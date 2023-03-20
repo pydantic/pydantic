@@ -3,11 +3,15 @@ import itertools
 import json
 import platform
 import sys
+from collections import deque
 from enum import Enum, IntEnum
 from typing import (
     Any,
     Callable,
     ClassVar,
+    Counter,
+    DefaultDict,
+    Deque,
     Dict,
     FrozenSet,
     Generic,
@@ -24,8 +28,9 @@ from typing import (
 )
 
 import pytest
+from dirty_equals import HasRepr
 from pydantic_core import core_schema
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, OrderedDict
 
 from pydantic import BaseModel, Field, Json, ValidationError, ValidationInfo, root_validator, validator
 from pydantic._internal._core_utils import collect_invalid_schemas
@@ -1067,7 +1072,6 @@ def test_replace_types():
         assert replace_types(str | list[T] | float, {T: int}) == str | list[int] | float
 
 
-@pytest.mark.xfail(reason='working on V2 - generic containers - issue #5019')
 def test_replace_types_with_user_defined_generic_type_field():
     """Test that using user defined generic types as generic model fields are handled correctly."""
 
@@ -1075,19 +1079,107 @@ def test_replace_types_with_user_defined_generic_type_field():
     KT = TypeVar('KT')
     VT = TypeVar('VT')
 
-    class GenericMapping(Mapping[KT, VT]):
+    class CustomCounter(Counter[T]):
         pass
 
-    class GenericList(List[T]):
+    class CustomDefaultDict(DefaultDict[KT, VT]):
+        pass
+
+    class CustomDeque(Deque[T]):
+        pass
+
+    class CustomDict(Dict[KT, VT]):
+        pass
+
+    class CustomFrozenset(FrozenSet[T]):
+        pass
+
+    class CustomIterable(Iterable[T]):
+        pass
+
+    class CustomList(List[T]):
+        pass
+
+    class CustomMapping(Mapping[KT, VT]):
+        pass
+
+    class CustomOrderedDict(OrderedDict[KT, VT]):
+        pass
+
+    class CustomSequence(Sequence[T]):
+        pass
+
+    class CustomSet(Set[T]):
+        pass
+
+    class CustomTuple(Tuple[T]):
         pass
 
     class Model(BaseModel, Generic[T, KT, VT]):
-        map_field: GenericMapping[KT, VT]
-        list_field: GenericList[T]
+        counter_field: CustomCounter[T]
+        default_dict_field: CustomDefaultDict[KT, VT]
+        deque_field: CustomDeque[T]
+        dict_field: CustomDict[KT, VT]
+        frozenset_field: CustomFrozenset[T]
+        iterable_field: CustomIterable[T]
+        list_field: CustomList[T]
+        mapping_field: CustomMapping[KT, VT]
+        ordered_dict_field: CustomOrderedDict[KT, VT]
+        sequence_field: CustomSequence[T]
+        set_field: CustomSet[T]
+        tuple_field: CustomTuple[T]
 
     assert replace_types(Model, {T: bool, KT: str, VT: int}) == Model[bool, str, int]
     assert replace_types(Model[T, KT, VT], {T: bool, KT: str, VT: int}) == Model[bool, str, int]
     assert replace_types(Model[T, VT, KT], {T: bool, KT: str, VT: int}) == Model[T, VT, KT][bool, int, str]
+
+    m = Model[bool, str, int](
+        counter_field=Counter([True, False]),
+        default_dict_field={'a': 1},
+        deque_field=[True, False],
+        dict_field={'a': 1},
+        frozenset_field=frozenset([True, False]),
+        iterable_field=[True, False],
+        list_field=[True, False],
+        mapping_field={'a': 2},
+        ordered_dict_field=OrderedDict([('a', 1)]),
+        sequence_field=[True, False],
+        set_field={True, False},
+        tuple_field=(True,),
+    )
+
+    # The following assertions are just to document the current behavior, and should
+    # be updated if/when we do a better job of respecting the exact annotated type
+    assert type(m.counter_field) is Counter.__origin__
+    assert type(m.default_dict_field) is dict
+    assert type(m.deque_field) is deque
+    assert type(m.dict_field) is dict
+    assert type(m.frozenset_field) is CustomFrozenset
+    assert type(m.iterable_field).__name__ == 'ValidatorIterator'
+    assert type(m.list_field) is CustomList
+    assert type(m.mapping_field) is dict
+    assert type(m.ordered_dict_field) is OrderedDict.__origin__
+    assert type(m.sequence_field) is list
+    assert type(m.set_field) is CustomSet
+    assert type(m.tuple_field) is tuple
+
+    assert m.model_dump() == {
+        'counter_field': {False: 1, True: 1},
+        'default_dict_field': {'a': 1},
+        'deque_field': deque([True, False]),
+        'dict_field': {'a': 1},
+        'frozenset_field': frozenset({False, True}),
+        'iterable_field': HasRepr(
+            'SerializationIterator(index=0, '
+            'iterator=ValidatorIterator(index=0, schema=Some(Bool(BoolValidator { strict: false }))))'
+        ),
+        'list_field': [True, False],
+        'mapping_field': {'a': 2},
+        'ordered_dict_field': {'a': 1},
+        'sequence_field': [True, False],
+        'set_field': {False, True},
+        'tuple_field': (True,),
+    }
 
 
 def test_replace_types_identity_on_unchanged():
@@ -1694,7 +1786,6 @@ def test_generic_enums():
     assert set(Model.model_json_schema()['$defs']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
 
 
-@pytest.mark.xfail(reason='working on V2 - generic containers - issue #5019')
 def test_generic_with_user_defined_generic_field():
     T = TypeVar('T')
 
