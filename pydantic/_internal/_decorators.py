@@ -212,7 +212,7 @@ def prepare_serializer_decorator(function: _SerializerType, allow_reuse: bool) -
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
     """
     if isinstance(function, staticmethod):
-        function = function.__func__
+        function = function.__func__  # type: ignore[assignment]
     if not allow_reuse and not in_ipython():
         ref = f'{function.__module__}::{function.__qualname__}'
         if ref in _FUNCS:
