@@ -597,7 +597,6 @@ def test_discriminated_union_forward_ref(create_module):
     }
 
 
-@pytest.mark.xfail(reason='TODO class_vars')
 def test_class_var_as_string(create_module):
     module = create_module(
         # language=Python

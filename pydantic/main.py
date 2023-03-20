@@ -70,6 +70,7 @@ class ModelMetaclass(ABCMeta):
         **kwargs: Any,
     ) -> type:
         if _base_class_defined:
+            class_vars: set[str] = set()
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
             private_attributes = _model_construction.inspect_namespace(namespace)
@@ -96,6 +97,8 @@ class ModelMetaclass(ABCMeta):
             for base in bases:
                 if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
                     base_private_attributes.update(base.__private_attributes__)
+                    class_vars.update(base.__class_vars__)
+            namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
             namespace['__pydantic_validator_functions__'] = validator_functions = _decorators.ValidationFunctions(bases)
@@ -233,6 +236,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     @typing.no_type_check
     def __setattr__(self, name, value):
+        if name in self.__class_vars__:
+            raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         if name.startswith('_'):
             _object_setattr(self, name, value)
         elif self.model_config['frozen']:
