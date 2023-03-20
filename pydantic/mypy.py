@@ -1,6 +1,7 @@
 import sys
 from configparser import ConfigParser
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Type as TypingType, Union
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union
+from typing import Type as TypingType
 
 from mypy.errorcodes import ErrorCode
 from mypy.nodes import (
@@ -158,7 +159,7 @@ class PydanticPlugin(Plugin):
         info_metaclass = ctx.cls.info.declared_metaclass
         assert info_metaclass, "callback not passed from 'get_metaclass_hook'"
         if getattr(info_metaclass.type, 'dataclass_transform_spec', None):
-            info_metaclass.type.dataclass_transform_spec = None  # type: ignore[attr-defined]
+            info_metaclass.type.dataclass_transform_spec = None
 
     def _pydantic_field_callback(self, ctx: FunctionContext) -> 'Type':
         """

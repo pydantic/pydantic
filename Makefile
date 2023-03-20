@@ -21,25 +21,24 @@ refresh-lockfiles:
 
 .PHONY: format
 format:
-	isort $(sources)
 	black $(sources)
+	ruff --fix $(sources)
 
 .PHONY: lint
 lint:
 	ruff $(sources)
-	isort $(sources) --check-only --df
 	black $(sources) --check --diff
 
-.PHONY: mypy
-mypy:
+.PHONY: typecheck
+typecheck:
 	mypy pydantic docs/build --disable-recursive-aliases
 
-.PHONY: pyupgrade
-pyupgrade:
-	pyupgrade --py37-plus `find pydantic tests -name "*.py" -type f`
+.PHONY: mypy
+test-mypy:
+	coverage run -m pytest tests/mypy --test-mypy
 
 .PHONY: pyright
-pyright:
+test-pyright:
 	cd tests/pyright && pyright
 
 .PHONY: test
@@ -67,7 +66,7 @@ test-fastapi:
 	./tests/test_fastapi.sh
 
 .PHONY: all
-all: lint mypy testcov
+all: lint typecheck testcov
 
 .PHONY: clean
 clean:
@@ -78,13 +77,13 @@ clean:
 	rm -rf .cache
 	rm -rf .pytest_cache
 	rm -rf .mypy_cache
+	rm -rf .ruff_cache
 	rm -rf htmlcov
 	rm -rf *.egg-info
 	rm -f .coverage
 	rm -f .coverage.*
 	rm -rf build
 	rm -rf dist
-	rm -f pydantic/*.c pydantic/*.so
 	rm -rf site
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html

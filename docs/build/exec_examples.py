@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from __future__ import annotations
+
 import importlib
 import json
 import os
@@ -237,8 +238,8 @@ def filter_lines(lines: list[str], error: Any) -> tuple[list[str], bool]:
 
 
 def upgrade_code(content: str, min_version: Version = HIGHEST_VERSION) -> str:
-    import pyupgrade._main  # type: ignore
     import autoflake  # type: ignore
+    import pyupgrade._main  # type: ignore
 
     upgraded = pyupgrade._main._fix_plugins(
         content,

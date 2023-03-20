@@ -17,9 +17,7 @@ from typing import (
     List,
     Set,
     Tuple,
-    Type,
     TypeVar,
-    Union,
     cast,
 )
 from uuid import UUID
@@ -202,16 +200,16 @@ HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 
 
 def conset(
-    item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
-) -> Type[Set[HashableItemType]]:
+    item_type: type[HashableItemType], *, min_length: int = None, max_length: int = None
+) -> type[set[HashableItemType]]:
     return Annotated[  # type: ignore[return-value]
         Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
     ]
 
 
 def confrozenset(
-    item_type: Type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
-) -> Type[FrozenSet[HashableItemType]]:
+    item_type: type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
+) -> type[frozenset[HashableItemType]]:
     return Annotated[  # type: ignore[return-value]
         FrozenSet[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
@@ -222,8 +220,8 @@ AnyItemType = TypeVar('AnyItemType')
 
 
 def conlist(
-    item_type: Type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
-) -> Type[List[AnyItemType]]:
+    item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
+) -> type[list[AnyItemType]]:
     return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
@@ -231,8 +229,8 @@ def conlist(
 
 
 def contuple(
-    item_type: Type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
-) -> Type[Tuple[AnyItemType]]:
+    item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
+) -> type[tuple[AnyItemType]]:
     return Annotated[  # type: ignore[return-value]
         Tuple[item_type],
         annotated_types.Len(min_length or 0, max_length),
@@ -279,7 +277,7 @@ def condecimal(
     max_digits: int | None = None,
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
-) -> Type[Decimal]:
+) -> type[Decimal]:
     return Annotated[  # type: ignore[return-value]
         Decimal,
         Strict(strict) if strict is not None else None,
@@ -507,9 +505,9 @@ class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
     __slots__ = 'field_type', 'min_length', 'max_length', 'error_prefix'
 
     def __init__(
-        self, field_type: Type[SecretField[SecretType]], min_length: int | None = None, max_length: int | None = None
+        self, field_type: type[SecretField[SecretType]], min_length: int | None = None, max_length: int | None = None
     ) -> None:
-        self.field_type: Type[SecretField[SecretType]] = field_type
+        self.field_type: type[SecretField[SecretType]] = field_type
         self.min_length = min_length
         self.max_length = max_length
         self.error_prefix: Literal['string', 'bytes'] = 'string' if field_type is SecretStr else 'bytes'
@@ -599,7 +597,7 @@ class PaymentCardNumber(str):
         )
 
     @classmethod
-    def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> 'PaymentCardNumber':
+    def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> PaymentCardNumber:
         return cls(__input_value)
 
     @property
@@ -647,7 +645,7 @@ class PaymentCardNumber(str):
         else:
             brand = PaymentCardBrand.other
 
-        required_length: Union[None, int, str] = None
+        required_length: None | int | str = None
         if brand in PaymentCardBrand.mastercard:
             required_length = 16
             valid = len(card_number) == required_length
@@ -697,7 +695,7 @@ class ByteSize(int):
         return core_schema.general_plain_validation_function(cls.validate)
 
     @classmethod
-    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> 'ByteSize':
+    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
         try:
             return cls(int(__input_value))
         except ValueError:
