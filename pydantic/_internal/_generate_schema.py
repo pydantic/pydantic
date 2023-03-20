@@ -777,11 +777,39 @@ _SerializerType = Literal[
 ]
 
 
+_VALID_SERIALIZER_SIGNATURES = """\
+Valid serializer signatures are:
+
+# an instance method with the default mode or `mode='plain'`
+@serializer('x')  # or @serialize('x', mode='plain')
+def ser_x(self, value: Any, info: pydantic.FieldSerializationInfo): ...
+
+# a static method or free-standing function with the default mode or `mode='plain'`
+@serializer('x')  # or @serialize('x', mode='plain')
+@staticmethod
+def ser_x(value: Any, info: pydantic.SerializationInfo): ...
+# equivalent to
+def ser_x(value: Any, info: pydantic.SerializationInfo): ...
+serializer('x')(ser_x)
+
+# an instance method with `mode='wrap'`
+@serializer('x', mode='wrap')
+def ser_x(self, value: Any, nxt: pydantic.SerializeWrapHandler, info: pydantic.FieldSerializationInfo): ...
+
+# a static method or free-standing function with `mode='wrap'`
+@serializer('x', mode='wrap')
+@staticmethod
+def ser_x(value: Any, nxt: pydantic.SerializeWrapHandler, info: pydantic.SerializationInfo): ...
+# equivalent to
+def ser_x(value: Any, nxt: pydantic.SerializeWrapHandler, info: pydantic.SerializationInfo): ...
+serializer('x')(ser_x)
+"""
+
+
 def _is_unbound_instance_method(sig: Signature, func: Callable[..., Any]) -> bool:
     if len(sig.parameters) < 2:
-        raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}')
-    first = next(iter(sig.parameters.keys()))
-    return sig.parameters[first].name == 'self'
+        raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}')
+    return next(iter(sig.parameters.values())).name == 'self'
 
 
 def _infer_serializer_type_from_signature(sig: Signature, func: Callable[..., Any]) -> _SerializerType:
@@ -796,7 +824,7 @@ def _infer_serializer_type_from_signature(sig: Signature, func: Callable[..., An
     elif len(sig.parameters) == 4 and _is_unbound_instance_method(sig, func):
         # (self, value, nxt, info) -> Any
         return 'field-wrap'
-    raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}')
+    raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}')
 
 
 def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializer]) -> core_schema.CoreSchema:
@@ -811,9 +839,13 @@ def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializ
         sig = signature(function)
         type_ = _infer_serializer_type_from_signature(sig, function)
         if serializer.wrap and type_ not in ('general-wrap', 'field-wrap'):
-            raise TypeError(f'Invalid signature for wrap serializer {function.__name__}: {sig}')
+            raise TypeError(
+                f'Invalid signature for wrap serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
+            )
         elif not serializer.wrap and type_ not in ('general-plain', 'field-plain'):
-            raise TypeError(f'Invalid signature for plain serializer {function.__name__}: {sig}')
+            raise TypeError(
+                f'Invalid signature for plain serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
+            )
         if type_ == 'general-wrap':
             schema['serialization'] = core_schema.general_function_wrap_ser_schema(
                 function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
