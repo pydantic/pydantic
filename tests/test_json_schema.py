@@ -1197,7 +1197,7 @@ def test_callable_type_with_fallback(default_value, properties):
     'type_,default_value,properties',
     (
         (
-            dict[Any, Any],
+            Dict[Any, Any],
             {(lambda x: x): 1},
             {'callback': {'title': 'Callback', 'type': 'object'}},
         ),

@@ -558,6 +558,8 @@ class GenerateJsonSchema:
                 if len(alias_path) != 1:
                     continue  # this means that the "alias" does not represent a single field
                 alias = alias_path[0]
+                if not isinstance(alias, str):
+                    continue  # this means that the "alias" does not represent a field
                 alias_is_present_on_all_choices = True
                 for choice in one_of_choices:
                     while '$ref' in choice:
