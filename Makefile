@@ -31,7 +31,7 @@ lint:
 
 .PHONY: typecheck
 typecheck:
-	mypy pydantic docs/build --disable-recursive-aliases
+	mypy pydantic docs/build --disable-recursive-aliases --config-file .mypy-configs/full.toml
 
 .PHONY: mypy
 test-mypy:
