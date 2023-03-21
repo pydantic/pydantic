@@ -96,6 +96,7 @@ _FIELDS_MAPPING = {
     'format': 'format',
 }
 
+# These are "kind" labels that can be used to control warnings. See `GenerateJsonSchema.render_warning_message`
 JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default']
 
 
@@ -148,6 +149,9 @@ JsonRef = NewType('JsonRef', str)
 class GenerateJsonSchema:
     # See https://json-schema.org/understanding-json-schema/reference/schema.html#id4 for more info about dialects
     schema_dialect = 'https://json-schema.org/draft/2020-12/schema'
+
+    # `self.render_warning_message` will do nothing if its argument `kind` is in `ignored_warning_kinds`;
+    # this value can be modified on subclasses to easily control which warnings are emitted
     ignored_warning_kinds: set[JsonSchemaWarningKind] = {'skipped-choice'}
 
     def __init__(self, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE):
