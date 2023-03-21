@@ -189,7 +189,9 @@ def test_date_format_function(benchmark):
         return value.strftime('%Y-%m-%d')
 
     serializer = SchemaSerializer(
-        core_schema.any_schema(serialization=core_schema.general_function_plain_ser_schema(fmt, json_return_type='str'))
+        core_schema.any_schema(
+            serialization=core_schema.general_plain_serializer_function_ser_schema(fmt, json_return_type='str')
+        )
     )
     d = date(2022, 11, 20)
     assert serializer.to_python(d) == '2022-11-20'
