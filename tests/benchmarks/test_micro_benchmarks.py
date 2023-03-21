@@ -1107,7 +1107,7 @@ def generator_gen_python(v, validator, info):
 
 @pytest.mark.benchmark(group='generator')
 def test_generator_python(benchmark):
-    schema = core_schema.general_wrap_validation_function(generator_gen_python, {'type': 'int'})
+    schema = core_schema.general_wrap_validator_function(generator_gen_python, {'type': 'int'})
     v = SchemaValidator(schema)
     input_value = tuple(range(100))
 
