@@ -227,11 +227,15 @@ def test_no_choices():
     with pytest.raises(SchemaError) as exc_info:
         SchemaValidator({'type': 'union'})
 
-    assert exc_info.value.args[0] == (
-        'Invalid Schema:\n'
+    assert str(exc_info.value) == (
+        '1 validation error for Schema\n'
         'union -> choices\n'
         "  Field required [type=missing, input_value={'type': 'union'}, input_type=dict]"
     )
+    assert exc_info.value.error_count() == 1
+    assert exc_info.value.errors() == [
+        {'input': {'type': 'union'}, 'loc': ('union', 'choices'), 'msg': 'Field required', 'type': 'missing'}
+    ]
 
 
 def test_empty_choices():
