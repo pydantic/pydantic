@@ -184,14 +184,14 @@ impl SchemaError {
     fn __str__(&self, py: Python) -> String {
         match &self.0 {
             SchemaErrorEnum::Message(message) => message.to_owned(),
-            SchemaErrorEnum::ValidationError(error) => error.display(py),
+            SchemaErrorEnum::ValidationError(error) => error.display(py, Some("Invalid Schema:")),
         }
     }
 
     fn __repr__(&self, py: Python) -> String {
         match &self.0 {
             SchemaErrorEnum::Message(message) => format!("SchemaError({message:?})"),
-            SchemaErrorEnum::ValidationError(error) => error.display(py),
+            SchemaErrorEnum::ValidationError(error) => error.display(py, Some("Invalid Schema:")),
         }
     }
 }

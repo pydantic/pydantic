@@ -228,7 +228,7 @@ def test_no_choices():
         SchemaValidator({'type': 'union'})
 
     assert str(exc_info.value) == (
-        '1 validation error for Schema\n'
+        'Invalid Schema:\n'
         'union -> choices\n'
         "  Field required [type=missing, input_value={'type': 'union'}, input_type=dict]"
     )
