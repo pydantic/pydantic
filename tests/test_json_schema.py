@@ -595,6 +595,10 @@ def test_set():
         ),
         (Tuple[str], {'prefixItems': [{'type': 'string'}], 'minItems': 1, 'maxItems': 1}),
         (Tuple[()], {'maxItems': 0, 'minItems': 0}),
+        (
+            Tuple[str, ...],
+            {'items': {'type': 'string'}, 'title': 'A', 'type': 'array'},
+        ),
     ],
 )
 def test_tuple(field_type, extra_props):
@@ -1982,7 +1986,7 @@ def test_model_with_extra_forbidden():
         (
             Tuple[Annotated[int, Field(gt=0)], ...],
             {},
-            {'items': [{'exclusiveMinimum': 0, 'type': 'integer'}], 'title': 'A', 'type': 'array'},
+            {'items': {'exclusiveMinimum': 0, 'type': 'integer'}, 'title': 'A', 'type': 'array'},
         ),
         (
             Tuple[Annotated[int, Field(gt=0)], Annotated[int, Field(gt=0)], Annotated[int, Field(gt=0)]],

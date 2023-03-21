@@ -100,7 +100,11 @@ JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default']
 
 
 class PydanticJsonSchemaWarning(UserWarning):
-    pass
+    """
+    This class is used to emit warnings produced during JSON schema generation.
+    See the `GenerateJsonSchema.emit_warning` and `GenerateJsonSchema.render_warning_message`
+    methods for more details; these can be overridden to control warning behavior
+    """
 
 
 def _apply_js_metadata(js_metadata: JsonSchemaMetadata, schema: JsonSchemaValue) -> None:
@@ -380,7 +384,7 @@ class GenerateJsonSchema:
     def tuple_variable_schema(self, schema: core_schema.TupleVariableSchema) -> JsonSchemaValue:
         json_schema: JsonSchemaValue = {'type': 'array', 'items': {}}
         if 'items_schema' in schema:
-            json_schema['items'] = [self.generate_inner(schema['items_schema'])]
+            json_schema['items'] = self.generate_inner(schema['items_schema'])
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
@@ -548,10 +552,13 @@ class GenerateJsonSchema:
             return schema['discriminator']
 
         if isinstance(schema['discriminator'], list):
-            # When an alias is used, the discriminator will be a list of single str lists, one for the attribute
-            # and one for the actual alias. This logic will work even if there is more than one possible attribute,
-            # and looks for whether a single alias choice is present as a documented property on all choices.
-            # If so, that property will be used as the OpenAPI discriminator.
+            # If the discriminator is a single item list containing a string, that is equivalent to the string case
+            if len(schema['discriminator']) == 1 and isinstance(schema['discriminator'][0], str):
+                return schema['discriminator'][0]
+            # When an alias is used that is different from the field name, the discriminator will be a list of single
+            # str lists, one for the attribute and one for the actual alias. The logic here will work even if there is
+            # more than one possible attribute, and looks for whether a single alias choice is present as a documented
+            # property on all choices. If so, that property will be used as the OpenAPI discriminator.
             for alias_path in schema['discriminator']:
                 if not isinstance(alias_path, list):
                     break  # this means that the discriminator is not a list of alias paths
@@ -989,6 +996,7 @@ class GenerateJsonSchema:
         return self.definitions.get(self.json_to_defs_refs[json_ref])
 
     def encode_default(self, dft: Any) -> Any:
+        # TODO: Add something equivalent to pydantic_encoder to pydantic_core, and use that instead
         from .json import pydantic_encoder
         from .main import BaseModel
 
@@ -1102,15 +1110,20 @@ class GenerateJsonSchema:
             raise PydanticInvalidForJsonSchema(f'Cannot generate a JsonSchema for {error_info}')
 
     def emit_warning(self, kind: JsonSchemaWarningKind, detail: str) -> None:
-        message = self.warning_message(kind, detail)
+        """
+        This method simply emits PydanticJsonSchemaWarnings based on handling in the `warning_message` method.
+        """
+        message = self.render_warning_message(kind, detail)
         if message is not None:
             warnings.warn(message, PydanticJsonSchemaWarning)
 
-    def warning_message(self, kind: JsonSchemaWarningKind, detail: str) -> str | None:
+    def render_warning_message(self, kind: JsonSchemaWarningKind, detail: str) -> str | None:
         """
-        Note: You can override the value of `ignored_warning_kinds` in a subclass of GenerateJsonSchema
-        to modify what warnings are generated. If you want more control, you can override this method
-        to return None in situations where you don't want warnings to be emitted.
+        This method is responsible for ignoring warnings as desired, and for formatting the warning messages.
+
+        You can override the value of `ignored_warning_kinds` in a subclass of GenerateJsonSchema
+        to modify what warnings are generated. If you want more control, you can override this method;
+        just return None in situations where you don't want warnings to be emitted.
         """
         if kind in self.ignored_warning_kinds:
             return None
