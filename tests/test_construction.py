@@ -72,14 +72,7 @@ def test_large_any_str():
     assert m.b == content_str
 
 
-def deprecated_copy(
-    m: BaseModel,
-    *,
-    include: Any | None = None,
-    exclude: Any | None = None,
-    update: dict[str, Any] | None = None,
-    deep: bool = False,
-):
+def deprecated_copy(m: BaseModel, *, include=None, exclude=None, update=None, deep=False):
     """
     This should only be used to make calls to the deprecated `copy` method with arguments
     that have been removed from `model_copy`. Otherwise, use the `copy_method` fixture below
