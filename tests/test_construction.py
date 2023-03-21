@@ -403,3 +403,17 @@ def test_copy_with_excluded_fields():
 
     assert 'dob' in user.__fields_set__
     assert 'dob' not in user_copy.__fields_set__
+
+
+def test_dunder_copy(ModelTwo):
+    m = ModelTwo(a=24, d=Model(a='12'))
+    m2 = m.__copy__()
+    assert m is not m2
+
+    assert m.a == m2.a == 24
+    assert isinstance(m2.d, Model)
+    assert m.d is m2.d
+    assert m.d.a == m2.d.a == 12
+
+    m.a = 12
+    assert m.a != m2.a

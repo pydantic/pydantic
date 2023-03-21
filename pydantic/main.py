@@ -7,7 +7,7 @@ import sys
 import typing
 import warnings
 from abc import ABCMeta
-from copy import deepcopy
+from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from inspect import getdoc
@@ -657,6 +657,42 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return self.model_dump() == other.model_dump()
         else:
             return self.model_dump() == other
+
+    def model_copy(self, deep: bool = False) -> typing_extensions.Self:
+        """
+        Returns a copy of the model
+        """
+        return self.__deepcopy__() if deep else self.__copy__()
+
+    def __copy__(self) -> typing_extensions.Self:
+        """
+        Returns a shallow copy of the model
+        """
+        cls = type(self)
+        m = cls.__new__(cls)
+        _object_setattr(m, '__dict__', copy(self.__dict__))
+        _object_setattr(m, '__fields_set__', copy(self.__fields_set__))
+        for name in self.__private_attributes__:
+            value = getattr(self, name, Undefined)
+            if value is not Undefined:
+                _object_setattr(m, name, value)
+        return m
+
+    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> typing_extensions.Self:
+        """
+        Returns a deep copy of the model
+        """
+        cls = type(self)
+        m = cls.__new__(cls)
+        _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
+        # This next line doesn't need a deepcopy because __fields_set__ is a set[str],
+        # and attempting a deepcopy would be marginally slower.
+        _object_setattr(m, '__fields_set__', copy(self.__fields_set__))
+        for name in self.__private_attributes__:
+            value = getattr(self, name, Undefined)
+            if value is not Undefined:
+                _object_setattr(m, name, deepcopy(value, memo=memo))
+        return m
 
     def __repr_args__(self) -> _repr.ReprArgs:
         return [
