@@ -444,7 +444,7 @@ def test_dataclass_field_after_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.field_after_validation_function(Foo.validate_b, core_schema.str_schema()),
+                    schema=core_schema.field_after_validator_function(Foo.validate_b, core_schema.str_schema()),
                 ),
             ],
         ),
@@ -475,7 +475,7 @@ def test_dataclass_field_plain_validator():
             [
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
-                    name='b', schema=core_schema.field_plain_validation_function(Foo.validate_b)
+                    name='b', schema=core_schema.field_plain_validator_function(Foo.validate_b)
                 ),
             ],
         ),
@@ -507,7 +507,7 @@ def test_dataclass_field_before_validator():
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
                     name='b',
-                    schema=core_schema.field_before_validation_function(Foo.validate_b, core_schema.str_schema()),
+                    schema=core_schema.field_before_validator_function(Foo.validate_b, core_schema.str_schema()),
                 ),
             ],
         ),
@@ -525,7 +525,9 @@ def test_dataclass_field_wrap_validator1():
         b: str
 
         @classmethod
-        def validate_b(cls, v: bytes, nxt: core_schema.CallableValidator, info: core_schema.FieldValidationInfo) -> str:
+        def validate_b(
+            cls, v: bytes, nxt: core_schema.ValidatorFunctionWrapHandler, info: core_schema.FieldValidationInfo
+        ) -> str:
             assert v == b'hello'
             v = nxt(v)
             assert v == 'hello'
@@ -540,8 +542,7 @@ def test_dataclass_field_wrap_validator1():
             [
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
-                    name='b',
-                    schema=core_schema.field_wrap_validation_function(Foo.validate_b, core_schema.str_schema()),
+                    name='b', schema=core_schema.field_wrap_validator_function(Foo.validate_b, core_schema.str_schema())
                 ),
             ],
         ),
@@ -560,7 +561,7 @@ def test_dataclass_field_wrap_validator2():
 
         @classmethod
         def validate_b(
-            cls, v: bytes, nxt: core_schema.CallableValidator, info: core_schema.FieldValidationInfo
+            cls, v: bytes, nxt: core_schema.ValidatorFunctionWrapHandler, info: core_schema.FieldValidationInfo
         ) -> bytes:
             assert v == b'hello'
             assert info.field_name == 'b'
@@ -574,8 +575,7 @@ def test_dataclass_field_wrap_validator2():
             [
                 core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
                 core_schema.dataclass_field(
-                    name='b',
-                    schema=core_schema.field_wrap_validation_function(Foo.validate_b, core_schema.str_schema()),
+                    name='b', schema=core_schema.field_wrap_validator_function(Foo.validate_b, core_schema.str_schema())
                 ),
             ],
         ),
@@ -740,7 +740,7 @@ def test_validate_assignment_function():
                 [
                     core_schema.dataclass_field('field_a', core_schema.str_schema()),
                     core_schema.dataclass_field(
-                        'field_b', core_schema.field_after_validation_function(func, core_schema.int_schema())
+                        'field_b', core_schema.field_after_validator_function(func, core_schema.int_schema())
                     ),
                     core_schema.dataclass_field('field_c', core_schema.int_schema()),
                 ],

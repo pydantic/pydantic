@@ -86,7 +86,7 @@ all_schema_functions = [
         {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'int'}},
     ),
     (
-        core_schema.general_before_validation_function,
+        core_schema.general_before_validator_function,
         args(val_function, {'type': 'int'}),
         {
             'type': 'function-before',
@@ -95,7 +95,7 @@ all_schema_functions = [
         },
     ),
     (
-        core_schema.general_after_validation_function,
+        core_schema.general_after_validator_function,
         args(val_function, {'type': 'int'}),
         {
             'type': 'function-after',
@@ -104,12 +104,12 @@ all_schema_functions = [
         },
     ),
     (
-        core_schema.general_wrap_validation_function,
+        core_schema.general_wrap_validator_function,
         args(val_function, {'type': 'int'}),
         {'type': 'function-wrap', 'function': {'type': 'general', 'function': val_function}, 'schema': {'type': 'int'}},
     ),
     (
-        core_schema.general_plain_validation_function,
+        core_schema.general_plain_validator_function,
         args(val_function),
         {'type': 'function-plain', 'function': {'type': 'general', 'function': val_function}},
     ),
@@ -281,7 +281,7 @@ def repr_function(value, _info):
 def test_expected_serialization_types(json_return_type):
     SchemaSerializer(
         core_schema.any_schema(
-            serialization=core_schema.general_function_plain_ser_schema(
+            serialization=core_schema.general_plain_serializer_function_ser_schema(
                 repr_function, json_return_type=json_return_type
             )
         )
