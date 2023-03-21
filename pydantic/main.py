@@ -373,6 +373,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         return m
 
+    # @typing_extensions.deprecated('This method is now deprecated; use `model_copy` instead')
     def copy(
         self: Model,
         *,
@@ -382,7 +383,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         deep: bool = False,
     ) -> Model:
         """
-        This method is now deprecated; see `model_copy` instead. If you need include / exclude / update, use:
+        This method is now deprecated; use `model_copy` instead. If you need include / exclude / update, use:
 
             data = self.model_dump(include=include, exclude=exclude, round_trip=True)
             data = {**data, **(update or {})}
@@ -397,12 +398,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         :param deep: set to `True` to make a deep copy of the model
         :return: new model instance
         """
-        deprecation_warning_message = 'The `copy` method is deprecated, use `model_copy` instead.'
-        if include is not None or exclude is not None or update is not None:
-            deprecation_warning_message += (
-                ' See the docstring of `BaseModel.copy` for details about how to handle include / exclude / update.'
-            )
-        warnings.warn(deprecation_warning_message, DeprecationWarning)
+        warnings.warn(
+            'The `copy` method is deprecated; use `model_copy` instead. '
+            'See the docstring of `BaseModel.copy` for details about how to handle include / exclude / update.',
+            DeprecationWarning,
+        )
 
         values = dict(
             self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
@@ -471,6 +471,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     @classmethod
+    # @typing_extensions.deprecated('This method is only used for _iter, which is deprecated')
     @typing.no_type_check
     def _get_value(
         cls,
@@ -577,6 +578,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         yield from self.__dict__.items()
 
+    # @typing_extensions.deprecated('This private method is only used for `BaseModel.copy`, which is deprecated')
     def _iter(
         self,
         to_dict: bool = False,

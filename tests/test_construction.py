@@ -1,5 +1,4 @@
 import pickle
-import re
 from typing import Any, List, Optional
 
 import pytest
@@ -80,8 +79,8 @@ def deprecated_copy(m: BaseModel, *, include=None, exclude=None, update=None, de
     with pytest.warns(
         DeprecationWarning,
         match=(
-            'The `copy` method is deprecated, use `model_copy` instead.'
-            ' See the docstring of `BaseModel.copy` for details about how to handle include / exclude / update.'
+            'The `copy` method is deprecated; use `model_copy` instead. '
+            'See the docstring of `BaseModel.copy` for details about how to handle include / exclude / update.'
         ),
     ):
         return m.copy(include=include, exclude=exclude, update=update, deep=deep)
@@ -93,16 +92,7 @@ def copy_method(request):
     Fixture to test both the old/deprecated `copy` and new `model_copy` methods.
     """
     if request.param == 'copy':
-
-        def old_copy_method(m, deep: bool = False):
-            with pytest.warns(
-                DeprecationWarning,
-                match=re.escape('The `copy` method is deprecated, use `model_copy` instead.'),
-            ):
-                return m.copy(deep=deep)
-
-        return old_copy_method
-
+        return deprecated_copy
     else:
 
         def new_copy_method(m, deep: bool = False):
