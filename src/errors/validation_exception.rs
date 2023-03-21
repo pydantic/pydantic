@@ -24,6 +24,10 @@ pub struct ValidationError {
 }
 
 impl ValidationError {
+    pub fn new(line_errors: Vec<PyLineError>, title: PyObject) -> Self {
+        Self { line_errors, title }
+    }
+
     pub fn from_val_error(py: Python, title: PyObject, error: ValError, outer_location: Option<LocItem>) -> PyErr {
         match error {
             ValError::LineErrors(raw_errors) => {
@@ -41,7 +45,7 @@ impl ValidationError {
         }
     }
 
-    fn display(&self, py: Python) -> String {
+    pub fn display(&self, py: Python) -> String {
         let count = self.line_errors.len();
         let plural = if count == 1 { "" } else { "s" };
         let title: &str = self.title.extract(py).unwrap();
@@ -77,11 +81,11 @@ impl ValidationError {
         self.title.clone_ref(py)
     }
 
-    fn error_count(&self) -> usize {
+    pub fn error_count(&self) -> usize {
         self.line_errors.len()
     }
 
-    fn errors(&self, py: Python, include_context: Option<bool>) -> PyResult<Py<PyList>> {
+    pub fn errors(&self, py: Python, include_context: Option<bool>) -> PyResult<Py<PyList>> {
         // taken approximately from the pyo3, but modified to return the error during iteration
         // https://github.com/PyO3/pyo3/blob/a3edbf4fcd595f0e234c87d4705eb600a9779130/src/types/list.rs#L27-L55
         unsafe {
