@@ -17,7 +17,7 @@ from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs, define_expected_missing_refs
 from ._fields import Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
-from ._generate_schema import generate_config, get_model_self_schema, model_schema
+from ._generate_schema import generate_config, get_model_self_schema, model_fields_schema
 from ._generics import recursively_defined_type_refs
 from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
@@ -109,7 +109,7 @@ def deferred_model_get_pydantic_validation_schema(
     fields, class_vars = collect_fields(cls, cls.__bases__, types_namespace)
 
     model_config = cls.model_config
-    inner_schema = model_schema(
+    inner_schema = model_fields_schema(
         model_ref,
         fields,
         cls.__pydantic_validator_functions__,
@@ -161,7 +161,7 @@ def complete_model_class(
         fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
         # this schema construction has to go here
         # since in some recursive generics it can raise a PydanticUndefinedAnnotation error
-        inner_schema = model_schema(
+        inner_schema = model_fields_schema(
             model_ref,
             fields,
             validator_functions,

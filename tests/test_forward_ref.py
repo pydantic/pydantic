@@ -1,3 +1,4 @@
+import dataclasses
 import re
 import sys
 from typing import Optional, Tuple
@@ -189,37 +190,20 @@ def test_self_forward_ref_local(create_module):
     assert Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
-@pytest.mark.xfail(reason='TODO dataclasses')
 def test_forward_ref_dataclass(create_module):
     @create_module
     def module():
-        from pydantic import AnyUrl
+        from typing import Optional
+
         from pydantic.dataclasses import dataclass
 
         @dataclass
-        class Dataclass:
-            url: AnyUrl
+        class MyDataclass:
+            a: int
+            b: Optional['MyDataclass'] = None
 
-    m = module.Dataclass('http://example.com  ')
-    assert m.url == 'http://example.com'
-
-
-@pytest.mark.xfail(reason='TODO dataclasses')
-def test_forward_ref_dataclass_with_future_annotations(create_module):
-    module = create_module(
-        # language=Python
-        """
-from __future__ import annotations
-from pydantic import AnyUrl
-from pydantic.dataclasses import dataclass
-
-@dataclass
-class Dataclass:
-    url: AnyUrl
-    """
-    )
-    m = module.Dataclass('http://example.com  ')
-    assert m.url == 'http://example.com'
+    dc = module.MyDataclass(a=1, b={'a': 2, 'b': {'a': 3}})
+    assert dataclasses.asdict(dc) == {'a': 1, 'b': {'a': 2, 'b': {'a': 3, 'b': None}}}
 
 
 def test_forward_ref_sub_types(create_module):
