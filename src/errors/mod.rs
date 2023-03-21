@@ -6,7 +6,7 @@ mod types;
 mod validation_exception;
 mod value_exception;
 
-pub use self::line_error::{pretty_line_errors, InputValue, ValError, ValLineError, ValResult};
+pub use self::line_error::{InputValue, ValError, ValLineError, ValResult};
 pub use self::location::LocItem;
 pub use self::types::{list_all_errors, ErrorType};
 pub use self::validation_exception::ValidationError;

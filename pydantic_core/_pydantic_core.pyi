@@ -154,7 +154,8 @@ class MultiHostUrl:
     def __repr__(self) -> str: ...
 
 class SchemaError(Exception):
-    pass
+    def error_count(self) -> int: ...
+    def errors(self) -> 'list[ErrorDetails]': ...
 
 class ValidationError(ValueError):
     @property

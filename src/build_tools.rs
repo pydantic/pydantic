@@ -4,10 +4,11 @@ use std::fmt;
 
 use pyo3::exceptions::{PyException, PyKeyError};
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString};
+use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{intern, FromPyObject, PyErrArguments};
 
-use crate::errors::{pretty_line_errors, ValError};
+use crate::errors::ValError;
+use crate::ValidationError;
 
 pub trait SchemaDict<'py> {
     fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
@@ -98,22 +99,25 @@ pub fn is_strict(schema: &PyDict, config: Option<&PyDict>) -> PyResult<bool> {
     Ok(schema_or_config_same(schema, config, intern!(py, "strict"))?.unwrap_or(false))
 }
 
+enum SchemaErrorEnum {
+    Message(String),
+    ValidationError(ValidationError),
+}
+
 // we could perhaps do clever things here to store each schema error, or have different types for the top
 // level error group, and other errors, we could perhaps also support error groups!?
 #[pyclass(extends=PyException, module="pydantic_core._pydantic_core")]
-pub struct SchemaError {
-    message: String,
-}
+pub struct SchemaError(SchemaErrorEnum);
 
 impl fmt::Debug for SchemaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "SchemaError({:?})", self.message)
+        write!(f, "SchemaError({:?})", self.message())
     }
 }
 
 impl fmt::Display for SchemaError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.message)
+        f.write_str(self.message())
     }
 }
 
@@ -134,12 +138,24 @@ impl SchemaError {
 
     pub fn from_val_error(py: Python, error: ValError) -> PyErr {
         match error {
-            ValError::LineErrors(line_errors) => {
-                let details = pretty_line_errors(py, line_errors);
-                SchemaError::new_err(format!("Invalid Schema:\n{details}"))
+            ValError::LineErrors(raw_errors) => {
+                let line_errors = raw_errors.into_iter().map(|e| e.into_py(py)).collect();
+                let validation_error = ValidationError::new(line_errors, "Schema".to_object(py));
+                let schema_error = SchemaError(SchemaErrorEnum::ValidationError(validation_error));
+                match Py::new(py, schema_error) {
+                    Ok(err) => PyErr::from_value(err.into_ref(py)),
+                    Err(err) => err,
+                }
             }
-            ValError::InternalErr(py_err) => py_err,
-            ValError::Omit => unreachable!(),
+            ValError::InternalErr(err) => err,
+            ValError::Omit => Self::new_err("Unexpected Omit error."),
+        }
+    }
+
+    fn message(&self) -> &str {
+        match &self.0 {
+            SchemaErrorEnum::Message(message) => message.as_str(),
+            SchemaErrorEnum::ValidationError(_) => "<ValidationError>",
         }
     }
 }
@@ -148,15 +164,35 @@ impl SchemaError {
 impl SchemaError {
     #[new]
     fn py_new(message: String) -> Self {
-        Self { message }
+        Self(SchemaErrorEnum::Message(message))
     }
 
-    fn __repr__(&self) -> String {
-        format!("{self:?}")
+    fn error_count(&self) -> usize {
+        match &self.0 {
+            SchemaErrorEnum::Message(_) => 0,
+            SchemaErrorEnum::ValidationError(error) => error.error_count(),
+        }
     }
 
-    fn __str__(&self) -> String {
-        self.to_string()
+    fn errors(&self, py: Python) -> PyResult<Py<PyList>> {
+        match &self.0 {
+            SchemaErrorEnum::Message(_) => Ok(PyList::empty(py).into_py(py)),
+            SchemaErrorEnum::ValidationError(error) => error.errors(py, None),
+        }
+    }
+
+    fn __str__(&self, py: Python) -> String {
+        match &self.0 {
+            SchemaErrorEnum::Message(message) => message.to_owned(),
+            SchemaErrorEnum::ValidationError(error) => error.display(py),
+        }
+    }
+
+    fn __repr__(&self, py: Python) -> String {
+        match &self.0 {
+            SchemaErrorEnum::Message(message) => format!("SchemaError({message:?})"),
+            SchemaErrorEnum::ValidationError(error) => error.display(py),
+        }
     }
 }
 

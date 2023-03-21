@@ -41,9 +41,10 @@ def test_def_error():
                 [core_schema.int_schema(ref='foobar'), {'type': 'wrong'}],
             )
         )
-    assert exc_info.value.args[0].startswith(
-        "Invalid Schema:\ndefinitions -> definitions -> 1\n  Input tag 'wrong' found using 'type'"
+    assert str(exc_info.value).startswith(
+        "1 validation error for Schema\ndefinitions -> definitions -> 1\n  Input tag 'wrong' found using 'type'"
     )
+    assert exc_info.value.error_count() == 1
 
 
 def test_dict_repeat():
