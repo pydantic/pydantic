@@ -237,7 +237,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     @typing.no_type_check
     def __setattr__(self, name, value):
         if name in self.__class_vars__:
-            raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
+            raise AttributeError(
+                f'"{name}" is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
+                f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
+            )
         if name.startswith('_'):
             _object_setattr(self, name, value)
         elif self.model_config['frozen']:
