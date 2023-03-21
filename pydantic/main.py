@@ -382,6 +382,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         deep: bool = False,
     ) -> Model:
         """
+        This method is now deprecated; see `model_copy` instead. If you need include / exclude / update, use:
+
+            data = self.model_dump(include=include, exclude=exclude, round_trip=True)
+            data = {**data, **(update or {})}
+            copied = self.model_validate(data)
+
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
         :param include: fields to include in new model
@@ -391,6 +397,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         :param deep: set to `True` to make a deep copy of the model
         :return: new model instance
         """
+        deprecation_warning_message = 'The `copy` method is deprecated, use `model_copy` instead.'
+        if include is not None or exclude is not None or update is not None:
+            deprecation_warning_message += (
+                ' See the docstring of `BaseModel.copy` for details about how to handle include / exclude / update.'
+            )
+        warnings.warn(deprecation_warning_message, DeprecationWarning)
 
         values = dict(
             self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
@@ -577,11 +589,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     ) -> TupleGenerator:
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
         # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
-        # if exclude is not None or self.__exclude_fields__ is not None:
-        #     exclude = _utils.ValueItems.merge(self.__exclude_fields__, exclude)
-        #
-        # if include is not None or self.__include_fields__ is not None:
-        #     include = _utils.ValueItems.merge(self.__include_fields__, include, intersect=True)
+        if exclude is not None:
+            exclude = _utils.ValueItems.merge(
+                {k: v.exclude for k, v in self.model_fields.items() if v.exclude is not None}, exclude
+            )
+
+        if include is not None:
+            include = _utils.ValueItems.merge(
+                {k: v.include for k, v in self.model_fields.items()}, include, intersect=True
+            )
 
         allowed_keys = self._calculate_keys(
             include=include, exclude=exclude, exclude_unset=exclude_unset  # type: ignore
