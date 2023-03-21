@@ -641,11 +641,13 @@ class Model(BaseModel):
     )
 
     m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
+    # TODO: How can we replicate this custom-encoder functionality without affecting the serialization of `User`?
     assert m.model_dump_json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
 
 
-@pytest.mark.xfail(reason='TODO json encoding')
+@pytest.mark.xfail(reason='working on v2')
 def test_json_encoder_forward_ref(create_module):
+    # TODO: Replace the use of json_encoders with a root_serializer
     module = create_module(
         # language=Python
         """
@@ -656,7 +658,7 @@ class User(BaseModel):
     name: str
     friends: Optional[List['User']] = None
 
-    mdoel_config = ConfigDict(
+    model_config = ConfigDict(
         json_encoders = {
             ForwardRef('User'): lambda v: f'User({v.name})',
         })
@@ -664,7 +666,7 @@ class User(BaseModel):
     )
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
-    assert m.model_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+    assert m.model_dump_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
 
 
 skip_pep585 = pytest.mark.skipif(
