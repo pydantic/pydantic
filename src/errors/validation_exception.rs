@@ -45,12 +45,16 @@ impl ValidationError {
         }
     }
 
-    pub fn display(&self, py: Python) -> String {
-        let count = self.line_errors.len();
-        let plural = if count == 1 { "" } else { "s" };
-        let title: &str = self.title.extract(py).unwrap();
+    pub fn display(&self, py: Python, prefix_override: Option<&'static str>) -> String {
         let line_errors = pretty_py_line_errors(py, self.line_errors.iter());
-        format!("{count} validation error{plural} for {title}\n{line_errors}")
+        if let Some(prefix) = prefix_override {
+            format!("{prefix}\n{line_errors}")
+        } else {
+            let count = self.line_errors.len();
+            let plural = if count == 1 { "" } else { "s" };
+            let title: &str = self.title.extract(py).unwrap();
+            format!("{count} validation error{plural} for {title}\n{line_errors}")
+        }
     }
 
     pub fn omit_error() -> PyErr {
@@ -106,7 +110,7 @@ impl ValidationError {
     }
 
     fn __repr__(&self, py: Python) -> String {
-        self.display(py)
+        self.display(py, None)
     }
 
     fn __str__(&self, py: Python) -> String {
