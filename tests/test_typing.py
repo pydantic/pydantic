@@ -42,8 +42,14 @@ def test_schema_typing() -> None:
         'type': 'tagged-union',
         'discriminator': 'type',
         'choices': {
-            'apple': {'type': 'typed-dict', 'fields': {'pips': {'schema': {'type': 'int'}}}},
-            'banana': {'type': 'typed-dict', 'fields': {'curvature': {'schema': {'type': 'float'}}}},
+            'apple': {
+                'type': 'typed-dict',
+                'fields': {'pips': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
+            },
+            'banana': {
+                'type': 'typed-dict',
+                'fields': {'curvature': {'type': 'typed-dict-field', 'schema': {'type': 'float'}}},
+            },
         },
     }
     SchemaValidator(schema)
@@ -78,16 +84,27 @@ def test_schema_typing() -> None:
     schema: CoreSchema = {
         'type': 'model',
         'cls': Foo,
-        'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'bar': {'schema': {'type': 'str'}}}},
+        'schema': {
+            'type': 'typed-dict',
+            'return_fields_set': True,
+            'fields': {'bar': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+        },
     }
     SchemaValidator(schema)
     schema: CoreSchema = {
         'type': 'typed-dict',
         'fields': {
-            'a': {'schema': {'type': 'str'}},
-            'b': {'schema': {'type': 'str'}, 'validation_alias': 'foobar'},
-            'c': {'schema': {'type': 'str'}, 'validation_alias': [['foobar', 0, 'bar'], ['foo']]},
-            'd': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'spam'}},
+            'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+            'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}, 'validation_alias': 'foobar'},
+            'c': {
+                'type': 'typed-dict-field',
+                'schema': {'type': 'str'},
+                'validation_alias': [['foobar', 0, 'bar'], ['foo']],
+            },
+            'd': {
+                'type': 'typed-dict-field',
+                'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'spam'},
+            },
         },
     }
     SchemaValidator(schema)
@@ -103,8 +120,9 @@ def test_schema_typing() -> None:
         'ref': 'Branch',
         'type': 'typed-dict',
         'fields': {
-            'name': {'schema': {'type': 'str'}},
+            'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
             'sub_branch': {
+                'type': 'typed-dict-field',
                 'schema': {
                     'type': 'default',
                     'schema': {
@@ -112,7 +130,7 @@ def test_schema_typing() -> None:
                         'choices': [{'type': 'none'}, {'type': 'definition-ref', 'schema_ref': 'Branch'}],
                     },
                     'default': None,
-                }
+                },
             },
         },
     }

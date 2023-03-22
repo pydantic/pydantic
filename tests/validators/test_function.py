@@ -89,7 +89,10 @@ def test_function_before_error_model():
         {
             'type': 'function-before',
             'function': {'type': 'general', 'function': f},
-            'schema': {'type': 'typed-dict', 'fields': {'my_field': {'schema': {'type': 'str', 'max_length': 5}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'fields': {'my_field': {'type': 'typed-dict-field', 'schema': {'type': 'str', 'max_length': 5}}},
+            },
         }
     )
 
@@ -248,11 +251,12 @@ def test_function_after_config():
             'type': 'typed-dict',
             'fields': {
                 'test_field': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'function-after',
                         'function': {'type': 'field', 'function': f},
                         'schema': {'type': 'str'},
-                    }
+                    },
                 }
             },
         },
@@ -314,7 +318,10 @@ def test_validate_assignment():
         {
             'type': 'function-after',
             'function': {'type': 'general', 'function': f},
-            'schema': {'type': 'typed-dict', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+            },
         }
     )
 

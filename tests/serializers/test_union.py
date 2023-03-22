@@ -46,8 +46,9 @@ def model_serializer() -> SchemaSerializer:
                         'type': 'typed-dict',
                         'return_fields_set': True,
                         'fields': {
-                            'a': {'schema': {'type': 'bytes'}},
+                            'a': {'type': 'typed-dict-field', 'schema': {'type': 'bytes'}},
                             'b': {
+                                'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'float',
                                     'serialization': {
@@ -55,7 +56,7 @@ def model_serializer() -> SchemaSerializer:
                                         'formatting_string': '0.1f',
                                         'when_used': 'unless-none',
                                     },
-                                }
+                                },
                             },
                         },
                     },
@@ -67,8 +68,9 @@ def model_serializer() -> SchemaSerializer:
                         'type': 'typed-dict',
                         'return_fields_set': True,
                         'fields': {
-                            'c': {'schema': {'type': 'bytes'}},
+                            'c': {'type': 'typed-dict-field', 'schema': {'type': 'bytes'}},
                             'd': {
+                                'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'float',
                                     'serialization': {
@@ -76,7 +78,7 @@ def model_serializer() -> SchemaSerializer:
                                         'formatting_string': '0.2f',
                                         'when_used': 'unless-none',
                                     },
-                                }
+                                },
                             },
                         },
                     },

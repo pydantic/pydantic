@@ -32,11 +32,15 @@ class TestBenchmarkSimpleModel:
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'fields': {
-                    'name': {'schema': {'type': 'str'}},
-                    'age': {'schema': {'type': 'int'}},
-                    'friends': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                    'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'friends': {
+                        'type': 'typed-dict-field',
+                        'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                    },
                     'settings': {
-                        'schema': {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'float'}}
+                        'type': 'typed-dict-field',
+                        'schema': {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'float'}},
                     },
                 },
             },

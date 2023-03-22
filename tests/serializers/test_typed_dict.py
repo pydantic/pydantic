@@ -26,6 +26,12 @@ def test_typed_dict():
     assert v.to_json({'bar': b'more', 'foo': 1, 'c': 3}) == b'{"bar":"more","foo":1}'
 
 
+def test_typed_dict_fields_has_type():
+    typed_dict_field = core_schema.typed_dict_field(core_schema.bytes_schema())
+
+    assert typed_dict_field['type'] == 'typed-dict-field'
+
+
 def test_typed_dict_allow_extra():
     v = SchemaSerializer(
         core_schema.typed_dict_schema(

@@ -62,13 +62,14 @@ def definition_schema():
             'type': 'typed-dict',
             'ref': 'Branch',
             'fields': {
-                'name': {'schema': {'type': 'str'}},
+                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'sub_branch': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'default',
                         'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
                         'default': None,
-                    }
+                    },
                 },
             },
         }

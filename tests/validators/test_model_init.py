@@ -17,7 +17,10 @@ def test_model_init():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )
@@ -48,17 +51,21 @@ def test_model_init_nested():
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'fields': {
-                    'field_a': {'schema': {'type': 'str'}},
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                     'field_b': {
+                        'type': 'typed-dict-field',
                         'schema': {
                             'type': 'model',
                             'cls': MyModel,
                             'schema': {
                                 'type': 'typed-dict',
                                 'return_fields_set': True,
-                                'fields': {'x_a': {'schema': {'type': 'str'}}, 'x_b': {'schema': {'type': 'int'}}},
+                                'fields': {
+                                    'x_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                                    'x_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                                },
                             },
-                        }
+                        },
                     },
                 },
             },
@@ -97,7 +104,10 @@ def test_function_before():
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
             },
         }
@@ -131,7 +141,10 @@ def test_function_after():
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
             },
         }
@@ -167,7 +180,10 @@ def test_function_wrap():
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
             },
         }

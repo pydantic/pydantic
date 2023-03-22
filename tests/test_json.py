@@ -95,7 +95,10 @@ def test_model():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+            'fields': {
+                'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            },
         }
     )
 
@@ -114,7 +117,9 @@ def test_error_loc():
         {
             'type': 'typed-dict',
             'return_fields_set': True,
-            'fields': {'field_a': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}}},
+            'fields': {
+                'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'list', 'items_schema': {'type': 'int'}}}
+            },
             'extra_validator': {'type': 'int'},
             'extra_behavior': 'allow',
         }

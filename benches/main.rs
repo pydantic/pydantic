@@ -324,16 +324,16 @@ fn typed_dict_json(bench: &mut Bencher) {
           'type': 'typed-dict',
           'extra_behavior': 'ignore',
           'fields': {
-            'a': {'schema': {'type': 'int'}},
-            'b': {'schema': {'type': 'int'}},
-            'c': {'schema': {'type': 'int'}},
-            'd': {'schema': {'type': 'int'}},
-            'e': {'schema': {'type': 'int'}},
-            'f': {'schema': {'type': 'int'}},
-            'g': {'schema': {'type': 'int'}},
-            'h': {'schema': {'type': 'int'}},
-            'i': {'schema': {'type': 'int'}},
-            'j': {'schema': {'type': 'int'}},
+            'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'c': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'd': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'e': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'f': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'g': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'h': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'i': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'j': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
           },
         }"#,
         );
@@ -353,16 +353,16 @@ fn typed_dict_python(bench: &mut Bencher) {
           'type': 'typed-dict',
           'extra_behavior': 'ignore',
           'fields': {
-            'a': {'schema': {'type': 'int'}},
-            'b': {'schema': {'type': 'int'}},
-            'c': {'schema': {'type': 'int'}},
-            'd': {'schema': {'type': 'int'}},
-            'e': {'schema': {'type': 'int'}},
-            'f': {'schema': {'type': 'int'}},
-            'g': {'schema': {'type': 'int'}},
-            'h': {'schema': {'type': 'int'}},
-            'i': {'schema': {'type': 'int'}},
-            'j': {'schema': {'type': 'int'}},
+            'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'c': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'd': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'e': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'f': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'g': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'h': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'i': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            'j': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
           },
         }"#,
         );
@@ -385,16 +385,18 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
             r#"{
             'type': 'typed-dict',
             'fields': {
-                'field_a': {'schema': {'type': 'str'}},
+                'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'field_b': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'typed-dict',
                         'fields': {
-                            'field_c': {'schema': {'type': 'str'}},
+                            'field_c': {'type': 'typed-dict-field','schema': {'type': 'str'}},
                             'field_d': {
+                                'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'typed-dict',
-                                    'fields': {'field_e': {'schema': {'type': 'str'}}, 'field_f': {'schema': {'type': 'int'}}},
+                                    'fields': {'field_e': {'type': 'typed-dict-field','schema': {'type': 'str'}}, 'field_f': {'type': 'typed-dict-field','schema': {'type': 'int'}}},
                                 }
                             },
                         },
