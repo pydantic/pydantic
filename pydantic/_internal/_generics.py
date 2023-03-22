@@ -81,7 +81,7 @@ if TYPE_CHECKING:
 
 else:
 
-    class DeepChainMap(ChainMap):  # type: ignore[type-arg]
+    class DeepChainMap(ChainMap):
         """
         Variant of ChainMap that allows direct updates to inner scopes
 
