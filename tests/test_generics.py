@@ -918,12 +918,12 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
             ...
 
         third_concrete = MyGeneric[Model]
-        assert concrete is not second_concrete, 1
-        assert concrete is not third_concrete, 2
-        assert second_concrete is not third_concrete, 3
-        assert globals()['MyGeneric[Model]'] is concrete, 4
-        assert globals()['MyGeneric[Model]_'] is second_concrete, 5
-        assert globals()['MyGeneric[Model]__'] is third_concrete, 6
+        assert concrete is not second_concrete
+        assert concrete is not third_concrete
+        assert second_concrete is not third_concrete
+        assert globals()['MyGeneric[Model]'] is concrete
+        assert globals()['MyGeneric[Model]_'] is second_concrete
+        assert globals()['MyGeneric[Model]__'] is third_concrete
 
 
 def test_generic_model_caching_detect_order_of_union_args_basic(create_module):
