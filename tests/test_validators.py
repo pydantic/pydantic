@@ -1087,7 +1087,10 @@ def test_root_validator_returns_none_exception():
         def root_validator_repeated(cls, values):
             return None
 
-    with pytest.raises(TypeError, match="__dict__ must be set to a dictionary, not a 'NoneType'"):
+    with pytest.raises(
+        TypeError,
+        match=r"(:?__dict__ must be set to a dictionary, not a 'NoneType')|(:?setting dictionary to a non-dict)",
+    ):
         Model()
 
 
