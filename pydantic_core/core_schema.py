@@ -2411,6 +2411,7 @@ def typed_dict_field(
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
         frozen: Whether the field is frozen
+        metadata: See [TODO] for details
     """
     return dict_not_none(
         type='typed-dict-field',
@@ -2575,6 +2576,7 @@ class DataclassField(TypedDict, total=False):
     validation_alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
     serialization_alias: str
     serialization_exclude: bool  # default: False
+    metadata: Any
 
 
 def dataclass_field(
@@ -2586,6 +2588,7 @@ def dataclass_field(
     validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
+    metadata: Any = None,
 ) -> DataclassField:
     """
     Returns a schema for a dataclass field, e.g.:
@@ -2606,6 +2609,7 @@ def dataclass_field(
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
+        metadata: See [TODO] for details
     """
     return dict_not_none(
         type='dataclass-field',
@@ -2616,6 +2620,7 @@ def dataclass_field(
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
+        metadata=metadata,
     )
 
 
