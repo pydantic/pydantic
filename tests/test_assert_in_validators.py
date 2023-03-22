@@ -3,14 +3,15 @@ PYTEST_DONT_REWRITE
 """
 import pytest
 
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError
+from pydantic.decorators import field_validator
 
 
 def test_assert_raises_validation_error():
     class Model(BaseModel):
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v):
             assert v == 'a', 'invalid a'

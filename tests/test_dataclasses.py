@@ -11,7 +11,8 @@ import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError, validator
+from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError
+from pydantic.decorators import field_validator
 
 
 def test_simple():
@@ -117,7 +118,7 @@ def test_validate_assignment_value_change():
     class MyDataclass:
         a: int
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def double_a(cls, v):
             return v * 2
@@ -1424,7 +1425,7 @@ def test_validator():
         a: int
         b: float
 
-        @validator('b')
+        @field_validator('b')
         @classmethod
         def double_b(cls, v, _):
             return v * 2
@@ -1447,7 +1448,7 @@ def test_parent_post_init():
 
     @pydantic.dataclasses.dataclass
     class B(A):
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def validate_a(cls, value, _):
             value += 3
@@ -1467,7 +1468,7 @@ def test_subclass_post_init():
         def __post_init__(self):
             self.a *= 2
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def validate_a(cls, value):
             value += 3
@@ -1487,7 +1488,7 @@ def test_subclass_post_init_inheritance():
         def __post_init__(self):
             self.a *= 2
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def validate_a(cls, value):
             value += 3
@@ -1529,7 +1530,7 @@ def test_validator_info_field_name_data_before():
         a: str
         b: str
 
-        @validator('b', mode='before')
+        @field_validator('b', mode='before')
         @classmethod
         def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
             assert v == b'but my barbaz is better'

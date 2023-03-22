@@ -3,8 +3,9 @@ from typing import Any, List
 
 import pytest
 
-from pydantic import ValidationError, root_validator, validator
+from pydantic import ValidationError, root_validator
 from pydantic.dataclasses import dataclass
+from pydantic.decorators import field_validator
 
 
 def test_simple():
@@ -12,7 +13,7 @@ def test_simple():
     class MyDataclass:
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def change_a(cls, v):
             return v + ' changed'
@@ -25,13 +26,13 @@ def test_validate_before():
     class MyDataclass:
         a: List[int]
 
-        @validator('a', mode='before')
+        @field_validator('a', mode='before')
         @classmethod
         def check_a1(cls, v: List[Any]) -> List[Any]:
             v.append('123')
             return v
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a2(cls, v: List[int]) -> List[int]:
             v.append(456)
@@ -48,7 +49,7 @@ def test_validate_multiple():
         a: str
         b: str
 
-        @validator('a', 'b')
+        @field_validator('a', 'b')
         @classmethod
         def check_a_and_b(cls, v, info):
             if len(v) < 4:
@@ -71,7 +72,7 @@ def test_classmethod():
     class MyDataclass:
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v):
             assert cls is MyDataclass and is_dataclass(MyDataclass)
@@ -87,7 +88,7 @@ def test_validate_parent():
     class Parent:
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def change_a(cls, v):
             return v + ' changed'
@@ -106,14 +107,14 @@ def test_inheritance_replace():
     class Parent:
         a: int
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def add_to_a(cls, v, **kwargs):
             return v + 1
 
     @dataclass
     class Child(Parent):
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def add_to_a(cls, v, **kwargs):
             return v + 5
@@ -130,7 +131,7 @@ def test_root_validator():
         a: int
         b: str
 
-        @validator('b')
+        @field_validator('b')
         @classmethod
         def repeat_b(cls, v, **kwargs):
             return v * 2

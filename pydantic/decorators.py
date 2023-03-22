@@ -15,7 +15,6 @@ from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, Protocol
 
 from ._internal import _decorators
-from .errors import PydanticUserError
 
 
 class _OnlyValueValidatorClsMethod(Protocol):
@@ -98,9 +97,8 @@ V1RootValidator = Union[
 # We lie to type checkers and say we return the same thing we get
 # but in reality we return a proxy object that _mostly_ behaves like the wrapped thing
 _V1ValidatorType = TypeVar('_V1ValidatorType', bound=Union[V1Validator, 'classmethod[Any]', 'staticmethod[Any]'])
-_V2ValidatorType = TypeVar('_V2ValidatorType', bound=Union[V2Validator, 'classmethod[Any]', 'staticmethod[Any]'])
-_V1OrV2ValidatorType = TypeVar(
-    '_V1OrV2ValidatorType', bound=Union[V1Validator, V2Validator, 'classmethod[Any]', 'staticmethod[Any]']
+_V2BeforeAfterOrPlainValidatorType = TypeVar(
+    '_V2BeforeAfterOrPlainValidatorType', bound=Union[V2Validator, 'classmethod[Any]', 'staticmethod[Any]']
 )
 _V2WrapValidatorType = TypeVar(
     '_V2WrapValidatorType', bound=Union[V2WrapValidator, 'classmethod[Any]', 'staticmethod[Any]']
@@ -113,45 +111,60 @@ _V1RootValidatorFunctionType = TypeVar(
 )
 
 
-@overload
 def validator(
     __field: str,
     *fields: str,
-    check_fields: bool | None = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
-    allow_reuse: bool = False,
-) -> Callable[[_V1OrV2ValidatorType], _V1OrV2ValidatorType]:
-    ...
-
-
-# Only allow V1 only validators if pre is specified
-@overload
-def validator(
-    __field: str,
-    *fields: str,
-    pre: bool,
-    check_fields: bool | None = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
+    pre: bool = False,
+    check_fields: bool | None = None,
     allow_reuse: bool = False,
 ) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
-    ...
+    """
+    Decorate methods on the class indicating that they should be used to validate fields
+    :param fields: which field(s) the method should be called on
+    :param sub_path: TODO
+    :param check_fields: whether to check that the fields actually exist on the model
+    :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
+    """
+    fields = tuple((__field, *fields))
+    warn(
+        'Pydantic V1 style `@validator` validators are deprecated.'
+        ' You should migrate to Pydantic V2 style `@field_validator` validators,'
+        ' see the migration guide for more details',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
+
+    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+        if _decorators.is_instance_method_from_sig(f):
+            raise TypeError('`@validator` cannot be applied to instance methods')
+        _decorators.check_for_duplicate_validator(f, allow_reuse=allow_reuse)
+        # auto apply the @classmethod decorator
+        f = _decorators.ensure_classmethod_based_on_signature(f)
+        wrap = _decorators.make_generic_v1_field_validator
+        validator_wrapper_info = _decorators.ValidatorDecoratorInfo(
+            fields=fields, type='field', mode=mode, sub_path=None, check_fields=check_fields
+        )
+        return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
+
+    return dec  # type: ignore[return-value]
 
 
-# Only allow V2 validators if mode is specified
 @overload
-def validator(
+def field_validator(
     __field: str,
     *fields: str,
-    mode: Literal['before', 'after', 'plain'],
+    mode: Literal['before', 'after', 'plain'] = ...,
     check_fields: bool | None = ...,
     sub_path: tuple[str | int, ...] | None = ...,
     allow_reuse: bool = False,
-) -> Callable[[_V2ValidatorType], _V2ValidatorType]:
+) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]:
     ...
 
 
 @overload
-def validator(
+def field_validator(
     __field: str,
     *fields: str,
     mode: Literal['wrap'],
@@ -162,10 +175,9 @@ def validator(
     ...
 
 
-def validator(
+def field_validator(
     *fields: str,
-    pre: bool | None = None,
-    mode: Literal['before', 'after', 'wrap', 'plain'] | None = None,
+    mode: Literal['before', 'after', 'wrap', 'plain'] = 'after',
     check_fields: bool | None = None,
     sub_path: tuple[str | int, ...] | None = None,
     allow_reuse: bool = False,
@@ -178,51 +190,15 @@ def validator(
     :param check_fields: whether to check that the fields actually exist on the model
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
-    if pre is not None and mode is not None:
-        raise TypeError('Combining `pre` and `mode` is not allowed')
-    if not fields:
-        raise PydanticUserError('validator with no fields specified')
-
-    if pre is not None:
-        warn(
-            'Pydantic V1 style validators using `pre=True` or `pre=False` are deprecated.'
-            " You should migrate to Pydantic V2 style decorators using `mode='before'` or `mode='after'`",
-            DeprecationWarning,
-            stacklevel=2,
-        )
 
     def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
-        nonlocal pre, mode
         if _decorators.is_instance_method_from_sig(f):
             raise TypeError('`@validator` cannot be applied to instance methods')
-        if pre is None and mode is None:
-            # check if we got a V1 or V2 validator and set the default accordingly
-            if _decorators.is_v1_validator(f):
-                pre = True
-            elif not isinstance(f, classmethod) and _decorators.is_classmethod_from_sig(f):
-                mode = 'after'
-            else:
-                mode = 'after'
         _decorators.check_for_duplicate_validator(f, allow_reuse=allow_reuse)
         # auto apply the @classmethod decorator and warn users if we had to do so
         f = _decorators.ensure_classmethod_based_on_signature(f)
-        if pre is not None:
-            # V1 validator
-            warn(
-                'Validator signatures using the `values` keyword argument or `**kwargs` are no longer supported.'
-                ' Please use `info: pydantic.FieldValidationInfo` as the second positional argument instead.'
-                ' Then you can retrieve `values` from `info.data`.'
-                ' This compatibility shim will be removed in a future minor release of Pydantic v2.X',
-                DeprecationWarning,
-                stacklevel=2,
-            )
-            wrap = partial(_decorators.make_generic_v1_field_validator)
-            mode = 'before' if pre is True else 'after'
-        else:
-            # V2 validator
-            wrap = partial(_decorators.make_generic_v2_field_validator, mode=mode)
 
-        assert mode is not None
+        wrap = partial(_decorators.make_generic_v2_field_validator, mode=mode)
 
         validator_wrapper_info = _decorators.ValidatorDecoratorInfo(
             fields=fields, type='field', mode=mode, sub_path=sub_path, check_fields=check_fields
@@ -284,7 +260,7 @@ def root_validator(  # type: ignore[misc]
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
     before or after standard model parsing/validation is performed.
     """
-    mode = 'before' if pre is True else 'after'
+    mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise TypeError(
             'If you use `@root_validator` with pre=False (the default)'
@@ -298,8 +274,8 @@ def root_validator(  # type: ignore[misc]
         _decorators.check_for_duplicate_validator(__func, allow_reuse=allow_reuse)
         # auto apply the @classmethod decorator and warn users if we had to do so
         res = _decorators.ensure_classmethod_based_on_signature(__func)
-        validator_wrapper_info = _decorators.RootValidatorDecoratorInfo(mode=mode)  # type: ignore[arg-type]
-        return _decorators.PydanticDecoratorMarker(res, validator_wrapper_info, shim=wrap)  # type: ignore[return-value]
+        validator_wrapper_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
+        return _decorators.PydanticDecoratorMarker(res, validator_wrapper_info, shim=wrap)
 
     def dec(f: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> Any:
         if _decorators.is_instance_method_from_sig(f):
@@ -307,10 +283,10 @@ def root_validator(  # type: ignore[misc]
         _decorators.check_for_duplicate_validator(f, allow_reuse=allow_reuse)
         # auto apply the @classmethod decorator and warn users if we had to do so
         res = _decorators.ensure_classmethod_based_on_signature(f)
-        validator_wrapper_info = _decorators.RootValidatorDecoratorInfo(mode=mode)  # type: ignore[arg-type]
+        validator_wrapper_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDecoratorMarker(res, validator_wrapper_info, shim=wrap)
 
-    return dec  # type: ignore[return-value]
+    return dec
 
 
 _PlainSerializationFunction = Union[

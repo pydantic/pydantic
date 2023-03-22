@@ -4,7 +4,6 @@ from enum import Enum
 from itertools import product
 from typing import Any, Deque, Dict, FrozenSet, List, Optional, Tuple, Type, Union
 from unittest.mock import MagicMock
-from warnings import WarningMessage
 
 import pytest
 from typing_extensions import Literal
@@ -19,14 +18,14 @@ from pydantic import (
     errors,
     validator,
 )
-from pydantic.decorators import root_validator
+from pydantic.decorators import field_validator, root_validator
 
 
 def test_simple():
     class Model(BaseModel):
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
             if 'foobar' not in v:
@@ -147,13 +146,13 @@ def test_validate_whole():
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', mode='before')
+        @field_validator('a', mode='before')
         @classmethod
         def check_a1(cls, v: List[Any]) -> List[Any]:
             v.append('123')
             return v
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a2(cls, v: List[int]) -> List[Any]:
             v.append(456)
@@ -168,7 +167,7 @@ def test_validate_pre_error():
     class Model(BaseModel):
         a: List[int]
 
-        @validator('a', mode='before')
+        @field_validator('a', mode='before')
         @classmethod
         def check_a1(cls, v: Any):
             calls.append(f'check_a1 {v}')
@@ -177,7 +176,7 @@ def test_validate_pre_error():
             v[0] += 1
             return v
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a2(cls, v: Any):
             calls.append(f'check_a2 {v}')
@@ -224,7 +223,7 @@ def validate_assignment_model_fixture():
         b: str = ...
         c: int = 0
 
-        @validator('b')
+        @field_validator('b')
         @classmethod
         def b_length(cls, v, info):
             values = info.data
@@ -232,7 +231,7 @@ def validate_assignment_model_fixture():
                 raise ValueError('b too short')
             return v
 
-        @validator('c')
+        @field_validator('c')
         @classmethod
         def double_c(cls, v: Any):
             return v * 2
@@ -298,7 +297,7 @@ def test_validating_assignment_values_dict():
         m: ModelOne
         b: int
 
-        @validator('b')
+        @field_validator('b')
         @classmethod
         def validate_b(cls, b, info: FieldValidationInfo):
             if 'm' in info.data:
@@ -319,7 +318,7 @@ def test_validate_multiple():
         a: str
         b: str
 
-        @validator('a', 'b')
+        @field_validator('a', 'b')
         @classmethod
         def check_a_and_b(cls, v: Any, info: FieldValidationInfo) -> Any:
             if len(v) < 4:
@@ -353,7 +352,7 @@ def test_classmethod():
     class Model(BaseModel):
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
             assert cls is Model
@@ -372,26 +371,13 @@ def test_duplicates():
             a: str
             b: str
 
-            @validator('a')
+            @field_validator('a')
             def duplicate_name(cls, v: Any):
                 return v
 
-            @validator('b')
+            @field_validator('b')
             def duplicate_name(cls, v: Any):  # noqa
                 return v
-
-
-def test_use_no_fields():
-    with pytest.raises(errors.PydanticUserError) as exc_info:
-
-        class Model(BaseModel):
-            a: str
-
-            @validator()
-            def checker(cls, v: Any):
-                return v
-
-    assert 'validator with no fields specified' in str(exc_info.value)
 
 
 @pytest.mark.xfail(reason='working on V2 - validator always')
@@ -403,7 +389,7 @@ def test_validate_always():
 
         # TODO: we're going to have a flag to validate defaults
         # instead
-        @validator('a', mode='before', always=True)
+        @field_validator('a', mode='before', always=True)
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -424,7 +410,7 @@ def test_validate_always_on_inheritance():
         a: str = None
 
     class Model(ParentModel):
-        @validator('a', mode='before', always=True)
+        @field_validator('a', mode='before', always=True)
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -443,7 +429,7 @@ def test_validate_not_always():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', mode='before')
+        @field_validator('a', mode='before')
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -464,13 +450,13 @@ def test_wildcard_validators():
         a: str
         b: int
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v, field, **kwargs):
             calls.append(('check_a', v, field.name))
             return v
 
-        @validator('*')
+        @field_validator('*')
         @classmethod
         def check_all(cls, v, field, **kwargs):
             calls.append(('check_all', v, field.name))
@@ -486,7 +472,7 @@ def test_wildcard_validator_error():
         a: str
         b: str
 
-        @validator('*')
+        @field_validator('*')
         @classmethod
         def check_all(cls, v, field, **kwargs):
             if 'foobar' not in v:
@@ -511,7 +497,7 @@ def test_invalid_field():
         class Model(BaseModel):
             a: str
 
-            @validator('b')
+            @field_validator('b')
             def check_b(cls, v: Any):
                 return v
 
@@ -526,7 +512,7 @@ def test_validate_child():
         a: str
 
     class Child(Parent):
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
             if 'foobar' not in v:
@@ -543,7 +529,7 @@ def test_validate_child_extra():
     class Parent(BaseModel):
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a_one(cls, v: Any):
             if 'foobar' not in v:
@@ -551,7 +537,7 @@ def test_validate_child_extra():
             return v
 
     class Child(Parent):
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a_two(cls, v: Any):
             return v.upper()
@@ -568,7 +554,7 @@ def test_validate_child_all():
         a: str
 
     class Child(Parent):
-        @validator('*')
+        @field_validator('*')
         @classmethod
         def check_a(cls, v: Any):
             if 'foobar' not in v:
@@ -585,7 +571,7 @@ def test_validate_parent():
     class Parent(BaseModel):
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
             if 'foobar' not in v:
@@ -608,7 +594,7 @@ def test_validate_parent_all():
     class Parent(BaseModel):
         a: str
 
-        @validator('*')
+        @field_validator('*')
         @classmethod
         def check_a(cls, v: Any):
             if 'foobar' not in v:
@@ -630,7 +616,7 @@ def test_inheritance_keep():
     class Parent(BaseModel):
         a: int
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def add_to_a(cls, v: Any):
             return v + 1
@@ -650,38 +636,38 @@ def test_inheritance_replace():
     class Parent(BaseModel):
         a: List[str]
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def parent_val_before(cls, v: List[str]):
             v.append('parent before')
             return v
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def val(cls, v: List[str]):
             v.append('parent')
             return v
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def parent_val_after(cls, v: List[str]):
             v.append('parent after')
             return v
 
     class Child(Parent):
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def child_val_before(cls, v: List[str]):
             v.append('child before')
             return v
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def val(cls, v: List[str]):
             v.append('child')
             return v
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def child_val_after(cls, v: List[str]):
             v.append('child after')
@@ -746,7 +732,7 @@ def test_validation_each_item():
     class Model(BaseModel):
         foobar: Dict[int, int]
 
-        @validator('foobar', each_item=True)
+        @field_validator('foobar', each_item=True)
         @classmethod
         def check_foobar(cls, v: Any):
             return v + 1
@@ -760,7 +746,7 @@ def test_validation_each_item_one_sublevel():
     class Model(BaseModel):
         foobar: List[Tuple[int, int]]
 
-        @validator('foobar', each_item=True)
+        @field_validator('foobar', each_item=True)
         @classmethod
         def check_foobar(cls, v: Tuple[int, int]) -> Tuple[int, int]:
             v1, v2 = v
@@ -774,7 +760,7 @@ def test_key_validation():
     class Model(BaseModel):
         foobar: Dict[int, int]
 
-        @validator('foobar')
+        @field_validator('foobar')
         @classmethod
         def check_foobar(cls, value):
             return {k + 1: v + 1 for k, v in value.items()}
@@ -789,7 +775,7 @@ def test_validator_always_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', mode='before', always=True)
+        @field_validator('a', mode='before', always=True)
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -809,7 +795,7 @@ def test_validator_always_pre():
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', always=True, mode='before')
+        @field_validator('a', always=True, mode='before')
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -826,7 +812,7 @@ def test_validator_always_post():
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', always=True)
+        @field_validator('a', always=True)
         @classmethod
         def check_a(cls, v: Any):
             return v or 'default value'
@@ -840,7 +826,7 @@ def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', always=True, mode='before')
+        @field_validator('a', always=True, mode='before')
         @classmethod
         def check_a(cls, v: Any):
             return v or 'default value'
@@ -856,7 +842,7 @@ def test_datetime_validator():
     class Model(BaseModel):
         d: datetime = None
 
-        @validator('d', mode='before', always=True)
+        @field_validator('d', mode='before', always=True)
         @classmethod
         def check_d(cls, v: Any):
             nonlocal check_calls
@@ -877,7 +863,7 @@ def test_pre_called_once():
     class Model(BaseModel):
         a: Tuple[int, int, int]
 
-        @validator('a', mode='before')
+        @field_validator('a', mode='before')
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -892,7 +878,7 @@ def test_assert_raises_validation_error():
     class Model(BaseModel):
         a: str
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
             assert v == 'a', 'invalid a'
@@ -922,7 +908,7 @@ def test_root_validator():
         b: str
         c: str
 
-        @validator('b')
+        @field_validator('b')
         @classmethod
         def repeat_b(cls, v: Any):
             return v * 2
@@ -986,7 +972,7 @@ def test_root_validator_pre():
         a: int = 1
         b: str
 
-        @validator('b')
+        @field_validator('b')
         @classmethod
         def repeat_b(cls, v: Any):
             return v * 2
@@ -1037,7 +1023,7 @@ def test_root_validator_repeat2():
         class Model(BaseModel):
             a: int = 1
 
-            @validator('a')
+            @field_validator('a')
             def repeat_validator(cls, v: Any) -> Any:  # type: ignore
                 return v
 
@@ -1103,8 +1089,8 @@ def test_reuse_global_validators():
         x: int
         y: int
 
-        double_x = validator('x', allow_reuse=True)(reusable_validator)
-        double_y = validator('y', allow_reuse=True)(reusable_validator)
+        double_x = field_validator('x', allow_reuse=True)(reusable_validator)
+        double_y = field_validator('y', allow_reuse=True)(reusable_validator)
 
     assert dict(Model(x=1, y=1)) == {'x': 2, 'y': 2}
 
@@ -1114,12 +1100,12 @@ def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
         a: str
         b: str
 
-        @validator('a', allow_reuse=allow_1)
+        @field_validator('a', allow_reuse=allow_1)
         @classmethod
         def duplicate_name(cls, v: Any):
             return v
 
-        @validator('b', allow_reuse=allow_2)
+        @field_validator('b', allow_reuse=allow_2)
         @classmethod
         def duplicate_name(cls, v: Any):  # noqa F811
             return v
@@ -1166,7 +1152,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
 
         if validator_classmethod:
             repeat_b = classmethod(repeat_b)
-        repeat_b = validator('b')(repeat_b)
+        repeat_b = field_validator('b')(repeat_b)
 
         def example_root_validator(cls, values):
             root_val_values.append(values)
@@ -1214,7 +1200,7 @@ def test_assignment_validator_cls():
 
         model_config = ConfigDict(validate_assignment=True)
 
-        @validator('name')
+        @field_validator('name')
         @classmethod
         def check_foo(cls, value):
             nonlocal validator_calls
@@ -1315,13 +1301,13 @@ def test_field_that_is_being_validated_is_excluded_from_validator_values():
 
         model_config = ConfigDict(validate_assignment=True)
 
-        @validator('foo')
+        @field_validator('foo')
         @classmethod
         def validate_foo(cls, v: Any, info: FieldValidationInfo) -> Any:
             check_values({**info.data})
             return v
 
-        @validator('bar')
+        @field_validator('bar')
         @classmethod
         def validate_bar(cls, v: Any, info: FieldValidationInfo) -> Any:
             check_values({**info.data})
@@ -1349,7 +1335,7 @@ def test_exceptions_in_field_validators_restore_original_field_value():
 
         model_config = ConfigDict(validate_assignment=True)
 
-        @validator('foo')
+        @field_validator('foo')
         @classmethod
         def validate_foo(cls, v: Any):
             if v == 'raise_exception':
@@ -1489,9 +1475,7 @@ def test_root_validator_many_values_change():
     assert r.area == 5
 
 
-V1_VALIDATOR_DEPRECATION_MATCH = (
-    r'Validator signatures using the `values` keyword argument or `\*\*kwargs` are no longer supported'
-)
+V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
 
 
 def _get_source_line(filename: str, lineno: int) -> str:
@@ -1501,19 +1485,7 @@ def _get_source_line(filename: str, lineno: int) -> str:
         return f.readline()
 
 
-def _check_warning(warnings: List[WarningMessage]) -> None:
-    assert len(warnings) == 1
-    w = warnings[0]
-    # check that we got stacklevel correct
-    # if this fails you need to edit the stacklevel
-    # parameter to warnings.warn in _decorators.py
-    assert w.filename == __file__
-    source = _get_source_line(w.filename, w.lineno)
-    # location varies slightly from 3.7 to 3.11
-    assert 'check_x' in source or "@validator('x')" in source
-
-
-def test_v1_validator_values_cls_method():
+def test_v1_validator_deprecated():
     with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
 
         class Point(BaseModel):
@@ -1526,106 +1498,31 @@ def test_v1_validator_values_cls_method():
                 assert x * 2 == values['y']
                 return x
 
-    _check_warning(w.list)
     assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
 
-
-def test_v1_validator_values_kwargs_cls_method():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
-
-        class Point(BaseModel):
-            y: int
-            x: int
-
-            @validator('x')
-            @classmethod
-            def check_x(cls, x: int, values: Dict[str, Any], **kwargs: Any) -> int:
-                assert kwargs.keys() == set()
-                assert x * 2 == values['y']
-                return x
-
-    _check_warning(w.list)
-    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
-
-
-def test_v1_validator_kwargs_cls_method():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
-
-        class Point(BaseModel):
-            y: int
-            x: int
-
-            @validator('x')
-            @classmethod
-            def check_x(cls, x: Any, **kwargs: Any) -> int:
-                assert kwargs.keys() == {'values'}
-                assert x * 2 == kwargs['values']['y']
-                return x
-
-    _check_warning(w.list)
-    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
-
-
-def test_v1_validator_values_function():
-    def _check_x(x: Any, values: Dict[str, Any]) -> int:
-        assert x * 2 == values['y']
-        return x
-
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
-
-        class Point(BaseModel):
-            y: int
-            x: int
-
-            check_x = validator('x')(_check_x)
-
-    _check_warning(w.list)
-    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
-
-
-def test_v1_validator_values_kwargs_function():
-    def _check_x(x: Any, values: Dict[str, Any], **kwargs: Any) -> int:
-        assert kwargs.keys() == set()
-        assert x * 2 == values['y']
-        return x
-
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
-
-        class Point(BaseModel):
-            y: int
-            x: int
-
-            check_x = validator('x')(_check_x)
-
-    _check_warning(w.list)
-    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
-
-
-def test_v1_validator_kwargs_function():
-    def _check_x(x: Any, **kwargs: Any) -> int:
-        assert kwargs.keys() == {'values'}
-        assert x * 2 == kwargs['values']['y']
-        return x
-
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH) as w:
-
-        class Point(BaseModel):
-            y: int
-            x: int
-
-            check_x = validator('x')(_check_x)
-
-    _check_warning(w.list)
-    assert Point(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+    warnings = w.list
+    assert len(warnings) == 1
+    w = warnings[0]
+    # check that we got stacklevel correct
+    # if this fails you need to edit the stacklevel
+    # parameter to warnings.warn in _decorators.py
+    assert w.filename == __file__
+    source = _get_source_line(w.filename, w.lineno)
+    # the reported location varies slightly from 3.7 to 3.11
+    assert 'check_x' in source or "@validator('x')" in source
 
 
 def test_instance_method() -> None:
+    """
+    Test this specifically because we cannot use the
+    type checker to inform users, and this is always a user mistake.
+    """
     with pytest.raises(TypeError, match='`@validator` cannot be applied to instance methods'):
 
         class _(BaseModel):
             x: int
 
-            @validator('x')
+            @field_validator('x')
             def check_x(self, x: int) -> int:
                 return x
 
@@ -1641,7 +1538,7 @@ def test_info_field_name_data_before():
         a: str
         b: str
 
-        @validator('b', mode='before')
+        @field_validator('b', mode='before')
         @classmethod
         def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
@@ -1664,17 +1561,17 @@ def test_decorator_proxy():
     class Model(BaseModel):
         x: int
 
-        @validator('x')
+        @field_validator('x')
         @staticmethod
         def val1(v: int) -> int:
             return v + 1
 
-        @validator('x')
+        @field_validator('x')
         @classmethod
         def val2(cls, v: int) -> int:
             return v + 1
 
-        val3 = validator('x')(val)
+        val3 = field_validator('x')(val)
 
     assert Model.val1(1) == 2
     assert Model.val2(1) == 2

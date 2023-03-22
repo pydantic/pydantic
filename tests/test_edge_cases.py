@@ -17,10 +17,10 @@ from pydantic import (
     ValidationError,
     constr,
     errors,
-    validator,
 )
 from pydantic._internal._fields import PydanticGeneralMetadata
 from pydantic.config import get_config
+from pydantic.decorators import field_validator
 from pydantic.fields import Field
 
 
@@ -1458,7 +1458,7 @@ def test_validated_optional_subfields():
     class Model(BaseModel):
         a: Optional[int]
 
-        @validator('a')
+        @field_validator('a')
         @classmethod
         def check_a(cls, v):
             return v
@@ -1672,7 +1672,7 @@ def test_modify_fields():
     class Foo(BaseModel):
         foo: List[List[int]]
 
-        @validator('foo')
+        @field_validator('foo')
         @classmethod
         def check_something(cls, value):
             return value
@@ -1778,7 +1778,7 @@ def test_optional_validator():
     class Model(BaseModel):
         something: Optional[str]
 
-        @validator('something')
+        @field_validator('something')
         @classmethod
         def check_something(cls, v):
             val_calls.append(v)
@@ -2103,7 +2103,7 @@ def test_default_factory_validator_child():
     class Parent(BaseModel):
         foo: List[str] = Field(default_factory=list)
 
-        @validator('foo', pre=True, each_item=True)
+        @field_validator('foo', pre=True, each_item=True)
         @classmethod
         def mutate_foo(cls, v):
             return f'{v}-1'

@@ -74,8 +74,8 @@ from pydantic import (
     conlist,
     conset,
     constr,
-    validator,
 )
+from pydantic.decorators import field_validator
 from pydantic.types import ImportString, SecretField, Strict
 
 try:
@@ -1554,7 +1554,7 @@ def test_infinite_iterable_validate_first():
         it: Iterable[int]
         b: int
 
-        @validator('it')
+        @field_validator('it')
         @classmethod
         def infinite_first_int(cls, it):
             return itertools.chain([next(it)], it)
@@ -2843,7 +2843,7 @@ def test_json_before_validator():
     class JsonModel(BaseModel):
         json_obj: Json[str]
 
-        @validator('json_obj', mode='before')
+        @field_validator('json_obj', mode='before')
         @classmethod
         def check(cls, v):
             assert v == '"foobar"'

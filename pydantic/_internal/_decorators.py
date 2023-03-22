@@ -443,16 +443,16 @@ def make_generic_v2_field_validator(
     compatible with pydantic_core
     """
     if mode in ('before', 'after', 'plain') and len(signature(validator).parameters) == 1:
-        val = cast(OnlyValueValidator, validator)
+        val1 = cast(OnlyValueValidator, validator)
 
         # allow the (v) -> Any signature as a convenience
         def wrapper1(value: Any, info: FieldValidationInfo) -> Any:
-            return val(value)
+            return val1(value)
 
         return wrapper1
 
-    val = cast(Union[FieldValidatorFunction, FieldWrapValidatorFunction], validator)
-    return val
+    val2 = cast(Union[FieldValidatorFunction, FieldWrapValidatorFunction], validator)
+    return val2
 
 
 RootValidatorValues = Dict[str, Any]
