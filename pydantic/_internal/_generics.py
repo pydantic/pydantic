@@ -36,7 +36,7 @@ KT = TypeVar('KT')
 VT = TypeVar('VT')
 _LIMITED_DICT_SIZE = 100
 if TYPE_CHECKING:
-    # Annoying inheriting from `MutableMapping` and `dict` breaks cython, hence this work around
+
     class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
         def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
             ...
@@ -48,8 +48,6 @@ else:
         Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
 
         Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
-
-        Annoying inheriting from `MutableMapping` breaks cython.
         """
 
         def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
@@ -76,31 +74,37 @@ if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
 else:
     GenericTypesCache = WeakValueDictionary
 
+if TYPE_CHECKING:
 
-class DeepChainMap(ChainMap[KT, VT]):
-    """
-    Variant of ChainMap that allows direct updates to inner scopes
+    class DeepChainMap(ChainMap[KT, VT]):
+        ...
 
-    Taken from https://docs.python.org/3/library/collections.html#collections.ChainMap,
-    with some light modifications for this use case.
-    """
+else:
 
-    def clear(self) -> None:
-        for mapping in self.maps:
-            mapping.clear()
+    class DeepChainMap(ChainMap):  # type: ignore[type-arg]
+        """
+        Variant of ChainMap that allows direct updates to inner scopes
 
-    def __setitem__(self, key: KT, value: VT) -> None:
-        for mapping in self.maps:
-            mapping[key] = value
+        Taken from https://docs.python.org/3/library/collections.html#collections.ChainMap,
+        with some light modifications for this use case.
+        """
 
-    def __delitem__(self, key: KT) -> None:
-        hit = False
-        for mapping in self.maps:
-            if key in mapping:
-                del mapping[key]
-                hit = True
-        if not hit:
-            raise KeyError(key)
+        def clear(self) -> None:
+            for mapping in self.maps:
+                mapping.clear()
+
+        def __setitem__(self, key: KT, value: VT) -> None:
+            for mapping in self.maps:
+                mapping[key] = value
+
+        def __delitem__(self, key: KT) -> None:
+            hit = False
+            for mapping in self.maps:
+                if key in mapping:
+                    del mapping[key]
+                    hit = True
+            if not hit:
+                raise KeyError(key)
 
 
 _GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
