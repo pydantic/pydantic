@@ -110,6 +110,9 @@ def collect_fields(  # noqa: C901
     * a nascent pydantic model
     * a nascent pydantic dataclass
     * or, a standard library dataclass
+    Also collect the names of any ClassVars present in the type hints.
+
+    The returned value is a tuple of two items: the fields dict, and the set of ClassVar names.
 
     :param cls: BaseModel or dataclass
     :param bases: parents of the class, generally `cls.__bases__`

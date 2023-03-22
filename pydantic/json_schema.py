@@ -443,18 +443,20 @@ class GenerateJsonSchema:
             # I'm not sure if this might need to be different if the function's mode is 'before'
             return self.generate_inner(schema['schema'])
         # function-plain
-        return self.handle_invalid_for_json_schema(schema, f'core_schema.PlainFunctionSchema ({schema["function"]})')
+        return self.handle_invalid_for_json_schema(
+            schema, f'core_schema.PlainValidatorFunctionSchema ({schema["function"]})'
+        )
 
-    def function_before_schema(self, schema: core_schema.FunctionBeforeSchema) -> JsonSchemaValue:
+    def function_before_schema(self, schema: core_schema.BeforeValidatorFunctionSchema) -> JsonSchemaValue:
         return self._function_schema(schema)
 
-    def function_after_schema(self, schema: core_schema.FunctionAfterSchema) -> JsonSchemaValue:
+    def function_after_schema(self, schema: core_schema.AfterValidatorFunctionSchema) -> JsonSchemaValue:
         return self._function_schema(schema)
 
-    def function_plain_schema(self, schema: core_schema.PlainFunctionSchema) -> JsonSchemaValue:
+    def function_plain_schema(self, schema: core_schema.PlainValidatorFunctionSchema) -> JsonSchemaValue:
         return self._function_schema(schema)
 
-    def function_wrap_schema(self, schema: core_schema.WrapFunctionSchema) -> JsonSchemaValue:
+    def function_wrap_schema(self, schema: core_schema.WrapValidatorFunctionSchema) -> JsonSchemaValue:
         return self._function_schema(schema)
 
     def default_schema(self, schema: core_schema.WithDefaultSchema) -> JsonSchemaValue:

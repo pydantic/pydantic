@@ -23,7 +23,6 @@ def test_model_validate_fails():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_model_validate_submodel():
     m = Model.model_validate(Model(a=10.2))
     assert m.model_dump() == {'a': 10.2, 'b': 10}
