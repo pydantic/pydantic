@@ -218,7 +218,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     if typing.TYPE_CHECKING:
         # model_after_init is called after at the end of `__init__` if it's defined
-        def model_post_init(self, **kwargs: Any) -> None:
+        def model_post_init(self, context: Any) -> None:
             pass
 
     @typing.no_type_check

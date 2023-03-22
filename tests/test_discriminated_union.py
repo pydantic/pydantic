@@ -866,7 +866,7 @@ def test_invalid_discriminator_value() -> None:
 def test_wrap_function_schema() -> None:
     cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('cat'))}
     dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('dog'))}
-    cat = core_schema.general_wrap_validation_function(lambda x, y, z: None, core_schema.typed_dict_schema(cat_fields))
+    cat = core_schema.general_wrap_validator_function(lambda x, y, z: None, core_schema.typed_dict_schema(cat_fields))
     dog = core_schema.typed_dict_schema(dog_fields)
     schema = core_schema.union_schema(cat, dog)
 
@@ -898,7 +898,7 @@ def test_plain_function_schema_is_invalid() -> None:
     ):
         apply_discriminator(
             core_schema.union_schema(
-                core_schema.general_plain_validation_function(lambda x, y: None),
+                core_schema.general_plain_validator_function(lambda x, y: None),
                 core_schema.int_schema(),
             ),
             'kind',
@@ -914,7 +914,7 @@ def test_invalid_str_choice_discriminator_values() -> None:
         # NOTE: Wrapping the union with a validator results in failure to more thoroughly decompose the tagged union.
         # I think this would be difficult to avoid in the general case, and I would suggest that we not attempt to do
         # more than this until presented with scenarios where it is helpful/necessary.
-        core_schema.general_wrap_validation_function(lambda x, y, z: x, dog),
+        core_schema.general_wrap_validator_function(lambda x, y, z: x, dog),
     )
 
     with pytest.raises(
@@ -975,7 +975,7 @@ def test_wrapped_nullable_union() -> None:
         # NOTE: Wrapping the union with a validator results in failure to more thoroughly decompose the tagged union.
         # I think this would be difficult to avoid in the general case, and I would suggest that we not attempt to do
         # more than this until presented with scenarios where it is helpful/necessary.
-        core_schema.general_wrap_validation_function(
+        core_schema.general_wrap_validator_function(
             lambda x, y, z: x, core_schema.nullable_schema(core_schema.union_schema(cat, dog))
         ),
     )

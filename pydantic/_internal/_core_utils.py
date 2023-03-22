@@ -10,17 +10,17 @@ from typing_extensions import TypeGuard, get_args
 from . import _repr
 
 AnyFunctionSchema = Union[
-    core_schema.FunctionAfterSchema,
-    core_schema.FunctionBeforeSchema,
-    core_schema.WrapFunctionSchema,
-    core_schema.PlainFunctionSchema,
+    core_schema.AfterValidatorFunctionSchema,
+    core_schema.BeforeValidatorFunctionSchema,
+    core_schema.WrapValidatorFunctionSchema,
+    core_schema.PlainValidatorFunctionSchema,
 ]
 
 
 FunctionSchemaWithInnerSchema = Union[
-    core_schema.FunctionAfterSchema,
-    core_schema.FunctionBeforeSchema,
-    core_schema.WrapFunctionSchema,
+    core_schema.AfterValidatorFunctionSchema,
+    core_schema.BeforeValidatorFunctionSchema,
+    core_schema.WrapValidatorFunctionSchema,
 ]
 
 
