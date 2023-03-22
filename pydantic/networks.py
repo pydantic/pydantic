@@ -137,10 +137,10 @@ else:
         ) -> core_schema.CoreSchema:
             import_email_validator()
             if schema is None:
-                return core_schema.general_after_validation_function(cls.validate, core_schema.str_schema())
+                return core_schema.general_after_validator_function(cls.validate, core_schema.str_schema())
             else:
                 assert schema['type'] == 'str', 'EmailStr must be used with string fields'
-                return core_schema.general_after_validation_function(cls.validate, schema)
+                return core_schema.general_after_validator_function(cls.validate, schema)
 
         @classmethod
         def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
@@ -166,9 +166,9 @@ class NameEmail(_repr.Representation):
         field_schema.update(type='string', format='name-email')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionAfterSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.AfterValidatorFunctionSchema:
         import_email_validator()
-        return core_schema.general_after_validation_function(
+        return core_schema.general_after_validator_function(
             cls._validate,
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
@@ -208,8 +208,8 @@ class IPvAnyAddress:
         field_schema.update(type='string', format='ipvanyaddress')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainFunctionSchema:
-        return core_schema.general_plain_validation_function(cls._validate)
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
     def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> IPv4Address | IPv6Address:
@@ -235,8 +235,8 @@ class IPvAnyInterface:
         field_schema.update(type='string', format='ipvanyinterface')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainFunctionSchema:
-        return core_schema.general_plain_validation_function(cls._validate)
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
     def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Interface | IPv6Interface:
@@ -264,8 +264,8 @@ class IPvAnyNetwork:
         field_schema.update(type='string', format='ipvanynetwork')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainFunctionSchema:
-        return core_schema.general_plain_validation_function(cls._validate)
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
     def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Network | IPv6Network:

@@ -1,11 +1,11 @@
 from pydantic_core import ValidationError
 from pydantic_core.core_schema import (
-    CallableValidator,
     FieldSerializationInfo,
     FieldValidationInfo,
     SerializationInfo,
-    SerializeWrapHandler,
+    SerializerFunctionWrapHandler,
     ValidationInfo,
+    ValidatorFunctionWrapHandler,
 )
 
 from . import dataclasses
@@ -35,8 +35,8 @@ __all__ = [
     'FieldValidationInfo',
     'SerializationInfo',
     'FieldSerializationInfo',
-    'CallableValidator',
-    'SerializeWrapHandler',
+    'ValidatorFunctionWrapHandler',
+    'SerializerFunctionWrapHandler',
     # config
     'BaseConfig',
     'ConfigDict',
