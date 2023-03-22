@@ -1,3 +1,12 @@
+## v1.10.7 (2023-03-22)
+
+* Fix creating schema from model using `ConstrainedStr` with `regex` as dict key, #5223 by @matejetz
+* Address bug in mypy plugin caused by explicit_package_bases=True, #5191 by @dmontagu
+* Add implicit defaults in the mypy plugin for Field with no default argument, #5190 by @dmontagu
+* Fix schema generated for Enum values used as Literals in discriminated unions, #5188 by @javibookline
+* Fix mypy failures caused by the pydantic mypy plugin when users define `from_orm` in their own classes, #5187 by @dmontagu
+* Fix `InitVar` usage with pydantic dataclasses, mypy version `1.1.1` and the custom mypy plugin, #5162 by @cdce8p
+
 ## v1.10.6 (2023-03-08)
 
 * Implement logic to support creating validators from non standard callables by using defaults to identify them and unwrapping `functools.partial` and `functools.partialmethod` when checking the signature, #5126 by @JensHeinrich
