@@ -13,11 +13,11 @@ refresh-lockfiles:
 	pip-compile -q --resolver backtracking -o requirements/all.txt --strip-extras requirements/all.in
 
 	pip-compile -q --resolver backtracking -o requirements/docs.txt requirements/docs-constrained.in
-	pip-compile -q --resolver backtracking -o requirements/linting.txt  requirements/linting-constrained.in
+	pip-compile -q --resolver backtracking -o requirements/linting.txt requirements/linting-constrained.in
 	pip-compile -q --resolver backtracking -o requirements/testing.txt  requirements/testing-constrained.in
 	pip-compile -q --resolver backtracking -o requirements/testing-extra.txt requirements/testing-extra-constrained.in
-	pip-compile -q --resolver backtracking -o requirements/pyproject-min.txt requirements/pyproject.toml-constrained.in
-	pip-compile -q --resolver backtracking -o requirements/pyproject-all.txt requirements/pyproject.toml-extras-constrained.in
+	pip-compile -q --resolver backtracking -o requirements/pyproject-min.txt --pip-args '-c requirements/all.txt' pyproject.toml
+	pip-compile -q --resolver backtracking -o requirements/pyproject-all.txt --pip-args '-c requirements/all.txt' --all-extras pyproject.toml
 
 	pip install --dry-run -r requirements/all.txt
 
