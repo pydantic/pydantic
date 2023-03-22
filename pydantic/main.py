@@ -83,9 +83,9 @@ class ModelMetaclass(ABCMeta):
                     # in a single function
                     namespace['_init_private_attributes'] = _model_construction.init_private_attributes
 
-                    def __pydantic_post_init__(self_: Any, **kwargs: Any) -> None:
-                        self_._init_private_attributes()
-                        self_.model_post_init(**kwargs)
+                    def __pydantic_post_init__(self_: Any, context: Any) -> None:
+                        self_._init_private_attributes(context)
+                        self_.model_post_init(context)
 
                     namespace['__pydantic_post_init__'] = __pydantic_post_init__
                 else:
@@ -199,35 +199,22 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         Raises ValidationError if the input data cannot be parsed to form a valid model.
 
         Uses something other than `self` for the first arg to allow "self" as a field name.
-
-        `__tracebackhide__` tells pytest and some other tools to omit the function from tracebacks
         """
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        values, fields_set = __pydantic_self__.__pydantic_validator__.validate_python(data)
-        _object_setattr(__pydantic_self__, '__dict__', values)
-        _object_setattr(__pydantic_self__, '__fields_set__', fields_set)
-        if hasattr(__pydantic_self__, '__pydantic_post_init__'):
-            __pydantic_self__.__pydantic_post_init__(context=None)
+        __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
 
     @classmethod
     def model_validate(cls: type[Model], obj: Any) -> Model:
-        values, fields_set = cls.__pydantic_validator__.validate_python(obj)
-        m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', values)
-        _object_setattr(m, '__fields_set__', fields_set)
-        if hasattr(cls, '__pydantic_post_init__'):
-            cls.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
-        return m
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+        return cls.__pydantic_validator__.validate_python(obj)
 
     @classmethod
     def model_validate_json(cls: type[Model], json_data: str | bytes | bytearray) -> Model:
-        values, fields_set = cls.__pydantic_validator__.validate_json(json_data)
-        m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', values)
-        _object_setattr(m, '__fields_set__', fields_set)
-        if hasattr(cls, '__pydantic_post_init__'):
-            cls.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
-        return m
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+        return cls.__pydantic_validator__.validate_json(json_data)
 
     if typing.TYPE_CHECKING:
         # model_after_init is called after at the end of `__init__` if it's defined
@@ -246,9 +233,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         elif self.model_config['frozen']:
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
         elif self.model_config['validate_assignment']:
-            values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
-            _object_setattr(self, '__dict__', values)
-            self.__fields_set__ |= fields_set
+            self.__pydantic_validator__.validate_assignment(self, name, value)
         elif self.model_config['extra'] is not Extra.allow and name not in self.model_fields:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')

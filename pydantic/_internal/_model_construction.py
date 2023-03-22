@@ -35,9 +35,11 @@ IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, sta
 object_setattr = object.__setattr__
 
 
-def init_private_attributes(self_: Any, **_kwargs: Any) -> None:
+def init_private_attributes(self_: Any, _context: Any) -> None:
     """
     This method is bound to model classes to initialise private attributes.
+
+    It takes context as an argument since that's what pydantic-core passes when calling it.
     """
     for name, private_attr in self_.__private_attributes__.items():
         default = private_attr.get_default()
@@ -126,7 +128,7 @@ def deferred_model_get_pydantic_validation_schema(
         cls,
         inner_schema,
         config=core_config,
-        call_after_init=model_post_init,
+        post_init=model_post_init,
         metadata=build_metadata_dict(js_metadata=js_metadata),
     )
 
@@ -157,6 +159,8 @@ def complete_model_class(
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
     try:
         fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+        # this schema construction has to go here
+        # since in some recursive generics it can raise a PydanticUndefinedAnnotation error
         inner_schema = model_fields_schema(
             model_ref,
             fields,
@@ -196,17 +200,17 @@ def complete_model_class(
     core_config = generate_config(cls.model_config, cls)
     cls.model_fields = fields
     cls.__class_vars__.update(class_vars)
-    cls.__pydantic_validator__ = SchemaValidator(inner_schema, core_config)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()
-    cls.__pydantic_core_schema__ = outer_schema = core_schema.model_schema(
+    cls.__pydantic_core_schema__ = schema = core_schema.model_schema(
         cls,
         inner_schema,
         config=core_config,
-        call_after_init=model_post_init,
+        post_init=model_post_init,
         metadata=build_metadata_dict(js_metadata=js_metadata),
     )
-    cls.__pydantic_serializer__ = SchemaSerializer(outer_schema, core_config)
+    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
