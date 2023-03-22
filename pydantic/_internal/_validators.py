@@ -21,7 +21,9 @@ from . import _fields
 
 
 def mapping_validator(
-    __input_value: typing.Mapping[Any, Any], validator: core_schema.CallableValidator, info: core_schema.ValidationInfo
+    __input_value: typing.Mapping[Any, Any],
+    validator: core_schema.ValidatorFunctionWrapHandler,
+    info: core_schema.ValidationInfo,
 ) -> typing.Mapping[Any, Any]:
     """
     Validator for `Mapping` types, if required `isinstance(v, Mapping)` has already been called.
@@ -48,7 +50,9 @@ def construct_counter(__input_value: typing.Mapping[Any, Any], _: core_schema.Va
 
 
 def sequence_validator(
-    __input_value: typing.Sequence[Any], validator: core_schema.CallableValidator, _: core_schema.ValidationInfo
+    __input_value: typing.Sequence[Any],
+    validator: core_schema.ValidatorFunctionWrapHandler,
+    _: core_schema.ValidationInfo,
 ) -> typing.Sequence[Any]:
     """
     Validator for `Sequence` types, isinstance(v, Sequence) has already been called.
@@ -316,7 +320,7 @@ def compile_pattern(pattern: PatternType) -> typing.Pattern[PatternType]:
 
 
 def deque_any_validator(
-    __input_value: Any, validator: core_schema.CallableValidator, _: core_schema.ValidationInfo
+    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler, _: core_schema.ValidationInfo
 ) -> deque[Any]:
     if isinstance(__input_value, deque):
         return __input_value
@@ -329,7 +333,7 @@ def deque_typed_validator(__input_value: list[Any], _: core_schema.ValidationInf
 
 
 def ordered_dict_any_validator(
-    __input_value: Any, validator: core_schema.CallableValidator, _: core_schema.ValidationInfo
+    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler, _: core_schema.ValidationInfo
 ) -> OrderedDict[Any, Any]:
     if isinstance(__input_value, OrderedDict):
         return __input_value

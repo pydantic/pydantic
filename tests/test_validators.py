@@ -16,7 +16,6 @@ from pydantic import (
     FieldValidationInfo,
     PydanticUserError,
     ValidationError,
-    ValidationInfo,
     errors,
     validator,
 )
@@ -311,7 +310,7 @@ def test_validating_assignment_values_dict():
         b: int
 
         @validator('b')
-        def validate_b(cls, b, info: ValidationInfo):
+        def validate_b(cls, b, info: FieldValidationInfo):
             if 'm' in info.data:
                 return b + info.data['m'].a  # this fails if info.data['m'] is a dict
             else:

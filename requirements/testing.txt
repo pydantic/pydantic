@@ -31,7 +31,7 @@ pytest==7.2.2
     #   pytest-pretty
 pytest-mock==3.10.0
     # via -r requirements/testing.in
-pytest-pretty==1.1.0
+pytest-pretty==1.1.1
     # via -r requirements/testing.in
 pytz==2022.7.1
     # via dirty-equals

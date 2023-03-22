@@ -52,7 +52,7 @@ class _V2WrapValidatorClsMethod(Protocol):
         self,
         __cls: Any,
         __input_value: Any,
-        __validator: _core_schema.CallableValidator,
+        __validator: _core_schema.ValidatorFunctionWrapHandler,
         __info: _core_schema.ValidationInfo,
     ) -> Any:
         ...
@@ -197,14 +197,14 @@ def root_validator(
 
 
 _PlainSerializationFunction = Union[
-    _core_schema.GeneralSerializePlainFunction,
-    _core_schema.FieldSerializePlainFunction,
+    _core_schema.GeneralPlainSerializerFunction,
+    _core_schema.FieldPlainSerializerFunction,
 ]
 
 
 _WrapSerializationFunction = Union[
-    _core_schema.GeneralSerializeWrapFunction,
-    _core_schema.FieldSerializeWrapFunction,
+    _core_schema.GeneralWrapSerializerFunction,
+    _core_schema.FieldWrapSerializerFunction,
 ]
 
 
@@ -263,9 +263,9 @@ def serializer(
     Decorate methods on the class indicating that they should be used to serialize fields.
     Four signatures are supported:
     - (self, value: Any, info: FieldSerializationInfo)
-    - (self, value: Any, nxt: SerializeWrapHandler, info: FieldSerializationInfo)
+    - (self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)
     - (value: Any, info: SerializationInfo)
-    - (value: Any, nxt: SerializeWrapHandler, info: SerializationInfo)
+    - (value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)
 
     :param fields: which field(s) the method should be called on
     :param mode: TODO

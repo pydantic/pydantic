@@ -7,7 +7,7 @@ import pytest
 from pydantic_core import PydanticSerializationError, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, FieldSerializationInfo, SerializationInfo, SerializeWrapHandler, serializer
+from pydantic import BaseModel, FieldSerializationInfo, SerializationInfo, SerializerFunctionWrapHandler, serializer
 
 
 def test_serialize_decorator_always():
@@ -70,7 +70,7 @@ def test_annotated_customisation():
         @classmethod
         def __get_pydantic_core_schema__(cls, _schema):
             # here we ignore the schema argument (which is just `{'type': 'int'}`) and return our own
-            return core_schema.general_before_validation_function(
+            return core_schema.general_before_validator_function(
                 parse_int,
                 core_schema.int_schema(),
                 serialization=core_schema.format_ser_schema(',', when_used='unless-none'),
@@ -91,7 +91,7 @@ def test_serialize_valid_signatures():
     def ser_plain(v: Any, info: SerializationInfo) -> Any:
         return f'{v:,}'
 
-    def ser_wrap(v: Any, nxt: SerializeWrapHandler, info: SerializationInfo) -> Any:
+    def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo) -> Any:
         return f'{nxt(v):,}'
 
     class MyModel(BaseModel):
@@ -108,7 +108,7 @@ def test_serialize_valid_signatures():
             return f'{v:,}'
 
         @serializer('f2', mode='wrap')
-        def ser_f2(self, v: Any, nxt: SerializeWrapHandler, info: FieldSerializationInfo) -> Any:
+        def ser_f2(self, v: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo) -> Any:
             assert self.f2 == 2_000
             assert v == 2_000
             assert info.field_name == 'f2'

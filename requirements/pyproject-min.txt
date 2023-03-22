@@ -6,7 +6,7 @@
 #
 annotated-types==0.4.0
     # via pydantic (pyproject.toml)
-pydantic-core==0.15.2
+pydantic-core==0.16.1
     # via pydantic (pyproject.toml)
 typing-extensions==4.5.0
     # via
