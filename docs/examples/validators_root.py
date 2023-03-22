@@ -11,7 +11,7 @@ class UserModel(BaseModel):
         assert 'card_number' not in values, 'card_number should not be included'
         return values
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def check_passwords_match(cls, values):
         pw1, pw2 = values.get('password1'), values.get('password2')
         if pw1 is not None and pw2 is not None and pw1 != pw2:

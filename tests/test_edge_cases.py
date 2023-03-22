@@ -1459,6 +1459,7 @@ def test_validated_optional_subfields():
         a: Optional[int]
 
         @validator('a')
+        @classmethod
         def check_a(cls, v):
             return v
 
@@ -1672,6 +1673,7 @@ def test_modify_fields():
         foo: List[List[int]]
 
         @validator('foo')
+        @classmethod
         def check_something(cls, value):
             return value
 
@@ -1777,6 +1779,7 @@ def test_optional_validator():
         something: Optional[str]
 
         @validator('something')
+        @classmethod
         def check_something(cls, v):
             val_calls.append(v)
             return v
@@ -2101,6 +2104,7 @@ def test_default_factory_validator_child():
         foo: List[str] = Field(default_factory=list)
 
         @validator('foo', pre=True, each_item=True)
+        @classmethod
         def mutate_foo(cls, v):
             return f'{v}-1'
 

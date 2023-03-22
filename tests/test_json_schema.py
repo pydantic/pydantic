@@ -1807,6 +1807,7 @@ def test_field_with_validator():
         something: Optional[int] = None
 
         @validator('something')
+        @classmethod
         def check_field(cls, v, info):
             return v
 

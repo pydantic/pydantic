@@ -113,6 +113,7 @@ def deferred_model_get_pydantic_validation_schema(
         model_ref,
         fields,
         cls.__pydantic_validator_functions__,
+        cls.__pydantic_root_validator_functions__,
         cls.__pydantic_serializer_functions__,
         model_config['arbitrary_types_allowed'],
         types_namespace,
@@ -152,8 +153,7 @@ def complete_model_class(
     """
     validator_functions = cls.__pydantic_validator_functions__
     serializer_functions = cls.__pydantic_serializer_functions__
-    validator_functions.set_bound_functions(cls)
-    serializer_functions.set_bound_functions(cls)
+    root_validator_functions = cls.__pydantic_root_validator_functions__
 
     self_schema, model_ref = get_model_self_schema(cls)
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
@@ -166,6 +166,7 @@ def complete_model_class(
             model_ref,
             fields,
             validator_functions,
+            root_validator_functions,
             serializer_functions,
             cls.model_config['arbitrary_types_allowed'],
             types_namespace,
@@ -194,9 +195,6 @@ def complete_model_class(
 
     inner_schema = consolidate_refs(inner_schema)
     inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
-
-    validator_functions.check_for_unused()
-    serializer_functions.check_for_unused()
 
     core_config = generate_config(cls.model_config, cls)
     cls.model_fields = fields

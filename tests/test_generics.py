@@ -85,18 +85,19 @@ def test_value_validation():
         data: T
 
         @validator('data')
+        @classmethod
         def validate_value_nonzero(cls, v: Any):
             if any(x == 0 for x in v.values()):
                 raise ValueError('some value is zero')
             return v
 
-        @root_validator()
-        def validate_sum(cls, item: Any):
-            values, fields = item
+        @root_validator(skip_on_failure=True)
+        @classmethod
+        def validate_sum(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             data = values.get('data', {})
             if sum(data.values()) > 5:
                 raise ValueError('sum too large')
-            return values, fields
+            return values
 
     assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
@@ -451,6 +452,7 @@ def test_generic():
         positive_number: int
 
         @validator('error')
+        @classmethod
         def validate_error(cls, v: Optional[error_type], info: ValidationInfo) -> Optional[error_type]:
             values = info.data
             if values.get('data', None) is None and v is None:
@@ -460,6 +462,7 @@ def test_generic():
             return v
 
         @validator('positive_number')
+        @classmethod
         def validate_positive_number(cls, v: int) -> int:
             if v < 0:
                 raise ValueError

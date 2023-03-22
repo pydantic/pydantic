@@ -66,11 +66,11 @@ class Model(BaseModel):
         assert value < 100, 'too old'
         return value
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
-    @root_validator(mode='before', allow_reuse=False)
+    @root_validator(pre=True)
     def pre_root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 

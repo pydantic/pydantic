@@ -1555,6 +1555,7 @@ def test_infinite_iterable_validate_first():
         b: int
 
         @validator('it')
+        @classmethod
         def infinite_first_int(cls, it):
             return itertools.chain([next(it)], it)
 
@@ -2836,13 +2837,14 @@ def test_json_not_str():
     ]
 
 
-def test_json_pre_validator():
+def test_json_before_validator():
     call_count = 0
 
     class JsonModel(BaseModel):
-        json_obj: Json
+        json_obj: Json[str]
 
         @validator('json_obj', mode='before')
+        @classmethod
         def check(cls, v):
             assert v == '"foobar"'
             nonlocal call_count

@@ -11,8 +11,8 @@ from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_sc
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
+from . import _decorators
 from ._core_utils import get_type_ref
-from ._decorators import SerializationFunctions, ValidationFunctions
 from ._fields import collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generate_schema import dataclass_schema, generate_config
@@ -31,12 +31,19 @@ if typing.TYPE_CHECKING:
         def __init__(self, *args: object, **kwargs: object) -> None:
             pass
 
-    class PydanticDataclass(StandardDataclass):
+    class PydanticDataclass(StandardDataclass, typing.Protocol):
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_core_schema__: typing.ClassVar[core_schema.CoreSchema]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
-        __pydantic_validator_functions__: typing.ClassVar[ValidationFunctions]
-        __pydantic_serializer_functions__: typing.ClassVar[SerializationFunctions]
+        __pydantic_validator_functions__: typing.ClassVar[
+            list[_decorators.Decorator[_decorators.ValidatorDecoratorInfo]]
+        ]
+        __pydantic_serializer_functions__: typing.ClassVar[
+            list[_decorators.Decorator[_decorators.SerializerDecoratorInfo]]
+        ]
+        __pydantic_root_validator_functions__: typing.ClassVar[
+            list[_decorators.Decorator[_decorators.RootValidatorDecoratorInfo]]
+        ]
         __pydantic_fields__: typing.ClassVar[dict[str, FieldInfo]]
 
 
@@ -79,28 +86,26 @@ def prepare_dataclass(
         cls.__pydantic_validator__ = MockValidator(warning_string)
         return False
 
-    cls.__pydantic_validator_functions__ = validator_functions = ValidationFunctions(bases)
-    cls.__pydantic_serializer_functions__ = serializer_functions = SerializationFunctions(bases)
-
-    for var_name, value in vars(cls).items():
-        found_validator = validator_functions.extract_decorator(var_name, value)
-        if not found_validator:
-            serializer_functions.extract_decorator(var_name, value)
-
-    validator_functions.set_bound_functions(cls)
-    serializer_functions.set_bound_functions(cls)
+    cls.__pydantic_validator_functions__ = validator_functions = _decorators.gather_decorator_functions(
+        cls, _decorators.ValidatorDecoratorInfo
+    )
+    cls.__pydantic_root_validator_functions__ = root_validator_functions = _decorators.gather_decorator_functions(
+        cls, _decorators.RootValidatorDecoratorInfo
+    )
+    cls.__pydantic_serializer_functions__ = serializer_functions = _decorators.gather_decorator_functions(
+        cls, _decorators.SerializerDecoratorInfo
+    )
 
     cls.__pydantic_core_schema__ = schema = dataclass_schema(
         cls,
         dataclass_ref,
         fields,
         validator_functions,
+        root_validator_functions,
         serializer_functions,
         config['arbitrary_types_allowed'],
         types_namespace,
     )
-    validator_functions.check_for_unused()
-    serializer_functions.check_for_unused()
 
     core_config = generate_config(config, cls)
     cls.__pydantic_fields__ = fields

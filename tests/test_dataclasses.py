@@ -118,6 +118,7 @@ def test_validate_assignment_value_change():
         a: int
 
         @validator('a')
+        @classmethod
         def double_a(cls, v):
             return v * 2
 
@@ -1424,6 +1425,7 @@ def test_validator():
         b: float
 
         @validator('b')
+        @classmethod
         def double_b(cls, v, _):
             return v * 2
 
@@ -1446,6 +1448,7 @@ def test_parent_post_init():
     @pydantic.dataclasses.dataclass
     class B(A):
         @validator('a')
+        @classmethod
         def validate_a(cls, value, _):
             value += 3
             return value
@@ -1465,6 +1468,7 @@ def test_subclass_post_init():
             self.a *= 2
 
         @validator('a')
+        @classmethod
         def validate_a(cls, value):
             value += 3
             return value
@@ -1484,6 +1488,7 @@ def test_subclass_post_init_inheritance():
             self.a *= 2
 
         @validator('a')
+        @classmethod
         def validate_a(cls, value):
             value += 3
             return value
@@ -1525,6 +1530,7 @@ def test_validator_info_field_name_data_before():
         b: str
 
         @validator('b', mode='before')
+        @classmethod
         def check_a(cls, v: Any, info: FieldValidationInfo) -> Any:
             assert v == b'but my barbaz is better'
             assert info.field_name == 'b'
