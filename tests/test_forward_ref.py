@@ -757,6 +757,22 @@ def test_force_rebuild():
     assert Foobar.model_rebuild(force=True) is True
 
 
+def test_rebuild_subclass_of_built_model():
+    class Model(BaseModel):
+        x: int
+
+    class FutureReferencingModel(Model):
+        y: 'FutureModel'
+        model_config = dict(undefined_types_warning=False)
+
+    class FutureModel(BaseModel):
+        pass
+
+    FutureReferencingModel.model_rebuild()
+
+    assert FutureReferencingModel(x=1, y=FutureModel()).model_dump() == {'x': 1, 'y': {}}
+
+
 def test_nested_annotation(create_module):
     module = create_module(
         # language=Python
