@@ -104,7 +104,7 @@ def deferred_model_get_pydantic_validation_schema(
     """
     self_schema, model_ref = get_model_self_schema(cls)
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
-    fields, class_vars = collect_fields(cls, cls.__bases__, types_namespace)
+    fields, _ = collect_fields(cls, cls.__bases__, types_namespace)
 
     model_config = cls.model_config
     inner_schema = model_fields_schema(
