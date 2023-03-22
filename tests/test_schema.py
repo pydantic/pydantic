@@ -1,6 +1,7 @@
 import json
 import math
 import os
+import re
 import sys
 import tempfile
 from datetime import date, datetime, time, timedelta
@@ -20,6 +21,7 @@ from typing import (
     NamedTuple,
     NewType,
     Optional,
+    Pattern,
     Set,
     Tuple,
     Type,
@@ -3255,4 +3257,28 @@ def test_model_with_type_attributes():
         'type': 'object',
         'properties': {'a': {'title': 'A'}, 'b': {'title': 'B'}},
         'required': ['a', 'b'],
+    }
+
+
+@pytest.mark.parametrize(
+    'regex_val',
+    [
+        '^text$',
+        re.compile('^text$'),
+    ],
+)
+def test_constrained_str_class_dict(regex_val: Union[str, Pattern[str]]):
+    class CustomStr(ConstrainedStr):
+        regex = regex_val
+
+    class Model(BaseModel):
+        a: Dict[CustomStr, Any]
+
+    json_schema = Model.schema()
+
+    assert json_schema == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'patternProperties': {'^text$': {}}, 'title': 'A', 'type': 'object'}},
+        'required': ['a'],
     }
