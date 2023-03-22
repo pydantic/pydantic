@@ -3,11 +3,11 @@ from __future__ import annotations
 import sys
 import types
 import typing
-from collections import defaultdict
+from collections import ChainMap, defaultdict
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
-from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, Tuple, TypeVar
+from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, MutableMapping, Tuple, TypeVar
 from weakref import WeakValueDictionary
 
 import typing_extensions
@@ -26,12 +26,84 @@ if TYPE_CHECKING:
 
 GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
 
+# TODO: We want to remove LimitedDict, but to do this, we'll need to improve the handling of generics caching
+#   Right now, to handle recursive generics, we some types must remain cached for brief periods without references
+#   By chaining the WeakValuesDict with a LimitedDict, we have a way to retain caching for all types with references,
+#   while also retaining a limited number of types even without references. This is generally enough to build
+#   specific recursive generic models without losing required items out of the cache.
+
+KT = TypeVar('KT')
+VT = TypeVar('VT')
+_LIMITED_DICT_SIZE = 100
+if TYPE_CHECKING:
+    # Annoying inheriting from `MutableMapping` and `dict` breaks cython, hence this work around
+    class LimitedDict(dict, MutableMapping[KT, VT]):  # type: ignore[type-arg]
+        def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
+            ...
+
+else:
+
+    class LimitedDict(dict):
+        """
+        Limit the size/length of a dict used for caching to avoid unlimited increase in memory usage.
+
+        Since the dict is ordered, and we always remove elements from the beginning, this is effectively a FIFO cache.
+
+        Annoying inheriting from `MutableMapping` breaks cython.
+        """
+
+        def __init__(self, size_limit: int = _LIMITED_DICT_SIZE):
+            self.size_limit = size_limit
+            super().__init__()
+
+        def __setitem__(self, __key: Any, __value: Any) -> None:
+            super().__setitem__(__key, __value)
+            if len(self) > self.size_limit:
+                excess = len(self) - self.size_limit + self.size_limit // 10
+                to_remove = list(self.keys())[:excess]
+                for key in to_remove:
+                    del self[key]
+
+        def __class_getitem__(cls, *args: Any) -> Any:
+            # to avoid errors with 3.7
+            return cls
+
+
 # weak dictionaries allow the dynamically created parametrized versions of generic models to get collected
 # once they are no longer referenced by the caller.
 if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
     GenericTypesCache = WeakValueDictionary[GenericTypesCacheKey, 'type[BaseModel]']
 else:
     GenericTypesCache = WeakValueDictionary
+
+
+class DeepChainMap(ChainMap[KT, VT]):
+    """
+    Variant of ChainMap that allows direct updates to inner scopes
+
+    Taken from https://docs.python.org/3/library/collections.html#collections.ChainMap,
+    with some light modifications for this use case.
+    """
+
+    def clear(self) -> None:
+        for mapping in self.maps:
+            mapping.clear()
+
+    def __setitem__(self, key: KT, value: VT) -> None:
+        for mapping in self.maps:
+            mapping[key] = value
+
+    def __delitem__(self, key: KT) -> None:
+        hit = False
+        for mapping in self.maps:
+            if key in mapping:
+                del mapping[key]
+                hit = True
+        if not hit:
+            raise KeyError(key)
+
+
+_GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
 
 
 def create_generic_submodel(
@@ -255,9 +327,6 @@ def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) 
 
 def recursively_defined_type_refs() -> set[str]:
     return set((_visit_counts_context.get() or {}).keys())
-
-
-_GENERIC_TYPES_CACHE = GenericTypesCache()
 
 
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:

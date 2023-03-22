@@ -36,6 +36,8 @@ from pydantic import BaseModel, Field, Json, ValidationError, ValidationInfo, ro
 from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import (
     _GENERIC_TYPES_CACHE,
+    _LIMITED_DICT_SIZE,
+    LimitedDict,
     generic_recursion_self_type,
     iter_contained_typevars,
     recursively_defined_type_refs,
@@ -46,6 +48,7 @@ from pydantic._internal._generics import (
 @pytest.fixture(autouse=True)
 def clean_cache():
     # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
+    _GENERIC_TYPES_CACHE.clear()
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
@@ -349,7 +352,7 @@ def test_caches_get_cleaned_up():
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
-    assert len(_GENERIC_TYPES_CACHE) == initial_types_cache_size
+    assert len(_GENERIC_TYPES_CACHE) < initial_types_cache_size + _LIMITED_DICT_SIZE
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
@@ -376,7 +379,7 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
-    assert len(_GENERIC_TYPES_CACHE) == types_cache_size
+    assert len(_GENERIC_TYPES_CACHE) < types_cache_size + _LIMITED_DICT_SIZE
 
 
 def test_generics_work_with_many_parametrized_base_models():
@@ -407,7 +410,7 @@ def test_generics_work_with_many_parametrized_base_models():
         generics.append(Working)
 
     target_size = cache_size + count_create_models * 3 + 2
-    assert len(_GENERIC_TYPES_CACHE) == target_size
+    assert len(_GENERIC_TYPES_CACHE) < target_size + _LIMITED_DICT_SIZE
     del models
     del generics
 
@@ -915,12 +918,12 @@ def test_generic_model_redefined_without_cache_fail(create_module, monkeypatch):
             ...
 
         third_concrete = MyGeneric[Model]
-        assert concrete is not second_concrete
-        assert concrete is not third_concrete
-        assert second_concrete is not third_concrete
-        assert globals()['MyGeneric[Model]'] is concrete
-        assert globals()['MyGeneric[Model]_'] is second_concrete
-        assert globals()['MyGeneric[Model]__'] is third_concrete
+        assert concrete is not second_concrete, 1
+        assert concrete is not third_concrete, 2
+        assert second_concrete is not third_concrete, 3
+        assert globals()['MyGeneric[Model]'] is concrete, 4
+        assert globals()['MyGeneric[Model]_'] is second_concrete, 5
+        assert globals()['MyGeneric[Model]__'] is third_concrete, 6
 
 
 def test_generic_model_caching_detect_order_of_union_args_basic(create_module):
@@ -2035,3 +2038,43 @@ def test_generic_recursion_contextvar():
 
     # Make sure that an exception causes the contextvar-managed recursive types cache to be reset
     assert not recursively_defined_type_refs()
+
+
+def test_limited_dict():
+    d = LimitedDict(10)
+    d[1] = '1'
+    d[2] = '2'
+    assert list(d.items()) == [(1, '1'), (2, '2')]
+    for no in '34567890':
+        d[int(no)] = no
+    assert list(d.items()) == [
+        (1, '1'),
+        (2, '2'),
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+    ]
+    d[11] = '11'
+
+    # reduce size to 9 after setting 11
+    assert len(d) == 9
+    assert list(d.items()) == [
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+        (11, '11'),
+    ]
+    d[12] = '12'
+    assert len(d) == 10
+    d[13] = '13'
+    assert len(d) == 9
