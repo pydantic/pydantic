@@ -934,7 +934,7 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
     if isinstance(metadata, PydanticGeneralMetadata):
         metadata_dict = metadata.__dict__
     elif isinstance(metadata, (BaseMetadata, PydanticMetadata)):
-        metadata_dict = dataclasses.asdict(metadata)  # type: ignore[call-overload]
+        metadata_dict = dataclasses.asdict(metadata)
     elif isinstance(metadata, type) and issubclass(metadata, PydanticMetadata):
         # also support PydanticMetadata classes being used without initialisation,
         # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
