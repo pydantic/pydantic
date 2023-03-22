@@ -131,7 +131,13 @@ def test_underscore_attrs_are_private():
     m._foo = None
     assert m._foo is None
 
-    with pytest.raises(ValueError, match='"Model" object has no field "_bar"'):
+    with pytest.raises(
+        AttributeError,
+        match=(
+            '"_bar" is a ClassVar of `Model` and cannot be set on an instance. '
+            'If you want to set a value on the class, use `Model._bar = value`.'
+        ),
+    ):
         m._bar = 1
 
 

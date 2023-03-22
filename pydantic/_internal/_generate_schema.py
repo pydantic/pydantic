@@ -32,7 +32,7 @@ if TYPE_CHECKING:
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
 
-__all__ = 'model_fields_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
+__all__ = 'model_fields_schema', 'dataclass_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
 
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
@@ -53,7 +53,7 @@ def model_fields_schema(
     This is typed_dict schema which is used to create the model.
     """
     schema_generator = GenerateSchema(arbitrary_types, types_namespace, typevars_map)
-    schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
+    fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {
             k: schema_generator.generate_td_field_schema(k, v, validator_functions, serializer_functions)
             for k, v in fields.items()
@@ -61,22 +61,21 @@ def model_fields_schema(
         ref=model_ref,
         return_fields_set=True,
     )
-    schema = apply_validators(schema, validator_functions.get_root_decorators())
-    return schema
+    fields_schema = apply_validators(fields_schema, validator_functions.get_root_decorators())
+    return fields_schema
 
 
-def dataclass_fields_schema(
-    dataclass_name: str,
+def dataclass_schema(
+    cls: type[Any],
     ref: str,
     fields: dict[str, FieldInfo],
-    has_post_init: bool,
     validator_functions: ValidationFunctions,
     serializer_functions: SerializationFunctions,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
 ) -> core_schema.CoreSchema:
     """
-    Generate schema for the fields of a dataclass, using `dataclass_args_schema`.
+    Generate schema for a dataclass.
     """
     # TODO add typevars_map argument when we support generic dataclasses
     schema_generator = GenerateSchema(arbitrary_types, types_namespace, None)
@@ -84,11 +83,10 @@ def dataclass_fields_schema(
         schema_generator.generate_dc_field_schema(k, v, validator_functions, serializer_functions)
         for k, v in fields.items()
     ]
-    schema: core_schema.CoreSchema = core_schema.dataclass_args_schema(
-        dataclass_name, args, collect_init_only=has_post_init, ref=ref
-    )
-    schema = apply_validators(schema, validator_functions.get_root_decorators())
-    return schema
+    has_post_init = hasattr(cls, '__post_init__')
+    args_schema = core_schema.dataclass_args_schema(cls.__name__, args, collect_init_only=has_post_init)
+    inner_schema = apply_validators(args_schema, validator_functions.get_root_decorators())
+    return core_schema.dataclass_schema(cls, inner_schema, post_init=has_post_init, ref=ref)
 
 
 def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfig:
@@ -539,7 +537,7 @@ class GenerateSchema:
             # NOTE: we might have better performance by using a tuple or list validator for the schema here,
             # but if you care about performance, you can define your own schema.
             # We should optimize for compatibility, not performance in this case
-            return core_schema.general_after_validation_function(
+            return core_schema.general_after_validator_function(
                 lambda __input_value, __info: type_(__input_value), schema
             )
 
@@ -597,7 +595,7 @@ class GenerateSchema:
         from ._validators import mapping_validator
 
         # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(dict_subclass), ...` in strict mode
-        return core_schema.general_wrap_validation_function(
+        return core_schema.general_wrap_validator_function(
             mapping_validator,
             core_schema.dict_schema(
                 keys_schema=self.generate_schema(arg0),
@@ -614,7 +612,7 @@ class GenerateSchema:
         from ._validators import construct_counter
 
         # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(Counter), ...` in strict mode
-        return core_schema.general_after_validation_function(
+        return core_schema.general_after_validator_function(
             construct_counter,
             core_schema.dict_schema(
                 keys_schema=self.generate_schema(arg),
@@ -633,7 +631,7 @@ class GenerateSchema:
         else:
             from ._validators import mapping_validator
 
-            return core_schema.general_wrap_validation_function(
+            return core_schema.general_wrap_validator_function(
                 mapping_validator,
                 core_schema.dict_schema(
                     keys_schema=self.generate_schema(arg0),
@@ -680,7 +678,7 @@ class GenerateSchema:
 
             return core_schema.chain_schema(
                 core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence'),
-                core_schema.general_wrap_validation_function(
+                core_schema.general_wrap_validator_function(
                     sequence_validator,
                     core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True),
                 ),
@@ -700,20 +698,22 @@ class GenerateSchema:
         from . import _serializers, _validators
 
         metadata = build_metadata_dict(js_metadata={'source_class': pattern_type, 'type': 'string', 'format': 'regex'})
-        ser = core_schema.general_function_plain_ser_schema(_serializers.pattern_serializer, json_return_type='str')
+        ser = core_schema.general_plain_serializer_function_ser_schema(
+            _serializers.pattern_serializer, json_return_type='str'
+        )
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
-            return core_schema.general_plain_validation_function(
+            return core_schema.general_plain_validator_function(
                 _validators.pattern_either_validator, serialization=ser, metadata=metadata
             )
 
         param = get_args(pattern_type)[0]
         if param == str:
-            return core_schema.general_plain_validation_function(
+            return core_schema.general_plain_validator_function(
                 _validators.pattern_str_validator, serialization=ser, metadata=metadata
             )
         elif param == bytes:
-            return core_schema.general_plain_validation_function(
+            return core_schema.general_plain_validator_function(
                 _validators.pattern_bytes_validator, serialization=ser, metadata=metadata
             )
         else:
@@ -749,21 +749,20 @@ class GenerateSchema:
         Generate schema for a dataclass.
         """
         # FIXME we need a way to make sure kw_only info is propagated through to fields
-        fields, _class_vars = collect_fields(
+        fields, _ = collect_fields(
             dataclass, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
         )
 
-        fields_schema = dataclass_fields_schema(
-            dataclass.__name__,
+        return dataclass_schema(
+            dataclass,
             get_type_ref(dataclass),
             fields,
-            hasattr(dataclass, '__post_init__'),
+            # FIXME we need to get validators and serializers from the dataclasses
             ValidationFunctions(()),
             SerializationFunctions(()),
             self.arbitrary_types,
             self.types_namespace,
         )
-        return core_schema.dataclass_schema(dataclass, fields_schema)
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         assert isinstance(typevar, typing.TypeVar)
@@ -783,14 +782,14 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
     f_match: Mapping[
         tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
     ] = {
-        ('before', True): core_schema.field_before_validation_function,
-        ('after', True): core_schema.field_after_validation_function,
-        ('plain', True): lambda f, _: core_schema.field_plain_validation_function(f),
-        ('wrap', True): core_schema.field_wrap_validation_function,
-        ('before', False): core_schema.general_before_validation_function,
-        ('after', False): core_schema.general_after_validation_function,
-        ('plain', False): lambda f, _: core_schema.general_plain_validation_function(f),
-        ('wrap', False): core_schema.general_wrap_validation_function,
+        ('before', True): core_schema.field_before_validator_function,
+        ('after', True): core_schema.field_after_validator_function,
+        ('plain', True): lambda f, _: core_schema.field_plain_validator_function(f),
+        ('wrap', True): core_schema.field_wrap_validator_function,
+        ('before', False): core_schema.general_before_validator_function,
+        ('after', False): core_schema.general_after_validator_function,
+        ('plain', False): lambda f, _: core_schema.general_plain_validator_function(f),
+        ('wrap', False): core_schema.general_wrap_validator_function,
     }
     for validator in validators:
         assert validator.sub_path is None, 'validator.sub_path is not yet supported'
@@ -824,14 +823,14 @@ serializer('x')(ser_x)
 
 # an instance method with `mode='wrap'`
 @serializer('x', mode='wrap')
-def ser_x(self, value: Any, nxt: pydantic.SerializeWrapHandler, info: pydantic.FieldSerializationInfo): ...
+def ser_x(self, value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
 
 # a static method or free-standing function with `mode='wrap'`
 @serializer('x', mode='wrap')
 @staticmethod
-def ser_x(value: Any, nxt: pydantic.SerializeWrapHandler, info: pydantic.SerializationInfo): ...
+def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.SerializationInfo): ...
 # equivalent to
-def ser_x(value: Any, nxt: pydantic.SerializeWrapHandler, info: pydantic.SerializationInfo): ...
+def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.SerializationInfo): ...
 serializer('x')(ser_x)
 """
 
@@ -877,20 +876,20 @@ def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializ
                 f'Invalid signature for plain serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
             )
         if type_ == 'general-wrap':
-            schema['serialization'] = core_schema.general_function_wrap_ser_schema(
+            schema['serialization'] = core_schema.general_wrap_serializer_function_ser_schema(
                 function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
         elif type_ == 'field-wrap':
-            schema['serialization'] = core_schema.field_function_wrap_ser_schema(
+            schema['serialization'] = core_schema.field_wrap_serializer_function_ser_schema(
                 function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
         elif type_ == 'general-plain':
-            schema['serialization'] = core_schema.general_function_plain_ser_schema(
+            schema['serialization'] = core_schema.general_plain_serializer_function_ser_schema(
                 function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
         else:
             assert type_ == 'field-plain'
-            schema['serialization'] = core_schema.field_function_plain_ser_schema(
+            schema['serialization'] = core_schema.field_plain_serializer_function_ser_schema(
                 function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
             )
     return schema
@@ -1017,13 +1016,3 @@ def get_model_self_schema(cls: type[BaseModel]) -> tuple[core_schema.ModelSchema
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
     return schema, model_ref
-
-
-def get_dc_self_schema(cls: type[StandardDataclass]) -> tuple[core_schema.DataclassSchema, str]:
-    dataclass_ref = get_type_ref(cls)
-    # TODO js_metadata
-    schema = core_schema.dataclass_schema(
-        cls,
-        core_schema.definition_reference_schema(dataclass_ref),
-    )
-    return schema, dataclass_ref
