@@ -53,15 +53,19 @@ class TestBenchmarkSimpleModel:
                     'type': 'typed-dict',
                     'return_fields_set': True,
                     'fields': {
-                        'name': {'schema': {'type': 'str'}},
-                        'age': {'schema': {'type': 'int'}},
-                        'friends': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'friends': {
+                            'type': 'typed-dict-field',
+                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                        },
                         'settings': {
+                            'type': 'typed-dict-field',
                             'schema': {
                                 'type': 'dict',
                                 'keys_schema': {'type': 'str'},
                                 'values_schema': {'type': 'float'},
-                            }
+                            },
                         },
                     },
                 },
@@ -80,15 +84,19 @@ class TestBenchmarkSimpleModel:
                 'schema': {
                     'type': 'typed-dict',
                     'fields': {
-                        'name': {'schema': {'type': 'str'}},
-                        'age': {'schema': {'type': 'int'}},
-                        'friends': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'friends': {
+                            'type': 'typed-dict-field',
+                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                        },
                         'settings': {
+                            'type': 'typed-dict-field',
                             'schema': {
                                 'type': 'dict',
                                 'keys_schema': {'type': 'str'},
                                 'values_schema': {'type': 'float'},
-                            }
+                            },
                         },
                     },
                 },
@@ -154,7 +162,9 @@ class TestModelLarge:
                     'return_fields_set': True,
                     'extra_behavior': 'allow',
                     'total': False,
-                    'fields': {f'field_{i}': {'schema': {'type': 'int'}} for i in range(100)},
+                    'fields': {
+                        f'field_{i}': {'type': 'typed-dict-field', 'schema': {'type': 'int'}} for i in range(100)
+                    },
                 },
             }
         )
@@ -224,7 +234,10 @@ def test_small_class_pyd(benchmark):
 def test_small_class_core_dict(benchmark):
     model_schema = {
         'type': 'typed-dict',
-        'fields': {'name': {'schema': {'type': 'str'}}, 'age': {'schema': {'type': 'int'}}},
+        'fields': {
+            'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+            'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+        },
     }
     dict_schema_validator = SchemaValidator(model_schema)
     benchmark(dict_schema_validator.validate_python, small_class_data)
@@ -246,7 +259,10 @@ def test_small_class_core_model(benchmark):
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'name': {'schema': {'type': 'str'}}, 'age': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )
@@ -379,8 +395,9 @@ def test_definition_model_core(definition_model_data, benchmark):
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'fields': {
-                    'width': {'schema': {'type': 'int'}},
+                    'width': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                     'branch': {
+                        'type': 'typed-dict-field',
                         'schema': {
                             'type': 'default',
                             'schema': {
@@ -388,7 +405,7 @@ def test_definition_model_core(definition_model_data, benchmark):
                                 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
                             },
                             'default': None,
-                        }
+                        },
                     },
                 },
             },
@@ -413,7 +430,13 @@ def test_list_of_dict_models_pyd(benchmark):
 @pytest.mark.benchmark(group='List[TypedDict]')
 def test_list_of_dict_models_core(benchmark):
     v = SchemaValidator(
-        {'type': 'list', 'items_schema': {'type': 'typed-dict', 'fields': {'width': {'schema': {'type': 'int'}}}}}
+        {
+            'type': 'list',
+            'items_schema': {
+                'type': 'typed-dict',
+                'fields': {'width': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
+            },
+        }
     )
 
     data = [{'width': i} for i in range(100)]
@@ -643,7 +666,10 @@ def test_many_models_pyd(benchmark):
 def test_many_models_core_dict(benchmark):
     model_schema = {
         'type': 'list',
-        'items_schema': {'type': 'typed-dict', 'fields': {'age': {'schema': {'type': 'int'}}}},
+        'items_schema': {
+            'type': 'typed-dict',
+            'fields': {'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
+        },
     }
     v = SchemaValidator(model_schema)
     benchmark(v.validate_python, many_models_data)
@@ -663,7 +689,7 @@ def test_many_models_core_model(benchmark):
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'age': {'schema': {'type': 'int'}}},
+                    'fields': {'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
                 },
             },
         }
@@ -729,7 +755,7 @@ class TestBenchmarkDateTime:
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'dt': {'schema': {'type': 'datetime'}}},
+                    'fields': {'dt': {'type': 'typed-dict-field', 'schema': {'type': 'datetime'}}},
                 },
             }
         )
@@ -1015,7 +1041,12 @@ def test_with_default(benchmark):
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'fields': {'name': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'John'}}},
+            'fields': {
+                'name': {
+                    'type': 'typed-dict-field',
+                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': 'John'},
+                }
+            },
         }
     )
     assert v.validate_python({'name': 'Foo'}) == {'name': 'Foo'}

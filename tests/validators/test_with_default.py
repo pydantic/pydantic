@@ -12,8 +12,11 @@ def test_typed_dict_default():
         {
             'type': 'typed-dict',
             'fields': {
-                'x': {'schema': {'type': 'str'}},
-                'y': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': '[default]'}},
+                'x': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                'y': {
+                    'type': 'typed-dict-field',
+                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default': '[default]'},
+                },
             },
         }
     )
@@ -26,8 +29,12 @@ def test_typed_dict_omit():
         {
             'type': 'typed-dict',
             'fields': {
-                'x': {'schema': {'type': 'str'}},
-                'y': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'omit'}, 'required': False},
+                'x': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                'y': {
+                    'type': 'typed-dict-field',
+                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'on_error': 'omit'},
+                    'required': False,
+                },
             },
         }
     )
@@ -216,8 +223,11 @@ def test_typed_dict_error():
         {
             'type': 'typed-dict',
             'fields': {
-                'x': {'schema': {'type': 'str'}},
-                'y': {'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default_factory': lambda y: y * 2}},
+                'x': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                'y': {
+                    'type': 'typed-dict-field',
+                    'schema': {'type': 'default', 'schema': {'type': 'str'}, 'default_factory': lambda y: y * 2},
+                },
             },
         }
     )
@@ -278,7 +288,10 @@ def test_model_class():
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'default': ({'field_a': '[default-a]', 'field_b': '[default-b]'}, set()),
                 'on_error': 'default',

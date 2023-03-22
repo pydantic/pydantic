@@ -43,7 +43,11 @@ def test_on_model_class():
             'type': 'model',
             'cls': MyModel,
             'config': {'str_max_length': 5},
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+            },
         }
     )
     assert 'max_length:Some(5)' in plain_repr(v)
@@ -60,7 +64,7 @@ def test_field_priority_model():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'f': {'schema': {'type': 'str', 'max_length': 5}}},
+                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'str', 'max_length': 5}}},
             },
         }
     )
@@ -74,7 +78,11 @@ def test_parent_priority():
         {
             'type': 'model',
             'cls': MyModel,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+            },
             'config': {'str_min_length': 2, 'str_max_length': 10},
         },
         {'str_max_length': 5, 'config_choose_priority': 1},
@@ -92,7 +100,11 @@ def test_child_priority():
         {
             'type': 'model',
             'cls': MyModel,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+            },
             'config': {'str_max_length': 5, 'config_choose_priority': 1},
         },
         {'str_min_length': 2, 'str_max_length': 10},
@@ -110,7 +122,11 @@ def test_merge_child_wins():
         {
             'type': 'model',
             'cls': MyModel,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+            },
             'config': {'str_max_length': 5},
         },
         {'str_min_length': 2, 'str_max_length': 10},
@@ -128,7 +144,11 @@ def test_merge_parent_wins():
         {
             'type': 'model',
             'cls': MyModel,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'str'}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+            },
             'config': {'str_max_length': 5},
         },
         {'str_min_length': 2, 'str_max_length': 10, 'config_merge_priority': 1},
@@ -152,18 +172,19 @@ def test_sub_model_merge():
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'fields': {
-                    'f': {'schema': {'type': 'str'}},
+                    'f': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                     'sub_model': {
+                        'type': 'typed-dict-field',
                         'schema': {
                             'type': 'model',
                             'cls': MyModel,
                             'schema': {
                                 'type': 'typed-dict',
                                 'return_fields_set': True,
-                                'fields': {'f': {'schema': {'type': 'str'}}},
+                                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
                             },
                             'config': {'str_max_length': 6, 'str_to_upper': True},
-                        }
+                        },
                     },
                 },
             },
@@ -231,7 +252,10 @@ def test_allow_inf_nan(config: CoreConfig, float_field_schema, input_value, expe
         {
             'type': 'model',
             'cls': MyModel,
-            'schema': {'type': 'typed-dict', 'fields': {'x': {'schema': float_field_schema}}},
+            'schema': {
+                'type': 'typed-dict',
+                'fields': {'x': {'type': 'typed-dict-field', 'schema': float_field_schema}},
+            },
             'config': config,
         }
     )

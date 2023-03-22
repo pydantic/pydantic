@@ -60,7 +60,10 @@ def test_ask():
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
             },
         }

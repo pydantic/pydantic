@@ -9,9 +9,10 @@ def test_branch_nullable():
             'type': 'typed-dict',
             'ref': 'Branch',
             'fields': {
-                'name': {'schema': {'type': 'str'}},
+                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'sub_branch': {
-                    'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}}
+                    'type': 'typed-dict-field',
+                    'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
                 },
             },
         }
@@ -32,9 +33,10 @@ def test_cyclic_recursion():
             'type': 'typed-dict',
             'ref': 'Branch',
             'fields': {
-                'name': {'schema': {'type': 'str'}},
+                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'sub_branch': {
-                    'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}}
+                    'type': 'typed-dict-field',
+                    'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
                 },
             },
         }
@@ -55,8 +57,9 @@ def test_custom_ser():
             'type': 'typed-dict',
             'ref': 'Branch',
             'fields': {
-                'name': {'schema': {'type': 'str'}},
+                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'sub_branch': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'nullable',
                         'schema': {
@@ -64,7 +67,7 @@ def test_custom_ser():
                             'schema_ref': 'Branch',
                             'serialization': {'type': 'to-string', 'when_used': 'always'},
                         },
-                    }
+                    },
                 },
             },
         }

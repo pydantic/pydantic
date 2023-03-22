@@ -64,7 +64,10 @@ class TestModelClass:
                         'schema': {
                             'type': 'typed-dict',
                             'return_fields_set': True,
-                            'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
+                            'fields': {
+                                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                                'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                            },
                         },
                     },
                     {
@@ -73,7 +76,10 @@ class TestModelClass:
                         'schema': {
                             'type': 'typed-dict',
                             'return_fields_set': True,
-                            'fields': {'c': {'schema': {'type': 'int'}}, 'd': {'schema': {'type': 'str'}}},
+                            'fields': {
+                                'c': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                                'd': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                            },
                         },
                     },
                 ],
@@ -128,7 +134,10 @@ class TestModelClassSimilar:
                         'schema': {
                             'type': 'typed-dict',
                             'return_fields_set': True,
-                            'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'str'}}},
+                            'fields': {
+                                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                                'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                            },
                         },
                     },
                     {
@@ -138,9 +147,12 @@ class TestModelClassSimilar:
                             'type': 'typed-dict',
                             'return_fields_set': True,
                             'fields': {
-                                'a': {'schema': {'type': 'int'}},
-                                'b': {'schema': {'type': 'str'}},
-                                'c': {'schema': {'type': 'default', 'schema': {'type': 'float'}, 'default': 1.0}},
+                                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                                'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                                'c': {
+                                    'type': 'typed-dict-field',
+                                    'schema': {'type': 'default', 'schema': {'type': 'float'}, 'default': 1.0},
+                                },
                             },
                         },
                     },

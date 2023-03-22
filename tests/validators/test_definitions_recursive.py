@@ -15,13 +15,14 @@ def test_branch_nullable():
             'type': 'typed-dict',
             'ref': 'Branch',
             'fields': {
-                'name': {'schema': {'type': 'str'}},
+                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'sub_branch': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'default',
                         'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
                         'default': None,
-                    }
+                    },
                 },
             },
         }
@@ -51,8 +52,9 @@ def test_branch_nullable_definitions():
                     'type': 'typed-dict',
                     'ref': 'Branch',
                     'fields': {
-                        'name': {'schema': {'type': 'str'}},
+                        'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                         'sub_branch': {
+                            'type': 'typed-dict-field',
                             'schema': {
                                 'type': 'default',
                                 'schema': {
@@ -60,7 +62,7 @@ def test_branch_nullable_definitions():
                                     'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
                                 },
                                 'default': None,
-                            }
+                            },
                         },
                     },
                 }
@@ -84,7 +86,10 @@ def test_unused_ref():
         {
             'type': 'typed-dict',
             'ref': 'Branch',
-            'fields': {'name': {'schema': {'type': 'str'}}, 'other': {'schema': {'type': 'int'}}},
+            'fields': {
+                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                'other': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+            },
         }
     )
     assert plain_repr(v).startswith('SchemaValidator(title="typed-dict",validator=TypedDict(TypedDictValidator')
@@ -98,8 +103,9 @@ def test_nullable_error():
             'ref': 'Branch',
             'type': 'typed-dict',
             'fields': {
-                'width': {'schema': {'type': 'int'}},
+                'width': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                 'sub_branch': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'default',
                         'schema': {
@@ -107,7 +113,7 @@ def test_nullable_error():
                             'choices': [{'type': 'none'}, {'type': 'definition-ref', 'schema_ref': 'Branch'}],
                         },
                         'default': None,
-                    }
+                    },
                 },
             },
         }
@@ -139,8 +145,9 @@ def test_list():
             'type': 'typed-dict',
             'ref': 'BranchList',
             'fields': {
-                'width': {'schema': {'type': 'int'}},
+                'width': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                 'branches': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'default',
                         'schema': {
@@ -148,7 +155,7 @@ def test_list():
                             'items_schema': {'type': 'definition-ref', 'schema_ref': 'BranchList'},
                         },
                         'default': None,
-                    }
+                    },
                 },
             },
         }
@@ -180,14 +187,16 @@ def test_multiple_intertwined():
             'ref': 'Foo',
             'type': 'typed-dict',
             'fields': {
-                'height': {'schema': {'type': 'int'}},
+                'height': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                 'bar': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'ref': 'Bar',
                         'type': 'typed-dict',
                         'fields': {
-                            'width': {'schema': {'type': 'int'}},
+                            'width': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                             'bars': {
+                                'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'default',
                                     'schema': {
@@ -195,9 +204,10 @@ def test_multiple_intertwined():
                                         'items_schema': {'type': 'definition-ref', 'schema_ref': 'Bar'},
                                     },
                                     'default': None,
-                                }
+                                },
                             },
                             'foo': {
+                                'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'default',
                                     'schema': {
@@ -205,10 +215,10 @@ def test_multiple_intertwined():
                                         'choices': [{'type': 'none'}, {'type': 'definition-ref', 'schema_ref': 'Foo'}],
                                     },
                                     'default': None,
-                                }
+                                },
                             },
                         },
-                    }
+                    },
                 },
             },
         }
@@ -242,8 +252,9 @@ def test_model_class():
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'fields': {
-                    'width': {'schema': {'type': 'int'}},
+                    'width': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                     'branch': {
+                        'type': 'typed-dict-field',
                         'schema': {
                             'type': 'default',
                             'schema': {
@@ -251,7 +262,7 @@ def test_model_class():
                                 'choices': [{'type': 'none'}, {'type': 'definition-ref', 'schema_ref': 'Branch'}],
                             },
                             'default': None,
-                        }
+                        },
                     },
                 },
             },
@@ -281,8 +292,9 @@ def test_invalid_schema():
                 'items_schema': {
                     'type': 'typed-dict',
                     'fields': {
-                        'width': {'schema': {'type': 'int'}},
+                        'width': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                         'branch': {
+                            'type': 'typed-dict-field',
                             'schema': {
                                 'type': 'default',
                                 'schema': {
@@ -290,7 +302,7 @@ def test_invalid_schema():
                                     'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'},
                                 },
                                 'default': None,
-                            }
+                            },
                         },
                     },
                 },
@@ -304,13 +316,14 @@ def test_outside_parent():
             'type': 'typed-dict',
             'fields': {
                 'tuple1': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'tuple-positional',
                         'items_schema': [{'type': 'int'}, {'type': 'int'}, {'type': 'str'}],
                         'ref': 'tuple-iis',
-                    }
+                    },
                 },
-                'tuple2': {'schema': {'type': 'definition-ref', 'schema_ref': 'tuple-iis'}},
+                'tuple2': {'type': 'typed-dict-field', 'schema': {'type': 'definition-ref', 'schema_ref': 'tuple-iis'}},
             },
         }
     )
@@ -329,13 +342,14 @@ def test_recursion_branch():
             'type': 'typed-dict',
             'ref': 'Branch',
             'fields': {
-                'name': {'schema': {'type': 'str'}},
+                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'branch': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'default',
                         'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 'Branch'}},
                         'default': None,
-                    }
+                    },
                 },
             },
         },
@@ -411,6 +425,7 @@ def multiple_tuple_schema() -> SchemaValidator:
             'type': 'typed-dict',
             'fields': {
                 'f1': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'tuple-positional',
                         'items_schema': [
@@ -418,14 +433,15 @@ def multiple_tuple_schema() -> SchemaValidator:
                             {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 't'}},
                         ],
                         'ref': 't',
-                    }
+                    },
                 },
                 'f2': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'default',
                         'schema': {'type': 'nullable', 'schema': {'type': 'definition-ref', 'schema_ref': 't'}},
                         'default': None,
-                    }
+                    },
                 },
             },
         }
@@ -547,12 +563,13 @@ def test_union_ref_strictness():
     v = SchemaValidator(
         {
             'fields': {
-                'a': {'schema': {'type': 'int', 'ref': 'int-type'}},
+                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int', 'ref': 'int-type'}},
                 'b': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'union',
                         'choices': [{'type': 'definition-ref', 'schema_ref': 'int-type'}, {'type': 'str'}],
-                    }
+                    },
                 },
             },
             'type': 'typed-dict',
@@ -574,8 +591,11 @@ def test_union_container_strictness():
     v = SchemaValidator(
         {
             'fields': {
-                'b': {'schema': {'type': 'union', 'choices': [{'type': 'int', 'ref': 'int-type'}, {'type': 'str'}]}},
-                'a': {'schema': {'type': 'definition-ref', 'schema_ref': 'int-type'}},
+                'b': {
+                    'type': 'typed-dict-field',
+                    'schema': {'type': 'union', 'choices': [{'type': 'int', 'ref': 'int-type'}, {'type': 'str'}]},
+                },
+                'a': {'type': 'typed-dict-field', 'schema': {'type': 'definition-ref', 'schema_ref': 'int-type'}},
             },
             'type': 'typed-dict',
         }
@@ -600,10 +620,11 @@ def test_union_cycle(strict: bool):
                 {
                     'fields': {
                         'foobar': {
+                            'type': 'typed-dict-field',
                             'schema': {
                                 'items_schema': {'schema_ref': 'root-schema', 'type': 'definition-ref'},
                                 'type': 'list',
-                            }
+                            },
                         }
                     },
                     'type': 'typed-dict',
@@ -713,12 +734,16 @@ def test_many_uses_of_ref():
             'type': 'typed-dict',
             'ref': 'Branch',
             'fields': {
-                'name': {'schema': {'type': 'str', 'max_length': 8, 'ref': 'limited-string'}},
+                'name': {
+                    'type': 'typed-dict-field',
+                    'schema': {'type': 'str', 'max_length': 8, 'ref': 'limited-string'},
+                },
                 'other_names': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'list',
                         'items_schema': {'type': 'definition-ref', 'schema_ref': 'limited-string'},
-                    }
+                    },
                 },
             },
         }
@@ -744,6 +769,7 @@ def test_error_inside_definition_wrapper():
                 'ref': 'Branch',
                 'fields': {
                     'sub_branch': {
+                        'type': 'typed-dict-field',
                         'schema': {
                             'type': 'default',
                             'schema': {
@@ -752,7 +778,7 @@ def test_error_inside_definition_wrapper():
                             },
                             'default': None,
                             'default_factory': lambda x: 'foobar',
-                        }
+                        },
                     }
                 },
             }
@@ -774,8 +800,9 @@ def test_model_td_recursive():
             'ref': '__main__.Foobar',
             'return_fields_set': True,
             'fields': {
-                'x': {'schema': {'type': 'int'}, 'required': True},
+                'x': {'type': 'typed-dict-field', 'schema': {'type': 'int'}, 'required': True},
                 'y': {
+                    'type': 'typed-dict-field',
                     'schema': {
                         'type': 'default',
                         'schema': {

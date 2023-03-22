@@ -86,13 +86,19 @@ def test_simple_tagged_union(py_and_json: PyAndJson, input_value, expected):
             'choices': {
                 'apple': {
                     'type': 'typed-dict',
-                    'fields': {'foo': {'schema': {'type': 'str'}}, 'bar': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'banana': {
                     'type': 'typed-dict',
                     'fields': {
-                        'foo': {'schema': {'type': 'str'}},
-                        'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'spam': {
+                            'type': 'typed-dict-field',
+                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                        },
                     },
                 },
             },
@@ -156,13 +162,19 @@ def test_int_choice_keys(py_and_json: PyAndJson, input_value, expected):
             'choices': {
                 123: {
                     'type': 'typed-dict',
-                    'fields': {'foo': {'schema': {'type': 'int'}}, 'bar': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'banana': {
                     'type': 'typed-dict',
                     'fields': {
-                        'foo': {'schema': {'type': 'str'}},
-                        'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'spam': {
+                            'type': 'typed-dict-field',
+                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                        },
                     },
                 },
             },
@@ -193,13 +205,19 @@ def test_enum_keys():
             'choices': {
                 1: {
                     'type': 'typed-dict',
-                    'fields': {'foo': {'schema': {'type': 'int'}}, 'bar': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'banana': {
                     'type': 'typed-dict',
                     'fields': {
-                        'foo': {'schema': {'type': 'str'}},
-                        'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'spam': {
+                            'type': 'typed-dict-field',
+                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                        },
                     },
                 },
             },
@@ -229,13 +247,16 @@ def test_discriminator_path(py_and_json: PyAndJson):
             'choices': {
                 'apple': {
                     'type': 'typed-dict',
-                    'fields': {'a': {'schema': {'type': 'str'}}, 'b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'banana': {
                     'type': 'typed-dict',
                     'fields': {
-                        'c': {'schema': {'type': 'str'}},
-                        'd': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'd': {'type': 'typed-dict-field', 'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
                     },
                 },
             },
@@ -417,11 +438,17 @@ def test_from_attributes():
             'choices': {
                 'apple': {
                     'type': 'typed-dict',
-                    'fields': {'a': {'schema': {'type': 'str'}}, 'b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'banana': {
                     'type': 'typed-dict',
-                    'fields': {'c': {'schema': {'type': 'str'}}, 'd': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'd': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
             },
         },
@@ -439,9 +466,16 @@ def test_use_ref():
             'type': 'tagged-union',
             'discriminator': 'foobar',
             'choices': {
-                'apple': {'type': 'typed-dict', 'ref': 'apple', 'fields': {'a': {'schema': {'type': 'str'}}}},
+                'apple': {
+                    'type': 'typed-dict',
+                    'ref': 'apple',
+                    'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                },
                 'apple2': {'type': 'definition-ref', 'schema_ref': 'apple'},
-                'banana': {'type': 'typed-dict', 'fields': {'b': {'schema': {'type': 'str'}}}},
+                'banana': {
+                    'type': 'typed-dict',
+                    'fields': {'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                },
             },
         },
         {'from_attributes': True},
@@ -475,13 +509,19 @@ def test_custom_error():
             'choices': {
                 'apple': {
                     'type': 'typed-dict',
-                    'fields': {'foo': {'schema': {'type': 'str'}}, 'bar': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'banana': {
                     'type': 'typed-dict',
                     'fields': {
-                        'foo': {'schema': {'type': 'str'}},
-                        'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'spam': {
+                            'type': 'typed-dict-field',
+                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                        },
                     },
                 },
             },
@@ -510,13 +550,19 @@ def test_custom_error_type():
             'choices': {
                 'apple': {
                     'type': 'typed-dict',
-                    'fields': {'foo': {'schema': {'type': 'str'}}, 'bar': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'banana': {
                     'type': 'typed-dict',
                     'fields': {
-                        'foo': {'schema': {'type': 'str'}},
-                        'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'spam': {
+                            'type': 'typed-dict-field',
+                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                        },
                     },
                 },
             },
@@ -587,20 +633,26 @@ def test_tag_repeated(py_and_json: PyAndJson, input_value, expected):
             'choices': {
                 'apple': {
                     'type': 'typed-dict',
-                    'fields': {'a': {'schema': {'type': 'str'}}, 'b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 'banana': {
                     'type': 'typed-dict',
                     'fields': {
-                        'c': {'schema': {'type': 'str'}},
-                        'd': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                        'c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                        'd': {'type': 'typed-dict-field', 'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
                     },
                 },
                 'cherry': 'banana',
                 'durian': 'apple',
                 1: {
                     'type': 'typed-dict',
-                    'fields': {'a': {'schema': {'type': 'int'}}, 'b': {'schema': {'type': 'int'}}},
+                    'fields': {
+                        'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
                 },
                 2: 1,
             },
@@ -626,7 +678,10 @@ def test_tag_repeated_invalid():
                 'choices': {
                     'apple': {
                         'type': 'typed-dict',
-                        'fields': {'a': {'schema': {'type': 'str'}}, 'b': {'schema': {'type': 'int'}}},
+                        'fields': {
+                            'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                            'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        },
                     },
                     'cherry': 'wrong',
                 },

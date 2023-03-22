@@ -101,7 +101,10 @@ def test_validation_error_multiple():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'x': {'schema': {'type': 'float'}}, 'y': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'x': {'type': 'typed-dict-field', 'schema': {'type': 'float'}},
+                    'y': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )

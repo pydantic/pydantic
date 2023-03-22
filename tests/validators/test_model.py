@@ -21,7 +21,10 @@ def test_model_class():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )
@@ -72,7 +75,7 @@ def test_model_class_setattr():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}},
+                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
             },
         }
     )
@@ -101,7 +104,7 @@ def test_model_class_root_validator():
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}},
+                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
                 },
             },
         }
@@ -131,7 +134,7 @@ def test_function_ask(mode, return_fields_set):
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': return_fields_set,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}},
+                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
                 },
             },
         }
@@ -172,8 +175,16 @@ def test_union_sub_schema():
             'schema': {
                 'type': 'union',
                 'choices': [
-                    {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'foo': {'schema': {'type': 'int'}}}},
-                    {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'bar': {'schema': {'type': 'int'}}}},
+                    {
+                        'type': 'typed-dict',
+                        'return_fields_set': True,
+                        'fields': {'foo': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
+                    },
+                    {
+                        'type': 'typed-dict',
+                        'return_fields_set': True,
+                        'fields': {'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
+                    },
                 ],
             },
         }
@@ -203,14 +214,20 @@ def test_tagged_union_sub_schema():
                 'choices': {
                     'apple': {
                         'type': 'typed-dict',
-                        'fields': {'foo': {'schema': {'type': 'str'}}, 'bar': {'schema': {'type': 'int'}}},
+                        'fields': {
+                            'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                            'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        },
                     },
                     'banana': {
                         'type': 'typed-dict',
                         'return_fields_set': True,
                         'fields': {
-                            'foo': {'schema': {'type': 'str'}},
-                            'spam': {'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
+                            'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                            'spam': {
+                                'type': 'typed-dict-field',
+                                'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                            },
                         },
                     },
                 },
@@ -256,7 +273,7 @@ def test_model_class_function_after():
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}},
+                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
                 },
             },
         }
@@ -276,7 +293,7 @@ def test_model_class_not_type():
                 'schema': {
                     'type': 'typed-dict',
                     'return_fields_set': True,
-                    'fields': {'field_a': {'schema': {'type': 'str'}}},
+                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
                 },
             }
         )
@@ -290,7 +307,10 @@ def test_not_return_fields_set():
         {
             'type': 'model',
             'cls': MyModel,
-            'schema': {'type': 'typed-dict', 'fields': {'field_a': {'schema': {'type': 'str'}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+            },
         }
     )
     assert 'expect_fields_set:false' in plain_repr(v)
@@ -316,7 +336,7 @@ def test_model_class_instance_direct():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}},
+                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
             },
         }
     )
@@ -353,7 +373,7 @@ def test_model_class_instance_subclass():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}},
+                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
             },
             'config': {'from_attributes': True},
         }
@@ -381,7 +401,10 @@ def test_model_class_strict():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )
@@ -412,7 +435,11 @@ def test_internal_error():
         {
             'type': 'model',
             'cls': int,
-            'schema': {'type': 'typed-dict', 'return_fields_set': True, 'fields': {'f': {'schema': {'type': 'int'}}}},
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
+            },
         }
     )
     with pytest.raises(AttributeError, match=re.escape("'int' object has no attribute '__dict__'")):
@@ -437,7 +464,10 @@ def test_revalidate():
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'from_attributes': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
             'config': {'revalidate_models': True},
         }
@@ -492,7 +522,10 @@ def test_revalidate_extra():
                 'return_fields_set': True,
                 'from_attributes': True,
                 'extra_behavior': 'allow',
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
             'config': {'revalidate_models': True},
         }
@@ -537,7 +570,10 @@ def test_post_init():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )
@@ -566,7 +602,10 @@ def test_revalidate_post_init():
                 'type': 'typed-dict',
                 'return_fields_set': True,
                 'from_attributes': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
             'config': {'revalidate_models': True},
         }
@@ -609,7 +648,7 @@ def test_post_init_validation_error():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}},
+                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
             },
         }
     )
@@ -646,7 +685,7 @@ def test_post_init_internal_error():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}},
+                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
             },
         }
     )
@@ -672,7 +711,10 @@ def test_post_init_mutate():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )
@@ -698,7 +740,10 @@ def test_validate_assignment():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )
@@ -772,7 +817,10 @@ def test_validate_assignment_no_fields_set():
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
-                'fields': {'field_a': {'schema': {'type': 'str'}}, 'field_b': {'schema': {'type': 'int'}}},
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
             },
         }
     )
