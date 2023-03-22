@@ -2376,6 +2376,7 @@ def lax_or_strict_schema(
 
 
 class TypedDictField(TypedDict, total=False):
+    type: Required[Literal['typed-dict-field']]
     schema: Required[CoreSchema]
     required: bool
     validation_alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
@@ -2412,6 +2413,7 @@ def typed_dict_field(
         frozen: Whether the field is frozen
     """
     return dict_not_none(
+        type='typed-dict-field',
         schema=schema,
         required=required,
         validation_alias=validation_alias,
@@ -2565,6 +2567,7 @@ def model_schema(
 
 
 class DataclassField(TypedDict, total=False):
+    type: Required[Literal['dataclass-field']]
     name: Required[str]
     schema: Required[CoreSchema]
     kw_only: bool  # default: True
@@ -2605,6 +2608,7 @@ def dataclass_field(
         serialization_exclude: Whether to exclude the field when serializing
     """
     return dict_not_none(
+        type='dataclass-field',
         name=name,
         schema=schema,
         kw_only=kw_only,

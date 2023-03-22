@@ -69,7 +69,10 @@ def test_schema_definition_error():
 def test_not_schema_definition_error():
     schema = {
         'type': 'typed-dict',
-        'fields': {f'f_{i}': {'schema': {'type': 'nullable', 'schema': {'type': 'int'}}} for i in range(101)},
+        'fields': {
+            f'f_{i}': {'type': 'typed-dict-field', 'schema': {'type': 'nullable', 'schema': {'type': 'int'}}}
+            for i in range(101)
+        },
     }
     v = SchemaValidator(schema)
     assert repr(v).count('TypedDictField') == 101

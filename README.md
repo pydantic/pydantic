@@ -29,17 +29,20 @@ v = SchemaValidator({
     'type': 'typed-dict',
     'fields': {
         'name': {
+            'type': 'typed-dict-field',
             'schema': {
                 'type': 'str',
             },
         },
         'age': {
+            'type': 'typed-dict-field',
             'schema': {
                 'type': 'int',
                 'ge': 18,
             },
         },
         'is_developer': {
+            'type': 'typed-dict-field',
             'schema': {
                 'type': 'default',
                 'schema': {'type': 'bool'},

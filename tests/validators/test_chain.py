@@ -141,7 +141,7 @@ def test_ask():
                     {
                         'type': 'typed-dict',
                         'return_fields_set': True,
-                        'fields': {'field_a': {'schema': {'type': 'str'}}},
+                        'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
                     },
                     {'type': 'function-plain', 'function': {'type': 'general', 'function': f}},
                 ],
