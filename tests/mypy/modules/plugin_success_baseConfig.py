@@ -76,7 +76,7 @@ class NoMutationModel(BaseModel):
 
 
 class MutationModel(NoMutationModel):
-    a = 1
+    a: int = 1
 
     model_config = dict(frozen=False, from_attributes=True)
 
@@ -90,7 +90,7 @@ class KwargsNoMutationModel(BaseModel, frozen=True):
 
 
 class KwargsMutationModel(KwargsNoMutationModel, frozen=False, from_attributes=True):
-    a = 1
+    a: int = 1
 
 
 KwargsMutationModel(x=1).x = 2

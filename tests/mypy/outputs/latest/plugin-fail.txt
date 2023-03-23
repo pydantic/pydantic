@@ -18,12 +18,13 @@
 74: note: Error code "pydantic-config" not covered by "type: ignore" comment
 77: error: Invalid value for "Config.from_attributes"  [pydantic-config]
 92: error: Incompatible types in assignment (expression has type "ellipsis", variable has type "int")  [assignment]
+95: error: Untyped fields disallowed  [pydantic-field]
 101: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]
+102: error: Untyped fields disallowed  [pydantic-field]
 105: error: Missing named argument "a" for "DefaultTestingModel"  [call-arg]
 105: error: Missing named argument "b" for "DefaultTestingModel"  [call-arg]
 105: error: Missing named argument "c" for "DefaultTestingModel"  [call-arg]
 105: error: Missing named argument "d" for "DefaultTestingModel"  [call-arg]
-105: error: Missing named argument "e" for "DefaultTestingModel"  [call-arg]
 109: error: Name "Undefined" is not defined  [name-defined]
 112: error: Missing named argument "undefined" for "UndefinedAnnotationModel"  [call-arg]
 115: error: Missing named argument "y" for "model_construct" of "Model"  [call-arg]
@@ -31,7 +32,7 @@
 166: error: Missing named argument "x" for "DynamicAliasModel2"  [call-arg]
 175: error: Missing named argument "x" for "KwargsDynamicAliasModel"  [call-arg]
 193: error: Unused "type: ignore" comment
-199: error: Unused "type: ignore" comment
+198: error: Untyped fields disallowed  [pydantic-field]
 223: error: Name "Missing" is not defined  [name-defined]
 250: error: Property "y" defined in "FrozenModel" is read-only  [misc]
 270: error: Incompatible types in assignment (expression has type "None", variable has type "int")  [assignment]

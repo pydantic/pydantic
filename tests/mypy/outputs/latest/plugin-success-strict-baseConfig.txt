@@ -1,5 +1,2 @@
 29: error: Unexpected keyword argument "z" for "Model"  [call-arg]
 45: error: Unexpected keyword argument "z" for "KwargsModel"  [call-arg]
-79: error: Untyped fields disallowed  [pydantic-field]
-93: error: Untyped fields disallowed  [pydantic-field]
-203: error: Untyped fields disallowed  [pydantic-field]
