@@ -58,8 +58,9 @@ class ValidatorDecoratorInfo(Representation):
     ) -> None:
         """
         :param mode: the pydantic-core validator mode.
-        :param mode: Not yet supported.
         :param check_fields: whether to check that the fields actually exist on the model.
+        :param each_item: if True this validator gets applied to the internal items of
+            lists/sets/dicts instead of the collection itself.
         """
         self.fields = fields
         self.mode = mode
@@ -85,7 +86,7 @@ class FieldValidatorDecoratorInfo(Representation):
         :param mode: the pydantic-core validator mode.
         :param type: either 'unbound' or 'field' indicating if this validator should have
             access to the model itself.
-        :param mode: Not yet supported.
+        :param sub_path: Not yet supported.
         :param check_fields: whether to check that the fields actually exist on the model.
         :param wrap: a callback to apply V1 compatibility shims or allow extra signatures
             that pydantic-core does not recognize.
@@ -131,7 +132,16 @@ class SerializerDecoratorInfo(Representation):
         when_used: WhenUsed = 'always',
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
-    ):
+    ) -> None:
+        """
+        :param mode: the pydantic-core serializer mode.
+        :param type: either 'unbound' or 'field' indicating if this validator should have
+            access to the model itself.
+        :param sub_path: Not yet supported.
+        :param json_return_type: TODO
+        :param when_used: TODO
+        :param check_fields: whether to check that the fields actually exist on the model.
+        """
         self.fields = fields
         self.sub_path = sub_path
         self.mode = mode
