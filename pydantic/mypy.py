@@ -80,6 +80,12 @@ BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
 MODEL_METACLASS_FULLNAME = 'pydantic.main.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
+DECORATOR_FULLNAMES = {
+    'pydantic.decorators.validator',
+    'pydantic.decorators.field_validator',
+    'pydantic.decorators.root_validator',
+    'pydantic.decorators.serializer',
+}
 
 
 def parse_mypy_version(version: str) -> tuple[int, ...]:
@@ -326,18 +332,13 @@ class PydanticModelTransformer:
         Teach mypy this by marking any function whose outermost decorator is a `validator()`,
         `field_validator()` or `serializer()` call as a `classmethod`.
         """
-        decorator_names = (
-            'pydantic.decorators.validator',
-            'pydantic.decorators.serializer',
-            'pydantic.decorators.field_validator',
-        )
         for name, sym in self._ctx.cls.info.names.items():
             if isinstance(sym.node, Decorator):
                 first_dec = sym.node.original_decorators[0]
                 if (
                     isinstance(first_dec, CallExpr)
                     and isinstance(first_dec.callee, NameExpr)
-                    and first_dec.callee.fullname in decorator_names
+                    and first_dec.callee.fullname in DECORATOR_FULLNAMES
                 ):
                     sym.node.func.is_class = True
 
@@ -459,9 +460,10 @@ class PydanticModelTransformer:
                 isinstance(stmt.rvalue, CallExpr)
                 and isinstance(stmt.rvalue.callee, CallExpr)
                 and isinstance(stmt.rvalue.callee.callee, NameExpr)
-                and stmt.rvalue.callee.callee.fullname == 'pydantic.decorators.validator'
+                and stmt.rvalue.callee.callee.fullname in DECORATOR_FULLNAMES
             ):
-                # This is a (possibly-reused) validator, not a field
+                # This is a (possibly-reused) validator or serializer, not a field
+                # TODO: We may want to inspect whatever replaces keep_untouched in the config
                 # In particular, it looks something like: my_validator = validator('my_field', allow_reuse=True)(f)
                 return None
 
