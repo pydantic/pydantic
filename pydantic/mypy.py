@@ -221,13 +221,11 @@ class PydanticPluginConfig:
         'init_forbid_extra',
         'init_typed',
         'warn_required_dynamic_aliases',
-        'warn_untyped_fields',
         'debug_dataclass_transform',
     )
     init_forbid_extra: bool
     init_typed: bool
     warn_required_dynamic_aliases: bool
-    warn_untyped_fields: bool
     debug_dataclass_transform: bool  # undocumented
 
     def __init__(self, options: Options) -> None:
