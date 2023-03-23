@@ -1571,3 +1571,26 @@ def test_decorator_proxy():
     assert Model.val1(1) == 2
     assert Model.val2(1) == 2
     assert Model.val3(1) == 2
+
+
+def test_validator_self():
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.raises(TypeError, match=r'`@validator` cannot be applied to instance methods'):
+
+            class Model(BaseModel):
+                a: int = 1
+
+                @validator('a')
+                def check_a(self, values: Any) -> Any:
+                    return values
+
+
+def test_field_validator_self():
+    with pytest.raises(TypeError, match=r'`@field_validator` cannot be applied to instance methods'):
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @field_validator('a')
+            def check_a(self, values: Any) -> Any:
+                return values

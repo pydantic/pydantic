@@ -202,7 +202,7 @@ def field_validator(
 
     def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
         if _decorators.is_instance_method_from_sig(f):
-            raise TypeError('`@validator` cannot be applied to instance methods')
+            raise TypeError('`@field_validator` cannot be applied to instance methods')
         _decorators.check_for_duplicate_validator(f, allow_reuse=allow_reuse)
         # auto apply the @classmethod decorator and warn users if we had to do so
         f = _decorators.ensure_classmethod_based_on_signature(f)
@@ -254,18 +254,11 @@ def root_validator(
 
 
 def root_validator(  # type: ignore[misc]
-    __func: _V1RootValidatorFunctionType | None = None,
     *,
     pre: bool = False,
     skip_on_failure: bool = False,
     allow_reuse: bool = False,
-) -> (
-    _decorators.PydanticDecoratorMarker[Any]
-    | Callable[
-        [_V1RootValidatorFunctionType],
-        _decorators.PydanticDecoratorMarker[Any],
-    ]
-):
+) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]]:
     """
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
     before or after standard model parsing/validation is performed.
@@ -283,14 +276,6 @@ def root_validator(  # type: ignore[misc]
             ' Please see the migration guide for more details.'
         )
     wrap = partial(_decorators.make_v1_generic_root_validator, pre=pre)
-    if __func is not None:
-        if _decorators.is_instance_method_from_sig(__func):
-            raise TypeError('`@root_validator` cannot be applied to instance methods')
-        _decorators.check_for_duplicate_validator(__func, allow_reuse=allow_reuse)
-        # auto apply the @classmethod decorator and warn users if we had to do so
-        res = _decorators.ensure_classmethod_based_on_signature(__func)
-        validator_wrapper_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
-        return _decorators.PydanticDecoratorMarker(res, validator_wrapper_info, shim=wrap)
 
     def dec(f: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> Any:
         if _decorators.is_instance_method_from_sig(f):
