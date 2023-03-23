@@ -49,18 +49,14 @@ def test_parse_obj_fails():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parsing_model_naming():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
-    assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel[int]'
+    assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 
     with pytest.raises(ValidationError) as exc_info:
-        parse_obj_as(int, 'a', type_name='ParsingModel')
-    assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel'
-
-    with pytest.raises(ValidationError) as exc_info:
-        parse_obj_as(int, 'a', type_name=lambda type_: type_.__name__)
+        with pytest.warns(DeprecationWarning, match='The type_name parameter is deprecated'):
+            parse_obj_as(int, 'a', type_name='ParsingModel')
     assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 
 
@@ -78,7 +74,6 @@ def test_parse_mapping_as():
     assert parse_obj_as(Dict[int, int], inputs) == {1: 2}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema():
     assert schema_of(Union[int, str], title='IntOrStr') == {
         'title': 'IntOrStr',
@@ -86,7 +81,6 @@ def test_schema():
     }
     assert schema_json_of(Union[int, str], title='IntOrStr', indent=2) == (
         '{\n'
-        '  "title": "IntOrStr",\n'
         '  "anyOf": [\n'
         '    {\n'
         '      "type": "integer"\n'
@@ -94,6 +88,7 @@ def test_schema():
         '    {\n'
         '      "type": "string"\n'
         '    }\n'
-        '  ]\n'
+        '  ],\n'
+        '  "title": "IntOrStr"\n'
         '}'
     )
