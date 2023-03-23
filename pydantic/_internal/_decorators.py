@@ -50,7 +50,7 @@ class ValidatorDecoratorInfo(Representation):
         self,
         *,
         fields: tuple[str, ...],
-        # mapped from pre=True/False
+        # pre=True/False in v1 should be converted to mode='before'/'after' in v2
         mode: Literal['before', 'after'],
         check_fields: bool | None,
         each_item: bool,
