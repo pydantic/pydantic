@@ -361,11 +361,11 @@ class GenerateSchema:
             schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
         schema = apply_annotations(schema, field_info.metadata)
 
-        this_field_validators = filter_field_decorator_info_by_field(decorators.validator.values(), name)
         # TODO: remove this V1 compatibility shim once it's deprecated
         # push down any `each_item=True` validators
         # note that this won't work for any Annotated types that get wrapped by a function validator
         # but that's okay because that didn't exist in V1
+        this_field_validators = filter_field_decorator_info_by_field(decorators.validator.values(), name)
         each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
         this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
         schema = apply_each_item_validators(schema, each_item_validators)
