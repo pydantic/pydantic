@@ -3059,8 +3059,10 @@ def test_secretbytes():
     assert f.empty_password.get_secret_value() == b''
 
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
-    assert f == f.copy()
-    assert f != f.copy(update=dict(password=b'4321'))
+    assert f == f.model_copy()
+    copied_with_changes = f.model_copy()
+    copied_with_changes.password = SecretBytes(b'4321')
+    assert f != copied_with_changes
 
 
 def test_secretbytes_is_secret_field():

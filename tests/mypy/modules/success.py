@@ -122,7 +122,7 @@ assert m_from_obj.first_name == data['first_name']
 assert m_from_obj.last_name == data['last_name']
 assert m_from_obj.list_of_ints == data['list_of_ints']
 
-m_copy = m_from_obj.copy()
+m_copy = m_from_obj.model_copy()
 
 assert isinstance(m_copy, Model)
 assert m_copy.age == m_from_obj.age

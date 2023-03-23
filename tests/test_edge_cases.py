@@ -2136,6 +2136,9 @@ def test_iter_coverage():
         x: int = 1
         y: str = 'a'
 
+    # with pytest.warns(
+    #     DeprecationWarning, match='This private method is only used for `BaseModel.copy`, which is deprecated'
+    # ):
     assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
 

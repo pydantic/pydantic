@@ -7,7 +7,7 @@ import sys
 import typing
 import warnings
 from abc import ABCMeta
-from copy import deepcopy
+from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from inspect import getdoc
@@ -363,6 +363,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         return m
 
+    # @typing_extensions.deprecated('This method is now deprecated; use `model_copy` instead')
     def copy(
         self: Model,
         *,
@@ -372,6 +373,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         deep: bool = False,
     ) -> Model:
         """
+        This method is now deprecated; use `model_copy` instead. If you need include / exclude, use:
+
+            data = self.model_dump(include=include, exclude=exclude, round_trip=True)
+            data = {**data, **(update or {})}
+            copied = self.model_validate(data)
+
         Duplicate a model, optionally choose which fields to include, exclude and change.
 
         :param include: fields to include in new model
@@ -381,6 +388,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         :param deep: set to `True` to make a deep copy of the model
         :return: new model instance
         """
+        warnings.warn(
+            'The `copy` method is deprecated; use `model_copy` instead. '
+            'See the docstring of `BaseModel.copy` for details about how to handle include / exclude / update.',
+            DeprecationWarning,
+        )
 
         values = dict(
             self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
@@ -449,6 +461,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     @classmethod
+    # @typing_extensions.deprecated('This method is only used for _iter, which is deprecated')
     @typing.no_type_check
     def _get_value(
         cls,
@@ -555,6 +568,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         yield from self.__dict__.items()
 
+    # @typing_extensions.deprecated('This private method is only used for `BaseModel.copy`, which is deprecated')
     def _iter(
         self,
         to_dict: bool = False,
@@ -567,11 +581,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     ) -> TupleGenerator:
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
         # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
-        # if exclude is not None or self.__exclude_fields__ is not None:
-        #     exclude = _utils.ValueItems.merge(self.__exclude_fields__, exclude)
-        #
-        # if include is not None or self.__include_fields__ is not None:
-        #     include = _utils.ValueItems.merge(self.__include_fields__, include, intersect=True)
+        if exclude is not None:
+            exclude = _utils.ValueItems.merge(
+                {k: v.exclude for k, v in self.model_fields.items() if v.exclude is not None}, exclude
+            )
+
+        if include is not None:
+            include = _utils.ValueItems.merge(
+                {k: v.include for k, v in self.model_fields.items()}, include, intersect=True
+            )
 
         allowed_keys = self._calculate_keys(
             include=include, exclude=exclude, exclude_unset=exclude_unset  # type: ignore
@@ -647,6 +665,51 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return self.model_dump() == other.model_dump()
         else:
             return self.model_dump() == other
+
+    def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
+        """
+        Returns a copy of the model.
+
+        :param update: values to change/add in the new model. Note: the data is not validated before creating
+            the new model: you should trust this data
+        :param deep: set to `True` to make a deep copy of the model
+        :return: new model instance
+        """
+        copied = self.__deepcopy__() if deep else self.__copy__()
+        if update:
+            copied.__dict__.update(update)
+            copied.__fields_set__.update(update.keys())
+        return copied
+
+    def __copy__(self: Model) -> Model:
+        """
+        Returns a shallow copy of the model
+        """
+        cls = type(self)
+        m = cls.__new__(cls)
+        _object_setattr(m, '__dict__', copy(self.__dict__))
+        _object_setattr(m, '__fields_set__', copy(self.__fields_set__))
+        for name in self.__private_attributes__:
+            value = getattr(self, name, Undefined)
+            if value is not Undefined:
+                _object_setattr(m, name, value)
+        return m
+
+    def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
+        """
+        Returns a deep copy of the model
+        """
+        cls = type(self)
+        m = cls.__new__(cls)
+        _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
+        # This next line doesn't need a deepcopy because __fields_set__ is a set[str],
+        # and attempting a deepcopy would be marginally slower.
+        _object_setattr(m, '__fields_set__', copy(self.__fields_set__))
+        for name in self.__private_attributes__:
+            value = getattr(self, name, Undefined)
+            if value is not Undefined:
+                _object_setattr(m, name, deepcopy(value, memo=memo))
+        return m
 
     def __repr_args__(self) -> _repr.ReprArgs:
         return [
