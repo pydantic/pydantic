@@ -1503,6 +1503,12 @@ def test_generics_memory_use():
 def test_construct_generic_model_with_validation_and_unenforced_constraint():
     T = TypeVar('T')
 
+    expected_args = (
+        'On field "unenforced" the following field constraints are set but not enforced: lt. \n'
+        'For more details see https://docs.pydantic.dev/usage/schema/#unenforced-field-constraints',
+    )
+
+    # Demonstrate the expected error behavior on generic models
     with pytest.raises(ValueError) as exc_info:
 
         class Page(GenericModel, Generic[T]):
@@ -1510,10 +1516,15 @@ def test_construct_generic_model_with_validation_and_unenforced_constraint():
             items: Sequence[T]
             unenforced: PositiveInt = Field(..., lt=10)
 
-    assert exc_info.value.args == (
-        'On field "unenforced" the following field constraints are set but not enforced: lt. \n'
-        'For more details see https://docs.pydantic.dev/usage/schema/#unenforced-field-constraints',
-    )
+    # Demonstrate that this exact same behavior also happens with a standard BaseModel subclass
+    with pytest.raises(ValueError) as exc_info:
+
+        class ConcretePage(BaseModel):
+            page: int = Field(ge=42)
+            items: Sequence[str]
+            unenforced: PositiveInt = Field(..., lt=10)
+
+    assert exc_info.value.args == expected_args
 
 
 def test_construct_generic_model_with_validation():
