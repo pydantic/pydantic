@@ -127,7 +127,6 @@ def validator(
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
-    :param sub_path: TODO
     :param check_fields: whether to check that the fields actually exist on the model
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
