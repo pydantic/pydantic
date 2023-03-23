@@ -275,7 +275,8 @@ def root_validator(  # type: ignore[misc]
         raise TypeError(
             'If you use `@root_validator` with pre=False (the default)'
             ' you MUST specify `skip_on_failure=True`.'
-            'The `skip_on_failure=False` option is no longer available.'
+            ' The `skip_on_failure=False` option is no longer available.'
+            ' Please see the migration guide for more details.'
         )
     wrap = partial(_decorators.make_v1_generic_root_validator, pre=pre)
     if __func is not None:
