@@ -80,7 +80,7 @@ class FieldInfo(_repr.Representation):
             raise ValueError('cannot specify both default and default_factory')
 
         self.alias = kwargs.get('alias')
-        self.alias_priority = kwargs.get('alias_priority', 2 if self.alias is not None else None)
+        self.alias_priority = kwargs.get('alias_priority') or 2 if self.alias is not None else None
         self.title = kwargs.get('title')
         self.description = kwargs.get('description')
         self.examples = kwargs.get('examples')
@@ -282,6 +282,10 @@ def Field(
     *,
     default_factory: typing.Callable[[], Any] | None = None,
     alias: str = None,
+    # TODO:
+    #  Alternative 1: we could drop alias_priority and tell people to manually override aliases in child classes
+    #  Alternative 2: we could add a new argument `override_with_alias_generator=True` equivalent to `alias_priority=1`
+    alias_priority: int = None,
     title: str = None,
     description: str = None,
     examples: list[Any] = None,
@@ -360,6 +364,7 @@ def Field(
         default,
         default_factory=default_factory,
         alias=alias,
+        alias_priority=alias_priority,
         title=title,
         description=description,
         examples=examples,
