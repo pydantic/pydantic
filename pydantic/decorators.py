@@ -276,6 +276,10 @@ def root_validator(  # type: ignore[misc]
             'If you use `@root_validator` with pre=False (the default)'
             ' you MUST specify `skip_on_failure=True`.'
             ' The `skip_on_failure=False` option is no longer available.'
+            ' If you were not trying to set `skip_on_failure=False` you'
+            ' can safely set `skip_on_failure=True`.'
+            ' If you do, this root validator will no longer be called'
+            ' if validation fails for any of the fields.'
             ' Please see the migration guide for more details.'
         )
     wrap = partial(_decorators.make_v1_generic_root_validator, pre=pre)
