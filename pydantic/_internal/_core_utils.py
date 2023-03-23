@@ -38,6 +38,14 @@ def is_function_with_inner_schema(
     return is_core_schema(schema) and schema['type'] in ('function-before', 'function-after', 'function-wrap')
 
 
+def is_list_like_schema_with_items_schema(
+    schema: CoreSchema,
+) -> TypeGuard[
+    core_schema.ListSchema | core_schema.TupleVariableSchema | core_schema.SetSchema | core_schema.FrozenSetSchema
+]:
+    return schema['type'] in ('list', 'tuple-variable', 'set', 'frozenset')
+
+
 def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
     """
     Produces the ref to be used for this type by pydantic_core's core schemas.

@@ -101,17 +101,6 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            namespace['__pydantic_validator_functions__'] = validator_functions = _decorators.ValidationFunctions(bases)
-
-            namespace['__pydantic_serializer_functions__'] = serializer_functions = _decorators.SerializationFunctions(
-                bases
-            )
-
-            for name, value in namespace.items():
-                found_validator = validator_functions.extract_decorator(name, value)
-                if not found_validator:
-                    serializer_functions.extract_decorator(name, value)
-
             if config_new['json_encoders']:
                 json_encoder = partial(custom_pydantic_encoder, config_new['json_encoders'])
             else:
@@ -127,6 +116,8 @@ class ModelMetaclass(ABCMeta):
                 namespace['__hash__'] = hash_func
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
+
+            cls.__pydantic_decorators__ = _decorators.gather_decorator_functions(cls)
 
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
@@ -170,8 +161,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_core_schema__: typing.ClassVar[CoreSchema]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
-        __pydantic_validator_functions__: typing.ClassVar[_decorators.ValidationFunctions]
-        __pydantic_serializer_functions__: typing.ClassVar[_decorators.SerializationFunctions]
+        __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
+        """metadata for `@validator`, `@root_validator` and `@serializer` decorators"""
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}

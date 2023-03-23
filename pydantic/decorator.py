@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, 
 
 from ._internal import _typing_extra, _utils
 from .config import Extra, get_config
-from .decorators import validator
+from .decorators import field_validator
 from .errors import PydanticUserError
 from .main import BaseModel, create_model
 
@@ -221,14 +221,16 @@ class ValidatedFunction:
             config_dict['extra'] = Extra.forbid
 
         class DecoratorBaseModel(BaseModel):
-            @validator(self.v_args_name, check_fields=False, allow_reuse=True)
+            @field_validator(self.v_args_name, check_fields=False, allow_reuse=True)
+            @classmethod
             def check_args(cls, v: Optional[List[Any]]) -> Optional[List[Any]]:
                 if takes_args or v is None:
                     return v
 
                 raise TypeError(f'{pos_args} positional arguments expected but {pos_args + len(v)} given')
 
-            @validator(self.v_kwargs_name, check_fields=False, allow_reuse=True)
+            @field_validator(self.v_kwargs_name, check_fields=False, allow_reuse=True)
+            @classmethod
             def check_kwargs(cls, v: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
                 if takes_kwargs or v is None:
                     return v
@@ -237,7 +239,8 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v.keys()))
                 raise TypeError(f'unexpected keyword argument{plural}: {keys}')
 
-            @validator(V_POSITIONAL_ONLY_NAME, check_fields=False, allow_reuse=True)
+            @field_validator(V_POSITIONAL_ONLY_NAME, check_fields=False, allow_reuse=True)
+            @classmethod
             def check_positional_only(cls, v: Optional[List[str]]) -> None:
                 if v is None:
                     return
@@ -246,7 +249,8 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v))
                 raise TypeError(f'positional-only argument{plural} passed as keyword argument{plural}: {keys}')
 
-            @validator(V_DUPLICATE_KWARGS, check_fields=False, allow_reuse=True)
+            @field_validator(V_DUPLICATE_KWARGS, check_fields=False, allow_reuse=True)
+            @classmethod
             def check_duplicate_kwargs(cls, v: Optional[List[str]]) -> None:
                 if v is None:
                     return

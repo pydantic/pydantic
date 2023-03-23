@@ -2,7 +2,8 @@ from typing import Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, ValidationError, create_model, errors, validator
+from pydantic import BaseModel, ConfigDict, Extra, Field, ValidationError, create_model, errors
+from pydantic.decorators import field_validator
 from pydantic.fields import ModelPrivateAttr
 
 
@@ -121,7 +122,8 @@ def test_custom_config_extras():
 @pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators():
     class BarModel(BaseModel):
-        @validator('a', check_fields=False)
+        @field_validator('a', check_fields=False)
+        @classmethod
         def check_a(cls, v):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
@@ -137,7 +139,8 @@ def test_inheritance_validators():
 @pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators_always():
     class BarModel(BaseModel):
-        @validator('a', check_fields=False, always=True)
+        @field_validator('a', check_fields=False, always=True)
+        @classmethod
         def check_a(cls, v):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
@@ -154,7 +157,8 @@ def test_inheritance_validators_always():
 @pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators_all():
     class BarModel(BaseModel):
-        @validator('*')
+        @field_validator('*')
+        @classmethod
         def check_all(cls, v):
             return v * 2
 
