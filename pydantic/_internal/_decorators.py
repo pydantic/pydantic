@@ -303,20 +303,6 @@ def unwrap_unbound_methods(function: Callable[..., Any] | classmethod[Any] | sta
     return function
 
 
-def is_v1_validator(function: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> bool:
-    """
-    For the case where `@validator` is called with non of the `pre` or `mode` arguments
-    determine if a function is a V1 validator or V2 validator.
-    """
-    sig = signature(unwrap_unbound_methods(function))
-    # in V1 `values` had to be a keyword parameter
-    # so we use that to distinguish (__v, values) from (__v, __info) or (__v, info)
-    return any(
-        pos != 0 and param.name == 'values' and param.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
-        for pos, param in enumerate(sig.parameters.values())
-    ) or any(param.kind is Parameter.VAR_KEYWORD for param in sig.parameters.values())
-
-
 def is_classmethod_from_sig(function: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> bool:
     sig = signature(unwrap_unbound_methods(function))
     first = next(iter(sig.parameters.values()), None)
