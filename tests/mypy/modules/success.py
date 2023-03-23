@@ -9,7 +9,6 @@ from pathlib import Path, PurePath
 from typing import Any, Dict, ForwardRef, Generic, List, Optional, Type, TypeVar
 from uuid import UUID
 
-from pydantic_core import Url
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
@@ -39,11 +38,13 @@ from pydantic import (
     StrictInt,
     StrictStr,
     UrlConstraints,
+    parse_obj_as,
     root_validator,
     validate_arguments,
     validator,
 )
 from pydantic.fields import Field, PrivateAttr
+from pydantic.networks import AnyUrl
 
 
 class Flags(BaseModel):
@@ -82,7 +83,7 @@ def day_of_week(dt: datetime) -> int:
     return dt.date().isoweekday()
 
 
-m = Model(age=21, list_of_ints=[1, '2', b'3'])
+m = Model(age=21, list_of_ints=[1, 2, 3])
 
 assert m.age == 21, m.age
 m.age = 42
@@ -95,7 +96,16 @@ dog_age = dog_years(m.age)
 assert dog_age == 294, dog_age
 
 
-m = Model(age=2, first_name=b'Woof', last_name=b'Woof', signup_ts='2017-06-07 00:00', list_of_ints=[1, '2', b'3'])
+Model(age=2, first_name='Woof', last_name='Woof', signup_ts=datetime(2017, 6, 7), list_of_ints=[1, 2, 3])
+m = Model.model_validate(
+    {
+        'age': 2,
+        'first_name': b'Woof',
+        'last_name': b'Woof',
+        'signup_ts': '2017-06-07 00:00',
+        'list_of_ints': [1, '2', b'3'],
+    }
+)
 
 assert m.first_name == 'Woof', m.first_name
 assert m.last_name == 'Woof', m.last_name
@@ -174,11 +184,11 @@ FooRef = ForwardRef('Foo')
 
 
 class MyConf(BaseModel):
-    str_pyobject: ImportString[Type[date]] = Field('datetime.date')
-    callable_pyobject: ImportString[Type[date]] = Field(date)
+    str_pyobject: ImportString[Type[date]] = Field(...)
+    callable_pyobject: ImportString[Type[date]] = Field(default=date)
 
 
-conf = MyConf()
+conf = MyConf(str_pyobject='datetime.date')
 var1: date = conf.str_pyobject(2020, 12, 20)
 var2: date = conf.callable_pyobject(2111, 1, 1)
 
@@ -188,6 +198,8 @@ class MyPrivateAttr(BaseModel):
 
 
 class PydanticTypes(BaseModel):
+    model_config = ConfigDict()  # TODO: add validate_all=True or equivalent if/when possible
+
     # Boolean
     my_strict_bool: StrictBool = True
     # Integer
@@ -207,19 +219,20 @@ class PydanticTypes(BaseModel):
     # String
     my_strict_str: StrictStr = 'pika'
     # ImportString
-    import_string_str: ImportString[Any] = 'datetime.date'
+    # TODO: Remove the parse_obj_as's below when we get `validate_all` (or similar) working
+    import_string_str: ImportString[Any] = parse_obj_as(ImportString[Any], 'datetime.date')  # type: ignore[misc]
     import_string_callable: ImportString[Any] = date
     # UUID
     my_uuid1: UUID1 = UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
-    my_uuid1_str: UUID1 = 'a8098c1a-f86e-11da-bd1a-00112444be1e'  # type: ignore
+    my_uuid1_str: UUID1 = parse_obj_as(UUID1, 'a8098c1a-f86e-11da-bd1a-00112444be1e')
     # Path
     my_file_path: FilePath = Path(__file__)
-    my_file_path_str: FilePath = __file__  # type: ignore
+    my_file_path_str: FilePath = parse_obj_as(Path, __file__)
     my_dir_path: DirectoryPath = Path('.')
-    my_dir_path_str: DirectoryPath = '.'  # type: ignore
+    my_dir_path_str: DirectoryPath = parse_obj_as(DirectoryPath, '.')
     # Json
-    my_json: Json[Dict[str, str]] = '{"hello": "world"}'  # type: ignore
-    my_json_list: Json[List[str]] = '["hello", "world"]'  # type: ignore
+    my_json: Json[Dict[str, str]] = parse_obj_as(Json[Dict[str, str]], '{"hello": "world"}')
+    my_json_list: Json[List[str]] = parse_obj_as(Json[List[str]], '["hello", "world"]')
     # Date
     my_past_date: PastDate = date.today() - timedelta(1)
     my_future_date: FutureDate = date.today() + timedelta(1)
@@ -227,15 +240,11 @@ class PydanticTypes(BaseModel):
     my_aware_datetime: AwareDatetime = datetime.now(tz=timezone.utc)
     my_naive_datetime: NaiveDatetime = datetime.now()
 
-    class Config:
-        validate_all = True
-
 
 validated = PydanticTypes()
 validated.import_string_str(2021, 1, 1)
 validated.import_string_callable(2021, 1, 1)
 validated.my_uuid1.hex
-validated.my_uuid1_str.hex
 validated.my_file_path.absolute()
 validated.my_file_path_str.absolute()
 validated.my_dir_path.absolute()
@@ -245,9 +254,9 @@ validated.my_json_list[0].capitalize()
 
 
 class UrlModel(BaseModel):
-    x: Annotated[Url, UrlConstraints(allowed_schemes=['http'])] = Field(None)
-    y: Annotated[Url, UrlConstraints(allowed_schemes=['http'])] = Field(None)
-    z: Annotated[Url, UrlConstraints(allowed_schemes=['s3', 's3n', 's3a'])] = Field(None)
+    x: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http'])] = Field(default=None)
+    y: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['http'])] = Field(default=None)
+    z: Annotated[AnyUrl, UrlConstraints(allowed_schemes=['s3', 's3n', 's3a'])] = Field(default=None)
 
 
 url_model = UrlModel(x='http://example.com')

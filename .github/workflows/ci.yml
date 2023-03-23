@@ -43,6 +43,11 @@ jobs:
         with:
           extra_args: --all-files --verbose
 
+      - name: run mypy
+        # pre-commit runs make typecheck-fast
+        # this is the more exhaustive version
+        run: make typecheck
+
       - name: make history
         run: python3 ./changes/make_history.py
 
@@ -53,7 +58,7 @@ jobs:
 
       - run: npm install -g pyright
 
-      - run: make pyright
+      - run: make test-pyright
 
   docs-build:
     runs-on: ubuntu-latest
@@ -193,7 +198,8 @@ jobs:
       fail-fast: false
       matrix:
         # test recent mypy versions on 3.10 and mypy 1.0.1 on all supported python versions
-        mypy-version: ['0.971', '0.982', '0.991', '1.0.1']
+        # if you change the value in the lockfile add the old value to this list
+        mypy-version: ['0.971', '0.982', '0.991', '1.0.1', 'lockfile']
         python-version: ['3.10']
         include:
           - mypy-version: '1.0.1'
@@ -231,7 +237,12 @@ jobs:
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
-      run: pip install mypy==${{ matrix.mypy-version }}
+      run: |
+        if [ ${{ matrix.mypy-version }} == 'lockfile' ]; then
+          pip install -r requirements/linting.txt
+        else
+          pip install mypy==${{ matrix.mypy-version }}
+        fi
 
     - run: mkdir coverage
 

@@ -1,9 +1,9 @@
+import dataclasses
 import re
 import sys
 from typing import Optional, Tuple
 
 import pytest
-from dirty_equals import HasRepr
 
 from pydantic import BaseModel, PydanticUserError, ValidationError
 
@@ -58,8 +58,8 @@ def test_forward_ref_auto_update_no_model(create_module):
     b = module.Bar(b={'a': {'b': {}}})
     assert b.model_dump() == {'b': {'a': {'b': {'a': None}}}}
 
-    # __field__ is complete on Foo
-    assert module.Foo.model_fields['a'] == HasRepr(
+    # model_fields is complete on Foo
+    assert repr(module.Foo.model_fields['a']) == (
         'FieldInfo(annotation=Union[PydanticForwardRef, NoneType], required=False)'
     )
 
@@ -190,37 +190,20 @@ def test_self_forward_ref_local(create_module):
     assert Foo(b={'a': '321'}).model_dump() == {'a': 123, 'b': {'a': 321, 'b': None}}
 
 
-@pytest.mark.xfail(reason='TODO dataclasses')
 def test_forward_ref_dataclass(create_module):
     @create_module
     def module():
-        from pydantic import AnyUrl
+        from typing import Optional
+
         from pydantic.dataclasses import dataclass
 
         @dataclass
-        class Dataclass:
-            url: AnyUrl
+        class MyDataclass:
+            a: int
+            b: Optional['MyDataclass'] = None
 
-    m = module.Dataclass('http://example.com  ')
-    assert m.url == 'http://example.com'
-
-
-@pytest.mark.xfail(reason='TODO dataclasses')
-def test_forward_ref_dataclass_with_future_annotations(create_module):
-    module = create_module(
-        # language=Python
-        """
-from __future__ import annotations
-from pydantic import AnyUrl
-from pydantic.dataclasses import dataclass
-
-@dataclass
-class Dataclass:
-    url: AnyUrl
-    """
-    )
-    m = module.Dataclass('http://example.com  ')
-    assert m.url == 'http://example.com'
+    dc = module.MyDataclass(a=1, b={'a': 2, 'b': {'a': 3}})
+    assert dataclasses.asdict(dc) == {'a': 1, 'b': {'a': 2, 'b': {'a': 3, 'b': None}}}
 
 
 def test_forward_ref_sub_types(create_module):
@@ -507,7 +490,6 @@ def test_forward_ref_with_create_model(create_module):
         assert instance.sub.model_dump() == {'foo': 'bar'}
 
 
-@pytest.mark.xfail(reason='TODO dataclasses')
 def test_resolve_forward_ref_dataclass(create_module):
     module = create_module(
         # language=Python
@@ -540,7 +522,6 @@ def test_nested_forward_ref():
     assert obj.model_dump() == {'x': (1, {'x': (2, {'x': (3, None)})})}
 
 
-@pytest.mark.xfail(reason='TODO discriminator')
 def test_discriminated_union_forward_ref(create_module):
     @create_module
     def module():
@@ -551,7 +532,9 @@ def test_discriminated_union_forward_ref(create_module):
         from pydantic import BaseModel, Field
 
         class Pet(BaseModel):
-            __root__: Union['Cat', 'Dog'] = Field(..., discriminator='type')
+            pet: Union['Cat', 'Dog'] = Field(discriminator='type')
+
+            model_config = dict(undefined_types_warning=False)
 
         class Cat(BaseModel):
             type: Literal['cat']
@@ -560,35 +543,44 @@ def test_discriminated_union_forward_ref(create_module):
             type: Literal['dog']
 
     with pytest.raises(PydanticUserError, match='`Pet` is not fully defined; you should define `Cat`'):
-        module.Pet.model_validate({'type': 'pika'})
+        module.Pet.model_validate({'pet': {'type': 'pika'}})
 
     module.Pet.model_rebuild()
 
-    with pytest.raises(ValidationError, match="No match for discriminator 'type' and value 'pika'"):
-        module.Pet.model_validate({'type': 'pika'})
+    with pytest.raises(
+        ValidationError,
+        match="Input tag 'pika' found using 'type' does not match any of the expected tags: 'cat', 'dog'",
+    ):
+        module.Pet.model_validate({'pet': {'type': 'pika'}})
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
-        'discriminator': {'propertyName': 'type', 'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}},
-        'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
+        'required': ['pet'],
+        'type': 'object',
+        'properties': {
+            'pet': {
+                'title': 'Pet',
+                'discriminator': {'mapping': {'cat': '#/$defs/Cat', 'dog': '#/$defs/Dog'}, 'propertyName': 'type'},
+                'oneOf': [{'$ref': '#/$defs/Cat'}, {'$ref': '#/$defs/Dog'}],
+            }
+        },
         '$defs': {
             'Cat': {
                 'title': 'Cat',
                 'type': 'object',
-                'properties': {'type': {'title': 'Type', 'enum': ['cat'], 'type': 'string'}},
+                'properties': {'type': {'const': 'cat', 'title': 'Type'}},
                 'required': ['type'],
             },
             'Dog': {
                 'title': 'Dog',
                 'type': 'object',
-                'properties': {'type': {'title': 'Type', 'enum': ['dog'], 'type': 'string'}},
+                'properties': {'type': {'const': 'dog', 'title': 'Type'}},
                 'required': ['type'],
             },
         },
     }
 
 
-@pytest.mark.xfail(reason='TODO class_vars')
 def test_class_var_as_string(create_module):
     module = create_module(
         # language=Python
@@ -633,11 +625,13 @@ class Model(BaseModel):
     )
 
     m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
+    # TODO: How can we replicate this custom-encoder functionality without affecting the serialization of `User`?
     assert m.model_dump_json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
 
 
-@pytest.mark.xfail(reason='TODO json encoding')
+@pytest.mark.xfail(reason='working on v2')
 def test_json_encoder_forward_ref(create_module):
+    # TODO: Replace the use of json_encoders with a root_serializer
     module = create_module(
         # language=Python
         """
@@ -648,7 +642,7 @@ class User(BaseModel):
     name: str
     friends: Optional[List['User']] = None
 
-    mdoel_config = ConfigDict(
+    model_config = ConfigDict(
         json_encoders = {
             ForwardRef('User'): lambda v: f'User({v.name})',
         })
@@ -656,7 +650,7 @@ class User(BaseModel):
     )
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
-    assert m.model_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+    assert m.model_dump_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
 
 
 skip_pep585 = pytest.mark.skipif(
@@ -761,6 +755,22 @@ def test_force_rebuild():
     assert Foobar.__pydantic_model_complete__ is True
     assert Foobar.model_rebuild() is None
     assert Foobar.model_rebuild(force=True) is True
+
+
+def test_rebuild_subclass_of_built_model():
+    class Model(BaseModel):
+        x: int
+
+    class FutureReferencingModel(Model):
+        y: 'FutureModel'
+        model_config = dict(undefined_types_warning=False)
+
+    class FutureModel(BaseModel):
+        pass
+
+    FutureReferencingModel.model_rebuild()
+
+    assert FutureReferencingModel(x=1, y=FutureModel()).model_dump() == {'x': 1, 'y': {}}
 
 
 def test_nested_annotation(create_module):

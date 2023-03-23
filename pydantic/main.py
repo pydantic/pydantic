@@ -3,6 +3,7 @@ Logic for creating models, could perhaps be renamed to `models.py`.
 """
 from __future__ import annotations as _annotations
 
+import sys
 import typing
 import warnings
 from abc import ABCMeta
@@ -11,11 +12,21 @@ from enum import Enum
 from functools import partial
 from inspect import getdoc
 from types import prepare_class, resolve_bases
-from typing import Any, Generic
+from typing import Any, Generic, TypeVar, overload
 
 import typing_extensions
+from pydantic_core import CoreConfig, SchemaValidator
 
-from ._internal import _decorators, _forward_ref, _generics, _model_construction, _repr, _typing_extra, _utils
+from ._internal import (
+    _decorators,
+    _forward_ref,
+    _generate_schema,
+    _generics,
+    _model_construction,
+    _repr,
+    _typing_extra,
+    _utils,
+)
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUserError
@@ -26,7 +37,7 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMet
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
+    from pydantic_core import CoreSchema, SchemaSerializer
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
@@ -36,7 +47,7 @@ if typing.TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
     IncEx = set[int] | set[str] | dict[int, Any] | dict[str, Any] | None
 
-__all__ = 'BaseModel', 'create_model'
+__all__ = 'BaseModel', 'create_model', 'Validator'
 
 _object_setattr = _model_construction.object_setattr
 # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
@@ -59,9 +70,10 @@ class ModelMetaclass(ABCMeta):
         **kwargs: Any,
     ) -> type:
         if _base_class_defined:
+            class_vars: set[str] = set()
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
-            namespace['__private_attributes__'] = private_attributes = _model_construction.inspect_namespace(namespace)
+            private_attributes = _model_construction.inspect_namespace(namespace)
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
                 namespace['__slots__'] = slots | private_attributes.keys()
@@ -71,9 +83,9 @@ class ModelMetaclass(ABCMeta):
                     # in a single function
                     namespace['_init_private_attributes'] = _model_construction.init_private_attributes
 
-                    def __pydantic_post_init__(self_: Any, **kwargs: Any) -> None:
-                        self_._init_private_attributes()
-                        self_.model_post_init(**kwargs)
+                    def __pydantic_post_init__(self_: Any, context: Any) -> None:
+                        self_._init_private_attributes(context)
+                        self_.model_post_init(context)
 
                     namespace['__pydantic_post_init__'] = __pydantic_post_init__
                 else:
@@ -81,11 +93,19 @@ class ModelMetaclass(ABCMeta):
             elif 'model_post_init' in namespace:
                 namespace['__pydantic_post_init__'] = namespace['model_post_init']
 
-            validator_functions = _decorators.ValidationFunctions(bases)
-            namespace[validator_functions.model_attribute] = validator_functions
+            base_private_attributes: dict[str, ModelPrivateAttr] = {}
+            for base in bases:
+                if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
+                    base_private_attributes.update(base.__private_attributes__)
+                    class_vars.update(base.__class_vars__)
+            namespace['__class_vars__'] = class_vars
+            namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            serializer_functions = _decorators.SerializationFunctions(bases)
-            namespace[serializer_functions.model_attribute] = serializer_functions
+            namespace['__pydantic_validator_functions__'] = validator_functions = _decorators.ValidationFunctions(bases)
+
+            namespace['__pydantic_serializer_functions__'] = serializer_functions = _decorators.SerializationFunctions(
+                bases
+            )
 
             for name, value in namespace.items():
                 found_validator = validator_functions.extract_decorator(name, value)
@@ -121,11 +141,11 @@ class ModelMetaclass(ABCMeta):
                     zip(_generics.iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ())
                 )
             )
+
+            cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
-                validator_functions,
-                serializer_functions,
                 bases,
                 types_namespace=_typing_extra.parent_frame_namespace(),
                 raise_errors=False,
@@ -181,51 +201,41 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         Raises ValidationError if the input data cannot be parsed to form a valid model.
 
         Uses something other than `self` for the first arg to allow "self" as a field name.
-
-        `__tracebackhide__` tells pytest and some other tools to omit the function from tracebacks
         """
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        values, fields_set = __pydantic_self__.__pydantic_validator__.validate_python(data)
-        _object_setattr(__pydantic_self__, '__dict__', values)
-        _object_setattr(__pydantic_self__, '__fields_set__', fields_set)
-        if hasattr(__pydantic_self__, '__pydantic_post_init__'):
-            __pydantic_self__.__pydantic_post_init__(context=None)
+        __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
 
     @classmethod
     def model_validate(cls: type[Model], obj: Any) -> Model:
-        values, fields_set = cls.__pydantic_validator__.validate_python(obj)
-        m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', values)
-        _object_setattr(m, '__fields_set__', fields_set)
-        if hasattr(cls, '__pydantic_post_init__'):
-            cls.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
-        return m
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+        return cls.__pydantic_validator__.validate_python(obj)
 
     @classmethod
     def model_validate_json(cls: type[Model], json_data: str | bytes | bytearray) -> Model:
-        values, fields_set = cls.__pydantic_validator__.validate_json(json_data)
-        m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', values)
-        _object_setattr(m, '__fields_set__', fields_set)
-        if hasattr(cls, '__pydantic_post_init__'):
-            cls.__pydantic_post_init__(context=None)  # type: ignore[attr-defined]
-        return m
+        # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
+        __tracebackhide__ = True
+        return cls.__pydantic_validator__.validate_json(json_data)
 
     if typing.TYPE_CHECKING:
         # model_after_init is called after at the end of `__init__` if it's defined
-        def model_post_init(self, **kwargs: Any) -> None:
+        def model_post_init(self, _context: Any) -> None:
             pass
 
     @typing.no_type_check
     def __setattr__(self, name, value):
+        if name in self.__class_vars__:
+            raise AttributeError(
+                f'"{name}" is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
+                f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
+            )
         if name.startswith('_'):
             _object_setattr(self, name, value)
         elif self.model_config['frozen']:
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
         elif self.model_config['validate_assignment']:
-            values, fields_set = self.__pydantic_validator__.validate_assignment(name, value, self.__dict__)
-            _object_setattr(self, '__dict__', values)
-            self.__fields_set__ |= fields_set
+            self.__pydantic_validator__.validate_assignment(self, name, value)
         elif self.model_config['extra'] is not Extra.allow and name not in self.model_fields:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
@@ -335,7 +345,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             m.__pydantic_post_init__(context=None)
         return m
 
-    def _copy_and_set_values(self: Model, values: typing.Dict[str, Any], fields_set: set[str], *, deep: bool) -> Model:
+    def _copy_and_set_values(self: Model, values: dict[str, Any], fields_set: set[str], *, deep: bool) -> Model:
         if deep:
             # chances of having empty dict here are quite low for using smart_deepcopy
             values = deepcopy(values)
@@ -358,7 +368,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         *,
         include: AbstractSetIntStr | MappingIntStrAny | None = None,
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        update: typing.Dict[str, Any] | None = None,
+        update: dict[str, Any] | None = None,
         deep: bool = False,
     ) -> Model:
         """
@@ -395,7 +405,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-    ) -> typing.Dict[str, Any]:
+    ) -> dict[str, Any]:
         """
         To override the logic used to generate the JSON schema, you can create a subclass of GenerateJsonSchema
         with your desired modifications, then override this method on a custom base class and set the default
@@ -515,8 +525,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         *,
         force: bool = False,
         raise_errors: bool = True,
-        types_namespace: typing.Dict[str, Any] | None = None,
-        typevars_map: typing.Dict[str, Any] | None = None,
+        types_namespace: dict[str, Any] | None = None,
+        typevars_map: dict[str, Any] | None = None,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -533,15 +543,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
-                cls.__pydantic_validator_functions__,
-                cls.__pydantic_serializer_functions__,
                 cls.__bases__,
                 raise_errors=raise_errors,
                 types_namespace=types_namespace,
                 typevars_map=typevars_map,
             )
 
-    def __iter__(self) -> 'TupleGenerator':
+    def __iter__(self) -> TupleGenerator:
         """
         so `dict(model)` works
         """
@@ -556,7 +564,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-    ) -> 'TupleGenerator':
+    ) -> TupleGenerator:
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
         # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
         # if exclude is not None or self.__exclude_fields__ is not None:
@@ -612,7 +620,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         include: MappingIntStrAny | None,
         exclude: MappingIntStrAny | None,
         exclude_unset: bool,
-        update: typing.Dict[str, Any] | None = None,
+        update: dict[str, Any] | None = None,
     ) -> typing.AbstractSet[str] | None:
         if include is None and exclude is None and exclude_unset is False:
             return None
@@ -832,3 +840,74 @@ def create_model(
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
     return meta(__model_name, resolved_bases, namespace, **kwds)
+
+
+T = TypeVar('T')
+
+
+class Validator(Generic[T]):
+    @overload
+    def __init__(self, __type: type[T], *, config: CoreConfig | None = None) -> None:
+        ...
+
+    # Adding this overload ensures you can use special forms without getting mypy errors.
+    # For example:
+    #   v: Validator[int | str] = Validator(int | str)
+    # Type checkers don't consider special forms like `int | str` (or `Union[int, str]`) to satisfy a Type[T]
+    @overload
+    def __init__(self, __type: Any, *, config: CoreConfig | None = None) -> None:
+        ...
+
+    def __init__(self, __type: Any, *, config: CoreConfig | None = None) -> None:
+        self._type = __type
+        merged_config: CoreConfig = {
+            **(config or {}),  # type: ignore[misc]
+            **getattr(__type, 'model_config', {}),
+        }
+        arbitrary_types = bool((config or {}).get('arbitrary_types_allowed', False))
+        local_ns = _typing_extra.parent_frame_namespace(parent_depth=2)
+        # BaseModel uses it's own __module__ to find out where it was defined
+        # and then look for symbols to resolve forward references in those globals
+        # On the other hand Validator() can be called with arbitrary objects,
+        # including type aliases where __module__ (always `typing.py`) is not useful
+        # So instead we look at the globals in our parent stack frame
+        # This works for the case where Validator() is called in a module that
+        # has the target of forward references in its scope but
+        # does not work for more complex cases
+        # for example, take the following:
+        #
+        # a.py
+        # ```python
+        # from typing import List, Dict
+        # IntList = List[int]
+        # OuterDict = Dict[str, 'IntList']
+        # ```
+        #
+        # b.py
+        # ```python
+        # from pydantic import Validator
+        # from a import OuterDict
+        # IntList = int  # replaces the symbol the forward reference is looking for
+        # v = Validator(OuterDict)
+        # v({"x": 1})  # should fail but doesn't
+        # ```
+        #
+        # If OuterDict were a BaseModel this would work because it would resolve
+        # the forward reference within the `a.py` namespace.
+        # But Validator(OuterDict) can't know what module OuterDict came from.
+        # In other words, the assumption that _all_ forward references exist in the
+        # module we are being called from is not technically always true
+        # Although most of the time it is and it works fine for recursive models and such/
+        # BaseModel's behavior isn't perfect either and _can_ break in similar ways,
+        # so there is no right or wrong between the two.
+        # But at the very least this behavior is _subtly_ different from BaseModel's.
+        global_ns = sys._getframe(1).f_globals.copy()
+        global_ns.update(local_ns or {})
+        gen = _generate_schema.GenerateSchema(
+            arbitrary_types=arbitrary_types, types_namespace=global_ns, typevars_map={}
+        )
+        schema = gen.generate_schema(__type)
+        self._validator = SchemaValidator(schema, config=merged_config)
+
+    def __call__(self, __input: Any) -> T:
+        return self._validator.validate_python(__input)

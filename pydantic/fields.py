@@ -12,6 +12,8 @@ from ._internal import _fields, _forward_ref, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
 
 if typing.TYPE_CHECKING:
+    from dataclasses import Field as DataclassField
+
     from ._internal._repr import ReprArgs
 
 
@@ -38,6 +40,8 @@ class FieldInfo(_repr.Representation):
         'repr',
         'discriminator',
         'json_schema_extra',
+        'init_var',
+        'kw_only',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -76,7 +80,7 @@ class FieldInfo(_repr.Representation):
             raise ValueError('cannot specify both default and default_factory')
 
         self.alias = kwargs.get('alias')
-        self.alias_priority = kwargs.get('alias_priority', 2 if self.alias is not None else None)
+        self.alias_priority = kwargs.get('alias_priority') or 2 if self.alias is not None else None
         self.title = kwargs.get('title')
         self.description = kwargs.get('description')
         self.examples = kwargs.get('examples')
@@ -86,11 +90,14 @@ class FieldInfo(_repr.Representation):
         self.discriminator = kwargs.get('discriminator')
         self.repr = kwargs.get('repr', True)
         self.json_schema_extra = kwargs.get('json_schema_extra')
+        # currently only used on dataclasses
+        self.init_var = kwargs.get('init_var', None)
+        self.kw_only = kwargs.get('kw_only', None)
 
     @classmethod
-    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> 'FieldInfo':
+    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
         """
-        Create `FieldInfo` with the `Field` function:
+        Create `FieldInfo` with the `Field` function, e.g.:
         >>> import pydantic
         >>> class MyModel(pydantic.BaseModel):
         >>>     foo: int = pydantic.Field(4, ...)  # <-- like this
@@ -101,7 +108,7 @@ class FieldInfo(_repr.Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> 'FieldInfo':
+    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> FieldInfo:
         """
         Create `FieldInfo` from a bare annotation, e.g.:
         >>> import pydantic
@@ -127,19 +134,26 @@ class FieldInfo(_repr.Representation):
         return cls(annotation=annotation)
 
     @classmethod
-    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> 'FieldInfo':
+    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
         """
         Create `FieldInfo` from an annotation with a default value, e.g.:
         >>> import pydantic, annotated_types, typing
         >>> class MyModel(pydantic.BaseModel):
-        >>>     foo: int = 4
-        >>>     bar: typing.Annotated[int, annotated_types.Gt(4)] = 4
-        >>>     spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4
+        >>>     foo: int = 4  # <-- like this
+        >>>     bar: typing.Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
+        >>>     spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
         """
+        import dataclasses
+
         if isinstance(default, cls):
             default.annotation, annotation_metadata = cls._extract_metadata(annotation)
             default.metadata += annotation_metadata
             return default
+        elif isinstance(default, dataclasses.Field):
+            pydantic_field = cls.from_dataclass_field(default)
+            pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
+            pydantic_field.metadata += annotation_metadata
+            return pydantic_field
         else:
             if _typing_extra.is_annotated(annotation):
                 first_arg, *extra_args = typing_extensions.get_args(annotation)
@@ -154,6 +168,29 @@ class FieldInfo(_repr.Representation):
                     return new_field_info
 
             return cls(annotation=annotation, default=default)
+
+    @classmethod
+    def from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
+        """
+        Construct a `FieldInfo` from a `dataclasses.Field` instance.
+        """
+        import dataclasses
+
+        default = dc_field.default
+        if default is dataclasses.MISSING:
+            default = Undefined
+
+        if dc_field.default_factory is dataclasses.MISSING:
+            default_factory: typing.Callable[[], Any] | None = None
+        else:
+            default_factory = dc_field.default_factory
+
+        # use the `Field` function so in correct kwargs raise the correct `TypeError`
+        field = Field(default=default, default_factory=default_factory, repr=dc_field.repr, **dc_field.metadata)
+
+        field.annotation, annotation_metadata = cls._extract_metadata(dc_field.type)
+        field.metadata += annotation_metadata
+        return field
 
     @classmethod
     def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
@@ -221,7 +258,7 @@ class FieldInfo(_repr.Representation):
         else:
             return typing_extensions._AnnotatedAlias(self.annotation, self.metadata)
 
-    def __repr_args__(self) -> 'ReprArgs':
+    def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))
         yield 'required', self.is_required()
 
@@ -245,6 +282,10 @@ def Field(
     *,
     default_factory: typing.Callable[[], Any] | None = None,
     alias: str = None,
+    # TODO:
+    #  Alternative 1: we could drop alias_priority and tell people to manually override aliases in child classes
+    #  Alternative 2: we could add a new argument `override_with_alias_generator=True` equivalent to `alias_priority=1`
+    alias_priority: int = None,
     title: str = None,
     description: str = None,
     examples: list[Any] = None,
@@ -323,6 +364,7 @@ def Field(
         default,
         default_factory=default_factory,
         alias=alias,
+        alias_priority=alias_priority,
         title=title,
         description=description,
         examples=examples,

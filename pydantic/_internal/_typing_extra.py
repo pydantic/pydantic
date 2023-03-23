@@ -7,7 +7,7 @@ import sys
 import types
 import typing
 from collections.abc import Callable
-from typing import Any
+from typing import Any, ForwardRef
 
 from typing_extensions import Annotated, Final, Literal, get_args, get_origin
 
@@ -72,7 +72,8 @@ if sys.version_info < (3, 10):
     NoneType = type(None)
     EllipsisType = type(Ellipsis)
 else:
-    from types import EllipsisType as EllipsisType, NoneType as NoneType
+    from types import EllipsisType as EllipsisType
+    from types import NoneType as NoneType
 
 
 NONE_TYPES: tuple[Any, Any, Any] = (None, NoneType, Literal[None])
@@ -374,3 +375,18 @@ else:
                 value = typing.Optional[value]
             hints[name] = value
         return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}
+
+
+if sys.version_info < (3, 9):
+
+    def evaluate_fwd_ref(
+        ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
+    ) -> Any:
+        return ref._evaluate(globalns=globalns, localns=localns)
+
+else:
+
+    def evaluate_fwd_ref(
+        ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
+    ) -> Any:
+        return ref._evaluate(globalns=globalns, localns=localns, recursive_guard=frozenset())

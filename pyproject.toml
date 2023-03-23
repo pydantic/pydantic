@@ -54,7 +54,7 @@ classifiers = [
 requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.2.0',
-    'pydantic-core>=0.11.1',
+    'pydantic-core>=0.16.1',
     'annotated-types>=0.4.0',
 ]
 optional-dependencies = { email = ['email-validator>=1.3.0'] }
@@ -95,14 +95,16 @@ filterwarnings = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['samuelcolvin', 'PrettyWood', 'hramezani']
+reviewers = ['samuelcolvin', 'hramezani', 'adriangb', 'dmontagu']
 require_change_file = false
 
 [tool.ruff]
 line-length = 120
-extend-select = ['Q', 'RUF100', 'C90']
+extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
+isort = { known-first-party = ['pydantic', 'tests'] }
+target-version = "py37"
 
 [tool.ruff.per-file-ignores]
 'pydantic/__init__.py' = ['F405', 'F403']
@@ -120,6 +122,7 @@ exclude_lines = [
     'raise NotImplementedError',
     'if TYPE_CHECKING:',
     '@overload',
+    '\(Protocol\):$',
 ]
 
 
@@ -136,45 +139,5 @@ line-length = 120
 target-version = ['py310']
 skip-string-normalization = true
 
-[tool.isort]
-line_length = 120
-known_first_party = 'pydantic'
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-combine_as_imports = true
-
-[tool.mypy]
-# temporarily ignore some files
-exclude = 'pydantic/(schema|_hypothesis_plugin)\.py'
-python_version = '3.10'
-show_error_codes = true
-follow_imports = 'silent'
-strict_optional = true
-warn_redundant_casts = true
-warn_unused_ignores = true
-disallow_any_generics = true
-check_untyped_defs = true
-no_implicit_reexport = true
-warn_unused_configs = true
-disallow_subclassing_any = true
-disallow_incomplete_defs = true
-disallow_untyped_decorators = true
-disallow_untyped_calls = true
-disallow_untyped_defs = true
-implicit_optional = true
-
-# ansi2html and devtools are required to avoid the need to install these packages when running linting,
-# they're used in the docs build script
-[[tool.mypy.overrides]]
-module = [
-    'email_validator.*',
-    'toml.*',
-    'ansi2html.*',
-    'devtools.*',
-]
-ignore_missing_imports = true
-
 [tool.pyright]
 include = ['pydantic']
-# reportUnnecessaryTypeIgnoreComment = true

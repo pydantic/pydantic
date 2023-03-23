@@ -17,9 +17,7 @@ from typing import (
     List,
     Set,
     Tuple,
-    Type,
     TypeVar,
-    Union,
     cast,
 )
 from uuid import UUID
@@ -77,12 +75,6 @@ __all__ = [
 from ._internal._core_metadata import build_metadata_dict
 from ._internal._utils import update_not_none
 from .json_schema import JsonSchemaMetadata
-
-if TYPE_CHECKING:
-    from .dataclasses import Dataclass
-    from .main import BaseModel
-
-    ModelOrDc = Type[Union[BaseModel, Dataclass]]
 
 
 @_dataclasses.dataclass
@@ -208,16 +200,16 @@ HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 
 
 def conset(
-    item_type: Type[HashableItemType], *, min_length: int = None, max_length: int = None
-) -> Type[Set[HashableItemType]]:
+    item_type: type[HashableItemType], *, min_length: int = None, max_length: int = None
+) -> type[set[HashableItemType]]:
     return Annotated[  # type: ignore[return-value]
         Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
     ]
 
 
 def confrozenset(
-    item_type: Type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
-) -> Type[FrozenSet[HashableItemType]]:
+    item_type: type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
+) -> type[frozenset[HashableItemType]]:
     return Annotated[  # type: ignore[return-value]
         FrozenSet[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
@@ -228,8 +220,8 @@ AnyItemType = TypeVar('AnyItemType')
 
 
 def conlist(
-    item_type: Type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
-) -> Type[List[AnyItemType]]:
+    item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
+) -> type[list[AnyItemType]]:
     return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
@@ -237,8 +229,8 @@ def conlist(
 
 
 def contuple(
-    item_type: Type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
-) -> Type[Tuple[AnyItemType]]:
+    item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
+) -> type[tuple[AnyItemType]]:
     return Annotated[  # type: ignore[return-value]
         Tuple[item_type],
         annotated_types.Len(min_length or 0, max_length),
@@ -263,9 +255,9 @@ else:
         ) -> core_schema.CoreSchema:
             if schema is None or schema == {'type': 'any'}:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-                return core_schema.function_plain_schema(_validators.import_string)
+                return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
             else:
-                return core_schema.function_before_schema(_validators.import_string, schema)
+                return core_schema.general_before_validator_function(lambda v, _: _validators.import_string(v), schema)
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -285,7 +277,7 @@ def condecimal(
     max_digits: int | None = None,
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
-) -> Type[Decimal]:
+) -> type[Decimal]:
     return Annotated[  # type: ignore[return-value]
         Decimal,
         Strict(strict) if strict is not None else None,
@@ -309,10 +301,12 @@ class UuidVersion:
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.FunctionSchema:
-        return core_schema.function_after_schema(schema, cast(core_schema.ValidatorFunction, self.validate))
+    ) -> core_schema.AfterValidatorFunctionSchema:
+        return core_schema.general_after_validator_function(
+            cast(core_schema.GeneralValidatorFunction, self.validate), schema
+        )
 
-    def validate(self, value: UUID, **_kwargs: Any) -> UUID:
+    def validate(self, value: UUID, _: core_schema.ValidationInfo) -> UUID:
         if value.version != self.uuid_version:
             raise PydanticCustomError(
                 'uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version}
@@ -339,34 +333,34 @@ class PathType:
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.FunctionSchema:
+    ) -> core_schema.AfterValidatorFunctionSchema:
         function_lookup = {
-            'file': cast(core_schema.ValidatorFunction, self.validate_file),
-            'dir': cast(core_schema.ValidatorFunction, self.validate_directory),
-            'new': cast(core_schema.ValidatorFunction, self.validate_new),
+            'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
+            'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
+            'new': cast(core_schema.GeneralValidatorFunction, self.validate_new),
         }
 
-        return core_schema.function_after_schema(
-            schema,
+        return core_schema.general_after_validator_function(
             function_lookup[self.path_type],
+            schema,
         )
 
     @staticmethod
-    def validate_file(path: Path, **_kwargs: Any) -> Path:
+    def validate_file(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.is_file():
             return path
         else:
             raise PydanticCustomError('path_not_file', 'Path does not point to a file')
 
     @staticmethod
-    def validate_directory(path: Path, **_kwargs: Any) -> Path:
+    def validate_directory(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.is_dir():
             return path
         else:
             raise PydanticCustomError('path_not_directory', 'Path does not point to a directory')
 
     @staticmethod
-    def validate_new(path: Path, **_kwargs: Any) -> Path:
+    def validate_new(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.exists():
             raise PydanticCustomError('path_exists', 'path already exists')
         elif not path.parent.exists():
@@ -427,7 +421,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.AfterValidatorFunctionSchema:
         validator = SecretFieldValidator(cls)
         if issubclass(cls, SecretStr):
             # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
@@ -446,16 +440,18 @@ class SecretField(abc.ABC, Generic[SecretType]):
             update_cs_function=validator.__pydantic_update_schema__,
             js_metadata=JsonSchemaMetadata(core_schema_override=override),
         )
-        return core_schema.function_after_schema(
+        return core_schema.general_after_validator_function(
+            validator,
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
                 cls._pre_core_schema(),
                 strict=True,
                 custom_error_type=cls._error_kind,
             ),
-            validator,
             metadata=metadata,
-            serialization=core_schema.function_plain_ser_schema(cls._serialize, json_return_type='str'),
+            serialization=core_schema.general_plain_serializer_function_ser_schema(
+                cls._serialize, json_return_type='str'
+            ),
         )
 
     @classmethod
@@ -511,14 +507,14 @@ class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
     __slots__ = 'field_type', 'min_length', 'max_length', 'error_prefix'
 
     def __init__(
-        self, field_type: Type[SecretField[SecretType]], min_length: int | None = None, max_length: int | None = None
+        self, field_type: type[SecretField[SecretType]], min_length: int | None = None, max_length: int | None = None
     ) -> None:
-        self.field_type: Type[SecretField[SecretType]] = field_type
+        self.field_type: type[SecretField[SecretType]] = field_type
         self.min_length = min_length
         self.max_length = max_length
         self.error_prefix: Literal['string', 'bytes'] = 'string' if field_type is SecretStr else 'bytes'
 
-    def __call__(self, __value: SecretField[SecretType] | SecretType, **_kwargs: Any) -> Any:
+    def __call__(self, __value: SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
         if self.min_length is not None and len(__value) < self.min_length:
             short_kind: core_schema.ErrorType = f'{self.error_prefix}_too_short'  # type: ignore[assignment]
             raise PydanticKnownError(short_kind, {'min_length': self.min_length})
@@ -594,16 +590,16 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
-        return core_schema.function_after_schema(
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.AfterValidatorFunctionSchema:
+        return core_schema.general_after_validator_function(
+            cls.validate,
             core_schema.str_schema(
                 min_length=cls.min_length, max_length=cls.max_length, strip_whitespace=cls.strip_whitespace
             ),
-            cls.validate,
         )
 
     @classmethod
-    def validate(cls, __input_value: str, **_kwargs: Any) -> 'PaymentCardNumber':
+    def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> PaymentCardNumber:
         return cls(__input_value)
 
     @property
@@ -651,7 +647,7 @@ class PaymentCardNumber(str):
         else:
             brand = PaymentCardBrand.other
 
-        required_length: Union[None, int, str] = None
+        required_length: None | int | str = None
         if brand in PaymentCardBrand.mastercard:
             required_length = 16
             valid = len(card_number) == required_length
@@ -696,12 +692,12 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
         # TODO better schema
-        return core_schema.function_plain_schema(cls.validate)
+        return core_schema.general_plain_validator_function(cls.validate)
 
     @classmethod
-    def validate(cls, __input_value: Any, **_kwargs: Any) -> 'ByteSize':
+    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
         try:
             return cls(int(__input_value))
         except ValueError:

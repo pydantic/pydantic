@@ -137,17 +137,17 @@ else:
         ) -> core_schema.CoreSchema:
             import_email_validator()
             if schema is None:
-                return core_schema.function_after_schema(core_schema.str_schema(), cls.validate)
+                return core_schema.general_after_validator_function(cls.validate, core_schema.str_schema())
             else:
                 assert schema['type'] == 'str', 'EmailStr must be used with string fields'
-                return core_schema.function_after_schema(schema, cls.validate)
+                return core_schema.general_after_validator_function(cls.validate, schema)
 
         @classmethod
         def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
             field_schema.update(type='string', format='email')
 
         @classmethod
-        def validate(cls, __input_value: str, **_kwargs: Any) -> str:
+        def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> str:
             return validate_email(__input_value)[1]
 
 
@@ -166,19 +166,19 @@ class NameEmail(_repr.Representation):
         field_schema.update(type='string', format='name-email')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.AfterValidatorFunctionSchema:
         import_email_validator()
-        return core_schema.function_after_schema(
+        return core_schema.general_after_validator_function(
+            cls._validate,
             core_schema.union_schema(
                 core_schema.is_instance_schema(cls),
                 core_schema.str_schema(),
             ),
-            cls._validate,
             serialization=core_schema.to_string_ser_schema(),
         )
 
     @classmethod
-    def _validate(cls, __input_value: NameEmail | str, **_kwargs: Any) -> NameEmail:
+    def _validate(cls, __input_value: NameEmail | str, _: core_schema.ValidationInfo) -> NameEmail:
         if isinstance(__input_value, cls):
             return __input_value
         else:
@@ -208,11 +208,11 @@ class IPvAnyAddress:
         field_schema.update(type='string', format='ipvanyaddress')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: Any, **_kwargs: Any) -> IPv4Address | IPv6Address:
+    def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> IPv4Address | IPv6Address:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -235,11 +235,11 @@ class IPvAnyInterface:
         field_schema.update(type='string', format='ipvanyinterface')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Interface | IPv6Interface:
+    def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Interface | IPv6Interface:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -264,11 +264,11 @@ class IPvAnyNetwork:
         field_schema.update(type='string', format='ipvanynetwork')
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Network | IPv6Network:
+    def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Network | IPv6Network:
         return cls(__input_value)  # type: ignore[return-value]
 
 

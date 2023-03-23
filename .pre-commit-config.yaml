@@ -16,15 +16,9 @@ repos:
     types: [python]
     language: system
     pass_filenames: false
-  - id: mypy
-    name: Mypy
-    entry: make mypy
+  - id: typecheck
+    name: Typecheck
+    entry: make typecheck-fast
     types: [python]
     language: system
     pass_filenames: false
-  - id: pyupgrade
-    name: Pyupgrade
-    entry: pyupgrade --py37-plus
-    types: [python]
-    language: system
-    exclude: ^docs/.*$

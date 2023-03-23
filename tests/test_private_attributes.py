@@ -111,7 +111,6 @@ def test_private_attribute_annotation():
     assert m.__dict__ == {}
 
 
-@pytest.mark.xfail(reason='ClassVar needs work')
 def test_underscore_attrs_are_private():
     class Model(BaseModel):
         _foo: str = 'abc'
@@ -120,7 +119,10 @@ def test_underscore_attrs_are_private():
         model_config = ConfigDict(underscore_attrs_are_private=True)
 
     assert Model.__slots__ == {'_foo'}
-    assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        repr(Model._foo).startswith('<member_descriptor object at')
+    else:
+        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
     assert Model._bar == 'cba'
     assert Model.__private_attributes__ == {'_foo': PrivateAttr('abc')}
 
@@ -129,7 +131,13 @@ def test_underscore_attrs_are_private():
     m._foo = None
     assert m._foo is None
 
-    with pytest.raises(ValueError, match='"Model" object has no field "_bar"'):
+    with pytest.raises(
+        AttributeError,
+        match=(
+            '"_bar" is a ClassVar of `Model` and cannot be set on an instance. '
+            'If you want to set a value on the class, use `Model._bar = value`.'
+        ),
+    ):
         m._bar = 1
 
 
@@ -152,14 +160,13 @@ def test_private_attribute_intersection_with_extra_field():
 def test_private_attribute_invalid_name():
     with pytest.raises(
         NameError,
-        match='Private attributes "foo" must not be a valid field name; Use sunder names, e. g. "_foo"',
+        match='Private attributes "foo" must not be a valid field name; use sunder names, e.g. "_foo"',
     ):
 
         class Model(BaseModel):
             foo = PrivateAttr()
 
 
-@pytest.mark.xfail(reason="not sure what's going on here???")
 def test_slots_are_ignored():
     class Model(BaseModel):
         __slots__ = (
@@ -174,11 +181,19 @@ def test_slots_are_ignored():
 
     assert Model.__private_attributes__ == {}
     assert set(Model.__slots__) == {'foo', '_bar'}
-    m = Model()
+    m1 = Model()
+    m2 = Model()
+
     for attr in Model.__slots__:
-        assert object.__getattribute__(m, attr) == 'spam'
-        with pytest.raises(ValueError, match=f'"Model" object has no field "{attr}"'):
-            setattr(m, attr, 'not spam')
+        assert object.__getattribute__(m1, attr) == 'spam'
+
+    # In v2, you are always allowed to set instance attributes if the name starts with `_`.
+    m1._bar = 'not spam'
+    assert m1._bar == 'not spam'
+    assert m2._bar == 'spam'
+
+    with pytest.raises(ValueError, match='"Model" object has no field "foo"'):
+        m1.foo = 'not spam'
 
 
 def test_default_and_default_factory_used_error():
@@ -216,7 +231,6 @@ def test_generic_private_attribute():
     assert m.model_dump() == {'value': 1}
 
 
-@pytest.mark.xfail(reason='config inheritance error')
 def test_private_attribute_multiple_inheritance():
     # We need to test this since PrivateAttr uses __slots__ and that has some restrictions with regards to
     # multiple inheritance
@@ -237,9 +251,14 @@ def test_private_attribute_multiple_inheritance():
     assert GrandParentModel.__slots__ == {'_foo'}
     assert ParentBModel.__slots__ == {'_bar'}
     assert Model.__slots__ == {'_baz'}
-    assert repr(Model._foo) == "<member '_foo' of 'GrandParentModel' objects>"
-    assert repr(Model._bar) == "<member '_bar' of 'ParentBModel' objects>"
-    assert repr(Model._baz) == "<member '_baz' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        assert repr(Model._foo).startswith('<member_descriptor object at')
+        assert repr(Model._bar).startswith('<member_descriptor object at')
+        assert repr(Model._baz).startswith('<member_descriptor object at')
+    else:
+        assert repr(Model._foo) == "<member '_foo' of 'GrandParentModel' objects>"
+        assert repr(Model._bar) == "<member '_bar' of 'ParentBModel' objects>"
+        assert repr(Model._baz) == "<member '_baz' of 'Model' objects>"
     assert Model.__private_attributes__ == {
         '_foo': PrivateAttr(default),
         '_bar': PrivateAttr(default),
@@ -270,3 +289,13 @@ def test_private_attribute_multiple_inheritance():
 
     assert m.model_dump() == {}
     assert m.__dict__ == {}
+
+
+def test_private_attributes_not_dunder() -> None:
+    with pytest.raises(
+        NameError,
+        match='Private attributes "__foo__" must not have dunder names; use a single underscore prefix instead.',
+    ):
+
+        class MyModel(BaseModel):
+            __foo__ = PrivateAttr({'private'})

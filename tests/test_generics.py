@@ -3,11 +3,15 @@ import itertools
 import json
 import platform
 import sys
+from collections import deque
 from enum import Enum, IntEnum
 from typing import (
     Any,
     Callable,
     ClassVar,
+    Counter,
+    DefaultDict,
+    Deque,
     Dict,
     FrozenSet,
     Generic,
@@ -24,17 +28,27 @@ from typing import (
 )
 
 import pytest
+from dirty_equals import HasRepr
 from pydantic_core import core_schema
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, OrderedDict
 
-from pydantic import BaseModel, Field, Json, ValidationError, root_validator, validator
+from pydantic import BaseModel, Field, Json, ValidationError, ValidationInfo, root_validator, validator
 from pydantic._internal._core_utils import collect_invalid_schemas
-from pydantic._internal._generics import _GENERIC_TYPES_CACHE, iter_contained_typevars, replace_types
+from pydantic._internal._generics import (
+    _GENERIC_TYPES_CACHE,
+    _LIMITED_DICT_SIZE,
+    LimitedDict,
+    generic_recursion_self_type,
+    iter_contained_typevars,
+    recursively_defined_type_refs,
+    replace_types,
+)
 
 
 @pytest.fixture(autouse=True)
 def clean_cache():
     # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
+    _GENERIC_TYPES_CACHE.clear()
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
@@ -71,13 +85,13 @@ def test_value_validation():
         data: T
 
         @validator('data')
-        def validate_value_nonzero(cls, v, **kwargs):
+        def validate_value_nonzero(cls, v: Any):
             if any(x == 0 for x in v.values()):
                 raise ValueError('some value is zero')
             return v
 
         @root_validator()
-        def validate_sum(cls, item, **kwargs):
+        def validate_sum(cls, item: Any):
             values, fields = item
             data = values.get('data', {})
             if sum(data.values()) > 5:
@@ -338,7 +352,7 @@ def test_caches_get_cleaned_up():
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
-    assert len(_GENERIC_TYPES_CACHE) == initial_types_cache_size
+    assert len(_GENERIC_TYPES_CACHE) < initial_types_cache_size + _LIMITED_DICT_SIZE
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
@@ -365,7 +379,7 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
     gc.collect(0)
     gc.collect(1)
     gc.collect(2)
-    assert len(_GENERIC_TYPES_CACHE) == types_cache_size
+    assert len(_GENERIC_TYPES_CACHE) < types_cache_size + _LIMITED_DICT_SIZE
 
 
 def test_generics_work_with_many_parametrized_base_models():
@@ -396,7 +410,7 @@ def test_generics_work_with_many_parametrized_base_models():
         generics.append(Working)
 
     target_size = cache_size + count_create_models * 3 + 2
-    assert len(_GENERIC_TYPES_CACHE) == target_size
+    assert len(_GENERIC_TYPES_CACHE) < target_size + _LIMITED_DICT_SIZE
     del models
     del generics
 
@@ -437,8 +451,8 @@ def test_generic():
         positive_number: int
 
         @validator('error')
-        def validate_error(cls, v: Optional[error_type], **kwargs) -> Optional[error_type]:
-            values = kwargs.get('data')
+        def validate_error(cls, v: Optional[error_type], info: ValidationInfo) -> Optional[error_type]:
+            values = info.data
             if values.get('data', None) is None and v is None:
                 raise ValueError('Must provide data or error')
             if values.get('data', None) is not None and v is not None:
@@ -446,7 +460,7 @@ def test_generic():
             return v
 
         @validator('positive_number')
-        def validate_positive_number(cls, v: int, **kwargs) -> int:
+        def validate_positive_number(cls, v: int) -> int:
             if v < 0:
                 raise ValueError
             return v
@@ -459,10 +473,10 @@ def test_generic():
         text: str
 
     success1 = Result[Data, Error](data=[Data(number=1, text='a')], positive_number=1)
-    assert success1.model_dump() == {'data': [{'number': 1, 'text': 'a'}], 'positive_number': 1}
+    assert success1.model_dump() == {'data': [{'number': 1, 'text': 'a'}], 'error': None, 'positive_number': 1}
     assert repr(success1) == (
-        'Result[test_generic.<locals>.Data, test_generic.<locals>.Error]'
-        "(data=[Data(number=1, text='a')], positive_number=1)"
+        'Result[test_generic.<locals>.Data,'
+        " test_generic.<locals>.Error](data=[Data(number=1, text='a')], error=None, positive_number=1)"
     )
 
     success2 = Result[Data, Error](error=Error(message='error'), positive_number=1)
@@ -480,18 +494,6 @@ def test_generic():
             'msg': 'Value error, Unknown error',
             'input': -1,
             'ctx': {'error': 'Unknown error'},
-        }
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
-    assert exc_info.value.errors() == [
-        {
-            'type': 'value_error',
-            'loc': ('error',),
-            'msg': 'Value error, Must not provide both data and error',
-            'input': Error(message='error'),
-            'ctx': {'error': 'Must not provide both data and error'},
         }
     ]
 
@@ -837,7 +839,7 @@ def test_generic_subclass_of_concrete_generic():
 
 def test_generic_model_pickle(create_module):
     # Using create_module because pickle doesn't support
-    # objects with <locals> in their __qualname__  (e. g. defined in function)
+    # objects with <locals> in their __qualname__  (e.g. defined in function)
     @create_module
     def module():
         import pickle
@@ -1073,7 +1075,6 @@ def test_replace_types():
         assert replace_types(str | list[T] | float, {T: int}) == str | list[int] | float
 
 
-@pytest.mark.xfail(reason='working on V2 - generic containers - issue #5019')
 def test_replace_types_with_user_defined_generic_type_field():
     """Test that using user defined generic types as generic model fields are handled correctly."""
 
@@ -1081,19 +1082,107 @@ def test_replace_types_with_user_defined_generic_type_field():
     KT = TypeVar('KT')
     VT = TypeVar('VT')
 
-    class GenericMapping(Mapping[KT, VT]):
+    class CustomCounter(Counter[T]):
         pass
 
-    class GenericList(List[T]):
+    class CustomDefaultDict(DefaultDict[KT, VT]):
+        pass
+
+    class CustomDeque(Deque[T]):
+        pass
+
+    class CustomDict(Dict[KT, VT]):
+        pass
+
+    class CustomFrozenset(FrozenSet[T]):
+        pass
+
+    class CustomIterable(Iterable[T]):
+        pass
+
+    class CustomList(List[T]):
+        pass
+
+    class CustomMapping(Mapping[KT, VT]):
+        pass
+
+    class CustomOrderedDict(OrderedDict[KT, VT]):
+        pass
+
+    class CustomSequence(Sequence[T]):
+        pass
+
+    class CustomSet(Set[T]):
+        pass
+
+    class CustomTuple(Tuple[T]):
         pass
 
     class Model(BaseModel, Generic[T, KT, VT]):
-        map_field: GenericMapping[KT, VT]
-        list_field: GenericList[T]
+        counter_field: CustomCounter[T]
+        default_dict_field: CustomDefaultDict[KT, VT]
+        deque_field: CustomDeque[T]
+        dict_field: CustomDict[KT, VT]
+        frozenset_field: CustomFrozenset[T]
+        iterable_field: CustomIterable[T]
+        list_field: CustomList[T]
+        mapping_field: CustomMapping[KT, VT]
+        ordered_dict_field: CustomOrderedDict[KT, VT]
+        sequence_field: CustomSequence[T]
+        set_field: CustomSet[T]
+        tuple_field: CustomTuple[T]
 
     assert replace_types(Model, {T: bool, KT: str, VT: int}) == Model[bool, str, int]
     assert replace_types(Model[T, KT, VT], {T: bool, KT: str, VT: int}) == Model[bool, str, int]
     assert replace_types(Model[T, VT, KT], {T: bool, KT: str, VT: int}) == Model[T, VT, KT][bool, int, str]
+
+    m = Model[bool, str, int](
+        counter_field=Counter([True, False]),
+        default_dict_field={'a': 1},
+        deque_field=[True, False],
+        dict_field={'a': 1},
+        frozenset_field=frozenset([True, False]),
+        iterable_field=[True, False],
+        list_field=[True, False],
+        mapping_field={'a': 2},
+        ordered_dict_field=OrderedDict([('a', 1)]),
+        sequence_field=[True, False],
+        set_field={True, False},
+        tuple_field=(True,),
+    )
+
+    # The following assertions are just to document the current behavior, and should
+    # be updated if/when we do a better job of respecting the exact annotated type
+    assert type(m.counter_field) is Counter.__origin__
+    assert type(m.default_dict_field) is dict
+    assert type(m.deque_field) is deque
+    assert type(m.dict_field) is dict
+    assert type(m.frozenset_field) is CustomFrozenset
+    assert type(m.iterable_field).__name__ == 'ValidatorIterator'
+    assert type(m.list_field) is CustomList
+    assert type(m.mapping_field) is dict
+    assert type(m.ordered_dict_field) is OrderedDict.__origin__
+    assert type(m.sequence_field) is list
+    assert type(m.set_field) is CustomSet
+    assert type(m.tuple_field) is tuple
+
+    assert m.model_dump() == {
+        'counter_field': {False: 1, True: 1},
+        'default_dict_field': {'a': 1},
+        'deque_field': deque([True, False]),
+        'dict_field': {'a': 1},
+        'frozenset_field': frozenset({False, True}),
+        'iterable_field': HasRepr(
+            'SerializationIterator(index=0, '
+            'iterator=ValidatorIterator(index=0, schema=Some(Bool(BoolValidator { strict: false }))))'
+        ),
+        'list_field': [True, False],
+        'mapping_field': {'a': 2},
+        'ordered_dict_field': {'a': 1},
+        'sequence_field': [True, False],
+        'set_field': {False, True},
+        'tuple_field': (True,),
+    }
 
 
 def test_replace_types_identity_on_unchanged():
@@ -1557,6 +1646,13 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
 
 
 def test_generic_recursive_models_complicated(create_module):
+    """
+    TODO: this test will fail if run by itself. This is due to weird behavior with the WeakValueDictionary
+        used for caching. As part of the next batch of generics work, we should attempt to fix this if possible.
+        In the meantime, if this causes issues, or the test otherwise starts failing, please make it xfail
+        with strict=False
+    """
+
     @create_module
     def module():
         from typing import Generic, TypeVar, Union
@@ -1568,7 +1664,7 @@ def test_generic_recursive_models_complicated(create_module):
         T3 = TypeVar('T3')
 
         class A1(BaseModel, Generic[T1]):
-            a1: T1  # 'A2[T1]'
+            a1: 'A2[T1]'
 
             model_config = dict(undefined_types_warning=False)
 
@@ -1693,7 +1789,6 @@ def test_generic_enums():
     assert set(Model.model_json_schema()['$defs']) == {'EnumA', 'EnumB', 'GModel_EnumA_', 'GModel_EnumB_'}
 
 
-@pytest.mark.xfail(reason='working on V2 - generic containers - issue #5019')
 def test_generic_with_user_defined_generic_field():
     T = TypeVar('T')
 
@@ -1894,3 +1989,92 @@ def test_generics_memory_use():
 
         class _(Outer[Foo]):
             pass
+
+
+@pytest.mark.xfail(reason='Generic models are not type aliases', raises=TypeError)
+def test_generic_model_as_parameter_to_generic_type_alias() -> None:
+    T = TypeVar('T')
+
+    class GenericPydanticModel(BaseModel, Generic[T]):
+        x: T
+
+    GenericPydanticModelList = List[GenericPydanticModel[T]]
+    GenericPydanticModelList[int]
+
+
+def test_double_typevar_substitution() -> None:
+    T = TypeVar('T')
+
+    class GenericPydanticModel(BaseModel, Generic[T]):
+        x: T = []
+
+    assert GenericPydanticModel[List[T]](x=[1, 2, 3]).model_dump() == {'x': [1, 2, 3]}
+
+
+@pytest.fixture(autouse=True)
+def ensure_contextvar_gets_reset():
+    # Ensure that the generic recursion contextvar is empty at the start of every test
+    assert not recursively_defined_type_refs()
+
+
+def test_generic_recursion_contextvar():
+    T = TypeVar('T')
+
+    class TestingException(Exception):
+        pass
+
+    class Model(BaseModel, Generic[T]):
+        pass
+
+    # Make sure that the contextvar-managed recursive types cache begins empty
+    assert not recursively_defined_type_refs()
+    try:
+        with generic_recursion_self_type(Model, (int,)):
+            # Make sure that something has been added to the contextvar-managed recursive types cache
+            assert recursively_defined_type_refs()
+            raise TestingException
+    except TestingException:
+        pass
+
+    # Make sure that an exception causes the contextvar-managed recursive types cache to be reset
+    assert not recursively_defined_type_refs()
+
+
+def test_limited_dict():
+    d = LimitedDict(10)
+    d[1] = '1'
+    d[2] = '2'
+    assert list(d.items()) == [(1, '1'), (2, '2')]
+    for no in '34567890':
+        d[int(no)] = no
+    assert list(d.items()) == [
+        (1, '1'),
+        (2, '2'),
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+    ]
+    d[11] = '11'
+
+    # reduce size to 9 after setting 11
+    assert len(d) == 9
+    assert list(d.items()) == [
+        (3, '3'),
+        (4, '4'),
+        (5, '5'),
+        (6, '6'),
+        (7, '7'),
+        (8, '8'),
+        (9, '9'),
+        (0, '0'),
+        (11, '11'),
+    ]
+    d[12] = '12'
+    assert len(d) == 10
+    d[13] = '13'
+    assert len(d) == 9

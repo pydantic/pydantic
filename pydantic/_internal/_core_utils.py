@@ -2,12 +2,26 @@
 
 from __future__ import annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, Union, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from typing_extensions import TypeGuard, get_args
 
 from . import _repr
+
+AnyFunctionSchema = Union[
+    core_schema.AfterValidatorFunctionSchema,
+    core_schema.BeforeValidatorFunctionSchema,
+    core_schema.WrapValidatorFunctionSchema,
+    core_schema.PlainValidatorFunctionSchema,
+]
+
+
+FunctionSchemaWithInnerSchema = Union[
+    core_schema.AfterValidatorFunctionSchema,
+    core_schema.BeforeValidatorFunctionSchema,
+    core_schema.WrapValidatorFunctionSchema,
+]
 
 
 def is_typed_dict_field(schema: CoreSchema | core_schema.TypedDictField) -> TypeGuard[core_schema.TypedDictField]:
@@ -18,6 +32,12 @@ def is_core_schema(schema: CoreSchema | core_schema.TypedDictField) -> TypeGuard
     return 'type' in schema
 
 
+def is_function_with_inner_schema(
+    schema: CoreSchema | core_schema.TypedDictField,
+) -> TypeGuard[FunctionSchemaWithInnerSchema]:
+    return is_core_schema(schema) and schema['type'] in ('function-before', 'function-after', 'function-wrap')
+
+
 def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
     """
     Produces the ref to be used for this type by pydantic_core's core schemas.
@@ -26,7 +46,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     when creating generic models without needing to create a concrete class.
     """
     origin = getattr(type_, '__pydantic_generic_origin__', None) or type_
-    args = getattr(type_, '__pydantic_generic_args__') or args_override or ()
+    args = getattr(type_, '__pydantic_generic_args__', None) or args_override or ()
 
     module_name = getattr(origin, '__module__', '<No __module__>')
     qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
@@ -184,19 +204,22 @@ class WalkAndApply:
             schema['items_schema'] = self._walk(schema['items_schema'])
         return schema
 
-    def handle_tuple_schema(
+    def handle_tuple_variable_schema(
         self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema
     ) -> CoreSchema:
-        if 'mode' not in schema or schema['mode'] == 'variable':
-            if 'items_schema' in schema:
-                # Could drop the # type: ignore on the next line if we made 'mode' required in TupleVariableSchema
-                schema['items_schema'] = self._walk(schema['items_schema'])
-        elif schema['mode'] == 'positional':
-            schema['items_schema'] = [self._walk(v) for v in schema['items_schema']]
-            if 'extra_schema' in schema:
-                schema['extra_schema'] = self._walk(schema['extra_schema'])
-        else:
-            raise ValueError(f"Unknown tuple mode: {schema['mode']}")
+        schema = cast(core_schema.TupleVariableSchema, schema)
+        if 'items_schema' in schema:
+            # Could drop the # type: ignore on the next line if we made 'mode' required in TupleVariableSchema
+            schema['items_schema'] = self._walk(schema['items_schema'])
+        return schema
+
+    def handle_tuple_positional_schema(
+        self, schema: core_schema.TupleVariableSchema | core_schema.TuplePositionalSchema
+    ) -> CoreSchema:
+        schema = cast(core_schema.TuplePositionalSchema, schema)
+        schema['items_schema'] = [self._walk(v) for v in schema['items_schema']]
+        if 'extra_schema' in schema:
+            schema['extra_schema'] = self._walk(schema['extra_schema'])
         return schema
 
     def handle_dict_schema(self, schema: core_schema.DictSchema) -> CoreSchema:
@@ -207,12 +230,12 @@ class WalkAndApply:
         return schema
 
     def handle_function_schema(
-        self, schema: core_schema.FunctionSchema | core_schema.FunctionPlainSchema | core_schema.FunctionWrapSchema
+        self,
+        schema: AnyFunctionSchema,
     ) -> CoreSchema:
-        if schema['mode'] == 'plain':
+        if not is_function_with_inner_schema(schema):
             return schema
-        if 'schema' in schema:
-            schema['schema'] = self._walk(schema['schema'])
+        schema['schema'] = self._walk(schema['schema'])
         return schema
 
     def handle_union_schema(self, schema: core_schema.UnionSchema) -> CoreSchema:

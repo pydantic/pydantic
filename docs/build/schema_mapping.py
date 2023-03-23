@@ -7,6 +7,7 @@ Done like this rather than as a raw rst table to make future edits easier.
 Please edit this file directly not .tmp_schema_mappings.html
 """
 from __future__ import annotations
+
 import json
 import re
 from pathlib import Path
@@ -63,7 +64,14 @@ table: list[tuple[str, str, str | dict[str, Any], str, str]] = [
         '',
     ),
     (
-        'tuple',
+        'tuple-positional',
+        'array',
+        {'items': {}},
+        'JSON Schema Core',
+        '',
+    ),
+    (
+        'tuple-variable',
         'array',
         {'items': {}},
         'JSON Schema Core',

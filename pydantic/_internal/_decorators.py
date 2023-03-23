@@ -3,10 +3,14 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
+import inspect
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar
+from functools import wraps
+from inspect import Parameter, signature
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast
 
-from pydantic_core.core_schema import JsonReturnTypes, WhenUsed
+from pydantic_core.core_schema import GeneralValidatorFunction, JsonReturnTypes, ValidationInfo, WhenUsed
+from typing_extensions import Protocol
 
 from ..errors import PydanticUserError
 
@@ -21,7 +25,8 @@ __all__ = (
     'Validator',
     'ValidationFunctions',
     'SerializationFunctions',
-    'prepare_decorator',
+    'prepare_validator_decorator',
+    'prepare_serializer_decorator',
 )
 FIELD_VALIDATOR_TAG = '_field_validator'
 ROOT_VALIDATOR_TAG = '_root_validator'
@@ -34,12 +39,13 @@ class Validator:
     Store information about field and root validators.
     """
 
-    __slots__ = 'function', 'mode', 'sub_path', 'check_fields'
+    __slots__ = 'function', 'mode', 'sub_path', 'check_fields', 'is_field_validator'
 
     def __init__(
         self,
         *,
         mode: Literal['before', 'after', 'wrap', 'plain'],
+        is_field_validator: bool,
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
     ):
@@ -48,6 +54,7 @@ class Validator:
         self.mode = mode
         self.sub_path = sub_path
         self.check_fields = check_fields
+        self.is_field_validator = is_field_validator
 
 
 class Serializer:
@@ -66,7 +73,8 @@ class Serializer:
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
     ):
-        # arguments match core_schema.function_plain_ser_schema or core_schema.function_wrap_ser_schema
+        # arguments match core_schema.general_plain_serializer_function_ser_schema or
+        # core_schema.general_wrap_serializer_function_ser_schema
         # function is set later after the class is created and functions are bound
         self.function: Callable[..., Any] | None = None
         self.sub_path = sub_path
@@ -133,7 +141,11 @@ class DecoratorFunctions(Generic[DecFunc]):
         Set functions in self._decorators, now that the class is created and functions are bound.
         """
         for name, decorator in self._decorators.items():
-            decorator.function = getattr(cls, name)
+            func = getattr(cls, name)
+            if isinstance(decorator, Validator):
+                decorator.function = make_generic_validator(func, decorator.mode)
+            else:
+                decorator.function = func
 
     def get_root_decorators(self) -> list[DecFunc]:
         return [self._decorators[name] for name in self._root_decorators]
@@ -192,20 +204,52 @@ class SerializationFunctions(DecoratorFunctions[Serializer]):
 _FUNCS: set[str] = set()
 
 
-def prepare_decorator(function: Callable[..., Any], allow_reuse: bool) -> classmethod[Any]:
-    """
-    Convert the function to a classmethod if it isn't already.
+_SerializerType = TypeVar('_SerializerType', bound=Callable[..., Any])
 
+
+def prepare_serializer_decorator(function: _SerializerType, allow_reuse: bool) -> _SerializerType:
+    """
     Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
     """
-    f_cls = function if isinstance(function, classmethod) else classmethod(function)
+    if isinstance(function, staticmethod):
+        function = function.__func__  # type: ignore[assignment]
     if not allow_reuse and not in_ipython():
-        ref = f'{f_cls.__func__.__module__}::{f_cls.__func__.__qualname__}'
+        ref = f'{function.__module__}::{function.__qualname__}'
         if ref in _FUNCS:
             warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
-    return f_cls
+    return function
+
+
+def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool) -> Any:
+    """
+    Apply the @classmethod or @staticmethod decorator to @validator functions if it was not applied already.
+    Warn about validators with duplicated names since without this, they can be overwritten silently
+    which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
+    """
+    sig = inspect.signature(function)
+    first_param = next(iter(sig.parameters.values()), None)
+    if first_param is None:
+        raise TypeError(f'Unrecognized validator signature {sig} for {function}')
+    ret: Any
+    if first_param.name == 'cls':
+        ret = function if isinstance(function, classmethod) else classmethod(function)
+        function = ret.__func__
+    elif first_param.name == 'self':
+        raise TypeError('Validators cannot be instance methods (they should not accept `self` as an argument)')
+    else:
+        ret = function if isinstance(function, staticmethod) else staticmethod(function)
+        function = ret.__func__
+    if not allow_reuse and not in_ipython():
+        fn = function
+        if isinstance(fn, classmethod):
+            fn = fn.__func__
+        ref = f'{fn.__module__}::{fn.__qualname__}'
+        if ref in _FUNCS:
+            warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
+        _FUNCS.add(ref)
+    return ret
 
 
 def in_ipython() -> bool:
@@ -218,3 +262,128 @@ def in_ipython() -> bool:
         return False
     else:  # pragma: no cover
         return True
+
+
+class OnlyValueValidator(Protocol):
+    def __call__(self, __value: Any) -> Any:
+        ...
+
+
+class V1ValidatorWithValues(Protocol):
+    def __call__(self, __value: Any, values: dict[str, Any]) -> Any:
+        ...
+
+
+class V1ValidatorWithValuesKwOnly(Protocol):
+    def __call__(self, __value: Any, *, values: dict[str, Any]) -> Any:
+        ...
+
+
+class V1ValidatorWithKwargs(Protocol):
+    def __call__(self, __value: Any, **kwargs: Any) -> Any:
+        ...
+
+
+class V1ValidatorWithKwargsAndValue(Protocol):
+    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:
+        ...
+
+
+class V1ValidatorWithValuesAndKwargs(Protocol):
+    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:
+        ...
+
+
+V1Validator = Union[
+    V1ValidatorWithValues, V1ValidatorWithValuesKwOnly, V1ValidatorWithKwargs, V1ValidatorWithValuesAndKwargs
+]
+
+
+def make_generic_validator(
+    validator: V1Validator | OnlyValueValidator | GeneralValidatorFunction, mode: str
+) -> GeneralValidatorFunction:
+    """
+    In order to support different signatures, including deprecated validator signatures from v1,
+    we introspect the function signature and wrap it in a parent function that has a signature
+    compatible with pydantic_core
+    """
+    sig = signature(validator)
+
+    def _warn_v1_validator() -> None:
+        warnings.warn(
+            'Validator signatures using the `values` keyword argument or `**kwargs` are no longer supported.'
+            ' Please use an `info: pydantic.ValidationInfo` as the second positional argument instead.'
+            ' This compatibility shim may be removed in a future minor release of Pydantic v2.X',
+            DeprecationWarning,
+            # The stacklevel parameter makes the warning show up as coming from the User's code instead
+            # of our internal implementation
+            # Since this just goes up the stack the source location will appear as
+            # class TheModelName(BaseModel):
+            # Which is good enough for now in terms of helping users locate the issue
+            # In the future maybe we can capture the calling module and line number in the
+            # @validator decorator and use that here to be more accurate about where the issue is
+            # But that may not be 100% reliable, so tabling for now.
+            stacklevel=6,
+        )
+
+    positional_params: list[str] = []
+    keyword_only_params: list[str] = []
+    accepts_kwargs = False
+    for param_name, parameter in sig.parameters.items():
+        if param_name in ('field', 'config'):
+            raise TypeError(
+                'The `field` and `config` parameters are not available in Pydantic V2.'
+                ' Please use the `info` parameter instead.'
+                ' You can access the configuration via `info.config`,'
+                ' but it is a dictionary instead of an object like it was in Pydantic V1.'
+                ' The `field` argument is no longer available.'
+            )
+        if parameter.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD):
+            positional_params.append(param_name)
+        elif parameter.kind is Parameter.KEYWORD_ONLY:
+            keyword_only_params.append(param_name)
+        elif parameter.kind is Parameter.VAR_KEYWORD:
+            accepts_kwargs = True
+
+    accepts_values_kw = (keyword_only_params == ['values'] and len(positional_params) == 1) or (
+        len(positional_params) == 2 and positional_params[1] == 'values'
+    )
+
+    if accepts_kwargs and len(positional_params) == 1:
+        # although this could be compatible with the V2 signature we want to discourage it,
+        # so we treat it as a backwards compatible validator
+        validator = cast(V1ValidatorWithKwargs, validator)
+
+        _warn_v1_validator()
+
+        @wraps(validator)
+        def _wrapper1(value: Any, info: ValidationInfo) -> Any:
+            return validator(value, values=info.data)  # type: ignore[call-arg]
+
+        return _wrapper1
+    if len(positional_params) == 1 and keyword_only_params == []:
+        validator = cast(OnlyValueValidator, validator)
+
+        @wraps(validator)
+        def _wrapper2(value: Any, info: ValidationInfo) -> Any:
+            return validator(value)  # type: ignore[call-arg]
+
+        return _wrapper2
+    elif len(positional_params) in (1, 2) and accepts_values_kw:
+        validator = cast(V1ValidatorWithValues, validator)
+
+        _warn_v1_validator()
+
+        @wraps(validator)
+        def _wrapper3(value: Any, info: ValidationInfo) -> Any:
+            return validator(value, values=info.data)  # type: ignore[call-arg]
+
+        return _wrapper3
+    elif keyword_only_params == [] and len(positional_params) == 2:
+        validator = cast(GeneralValidatorFunction, validator)
+        return validator
+    raise TypeError(
+        f'Unsupported signature for {mode} validator {validator}: {sig} is not supported.'
+        ' Validators must be compatible with the following two signature:\n'
+        ' - (__value: Any, __info: pydantic.ValidationInfo) -> Any\n'
+    )
