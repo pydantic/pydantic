@@ -1,3 +1,4 @@
+use std::env;
 use std::path::Path;
 use std::process::Command;
 use std::str::from_utf8;
@@ -10,7 +11,7 @@ fn generate_self_schema() {
         // skip running generate_self_schema.py
         return;
     }
-    let output = Command::new("python3")
+    let output = Command::new(env::var("PYTHON").unwrap_or_else(|_| "python3".to_owned()))
         .arg("generate_self_schema.py")
         .output()
         .expect("failed to execute process");
