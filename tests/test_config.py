@@ -334,7 +334,7 @@ class TestsBaseConfig:
                 frozen = True
 
         m = Model(a=40, b=10)
-        assert m == m.copy()
+        assert m == m.model_copy()
 
     def test_config_class_is_deprecated(self):
         with pytest.warns(
