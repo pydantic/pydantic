@@ -226,6 +226,7 @@ def root_validator(
     # if you specify `pre=True` then you don't need to specify
     # `skip_on_failure`, in fact it is not allowed as an argument!
     pre: Literal[True],
+    skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
 ) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
     ...
