@@ -399,20 +399,20 @@ def f2(value: Any, values: Dict[str, Any]) -> Any: ...
 class Model(BaseModel):
     x: int
 
-    @validator('x')  # or @validator('x', pre=<True or False>)
+    @validator('x')
     @classmethod  # optional
     def val_x1(cls, value: Any) -> Any: ...
 
     @validator('x')
-    @classmethod
+    @classmethod  # optional
     def val_x2(cls, value: Any, values: Dict[str, Any]) -> Any: ...
 
     @validator('x')
-    @staticmethod
+    @staticmethod  # required
     def val_x3(value: Any) -> Any: ...
 
     @validator('x')
-    @staticmethod
+    @staticmethod  # required
     def val_x4(value: Any, values: Dict[str, Any]) -> Any: ...
 
     val_x5 = validator('x')(f1)
@@ -518,27 +518,6 @@ RootValidatorValuesAndFieldsSet = Tuple[RootValidatorValues, RootValidatorFields
 class V1RootValidatorFunction(Protocol):
     def __call__(self, __values: RootValidatorValues) -> RootValidatorValues:
         ...
-
-
-VALID_ROOT_VALIDATOR_SIGNATURES = """\
-For `pre=True` or `pre=False` a classmethod, staticmethod or unbound function that accepts values:
-
-def f(values: Dict[str, Any]) -> Any: ...
-
-class Model(BaseModel):
-    x: int
-
-    # or @root_validator(pre=<True or False>)
-    @root_validator(skip_on_failure=True)
-    @classmethod  # optional
-    def val_model1(cls, values: Dict[str, Any]) -> Any: ...
-
-    @root_validator(skip_on_failure=True)
-    @staticmethod
-    def val_model2(values: Dict[str, Any]) -> Any: ...
-
-    val_model3 = validator('x')(f)
-"""
 
 
 class V2CoreBeforeRootValidator(Protocol):
