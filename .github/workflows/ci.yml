@@ -77,9 +77,6 @@ jobs:
 
     runs-on: ubuntu-latest
 
-    env:
-      PYTHON: ${{ matrix.python-version }}
-
     steps:
       - uses: actions/checkout@v3
 
