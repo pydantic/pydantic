@@ -7,11 +7,132 @@
 
 {!.version.md!}
 
-Data validation using Python type annotations.
+*pydantic* is the most widely used data validation library for Python. 
 
-*pydantic* enforces type hints at runtime, and provides user-friendly errors when data is invalid.
+With *pydantic*, Python type annotations become more than tools for documentation and type checking. *pydantic* **enforces type hints** at runtime, and provides **user-friendly errors** when data is invalid.
 
-Define how data should be in pure, canonical Python; validate it with *pydantic*.
+*pydantic* is simple to use, even when doing complex things, and enables you to define and validate data in pure, canonical Python.
+
+Try *pydantic* today! [Installation](/install/) is as simple as: [`pip install pydantic`](/install/).
+
+## Example
+
+{!.tmp_examples/index_main.md!}
+
+What's going on here:
+
+* `id` is of type int; the annotation-only declaration tells *pydantic* that this field is required. Strings,
+  bytes, or floats will be coerced to ints if possible; otherwise an exception will be raised.
+* `name` is inferred as a string from the provided default; because it has a default, it is not required.
+* `signup_ts` is a datetime field that is not required (and takes the value ``None`` if it's not supplied).
+  *pydantic* will process either a unix timestamp int (e.g. `1496498400`) or a string representing the date and time.
+* `friends` uses Python's typing system, and requires a list of integers. As with `id`, integer-like objects
+  will be converted to integers.
+
+If validation fails, pydantic will raise an error with a breakdown of what was wrong:
+
+{!.tmp_examples/index_error.md!}
+
+
+## Rationale
+
+So *pydantic* uses some cool new language features, but why should I actually go and use it?
+
+**Plays nicely with your IDE/linter/brain**
+: There's no new schema definition micro-language to learn. If you know how to use Python type hints,
+  you know how to use *pydantic*. Data structures are just instances of classes you define with type annotations,
+  so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)),
+  and your intuition should all work properly with your validated data.
+
+**Fast**
+: *pydantic* has always taken performance seriously, most of the library is compiled with cython giving a ~50% speedup,
+  it's generally as fast or faster than most similar libraries.
+
+**Validate complex structures**
+: Use of [recursive *pydantic* models](usage/models.md#recursive-models), `typing`'s
+  [standard types](usage/types.md#standard-library-types) (e.g. `List`, `Tuple`, `Dict` etc.) and
+  [validators](usage/validators.md) allow
+  complex data schemas to be clearly and easily defined, validated, and parsed.
+
+**Extensible**
+: *pydantic* allows [custom data types](usage/types.md#custom-data-types) to be defined or you can extend validation
+  with methods on a model decorated with the [`validator`](usage/validators.md) decorator.
+
+**Dataclasses integration**
+: As well as `BaseModel`, *pydantic* provides
+  a [`dataclass`](usage/dataclasses.md) decorator which creates (almost) vanilla Python dataclasses with input
+  data parsing and validation.
+
+## Using Pydantic
+
+Hundreds of organisations and packages are using *pydantic*, including:
+
+[FastAPI](https://fastapi.tiangolo.com/)
+: A high performance API framework, easy to learn,
+  fast to code and ready for production, based on *pydantic* and Starlette.
+
+[Project Jupyter](https://jupyter.org/)
+: Developers of the Jupyter notebook are using *pydantic*
+  [for subprojects](https://github.com/pydantic/pydantic/issues/773), through the FastAPI-based Jupyter server
+  [Jupyverse](https://github.com/jupyter-server/jupyverse), and for [FPS](https://github.com/jupyter-server/fps)'s
+  configuration management.
+
+**Microsoft**
+: Using *pydantic* (via FastAPI) for
+  [numerous services](https://github.com/tiangolo/fastapi/pull/26#issuecomment-463768795), some of which are
+  "getting integrated into the core Windows product and some Office products."
+
+**Amazon Web Services**
+: Uusing *pydantic* in [gluon-ts](https://github.com/awslabs/gluon-ts), an open-source probabilistic time series
+  modeling library.
+
+**The NSA**
+: Using *pydantic* in [WALKOFF](https://github.com/nsacyber/WALKOFF), an open-source automation framework.
+
+**Uber**
+: Using *pydantic* in [Ludwig](https://github.com/uber/ludwig), an open-source TensorFlow wrapper.
+
+**Cuenca**
+: A Mexican neobank that uses *pydantic* for several internal
+  tools (including API validation) and for open source projects like
+  [stpmex](https://github.com/cuenca-mx/stpmex-python), which is used to process real-time, 24/7, inter-bank
+  transfers in Mexico.
+
+[The Molecular Sciences Software Institute](https://molssi.org)
+: Using *pydantic* in [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
+  for quantum chemistry.
+
+[Reach](https://www.reach.vote)
+: Trusts *pydantic* (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq) (Samuel's excellent
+  asynchronous task queue) to reliably power multiple mission-critical microservices.
+
+[Robusta.dev](https://robusta.dev/)
+: Using *pydantic* to automate Kubernetes troubleshooting and maintenance. For example, their open source
+  [tools to debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
+  *pydantic* models.
+
+For a more comprehensive list of open-source projects using *pydantic* see the
+[list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), or you can find some awesome projects using *pydantic* in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
+
+## Discussion of Pydantic
+
+Podcasts and videos discussing pydantic.
+
+[Talk Python To Me](https://talkpython.fm/episodes/show/313/automate-your-data-exchange-with-pydantic){target=_blank}
+: Michael Kennedy and Samuel Colvin, the creator of *pydantic*, dive into the history of pydantic and its many uses and benefits.
+
+[Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
+: Discussion about where *pydantic* came from and ideas for where it might go next with
+  Samuel Colvin the creator of pydantic.
+
+[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
+: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management
+  using Python type annotations, and it's the Python type annotations that makes me really extra happy... It works
+  automatically with all the IDE's you already have.*" --Michael Kennedy
+
+[Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
+: A talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking
+  through the core features of pydantic.
 
 ## Sponsors
 
@@ -83,122 +204,3 @@ And many more who kindly sponsor Samuel Colvin on [GitHub Sponsors](https://gith
     ul.appendChild(ul.children[Math.random() * i | 0])
   }
 </script>
-
-## Example
-
-{!.tmp_examples/index_main.md!}
-
-What's going on here:
-
-* `id` is of type int; the annotation-only declaration tells *pydantic* that this field is required. Strings,
-  bytes or floats will be coerced to ints if possible; otherwise an exception will be raised.
-* `name` is inferred as a string from the provided default; because it has a default, it is not required.
-* `signup_ts` is a datetime field which is not required (and takes the value ``None`` if it's not supplied).
-  *pydantic* will process either a unix timestamp int (e.g. `1496498400`) or a string representing the date & time.
-* `friends` uses Python's typing system, and requires a list of integers. As with `id`, integer-like objects
-  will be converted to integers.
-
-If validation fails pydantic will raise an error with a breakdown of what was wrong:
-
-{!.tmp_examples/index_error.md!}
-
-
-## Rationale
-
-So *pydantic* uses some cool new language features, but why should I actually go and use it?
-
-**plays nicely with your IDE/linter/brain**
-: There's no new schema definition micro-language to learn. If you know how to use Python type hints,
-  you know how to use *pydantic*. Data structures are just instances of classes you define with type annotations,
-  so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)),
-  and your intuition should all work properly with your validated data.
-
-**fast**
-: *pydantic* has always taken performance seriously, most of the library is compiled with cython giving a ~50% speedup,
-  it's generally as fast or faster than most similar libraries.
-
-**validate complex structures**
-: use of [recursive *pydantic* models](usage/models.md#recursive-models), `typing`'s
-  [standard types](usage/types.md#standard-library-types) (e.g. `List`, `Tuple`, `Dict` etc.) and
-  [validators](usage/validators.md) allow
-  complex data schemas to be clearly and easily defined, validated, and parsed.
-
-**extensible**
-: *pydantic* allows [custom data types](usage/types.md#custom-data-types) to be defined or you can extend validation
-  with methods on a model decorated with the [`validator`](usage/validators.md) decorator.
-
-**dataclasses integration**
-: As well as `BaseModel`, *pydantic* provides
-  a [`dataclass`](usage/dataclasses.md) decorator which creates (almost) vanilla Python dataclasses with input
-  data parsing and validation.
-
-## Using Pydantic
-
-Hundreds of organisations and packages are using *pydantic*, including:
-
-[FastAPI](https://fastapi.tiangolo.com/)
-: a high performance API framework, easy to learn,
-  fast to code and ready for production, based on *pydantic* and Starlette.
-
-[Project Jupyter](https://jupyter.org/)
-: developers of the Jupyter notebook are using *pydantic*
-  [for subprojects](https://github.com/pydantic/pydantic/issues/773), through the FastAPI-based Jupyter server
-  [Jupyverse](https://github.com/jupyter-server/jupyverse), and for [FPS](https://github.com/jupyter-server/fps)'s
-  configuration management.
-
-**Microsoft**
-: are using *pydantic* (via FastAPI) for
-  [numerous services](https://github.com/tiangolo/fastapi/pull/26#issuecomment-463768795), some of which are
-  "getting integrated into the core Windows product and some Office products."
-
-**Amazon Web Services**
-: are using *pydantic* in [gluon-ts](https://github.com/awslabs/gluon-ts), an open-source probabilistic time series
-  modeling library.
-
-**The NSA**
-: are using *pydantic* in [WALKOFF](https://github.com/nsacyber/WALKOFF), an open-source automation framework.
-
-**Uber**
-: are using *pydantic* in [Ludwig](https://github.com/uber/ludwig), an open-source TensorFlow wrapper.
-
-**Cuenca**
-: are a Mexican neobank that uses *pydantic* for several internal
-  tools (including API validation) and for open source projects like
-  [stpmex](https://github.com/cuenca-mx/stpmex-python), which is used to process real-time, 24/7, inter-bank
-  transfers in Mexico.
-
-[The Molecular Sciences Software Institute](https://molssi.org)
-: are using *pydantic* in [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
-  for quantum chemistry.
-
-[Reach](https://www.reach.vote)
-: trusts *pydantic* (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq) (Samuel's excellent
-  asynchronous task queue) to reliably power multiple mission-critical microservices.
-
-[Robusta.dev](https://robusta.dev/)
-: are using *pydantic* to automate Kubernetes troubleshooting and maintenance. For example, their open source
-  [tools to debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
-  *pydantic* models.
-
-For a more comprehensive list of open-source projects using *pydantic* see the
-[list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), Or you can find some awesome projects using *pydantic* in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
-
-## Discussion of Pydantic
-
-Podcasts and videos discussing pydantic.
-
-[Talk Python To Me](https://talkpython.fm/episodes/show/313/automate-your-data-exchange-with-pydantic){target=_blank}
-: Michael Kennedy and Samuel Colvin, the creator of *pydantic*, dive into the history of pydantic and its many uses and benefits.
-
-[Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
-: Discussion about where *pydantic* came from and ideas for where it might go next with
-  Samuel Colvin the creator of pydantic.
-
-[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
-: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management
-  using Python type annotations, and it's the Python type annotations that makes me really extra happy... It works
-  automatically with all the IDE's you already have.*" --Michael Kennedy
-
-[Python pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
-: a talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to pydantic and walking
-  through the core features of pydantic.
