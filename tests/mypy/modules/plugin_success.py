@@ -258,14 +258,14 @@ class OrmMixin(Generic[_TModel, _TType]):
         return cls.from_orm(model)
 
 
-# Include the import down here to reduce the effect on line numbers
-from dataclasses import InitVar  # noqa E402
+import sys  # noqa E402
 
+if sys.version_info >= (3, 8):  # InitVar is not supported in 3.7 due to loss of type information
+    from dataclasses import InitVar  # E402
 
-@dataclass
-class MyDataClass:
-    foo: InitVar[str]
-    bar: str
+    @dataclass
+    class MyDataClass:
+        foo: InitVar[str]
+        bar: str
 
-
-MyDataClass(foo='foo', bar='bar')
+    MyDataClass(foo='foo', bar='bar')
