@@ -198,7 +198,7 @@ class MyPrivateAttr(BaseModel):
 
 
 class PydanticTypes(BaseModel):
-    model_config = dict()  # TODO: add validate_all=True or equivalent if/when possible
+    model_config: ConfigDict = dict()  # TODO: add validate_all=True or equivalent if/when possible
 
     # Boolean
     my_strict_bool: StrictBool = True
