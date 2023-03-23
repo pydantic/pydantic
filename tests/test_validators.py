@@ -941,10 +941,6 @@ def test_root_validator():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(b='snap dragon', c='snap dragon2')
-    # TODO: we seem to stop early with root validators
-    # In V1 we ran them all (as per this test)
-    # Both V1 and V2 do stop early for function validators _on the same field_
-    # Is this intentional?
     assert exc_info.value.errors() == [
         {
             'type': 'value_error',
