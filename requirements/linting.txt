@@ -18,7 +18,7 @@ distlib==0.3.6
     # via virtualenv
 exceptiongroup==1.1.1
     # via hypothesis
-filelock==3.10.0
+filelock==3.10.1
     # via virtualenv
 hypothesis==6.70.0
     # via -r requirements/linting.in
@@ -48,7 +48,7 @@ pyupgrade==3.3.1
     # via -r requirements/linting.in
 pyyaml==6.0
     # via pre-commit
-ruff==0.0.257
+ruff==0.0.258
     # via -r requirements/linting.in
 sortedcontainers==2.4.0
     # via hypothesis

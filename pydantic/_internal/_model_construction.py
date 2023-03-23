@@ -159,6 +159,7 @@ def complete_model_class(
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
     try:
         fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+        apply_alias_generator(cls.model_config, fields)
         # this schema construction has to go here
         # since in some recursive generics it can raise a PydanticUndefinedAnnotation error
         inner_schema = model_fields_schema(
@@ -303,3 +304,17 @@ class MockValidator:
         # raise an AttributeError if `item` doesn't exist
         getattr(SchemaValidator, item)
         raise PydanticUserError(self._error_message)
+
+
+def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> None:
+    alias_generator = config['alias_generator']
+    if alias_generator is None:
+        return
+
+    for name, field_info in fields.items():
+        if field_info.alias_priority is None or field_info.alias_priority <= 1:
+            alias = alias_generator(name)
+            if not isinstance(alias, str):
+                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+            field_info.alias = alias
+            field_info.alias_priority = 1

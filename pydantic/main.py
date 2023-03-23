@@ -141,6 +141,8 @@ class ModelMetaclass(ABCMeta):
                     zip(_generics.iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ())
                 )
             )
+
+            cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
             _model_construction.complete_model_class(
                 cls,
                 cls_name,

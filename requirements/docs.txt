@@ -69,7 +69,7 @@ pyyaml==6.0
     #   pyyaml-env-tag
 pyyaml-env-tag==0.1
     # via mkdocs
-regex==2022.10.31
+regex==2023.3.22
     # via mkdocs-material
 requests==2.28.2
     # via mkdocs-material

@@ -27,7 +27,7 @@ SelfReferencingModel.model_rebuild()
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
 model.x = 2
-model.from_orm(model)
+model.model_validate(model.__dict__)  # TODO: Change this to .model_validate(model) when possible
 
 self_referencing_model = SelfReferencingModel(submodel=SelfReferencingModel(submodel=None))
 
@@ -42,17 +42,19 @@ class KwargsModel(BaseModel, from_attributes=True):
 kwargs_model = KwargsModel(x=1, y='y')
 KwargsModel(x=1, y='y', z='z')
 kwargs_model.x = 2
-kwargs_model.from_orm(kwargs_model)
+kwargs_model.model_validate(kwargs_model.__dict__)
 
 
 class InheritingModel(Model):
     z: int = 1
 
 
-InheritingModel.from_orm(model)
+InheritingModel.model_validate(model.__dict__)
 
 
 class ForwardReferencingModel(Model):
+    model_config = dict(undefined_types_warning=False)
+
     future: 'FutureModel'
 
 
@@ -78,7 +80,7 @@ class MutationModel(NoMutationModel):
 
 
 MutationModel(x=1).x = 2
-MutationModel.from_orm(model)
+MutationModel.model_validate(model.__dict__)
 
 
 class KwargsNoMutationModel(BaseModel, frozen=True):
@@ -90,14 +92,14 @@ class KwargsMutationModel(KwargsNoMutationModel, frozen=False, from_attributes=T
 
 
 KwargsMutationModel(x=1).x = 2
-KwargsMutationModel.from_orm(model)
+KwargsMutationModel.model_validate(model.__dict__)
 
 
 class OverrideModel(Model):
     x: int
 
 
-OverrideModel(x=1.5, y='b')
+OverrideModel(x=1, y='b')
 
 
 class Mixin:
@@ -128,11 +130,7 @@ class ClassVarModel(BaseModel):
 ClassVarModel(x=1)
 
 
-class Config:
-    validate_assignment = True
-
-
-@dataclass(config=Config)
+@dataclass(config={'validate_assignment': True})
 class AddProject:
     name: str
     slug: Optional[str]
@@ -175,7 +173,7 @@ class NotFrozenModel(FrozenModel):
 
 
 NotFrozenModel(x=1).x = 2
-NotFrozenModel.from_orm(model)
+NotFrozenModel.model_validate(model.__dict__)
 
 
 class KwargsFrozenModel(BaseModel, frozen=True):
@@ -187,7 +185,7 @@ class KwargsNotFrozenModel(FrozenModel, frozen=False, from_attributes=True):
 
 
 KwargsNotFrozenModel(x=1).x = 2
-KwargsNotFrozenModel.from_orm(model)
+KwargsNotFrozenModel.model_validate(model.__dict__)
 
 
 class ModelWithSelfField(BaseModel):
@@ -200,7 +198,7 @@ def f(name: str) -> str:
 
 class ModelWithAllowReuseValidator(BaseModel):
     name: str
-    _normalize_name = validator('name', allow_reuse=True)(f)
+    normalize_name = validator('name', allow_reuse=True)(f)
 
 
 model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
