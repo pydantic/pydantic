@@ -41,8 +41,8 @@ from pydantic import (
     parse_obj_as,
     root_validator,
     validate_arguments,
-    validator,
 )
+from pydantic.decorators import field_validator
 from pydantic.fields import Field, PrivateAttr
 from pydantic.networks import AnyUrl
 
@@ -61,16 +61,16 @@ class Model(BaseModel):
     signup_ts: Optional[datetime] = None
     list_of_ints: List[int]
 
-    @validator('age')
+    @field_validator('age')
     def check_age(cls, value: int) -> int:
         assert value < 100, 'too old'
         return value
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
-    @root_validator(mode='before', allow_reuse=False)
+    @root_validator(pre=True, skip_on_failure=True, allow_reuse=False)
     def pre_root_check(cls, values: Dict[str, Any]) -> Dict[str, Any]:
         return values
 
