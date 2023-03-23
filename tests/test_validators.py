@@ -442,50 +442,56 @@ def test_validate_not_always():
     assert check_calls == 1
 
 
-@pytest.mark.xfail(reason='working on V2 - wildcard validators')
 def test_wildcard_validators():
-    calls = []
+    calls: list[tuple[str, Any]] = []
 
-    class Model(BaseModel):
-        a: str
-        b: int
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
-        @field_validator('a')
-        @classmethod
-        def check_a(cls, v, field, **kwargs):
-            calls.append(('check_a', v, field.name))
-            return v
+        class Model(BaseModel):
+            a: str
+            b: int
 
-        @field_validator('*')
-        @classmethod
-        def check_all(cls, v, field, **kwargs):
-            calls.append(('check_all', v, field.name))
-            return v
+            @validator('a')
+            def check_a(cls, v: Any) -> Any:
+                calls.append(('check_a', v))
+                return v
+
+            @validator('*')
+            def check_all(cls, v: Any) -> Any:
+                calls.append(('check_all', v))
+                return v
 
     assert Model(a='abc', b='123').model_dump() == dict(a='abc', b=123)
-    assert calls == [('check_a', 'abc', 'a'), ('check_all', 'abc', 'a'), ('check_all', 123, 'b')]
+    assert calls == [('check_a', 'abc'), ('check_all', 'abc'), ('check_all', 123)]
 
 
-@pytest.mark.xfail(reason='working on V2 - wildcard validators')
 def test_wildcard_validator_error():
-    class Model(BaseModel):
-        a: str
-        b: str
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
-        @field_validator('*')
-        @classmethod
-        def check_all(cls, v, field, **kwargs):
-            if 'foobar' not in v:
-                raise ValueError('"foobar" not found in a')
-            return v
+        class Model(BaseModel):
+            a: str
+            b: str
+
+            @validator('*')
+            def check_all(cls, v: Any) -> Any:
+                if 'foobar' not in v:
+                    raise ValueError('"foobar" not found in a')
+                return v
 
     assert Model(a='foobar a', b='foobar b').b == 'foobar b'
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
+
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': '"foobar" not found in a', 'type': 'value_error'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {
+            'type': 'value_error',
+            'loc': ('a',),
+            'msg': 'Value error, "foobar" not found in a',
+            'input': 'snap',
+            'ctx': {'error': '"foobar" not found in a'},
+        },
+        {'type': 'missing', 'loc': ('b',), 'msg': 'Field required', 'input': {'a': 'snap'}},
     ]
 
 

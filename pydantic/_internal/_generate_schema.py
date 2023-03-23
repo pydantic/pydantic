@@ -45,15 +45,28 @@ __all__ = 'model_fields_schema', 'dataclass_schema', 'GenerateSchema', 'generate
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
 
-FieldDecoratorInfoType = TypeVar(
-    'FieldDecoratorInfoType', bound=Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, SerializerDecoratorInfo]
-)
+FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, SerializerDecoratorInfo]
+FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
+
+
+def check_validator_fields_against_field_name(
+    info: FieldDecoratorInfo,
+    field: str,
+) -> bool:
+    if isinstance(info, ValidatorDecoratorInfo):
+        # V1 compat: accept `'*'` as a wildcard that matches all fields
+        if info.fields == ('*',):
+            return True
+    for v_field_name in info.fields:
+        if v_field_name == field:
+            return True
+    return False
 
 
 def filter_field_decorator_info_by_field(
     validator_functions: Iterable[Decorator[FieldDecoratorInfoType]], field: str
 ) -> list[Decorator[FieldDecoratorInfoType]]:
-    return [dec for dec in validator_functions if field in dec.info.fields]
+    return [dec for dec in validator_functions if check_validator_fields_against_field_name(dec.info, field)]
 
 
 def apply_each_item_validators(
