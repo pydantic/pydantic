@@ -47,6 +47,11 @@ _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, SerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
+AnyFieldDecorator = Union[
+    Decorator[ValidatorDecoratorInfo],
+    Decorator[FieldValidatorDecoratorInfo],
+    Decorator[SerializerDecoratorInfo],
+]
 
 
 def check_validator_fields_against_field_name(
@@ -61,6 +66,20 @@ def check_validator_fields_against_field_name(
         if v_field_name == field:
             return True
     return False
+
+
+def check_validator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields: Iterable[str]) -> None:
+    fields = set(fields)
+    for dec in decorators:
+        if isinstance(dec.info, ValidatorDecoratorInfo) and dec.info.fields == ('*',):
+            # V1 compat: accept `'*'` as a wildcard that matches all fields
+            continue
+        for field in dec.info.fields:
+            if field not in fields:
+                raise PydanticUserError(
+                    f'Validators defined with incorrect fields: {dec.unwapped_func.__name__}'
+                    " (use check_fields=False if you're inheriting from the model and intended this)"
+                )
 
 
 def filter_field_decorator_info_by_field(
@@ -112,6 +131,10 @@ def model_fields_schema(
     This is typed_dict schema which is used to create the model.
     """
     schema_generator = GenerateSchema(arbitrary_types, types_namespace, typevars_map)
+    check_validator_fields_exist(
+        [*decorators.field_validator.values(), *decorators.serializer.values(), *decorators.validator.values()],
+        fields.keys(),
+    )
     fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
         {k: schema_generator.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
         ref=model_ref,
