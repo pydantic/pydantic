@@ -43,7 +43,8 @@ FIELD_SERIALIZER_TAG = '_field_serializer'
 
 class ValidatorDecoratorInfo(Representation):
     """
-    Store information about field validators created via `@validator`
+    A container for data from `@validator` so that we can access it
+    while building the pydantic-core schema.
     """
 
     def __init__(
@@ -68,7 +69,8 @@ class ValidatorDecoratorInfo(Representation):
 
 class FieldValidatorDecoratorInfo(Representation):
     """
-    Store information about field validators created via `@field_validator`
+    A container for data from `@field_validator` so that we can access it
+    while building the pydantic-core schema.
     """
 
     def __init__(
@@ -96,7 +98,8 @@ class FieldValidatorDecoratorInfo(Representation):
 
 class RootValidatorDecoratorInfo(Representation):
     """
-    Store information about root validators created via `@root_validator`
+    A container for data from `@root_validator` so that we can access it
+    while building the pydantic-core schema.
     """
 
     def __init__(
