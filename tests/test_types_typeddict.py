@@ -3,7 +3,7 @@ Tests for TypedDict
 """
 import sys
 import typing
-from typing import Generic, List, Optional, TypeVar
+from typing import Generic, Optional, TypeVar
 
 import pytest
 import typing_extensions
@@ -462,9 +462,11 @@ def test_generic_typeddict_in_generic_model():
 def test_recursive_generic_typeddict(create_module):
     @create_module
     def module():
-        from typing import Generic, Optional, TypeVar
+        from typing import Generic, List, Optional, TypeVar
 
         from typing_extensions import TypedDict
+
+        from pydantic import BaseModel
 
         T = TypeVar('T')
 

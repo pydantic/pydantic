@@ -209,10 +209,12 @@ class Decorator(Generic[DecoratorInfoType], Representation):
         self,
         cls_var_name: str,
         func: Callable[..., Any],
+        unwrapped_func: Callable[..., Any],
         info: DecoratorInfoType,
     ) -> None:
         self.cls_var_name = cls_var_name
         self.func = func
+        self.unwrapped_func = unwrapped_func
         self.info = info
 
 
@@ -269,14 +271,14 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
             shimmed_func = var_value.shim(func) if var_value.shim is not None else func
             info = var_value.decorator_info
             if isinstance(info, ValidatorDecoratorInfo):
-                res.validator[var_name] = Decorator(var_name, shimmed_func, info)
+                res.validator[var_name] = Decorator(var_name, shimmed_func, func, info)
             elif isinstance(info, FieldValidatorDecoratorInfo):
-                res.field_validator[var_name] = Decorator(var_name, shimmed_func, info)
+                res.field_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
             elif isinstance(info, RootValidatorDecoratorInfo):
-                res.root_validator[var_name] = Decorator(var_name, shimmed_func, info)
+                res.root_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
             else:
                 assert isinstance(info, SerializerDecoratorInfo)
-                res.serializer[var_name] = Decorator(var_name, shimmed_func, info)
+                res.serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
             # replace our marker with the bound, concrete function
             setattr(cls, var_name, func)
 

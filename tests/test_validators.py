@@ -495,8 +495,6 @@ def test_wildcard_validator_error():
     ]
 
 
-# TODO: needs fix, is check_fields not being used?
-@pytest.mark.xfail(reason='working on V2')
 def test_invalid_field():
     with pytest.raises(errors.PydanticUserError) as exc_info:
 
@@ -554,23 +552,24 @@ def test_validate_child_extra():
         Child(a='snap')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_child_all():
-    class Parent(BaseModel):
-        a: str
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
-    class Child(Parent):
-        @field_validator('*')
-        @classmethod
-        def check_a(cls, v: Any):
-            if 'foobar' not in v:
-                raise ValueError('"foobar" not found in a')
-            return v
+        class Parent(BaseModel):
+            a: str
 
-    assert Parent(a='this is not a child').a == 'this is not a child'
-    assert Child(a='this is foobar good').a == 'this is foobar good'
-    with pytest.raises(ValidationError):
-        Child(a='snap')
+        class Child(Parent):
+            @validator('*')
+            @classmethod
+            def check_a(cls, v: Any):
+                if 'foobar' not in v:
+                    raise ValueError('"foobar" not found in a')
+                return v
+
+        assert Parent(a='this is not a child').a == 'this is not a child'
+        assert Child(a='this is foobar good').a == 'this is foobar good'
+        with pytest.raises(ValidationError):
+            Child(a='snap')
 
 
 def test_validate_parent():
@@ -595,27 +594,28 @@ def test_validate_parent():
         Child(a='snap')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validate_parent_all():
-    class Parent(BaseModel):
-        a: str
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
-        @field_validator('*')
-        @classmethod
-        def check_a(cls, v: Any):
-            if 'foobar' not in v:
-                raise ValueError('"foobar" not found in a')
-            return v
+        class Parent(BaseModel):
+            a: str
 
-    class Child(Parent):
-        pass
+            @validator('*')
+            @classmethod
+            def check_a(cls, v: Any):
+                if 'foobar' not in v:
+                    raise ValueError('"foobar" not found in a')
+                return v
 
-    assert Parent(a='this is foobar good').a == 'this is foobar good'
-    assert Child(a='this is foobar good').a == 'this is foobar good'
-    with pytest.raises(ValidationError):
-        Parent(a='snap')
-    with pytest.raises(ValidationError):
-        Child(a='snap')
+        class Child(Parent):
+            pass
+
+        assert Parent(a='this is foobar good').a == 'this is foobar good'
+        assert Child(a='this is foobar good').a == 'this is foobar good'
+        with pytest.raises(ValidationError):
+            Parent(a='snap')
+        with pytest.raises(ValidationError):
+            Child(a='snap')
 
 
 def test_inheritance_keep():
