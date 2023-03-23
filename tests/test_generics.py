@@ -32,7 +32,7 @@ from dirty_equals import HasRepr
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal, OrderedDict
 
-from pydantic import BaseModel, Field, Json, PositiveInt, ValidationError, ValidationInfo, root_validator, validator
+from pydantic import BaseModel, Field, Json, PositiveInt, ValidationError, ValidationInfo, root_validator
 from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import (
     _GENERIC_TYPES_CACHE,
@@ -43,6 +43,7 @@ from pydantic._internal._generics import (
     recursively_defined_type_refs,
     replace_types,
 )
+from pydantic.decorators import field_validator
 
 
 @pytest.fixture(autouse=True)
@@ -84,19 +85,20 @@ def test_value_validation():
     class Response(BaseModel, Generic[T]):
         data: T
 
-        @validator('data')
+        @field_validator('data')
+        @classmethod
         def validate_value_nonzero(cls, v: Any):
             if any(x == 0 for x in v.values()):
                 raise ValueError('some value is zero')
             return v
 
-        @root_validator()
-        def validate_sum(cls, item: Any):
-            values, fields = item
+        @root_validator(skip_on_failure=True)
+        @classmethod
+        def validate_sum(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             data = values.get('data', {})
             if sum(data.values()) > 5:
                 raise ValueError('sum too large')
-            return values, fields
+            return values
 
     assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
@@ -450,7 +452,8 @@ def test_generic():
         error: Optional[error_type] = None
         positive_number: int
 
-        @validator('error')
+        @field_validator('error')
+        @classmethod
         def validate_error(cls, v: Optional[error_type], info: ValidationInfo) -> Optional[error_type]:
             values = info.data
             if values.get('data', None) is None and v is None:
@@ -459,7 +462,8 @@ def test_generic():
                 raise ValueError('Must not provide both data and error')
             return v
 
-        @validator('positive_number')
+        @field_validator('positive_number')
+        @classmethod
         def validate_positive_number(cls, v: int) -> int:
             if v < 0:
                 raise ValueError

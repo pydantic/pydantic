@@ -3,202 +3,284 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
-import inspect
 import warnings
-from functools import wraps
 from inspect import Parameter, signature
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
-from pydantic_core.core_schema import GeneralValidatorFunction, JsonReturnTypes, ValidationInfo, WhenUsed
-from typing_extensions import Protocol
+from pydantic_core.core_schema import (
+    FieldValidationInfo,
+    FieldValidatorFunction,
+    FieldWrapValidatorFunction,
+    JsonReturnTypes,
+    ValidationInfo,
+    WhenUsed,
+)
+from typing_extensions import Protocol, TypeAlias
 
-from ..errors import PydanticUserError
+from pydantic._internal._repr import Representation
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
 
-    from ..main import BaseModel
 
-__all__ = (
-    'FIELD_VALIDATOR_TAG',
-    'ROOT_VALIDATOR_TAG',
-    'Validator',
-    'ValidationFunctions',
-    'SerializationFunctions',
-    'prepare_validator_decorator',
-    'prepare_serializer_decorator',
-)
 FIELD_VALIDATOR_TAG = '_field_validator'
 ROOT_VALIDATOR_TAG = '_root_validator'
 
 FIELD_SERIALIZER_TAG = '_field_serializer'
 
 
-class Validator:
+class ValidatorDecoratorInfo(Representation):
     """
-    Store information about field and root validators.
+    A container for data from `@validator` so that we can access it
+    while building the pydantic-core schema.
     """
-
-    __slots__ = 'function', 'mode', 'sub_path', 'check_fields', 'is_field_validator'
 
     def __init__(
         self,
         *,
+        fields: tuple[str, ...],
+        # pre=True/False in v1 should be converted to mode='before'/'after' in v2
+        mode: Literal['before', 'after'],
+        check_fields: bool | None,
+        each_item: bool,
+    ) -> None:
+        """
+        :param mode: the pydantic-core validator mode.
+        :param check_fields: whether to check that the fields actually exist on the model.
+        :param each_item: if True this validator gets applied to the internal items of
+            lists/sets/dicts instead of the collection itself.
+        """
+        self.fields = fields
+        self.mode = mode
+        self.check_fields = check_fields
+        self.each_item = each_item
+
+
+class FieldValidatorDecoratorInfo(Representation):
+    """
+    A container for data from `@field_validator` so that we can access it
+    while building the pydantic-core schema.
+    """
+
+    def __init__(
+        self,
+        *,
+        fields: tuple[str, ...],
         mode: Literal['before', 'after', 'wrap', 'plain'],
-        is_field_validator: bool,
-        sub_path: tuple[str | int, ...] | None = None,
-        check_fields: bool | None = None,
-    ):
-        # function is set later after the class is created and functions are bound
-        self.function: Callable[..., Any] | None = None
+        sub_path: tuple[str | int, ...] | None,
+        check_fields: bool | None,
+    ) -> None:
+        """
+        :param mode: the pydantic-core validator mode.
+        :param type: either 'unbound' or 'field' indicating if this validator should have
+            access to the model itself.
+        :param sub_path: Not yet supported.
+        :param check_fields: whether to check that the fields actually exist on the model.
+        :param wrap: a callback to apply V1 compatibility shims or allow extra signatures
+            that pydantic-core does not recognize.
+        """
+        self.fields = fields
         self.mode = mode
         self.sub_path = sub_path
         self.check_fields = check_fields
-        self.is_field_validator = is_field_validator
 
 
-class Serializer:
+class RootValidatorDecoratorInfo(Representation):
     """
-    Store information about field serializers.
+    A container for data from `@root_validator` so that we can access it
+    while building the pydantic-core schema.
     """
-
-    __slots__ = 'function', 'sub_path', 'wrap', 'json_return_type', 'when_used', 'check_fields'
 
     def __init__(
         self,
         *,
-        wrap: bool = False,
+        mode: Literal['before', 'after'],
+    ) -> None:
+        """
+        :param mode: the pydantic-core validator mode
+        """
+        self.mode = mode
+
+
+class SerializerDecoratorInfo(Representation):
+    """
+    A container for data from `@serializer` so that we can access it
+    while building the pydantic-core schema.
+    """
+
+    json_return_type: JsonReturnTypes | None
+    when_used: WhenUsed
+
+    def __init__(
+        self,
+        *,
+        fields: tuple[str, ...],
+        mode: Literal['plain', 'wrap'],
         json_return_type: JsonReturnTypes | None = None,
         when_used: WhenUsed = 'always',
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
-    ):
-        # arguments match core_schema.general_plain_serializer_function_ser_schema or
-        # core_schema.general_wrap_serializer_function_ser_schema
-        # function is set later after the class is created and functions are bound
-        self.function: Callable[..., Any] | None = None
+    ) -> None:
+        """
+        :param mode: the pydantic-core serializer mode.
+        :param type: either 'unbound' or 'field' indicating if this validator should have
+            access to the model itself.
+        :param sub_path: Not yet supported.
+        :param json_return_type: TODO
+        :param when_used: TODO
+        :param check_fields: whether to check that the fields actually exist on the model.
+        """
+        self.fields = fields
         self.sub_path = sub_path
-        self.wrap = wrap
+        self.mode = mode
         self.json_return_type = json_return_type
         self.when_used = when_used
         self.check_fields = check_fields
 
 
-DecFunc = TypeVar('DecFunc', Validator, Serializer)
+DecoratorInfo = Union[
+    ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, RootValidatorDecoratorInfo, SerializerDecoratorInfo
+]
+
+ReturnType = TypeVar('ReturnType')
+DecoratedType: TypeAlias = 'Union[classmethod[ReturnType], staticmethod[ReturnType], Callable[..., ReturnType]]'
 
 
-class DecoratorFunctions(Generic[DecFunc]):
-    __slots__ = (
-        '_decorators',
-        '_field_decorators',
-        '_direct_field_decorators',
-        '_all_fields_decorators',
-        '_root_decorators',
-        '_used_decorators',
-    )
-    model_attribute: ClassVar[str]
-    _field_tag: ClassVar[str]
-    _root_tag: ClassVar[str | None]
+class PydanticDecoratorMarker(Generic[ReturnType], Representation):
+    """
+    Wrap a classmethod, staticmethod or unbound function
+    and act as a descriptor that allows us to detect decorated items
+    from the class' attributes.
 
-    def __init__(self, bases: tuple[type[Any], ...]) -> None:
-        self._decorators: dict[str, DecFunc] = {}
-        self._field_decorators: dict[str, list[str]] = {}
-        self._direct_field_decorators: set[str] = set()
-        self._all_fields_decorators: list[str] = []
-        self._root_decorators: list[str] = []
-        self._used_decorators: set[str] = set()
-        self._inherit(bases)
+    This class' __get__ returns the wrapped item's __get__ result,
+    which makes it transparent for classmethods and staticmethods.
+    """
 
-    def extract_decorator(self, name: str, value: Any) -> bool:
-        """
-        If the value is a field or root decorator, add it to the appropriate group of decorators.
+    def __init__(
+        self,
+        wrapped: DecoratedType[ReturnType],
+        decorator_info: DecoratorInfo,
+        shim: Callable[[Callable[..., Any]], Callable[..., Any]] | None,
+    ) -> None:
+        self.wrapped = wrapped
+        self.decorator_info = decorator_info
+        self.shim = shim
 
-        Note at this point the function is not bound to the class,
-        we have to set functions later in `set_bound_functions`.
-        """
-        f_decorator: tuple[tuple[str, ...], DecFunc] | None = getattr(value, self._field_tag, None)
-        if f_decorator:
-            fields, decorator = f_decorator
-            self._decorators[name] = decorator
-            for field_name in fields:
-                this_field_decorators = self._field_decorators.get(field_name)
-                if this_field_decorators:
-                    this_field_decorators.append(name)
-                else:
-                    self._field_decorators[field_name] = [name]
-                return True
-        elif self._root_tag is not None:
-            r_decorator: DecFunc | None = getattr(value, self._root_tag, None)
-            if r_decorator:
-                self._decorators[name] = r_decorator
-                self._root_decorators.append(name)
-                return True
+    @overload
+    def __get__(self, obj: None, objtype: None) -> PydanticDecoratorMarker[ReturnType]:
+        ...
 
-        return False
+    @overload
+    def __get__(self, obj: object, objtype: type[object]) -> Callable[..., ReturnType]:
+        ...
 
-    def set_bound_functions(self, cls: type[BaseModel]) -> None:
-        """
-        Set functions in self._decorators, now that the class is created and functions are bound.
-        """
-        for name, decorator in self._decorators.items():
-            func = getattr(cls, name)
-            if isinstance(decorator, Validator):
-                decorator.function = make_generic_validator(func, decorator.mode)
+    def __get__(
+        self, obj: object | None, objtype: type[object] | None = None
+    ) -> Callable[..., ReturnType] | PydanticDecoratorMarker[ReturnType]:
+        if obj is None:
+            return self
+        return self.wrapped.__get__(obj, objtype)
+
+
+DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
+
+
+class Decorator(Generic[DecoratorInfoType], Representation):
+    """
+    A generic container class to join together the decorator metadata
+    (metadata from decorator itself, which we have when the
+    decorator is called but not when we are building the core-schema)
+    and the bound function (which we have after the class itself is created).
+    """
+
+    def __init__(
+        self,
+        cls_var_name: str,
+        func: Callable[..., Any],
+        info: DecoratorInfoType,
+    ) -> None:
+        self.cls_var_name = cls_var_name
+        self.func = func
+        self.info = info
+
+
+AnyDecorator = Union[
+    Decorator[ValidatorDecoratorInfo],
+    Decorator[FieldValidatorDecoratorInfo],
+    Decorator[RootValidatorDecoratorInfo],
+    Decorator[SerializerDecoratorInfo],
+]
+
+
+class DecoratorInfos(Representation):
+    # mapping of name in the class namespace to decorator info
+    # note that the name in the class namespace is the function or attribute name
+    # not the field name!
+    validator: dict[str, Decorator[ValidatorDecoratorInfo]]
+    field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]]
+    root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]]
+    serializer: dict[str, Decorator[SerializerDecoratorInfo]]
+
+    def __init__(self) -> None:
+        self.validator = {}
+        self.field_validator = {}
+        self.root_validator = {}
+        self.serializer = {}
+
+
+def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
+    # We want to collect all DecFunc instances that exist as
+    # attributes in the namespace of the class (a BaseModel or dataclass)
+    # that called us
+    # But we want to collect these in the order of the bases
+    # So instead of getting them all from the leaf class (the class that called us),
+    # we traverse the bases from root (the oldest ancestor class) to leaf
+    # and collect all of the instances as we go, taking care to replace
+    # any duplicate ones with the last one we see to mimick how function overriding
+    # works with inheritance.
+    # If we do replace any functions we put the replacement into the position
+    # the replaced function was in; that is, we maintain the order.
+
+    # reminder: dicts are ordered and replacement does not alter the order
+    res = DecoratorInfos()
+    for base in cls.__bases__:
+        existing = cast(Union[DecoratorInfos, None], getattr(base, '__pydantic_decorators__', None))
+        if existing is not None:
+            res.validator.update(existing.validator)
+            res.field_validator.update(existing.field_validator)
+            res.root_validator.update(existing.root_validator)
+            res.serializer.update(existing.serializer)
+
+    for var_name, var_value in vars(cls).items():
+        if isinstance(var_value, PydanticDecoratorMarker):
+            func = var_value.wrapped.__get__(None, cls)
+            shimmed_func = var_value.shim(func) if var_value.shim is not None else func
+            info = var_value.decorator_info
+            if isinstance(info, ValidatorDecoratorInfo):
+                res.validator[var_name] = Decorator(var_name, shimmed_func, info)
+            elif isinstance(info, FieldValidatorDecoratorInfo):
+                res.field_validator[var_name] = Decorator(var_name, shimmed_func, info)
+            elif isinstance(info, RootValidatorDecoratorInfo):
+                res.root_validator[var_name] = Decorator(var_name, shimmed_func, info)
             else:
-                decorator.function = func
+                assert isinstance(info, SerializerDecoratorInfo)
+                res.serializer[var_name] = Decorator(var_name, shimmed_func, info)
+            # replace our marker with the bound, concrete function
+            setattr(cls, var_name, func)
 
-    def get_root_decorators(self) -> list[DecFunc]:
-        return [self._decorators[name] for name in self._root_decorators]
-
-    def get_field_decorators(self, name: str) -> list[DecFunc]:
-        """
-        Get all decorators for a given field name.
-        """
-        self._used_decorators.add(name)
-        decorators_names = self._field_decorators.get(name, [])
-        decorators_names += self._all_fields_decorators
-        return [self._decorators[name] for name in decorators_names]
-
-    def check_for_unused(self) -> None:
-        unused_decorator_keys = self._decorators.keys() - self._used_decorators - set(self._root_decorators)
-        unused_decorators = [name for name in unused_decorator_keys if self._decorators[name].check_fields]
-        if unused_decorators:
-            fn = ', '.join(unused_decorators)
-            raise PydanticUserError(
-                f"Decorator defined with incorrect fields: {fn} "
-                f"(use check_fields=False if you're inheriting from the model and intended this)"
-            )
-
-    def _inherit(self, bases: tuple[type[Any], ...]) -> None:
-        """
-        Inherit decorators from `ValidationFunctions` instances on base classes.
-
-        Validators from the closest base should be called last, and the greatest-(grand)parent first - to roughly
-        match their definition order in code.
-        """
-        for base in reversed(bases):
-            parent_vf: DecoratorFunctions[DecFunc] | None = getattr(base, self.model_attribute, None)
-            if parent_vf:
-                self._decorators.update(parent_vf._decorators)
-                for k, v in parent_vf._field_decorators.items():
-                    existing = self._field_decorators.get(k)
-                    if existing:
-                        existing.extend(v)
-                    self._field_decorators[k] = v[:]
-                self._all_fields_decorators.extend(parent_vf._all_fields_decorators)
-                self._root_decorators.extend(parent_vf._root_decorators)
-
-
-class ValidationFunctions(DecoratorFunctions[Validator]):
-    model_attribute: ClassVar[str] = '__pydantic_validator_functions__'
-    _field_tag: ClassVar[str] = FIELD_VALIDATOR_TAG
-    _root_tag: ClassVar[str | None] = ROOT_VALIDATOR_TAG
-
-
-class SerializationFunctions(DecoratorFunctions[Serializer]):
-    model_attribute: ClassVar[str] = '__pydantic_serializer_functions__'
-    _field_tag: ClassVar[str] = FIELD_SERIALIZER_TAG
-    _root_tag: ClassVar[str | None] = None
+    return res
 
 
 _FUNCS: set[str] = set()
@@ -222,34 +304,52 @@ def prepare_serializer_decorator(function: _SerializerType, allow_reuse: bool) -
     return function
 
 
-def prepare_validator_decorator(function: Callable[..., Any], allow_reuse: bool) -> Any:
+def unwrap_unbound_methods(function: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> Callable[..., Any]:
     """
-    Apply the @classmethod or @staticmethod decorator to @validator functions if it was not applied already.
+    Unwrap unbound classmethods and staticmethods
+    """
+    if isinstance(function, (classmethod, staticmethod)):
+        return function.__func__
+    return function
+
+
+def is_classmethod_from_sig(function: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> bool:
+    sig = signature(unwrap_unbound_methods(function))
+    first = next(iter(sig.parameters.values()), None)
+    if first and first.name == 'cls':
+        return True
+    return False
+
+
+def is_instance_method_from_sig(function: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> bool:
+    sig = signature(unwrap_unbound_methods(function))
+    first = next(iter(sig.parameters.values()), None)
+    if first and first.name == 'self':
+        return True
+    return False
+
+
+def ensure_classmethod_based_on_signature(
+    function: Callable[..., Any] | classmethod[Any] | staticmethod[Any],
+) -> classmethod[Any] | staticmethod[Any] | Callable[..., Any]:
+    if not isinstance(function, classmethod) and is_classmethod_from_sig(function):
+        return classmethod(function)
+    return function
+
+
+def check_for_duplicate_validator(
+    function: Callable[..., Any] | classmethod[Any] | staticmethod[Any], allow_reuse: bool
+) -> None:
+    """
     Warn about validators with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
     """
-    sig = inspect.signature(function)
-    first_param = next(iter(sig.parameters.values()), None)
-    if first_param is None:
-        raise TypeError(f'Unrecognized validator signature {sig} for {function}')
-    ret: Any
-    if first_param.name == 'cls':
-        ret = function if isinstance(function, classmethod) else classmethod(function)
-        function = ret.__func__
-    elif first_param.name == 'self':
-        raise TypeError('Validators cannot be instance methods (they should not accept `self` as an argument)')
-    else:
-        ret = function if isinstance(function, staticmethod) else staticmethod(function)
-        function = ret.__func__
     if not allow_reuse and not in_ipython():
-        fn = function
-        if isinstance(fn, classmethod):
-            fn = fn.__func__
-        ref = f'{fn.__module__}::{fn.__qualname__}'
+        function = unwrap_unbound_methods(function)
+        ref = f'{function.__module__}::{function.__qualname__}'
         if ref in _FUNCS:
             warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
-    return ret
 
 
 def in_ipython() -> bool:
@@ -265,6 +365,10 @@ def in_ipython() -> bool:
 
 
 class OnlyValueValidator(Protocol):
+    """
+    A simple validator, supported for V1 validators and V2 validators
+    """
+
     def __call__(self, __value: Any) -> Any:
         ...
 
@@ -284,11 +388,6 @@ class V1ValidatorWithKwargs(Protocol):
         ...
 
 
-class V1ValidatorWithKwargsAndValue(Protocol):
-    def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:
-        ...
-
-
 class V1ValidatorWithValuesAndKwargs(Protocol):
     def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:
         ...
@@ -299,33 +398,36 @@ V1Validator = Union[
 ]
 
 
-def make_generic_validator(
-    validator: V1Validator | OnlyValueValidator | GeneralValidatorFunction, mode: str
-) -> GeneralValidatorFunction:
-    """
-    In order to support different signatures, including deprecated validator signatures from v1,
-    we introspect the function signature and wrap it in a parent function that has a signature
-    compatible with pydantic_core
-    """
-    sig = signature(validator)
+V1_VALIDATOR_VALID_SIGNATURES = """\
+def f1(value: Any) -> Any: ...
+def f2(value: Any, values: Dict[str, Any]) -> Any: ...
 
-    def _warn_v1_validator() -> None:
-        warnings.warn(
-            'Validator signatures using the `values` keyword argument or `**kwargs` are no longer supported.'
-            ' Please use an `info: pydantic.ValidationInfo` as the second positional argument instead.'
-            ' This compatibility shim may be removed in a future minor release of Pydantic v2.X',
-            DeprecationWarning,
-            # The stacklevel parameter makes the warning show up as coming from the User's code instead
-            # of our internal implementation
-            # Since this just goes up the stack the source location will appear as
-            # class TheModelName(BaseModel):
-            # Which is good enough for now in terms of helping users locate the issue
-            # In the future maybe we can capture the calling module and line number in the
-            # @validator decorator and use that here to be more accurate about where the issue is
-            # But that may not be 100% reliable, so tabling for now.
-            stacklevel=6,
-        )
+class Model(BaseModel):
+    x: int
 
+    @validator('x')
+    @classmethod  # optional
+    def val_x1(cls, value: Any) -> Any: ...
+
+    @validator('x')
+    @classmethod  # optional
+    def val_x2(cls, value: Any, values: Dict[str, Any]) -> Any: ...
+
+    @validator('x')
+    @staticmethod  # required
+    def val_x3(value: Any) -> Any: ...
+
+    @validator('x')
+    @staticmethod  # required
+    def val_x4(value: Any, values: Dict[str, Any]) -> Any: ...
+
+    val_x5 = validator('x')(f1)
+    val_x6 = validator('x')(f2)
+"""
+
+
+def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFunction:
+    sig = signature(unwrap_unbound_methods(validator))
     positional_params: list[str] = []
     keyword_only_params: list[str] = []
     accepts_kwargs = False
@@ -342,7 +444,8 @@ def make_generic_validator(
             positional_params.append(param_name)
         elif parameter.kind is Parameter.KEYWORD_ONLY:
             keyword_only_params.append(param_name)
-        elif parameter.kind is Parameter.VAR_KEYWORD:
+        else:
+            assert parameter.kind is Parameter.VAR_KEYWORD
             accepts_kwargs = True
 
     accepts_values_kw = (keyword_only_params == ['values'] and len(positional_params) == 1) or (
@@ -350,40 +453,111 @@ def make_generic_validator(
     )
 
     if accepts_kwargs and len(positional_params) == 1:
-        # although this could be compatible with the V2 signature we want to discourage it,
-        # so we treat it as a backwards compatible validator
-        validator = cast(V1ValidatorWithKwargs, validator)
+        # has (v, **kwargs) or (v, values, **kwargs)
+        val1 = cast(Union[V1ValidatorWithKwargs, V1ValidatorWithValuesAndKwargs], validator)
 
-        _warn_v1_validator()
+        def wrapper1(value: Any, info: FieldValidationInfo) -> Any:
+            return val1(value, values=info.data)
 
-        @wraps(validator)
-        def _wrapper1(value: Any, info: ValidationInfo) -> Any:
-            return validator(value, values=info.data)  # type: ignore[call-arg]
+        return wrapper1
+    if len(positional_params) == 1 and keyword_only_params == []:
+        # (v) -> Any
+        val2 = cast(OnlyValueValidator, validator)
+
+        def wrapper2(value: Any, _: ValidationInfo) -> Any:
+            return val2(value)
+
+        return wrapper2
+    elif len(positional_params) in (1, 2) and accepts_values_kw:
+        # (v, values) -> Any or (v, *, values) -> Any
+        val3 = cast(V1ValidatorWithValues, validator)
+
+        def wrapper3(value: Any, info: FieldValidationInfo) -> Any:
+            return val3(value, values=info.data)
+
+        return wrapper3
+    raise TypeError(
+        f'Unsupported signature for V1 style validator {validator}: {sig} is not supported.'
+        f' Valid signatures are:\n{V1_VALIDATOR_VALID_SIGNATURES}'
+    )
+
+
+@overload
+def make_generic_v2_field_validator(
+    validator: FieldWrapValidatorFunction, mode: Literal['wrap']
+) -> FieldWrapValidatorFunction:
+    ...
+
+
+@overload
+def make_generic_v2_field_validator(
+    validator: OnlyValueValidator | FieldValidatorFunction, mode: Literal['before', 'after', 'plain']
+) -> FieldValidatorFunction:
+    ...
+
+
+def make_generic_v2_field_validator(
+    validator: OnlyValueValidator | FieldValidatorFunction | FieldWrapValidatorFunction, mode: str
+) -> FieldValidatorFunction | FieldWrapValidatorFunction:
+    """
+    In order to support different signatures, including deprecated validator signatures from v1,
+    we introspect the function signature and wrap it in a parent function that has a signature
+    compatible with pydantic_core
+    """
+    if mode in ('before', 'after', 'plain') and len(signature(validator).parameters) == 1:
+        val1 = cast(OnlyValueValidator, validator)
+
+        # allow the (v) -> Any signature as a convenience
+        def wrapper1(value: Any, info: FieldValidationInfo) -> Any:
+            return val1(value)
+
+        return wrapper1
+
+    val2 = cast(Union[FieldValidatorFunction, FieldWrapValidatorFunction], validator)
+    return val2
+
+
+RootValidatorValues = Dict[str, Any]
+RootValidatorFieldsSet = Set[str]
+RootValidatorValuesAndFieldsSet = Tuple[RootValidatorValues, RootValidatorFieldsSet]
+
+
+class V1RootValidatorFunction(Protocol):
+    def __call__(self, __values: RootValidatorValues) -> RootValidatorValues:
+        ...
+
+
+class V2CoreBeforeRootValidator(Protocol):
+    def __call__(self, __values: RootValidatorValues, __info: ValidationInfo) -> RootValidatorValues:
+        ...
+
+
+class V2CoreAfterRootValidator(Protocol):
+    def __call__(
+        self, __values_and_fields_set: RootValidatorValuesAndFieldsSet, __info: ValidationInfo
+    ) -> RootValidatorValuesAndFieldsSet:
+        ...
+
+
+def make_v1_generic_root_validator(
+    validator: V1RootValidatorFunction, pre: bool
+) -> V2CoreBeforeRootValidator | V2CoreAfterRootValidator:
+    """
+    Wrap a V1 style root validator for V2 compatibility
+    """
+    if pre is True:
+        # mode='before' for pydantic-core
+        def _wrapper1(values: RootValidatorValues, _: ValidationInfo) -> RootValidatorValues:
+            return validator(values)
 
         return _wrapper1
-    if len(positional_params) == 1 and keyword_only_params == []:
-        validator = cast(OnlyValueValidator, validator)
 
-        @wraps(validator)
-        def _wrapper2(value: Any, info: ValidationInfo) -> Any:
-            return validator(value)  # type: ignore[call-arg]
+    # mode='after' for pydantic-core
+    def _wrapper2(
+        values_and_fields_set: tuple[RootValidatorValues, RootValidatorFieldsSet], _: ValidationInfo
+    ) -> tuple[RootValidatorValues, RootValidatorFieldsSet]:
+        values, fields_set = values_and_fields_set
+        values = validator(values)
+        return (values, fields_set)
 
-        return _wrapper2
-    elif len(positional_params) in (1, 2) and accepts_values_kw:
-        validator = cast(V1ValidatorWithValues, validator)
-
-        _warn_v1_validator()
-
-        @wraps(validator)
-        def _wrapper3(value: Any, info: ValidationInfo) -> Any:
-            return validator(value, values=info.data)  # type: ignore[call-arg]
-
-        return _wrapper3
-    elif keyword_only_params == [] and len(positional_params) == 2:
-        validator = cast(GeneralValidatorFunction, validator)
-        return validator
-    raise TypeError(
-        f'Unsupported signature for {mode} validator {validator}: {sig} is not supported.'
-        ' Validators must be compatible with the following two signature:\n'
-        ' - (__value: Any, __info: pydantic.ValidationInfo) -> Any\n'
-    )
+    return _wrapper2

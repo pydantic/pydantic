@@ -10,7 +10,7 @@ import sys
 import typing
 import warnings
 from inspect import Signature, signature
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Mapping
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
@@ -21,8 +21,15 @@ from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _discriminated_union, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
-from ._core_utils import get_type_ref
-from ._decorators import SerializationFunctions, Serializer, ValidationFunctions, Validator
+from ._core_utils import get_type_ref, is_list_like_schema_with_items_schema
+from ._decorators import (
+    Decorator,
+    DecoratorInfos,
+    FieldValidatorDecoratorInfo,
+    RootValidatorDecoratorInfo,
+    SerializerDecoratorInfo,
+    ValidatorDecoratorInfo,
+)
 from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
@@ -38,11 +45,63 @@ __all__ = 'model_fields_schema', 'dataclass_schema', 'GenerateSchema', 'generate
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
 
+FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, SerializerDecoratorInfo]
+FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
+
+
+def check_validator_fields_against_field_name(
+    info: FieldDecoratorInfo,
+    field: str,
+) -> bool:
+    if isinstance(info, ValidatorDecoratorInfo):
+        # V1 compat: accept `'*'` as a wildcard that matches all fields
+        if info.fields == ('*',):
+            return True
+    for v_field_name in info.fields:
+        if v_field_name == field:
+            return True
+    return False
+
+
+def filter_field_decorator_info_by_field(
+    validator_functions: Iterable[Decorator[FieldDecoratorInfoType]], field: str
+) -> list[Decorator[FieldDecoratorInfoType]]:
+    return [dec for dec in validator_functions if check_validator_fields_against_field_name(dec.info, field)]
+
+
+def apply_each_item_validators(
+    schema: core_schema.CoreSchema, each_item_validators: list[Decorator[ValidatorDecoratorInfo]]
+) -> core_schema.CoreSchema:
+    # TODO: remove this V1 compatibility shim once it's deprecated
+    # push down any `each_item=True` validators
+    # note that this won't work for any Annotated types that get wrapped by a function validator
+    # but that's okay because that didn't exist in V1
+    if schema['type'] == 'nullable':
+        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
+        return schema
+    elif is_list_like_schema_with_items_schema(schema):
+        inner_schema = schema.get('items_schema', None)
+        if inner_schema is None:
+            inner_schema = core_schema.any_schema()
+        schema['items_schema'] = apply_validators(inner_schema, each_item_validators)
+    elif schema['type'] == 'dict':
+        # push down any `each_item=True` validators onto dict _values_
+        # this is super arbitrary but it's the V1 behavior
+        inner_schema = schema.get('values_schema', None)
+        if inner_schema is None:
+            inner_schema = core_schema.any_schema()
+        schema['values_schema'] = apply_validators(inner_schema, each_item_validators)
+    elif each_item_validators:
+        raise TypeError(
+            f"`@validator(..., each_item=True)` cannot be applied to fields with a schema of {schema['type']}"
+        )
+    return schema
+
+
 def model_fields_schema(
     model_ref: str,
     fields: dict[str, FieldInfo],
-    validator_functions: ValidationFunctions,
-    serializer_functions: SerializationFunctions,
+    decorators: DecoratorInfos,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
     typevars_map: dict[Any, Any] | None,
@@ -54,14 +113,11 @@ def model_fields_schema(
     """
     schema_generator = GenerateSchema(arbitrary_types, types_namespace, typevars_map)
     fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
-        {
-            k: schema_generator.generate_td_field_schema(k, v, validator_functions, serializer_functions)
-            for k, v in fields.items()
-        },
+        {k: schema_generator.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
         ref=model_ref,
         return_fields_set=True,
     )
-    fields_schema = apply_validators(fields_schema, validator_functions.get_root_decorators())
+    fields_schema = apply_validators(fields_schema, decorators.root_validator.values())
     return fields_schema
 
 
@@ -69,8 +125,7 @@ def dataclass_schema(
     cls: type[Any],
     ref: str,
     fields: dict[str, FieldInfo],
-    validator_functions: ValidationFunctions,
-    serializer_functions: SerializationFunctions,
+    decorators: DecoratorInfos,
     arbitrary_types: bool,
     types_namespace: dict[str, Any] | None,
 ) -> core_schema.CoreSchema:
@@ -79,13 +134,10 @@ def dataclass_schema(
     """
     # TODO add typevars_map argument when we support generic dataclasses
     schema_generator = GenerateSchema(arbitrary_types, types_namespace, None)
-    args = [
-        schema_generator.generate_dc_field_schema(k, v, validator_functions, serializer_functions)
-        for k, v in fields.items()
-    ]
+    args = [schema_generator.generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
     has_post_init = hasattr(cls, '__post_init__')
     args_schema = core_schema.dataclass_args_schema(cls.__name__, args, collect_init_only=has_post_init)
-    inner_schema = apply_validators(args_schema, validator_functions.get_root_decorators())
+    inner_schema = apply_validators(args_schema, decorators.root_validator.values())
     return core_schema.dataclass_schema(cls, inner_schema, post_init=has_post_init, ref=ref)
 
 
@@ -266,7 +318,7 @@ class GenerateSchema:
         elif issubclass(origin, typing.Counter):
             # Subclasses of typing.Counter may be handled as subclasses of dict; see note above
             return self._counter_schema(obj)
-        elif origin == typing.Dict:
+        elif origin in (typing.Dict, dict):
             return self._dict_schema(obj)
         elif issubclass(origin, typing.Dict):
             # Subclasses of typing.Dict may be handled as subclasses of dict; see note above
@@ -308,8 +360,7 @@ class GenerateSchema:
         self,
         name: str,
         field_info: FieldInfo,
-        validator_functions: ValidationFunctions,
-        serializer_functions: SerializationFunctions,
+        decorators: DecoratorInfos,
         *,
         required: bool = True,
     ) -> core_schema.TypedDictField:
@@ -318,11 +369,24 @@ class GenerateSchema:
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
+
         if field_info.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
         schema = apply_annotations(schema, field_info.metadata)
 
-        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
+        # TODO: remove this V1 compatibility shim once it's deprecated
+        # push down any `each_item=True` validators
+        # note that this won't work for any Annotated types that get wrapped by a function validator
+        # but that's okay because that didn't exist in V1
+        this_field_validators = filter_field_decorator_info_by_field(decorators.validator.values(), name)
+        each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
+        this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
+        schema = apply_each_item_validators(schema, each_item_validators)
+
+        schema = apply_validators(schema, filter_field_decorator_info_by_field(this_field_validators, name))
+        schema = apply_validators(
+            schema, filter_field_decorator_info_by_field(decorators.field_validator.values(), name)
+        )
 
         # the default validator needs to go outside of any other validators
         # so that it is the topmost validator for the typed-dict-field validator
@@ -331,7 +395,7 @@ class GenerateSchema:
             required = False
             schema = wrap_default(field_info, schema)
 
-        schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
+        schema = apply_serializers(schema, filter_field_decorator_info_by_field(decorators.serializer.values(), name))
         misc = JsonSchemaMetadata(
             title=field_info.title,
             description=field_info.description,
@@ -351,8 +415,7 @@ class GenerateSchema:
         self,
         name: str,
         field_info: FieldInfo,
-        validator_functions: ValidationFunctions,
-        serializer_functions: SerializationFunctions,
+        decorators: DecoratorInfos,
     ) -> core_schema.DataclassField:
         """
         Prepare a DataclassField to represent the parameter/field, of a dataclass
@@ -364,8 +427,11 @@ class GenerateSchema:
         if not field_info.is_required():
             schema = wrap_default(field_info, schema)
 
-        schema = apply_validators(schema, validator_functions.get_field_decorators(name))
-        schema = apply_serializers(schema, serializer_functions.get_field_decorators(name))
+        schema = apply_validators(
+            schema, filter_field_decorator_info_by_field(decorators.field_validator.values(), name)
+        )
+        schema = apply_validators(schema, filter_field_decorator_info_by_field(decorators.validator.values(), name))
+        schema = apply_serializers(schema, filter_field_decorator_info_by_field(decorators.serializer.values(), name))
         # use `or None` to so the core schema is minimal
         return core_schema.dataclass_field(
             name,
@@ -382,7 +448,7 @@ class GenerateSchema:
         Generate schema for a Union.
         """
         args = get_args(union_type)
-        choices = []
+        choices: list[core_schema.CoreSchema] = []
         nullable = False
         for arg in args:
             if arg is None or arg is _typing_extra.NoneType:
@@ -439,8 +505,6 @@ class GenerateSchema:
         required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
         fields: dict[str, core_schema.TypedDictField] = {}
-        validator_functions = ValidationFunctions(())
-        serializer_functions = SerializationFunctions(())
 
         obj_ref = f'{typed_dict_cls.__module__}.{typed_dict_cls.__qualname__}:{id(typed_dict_cls)}'
         if obj_ref in self._recursion_cache:
@@ -464,7 +528,7 @@ class GenerateSchema:
 
             field_info = FieldInfo.from_annotation(annotation)
             fields[field_name] = self.generate_td_field_schema(
-                field_name, field_info, validator_functions, serializer_functions, required=required
+                field_name, field_info, DecoratorInfos(), required=required
             )
 
         typed_dict_ref = get_type_ref(typed_dict_cls)
@@ -758,8 +822,7 @@ class GenerateSchema:
             get_type_ref(dataclass),
             fields,
             # FIXME we need to get validators and serializers from the dataclasses
-            ValidationFunctions(()),
-            SerializationFunctions(()),
+            DecoratorInfos(),
             self.arbitrary_types,
             self.types_namespace,
         )
@@ -775,7 +838,12 @@ class GenerateSchema:
         return schema
 
 
-def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]) -> core_schema.CoreSchema:
+def apply_validators(
+    schema: core_schema.CoreSchema,
+    validators: Iterable[Decorator[RootValidatorDecoratorInfo]]
+    | Iterable[Decorator[ValidatorDecoratorInfo]]
+    | Iterable[Decorator[FieldValidatorDecoratorInfo]],
+) -> core_schema.CoreSchema:
     """
     Apply validators to a schema.
     """
@@ -792,9 +860,8 @@ def apply_validators(schema: core_schema.CoreSchema, validators: list[Validator]
         ('wrap', False): core_schema.general_wrap_validator_function,
     }
     for validator in validators:
-        assert validator.sub_path is None, 'validator.sub_path is not yet supported'
-        assert validator.function is not None
-        schema = f_match[(validator.mode, validator.is_field_validator)](validator.function, schema)
+        is_field = isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo))
+        schema = f_match[(validator.info.mode, is_field)](validator.func, schema)
     return schema
 
 
@@ -856,41 +923,48 @@ def _infer_serializer_type_from_signature(sig: Signature, func: Callable[..., An
     raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}')
 
 
-def apply_serializers(schema: core_schema.CoreSchema, serializers: list[Serializer]) -> core_schema.CoreSchema:
+def apply_serializers(
+    schema: core_schema.CoreSchema, serializers: list[Decorator[SerializerDecoratorInfo]]
+) -> core_schema.CoreSchema:
     """
     Apply serializers to a schema.
     """
     if serializers:
         # use the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
-        assert serializer.sub_path is None, 'serializer.sub_path is not yet supported'
-        function = typing.cast(typing.Callable[..., Any], serializer.function)
+        function = serializer.func
         sig = signature(function)
         type_ = _infer_serializer_type_from_signature(sig, function)
-        if serializer.wrap and type_ not in ('general-wrap', 'field-wrap'):
+        if serializer.info.mode == 'wrap' and type_ not in ('general-wrap', 'field-wrap'):
             raise TypeError(
                 f'Invalid signature for wrap serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
             )
-        elif not serializer.wrap and type_ not in ('general-plain', 'field-plain'):
+        elif serializer.info.mode == 'plain' and type_ not in ('general-plain', 'field-plain'):
             raise TypeError(
                 f'Invalid signature for plain serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
             )
         if type_ == 'general-wrap':
             schema['serialization'] = core_schema.general_wrap_serializer_function_ser_schema(
-                function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
+                function,
+                schema.copy(),
+                json_return_type=serializer.info.json_return_type,
+                when_used=serializer.info.when_used,
             )
         elif type_ == 'field-wrap':
             schema['serialization'] = core_schema.field_wrap_serializer_function_ser_schema(
-                function, schema.copy(), json_return_type=serializer.json_return_type, when_used=serializer.when_used
+                function,
+                schema.copy(),
+                json_return_type=serializer.info.json_return_type,
+                when_used=serializer.info.when_used,
             )
         elif type_ == 'general-plain':
             schema['serialization'] = core_schema.general_plain_serializer_function_ser_schema(
-                function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
+                function, json_return_type=serializer.info.json_return_type, when_used=serializer.info.when_used
             )
         else:
             assert type_ == 'field-plain'
             schema['serialization'] = core_schema.field_plain_serializer_function_ser_schema(
-                function, json_return_type=serializer.json_return_type, when_used=serializer.when_used
+                function, json_return_type=serializer.info.json_return_type, when_used=serializer.info.when_used
             )
     return schema
 
