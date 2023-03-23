@@ -31,7 +31,7 @@ import pytest
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Extra, Field, ImportString, ValidationError, confrozenset, conlist, conset
+from pydantic import BaseModel, Extra, Field, ImportString, ValidationError
 from pydantic._internal._core_metadata import build_metadata_dict
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
@@ -1604,34 +1604,6 @@ def test_constraints_schema(kwargs, type_, expected_extra):
 
     expected_schema['properties']['a'].update(expected_extra)
     assert Foo.model_json_schema() == expected_schema
-
-
-@pytest.mark.xfail(reason='working on V2')
-@pytest.mark.parametrize(
-    'kwargs,type_',
-    [
-        ({'max_length': 5}, int),
-        ({'min_length': 2}, float),
-        ({'max_length': 5}, Decimal),
-        ({'frozen': True}, bool),
-        ({'pattern': '^foo$'}, int),
-        ({'gt': 2}, str),
-        ({'lt': 5}, bytes),
-        ({'ge': 2}, str),
-        ({'le': 5}, bool),
-        ({'gt': 0}, Callable),
-        ({'gt': 0}, Callable[[int], int]),
-        ({'gt': 0}, conlist(int, min_length=4)),
-        ({'gt': 0}, conset(int, min_length=4)),
-        ({'gt': 0}, confrozenset(int, min_length=4)),
-    ],
-)
-def test_unenforced_constraints_schema(kwargs, type_):
-    # TODO: Make SchemaError have an errors field, and use it to get this test passing
-    with pytest.raises(ValueError, match='On field "a" the following field constraints are set but not enforced'):
-
-        class Foo(BaseModel):
-            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
 @pytest.mark.parametrize(

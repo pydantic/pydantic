@@ -1134,6 +1134,45 @@ def test_int_enum_type():
             my_int_enum: IntEnum
 
 
+@pytest.mark.parametrize(
+    'kwargs,type_',
+    [
+        ({'max_length': 5}, int),
+        ({'min_length': 2}, float),
+        ({'frozen': True}, bool),
+        ({'pattern': '^foo$'}, int),
+        ({'gt': 2}, str),
+        ({'lt': 5}, bytes),
+        ({'ge': 2}, str),
+        ({'le': 5}, bool),
+        ({'gt': 0}, Callable),
+        ({'gt': 0}, Callable[[int], int]),
+        ({'gt': 0}, conlist(int, min_length=4)),
+        ({'gt': 0}, conset(int, min_length=4)),
+        ({'gt': 0}, confrozenset(int, min_length=4)),
+    ],
+)
+def test_invalid_schema_constraints(kwargs, type_):
+    with pytest.raises(SchemaError, match='Invalid Schema:\n.*\n  Extra inputs are not permitted'):
+
+        class Foo(BaseModel):
+            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+
+
+@pytest.mark.xfail(reason='Do we want to make this a SchemaError?')
+def test_invalid_decimal_constraint():
+    # Using the following line instead of the uncommented one below would make the test pass:
+    # with pytest.raises(TypeError, match="DecimalValidator has no attribute 'max_length'"):
+    with pytest.raises(SchemaError, match='Invalid Schema:\n.*\n  Extra inputs are not permitted'):
+        # TODO: This error comes from pydantic._internal._fields.CustomValidator._update_attrs
+        #   Should we modify how that works to produce SchemaError like in the cases above?
+        #   If so, do we need to expose a way to create a SchemaError from python?
+        #   Right now this can only be done from the Rust side of pydantic_core
+
+        class Foo(BaseModel):
+            a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
+
+
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_success():
     class MoreStringsModel(BaseModel):
