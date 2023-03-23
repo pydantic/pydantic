@@ -1,8 +1,7 @@
 from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, Field, create_model
+from pydantic import BaseModel, Field, create_model, field_validator
 from pydantic.dataclasses import dataclass
-from pydantic.decorators import field_validator
 
 
 # placeholder for removed line

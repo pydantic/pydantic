@@ -38,11 +38,11 @@ from pydantic import (
     StrictInt,
     StrictStr,
     UrlConstraints,
+    field_validator,
     parse_obj_as,
     root_validator,
     validate_arguments,
 )
-from pydantic.decorators import field_validator
 from pydantic.fields import Field, PrivateAttr
 from pydantic.networks import AnyUrl
 
