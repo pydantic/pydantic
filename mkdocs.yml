@@ -76,6 +76,7 @@ markdown_extensions:
     base_path: docs
 - toc:
     permalink: true
+    title: Page contents
 - admonition
 - pymdownx.highlight
 - pymdownx.extra
