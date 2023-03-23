@@ -252,7 +252,7 @@ def root_validator(
     ...
 
 
-def root_validator(  # type: ignore[misc]
+def root_validator(
     *,
     pre: bool = False,
     skip_on_failure: bool = False,
