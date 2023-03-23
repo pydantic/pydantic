@@ -1552,7 +1552,7 @@ def test_decorator_proxy():
         def val2(cls, v: int) -> int:
             return v + 1
 
-        val3 = field_validator('x')(staticmethod(val))
+        val3 = field_validator('x')(val)
 
     assert Model.val1(1) == 2
     assert Model.val2(1) == 2
