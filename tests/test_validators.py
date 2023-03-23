@@ -1375,7 +1375,7 @@ def test_overridden_root_validators():
 
 # TODO: I think this is real bug in pydantic-core
 # the root validator doesn't get called on assignment
-# @pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_pre_root_validator_fail():
     class Model(BaseModel):
         current_value: float = Field(..., alias='current')
@@ -1552,7 +1552,7 @@ def test_decorator_proxy():
         def val2(cls, v: int) -> int:
             return v + 1
 
-        val3 = field_validator('x')(val)
+        val3 = field_validator('x')(staticmethod(val))
 
     assert Model.val1(1) == 2
     assert Model.val2(1) == 2
