@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 import json
 import warnings
 from functools import lru_cache
-from typing import Any, Callable, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Type, TypeVar, Union
 
 from . import Validator
 from ._internal import _repr
@@ -19,7 +21,7 @@ def _generate_parsing_type_name(type_: Any) -> str:
 
 
 @lru_cache(maxsize=2048)
-def _get_parsing_type(type_: Any, *, type_name: Optional[NameFactory] = None) -> Any:
+def _get_parsing_type(type_: Any, *, type_name: NameFactory | None = None) -> Any:
     from pydantic.main import create_model
 
     if type_name is None:
@@ -32,7 +34,7 @@ def _get_parsing_type(type_: Any, *, type_name: Optional[NameFactory] = None) ->
 T = TypeVar('T')
 
 
-def parse_obj_as(type_: Type[T], obj: Any, type_name: Optional[NameFactory] = None) -> T:
+def parse_obj_as(type_: type[T], obj: Any, type_name: NameFactory | None = None) -> T:
     if type_name is not None:  # pragma: no cover
         warnings.warn(
             'The type_name parameter is deprecated. parse_obj_as no longer creates temporary models', stacklevel=2
@@ -43,11 +45,11 @@ def parse_obj_as(type_: Type[T], obj: Any, type_name: Optional[NameFactory] = No
 def schema_of(
     type_: Any,
     *,
-    title: Optional[NameFactory] = None,
+    title: NameFactory | None = None,
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-) -> 'dict[str, Any]':
+) -> dict[str, Any]:
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
     json_schema_generator = schema_generator(by_alias=by_alias, ref_template=ref_template)
     if hasattr(type_, '__pydantic_core_schema__'):
@@ -62,7 +64,7 @@ def schema_of(
 def schema_json_of(
     type_: Any,
     *,
-    title: Optional[NameFactory] = None,
+    title: NameFactory | None = None,
     by_alias: bool = True,
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
