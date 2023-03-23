@@ -666,7 +666,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         else:
             return self.model_dump() == other
 
-    def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> typing_extensions.Self:
+    def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
         """
         Returns a copy of the model.
 
@@ -681,7 +681,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             copied.__fields_set__.update(update.keys())
         return copied
 
-    def __copy__(self) -> typing_extensions.Self:
+    def __copy__(self: Model) -> Model:
         """
         Returns a shallow copy of the model
         """
@@ -695,7 +695,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 _object_setattr(m, name, value)
         return m
 
-    def __deepcopy__(self, memo: dict[int, Any] | None = None) -> typing_extensions.Self:
+    def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
         """
         Returns a deep copy of the model
         """
