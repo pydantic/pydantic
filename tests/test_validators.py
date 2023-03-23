@@ -678,7 +678,8 @@ def test_inheritance_replace():
 
 
 def test_inheritance_replace_root_validator():
-    """We promise that if you add a validator
+    """
+    We promise that if you add a validator
     with the same _function_ name as an existing validator
     it replaces the existing validator and is run instead of it.
     """
