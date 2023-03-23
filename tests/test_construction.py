@@ -95,8 +95,8 @@ def copy_method(request):
         return deprecated_copy
     else:
 
-        def new_copy_method(m, deep: bool = False):
-            return m.model_copy(deep=deep)
+        def new_copy_method(m, *, update=None, deep=False):
+            return m.model_copy(update=update, deep=deep)
 
         return new_copy_method
 
@@ -238,9 +238,9 @@ def test_copy_advanced_include_exclude():
     assert m2.model_dump() == {'f': {'d': [{'a': 'c', 'b': 'e'}]}}
 
 
-def test_copy_update(ModelTwo):
+def test_copy_update(ModelTwo, copy_method):
     m = ModelTwo(a=24, d=Model(a='12'))
-    m2 = deprecated_copy(m, update={'a': 'different'})
+    m2 = copy_method(m, update={'a': 'different'})
 
     assert m.a == 24
     assert m2.a == 'different'
@@ -252,13 +252,13 @@ def test_copy_update(ModelTwo):
         assert m != m2
 
 
-def test_copy_update_unset():
+def test_copy_update_unset(copy_method):
     class Foo(BaseModel):
         foo: Optional[str] = None
         bar: Optional[str] = None
 
     assert (
-        deprecated_copy(Foo(foo='hello'), update={'bar': 'world'}).model_dump_json(exclude_unset=True)
+        copy_method(Foo(foo='hello'), update={'bar': 'world'}).model_dump_json(exclude_unset=True)
         == b'{"foo":"hello","bar":"world"}'
     )
 
@@ -356,7 +356,7 @@ def test_immutable_copy_with_frozen(copy_method):
     m = Model(a=40, b=10)
     assert m == copy_method(m)
 
-    m2 = deprecated_copy(m, update={'b': 12})
+    m2 = copy_method(m, update={'b': 12})
     assert repr(m2) == 'Model(a=40, b=12)'
     with pytest.raises(TypeError):
         m2.b = 13

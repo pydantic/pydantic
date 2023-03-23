@@ -371,7 +371,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         deep: bool = False,
     ) -> Model:
         """
-        This method is now deprecated; use `model_copy` instead. If you need include / exclude / update, use:
+        This method is now deprecated; use `model_copy` instead. If you need include / exclude, use:
 
             data = self.model_dump(include=include, exclude=exclude, round_trip=True)
             data = {**data, **(update or {})}
@@ -664,11 +664,20 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         else:
             return self.model_dump() == other
 
-    def model_copy(self, deep: bool = False) -> typing_extensions.Self:
+    def model_copy(self, *, update: dict[str, Any] | None = None, deep: bool = False) -> typing_extensions.Self:
         """
-        Returns a copy of the model
+        Returns a copy of the model.
+
+        :param update: values to change/add in the new model. Note: the data is not validated before creating
+            the new model: you should trust this data
+        :param deep: set to `True` to make a deep copy of the model
+        :return: new model instance
         """
-        return self.__deepcopy__() if deep else self.__copy__()
+        copied = self.__deepcopy__() if deep else self.__copy__()
+        if update:
+            copied.__dict__.update(update)
+            copied.__fields_set__.update(update.keys())
+        return copied
 
     def __copy__(self) -> typing_extensions.Self:
         """
