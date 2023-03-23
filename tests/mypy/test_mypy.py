@@ -82,21 +82,25 @@ def build_executable_modules():
     """
     Iterates over the test cases and returns a list of modules that should be executable.
     Specifically, we include any modules that are not expected to produce any typechecking errors.
-    We also exclude any modules for which the type-checking tests are skipped or xfailed.
+    Currently, we do not skip/xfail executable modules, but I have included code below that could
+    do so if uncommented.
     """
     modules = set()
     for case in cases:
         if type(case) != tuple:
             # this means it is a pytest.param
-            # exclude any pytest.param cases that might be xfailed
             skip_this_case = False
             for mark in case.marks:
-                if mark.markname == 'skipif' and mark.args[0]:
-                    skip_this_case = True
-                    break
-                elif mark.markname == 'xfail':
-                    skip_this_case = True  # don't attempt to execute xfail modules
-                    break
+                # Uncomment the lines below to respect skipif:
+                # if mark.markname == 'skipif' and mark.args[0]:
+                #     skip_this_case = True
+                #     break
+
+                # Uncomment the lines below to respect xfail:
+                # if mark.markname == 'xfail':
+                #     skip_this_case = True  # don't attempt to execute xfail modules
+                #     break
+                pass
             if skip_this_case:
                 continue
             case = case.values
