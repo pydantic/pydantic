@@ -24,7 +24,7 @@ hypothesis==6.70.0
     # via -r requirements/linting.in
 identify==2.5.21
     # via pre-commit
-mypy==1.0.1
+mypy==1.1.1
     # via -r requirements/linting.in
 mypy-extensions==1.0.0
     # via
