@@ -1581,3 +1581,106 @@ def test_field_validator_self():
             @field_validator('a')
             def check_a(self, values: Any) -> Any:
                 return values
+
+
+def test_v1_validator_signature_kwargs_not_allowed() -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.raises(TypeError, match=r'Unsupported signature for V1 style validator'):
+
+            class Model(BaseModel):
+                a: int
+
+                @validator('a')
+                def check_a(cls, value: Any, foo: Any) -> Any:
+                    ...
+
+
+def test_v1_validator_signature_kwargs1() -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            a: int
+            b: int
+
+            @validator('b')
+            def check_b(cls, value: Any, **kwargs: Any) -> Any:
+                assert kwargs == {'values': {'a': 1}}
+                assert value == 2
+                return value + 1
+
+    assert Model(a=1, b=2).model_dump() == {'a': 1, 'b': 3}
+
+
+def test_v1_validator_signature_kwargs2() -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            a: int
+            b: int
+
+            @validator('b')
+            def check_b(cls, value: Any, values: Dict[str, Any], **kwargs: Any) -> Any:
+                assert kwargs == {}
+                assert values == {'a': 1}
+                assert value == 2
+                return value + 1
+
+    assert Model(a=1, b=2).model_dump() == {'a': 1, 'b': 3}
+
+
+def test_v1_validator_signature_with_values() -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            a: int
+            b: int
+
+            @validator('b')
+            def check_b(cls, value: Any, values: Dict[str, Any]) -> Any:
+                assert values == {'a': 1}
+                assert value == 2
+                return value + 1
+
+    assert Model(a=1, b=2).model_dump() == {'a': 1, 'b': 3}
+
+
+def test_v1_validator_signature_with_values_kw_only() -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            a: int
+            b: int
+
+            @validator('b')
+            def check_b(cls, value: Any, *, values: Dict[str, Any]) -> Any:
+                assert values == {'a': 1}
+                assert value == 2
+                return value + 1
+
+    assert Model(a=1, b=2).model_dump() == {'a': 1, 'b': 3}
+
+
+def test_v1_validator_signature_with_field() -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.raises(TypeError, match=r'The `field` and `config` parameters are not available in Pydantic V2'):
+
+            class Model(BaseModel):
+                a: int
+                b: int
+
+                @validator('b')
+                def check_b(cls, value: Any, field: Any) -> Any:
+                    ...
+
+
+def test_v1_validator_signature_with_config() -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+        with pytest.raises(TypeError, match=r'The `field` and `config` parameters are not available in Pydantic V2'):
+
+            class Model(BaseModel):
+                a: int
+                b: int
+
+                @validator('b')
+                def check_b(cls, value: Any, config: Any) -> Any:
+                    ...

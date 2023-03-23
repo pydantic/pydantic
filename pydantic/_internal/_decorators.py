@@ -444,7 +444,8 @@ def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFun
             positional_params.append(param_name)
         elif parameter.kind is Parameter.KEYWORD_ONLY:
             keyword_only_params.append(param_name)
-        elif parameter.kind is Parameter.VAR_KEYWORD:
+        else:
+            assert parameter.kind is Parameter.VAR_KEYWORD
             accepts_kwargs = True
 
     accepts_values_kw = (keyword_only_params == ['values'] and len(positional_params) == 1) or (
