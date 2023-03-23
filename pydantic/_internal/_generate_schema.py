@@ -356,8 +356,12 @@ class GenerateSchema:
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
-        this_field_validators = filter_field_decorator_info_by_field(decorators.validator.values(), name)
 
+        if field_info.discriminator is not None:
+            schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
+        schema = apply_annotations(schema, field_info.metadata)
+
+        this_field_validators = filter_field_decorator_info_by_field(decorators.validator.values(), name)
         # TODO: remove this V1 compatibility shim once it's deprecated
         # push down any `each_item=True` validators
         # note that this won't work for any Annotated types that get wrapped by a function validator
@@ -365,10 +369,6 @@ class GenerateSchema:
         each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
         this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
         schema = apply_each_item_validators(schema, each_item_validators)
-
-        if field_info.discriminator is not None:
-            schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
-        schema = apply_annotations(schema, field_info.metadata)
 
         schema = apply_validators(schema, filter_field_decorator_info_by_field(this_field_validators, name))
         schema = apply_validators(
