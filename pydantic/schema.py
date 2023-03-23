@@ -43,6 +43,7 @@ from .fields import (
     SHAPE_SINGLETON,
     SHAPE_TUPLE,
     SHAPE_TUPLE_ELLIPSIS,
+    DeferredType,
     FieldInfo,
     ModelField,
 )
@@ -1028,7 +1029,7 @@ def get_annotation_from_field_info(
     return annotation
 
 
-def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> Tuple[Type[Any], Set[str]]:  # noqa: C901
+def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> Tuple[Any, Set[str]]:  # noqa: C901
     """
     Get an annotation with used constraints implemented for numbers and strings based on the field_info.
 
@@ -1038,7 +1039,11 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
     """
     used_constraints: Set[str] = set()
 
-    def go(type_: Any) -> Type[Any]:
+    def go(type_: Any) -> Any:
+        if isinstance(type_, DeferredType):
+            used_constraints.update(field_info.get_constraints())
+            return type_
+
         if (
             is_literal_type(type_)
             or isinstance(type_, ForwardRef)
@@ -1055,7 +1060,7 @@ def get_annotation_with_constraints(annotation: Any, field_info: FieldInfo) -> T
             if origin is Annotated:
                 return go(args[0])
             if is_union(origin):
-                return Union[tuple(go(a) for a in args)]  # type: ignore
+                return Union[tuple(go(a) for a in args)]
 
             if issubclass(origin, List) and (
                 field_info.min_items is not None

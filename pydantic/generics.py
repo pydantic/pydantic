@@ -24,6 +24,7 @@ from typing_extensions import Annotated
 from .class_validators import gather_all_validators
 from .fields import DeferredType
 from .main import BaseModel, create_model
+from .schema import get_annotation_from_field_info
 from .types import JsonWrapper
 from .typing import display_as_type, get_all_type_hints, get_args, get_origin, typing_base
 from .utils import all_identical, lenient_issubclass
@@ -383,7 +384,12 @@ def _prepare_model_fields(
         assert field.type_.__class__ is DeferredType, field.type_.__class__
 
         field_type_hint = instance_type_hints[key]
-        concrete_type = replace_types(field_type_hint, typevars_map)
+        concrete_type = get_annotation_from_field_info(
+            replace_types(field_type_hint, typevars_map),
+            field.field_info,
+            field.name,
+            created_model.__config__.validate_assignment,
+        )
         field.type_ = concrete_type
         field.outer_type_ = concrete_type
         field.prepare()
