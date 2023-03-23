@@ -661,7 +661,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         self_type = getattr(self, '__pydantic_generic_origin__', None) or self.__class__
         other_type = getattr(other, '__pydantic_generic_origin__', None) or other.__class__
 
-        if (self_type, self.__dict__) != (other_type, other.__dict__):
+        if self_type != other_type:
+            return False
+
+        if self.__dict__ != other.__dict__:
             return False
 
         # If the types and field values match, check for equality of private attributes
