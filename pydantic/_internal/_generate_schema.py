@@ -74,6 +74,8 @@ def check_validator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields
         if isinstance(dec.info, ValidatorDecoratorInfo) and dec.info.fields == ('*',):
             # V1 compat: accept `'*'` as a wildcard that matches all fields
             continue
+        if dec.info.check_fields is False:
+            continue
         for field in dec.info.fields:
             if field not in fields:
                 raise PydanticUserError(
