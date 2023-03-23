@@ -32,7 +32,7 @@ from dirty_equals import HasRepr
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal, OrderedDict
 
-from pydantic import BaseModel, Field, Json, ValidationError, ValidationInfo, root_validator, validator
+from pydantic import BaseModel, Field, Json, PositiveInt, ValidationError, ValidationInfo, root_validator, validator
 from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import (
     _GENERIC_TYPES_CACHE,
@@ -2078,3 +2078,61 @@ def test_limited_dict():
     assert len(d) == 10
     d[13] = '13'
     assert len(d) == 9
+
+
+def test_construct_generic_model_with_validation():
+    T = TypeVar('T')
+
+    class Page(BaseModel, Generic[T]):
+        page: int = Field(ge=42)
+        items: Sequence[T]
+        unenforced: PositiveInt = Field(..., lt=10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Page[int](page=41, items=[], unenforced=11)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'ge': 42},
+            'input': 41,
+            'loc': ('page',),
+            'msg': 'Input should be greater than or equal to 42',
+            'type': 'greater_than_equal',
+        },
+        {
+            'ctx': {'lt': 10},
+            'input': 11,
+            'loc': ('unenforced',),
+            'msg': 'Input should be less than 10',
+            'type': 'less_than',
+        },
+    ]
+
+
+def test_construct_other_generic_model_with_validation():
+    # based on the test-case from https://github.com/samuelcolvin/pydantic/issues/2581
+    T = TypeVar('T')
+
+    class Page(BaseModel, Generic[T]):
+        page: int = Field(ge=42)
+        items: Sequence[T]
+
+    # Check we can perform this assignment, this is the actual test
+    concrete_model = Page[str]
+    print(concrete_model)
+    assert concrete_model.__name__ == 'Page[str]'
+
+    # Sanity check the resulting type works as expected
+    valid = concrete_model(page=42, items=[])
+    assert valid.page == 42
+
+    with pytest.raises(ValidationError) as exc_info:
+        concrete_model(page=41, items=[])
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'ge': 42},
+            'input': 41,
+            'loc': ('page',),
+            'msg': 'Input should be greater than or equal to 42',
+            'type': 'greater_than_equal',
+        }
+    ]
