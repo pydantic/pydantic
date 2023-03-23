@@ -260,12 +260,19 @@ class OrmMixin(Generic[_TModel, _TType]):
 
 import sys  # noqa E402
 
-if sys.version_info >= (3, 8):  # InitVar is not supported in 3.7 due to loss of type information
+if sys.version_info >= (3, 8):
     from dataclasses import InitVar  # E402
 
-    @dataclass
-    class MyDataClass:
-        foo: InitVar[str]
-        bar: str
+    InitVarStr = InitVar[str]
+else:
+    # InitVar is not supported in 3.7 due to loss of type information
+    InitVarStr = str
 
-    MyDataClass(foo='foo', bar='bar')
+
+@dataclass
+class MyDataClass:
+    foo: InitVarStr
+    bar: str
+
+
+MyDataClass(foo='foo', bar='bar')
