@@ -1035,17 +1035,6 @@ def test_root_validator_repeat2():
                 return values
 
 
-def test_root_validator_self():
-    with pytest.raises(TypeError, match=r'`@root_validator` cannot be applied to instance methods'):
-
-        class Model(BaseModel):
-            a: int = 1
-
-            @root_validator(skip_on_failure=True)
-            def root_validator(self, values: Any) -> Any:
-                return values
-
-
 def test_root_validator_types():
     root_val_values: Optional[Tuple[Type[BaseModel], Dict[str, Any]]] = None
 
@@ -1503,21 +1492,6 @@ def test_v1_validator_deprecated():
     assert 'check_x' in source or "@validator('x')" in source
 
 
-def test_instance_method() -> None:
-    """
-    Test this specifically because we cannot use the
-    type checker to inform users, and this is always a user mistake.
-    """
-    with pytest.raises(TypeError, match='`@validator` cannot be applied to instance methods'):
-
-        class _(BaseModel):
-            x: int
-
-            @field_validator('x')
-            def check_x(self, x: int) -> int:
-                return x
-
-
 def test_info_field_name_data_before():
     """
     Test accessing info.field_name and info.data
@@ -1567,6 +1541,17 @@ def test_decorator_proxy():
     assert Model.val1(1) == 2
     assert Model.val2(1) == 2
     assert Model.val3(1) == 2
+
+
+def test_root_validator_self():
+    with pytest.raises(TypeError, match=r'`@root_validator` cannot be applied to instance methods'):
+
+        class Model(BaseModel):
+            a: int = 1
+
+            @root_validator(skip_on_failure=True)
+            def root_validator(self, values: Any) -> Any:
+                return values
 
 
 def test_validator_self():
