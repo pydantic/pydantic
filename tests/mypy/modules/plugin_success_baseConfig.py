@@ -1,6 +1,6 @@
 from typing import ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, Field, create_model, validator
+from pydantic import BaseModel, Field, create_model, field_validator
 from pydantic.dataclasses import dataclass
 
 
@@ -200,7 +200,7 @@ def f(name: str) -> str:
 
 class ModelWithAllowReuseValidator(BaseModel):
     name: str
-    normalize_name = validator('name', allow_reuse=True)(f)
+    normalize_name = field_validator('name', allow_reuse=True)(f)
 
 
 model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
@@ -220,7 +220,7 @@ response = Response[Model](data=model, error=None)
 class ModelWithAnnotatedValidator(BaseModel):
     name: str
 
-    @validator('name')
+    @field_validator('name')
     def noop_validator_with_annotations(cls, name: str) -> str:
         return name
 

@@ -31,12 +31,13 @@ import pytest
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Extra, Field, ImportString, ValidationError, confrozenset, conlist, conset, validator
+from pydantic import BaseModel, Extra, Field, ImportString, ValidationError, confrozenset, conlist, conset
 from pydantic._internal._core_metadata import build_metadata_dict
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
+from pydantic.decorators import field_validator
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import (
@@ -1768,7 +1769,7 @@ def test_optional_validator():
     class Model(BaseModel):
         something: Optional[str] = None
 
-        @validator('something')
+        @field_validator('something')
         def check_something(cls, v):
             if v is not None and 'x' in v:
                 raise ValueError('should not contain x')
@@ -1806,7 +1807,8 @@ def test_field_with_validator():
     class Model(BaseModel):
         something: Optional[int] = None
 
-        @validator('something')
+        @field_validator('something')
+        @classmethod
         def check_field(cls, v, info):
             return v
 

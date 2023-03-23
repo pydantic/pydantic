@@ -1,10 +1,11 @@
 from dataclasses import asdict, is_dataclass
-from typing import List
+from typing import Any, List
 
 import pytest
 
-from pydantic import ValidationError, root_validator, validator
+from pydantic import ValidationError, root_validator
 from pydantic.dataclasses import dataclass
+from pydantic.decorators import field_validator
 
 
 def test_simple():
@@ -12,25 +13,28 @@ def test_simple():
     class MyDataclass:
         a: str
 
-        @validator('a')
+        @field_validator('a')
+        @classmethod
         def change_a(cls, v):
             return v + ' changed'
 
     assert MyDataclass(a='this is foobar good').a == 'this is foobar good changed'
 
 
-def test_validate_pre():
+def test_validate_before():
     @dataclass
     class MyDataclass:
         a: List[int]
 
-        @validator('a', mode='before')
-        def check_a1(cls, v):
+        @field_validator('a', mode='before')
+        @classmethod
+        def check_a1(cls, v: List[Any]) -> List[Any]:
             v.append('123')
             return v
 
-        @validator('a')
-        def check_a2(cls, v):
+        @field_validator('a')
+        @classmethod
+        def check_a2(cls, v: List[int]) -> List[int]:
             v.append(456)
             return v
 
@@ -45,7 +49,8 @@ def test_validate_multiple():
         a: str
         b: str
 
-        @validator('a', 'b')
+        @field_validator('a', 'b')
+        @classmethod
         def check_a_and_b(cls, v, info):
             if len(v) < 4:
                 raise TypeError(f'{info.field_name} is too short')
@@ -67,7 +72,8 @@ def test_classmethod():
     class MyDataclass:
         a: str
 
-        @validator('a')
+        @field_validator('a')
+        @classmethod
         def check_a(cls, v):
             assert cls is MyDataclass and is_dataclass(MyDataclass)
             return v
@@ -82,7 +88,8 @@ def test_validate_parent():
     class Parent:
         a: str
 
-        @validator('a')
+        @field_validator('a')
+        @classmethod
         def change_a(cls, v):
             return v + ' changed'
 
@@ -100,13 +107,15 @@ def test_inheritance_replace():
     class Parent:
         a: int
 
-        @validator('a')
+        @field_validator('a')
+        @classmethod
         def add_to_a(cls, v, **kwargs):
             return v + 1
 
     @dataclass
     class Child(Parent):
-        @validator('a')
+        @field_validator('a')
+        @classmethod
         def add_to_a(cls, v, **kwargs):
             return v + 5
 
@@ -122,11 +131,12 @@ def test_root_validator():
         a: int
         b: str
 
-        @validator('b')
+        @field_validator('b')
+        @classmethod
         def repeat_b(cls, v, **kwargs):
             return v * 2
 
-        @root_validator
+        @root_validator(skip_on_failure=True)
         def root_validator(cls, values, **kwargs):
             root_val_values.append(values)
             if 'snap' in values.get('b', ''):
