@@ -209,12 +209,12 @@ class Decorator(Generic[DecoratorInfoType], Representation):
         self,
         cls_var_name: str,
         func: Callable[..., Any],
-        unwapped_func: Callable[..., Any],
+        unwrapped_func: Callable[..., Any],
         info: DecoratorInfoType,
     ) -> None:
         self.cls_var_name = cls_var_name
         self.func = func
-        self.unwapped_func = unwapped_func
+        self.unwrapped_func = unwrapped_func
         self.info = info
 
 

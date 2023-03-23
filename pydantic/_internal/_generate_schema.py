@@ -79,7 +79,7 @@ def check_validator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields
         for field in dec.info.fields:
             if field not in fields:
                 raise PydanticUserError(
-                    f'Validators defined with incorrect fields: {dec.unwapped_func.__name__}'
+                    f'Validators defined with incorrect fields: {dec.unwrapped_func.__name__}'
                     " (use check_fields=False if you're inheriting from the model and intended this)"
                 )
 
