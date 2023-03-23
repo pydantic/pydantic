@@ -688,38 +688,32 @@ def test_inheritance_replace_root_validator():
         a: List[str]
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def parent_val_before(cls, values: Dict[str, Any]):
             values['a'].append('parent before')
             return values
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def val(cls, values: Dict[str, Any]):
             values['a'].append('parent')
             return values
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def parent_val_after(cls, values: Dict[str, Any]):
             values['a'].append('parent after')
             return values
 
     class Child(Parent):
         @root_validator(skip_on_failure=True)
-        @classmethod
         def child_val_before(cls, values: Dict[str, Any]):
             values['a'].append('child before')
             return values
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def val(cls, values: Dict[str, Any]):
             values['a'].append('child')
             return values
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def child_val_after(cls, values: Dict[str, Any]):
             values['a'].append('child after')
             return values
@@ -777,7 +771,7 @@ def test_validator_always_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @field_validator('a', mode='before', always=True)
+        @validator('a', mode='before', always=True)
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -797,7 +791,7 @@ def test_validator_always_pre():
     class Model(BaseModel):
         a: str = None
 
-        @field_validator('a', always=True, mode='before')
+        @validator('a', always=True, mode='before')
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -814,7 +808,7 @@ def test_validator_always_post():
     class Model(BaseModel):
         a: str = None
 
-        @field_validator('a', always=True)
+        @validator('a', always=True)
         @classmethod
         def check_a(cls, v: Any):
             return v or 'default value'
@@ -828,7 +822,7 @@ def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @field_validator('a', always=True, mode='before')
+        @validator('a', always=True, mode='before')
         @classmethod
         def check_a(cls, v: Any):
             return v or 'default value'
@@ -844,7 +838,7 @@ def test_datetime_validator():
     class Model(BaseModel):
         d: datetime = None
 
-        @field_validator('d', mode='before', always=True)
+        @validator('d', mode='before', always=True)
         @classmethod
         def check_d(cls, v: Any):
             nonlocal check_calls
@@ -916,7 +910,6 @@ def test_root_validator():
             return v * 2
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def example_root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             root_val_values.append(values)
             if 'snap' in values.get('b', ''):
@@ -924,7 +917,6 @@ def test_root_validator():
             return dict(values, b='changed')
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def example_root_validator2(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             root_val_values.append(values)
             if 'snap' in values.get('c', ''):
@@ -980,7 +972,6 @@ def test_root_validator_pre():
             return v * 2
 
         @root_validator(pre=True)
-        @classmethod
         def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             root_val_values.append(values)
             if 'snap' in values.get('b', ''):
@@ -1053,7 +1044,6 @@ def test_root_validator_types():
         b: str
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             nonlocal root_val_values
             root_val_values = cls, values
@@ -1071,7 +1061,6 @@ def test_root_validator_returns_none_exception():
         a: int = 1
 
         @root_validator(skip_on_failure=True)
-        @classmethod
         def root_validator_repeated(cls, values):
             return None
 
@@ -1115,7 +1104,6 @@ def declare_with_reused_validators(include_root, allow_1, allow_2, allow_3):
         if include_root:
 
             @root_validator(allow_reuse=allow_3, skip_on_failure=True)
-            @classmethod
             def duplicate_name(cls, values):  # noqa F811
                 return values
 
@@ -1356,26 +1344,22 @@ def test_overridden_root_validators():
         x: str
 
         @root_validator(pre=True)
-        @classmethod
         def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('A', 'pre')
             return values
 
         @root_validator(pre=False, skip_on_failure=True)
-        @classmethod
         def post_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('A', 'post')
             return values
 
     class B(A):
         @root_validator(pre=True)
-        @classmethod
         def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('B', 'pre')
             return values
 
         @root_validator(pre=False, skip_on_failure=True)
-        @classmethod
         def post_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('B', 'post')
             return values
@@ -1390,8 +1374,8 @@ def test_overridden_root_validators():
 
 
 # TODO: I think this is real bug in pydantic-core
-# the root validator gets called with values='100'
-@pytest.mark.xfail(reason='working on V2')
+# the root validator doesn't get called on assignment
+# @pytest.mark.xfail(reason='working on V2')
 def test_validating_assignment_pre_root_validator_fail():
     class Model(BaseModel):
         current_value: float = Field(..., alias='current')
@@ -1399,8 +1383,7 @@ def test_validating_assignment_pre_root_validator_fail():
 
         model_config = ConfigDict(validate_assignment=True)
 
-        @root_validator(pre=True)
-        @classmethod
+        @root_validator(pre=True, skip_on_failure=True)
         def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             if any(isinstance(x, str) for x in values.values()):
                 raise ValueError('values cannot be a string')
@@ -1431,7 +1414,6 @@ def test_root_validator_skip_on_failure_invalid(kwargs: Dict[str, Any]):
 
         class Model(BaseModel):
             @root_validator(**kwargs)
-            @classmethod
             def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
                 return values
 
@@ -1448,7 +1430,6 @@ def test_root_validator_skip_on_failure_invalid(kwargs: Dict[str, Any]):
 def test_root_validator_skip_on_failure_valid(kwargs: Dict[str, Any]):
     class Model(BaseModel):
         @root_validator(**kwargs, allow_reuse=True)
-        @classmethod
         def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             return values
 
@@ -1465,7 +1446,6 @@ def test_root_validator_many_values_change():
         model_config = ConfigDict(validate_assignment=True)
 
         @root_validator(skip_on_failure=True, allow_reuse=True)
-        @classmethod
         def set_area(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             values['area'] = values['width'] * values['height']
             return values
