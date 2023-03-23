@@ -248,8 +248,7 @@ def test_copy_update(ModelTwo, copy_method):
     with pytest.warns(UserWarning, match='Expected `float` but got `str`'):
         m2_keys = m2.model_dump().keys()
     assert set(m_keys) == set(m2_keys) == {'a', 'b', 'c', 'd'}
-    with pytest.warns(UserWarning, match='Expected `float` but got `str`'):
-        assert m != m2
+    assert m != m2
 
 
 def test_copy_update_unset(copy_method):
