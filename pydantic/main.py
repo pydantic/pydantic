@@ -27,7 +27,7 @@ from typing import (
 from typing_extensions import dataclass_transform
 
 from .class_validators import ValidatorGroup, extract_root_validators, extract_validators, inherit_validators
-from .config import BaseConfig, Extra, inherit_config, prepare_config
+from .config import BaseConfig, Extra, combine_configs, prepare_config
 from .error_wrappers import ErrorWrapper, ValidationError
 from .errors import ConfigError, DictError, ExtraError, MissingError
 from .fields import (
@@ -122,7 +122,7 @@ class ModelMetaclass(ABCMeta):
     @no_type_check  # noqa C901
     def __new__(mcs, name, bases, namespace, **kwargs):  # noqa C901
         fields: Dict[str, ModelField] = {}
-        config = BaseConfig
+        base_configs: List[type] = [BaseConfig]
         validators: 'ValidatorListDict' = {}
 
         pre_root_validators, post_root_validators = [], []
@@ -136,7 +136,7 @@ class ModelMetaclass(ABCMeta):
         for base in reversed(bases):
             if _is_base_model_class_defined and issubclass(base, BaseModel) and base != BaseModel:
                 fields.update(smart_deepcopy(base.__fields__))
-                config = inherit_config(base.__config__, config)
+                base_configs.append(base.__config__)
                 validators = inherit_validators(base.__validators__, validators)
                 pre_root_validators += base.__pre_root_validators__
                 post_root_validators += base.__post_root_validators__
@@ -147,14 +147,20 @@ class ModelMetaclass(ABCMeta):
         resolve_forward_refs = kwargs.pop('__resolve_forward_refs__', True)
         allowed_config_kwargs: SetStr = {
             key
-            for key in dir(config)
+            for base_config in base_configs
+            for key in dir(base_config)
             if not (key.startswith('__') and key.endswith('__'))  # skip dunder methods and attributes
         }
         config_kwargs = {key: kwargs.pop(key) for key in kwargs.keys() & allowed_config_kwargs}
         config_from_namespace = namespace.get('Config')
-        if config_kwargs and config_from_namespace:
-            raise TypeError('Specifying config in two places is ambiguous, use either Config attribute or class kwargs')
-        config = inherit_config(config_from_namespace, config, **config_kwargs)
+        if config_from_namespace:
+            base_configs.append(config_from_namespace)
+            if config_kwargs:
+                raise TypeError(
+                    'Specifying config in two places is ambiguous, use either Config attribute or class kwargs'
+                )
+        base_configs.reverse()
+        config = combine_configs(*base_configs, **config_kwargs)
 
         validators = inherit_validators(extract_validators(namespace), validators)
         vg = ValidatorGroup(validators)
@@ -1017,7 +1023,7 @@ def create_model(
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['Config'] = inherit_config(__config__, BaseConfig)
+        namespace['Config'] = combine_configs(__config__, BaseConfig)
     resolved_bases = resolve_bases(__base__)
     meta, ns, kwds = prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:

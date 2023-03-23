@@ -28,7 +28,7 @@ if TYPE_CHECKING:
 else:
     SchemaExtraCallable = Callable[..., None]
 
-__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'inherit_config', 'prepare_config'
+__all__ = 'BaseConfig', 'ConfigDict', 'get_config', 'Extra', 'combine_configs', 'prepare_config'
 
 
 class Extra(str, Enum):
@@ -165,21 +165,19 @@ def get_config(config: Union[ConfigDict, Type[object], None]) -> Type[BaseConfig
         return Config
 
 
-def inherit_config(self_config: 'ConfigType', parent_config: 'ConfigType', **namespace: Any) -> 'ConfigType':
-    if not self_config:
-        base_classes: Tuple['ConfigType', ...] = (parent_config,)
-    elif self_config == parent_config:
-        base_classes = (self_config,)
-    else:
-        base_classes = self_config, parent_config
+def combine_configs(*configs: Type[Any], **namespace: Any) -> Type[Any]:
+    # remove redundant bases
+    base_classes = list(configs)
+    while len(base_classes) > 1 and issubclass(base_classes[-2], base_classes[-1]):
+        del base_classes[-1]
 
-    namespace['json_encoders'] = {
-        **getattr(parent_config, 'json_encoders', {}),
-        **getattr(self_config, 'json_encoders', {}),
-        **namespace.get('json_encoders', {}),
-    }
+    json_encoders: Dict[Type[Any], AnyCallable] = {}
+    for config in reversed(base_classes):
+        json_encoders.update(getattr(config, 'json_encoders', {}))
+    json_encoders.update(namespace.get('json_encoders', {}))
+    namespace['json_encoders'] = json_encoders
 
-    return type('Config', base_classes, namespace)
+    return type('Config', tuple(base_classes), namespace)
 
 
 def prepare_config(config: Type[BaseConfig], cls_name: str) -> None:
