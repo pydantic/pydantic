@@ -35,15 +35,7 @@ if typing.TYPE_CHECKING:
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_core_schema__: typing.ClassVar[core_schema.CoreSchema]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
-        __pydantic_validator_functions__: typing.ClassVar[
-            list[_decorators.Decorator[_decorators.ValidatorDecoratorInfo]]
-        ]
-        __pydantic_serializer_functions__: typing.ClassVar[
-            list[_decorators.Decorator[_decorators.SerializerDecoratorInfo]]
-        ]
-        __pydantic_root_validator_functions__: typing.ClassVar[
-            list[_decorators.Decorator[_decorators.RootValidatorDecoratorInfo]]
-        ]
+        __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
         __pydantic_fields__: typing.ClassVar[dict[str, FieldInfo]]
 
 
@@ -86,23 +78,13 @@ def prepare_dataclass(
         cls.__pydantic_validator__ = MockValidator(warning_string)
         return False
 
-    cls.__pydantic_validator_functions__ = validator_functions = _decorators.gather_decorator_functions(
-        cls, _decorators.ValidatorDecoratorInfo
-    )
-    cls.__pydantic_root_validator_functions__ = root_validator_functions = _decorators.gather_decorator_functions(
-        cls, _decorators.RootValidatorDecoratorInfo
-    )
-    cls.__pydantic_serializer_functions__ = serializer_functions = _decorators.gather_decorator_functions(
-        cls, _decorators.SerializerDecoratorInfo
-    )
+    cls.__pydantic_decorators__ = decorators = _decorators.gather_decorator_functions(cls)
 
     cls.__pydantic_core_schema__ = schema = dataclass_schema(
         cls,
         dataclass_ref,
         fields,
-        validator_functions,
-        root_validator_functions,
-        serializer_functions,
+        decorators,
         config['arbitrary_types_allowed'],
         types_namespace,
     )

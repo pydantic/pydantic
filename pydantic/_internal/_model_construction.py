@@ -112,9 +112,7 @@ def deferred_model_get_pydantic_validation_schema(
     inner_schema = model_fields_schema(
         model_ref,
         fields,
-        cls.__pydantic_validator_functions__,
-        cls.__pydantic_root_validator_functions__,
-        cls.__pydantic_serializer_functions__,
+        cls.__pydantic_decorators__,
         model_config['arbitrary_types_allowed'],
         types_namespace,
         typevars_map,
@@ -151,10 +149,6 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-    validator_functions = cls.__pydantic_validator_functions__
-    serializer_functions = cls.__pydantic_serializer_functions__
-    root_validator_functions = cls.__pydantic_root_validator_functions__
-
     self_schema, model_ref = get_model_self_schema(cls)
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
     try:
@@ -165,9 +159,7 @@ def complete_model_class(
         inner_schema = model_fields_schema(
             model_ref,
             fields,
-            validator_functions,
-            root_validator_functions,
-            serializer_functions,
+            cls.__pydantic_decorators__,
             cls.model_config['arbitrary_types_allowed'],
             types_namespace,
             typevars_map,

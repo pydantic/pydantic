@@ -728,31 +728,32 @@ def test_inheritance_replace_root_validator():
     assert Child(a=[]).a == ['parent before', 'child', 'parent after', 'child before', 'child after']
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_validation_each_item():
-    class Model(BaseModel):
-        foobar: Dict[int, int]
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
-        @field_validator('foobar', each_item=True)
-        @classmethod
-        def check_foobar(cls, v: Any):
-            return v + 1
+        class Model(BaseModel):
+            foobar: Dict[int, int]
+
+            @validator('foobar', each_item=True)
+            @classmethod
+            def check_foobar(cls, v: Any):
+                return v + 1
 
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
-# TODO: fairly certain
-@pytest.mark.xfail(reason='working on V2')
 def test_validation_each_item_one_sublevel():
-    class Model(BaseModel):
-        foobar: List[Tuple[int, int]]
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
 
-        @field_validator('foobar', each_item=True)
-        @classmethod
-        def check_foobar(cls, v: Tuple[int, int]) -> Tuple[int, int]:
-            v1, v2 = v
-            assert v1 == v2
-            return v
+        class Model(BaseModel):
+            foobar: List[Tuple[int, int]]
+
+            @validator('foobar', each_item=True)
+            @classmethod
+            def check_foobar(cls, v: Tuple[int, int]) -> Tuple[int, int]:
+                v1, v2 = v
+                assert v1 == v2
+                return v
 
     assert Model(foobar=[(1, 1), (2, 2)]).foobar == [(1, 1), (2, 2)]
 
@@ -1140,7 +1141,6 @@ def test_allow_reuse(include_root, allow_1, allow_2, allow_3, reset_tracked_vali
 
 
 @pytest.mark.parametrize('validator_classmethod,root_validator_classmethod', product(*[[True, False]] * 2))
-@pytest.mark.filterwarnings('ignore:.*auto apply `@classmethod`:UserWarning')
 def test_root_validator_classmethod(validator_classmethod, root_validator_classmethod, reset_tracked_validators):
     root_val_values = []
 

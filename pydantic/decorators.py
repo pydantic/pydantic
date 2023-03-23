@@ -93,12 +93,14 @@ V1RootValidator = Union[
     _decorators.V1RootValidatorFunction,
 ]
 
+
 # Allow both a V1 (assumed pre=False) or V2 (assumed mode='after') validator
 # We lie to type checkers and say we return the same thing we get
 # but in reality we return a proxy object that _mostly_ behaves like the wrapped thing
 _V1ValidatorType = TypeVar('_V1ValidatorType', bound=Union[V1Validator, 'classmethod[Any]', 'staticmethod[Any]'])
 _V2BeforeAfterOrPlainValidatorType = TypeVar(
-    '_V2BeforeAfterOrPlainValidatorType', bound=Union[V2Validator, 'classmethod[Any]', 'staticmethod[Any]']
+    '_V2BeforeAfterOrPlainValidatorType',
+    bound=Union[V2Validator, 'classmethod[Any]', 'staticmethod[Any]'],
 )
 _V2WrapValidatorType = TypeVar(
     '_V2WrapValidatorType', bound=Union[V2WrapValidator, 'classmethod[Any]', 'staticmethod[Any]']
@@ -106,7 +108,10 @@ _V2WrapValidatorType = TypeVar(
 _V1RootValidatorFunctionType = TypeVar(
     '_V1RootValidatorFunctionType',
     bound=Union[
-        _decorators.V1RootValidatorFunction, _V1RootValidatorClsMethod, 'classmethod[Any]', 'staticmethod[Any]'
+        _decorators.V1RootValidatorFunction,
+        _V1RootValidatorClsMethod,
+        'classmethod[Any]',
+        'staticmethod[Any]',
     ],
 )
 
@@ -117,6 +122,7 @@ def validator(
     pre: bool = False,
     check_fields: bool | None = None,
     allow_reuse: bool = False,
+    each_item: bool = False,
 ) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
@@ -144,7 +150,10 @@ def validator(
         f = _decorators.ensure_classmethod_based_on_signature(f)
         wrap = _decorators.make_generic_v1_field_validator
         validator_wrapper_info = _decorators.ValidatorDecoratorInfo(
-            fields=fields, type='field', mode=mode, sub_path=None, check_fields=check_fields
+            fields=fields,
+            mode=mode,
+            check_fields=check_fields,
+            each_item=each_item,
         )
         return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
 
@@ -200,8 +209,8 @@ def field_validator(
 
         wrap = partial(_decorators.make_generic_v2_field_validator, mode=mode)
 
-        validator_wrapper_info = _decorators.ValidatorDecoratorInfo(
-            fields=fields, type='field', mode=mode, sub_path=sub_path, check_fields=check_fields
+        validator_wrapper_info = _decorators.FieldValidatorDecoratorInfo(
+            fields=fields, mode=mode, sub_path=sub_path, check_fields=check_fields
         )
         return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
 

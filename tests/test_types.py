@@ -3562,7 +3562,7 @@ def test_union_compound_types():
     assert e.value.errors() == [
         {
             'type': 'string_type',
-            'loc': ('values', 'function-wrap[mapping_validator(), dict[str,str]]', 'x'),
+            'loc': ('values', 'dict[str,str]', 'x'),
             'msg': 'Input should be a valid string',
             'input': {'a': 'b'},
         },
@@ -3574,7 +3574,7 @@ def test_union_compound_types():
         },
         {
             'type': 'list_type',
-            'loc': ('values', 'function-wrap[mapping_validator(), dict[str,list[str]]]', 'x'),
+            'loc': ('values', 'dict[str,list[str]]', 'x'),
             'msg': 'Input should be a valid list/array',
             'input': {'a': 'b'},
         },

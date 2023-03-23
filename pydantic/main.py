@@ -117,15 +117,7 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
-            cls.__pydantic_validator_functions__ = _decorators.gather_decorator_functions(
-                cls, _decorators.ValidatorDecoratorInfo
-            )
-            cls.__pydantic_root_validator_functions__ = _decorators.gather_decorator_functions(
-                cls, _decorators.RootValidatorDecoratorInfo
-            )
-            cls.__pydantic_serializer_functions__ = _decorators.gather_decorator_functions(
-                cls, _decorators.SerializerDecoratorInfo
-            )
+            cls.__pydantic_decorators__ = _decorators.gather_decorator_functions(cls)
 
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
@@ -169,15 +161,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_core_schema__: typing.ClassVar[CoreSchema]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
-        __pydantic_validator_functions__: typing.ClassVar[
-            list[_decorators.Decorator[_decorators.ValidatorDecoratorInfo]]
-        ]
-        __pydantic_root_validator_functions__: typing.ClassVar[
-            list[_decorators.Decorator[_decorators.RootValidatorDecoratorInfo]]
-        ]
-        __pydantic_serializer_functions__: typing.ClassVar[
-            list[_decorators.Decorator[_decorators.SerializerDecoratorInfo]]
-        ]
+        __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}

@@ -9,7 +9,6 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
-    ClassVar,
     Dict,
     Generic,
     Set,
@@ -30,6 +29,8 @@ from pydantic_core.core_schema import (
 )
 from typing_extensions import Protocol, TypeAlias
 
+from pydantic._internal._repr import Representation
+
 if TYPE_CHECKING:
     from typing_extensions import Literal
 
@@ -40,21 +41,43 @@ ROOT_VALIDATOR_TAG = '_root_validator'
 FIELD_SERIALIZER_TAG = '_field_serializer'
 
 
-class ValidatorDecoratorInfo:
+class ValidatorDecoratorInfo(Representation):
     """
     Store information about field validators created via `@validator`
     """
 
-    model_attribute: ClassVar[str] = '__pydantic_validator_functions__'
+    def __init__(
+        self,
+        *,
+        fields: tuple[str, ...],
+        # mapped from pre=True/False
+        mode: Literal['before', 'after'],
+        check_fields: bool | None,
+        each_item: bool,
+    ) -> None:
+        """
+        :param mode: the pydantic-core validator mode.
+        :param mode: Not yet supported.
+        :param check_fields: whether to check that the fields actually exist on the model.
+        """
+        self.fields = fields
+        self.mode = mode
+        self.check_fields = check_fields
+        self.each_item = each_item
+
+
+class FieldValidatorDecoratorInfo(Representation):
+    """
+    Store information about field validators created via `@field_validator`
+    """
 
     def __init__(
         self,
         *,
         fields: tuple[str, ...],
         mode: Literal['before', 'after', 'wrap', 'plain'],
-        type: Literal['unbound', 'field'],
-        sub_path: tuple[str | int, ...] | None = None,
-        check_fields: bool | None = None,
+        sub_path: tuple[str | int, ...] | None,
+        check_fields: bool | None,
     ) -> None:
         """
         :param mode: the pydantic-core validator mode.
@@ -69,15 +92,12 @@ class ValidatorDecoratorInfo:
         self.mode = mode
         self.sub_path = sub_path
         self.check_fields = check_fields
-        self.type = type
 
 
-class RootValidatorDecoratorInfo:
+class RootValidatorDecoratorInfo(Representation):
     """
     Store information about root validators created via `@root_validator`
     """
-
-    model_attribute: ClassVar[str] = '__pydantic_root_validator_functions__'
 
     def __init__(
         self,
@@ -90,13 +110,14 @@ class RootValidatorDecoratorInfo:
         self.mode = mode
 
 
-class SerializerDecoratorInfo:
+class SerializerDecoratorInfo(Representation):
     """
     A container for data from `@serializer` so that we can access it
     while building the pydantic-core schema.
     """
 
-    model_attribute: ClassVar[str] = '__pydantic_serializer_functions__'
+    json_return_type: JsonReturnTypes | None
+    when_used: WhenUsed
 
     def __init__(
         self,
@@ -116,13 +137,15 @@ class SerializerDecoratorInfo:
         self.check_fields = check_fields
 
 
-DecoratorInfo = Union[ValidatorDecoratorInfo, RootValidatorDecoratorInfo, SerializerDecoratorInfo]
+DecoratorInfo = Union[
+    ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, RootValidatorDecoratorInfo, SerializerDecoratorInfo
+]
 
 ReturnType = TypeVar('ReturnType')
 DecoratedType: TypeAlias = 'Union[classmethod[ReturnType], staticmethod[ReturnType], Callable[..., ReturnType]]'
 
 
-class PydanticDecoratorMarker(Generic[ReturnType]):
+class PydanticDecoratorMarker(Generic[ReturnType], Representation):
     """
     Wrap a classmethod, staticmethod or unbound function
     and act as a descriptor that allows us to detect decorated items
@@ -147,7 +170,7 @@ class PydanticDecoratorMarker(Generic[ReturnType]):
         ...
 
     @overload
-    def __get__(self, obj: object, objtype: type[object]) -> Any:
+    def __get__(self, obj: object, objtype: type[object]) -> Callable[..., ReturnType]:
         ...
 
     def __get__(
@@ -161,7 +184,7 @@ class PydanticDecoratorMarker(Generic[ReturnType]):
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
 
 
-class Decorator(Generic[DecoratorInfoType]):
+class Decorator(Generic[DecoratorInfoType], Representation):
     def __init__(
         self,
         cls_var_name: str,
@@ -173,9 +196,31 @@ class Decorator(Generic[DecoratorInfoType]):
         self.info = info
 
 
-def gather_decorator_functions(
-    cls: type[Any], decorator_info_type: type[DecoratorInfoType]
-) -> list[Decorator[DecoratorInfoType]]:
+AnyDecorator = Union[
+    Decorator[ValidatorDecoratorInfo],
+    Decorator[FieldValidatorDecoratorInfo],
+    Decorator[RootValidatorDecoratorInfo],
+    Decorator[SerializerDecoratorInfo],
+]
+
+
+class DecoratorInfos(Representation):
+    # mapping of name in the class namespace to decorator info
+    # note that the name in the class namespace is the function or attribute name
+    # not the field name!
+    validator: dict[str, Decorator[ValidatorDecoratorInfo]]
+    field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]]
+    root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]]
+    serializer: dict[str, Decorator[SerializerDecoratorInfo]]
+
+    def __init__(self) -> None:
+        self.validator = {}
+        self.field_validator = {}
+        self.root_validator = {}
+        self.serializer = {}
+
+
+def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
     # We want to collect all DecFunc instances that exist as
     # attributes in the namespace of the class (a BaseModel or dataclass)
     # that called us
@@ -189,23 +234,33 @@ def gather_decorator_functions(
     # the replaced function was in; that is, we maintain the order.
 
     # reminder: dicts are ordered and replacement does not alter the order
-    decorators: dict[str, Decorator[DecoratorInfoType]] = {}
+    res = DecoratorInfos()
     for base in cls.__bases__:
-        existing: list[Decorator[DecoratorInfoType]] = getattr(
-            base, decorator_info_type.model_attribute, []  # type: ignore[attr-defined]
-        )
-        for dec in existing:
-            decorators[dec.cls_var_name] = dec
+        existing = cast(Union[DecoratorInfos, None], getattr(base, '__pydantic_decorators__', None))
+        if existing is not None:
+            res.validator.update(existing.validator)
+            res.field_validator.update(existing.field_validator)
+            res.root_validator.update(existing.root_validator)
+            res.serializer.update(existing.serializer)
 
     for var_name, var_value in vars(cls).items():
-        if isinstance(var_value, PydanticDecoratorMarker) and isinstance(var_value.decorator_info, decorator_info_type):
+        if isinstance(var_value, PydanticDecoratorMarker):
             func = var_value.wrapped.__get__(None, cls)
             shimmed_func = var_value.shim(func) if var_value.shim is not None else func
-            decorators[var_name] = Decorator(var_name, shimmed_func, var_value.decorator_info)
+            info = var_value.decorator_info
+            if isinstance(info, ValidatorDecoratorInfo):
+                res.validator[var_name] = Decorator(var_name, shimmed_func, info)
+            elif isinstance(info, FieldValidatorDecoratorInfo):
+                res.field_validator[var_name] = Decorator(var_name, shimmed_func, info)
+            elif isinstance(info, RootValidatorDecoratorInfo):
+                res.root_validator[var_name] = Decorator(var_name, shimmed_func, info)
+            else:
+                assert isinstance(info, SerializerDecoratorInfo)
+                res.serializer[var_name] = Decorator(var_name, shimmed_func, info)
             # replace our marker with the bound, concrete function
             setattr(cls, var_name, func)
 
-    return list(decorators.values())
+    return res
 
 
 _FUNCS: set[str] = set()
