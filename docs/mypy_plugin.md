@@ -59,6 +59,10 @@ There are other benefits too! See below for more details.
 * Field with both a `default` and a `default_factory` will result in an error during static checking.
 * The type of the `default` and `default_factory` value must be compatible with the one of the field.
 
+#### Warn about the use of untyped fields
+* You'll get a mypy error any time you assign a public attribute on a model without annotating its type
+* If your goal is to set a ClassVar, you should explicitly annotate the field using typing.ClassVar
+
 ### Optional Capabilities:
 #### Prevent the use of required dynamic aliases
 
@@ -67,14 +71,6 @@ There are other benefits too! See below for more details.
   `Config.populate_by_name=False`.
 * This is important because if such aliases are present, mypy cannot properly type check calls to `__init__`.
   In this case, it will default to treating all arguments as optional.
-
-#### Prevent the use of untyped fields
-* If the [`warn_untyped_fields` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy error
-  any time you create a field on a model without annotating its type.
-* This is important because non-annotated fields may result in
-  [**validators being applied in a surprising order**](usage/models.md#field-ordering).
-* In addition, mypy may not be able to correctly infer the type of the field, and may miss
-  checks or raise spurious errors.
 
 ### Enabling the Plugin
 
@@ -115,7 +111,6 @@ disallow_untyped_defs = True
 init_forbid_extra = True
 init_typed = True
 warn_required_dynamic_aliases = True
-warn_untyped_fields = True
 ```
 
 As of `mypy>=0.900`, mypy config may also be included in the `pyproject.toml` file rather than `mypy.ini`.
@@ -140,5 +135,4 @@ disallow_untyped_defs = true
 init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
-warn_untyped_fields = true
 ```

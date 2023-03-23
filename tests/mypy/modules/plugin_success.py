@@ -11,8 +11,6 @@ class Model(BaseModel):
 
     model_config = ConfigDict(from_attributes=True)
 
-    not_config = ConfigDict(frozen=True)
-
 
 class SelfReferencingModel(BaseModel):
     submodel: Optional['SelfReferencingModel']
@@ -35,8 +33,6 @@ self_referencing_model = SelfReferencingModel(submodel=SelfReferencingModel(subm
 class KwargsModel(BaseModel, from_attributes=True):
     x: float
     y: str
-
-    not_config = ConfigDict(frozen=True)
 
 
 kwargs_model = KwargsModel(x=1, y='y')
@@ -74,7 +70,7 @@ class NoMutationModel(BaseModel):
 
 
 class MutationModel(NoMutationModel):
-    a = 1
+    a: int = 1
 
     model_config = ConfigDict(frozen=False, from_attributes=True)
 
@@ -88,7 +84,7 @@ class KwargsNoMutationModel(BaseModel, frozen=True):
 
 
 class KwargsMutationModel(KwargsNoMutationModel, frozen=False, from_attributes=True):
-    a = 1
+    a: int = 1
 
 
 KwargsMutationModel(x=1).x = 2
@@ -260,3 +256,23 @@ class OrmMixin(Generic[_TModel, _TType]):
         if model is None:
             return None
         return cls.from_orm(model)
+
+
+import sys  # noqa E402
+
+if sys.version_info >= (3, 8):
+    from dataclasses import InitVar  # E402
+
+    InitVarStr = InitVar[str]
+else:
+    # InitVar is not supported in 3.7 due to loss of type information
+    InitVarStr = str
+
+
+@dataclass
+class MyDataClass:
+    foo: InitVarStr
+    bar: str
+
+
+MyDataClass(foo='foo', bar='bar')
