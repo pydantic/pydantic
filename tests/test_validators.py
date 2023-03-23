@@ -736,6 +736,20 @@ def test_validation_each_item():
     assert Model(foobar={1: 1}).foobar == {1: 2}
 
 
+def test_validation_each_item_nullable():
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            foobar: Optional[List[int]]
+
+            @validator('foobar', each_item=True)
+            @classmethod
+            def check_foobar(cls, v: Any):
+                return v + 1
+
+    assert Model(foobar=[1]).foobar == [2]
+
+
 def test_validation_each_item_one_sublevel():
     with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
 

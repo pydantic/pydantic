@@ -56,6 +56,35 @@ def filter_field_decorator_info_by_field(
     return [dec for dec in validator_functions if field in dec.info.fields]
 
 
+def apply_each_item_validators(
+    schema: core_schema.CoreSchema, each_item_validators: list[Decorator[ValidatorDecoratorInfo]]
+) -> core_schema.CoreSchema:
+    # TODO: remove this V1 compatibility shim once it's deprecated
+    # push down any `each_item=True` validators
+    # note that this won't work for any Annotated types that get wrapped by a function validator
+    # but that's okay because that didn't exist in V1
+    if schema['type'] == 'nullable':
+        schema['schema'] = apply_each_item_validators(schema['schema'], each_item_validators)
+        return schema
+    elif is_list_like_schema_with_items_schema(schema):
+        inner_schema = schema.get('items_schema', None)
+        if inner_schema is None:
+            inner_schema = core_schema.any_schema()
+        schema['items_schema'] = apply_validators(inner_schema, each_item_validators)
+    elif schema['type'] == 'dict':
+        # push down any `each_item=True` validators onto dict _values_
+        # this is super arbitrary but it's the V1 behavior
+        inner_schema = schema.get('values_schema', None)
+        if inner_schema is None:
+            inner_schema = core_schema.any_schema()
+        schema['values_schema'] = apply_validators(inner_schema, each_item_validators)
+    elif each_item_validators:
+        raise TypeError(
+            f"`@validator(..., each_item=True)` cannot be applied to fields with a schema of {schema['type']}"
+        )
+    return schema
+
+
 def model_fields_schema(
     model_ref: str,
     fields: dict[str, FieldInfo],
@@ -335,26 +364,7 @@ class GenerateSchema:
         # but that's okay because that didn't exist in V1
         each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
         this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
-        if is_list_like_schema_with_items_schema(schema):
-            inner_schema = schema.get('items_schema', None)
-            if inner_schema is None:
-                inner_schema = core_schema.any_schema()
-            schema['items_schema'] = apply_validators(
-                inner_schema, filter_field_decorator_info_by_field(each_item_validators, name)
-            )
-        elif schema['type'] == 'dict':
-            # push down any `each_item=True` validators onto dict _values_
-            # this is super arbitrary but it's the V1 behavior
-            inner_schema = schema.get('values_schema', None)
-            if inner_schema is None:
-                inner_schema = core_schema.any_schema()
-            schema['values_schema'] = apply_validators(
-                inner_schema, filter_field_decorator_info_by_field(each_item_validators, name)
-            )
-        elif each_item_validators:
-            raise TypeError(
-                f"`@validator(..., each_item=True)` cannot be applied to fields with a schema of {schema['type']}"
-            )
+        schema = apply_each_item_validators(schema, each_item_validators)
 
         if field_info.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
