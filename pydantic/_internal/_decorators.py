@@ -188,6 +188,13 @@ DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
 
 
 class Decorator(Generic[DecoratorInfoType], Representation):
+    """
+    A generic container class to join together the decorator metadata
+    (metadata from decorator itself, which we have when the
+    decorator is called but not when we are building the core-schema)
+    and the bound function (which we have after the class itself is created).
+    """
+
     def __init__(
         self,
         cls_var_name: str,
