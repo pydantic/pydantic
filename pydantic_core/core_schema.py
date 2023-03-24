@@ -464,6 +464,7 @@ def any_schema(*, ref: str | None = None, metadata: Any = None, serialization: S
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.any_schema()
     v = SchemaValidator(schema)
     assert v.validate_python(1) == 1
@@ -490,6 +491,7 @@ def none_schema(*, ref: str | None = None, metadata: Any = None, serialization: 
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.none_schema()
     v = SchemaValidator(schema)
     assert v.validate_python(None) is None
@@ -519,6 +521,7 @@ def bool_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.bool_schema()
     v = SchemaValidator(schema)
     assert v.validate_python('True') is True
@@ -563,6 +566,7 @@ def int_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.int_schema(multiple_of=2, le=6, ge=2)
     v = SchemaValidator(schema)
     assert v.validate_python('4') == 4
@@ -625,6 +629,7 @@ def float_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.float_schema(le=0.8, ge=0.2)
     v = SchemaValidator(schema)
     assert v.validate_python('0.5') == 0.5
@@ -689,6 +694,7 @@ def str_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.str_schema(max_length=10, min_length=2)
     v = SchemaValidator(schema)
     assert v.validate_python('hello') == 'hello'
@@ -745,6 +751,7 @@ def bytes_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.bytes_schema(max_length=10, min_length=2)
     v = SchemaValidator(schema)
     assert v.validate_python(b'hello') == b'hello'
@@ -804,6 +811,7 @@ def date_schema(
     ```py
     from datetime import date
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.date_schema(le=date(2020, 1, 1), ge=date(2019, 1, 1))
     v = SchemaValidator(schema)
     assert v.validate_python(date(2019, 6, 1)) == date(2019, 6, 1)
@@ -865,6 +873,7 @@ def time_schema(
     ```py
     from datetime import time
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.time_schema(le=time(12, 0, 0), ge=time(6, 0, 0))
     v = SchemaValidator(schema)
     assert v.validate_python(time(9, 0, 0)) == time(9, 0, 0)
@@ -922,6 +931,7 @@ def datetime_schema(
     ```py
     from datetime import datetime
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.datetime_schema()
     v = SchemaValidator(schema)
     now = datetime.now()
@@ -986,6 +996,7 @@ def timedelta_schema(
     ```py
     from datetime import timedelta
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.timedelta_schema(le=timedelta(days=1), ge=timedelta(days=0))
     v = SchemaValidator(schema)
     assert v.validate_python(timedelta(hours=12)) == timedelta(hours=12)
@@ -1030,7 +1041,8 @@ def literal_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    schema = core_schema.literal_schema('hello', "world")
+
+    schema = core_schema.literal_schema('hello', 'world')
     v = SchemaValidator(schema)
     assert v.validate_python('hello') == 'hello'
     ```
@@ -1168,6 +1180,7 @@ def callable_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.callable_schema()
     v = SchemaValidator(schema)
     v.validate_python(min)
@@ -1222,6 +1235,7 @@ def list_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.list_schema(core_schema.int_schema(), min_length=0, max_length=10)
     v = SchemaValidator(schema)
     assert v.validate_python(['4']) == [4]
@@ -1273,7 +1287,10 @@ def tuple_positional_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    schema = core_schema.tuple_positional_schema(core_schema.int_schema(), core_schema.str_schema())
+
+    schema = core_schema.tuple_positional_schema(
+        core_schema.int_schema(), core_schema.str_schema()
+    )
     v = SchemaValidator(schema)
     assert v.validate_python((1, 'hello')) == (1, 'hello')
     ```
@@ -1326,7 +1343,10 @@ def tuple_variable_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    schema = core_schema.tuple_variable_schema(items_schema=core_schema.int_schema(), min_length=0, max_length=10)
+
+    schema = core_schema.tuple_variable_schema(
+        items_schema=core_schema.int_schema(), min_length=0, max_length=10
+    )
     v = SchemaValidator(schema)
     assert v.validate_python(('1', 2, 3)) == (1, 2, 3)
     ```
@@ -1380,7 +1400,10 @@ def set_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    schema = core_schema.set_schema(items_schema=core_schema.int_schema(), min_length=0, max_length=10)
+
+    schema = core_schema.set_schema(
+        items_schema=core_schema.int_schema(), min_length=0, max_length=10
+    )
     v = SchemaValidator(schema)
     assert v.validate_python({1, '2', 3}) == {1, 2, 3}
     ```
@@ -1438,7 +1461,10 @@ def frozenset_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    schema = core_schema.frozenset_schema(items_schema=core_schema.int_schema(), min_length=0, max_length=10)
+
+    schema = core_schema.frozenset_schema(
+        items_schema=core_schema.int_schema(), min_length=0, max_length=10
+    )
     v = SchemaValidator(schema)
     assert v.validate_python(frozenset(range(3))) == frozenset({0, 1, 2})
     ```
@@ -1567,6 +1593,7 @@ def dict_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.dict_schema(
         keys_schema=core_schema.str_schema(), values_schema=core_schema.int_schema()
     )
@@ -1649,10 +1676,10 @@ def field_before_validator_function(
         assert info.field_name is not None
         return v.decode() + 'world'
 
-    func_schema = core_schema.field_before_validator_function(function=fn, schema=core_schema.str_schema())
-    schema = core_schema.typed_dict_schema(
-        {'a': core_schema.typed_dict_field(func_schema)}
+    func_schema = core_schema.field_before_validator_function(
+        function=fn, schema=core_schema.str_schema()
     )
+    schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
     v = SchemaValidator(schema)
     assert v.validate_python({'a': b'hello '}) == {'a': 'hello world'}
@@ -1695,7 +1722,9 @@ def general_before_validator_function(
         assert 'hello' in v_str
         return v_str + 'world'
 
-    schema = core_schema.general_before_validator_function(function=fn, schema=core_schema.str_schema())
+    schema = core_schema.general_before_validator_function(
+        function=fn, schema=core_schema.str_schema()
+    )
     v = SchemaValidator(schema)
     assert v.validate_python(b'hello ') == "b'hello 'world"
     ```
@@ -1741,10 +1770,11 @@ def field_after_validator_function(
         assert info.field_name is not None
         return v + 'world'
 
-    func_schema = core_schema.field_after_validator_function(function=fn, schema=core_schema.str_schema())
-    schema = core_schema.typed_dict_schema(
-        {'a': core_schema.typed_dict_field(func_schema)}
+    func_schema = core_schema.field_after_validator_function(
+        function=fn, schema=core_schema.str_schema()
     )
+    schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
+    schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
     v = SchemaValidator(schema)
     assert v.validate_python({'a': b'hello '}) == {'a': 'hello world'}
@@ -1785,7 +1815,9 @@ def general_after_validator_function(
         assert 'hello' in v
         return v + 'world'
 
-    schema = core_schema.general_after_validator_function(schema=core_schema.str_schema(), function=fn)
+    schema = core_schema.general_after_validator_function(
+        schema=core_schema.str_schema(), function=fn
+    )
     v = SchemaValidator(schema)
     assert v.validate_python('hello ') == 'hello world'
     ```
@@ -1861,10 +1893,16 @@ def general_wrap_validator_function(
     ```py
     from pydantic_core import SchemaValidator, core_schema
 
-    def fn(v: str, validator: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo) -> str:
+    def fn(
+        v: str,
+        validator: core_schema.ValidatorFunctionWrapHandler,
+        info: core_schema.ValidationInfo,
+    ) -> str:
         return validator(input_value=v) + 'world'
 
-    schema = core_schema.general_wrap_validator_function(function=fn, schema=core_schema.str_schema())
+    schema = core_schema.general_wrap_validator_function(
+        function=fn, schema=core_schema.str_schema()
+    )
     v = SchemaValidator(schema)
     assert v.validate_python('hello ') == 'hello world'
     ```
@@ -1903,15 +1941,19 @@ def field_wrap_validator_function(
     ```py
     from pydantic_core import SchemaValidator, core_schema
 
-    def fn(v: bytes, validator: core_schema.ValidatorFunctionWrapHandler, info: core_schema.FieldValidationInfo) -> str:
+    def fn(
+        v: bytes,
+        validator: core_schema.ValidatorFunctionWrapHandler,
+        info: core_schema.FieldValidationInfo,
+    ) -> str:
         assert info.data is not None
         assert info.field_name is not None
         return validator(v) + 'world'
 
-    func_schema = core_schema.field_wrap_validator_function(function=fn, schema=core_schema.str_schema())
-    schema = core_schema.typed_dict_schema(
-        {'a': core_schema.typed_dict_field(func_schema)}
+    func_schema = core_schema.field_wrap_validator_function(
+        function=fn, schema=core_schema.str_schema()
     )
+    schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
     v = SchemaValidator(schema)
     assert v.validate_python({'a': b'hello '}) == {'a': 'hello world'}
@@ -1961,7 +2003,7 @@ def general_plain_validator_function(
 
     schema = core_schema.general_plain_validator_function(function=fn)
     v = SchemaValidator(schema)
-    assert v.validate_python("hello ") == 'hello world'
+    assert v.validate_python('hello ') == 'hello world'
     ```
 
     Args:
@@ -1999,12 +2041,10 @@ def field_plain_validator_function(
         return str(v) + 'world'
 
     func_schema = core_schema.field_plain_validator_function(function=fn)
-    schema = core_schema.typed_dict_schema(
-        {'a': core_schema.typed_dict_field(func_schema)}
-    )
+    schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
     v = SchemaValidator(schema)
-    assert v.validate_python({'a': "hello "}) == {'a': 'hello world'}
+    assert v.validate_python({'a': 'hello '}) == {'a': 'hello world'}
     ```
 
     Args:
@@ -2053,6 +2093,7 @@ def with_default_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.with_default_schema(core_schema.str_schema(), default='hello')
     wrapper_schema = core_schema.typed_dict_schema(
         {'a': core_schema.typed_dict_field(schema)}
@@ -2108,6 +2149,7 @@ def nullable_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.nullable_schema(core_schema.str_schema())
     v = SchemaValidator(schema)
     assert v.validate_python(None) is None
@@ -2155,6 +2197,7 @@ def union_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.union_schema(core_schema.str_schema(), core_schema.int_schema())
     v = SchemaValidator(schema)
     assert v.validate_python('hello') == 'hello'
@@ -2220,6 +2263,7 @@ def tagged_union_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     apple_schema = core_schema.typed_dict_schema(
         {
             'foo': core_schema.typed_dict_field(core_schema.str_schema()),
@@ -2229,7 +2273,9 @@ def tagged_union_schema(
     banana_schema = core_schema.typed_dict_schema(
         {
             'foo': core_schema.typed_dict_field(core_schema.str_schema()),
-            'spam': core_schema.typed_dict_field(core_schema.list_schema(items_schema=core_schema.int_schema())),
+            'spam': core_schema.typed_dict_field(
+                core_schema.list_schema(items_schema=core_schema.int_schema())
+            ),
         }
     )
     schema = core_schema.tagged_union_schema(
@@ -2241,7 +2287,10 @@ def tagged_union_schema(
     )
     v = SchemaValidator(schema)
     assert v.validate_python({'foo': 'apple', 'bar': '123'}) == {'foo': 'apple', 'bar': 123}
-    assert v.validate_python({'foo': 'banana', 'spam': [1, 2, 3]}) == {'foo': 'banana', 'spam': [1, 2, 3]}
+    assert v.validate_python({'foo': 'banana', 'spam': [1, 2, 3]}) == {
+        'foo': 'banana',
+        'spam': [1, 2, 3],
+    }
     ```
 
     Args:
@@ -2301,9 +2350,11 @@ def chain_schema(
         return v + ' world'
 
     fn_schema = core_schema.general_plain_validator_function(function=fn)
-    schema = core_schema.chain_schema(fn_schema, fn_schema, fn_schema, core_schema.str_schema())
+    schema = core_schema.chain_schema(
+        fn_schema, fn_schema, fn_schema, core_schema.str_schema()
+    )
     v = SchemaValidator(schema)
-    assert v.validate_python("hello") == 'hello world world world'
+    assert v.validate_python('hello') == 'hello world world world'
     ```
 
     Args:
@@ -2347,11 +2398,15 @@ def lax_or_strict_schema(
     lax_schema = core_schema.int_schema(strict=False)
     strict_schema = core_schema.int_schema(strict=True)
 
-    schema = core_schema.lax_or_strict_schema(lax_schema=lax_schema, strict_schema=strict_schema, strict=True)
+    schema = core_schema.lax_or_strict_schema(
+        lax_schema=lax_schema, strict_schema=strict_schema, strict=True
+    )
     v = SchemaValidator(schema)
     assert v.validate_python(123) == 123
 
-    schema = core_schema.lax_or_strict_schema(lax_schema=lax_schema, strict_schema=strict_schema, strict=False)
+    schema = core_schema.lax_or_strict_schema(
+        lax_schema=lax_schema, strict_schema=strict_schema, strict=False
+    )
     v = SchemaValidator(schema)
     assert v.validate_python('123') == 123
     ```
@@ -2400,7 +2455,8 @@ def typed_dict_field(
     Returns a schema that matches a typed dict field, e.g.:
 
     ```py
-    from pydantic_core import SchemaValidator, core_schema
+    from pydantic_core import core_schema
+
     field = core_schema.typed_dict_field(schema=core_schema.int_schema(), required=True)
     ```
 
@@ -2460,6 +2516,7 @@ def typed_dict_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     wrapper_schema = core_schema.typed_dict_schema(
         {'a': core_schema.typed_dict_field(core_schema.str_schema())}
     )
@@ -2595,7 +2652,10 @@ def dataclass_field(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    field = core_schema.dataclass_field(name='a', schema=core_schema.str_schema(), kw_only=False)
+
+    field = core_schema.dataclass_field(
+        name='a', schema=core_schema.str_schema(), kw_only=False
+    )
     schema = core_schema.dataclass_args_schema('Foobar', [field])
     v = SchemaValidator(schema)
     assert v.validate_python({'a': 'hello'}) == ({'a': 'hello'}, None)
@@ -2649,8 +2709,13 @@ def dataclass_args_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    field_a = core_schema.dataclass_field(name='a', schema=core_schema.str_schema(), kw_only=False)
-    field_b = core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), kw_only=False)
+
+    field_a = core_schema.dataclass_field(
+        name='a', schema=core_schema.str_schema(), kw_only=False
+    )
+    field_b = core_schema.dataclass_field(
+        name='b', schema=core_schema.bool_schema(), kw_only=False
+    )
     schema = core_schema.dataclass_args_schema('Foobar', [field_a, field_b])
     v = SchemaValidator(schema)
     assert v.validate_python({'a': 'hello', 'b': True}) == ({'a': 'hello', 'b': True}, None)
@@ -2742,7 +2807,10 @@ def arguments_parameter(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    param = core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), mode='positional_only')
+
+    param = core_schema.arguments_parameter(
+        name='a', schema=core_schema.str_schema(), mode='positional_only'
+    )
     schema = core_schema.arguments_schema(param)
     v = SchemaValidator(schema)
     assert v.validate_python(('hello',)) == (('hello',), {})
@@ -2782,8 +2850,13 @@ def arguments_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    param_a = core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), mode='positional_only')
-    param_b = core_schema.arguments_parameter(name='b', schema=core_schema.bool_schema(), mode='positional_only')
+
+    param_a = core_schema.arguments_parameter(
+        name='a', schema=core_schema.str_schema(), mode='positional_only'
+    )
+    param_b = core_schema.arguments_parameter(
+        name='b', schema=core_schema.bool_schema(), mode='positional_only'
+    )
     schema = core_schema.arguments_schema(param_a, param_b)
     v = SchemaValidator(schema)
     assert v.validate_python(('hello', True)) == (('hello', True), {})
@@ -2834,8 +2907,13 @@ def call_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
-    param_a = core_schema.arguments_parameter(name='a', schema=core_schema.str_schema(), mode='positional_only')
-    param_b = core_schema.arguments_parameter(name='b', schema=core_schema.bool_schema(), mode='positional_only')
+
+    param_a = core_schema.arguments_parameter(
+        name='a', schema=core_schema.str_schema(), mode='positional_only'
+    )
+    param_b = core_schema.arguments_parameter(
+        name='b', schema=core_schema.bool_schema(), mode='positional_only'
+    )
     args_schema = core_schema.arguments_schema(param_a, param_b)
 
     schema = core_schema.call_schema(
@@ -2892,8 +2970,11 @@ def custom_error_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.custom_error_schema(
-        schema=core_schema.int_schema(), custom_error_type='MyError', custom_error_message="Error msg"
+        schema=core_schema.int_schema(),
+        custom_error_type='MyError',
+        custom_error_message='Error msg',
     )
     v = SchemaValidator(schema)
     v.validate_python(1)
@@ -2940,6 +3021,7 @@ def json_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     dict_schema = core_schema.typed_dict_schema(
         {
             'field_a': core_schema.typed_dict_field(core_schema.str_schema()),
@@ -3000,6 +3082,7 @@ def url_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.url_schema()
     v = SchemaValidator(schema)
     # TODO: Assert this is equal to a constructed URL object
@@ -3065,6 +3148,7 @@ def multi_host_url_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.multi_host_url_schema()
     v = SchemaValidator(schema)
     # TODO: Assert this is equal to a constructed URL object
@@ -3113,6 +3197,7 @@ def definitions_schema(schema: CoreSchema, definitions: list[CoreSchema]) -> Def
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema = core_schema.definitions_schema(
         core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
         [core_schema.int_schema(ref='foobar')],
@@ -3144,6 +3229,7 @@ def definition_reference_schema(
 
     ```py
     from pydantic_core import SchemaValidator, core_schema
+
     schema_definition = core_schema.definition_reference_schema('list-schema')
     schema = core_schema.list_schema(items_schema=schema_definition, ref='list-schema')
     v = SchemaValidator(schema)

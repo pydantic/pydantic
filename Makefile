@@ -89,9 +89,11 @@ rust-benchmark:
 	cargo rust-bench
 
 .PHONY: testcov
-testcov: build-coverage test
+testcov: build-coverage
 	@rm -rf htmlcov
 	@mkdir -p htmlcov
+	coverage run -m pytest
+	coverage report
 	coverage html -d htmlcov/python
 	coverage-prepare html pydantic_core/*.so
 

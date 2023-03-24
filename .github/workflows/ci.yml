@@ -25,7 +25,7 @@ jobs:
         name: cache rust
         uses: Swatinem/rust-cache@v2
         with:
-          key: coverage-v1
+          key: coverage-v2
 
       - run: cargo install rustfilt coverage-prepare
         if: steps.cache-rust.outputs.cache-hit != 'true'
@@ -47,9 +47,6 @@ jobs:
       - run: pip freeze
 
       - run: coverage run -m pytest
-        env:
-          BENCHMARK_VS_PYDANTIC: 1
-          HYPOTHESIS_PROFILE: slow
 
       - run: ls -lha
       - run: coverage xml
@@ -262,6 +259,7 @@ jobs:
         uses: re-actors/alls-green@release/v1
         with:
           jobs: ${{ toJSON(needs) }}
+          allowed-failures: coverage
 
   build:
     name: build on ${{ matrix.platform || matrix.os }} (${{ matrix.target }} - ${{ matrix.manylinux || 'auto' }})

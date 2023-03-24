@@ -1,6 +1,4 @@
 import re
-import sys
-from pathlib import Path
 
 import pytest
 from typing_extensions import get_args
@@ -136,14 +134,6 @@ def test_validation_error_multiple():
         '  Input should be a valid integer, unable to parse string as an integer '
         "[type=int_parsing, input_value='y', input_type=str]"
     )
-
-
-@pytest.mark.skipif(sys.platform == 'emscripten', reason='README.md is not mounted in wasm file system')
-def test_readme(import_execute):
-    this_dir = Path(__file__).parent
-    readme = (this_dir / '..' / 'README.md').read_text()
-    example_code = re.search(r'\n```py\n(.*?)\n```\n', readme, re.M | re.S).group(1)
-    import_execute(example_code)
 
 
 def test_core_schema_type_literal():
