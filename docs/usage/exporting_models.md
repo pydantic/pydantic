@@ -185,7 +185,7 @@ class WithCustomEncoders(BaseModel):
 
 m = WithCustomEncoders(dt=datetime(2032, 6, 1), diff=timedelta(hours=100))
 print(m.model_dump_json())
-#> b'{"dt":1969657200.0,"diff":"P4DT14400S"}'
+#> b'{"dt":1969660800.0,"diff":"P4DT14400S"}'
 ```
 
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided

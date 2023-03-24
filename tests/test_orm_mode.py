@@ -85,7 +85,6 @@ def test_from_attributes_root():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_from_attributes():
     class PetCls:
         def __init__(self, *, name: str, species: str):
@@ -132,7 +131,6 @@ def test_not_from_attributes():
         Pet.from_orm(None)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_object_with_getattr():
     class FooGetAttr:
         def __getattr__(self, key: str):
@@ -160,7 +158,6 @@ def test_object_with_getattr():
         ModelInvalid.from_orm(foo)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_properties():
     class XyProperty:
         x = 4
@@ -290,7 +287,6 @@ def test_recursive_parsing():
     assert ModelB.from_orm(obj) == ModelB(b=ModelA(a=1))
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_nested_orm():
     class User(BaseModel):
         model_config = ConfigDict(from_attributes=True)

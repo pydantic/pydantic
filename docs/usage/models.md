@@ -157,7 +157,7 @@ print(m.model_dump())
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
 
-## ORM Mode (aka Arbitrary Class Instances)
+## "From Attributes" (aka ORM Mode/Arbitrary Class Instances)
 
 Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.
 
@@ -170,20 +170,19 @@ The example here uses SQLAlchemy, but the same approach should work for any ORM.
 
 ```py
 from typing import List
-from sqlalchemy import Column, Integer, String
-from sqlalchemy.dialects.postgresql import ARRAY
-from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, constr
 
-Base = declarative_base()
 
+class CompanyOrm:
+    """
+    An ORM object that we want to map to a Pydantic model.
+    """
 
-class CompanyOrm(Base):
-    __tablename__ = 'companies'
-    id = Column(Integer, primary_key=True, nullable=False)
-    public_key = Column(String(20), index=True, nullable=False, unique=True)
-    name = Column(String(63), unique=True)
-    domains = Column(ARRAY(String(255)))
+    def __init__(self, id: int, public_key: str, name: str, domains: List[str]):
+        self.id = id
+        self.public_key = public_key
+        self.name = name
+        self.domains = domains
 
 
 class CompanyModel(BaseModel):

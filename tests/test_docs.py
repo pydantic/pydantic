@@ -38,7 +38,7 @@ class MockedDatetime(datetime):
 
 @pytest.mark.skipif(sys.platform not in {'linux', 'darwin'}, reason='Only bother on linux and macos')
 @pytest.mark.parametrize('example', find_examples('docs'), ids=str)
-def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
+def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):  # noqa: C901
     global index_main
     if example.path.name == 'index.md':
         if index_main is None:
@@ -73,8 +73,6 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 
     if test_settings == 'skip':
         return
-    elif test_settings and test_settings.startswith('xfail'):
-        pytest.xfail(test_settings[5:])
 
     group_name = prefix_settings.get('group')
     d = group_globals.get(group_name)
@@ -82,11 +80,22 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
     mocker.patch('datetime.datetime', MockedDatetime)
     mocker.patch('random.randint', return_value=3)
 
-    if test_settings == 'no-print-intercept':
-        d2 = eval_example.run(example, module_globals=d)
-    elif eval_example.update_examples:
-        d2 = eval_example.run_print_update(example, module_globals=d)
-    else:
-        d2 = eval_example.run_print_check(example, module_globals=d)
+    xfail = None
+    if test_settings and test_settings.startswith('xfail'):
+        xfail = test_settings[5:]
 
-    group_globals.set(group_name, d2)
+    try:
+        if test_settings == 'no-print-intercept':
+            d2 = eval_example.run(example, module_globals=d)
+        elif eval_example.update_examples:
+            d2 = eval_example.run_print_update(example, module_globals=d)
+        else:
+            d2 = eval_example.run_print_check(example, module_globals=d)
+    except Exception as e:
+        if xfail:
+            pytest.xfail(str(e))
+        raise
+    else:
+        if xfail:
+            pytest.fail('expected xfail')
+        group_globals.set(group_name, d2)

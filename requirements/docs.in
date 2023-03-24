@@ -5,4 +5,3 @@ mdx-truly-sane-lists
 mkdocs
 mkdocs-exclude
 mkdocs-material
-sqlalchemy==1.4.0
