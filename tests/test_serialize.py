@@ -201,3 +201,25 @@ def test_invalid_signature_bad_plain_signature() -> None:
             @serializer('x', mode='plain')
             def no_args(self, value: Any, nxt: Any, info: Any) -> Any:  # pragma: no cover
                 ...
+
+
+def test_serialize_ignore_info_plain():
+    class MyModel(BaseModel):
+        x: int
+
+        @serializer('x')
+        def ser_x(v: Any) -> str:
+            return f'{v:,}'
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}
+
+
+def test_serialize_ignore_info_wrap():
+    class MyModel(BaseModel):
+        x: int
+
+        @serializer('x', mode='wrap')
+        def ser_x(v: Any, handler: SerializerFunctionWrapHandler) -> str:
+            return f'{handler(v):,}'
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}

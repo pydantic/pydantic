@@ -291,12 +291,14 @@ def root_validator(
 _PlainSerializationFunction = Union[
     _core_schema.GeneralPlainSerializerFunction,
     _core_schema.FieldPlainSerializerFunction,
+    _decorators.PlainSerializerWithoutInfo,
 ]
 
 
 _WrapSerializationFunction = Union[
     _core_schema.GeneralWrapSerializerFunction,
     _core_schema.FieldWrapSerializerFunction,
+    _decorators.WrapSerializerWithoutInfo,
 ]
 
 
@@ -382,6 +384,8 @@ def serializer(
             sub_path=sub_path,
             check_fields=check_fields,
         )
-        return _decorators.PydanticDecoratorMarker(res, validator_wrapper_info, shim=lambda x: x)
+        return _decorators.PydanticDecoratorMarker(
+            res, validator_wrapper_info, shim=partial(_decorators.make_generic_v2_field_serializer, mode=mode)
+        )
 
     return dec

@@ -20,10 +20,16 @@ from typing import (
 )
 
 from pydantic_core.core_schema import (
+    FieldPlainSerializerFunction,
     FieldValidationInfo,
     FieldValidatorFunction,
+    FieldWrapSerializerFunction,
     FieldWrapValidatorFunction,
+    GeneralPlainSerializerFunction,
+    GeneralWrapSerializerFunction,
     JsonReturnTypes,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
     ValidationInfo,
     WhenUsed,
 )
@@ -563,3 +569,54 @@ def make_v1_generic_root_validator(
         return (values, fields_set)
 
     return _wrapper2
+
+
+PlainSerializerWithoutInfo = Callable[[Any], Any]
+WrapSerializerWithoutInfo = Callable[[Any, SerializerFunctionWrapHandler], Any]
+
+AnyCoreSerializer = Union[
+    FieldPlainSerializerFunction,
+    FieldWrapSerializerFunction,
+    GeneralPlainSerializerFunction,
+    GeneralWrapSerializerFunction,
+]
+
+AnySerializerFunction = Union[
+    PlainSerializerWithoutInfo,
+    WrapSerializerWithoutInfo,
+    AnyCoreSerializer,
+]
+
+
+def make_generic_v2_field_serializer(
+    serializer: AnySerializerFunction, mode: Literal['plain', 'wrap']
+) -> AnyCoreSerializer:
+    """
+    Wrap serializers to allow ignoring the `info` argument as a convenience.
+    """
+    sig = signature(serializer)
+    n_positional = sum(
+        1
+        for param in sig.parameters.values()
+        if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+    )
+    if mode == 'plain':
+        if n_positional == 1:
+            func1 = cast(PlainSerializerWithoutInfo, serializer)
+
+            def _wrap1(value: Any, _: SerializationInfo) -> Any:
+                return func1(value)
+
+            return _wrap1
+        func = cast(AnyCoreSerializer, serializer)
+        return func
+    assert mode == 'wrap'
+    if n_positional == 2:
+        func2 = cast(WrapSerializerWithoutInfo, serializer)
+
+        def _wrap2(value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo) -> Any:
+            return func2(value, handler)
+
+        return _wrap2
+    func = cast(AnyCoreSerializer, serializer)
+    return func
