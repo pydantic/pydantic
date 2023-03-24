@@ -187,7 +187,50 @@ with custom properties and validation.
 
 *pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
 
-{!.tmp_examples/types_iterables.md!}
+```py
+from typing import Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    simple_list: list = None
+    list_of_ints: List[int] = None
+
+    simple_tuple: tuple = None
+    tuple_of_different_types: Tuple[int, float, str, bool] = None
+
+    simple_dict: dict = None
+    dict_str_float: Dict[str, float] = None
+
+    simple_set: set = None
+    set_bytes: Set[bytes] = None
+    frozen_set: FrozenSet[int] = None
+
+    str_or_bytes: Union[str, bytes] = None
+    none_or_str: Optional[str] = None
+
+    sequence_of_ints: Sequence[int] = None
+
+    compound: Dict[Union[str, bytes], List[Set[int]]] = None
+
+    deque: Deque[int] = None
+
+
+print(Model(simple_list=['1', '2', '3']).simple_list)
+print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
+
+print(Model(simple_dict={'a': 1, b'b': 2}).simple_dict)
+print(Model(dict_str_float={'a': 1, b'b': 2}).dict_str_float)
+
+print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
+print(Model(tuple_of_different_types=[4, 3, 2, 1]).tuple_of_different_types)
+
+print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
+print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
+
+print(Model(deque=[1, 2, 3]).deque)
+```
 
 ### Infinite Generators
 
@@ -198,7 +241,44 @@ validated with the sub-type of `Sequence` (e.g. `int` in `Sequence[int]`).
 But if you have a generator that you don't want to be consumed, e.g. an infinite
 generator or a remote data loader, you can define its type with `Iterable`:
 
-{!.tmp_examples/types_infinite_generator.md!}
+```py
+from typing import Iterable
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    infinite: Iterable[int]
+
+
+def infinite_ints():
+    i = 0
+    while True:
+        yield i
+        i += 1
+
+
+m = Model(infinite=infinite_ints())
+print(m)
+"""
+infinite=ValidatorIterator(index=0, schema=Some(Int(IntValidator { strict: false })))
+"""
+
+for i in m.infinite:
+    print(i)
+    #> 0
+    #> 1
+    #> 2
+    #> 3
+    #> 4
+    #> 5
+    #> 6
+    #> 7
+    #> 8
+    #> 9
+    #> 10
+    if i == 10:
+        break
+```
 
 !!! warning
     `Iterable` fields only perform a simple check that the argument is iterable and
@@ -219,7 +299,54 @@ generator or a remote data loader, you can define its type with `Iterable`:
 
 You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
-{!.tmp_examples/types_infinite_generator_validate_first.md!}
+```py
+import itertools
+from typing import Iterable
+from pydantic import BaseModel, validator, ValidationError
+from pydantic.fields import ModelField
+
+
+class Model(BaseModel):
+    infinite: Iterable[int]
+
+    @validator('infinite')
+    # You don't need to add the "ModelField", but it will help your
+    # editor give you completion and catch errors
+    def infinite_first_int(cls, iterable, field: ModelField):
+        first_value = next(iterable)
+        if field.sub_fields:
+            # The Iterable had a parameter type, in this case it's int
+            # We use it to validate the first value
+            sub_field = field.sub_fields[0]
+            v, error = sub_field.validate(first_value, {}, loc='first_value')
+            if error:
+                raise ValidationError([error], cls)
+        # This creates a new generator that returns the first value and then
+        # the rest of the values from the (already started) iterable
+        return itertools.chain([first_value], iterable)
+
+
+def infinite_ints():
+    i = 0
+    while True:
+        yield i
+        i += 1
+
+
+m = Model(infinite=infinite_ints())
+print(m)
+
+
+def infinite_strs():
+    while True:
+        yield from 'allthesingleladies'
+
+
+try:
+    Model(infinite=infinite_strs())
+except ValidationError as e:
+    print(e)
+```
 
 ### Unions
 
@@ -229,7 +356,36 @@ The `Union` type allows a model attribute to accept different types, e.g.:
     You may get unexpected coercion with `Union`; see below.<br />
     Know that you can also make the check slower but stricter by using [Smart Union](model_config.md#smart-union)
 
-{!.tmp_examples/types_union_incorrect.md!}
+```py
+from uuid import UUID
+from typing import Union
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    id: Union[int, str, UUID]
+    name: str
+
+
+user_01 = User(id=123, name='John Doe')
+print(user_01)
+#> id=123 name='John Doe'
+print(user_01.id)
+#> 123
+user_02 = User(id='1234', name='John Doe')
+print(user_02)
+#> id='1234' name='John Doe'
+print(user_02.id)
+#> 1234
+user_03_uuid = UUID('cf57432e-809e-4353-adbd-9d5c0d733868')
+user_03 = User(id=user_03_uuid, name='John Doe')
+print(user_03)
+#> id=UUID('cf57432e-809e-4353-adbd-9d5c0d733868') name='John Doe'
+print(user_03.id)
+#> cf57432e-809e-4353-adbd-9d5c0d733868
+print(user_03_uuid.int)
+#> 275603287559914445491632874575877060712
+```
 
 However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under `Union` and will use
 the first one that matches. In the above example the `id` of `user_03` was defined as a `uuid.UUID` class (which
@@ -250,7 +406,26 @@ followed by less specific types.
 
 In the above example, the `UUID` class should precede the `int` and `str` classes to preclude the unexpected representation as such:
 
-{!.tmp_examples/types_union_correct.md!}
+```py
+from uuid import UUID
+from typing import Union
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    id: Union[UUID, int, str]
+    name: str
+
+
+user_03_uuid = UUID('cf57432e-809e-4353-adbd-9d5c0d733868')
+user_03 = User(id=user_03_uuid, name='John Doe')
+print(user_03)
+#> id=UUID('cf57432e-809e-4353-adbd-9d5c0d733868') name='John Doe'
+print(user_03.id)
+#> cf57432e-809e-4353-adbd-9d5c0d733868
+print(user_03_uuid.int)
+#> 275603287559914445491632874575877060712
+```
 
 !!! tip
     The type `Optional[x]` is a shorthand for `Union[x, None]`.
@@ -273,7 +448,44 @@ Setting a discriminated union has many benefits:
 - only one explicit error is raised in case of failure
 - the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminatorObject)
 
-{!.tmp_examples/types_union_discriminated.md!}
+```py
+from typing import Literal, Union
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+    meows: int
+
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']
+    barks: float
+
+
+class Lizard(BaseModel):
+    pet_type: Literal['reptile', 'lizard']
+    scales: bool
+
+
+class Model(BaseModel):
+    pet: Union[Cat, Dog, Lizard] = Field(..., discriminator='pet_type')
+    n: int
+
+
+print(Model(pet={'pet_type': 'dog', 'barks': 3.14}, n=1))
+#> pet=Dog(pet_type='dog', barks=3.14) n=1
+try:
+    Model(pet={'pet_type': 'dog'}, n=1)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Lizard
+    pet -> dog -> barks
+      Field required [type=missing, input_value={'pet_type': 'dog'}, input_type=dict]
+    """
+```
 
 !!! note
     Using the [Annotated Fields syntax](../schema/#typingannotated-fields) can be handy to regroup
@@ -290,13 +502,109 @@ Setting a discriminated union has many benefits:
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
 In this case you can always create "intermediate" models with `__root__` and add your discriminator.
 
-{!.tmp_examples/types_union_discriminated_nested.md!}
+```py
+from typing import Literal, Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field, ValidationError
+
+
+class BlackCat(BaseModel):
+    pet_type: Literal['cat']
+    color: Literal['black']
+    black_name: str
+
+
+class WhiteCat(BaseModel):
+    pet_type: Literal['cat']
+    color: Literal['white']
+    white_name: str
+
+
+# Can also be written with a custom root type
+#
+# class Cat(BaseModel):
+#   __root__: Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+Cat = Annotated[Union[BlackCat, WhiteCat], Field(discriminator='color')]
+
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']
+    name: str
+
+
+Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+
+class Model(BaseModel):
+    pet: Pet
+    n: int
+
+
+m = Model(pet={'pet_type': 'cat', 'color': 'black', 'black_name': 'felix'}, n=1)
+print(m)
+#> pet=BlackCat(pet_type='cat', color='black', black_name='felix') n=1
+try:
+    Model(pet={'pet_type': 'cat', 'color': 'red'}, n='1')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Dog
+    pet -> cat
+      Input tag 'red' found using 'color' does not match any of the expected tags: 'black', 'white' [type=union_tag_invalid, input_value={'pet_type': 'cat', 'color': 'red'}, input_type=dict]
+    """
+try:
+    Model(pet={'pet_type': 'cat', 'color': 'black'}, n='1')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Dog
+    pet -> cat -> black -> black_name
+      Field required [type=missing, input_value={'pet_type': 'cat', 'color': 'black'}, input_type=dict]
+    """
+```
 
 ### Enums and Choices
 
 *pydantic* uses Python's standard `enum` classes to define choices.
 
-{!.tmp_examples/types_choices.md!}
+```py
+from enum import Enum, IntEnum
+
+from pydantic import BaseModel, ValidationError
+
+
+class FruitEnum(str, Enum):
+    pear = 'pear'
+    banana = 'banana'
+
+
+class ToolEnum(IntEnum):
+    spanner = 1
+    wrench = 2
+
+
+class CookingModel(BaseModel):
+    fruit: FruitEnum = FruitEnum.pear
+    tool: ToolEnum = ToolEnum.spanner
+
+
+print(CookingModel())
+#> fruit=<FruitEnum.pear: 'pear'> tool=<ToolEnum.spanner: 1>
+print(CookingModel(tool=2, fruit='banana'))
+#> fruit=<FruitEnum.banana: 'banana'> tool=<ToolEnum.wrench: 2>
+try:
+    CookingModel(fruit='other')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for CookingModel
+    fruit
+      Input should be 'pear' or 'banana' [type=literal_error, input_value='other', input_type=str]
+    """
+```
 
 
 ### Datetime Types
@@ -338,7 +646,27 @@ types:
     * `[-][DD ][HH:MM]SS[.ffffff]`
     * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
-{!.tmp_examples/types_dt.md!}
+```py
+from datetime import date, datetime, time, timedelta
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    d: date = None
+    dt: datetime = None
+    t: time = None
+    td: timedelta = None
+
+
+m = Model(
+    d=1966280412345.6789,
+    dt='2032-04-23T10:20:30.400+02:30',
+    t=time(4, 8, 16),
+    td='P3DT12H30M5S',
+)
+
+print(m.model_dump())
+```
 
 ### Booleans
 
@@ -362,13 +690,46 @@ A standard `bool` field will raise a `ValidationError` if the value is not one o
 
 Here is a script demonstrating some of these behaviors:
 
-{!.tmp_examples/types_boolean.md!}
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class BooleanModel(BaseModel):
+    bool_value: bool
+
+
+print(BooleanModel(bool_value=False))
+#> bool_value=False
+print(BooleanModel(bool_value='False'))
+#> bool_value=False
+try:
+    BooleanModel(bool_value=[])
+except ValidationError as e:
+    print(str(e))
+    """
+    1 validation error for BooleanModel
+    bool_value
+      Input should be a valid boolean [type=bool_type, input_value=[], input_type=list]
+    """
+```
 
 ### Callable
 
 Fields can also be of type `Callable`:
 
-{!.tmp_examples/types_callable.md!}
+```py
+from typing import Callable
+from pydantic import BaseModel
+
+
+class Foo(BaseModel):
+    callback: Callable[[int], int]
+
+
+m = Foo(callback=lambda x: x)
+print(m)
+#> callback=<function <lambda> at 0x7fde0c519e10>
+```
 
 !!! warning
     Callable fields only perform a simple check that the argument is
@@ -380,17 +741,95 @@ Fields can also be of type `Callable`:
 *pydantic* supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
 
-{!.tmp_examples/types_type.md!}
+```py
+from typing import Type
+
+from pydantic import BaseModel
+from pydantic import ValidationError
+
+
+class Foo:
+    pass
+
+
+class Bar(Foo):
+    pass
+
+
+class Other:
+    pass
+
+
+class SimpleModel(BaseModel):
+    just_subclasses: Type[Foo]
+
+
+SimpleModel(just_subclasses=Foo)
+SimpleModel(just_subclasses=Bar)
+try:
+    SimpleModel(just_subclasses=Other)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for SimpleModel
+    just_subclasses
+      Input should be a subclass of Foo [type=is_subclass_of, input_value=<class '__main__.Other'>, input_type=type]
+    """
+```
 
 You may also use `Type` to specify that any class is allowed.
 
-{!.tmp_examples/types_bare_type.md!}
+```py upgrade="skip"
+from typing import Type
+
+from pydantic import BaseModel, ValidationError
+
+
+class Foo:
+    pass
+
+
+class LenientSimpleModel(BaseModel):
+    any_class_goes: Type
+
+
+LenientSimpleModel(any_class_goes=int)
+LenientSimpleModel(any_class_goes=Foo)
+try:
+    LenientSimpleModel(any_class_goes=Foo())
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for LenientSimpleModel
+    any_class_goes
+      Input should be a type [type=is_type, input_value=<__main__.Foo object at 0x7fde0c1d0e50>, input_type=Foo]
+    """
+```
 
 ### TypeVar
 
 `TypeVar` is supported either unconstrained, constrained or with a bound.
 
-{!.tmp_examples/types_typevar.md!}
+```py
+from typing import TypeVar
+from pydantic import BaseModel
+
+Foobar = TypeVar('Foobar')
+BoundFloat = TypeVar('BoundFloat', bound=float)
+IntStr = TypeVar('IntStr', int, str)
+
+
+class Model(BaseModel):
+    a: Foobar  # equivalent of ": Any"
+    b: BoundFloat  # equivalent of ": float"
+    c: IntStr  # equivalent of ": Union[int, str]"
+
+
+print(Model(a=[1], b=4.2, c='x'))
+
+# a may be None and is therefore optional
+print(Model(b=1, c=1))
+```
 
 ## Literal Type
 
@@ -401,22 +840,144 @@ You may also use `Type` to specify that any class is allowed.
 *pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to Python 3.8)
 as a lightweight way to specify that a field may accept only specific literal values:
 
-{!.tmp_examples/types_literal1.md!}
+```py
+from typing import Literal
+
+from pydantic import BaseModel, ValidationError
+
+
+class Pie(BaseModel):
+    flavor: Literal['apple', 'pumpkin']
+
+
+Pie(flavor='apple')
+Pie(flavor='pumpkin')
+try:
+    Pie(flavor='cherry')
+except ValidationError as e:
+    print(str(e))
+    """
+    1 validation error for Pie
+    flavor
+      Input should be 'apple' or 'pumpkin' [type=literal_error, input_value='cherry', input_type=str]
+    """
+```
 
 One benefit of this field type is that it can be used to check for equality with one or more specific values
 without needing to declare custom validators:
 
-{!.tmp_examples/types_literal2.md!}
+```py
+from typing import ClassVar, List, Union
+
+from typing import Literal
+
+from pydantic import BaseModel, ValidationError
+
+
+class Cake(BaseModel):
+    kind: Literal['cake']
+    required_utensils: ClassVar[List[str]] = ['fork', 'knife']
+
+
+class IceCream(BaseModel):
+    kind: Literal['icecream']
+    required_utensils: ClassVar[List[str]] = ['spoon']
+
+
+class Meal(BaseModel):
+    dessert: Union[Cake, IceCream]
+
+
+print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
+#> Cake
+print(type(Meal(dessert={'kind': 'icecream'}).dessert).__name__)
+#> IceCream
+try:
+    Meal(dessert={'kind': 'pie'})
+except ValidationError as e:
+    print(str(e))
+    """
+    2 validation errors for IceCream
+    dessert -> Cake -> kind
+      Input should be 'cake' [type=literal_error, input_value='pie', input_type=str]
+    dessert -> IceCream -> kind
+      Input should be 'icecream' [type=literal_error, input_value='pie', input_type=str]
+    """
+```
 
 With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
 
-{!.tmp_examples/types_literal3.md!}
+```py
+from typing import Optional, Union
+
+from typing import Literal
+
+from pydantic import BaseModel
+
+
+class Dessert(BaseModel):
+    kind: str
+
+
+class Pie(Dessert):
+    kind: Literal['pie']
+    flavor: Optional[str]
+
+
+class ApplePie(Pie):
+    flavor: Literal['apple']
+
+
+class PumpkinPie(Pie):
+    flavor: Literal['pumpkin']
+
+
+class Meal(BaseModel):
+    dessert: Union[ApplePie, PumpkinPie, Pie, Dessert]
+
+
+print(type(Meal(dessert={'kind': 'pie', 'flavor': 'apple'}).dessert).__name__)
+#> ApplePie
+print(type(Meal(dessert={'kind': 'pie', 'flavor': 'pumpkin'}).dessert).__name__)
+#> PumpkinPie
+print(type(Meal(dessert={'kind': 'pie'}).dessert).__name__)
+#> Dessert
+print(type(Meal(dessert={'kind': 'cake'}).dessert).__name__)
+#> Dessert
+```
 
 ## Annotated Types
 
 ### NamedTuple
 
-{!.tmp_examples/annotated_types_named_tuple.md!}
+```py
+from typing import NamedTuple
+
+from pydantic import BaseModel, ValidationError
+
+
+class Point(NamedTuple):
+    x: int
+    y: int
+
+
+class Model(BaseModel):
+    p: Point
+
+
+print(Model(p=('1', '2')))
+#> p=Point(x=1, y=2)
+
+try:
+    Model(p=('1.3', '2'))
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    p -> arguments -> 0
+      Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value='1.3', input_type=str]
+    """
+```
 
 ### TypedDict
 
@@ -427,7 +988,53 @@ With proper ordering in an annotated `Union`, you can use this to parse types of
     We therefore recommend using [typing-extensions](https://pypi.org/project/typing-extensions/) with Python 3.8 as well.
 
 
-{!.tmp_examples/annotated_types_typed_dict.md!}
+```py
+from typing_extensions import TypedDict
+
+from pydantic import BaseModel, Extra, ValidationError
+
+
+# `total=False` means keys are non-required
+class UserIdentity(TypedDict, total=False):
+    name: str
+    surname: str
+
+
+class User(TypedDict):
+    identity: UserIdentity
+    age: int
+
+
+class Model(BaseModel):
+    u: User
+
+    class Config:
+        extra = Extra.forbid
+
+
+print(Model(u={'identity': {'name': 'Smith', 'surname': 'John'}, 'age': '37'}))
+
+print(Model(u={'identity': {'name': None, 'surname': 'John'}, 'age': '37'}))
+
+print(Model(u={'identity': {}, 'age': '37'}))
+
+
+try:
+    Model(u={'identity': {'name': ['Smith'], 'surname': 'John'}, 'age': '24'})
+except ValidationError as e:
+    print(e)
+
+try:
+    Model(
+        u={
+            'identity': {'name': 'Smith', 'surname': 'John'},
+            'age': '37',
+            'email': 'john.smith@me.com',
+        }
+    )
+except ValidationError as e:
+    print(e)
+```
 
 ## Pydantic Types
 
@@ -609,12 +1216,93 @@ some nuance to this behavior, demonstrated in the examples below.
 > being worked on.
 
 **Good behavior:**
-{!.tmp_examples/types_import_string_usage.md!}
+```py
+from pydantic import BaseModel, ImportString, ValidationError
+
+
+class ImportThings(BaseModel):
+    obj: ImportString
+
+
+# A string value will cause an automatic import
+my_cos = ImportThings(obj='math.cos')
+
+# You can use the imported function as you would expect
+cos_of_0 = my_cos.obj(0)
+assert cos_of_0 == 1
+
+
+# A string whose value cannot be imported will raise an error
+try:
+    ImportThings(obj='foo.bar')
+except ValidationError as e:
+    print(e)
+
+
+# An object defined in the current namespace can indeed be imported,
+# though you should probably avoid doing this (since the ordering of declaration
+# can have an impact on behavior).
+class Foo:
+    bar = 1
+
+
+# This now works
+my_foo = ImportThings(obj=Foo)
+# So does this
+my_foo_2 = ImportThings(obj='__main__.Foo')
+
+
+# Actual python objects can be assigned as well
+from math import cos  # noqa: E402
+
+my_cos = ImportThings(obj=cos)
+my_cos_2 = ImportThings(obj='math.cos')
+assert my_cos == my_cos_2
+```
 
 **Serializing an `ImportString` type to json is possible with a
 [custom encoder](exporting_models.md#json_encoders) which accounts for
 the evaluated object:**
-{!.tmp_examples/types_import_string_serialization.md!}
+```py
+from pydantic import BaseModel, ImportString
+from types import BuiltinFunctionType
+
+
+# The following class will not successfully serialize to JSON
+# Since "obj" is evaluated to an object, not a pydantic `ImportString`
+class WithCustomEncodersBad(BaseModel):
+    obj: ImportString
+
+    class Config:
+        json_encoders = {ImportString: lambda x: str(x)}
+
+
+# Create an instance
+m = WithCustomEncodersBad(obj='math.cos')
+
+try:
+    m.json()
+except TypeError as e:
+    print(e)
+
+# Let's do some sanity checks to verify that m.obj is not an "ImportString"
+print(isinstance(m.obj, ImportString))
+print(isinstance(m.obj, BuiltinFunctionType))
+
+
+# So now that we know that after an ImportString is evaluated by Pydantic
+# it results in its underlying object, we can configure our json encoder
+# to account for those specific types
+class WithCustomEncodersGood(BaseModel):
+    obj: ImportString
+
+    class Config:
+        json_encoders = {BuiltinFunctionType: lambda x: str(x)}
+
+
+m = WithCustomEncodersGood(obj='math.cos')
+print(m.json())
+```
 
 ### URLs
 
@@ -671,7 +1359,38 @@ For URI/URL validation the following types are available:
 The above types (which all inherit from `AnyUrl`) will attempt to give descriptive errors when invalid URLs are
 provided:
 
-{!.tmp_examples/types_urls.md!}
+```py
+from pydantic import BaseModel, HttpUrl, ValidationError
+
+
+class MyModel(BaseModel):
+    url: HttpUrl
+
+
+m = MyModel(url='http://www.example.com')
+print(m.url)
+#> http://www.example.com/
+
+try:
+    MyModel(url='ftp://invalid.url')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for MyModel
+    url
+      URL scheme should be 'http' or 'https' [type=url_scheme, input_value='ftp://invalid.url', input_type=str]
+    """
+
+try:
+    MyModel(url='not a url')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for MyModel
+    url
+      Input should be a valid URL, relative URL without a base [type=url_parsing, input_value='not a url', input_type=str]
+    """
+```
 
 If you require a custom URI/URL type, it can be created in a similar way to the types defined above.
 
@@ -701,7 +1420,41 @@ the above types export the following properties:
 
 If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
-{!.tmp_examples/types_url_properties.md!}
+```py
+from pydantic import BaseModel, HttpUrl, PostgresDsn, ValidationError, validator
+
+
+class MyModel(BaseModel):
+    url: HttpUrl
+
+
+m = MyModel(url='http://www.example.com')
+
+# the repr() method for a url will display all properties of the url
+print(repr(m.url))
+print(m.url.scheme)
+print(m.url.host)
+print(m.url.host_type)
+print(m.url.port)
+
+
+class MyDatabaseModel(BaseModel):
+    db: PostgresDsn
+
+    @validator('db')
+    def check_db_name(cls, v):
+        assert v.path and len(v.path) > 1, 'database must be provided'
+        return v
+
+
+m = MyDatabaseModel(db='postgres://user:pass@localhost:5432/foobar')
+print(m.db)
+
+try:
+    MyDatabaseModel(db='postgres://user:pass@localhost:5432')
+except ValidationError as e:
+    print(e)
+```
 
 #### International Domains
 
@@ -709,7 +1462,24 @@ If further validation is required, these properties can be used by validators to
 [punycode](https://en.wikipedia.org/wiki/Punycode) (see
 [this article](https://www.xudongz.com/blog/2017/idn-phishing/) for a good description of why this is important):
 
-{!.tmp_examples/types_url_punycode.md!}
+```py
+from pydantic import BaseModel, HttpUrl
+
+
+class MyModel(BaseModel):
+    url: HttpUrl
+
+
+m1 = MyModel(url='http://puny£code.com')
+print(m1.url)
+print(m1.url.host_type)
+m2 = MyModel(url='https://www.аррӏе.com/')
+print(m2.url)
+print(m2.url.host_type)
+m3 = MyModel(url='https://www.example.珠宝/')
+print(m3.url)
+print(m3.url.host_type)
+```
 
 
 !!! warning
@@ -744,7 +1514,40 @@ You can use the `Color` data type for storing colors as per
 - [HSL strings](https://developer.mozilla.org/en-US/docs/Web/CSS/color_value#HSL_colors)
   (e.g. `"hsl(270, 60%, 70%)"`, `"hsl(270, 60%, 70%, .5)"`)
 
-{!.tmp_examples/types_color.md!}
+```py
+from pydantic import BaseModel, ValidationError
+from pydantic.color import Color
+
+c = Color('ff00ff')
+print(c.as_named())
+#> magenta
+print(c.as_hex())
+#> #f0f
+c2 = Color('green')
+print(c2.as_rgb_tuple())
+#> (0, 128, 0)
+print(c2.original())
+#> green
+print(repr(Color('hsl(180, 100%, 50%)')))
+#> Color('cyan', rgb=(0, 255, 255))
+
+
+class Model(BaseModel):
+    color: Color
+
+
+print(Model(color='purple'))
+#> color=Color('purple', rgb=(128, 0, 128))
+try:
+    Model(color='hello')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    color
+      value is not a valid color: string not recognised as a valid color [type=color_error, input_value='hello', input_type=str]
+    """
+```
 
 `Color` has the following methods:
 
@@ -790,7 +1593,56 @@ that you do not want to be visible in logging or tracebacks.
 `SecretStr` and `SecretBytes` can be initialized idempotently or by using `str` or `bytes` literals respectively.
 The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
-{!.tmp_examples/types_secret_types.md!}
+```py
+from pydantic import BaseModel, SecretStr, SecretBytes, ValidationError
+
+
+class SimpleModel(BaseModel):
+    password: SecretStr
+    password_bytes: SecretBytes
+
+
+sm = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
+
+# Standard access methods will not display the secret
+print(sm)
+print(sm.password)
+print(sm.model_dump())
+print(sm.model_dump_json())
+
+# Use get_secret_value method to see the secret's content.
+print(sm.password.get_secret_value())
+print(sm.password_bytes.get_secret_value())
+
+try:
+    SimpleModel(password=[1, 2, 3], password_bytes=[1, 2, 3])
+except ValidationError as e:
+    print(e)
+
+
+# If you want the secret to be dumped as plain-text using the json method,
+# you can use json_encoders in the Config class.
+class SimpleModelDumpable(BaseModel):
+    password: SecretStr
+    password_bytes: SecretBytes
+
+    class Config:
+        json_encoders = {
+            SecretStr: lambda v: v.get_secret_value() if v else None,
+            SecretBytes: lambda v: v.get_secret_value() if v else None,
+        }
+
+
+sm2 = SimpleModelDumpable(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
+
+# Standard access methods will not display the secret
+print(sm2)
+print(sm2.password)
+print(sm2.model_dump())
+
+# But the json method will
+print(sm2.model_dump_json())
+```
 
 ### Json Type
 
@@ -798,14 +1650,94 @@ You can use `Json` data type to make *pydantic* first load a raw JSON string.
 It can also optionally be used to parse the loaded object into another type base on
 the type `Json` is parameterised with:
 
-{!.tmp_examples/types_json_type.md!}
+```py
+from typing import Any, List
+
+from pydantic import BaseModel, Json, ValidationError
+
+
+class AnyJsonModel(BaseModel):
+    json_obj: Json[Any]
+
+
+class ConstrainedJsonModel(BaseModel):
+    json_obj: Json[List[int]]
+
+
+print(AnyJsonModel(json_obj='{"b": 1}'))
+#> json_obj={'b': 1}
+print(ConstrainedJsonModel(json_obj='[1, 2, 3]'))
+#> json_obj=[1, 2, 3]
+try:
+    ConstrainedJsonModel(json_obj=12)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for ConstrainedJsonModel
+    json_obj
+      JSON input should be string, bytes or bytearray [type=json_type, input_value=12, input_type=int]
+    """
+
+try:
+    ConstrainedJsonModel(json_obj='[a, b]')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for ConstrainedJsonModel
+    json_obj
+      Invalid JSON: expected value at line 1 column 2 [type=json_invalid, input_value='[a, b]', input_type=str]
+    """
+
+try:
+    ConstrainedJsonModel(json_obj='["a", "b"]')
+except ValidationError as e:
+    print(e)
+    """
+    2 validation errors for ConstrainedJsonModel
+    json_obj -> 0
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
+    json_obj -> 1
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='b', input_type=str]
+    """
+```
 
 ### Payment Card Numbers
 
 The `PaymentCardNumber` type validates [payment cards](https://en.wikipedia.org/wiki/Payment_card)
 (such as a debit or credit card).
 
-{!.tmp_examples/types_payment_card_number.md!}
+```py
+from datetime import date
+
+from pydantic import BaseModel
+from pydantic.types import PaymentCardBrand, PaymentCardNumber, constr
+
+
+class Card(BaseModel):
+    name: constr(strip_whitespace=True, min_length=1)
+    number: PaymentCardNumber
+    exp: date
+
+    @property
+    def brand(self) -> PaymentCardBrand:
+        return self.number.brand
+
+    @property
+    def expired(self) -> bool:
+        return self.exp < date.today()
+
+
+card = Card(
+    name='Georg Wilhelm Friedrich Hegel',
+    number='4000000000000002',
+    exp=date(2023, 9, 30),
+)
+
+assert card.number.brand == PaymentCardBrand.visa
+assert card.number.bin == '400000'
+assert card.number.last4 == '0002'
+assert card.number.masked == '400000******0002'
+```
 
 `PaymentCardBrand` can be one of the following based on the BIN:
 
@@ -825,7 +1757,67 @@ The actual validation verifies the card number is:
 
 The value of numerous common types can be restricted using `con*` type functions:
 
-{!.tmp_examples/types_constrained.md!}
+```py
+from decimal import Decimal
+
+from pydantic import (
+    BaseModel,
+    NegativeFloat,
+    NegativeInt,
+    PositiveFloat,
+    PositiveInt,
+    NonNegativeFloat,
+    NonNegativeInt,
+    NonPositiveFloat,
+    NonPositiveInt,
+    conbytes,
+    condecimal,
+    confloat,
+    conint,
+    conlist,
+    conset,
+    constr,
+    Field,
+)
+
+
+class Model(BaseModel):
+    upper_bytes: conbytes(to_upper=True)
+    lower_bytes: conbytes(to_lower=True)
+    short_bytes: conbytes(min_length=2, max_length=10)
+    strip_bytes: conbytes(strip_whitespace=True)
+
+    upper_str: constr(to_upper=True)
+    lower_str: constr(to_lower=True)
+    short_str: constr(min_length=2, max_length=10)
+    regex_str: constr(regex=r'^apple (pie|tart|sandwich)$')
+    strip_str: constr(strip_whitespace=True)
+
+    big_int: conint(gt=1000, lt=1024)
+    mod_int: conint(multiple_of=5)
+    pos_int: PositiveInt
+    neg_int: NegativeInt
+    non_neg_int: NonNegativeInt
+    non_pos_int: NonPositiveInt
+
+    big_float: confloat(gt=1000, lt=1024)
+    unit_interval: confloat(ge=0, le=1)
+    mod_float: confloat(multiple_of=0.5)
+    pos_float: PositiveFloat
+    neg_float: NegativeFloat
+    non_neg_float: NonNegativeFloat
+    non_pos_float: NonPositiveFloat
+
+    short_list: conlist(int, min_items=1, max_items=4)
+    short_set: conset(int, min_items=1, max_items=4)
+
+    decimal_positive: condecimal(gt=0)
+    decimal_negative: condecimal(lt=0)
+    decimal_max_digits_and_places: condecimal(max_digits=2, decimal_places=2)
+    mod_decimal: condecimal(multiple_of=Decimal('0.25'))
+
+    bigger_int: int = Field(..., gt=10000)
+```
 
 Where `Field` refers to the [field function](schema.md#field-customization).
 
@@ -932,7 +1924,81 @@ The following caveats apply:
     even though `bool` is a subclass of `int` in Python. Other subclasses will work.
 - `StrictFloat` (and the `strict` option of `ConstrainedFloat`) will not accept `int`.
 
-{!.tmp_examples/types_strict.md!}
+```py
+from pydantic import (
+    BaseModel,
+    StrictBytes,
+    StrictBool,
+    StrictInt,
+    ValidationError,
+    confloat,
+)
+
+
+class StrictBytesModel(BaseModel):
+    strict_bytes: StrictBytes
+
+
+try:
+    StrictBytesModel(strict_bytes='hello world')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for StrictBytesModel
+    strict_bytes
+      Input should be a valid bytes [type=bytes_type, input_value='hello world', input_type=str]
+    """
+
+
+class StrictIntModel(BaseModel):
+    strict_int: StrictInt
+
+
+try:
+    StrictIntModel(strict_int=3.14159)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for StrictIntModel
+    strict_int
+      Input should be a valid integer [type=int_type, input_value=3.14159, input_type=float]
+    """
+
+
+class ConstrainedFloatModel(BaseModel):
+    constrained_float: confloat(strict=True, ge=0.0)
+
+
+try:
+    ConstrainedFloatModel(constrained_float=3)
+except ValidationError as e:
+    print(e)
+
+try:
+    ConstrainedFloatModel(constrained_float=-1.23)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for ConstrainedFloatModel
+    constrained_float
+      Input should be greater than or equal to 0 [type=greater_than_equal, input_value=-1.23, input_type=float]
+    """
+
+
+class StrictBoolModel(BaseModel):
+    strict_bool: StrictBool
+
+
+try:
+    StrictBoolModel(strict_bool='False')
+except ValidationError as e:
+    print(str(e))
+    """
+    1 validation error for StrictBoolModel
+    strict_bool
+      Input should be a valid boolean [type=bool_type, input_value='False', input_type=str]
+    """
+```
 
 ## ByteSize
 
@@ -942,7 +2008,28 @@ raw bytes and print out human readable versions of the bytes as well.
 !!! info
     Note that `1b` will be parsed as "1 byte" and not "1 bit".
 
-{!.tmp_examples/types_bytesize.md!}
+```py
+from pydantic import BaseModel, ByteSize
+
+
+class MyModel(BaseModel):
+    size: ByteSize
+
+
+print(MyModel(size=52000).size)
+#> 52000
+print(MyModel(size='3000 KiB').size)
+#> 3072000
+
+m = MyModel(size='50 PB')
+print(m.size.human_readable())
+#> 44.4PiB
+print(m.size.human_readable(decimal=True))
+#> 50.0PB
+
+print(m.size.to('TiB'))
+#> 45474.73508864641
+```
 
 ## Custom Data Types
 
@@ -957,7 +2044,76 @@ to get validators to parse and validate the input data.
     These validators have the same semantics as in [Validators](validators.md), you can
     declare a parameter `config`, `field`, etc.
 
-{!.tmp_examples/types_custom_type.md!}
+```py
+import re
+from pydantic import BaseModel
+
+# https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom#Validation
+post_code_regex = re.compile(
+    r'(?:'
+    r'([A-Z]{1,2}[0-9][A-Z0-9]?|ASCN|STHL|TDCU|BBND|[BFS]IQQ|PCRN|TKCA) ?'
+    r'([0-9][A-Z]{2})|'
+    r'(BFPO) ?([0-9]{1,4})|'
+    r'(KY[0-9]|MSR|VG|AI)[ -]?[0-9]{4}|'
+    r'([A-Z]{2}) ?([0-9]{2})|'
+    r'(GE) ?(CX)|'
+    r'(GIR) ?(0A{2})|'
+    r'(SAN) ?(TA1)'
+    r')'
+)
+
+
+class PostCode(str):
+    """
+    Partial UK postcode validation. Note: this is just an example, and is not
+    intended for use in production; in particular this does NOT guarantee
+    a postcode exists, just that it has a valid format.
+    """
+
+    @classmethod
+    def __get_validators__(cls):
+        # one or more validators may be yielded which will be called in the
+        # order to validate the input, each validator will receive as an input
+        # the value returned from the previous validator
+        yield cls.validate
+
+    @classmethod
+    def __pydantic_modify_json_schema__(cls, field_schema):
+        # __pydantic_modify_json_schema__ should mutate the dict it receives
+        # in place, the returned value will be ignored
+        field_schema.update(
+            # simplified regex here for brevity, see the wikipedia link above
+            pattern='^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
+            # some example postcodes
+            examples=['SP11 9DG', 'w1j7bu'],
+        )
+
+    @classmethod
+    def validate(cls, v):
+        if not isinstance(v, str):
+            raise TypeError('string required')
+        m = post_code_regex.fullmatch(v.upper())
+        if not m:
+            raise ValueError('invalid postcode format')
+        # you could also return a string here which would mean model.post_code
+        # would be a string, pydantic won't care but you could end up with some
+        # confusion since the value's type won't match the type annotation
+        # exactly
+        return cls(f'{m.group(1)} {m.group(2)}')
+
+    def __repr__(self):
+        return f'PostCode({super().__repr__()})'
+
+
+class Model(BaseModel):
+    post_code: PostCode
+
+
+model = Model(post_code='sw8 5el')
+print(model)
+print(model.post_code)
+print(Model.model_json_schema())
+```
 
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
@@ -969,14 +2125,98 @@ See [schema](schema.md) for more details on how the model's schema is generated.
 You can allow arbitrary types using the `arbitrary_types_allowed` config in the
 [Model Config](model_config.md).
 
-{!.tmp_examples/types_arbitrary_allowed.md!}
+```py
+from pydantic import BaseModel, ValidationError
+
+
+# This is not a pydantic model, it's an arbitrary class
+class Pet:
+    def __init__(self, name: str):
+        self.name = name
+
+
+class Model(BaseModel):
+    pet: Pet
+    owner: str
+
+    class Config:
+        arbitrary_types_allowed = True
+
+
+pet = Pet(name='Hedwig')
+# A simple check of instance type is used to validate the data
+model = Model(owner='Harry', pet=pet)
+print(model)
+print(model.pet)
+print(model.pet.name)
+print(type(model.pet))
+try:
+    # If the value is not an instance of the type, it's invalid
+    Model(owner='Harry', pet='Hedwig')
+except ValidationError as e:
+    print(e)
+# Nothing in the instance of the arbitrary type is checked
+# Here name probably should have been a str, but it's not validated
+pet2 = Pet(name=42)
+model2 = Model(owner='Harry', pet=pet2)
+print(model2)
+print(model2.pet)
+print(model2.pet.name)
+print(type(model2.pet))
+```
 
 ### Undefined Types Warning
 
 You can suppress the Undefined Types Warning by setting `undefined_types_warning` to `False` in the
 [Model Config](model_config.md).
 
-{!.tmp_examples/types_undefined_warning.md!}
+```py
+from __future__ import annotations
+
+from pydantic import BaseModel
+
+
+# This example shows how Book and Person types reference each other.
+# We will demonstrate how to suppress the undefined types warning
+# when define such models.
+
+
+class Book(BaseModel):
+    title: str
+    author: Person  # note the `Person` type is not yet defined
+
+    # Suppress undefined types warning so we can continue defining our models.
+    class Config:
+        undefined_types_warning = False
+
+
+class Person(BaseModel):
+    name: str
+    books_read: list[Book] | None = None
+
+
+# Now, we can rebuild the `Book` model, since the `Person` model is now defined.
+# Note: there's no need to call `model_rebuild()` on `Person`,
+# it's already complete.
+Book.model_rebuild()
+
+# Let's create some instances of our models, to demonstrate that they work.
+python_crash_course = Book(
+    title='Python Crash Course',
+    author=Person(name='Eric Matthes'),
+)
+jane_doe = Person(name='Jane Doe', books_read=[python_crash_course])
+
+assert jane_doe.dict(exclude_unset=True) == {
+    'name': 'Jane Doe',
+    'books_read': [
+        {
+            'title': 'Python Crash Course',
+            'author': {'name': 'Eric Matthes'},
+        },
+    ],
+}
+```
 
 ### Generic Classes as Types
 
@@ -995,4 +2235,88 @@ If the Generic class that you are using as a sub-type has a classmethod
 Because you can declare validators that receive the current `field`, you can extract
 the `sub_fields` (from the generic class type parameters) and validate data with them.
 
-{!.tmp_examples/types_generics.md!}
+```py
+from pydantic import BaseModel, ValidationError
+from pydantic.fields import ModelField
+from typing import TypeVar, Generic
+
+AgedType = TypeVar('AgedType')
+QualityType = TypeVar('QualityType')
+
+
+# This is not a pydantic model, it's an arbitrary generic class
+class TastingModel(Generic[AgedType, QualityType]):
+    def __init__(self, name: str, aged: AgedType, quality: QualityType):
+        self.name = name
+        self.aged = aged
+        self.quality = quality
+
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    # You don't need to add the "ModelField", but it will help your
+    # editor give you completion and catch errors
+    def validate(cls, v, field: ModelField):
+        if not isinstance(v, cls):
+            # The value is not even a TastingModel
+            raise TypeError('Invalid value')
+        if not field.sub_fields:
+            # Generic parameters were not provided so we don't try to validate
+            # them and just return the value as is
+            return v
+        aged_f = field.sub_fields[0]
+        quality_f = field.sub_fields[1]
+        errors = []
+        # Here we don't need the validated value, but we want the errors
+        valid_value, error = aged_f.validate(v.aged, {}, loc='aged')
+        if error:
+            errors.append(error)
+        # Here we don't need the validated value, but we want the errors
+        valid_value, error = quality_f.validate(v.quality, {}, loc='quality')
+        if error:
+            errors.append(error)
+        if errors:
+            raise ValidationError(errors, cls)
+        # Validation passed without errors, return the same instance received
+        return v
+
+
+class Model(BaseModel):
+    # for wine, "aged" is an int with years, "quality" is a float
+    wine: TastingModel[int, float]
+    # for cheese, "aged" is a bool, "quality" is a str
+    cheese: TastingModel[bool, str]
+    # for thing, "aged" is a Any, "quality" is Any
+    thing: TastingModel
+
+
+model = Model(
+    # This wine was aged for 20 years and has a quality of 85.6
+    wine=TastingModel(name='Cabernet Sauvignon', aged=20, quality=85.6),
+    # This cheese is aged (is mature) and has "Good" quality
+    cheese=TastingModel(name='Gouda', aged=True, quality='Good'),
+    # This Python thing has aged "Not much" and has a quality "Awesome"
+    thing=TastingModel(name='Python', aged='Not much', quality='Awesome'),
+)
+print(model)
+print(model.wine.aged)
+print(model.wine.quality)
+print(model.cheese.aged)
+print(model.cheese.quality)
+print(model.thing.aged)
+try:
+    # If the values of the sub-types are invalid, we get an error
+    Model(
+        # For wine, aged should be an int with the years, and quality a float
+        wine=TastingModel(name='Merlot', aged=True, quality='Kinda good'),
+        # For cheese, aged should be a bool, and quality a str
+        cheese=TastingModel(name='Gouda', aged='yeah', quality=5),
+        # For thing, no type parameters are declared, and we skipped validation
+        # in those cases in the Assessment.validate() function
+        thing=TastingModel(name='Python', aged='Not much', quality='Awesome'),
+    )
+except ValidationError as e:
+    print(e)
+```

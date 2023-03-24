@@ -20,7 +20,30 @@ Arguments:
 
 Example:
 
-{!.tmp_examples/exporting_models_dict.md!}
+```py
+from pydantic import BaseModel
+
+
+class BarModel(BaseModel):
+    whatever: int
+
+
+class FooBarModel(BaseModel):
+    banana: float
+    foo: str
+    bar: BarModel
+
+
+m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
+
+# returns a dictionary:
+print(m.model_dump())
+#> {'banana': 3.14, 'foo': 'hello', 'bar': {'whatever': 123}}
+print(m.model_dump(include={'foo', 'bar'}))
+#> {'foo': 'hello', 'bar': {'whatever': 123}}
+print(m.model_dump(exclude={'foo', 'bar'}))
+#> {'banana': 3.14}
+```
 
 ## `dict(model)` and iteration
 
@@ -30,7 +53,30 @@ returned, so sub-models will not be converted to dictionaries.
 
 Example:
 
-{!.tmp_examples/exporting_models_iterate.md!}
+```py
+from pydantic import BaseModel
+
+
+class BarModel(BaseModel):
+    whatever: int
+
+
+class FooBarModel(BaseModel):
+    banana: float
+    foo: str
+    bar: BarModel
+
+
+m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
+
+print(dict(m))
+#> {'banana': 3.14, 'foo': 'hello', 'bar': BarModel(whatever=123)}
+for name, value in m:
+    print(f'{name}: {value}')
+    #> banana: 3.14
+    #> foo: hello
+    #> bar: whatever=123
+```
 
 ## `model.copy(...)`
 
@@ -45,7 +91,34 @@ Arguments:
 
 Example:
 
-{!.tmp_examples/exporting_models_copy.md!}
+```py
+from pydantic import BaseModel
+
+
+class BarModel(BaseModel):
+    whatever: int
+
+
+class FooBarModel(BaseModel):
+    banana: float
+    foo: str
+    bar: BarModel
+
+
+m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
+
+# TODO!
+# print(m.model_copy(include={'foo', 'bar'}))
+# print(m.model_copy(exclude={'foo', 'bar'}))
+print(m.model_copy(update={'banana': 0}))
+#> banana=0 foo='hello' bar=BarModel(whatever=123)
+print(id(m.bar), id(m.model_copy().bar))
+#> 140591704496000 140591704496000
+# normal copy gives the same object reference for bar
+print(id(m.bar), id(m.model_copy(deep=True).bar))
+#> 140591704496000 140591667224640
+# deep copy gives a new object reference for `bar`
+```
 
 ## `model.model_dump_json(...)`
 
@@ -71,22 +144,52 @@ Arguments:
 *pydantic* can serialise many commonly used types to JSON (e.g. `datetime`, `date` or `UUID`) which would normally
 fail with a simple `json.dumps(foobar)`.
 
-{!.tmp_examples/exporting_models_json.md!}
+```py
+from datetime import datetime
+from pydantic import BaseModel
+
+
+class BarModel(BaseModel):
+    whatever: int
+
+
+class FooBarModel(BaseModel):
+    foo: datetime
+    bar: BarModel
+
+
+m = FooBarModel(foo=datetime(2032, 6, 1, 12, 13, 14), bar={'whatever': 123})
+print(m.model_dump_json())
+#> b'{"foo":"2032-06-01T12:13:14","bar":{"whatever":123}}'
+```
 
 ### `json_encoders`
 
 Serialisation can be customised on a model using the `json_encoders` config property; the keys should be types (or names of types for forward references), and
 the values should be functions which serialise that type (see the example below):
 
-{!.tmp_examples/exporting_models_json_encoders.md!}
+```py
+from datetime import datetime, timedelta
+from pydantic import BaseModel, serializer
+
+
+class WithCustomEncoders(BaseModel):
+    model_config = dict(ser_json_timedelta='iso8601')
+    dt: datetime
+    diff: timedelta
+
+    @serializer('dt')
+    def serialize_dt(self, dt: datetime, _info):
+        return dt.timestamp()
+
+
+m = WithCustomEncoders(dt=datetime(2032, 6, 1), diff=timedelta(hours=100))
+print(m.model_dump_json())
+#> b'{"dt":1969657200.0,"diff":"P4DT14400S"}'
+```
 
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
 as an optional alternative which implements [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) time diff encoding.
-
-The `json_encoders` are also merged during the models inheritance with the child
-encoders taking precedence over the parent one.
-
-{!.tmp_examples/exporting_models_json_encoders_merge.md!}
 
 ### Serialising self-reference or other models
 
@@ -94,7 +197,44 @@ By default, models are serialised as dictionaries.
 If you want to serialise them differently, you can add `models_as_dict=False` when calling `json()` method
 and add the classes of the model in `json_encoders`.
 In case of forward references, you can use a string with the class name instead of the class itself
-{!.tmp_examples/exporting_models_json_forward_ref.md!}
+
+```py test="skip"
+# TODO we need to serializers for this example
+from typing import List, Optional
+
+from pydantic import BaseModel
+
+
+class Address(BaseModel):
+    city: str
+    country: str
+
+
+class User(BaseModel):
+    name: str
+    address: Address
+    friends: Optional[List['User']] = None
+
+    class Config:
+        json_encoders = {
+            Address: lambda a: f'{a.city} ({a.country})',
+            'User': lambda u: f'{u.name} in {u.address.city} '
+            f'({u.address.country[:2].upper()})',
+        }
+
+
+User.update_forward_refs()
+
+wolfgang = User(
+    name='Wolfgang',
+    address=Address(city='Berlin', country='Deutschland'),
+    friends=[
+        User(name='Pierre', address=Address(city='Paris', country='France')),
+        User(name='John', address=Address(city='London', country='UK')),
+    ],
+)
+print(wolfgang.model_dump_json(models_as_dict=False))
+```
 
 ### Serialising subclasses
 
@@ -105,37 +245,101 @@ In case of forward references, you can use a string with the class name instead 
 
 Subclasses of common types are automatically encoded like their super-classes:
 
-{!.tmp_examples/exporting_models_json_subclass.md!}
+```py
+from datetime import date, timedelta
+from pydantic import BaseModel
+from pydantic_core import core_schema
 
-### Custom JSON (de)serialisation
 
-To improve the performance of encoding and decoding JSON, alternative JSON implementations
-(e.g. [ujson](https://pypi.python.org/pypi/ujson)) can be used via the
-`json_loads` and `json_dumps` properties of `Config`.
+class DayThisYear(date):
+    """
+    Contrived example of a special type of date that
+    takes an int and interprets it as a day in the current year
+    """
 
-{!.tmp_examples/exporting_models_ujson.md!}
+    @classmethod
+    def __get_pydantic_core_schema__(cls, **kwargs):
+        return core_schema.general_after_validator_function(
+            cls.validate,
+            core_schema.int_schema(),
+            serialization=core_schema.format_ser_schema('%Y-%m-%d'),
+        )
 
-`ujson` generally cannot be used to dump JSON since it doesn't support encoding of objects like datetimes and does
-not accept a `default` fallback function argument. To do this, you may use another library like
-[orjson](https://github.com/ijl/orjson).
+    @classmethod
+    def validate(cls, v: int, _info):
+        return date.today().replace(month=1, day=1) + timedelta(days=v)
 
-{!.tmp_examples/exporting_models_orjson.md!}
 
-Note that `orjson` takes care of `datetime` encoding natively, making it faster than `json.dumps` but
-meaning you cannot always customise the encoding using `Config.json_encoders`.
+class FooModel(BaseModel):
+    date: DayThisYear
+
+
+m = FooModel(date=300)
+print(m.model_dump_json())
+#> b'{"date":"2023-10-28"}'
+```
 
 ## `pickle.dumps(model)`
 
 Using the same plumbing as `copy()`, *pydantic* models support efficient pickling and unpickling.
 
-{!.tmp_examples/exporting_models_pickle.md!}
+```py test="skip"
+# TODO need to get pickling to work
+import pickle
+from pydantic import BaseModel
+
+
+class FooBarModel(BaseModel):
+    a: str
+    b: int
+
+
+m = FooBarModel(a='hello', b=123)
+print(m)
+data = pickle.dumps(m)
+print(data)
+m2 = pickle.loads(data)
+print(m2)
+```
 
 ## Advanced include and exclude
 
 The `dict`, `json`, and `copy` methods support `include` and `exclude` arguments which can either be
 sets or dictionaries. This allows nested selection of which fields to export:
 
-{!.tmp_examples/exporting_models_exclude1.md!}
+```py
+from pydantic import BaseModel, SecretStr
+
+
+class User(BaseModel):
+    id: int
+    username: str
+    password: SecretStr
+
+
+class Transaction(BaseModel):
+    id: str
+    user: User
+    value: int
+
+
+t = Transaction(
+    id='1234567890',
+    user=User(id=42, username='JohnDoe', password='hashedpassword'),
+    value=9876543210,
+)
+
+# using a set:
+print(t.model_dump(exclude={'user', 'value'}))
+#> {'id': '1234567890'}
+
+# using a dict:
+print(t.model_dump(exclude={'user': {'username', 'password'}, 'value': True}))
+#> {'id': '1234567890', 'user': {'id': 42}}
+
+print(t.model_dump(include={'id': True, 'user': {'id'}}))
+#> {'id': '1234567890', 'user': {'id': 42}}
+```
 
 The `True` indicates that we want to exclude or include an entire key, just as if we included it in a set.
 Of course, the same can be done at any depth level.
@@ -144,7 +348,93 @@ Special care must be taken when including or excluding fields from a list or tup
 `dict` and related methods expect integer keys for element-wise inclusion or exclusion. To exclude a field from **every**
 member of a list or tuple, the dictionary key `'__all__'` can be used as follows:
 
-{!.tmp_examples/exporting_models_exclude2.md!}
+```py
+import datetime
+from typing import List
+
+from pydantic import BaseModel, SecretStr
+
+
+class Country(BaseModel):
+    name: str
+    phone_code: int
+
+
+class Address(BaseModel):
+    post_code: int
+    country: Country
+
+
+class CardDetails(BaseModel):
+    number: SecretStr
+    expires: datetime.date
+
+
+class Hobby(BaseModel):
+    name: str
+    info: str
+
+
+class User(BaseModel):
+    first_name: str
+    second_name: str
+    address: Address
+    card_details: CardDetails
+    hobbies: List[Hobby]
+
+
+user = User(
+    first_name='John',
+    second_name='Doe',
+    address=Address(post_code=123456, country=Country(name='USA', phone_code=1)),
+    card_details=CardDetails(
+        number='4212934504460000', expires=datetime.date(2020, 5, 1)
+    ),
+    hobbies=[
+        Hobby(name='Programming', info='Writing code and stuff'),
+        Hobby(name='Gaming', info='Hell Yeah!!!'),
+    ],
+)
+
+exclude_keys = {
+    'second_name': True,
+    'address': {'post_code': True, 'country': {'phone_code'}},
+    'card_details': True,
+    # You can exclude fields from specific members of a tuple/list by index:
+    'hobbies': {-1: {'info'}},
+}
+
+include_keys = {
+    'first_name': True,
+    'address': {'country': {'name'}},
+    'hobbies': {0: True, -1: {'name'}},
+}
+
+# would be the same as user.model_dump(exclude=exclude_keys) in this case:
+print(user.model_dump(include=include_keys))
+"""
+{
+    'first_name': 'John',
+    'address': {'country': {'name': 'USA'}},
+    'hobbies': [{'name': 'Programming', 'info': 'Writing code and stuff'}],
+}
+"""
+
+# To exclude a field from all members of a nested list or tuple, use "__all__":
+print(user.model_dump(exclude={'hobbies': {'__all__': {'info'}}}))
+"""
+{
+    'first_name': 'John',
+    'second_name': 'Doe',
+    'address': {'post_code': 123456, 'country': {'name': 'USA', 'phone_code': 1}},
+    'card_details': {
+        'number': SecretStr('**********'),
+        'expires': datetime.date(2020, 5, 1),
+    },
+    'hobbies': [{'name': 'Programming'}, {'name': 'Gaming'}],
+}
+"""
+```
 
 The same holds for the `json` and `copy` methods.
 
@@ -152,7 +442,32 @@ The same holds for the `json` and `copy` methods.
 
 In addition to the explicit arguments `exclude` and `include` passed to `dict`, `json` and `copy` methods, we can also pass the `include`/`exclude` arguments directly to the `Field` constructor or the equivalent `field` entry in the models `Config` class:
 
-{!.tmp_examples/exporting_models_exclude3.md!}
+```py
+from pydantic import BaseModel, Field, SecretStr
+
+
+class User(BaseModel):
+    id: int
+    username: str
+    password: SecretStr = Field(..., exclude=True)
+
+
+class Transaction(BaseModel):
+    id: str
+    user: User = Field(exclude={'username'})
+    value: int = Field(exclude=True)
+
+
+t = Transaction(
+    id='1234567890',
+    user=User(id=42, username='JohnDoe', password='hashedpassword'),
+    value=9876543210,
+)
+
+print(t.model_dump())
+#> {'id': '1234567890'}
+# TODO this is wrong! not all of "user" should be excluded
+```
 
 In the case where multiple strategies are used, `exclude`/`include` fields are merged according to the following rules:
 
@@ -163,8 +478,56 @@ Note that while merging settings, `exclude` entries are merged by computing the 
 
 The resulting merged exclude settings:
 
-{!.tmp_examples/exporting_models_exclude4.md!}
+```py
+from pydantic import BaseModel, Field, SecretStr
+
+
+class User(BaseModel):
+    id: int
+    username: str  # overridden by explicit exclude
+    password: SecretStr = Field(exclude=True)
+
+
+class Transaction(BaseModel):
+    id: str
+    user: User
+    value: int
+
+
+t = Transaction(
+    id='1234567890',
+    user=User(id=42, username='JohnDoe', password='hashedpassword'),
+    value=9876543210,
+)
+
+print(t.model_dump(exclude={'value': True, 'user': {'username'}}))
+#> {'id': '1234567890', 'user': {'id': 42}}
+```
 
 are the same as using merged include settings as follows:
 
-{!.tmp_examples/exporting_models_exclude5.md!}
+```py
+from pydantic import BaseModel, Field, SecretStr
+
+
+class User(BaseModel):
+    id: int = Field(..., include=True)
+    username: str = Field(..., include=True)  # overridden by explicit include
+    password: SecretStr
+
+
+class Transaction(BaseModel):
+    id: str
+    user: User
+    value: int
+
+
+t = Transaction(
+    id='1234567890',
+    user=User(id=42, username='JohnDoe', password='hashedpassword'),
+    value=9876543210,
+)
+
+print(t.model_dump(include={'id': True, 'user': {'id'}}))
+#> {'id': '1234567890', 'user': {'id': 42}}
+```

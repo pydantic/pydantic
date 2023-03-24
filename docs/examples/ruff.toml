@@ -1,9 +1,0 @@
-line-length = 80
-ignore = ["E402", "F722"]
-extend-select = ["Q"]
-flake8-quotes = {inline-quotes = "single", multiline-quotes = "double"}
-
-[per-file-ignores]
-# waiting for https://github.com/charliermarsh/ruff/issues/282
-"models_structural_pattern_matching.py" = ["E999"]
-"schema_unenforced_constraints.py" = ["F811"]

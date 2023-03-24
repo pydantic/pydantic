@@ -4,7 +4,20 @@
 Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/pep-0563/))
 "just work".
 
-{!.tmp_examples/postponed_annotations_main.md!}
+```py
+from __future__ import annotations
+from typing import Any, List
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    a: List[int]
+    b: Any
+
+
+print(Model(a=('1', 2, 3), b='ok'))
+#> a=[1, 2, 3] b='ok'
+```
 
 Internally, *pydantic*  will call a method similar to `typing.get_type_hints` to resolve annotations.
 
@@ -16,7 +29,23 @@ In some cases, a `ForwardRef` won't be able to be resolved during model creation
 For example, this happens whenever a model references itself as a field type.
 When this happens, you'll need to call `update_forward_refs` after the model has been created before it can be used:
 
-{!.tmp_examples/postponed_annotations_forward_ref.md!}
+```py
+from typing import ForwardRef
+from pydantic import BaseModel
+
+Foo = ForwardRef('Foo')
+
+
+class Foo(BaseModel):
+    a: int = 123
+    b: Foo = None
+
+
+Foo.update_forward_refs()
+
+print(Foo())
+print(Foo(b={'a': '321'}))
+```
 
 !!! warning
     To resolve strings (type names) into annotations (types), *pydantic* needs a namespace dict in which to
@@ -25,11 +54,49 @@ When this happens, you'll need to call `update_forward_refs` after the model has
 
 For example, this works fine:
 
-{!.tmp_examples/postponed_annotations_works.md!}
+```py
+from __future__ import annotations
+from pydantic import BaseModel
+from pydantic import HttpUrl  # HttpUrl is defined in the module's global scope
+
+
+def this_works():
+    class Model(BaseModel):
+        a: HttpUrl
+
+    print(Model(a='https://example.com'))
+
+
+this_works()
+```
 
 While this will break:
 
-{!.tmp_examples/postponed_annotations_broken.md!}
+```py
+from __future__ import annotations
+from pydantic import BaseModel
+from pydantic.errors import PydanticUserError
+
+
+def this_is_broken():
+    from pydantic import HttpUrl  # HttpUrl is defined in function local scope
+
+    class Model(BaseModel):
+        a: HttpUrl
+
+    try:
+        Model(a='https://example.com')
+    except PydanticUserError as e:
+        print(e)
+
+    try:
+        Model.update_forward_refs()
+    except NameError as e:
+        print(e)
+
+
+this_is_broken()
+```
 
 Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.
 
@@ -40,10 +107,39 @@ resolved after model creation.
 
 Within the model, you can refer to the not-yet-constructed model using a string:
 
-{!.tmp_examples/postponed_annotations_self_referencing_string.md!}
+```py
+from pydantic import BaseModel
+
+
+class Foo(BaseModel):
+    a: int = 123
+    #: The sibling of `Foo` is referenced by string
+    sibling: 'Foo' = None
+
+
+print(Foo())
+#> a=123 sibling=None
+print(Foo(sibling={'a': '321'}))
+#> a=123 sibling=Foo(a=321, sibling=None)
+```
 
 Since Python 3.7, you can also refer it by its type, provided you import `annotations` (see
 [above](postponed_annotations.md) for support depending on Python
 and *pydantic* versions).
 
-{!.tmp_examples/postponed_annotations_self_referencing_annotations.md!}
+```py
+from __future__ import annotations
+from pydantic import BaseModel
+
+
+class Foo(BaseModel):
+    a: int = 123
+    #: The sibling of `Foo` is referenced directly by type
+    sibling: Foo = None
+
+
+print(Foo())
+#> a=123 sibling=None
+print(Foo(sibling={'a': '321'}))
+#> a=123 sibling=Foo(a=321, sibling=None)
+```
