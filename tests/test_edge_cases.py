@@ -4,11 +4,12 @@ import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, get_args
+from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import core_schema
+from typing_extensions import get_args
 
 from pydantic import (
     BaseModel,
