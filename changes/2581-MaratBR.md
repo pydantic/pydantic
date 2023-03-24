@@ -1,2 +1,2 @@
-Fixes [#2581](/samuelcolvin/pydantic/issues/2581). Using constraints such as `gt` or `le` 
+Allow constraints such as `gt` or `le` on generic models.
 no longer raises `ValueError` due to unenforced constraint.
