@@ -68,13 +68,13 @@ def test_custom_init_signature_with_no_var_kw():
     assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
 
 
-@pytest.mark.xfail(reason='TODO create_model')
 def test_invalid_identifiers_signature():
     model = create_model(
-        'Model', **{'123 invalid identifier!': Field(123, alias='valid_identifier'), '!': Field(0, alias='yeah')}
+        'Model',
+        **{'123 invalid identifier!': (int, Field(123, alias='valid_identifier')), '!': (int, Field(0, alias='yeah'))},
     )
     assert _equals(str(signature(model)), '(*, valid_identifier: int = 123, yeah: int = 0) -> None')
-    model = create_model('Model', **{'123 invalid identifier!': 123, '!': Field(0, alias='yeah')})
+    model = create_model('Model', **{'123 invalid identifier!': (int, 123), '!': (int, Field(0, alias='yeah'))})
     assert _equals(str(signature(model)), '(*, yeah: int = 0, **extra_data: Any) -> None')
 
 

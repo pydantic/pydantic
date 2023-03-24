@@ -906,9 +906,8 @@ def test_model_iteration():
         pytest.param(
             {'foos': {0: 1}},
             TypeError,
-            '`exclude` argument must a set or dict',
+            '`exclude` argument must be a set or dict',
             id='value as int should be an error',
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
         pytest.param(
             {'foos': {'__all__': {1}}},
@@ -1392,7 +1391,7 @@ def test_base_config_type_hinting():
     get_type_hints(type(M.model_config))
 
 
-@pytest.mark.xfail(reason='https://github.com/pydantic/pydantic-core/pull/237')
+@pytest.mark.xfail(reason='frozen field; https://github.com/pydantic/pydantic-core/pull/237')
 def test_frozen_field():
     """assigning a frozen=True field should raise a TypeError"""
 

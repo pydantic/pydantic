@@ -88,7 +88,7 @@ class CustomValidator(ABC):
         attrs = attrs or set(self.__slots__)  # type: ignore[attr-defined]
         for k, v in constraints.items():
             if k not in attrs:
-                raise TypeError(f'{self.__class__.__name__} has no attribute {k!r}')
+                raise TypeError(f'{k!r} is not a valid constraint for {self.__class__.__name__}')
             setattr(self, k, v)
 
 

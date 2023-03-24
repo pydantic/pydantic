@@ -32,7 +32,15 @@ from dirty_equals import HasRepr
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal, OrderedDict
 
-from pydantic import BaseModel, Field, Json, PositiveInt, ValidationError, ValidationInfo, root_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    Json,
+    PositiveInt,
+    ValidationError,
+    ValidationInfo,
+    root_validator,
+)
 from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import (
     _GENERIC_TYPES_CACHE,
@@ -1651,8 +1659,9 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
 
 def test_generic_recursive_models_complicated(create_module):
     """
-    TODO: this test will fail if run by itself. This is due to weird behavior with the WeakValueDictionary
-        used for caching. As part of the next batch of generics work, we should attempt to fix this if possible.
+    TODO: If we drop the use of LimitedDict and use WeakValueDictionary only, this test will fail if run by itself.
+        This is due to weird behavior with the WeakValueDictionary used for caching.
+        As part of the next batch of generics work, we should attempt to fix this if possible.
         In the meantime, if this causes issues, or the test otherwise starts failing, please make it xfail
         with strict=False
     """

@@ -480,7 +480,7 @@ def test_default_factory_singleton_field():
     assert Foo().singleton is Foo().singleton
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_schema():
     @pydantic.dataclasses.dataclass
     class User:
@@ -522,7 +522,7 @@ def test_schema():
     }
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_nested_schema():
     @pydantic.dataclasses.dataclass
     class Nested:
@@ -771,7 +771,7 @@ def test_override_builtin_dataclass_nested():
     assert foo.file.meta.seen_count == 7
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_override_builtin_dataclass_nested_schema():
     @dataclasses.dataclass
     class Meta:
@@ -950,7 +950,7 @@ class ModelForPickle(pydantic.BaseModel):
         restored_obj.dataclass.value = 'value of a wrong type'
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_config_field_info_create_model():
     # works
     class A1(BaseModel):
@@ -1090,7 +1090,7 @@ def test_issue_2541():
         e.item.infos.id = 2
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_issue_2555():
     @dataclasses.dataclass
     class Span:
@@ -1130,7 +1130,7 @@ def test_issue_2594():
     assert isinstance(M(e={}).e, Empty)
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_schema_description_unset():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1146,7 +1146,7 @@ def test_schema_description_unset():
     assert 'description' not in B.__pydantic_model__.model_json_schema()
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_schema_description_set():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1185,7 +1185,7 @@ def test_issue_3011():
     assert c.thing.thing_a == 'Thing A'
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_issue_3162():
     @dataclasses.dataclass
     class User:
@@ -1212,7 +1212,7 @@ def test_issue_3162():
     }
 
 
-@pytest.mark.xfail(reason='JSON schema')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_discriminated_union_basemodel_instance_value():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1434,7 +1434,7 @@ def test_validator():
     assert d.b == 5.0
 
 
-@pytest.mark.xfail(reason='working on V2 - validator in child not applied')
+@pytest.mark.xfail(reason='validator in child not applied')
 def test_parent_post_init():
     @dataclasses.dataclass
     class A:
@@ -1456,7 +1456,7 @@ def test_parent_post_init():
     assert B(a=1).a == 5  # 1 * 2 + 3
 
 
-@pytest.mark.xfail(reason='working on V2 - validator in child not applied')
+@pytest.mark.xfail(reason='validator in child not applied')
 def test_subclass_post_init():
     @dataclasses.dataclass
     class A:
@@ -1476,7 +1476,7 @@ def test_subclass_post_init():
     assert B().a == 5  # 1 * 2 + 3
 
 
-@pytest.mark.xfail(reason='working on V2 - validator in child not applied')
+@pytest.mark.xfail(reason='validator in child not applied')
 def test_subclass_post_init_inheritance():
     @dataclasses.dataclass
     class A:

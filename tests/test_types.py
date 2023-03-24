@@ -1159,15 +1159,8 @@ def test_invalid_schema_constraints(kwargs, type_):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
-@pytest.mark.xfail(reason='Do we want to make this a SchemaError?')
 def test_invalid_decimal_constraint():
-    # Using the following line instead of the uncommented one below would make the test pass:
-    # with pytest.raises(TypeError, match="DecimalValidator has no attribute 'max_length'"):
-    with pytest.raises(SchemaError, match='Invalid Schema:\n.*\n  Extra inputs are not permitted'):
-        # TODO: This error comes from pydantic._internal._fields.CustomValidator._update_attrs
-        #   Should we modify how that works to produce SchemaError like in the cases above?
-        #   If so, do we need to expose a way to create a SchemaError from python?
-        #   Right now this can only be done from the Rust side of pydantic_core
+    with pytest.raises(TypeError, match="'max_length' is not a valid constraint for DecimalValidator"):
 
         class Foo(BaseModel):
             a: Decimal = Field('foo', title='A title', description='A description', max_length=5)

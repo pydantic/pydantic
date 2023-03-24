@@ -2050,7 +2050,7 @@ def test_subfield_field_info():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - dataclasses')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_dataclass():
     @dataclass
     class Model:
@@ -2617,7 +2617,7 @@ def test_complex_nested_generic():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='need to pass FieldInfo when calling __pydantic_modify_json_schema__')
 def test_schema_with_field_parameter():
     # TODO: Update so that __pydantic_modify_json_schema__ gets called with the FieldInfo when handling fields
     class RestrictedAlphabetStr(str):
@@ -3273,7 +3273,7 @@ def test_alias_same():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - dataclasses')
+@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_nested_python_dataclasses():
     """
     Test schema generation for nested python dataclasses
