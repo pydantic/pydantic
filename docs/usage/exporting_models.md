@@ -112,11 +112,11 @@ m = FooBarModel(banana=3.14, foo='hello', bar={'whatever': 123})
 # print(m.model_copy(exclude={'foo', 'bar'}))
 print(m.model_copy(update={'banana': 0}))
 #> banana=0 foo='hello' bar=BarModel(whatever=123)
-print(id(m.bar), id(m.model_copy().bar))
-#> 140591704496000 140591704496000
+print(id(m.bar) == id(m.model_copy().bar))
+#> True
 # normal copy gives the same object reference for bar
-print(id(m.bar), id(m.model_copy(deep=True).bar))
-#> 140591704496000 140591667224640
+print(id(m.bar) == id(m.model_copy(deep=True).bar))
+#> False
 # deep copy gives a new object reference for `bar`
 ```
 

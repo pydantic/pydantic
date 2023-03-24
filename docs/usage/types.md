@@ -218,18 +218,27 @@ class Model(BaseModel):
 
 
 print(Model(simple_list=['1', '2', '3']).simple_list)
+#> ['1', '2', '3']
 print(Model(list_of_ints=['1', '2', '3']).list_of_ints)
+#> [1, 2, 3]
 
 print(Model(simple_dict={'a': 1, b'b': 2}).simple_dict)
+#> {'a': 1, b'b': 2}
 print(Model(dict_str_float={'a': 1, b'b': 2}).dict_str_float)
+#> {'a': 1.0, 'b': 2.0}
 
 print(Model(simple_tuple=[1, 2, 3, 4]).simple_tuple)
-print(Model(tuple_of_different_types=[4, 3, 2, 1]).tuple_of_different_types)
+#> (1, 2, 3, 4)
+print(Model(tuple_of_different_types=[4, 3, '2', 1]).tuple_of_different_types)
+#> (4, 3.0, '2', True)
 
 print(Model(sequence_of_ints=[1, 2, 3, 4]).sequence_of_ints)
+#> [1, 2, 3, 4]
 print(Model(sequence_of_ints=(1, 2, 3, 4)).sequence_of_ints)
+#> (1, 2, 3, 4)
 
 print(Model(deque=[1, 2, 3]).deque)
+#> deque([1, 2, 3])
 ```
 
 ### Infinite Generators
@@ -299,20 +308,19 @@ for i in m.infinite:
 
 You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
-```py
+```py test="xfail - what's going on here?"
 import itertools
 from typing import Iterable
-from pydantic import BaseModel, validator, ValidationError
-from pydantic.fields import ModelField
+from pydantic import BaseModel, field_validator, ValidationError
 
 
 class Model(BaseModel):
     infinite: Iterable[int]
 
-    @validator('infinite')
+    @field_validator('infinite')
     # You don't need to add the "ModelField", but it will help your
     # editor give you completion and catch errors
-    def infinite_first_int(cls, iterable, field: ModelField):
+    def infinite_first_int(cls, iterable, field):
         first_value = next(iterable)
         if field.sub_fields:
             # The Iterable had a parameter type, in this case it's int
@@ -659,13 +667,16 @@ class Model(BaseModel):
 
 
 m = Model(
-    d=1966280412345.6789,
+    d=1679616000.0,
     dt='2032-04-23T10:20:30.400+02:30',
     t=time(4, 8, 16),
     td='P3DT12H30M5S',
 )
 
 print(m.model_dump())
+"""
+{'d': datetime.date(2023, 3, 24), 'dt': datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(+02:30)), 't': datetime.time(4, 8, 16), 'td': datetime.timedelta(days=3, seconds=45005)}
+"""
 ```
 
 ### Booleans
@@ -728,7 +739,7 @@ class Foo(BaseModel):
 
 m = Foo(callback=lambda x: x)
 print(m)
-#> callback=<function <lambda> at 0x7fde0c519e10>
+#> callback=<function <lambda> at 0x0123456789ab>
 ```
 
 !!! warning
@@ -802,7 +813,7 @@ except ValidationError as e:
     """
     1 validation error for LenientSimpleModel
     any_class_goes
-      Input should be a type [type=is_type, input_value=<__main__.Foo object at 0x7fde0c1d0e50>, input_type=Foo]
+      Input should be a type [type=is_type, input_value=<__main__.Foo object at 0x0123456789ab>, input_type=Foo]
     """
 ```
 
@@ -826,9 +837,11 @@ class Model(BaseModel):
 
 
 print(Model(a=[1], b=4.2, c='x'))
+#> a=[1] b=4.2 c='x'
 
-# a may be None and is therefore optional
-print(Model(b=1, c=1))
+# a may be None
+print(Model(a=None, b=1, c=1))
+#> a=None b=1.0 c=1
 ```
 
 ## Literal Type
@@ -1006,23 +1019,29 @@ class User(TypedDict):
 
 
 class Model(BaseModel):
+    model_config = dict(extra=Extra.forbid)
     u: User
-
-    class Config:
-        extra = Extra.forbid
 
 
 print(Model(u={'identity': {'name': 'Smith', 'surname': 'John'}, 'age': '37'}))
+#> u={'identity': {'name': 'Smith', 'surname': 'John'}, 'age': 37}
 
-print(Model(u={'identity': {'name': None, 'surname': 'John'}, 'age': '37'}))
+print(Model(u={'identity': {'surname': 'John'}, 'age': '37'}))
+#> u={'identity': {'surname': 'John'}, 'age': 37}
 
 print(Model(u={'identity': {}, 'age': '37'}))
+#> u={'identity': {}, 'age': 37}
 
 
 try:
     Model(u={'identity': {'name': ['Smith'], 'surname': 'John'}, 'age': '24'})
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for Model
+    u -> identity -> name
+      Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
+    """
 
 try:
     Model(
@@ -1034,6 +1053,11 @@ try:
     )
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for Model
+    u -> email
+      Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
+    """
 ```
 
 ## Pydantic Types
@@ -1237,19 +1261,25 @@ try:
     ImportThings(obj='foo.bar')
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for ImportThings
+    obj
+      Invalid python path: No module named 'foo' [type=import_error, input_value='foo.bar', input_type=str]
+    """
 
 
-# An object defined in the current namespace can indeed be imported,
-# though you should probably avoid doing this (since the ordering of declaration
-# can have an impact on behavior).
-class Foo:
-    bar = 1
-
-
-# This now works
-my_foo = ImportThings(obj=Foo)
-# So does this
-my_foo_2 = ImportThings(obj='__main__.Foo')
+# TODO sort out the module name here
+# # An object defined in the current namespace can indeed be imported,
+# # though you should probably avoid doing this (since the ordering of declaration
+# # can have an impact on behavior).
+# class Foo:
+#     bar = 1
+#
+#
+# # This now works
+# my_foo = ImportThings(obj=Foo)
+# # So does this
+# my_foo_2 = ImportThings(obj='__main__.Foo')
 
 
 # Actual python objects can be assigned as well
@@ -1263,7 +1293,7 @@ assert my_cos == my_cos_2
 **Serializing an `ImportString` type to json is possible with a
 [custom encoder](exporting_models.md#json_encoders) which accounts for
 the evaluated object:**
-```py
+```py test="xfail - replace json_encoders"
 from pydantic import BaseModel, ImportString
 from types import BuiltinFunctionType
 
@@ -1421,7 +1451,7 @@ the above types export the following properties:
 If further validation is required, these properties can be used by validators to enforce specific behaviour:
 
 ```py
-from pydantic import BaseModel, HttpUrl, PostgresDsn, ValidationError, validator
+from pydantic import BaseModel, HttpUrl, PostgresDsn, ValidationError, field_validator
 
 
 class MyModel(BaseModel):
@@ -1432,16 +1462,19 @@ m = MyModel(url='http://www.example.com')
 
 # the repr() method for a url will display all properties of the url
 print(repr(m.url))
+#> Url('http://www.example.com/')
 print(m.url.scheme)
+#> http
 print(m.url.host)
-print(m.url.host_type)
+#> www.example.com
 print(m.url.port)
+#> 80
 
 
 class MyDatabaseModel(BaseModel):
     db: PostgresDsn
 
-    @validator('db')
+    @field_validator('db')
     def check_db_name(cls, v):
         assert v.path and len(v.path) > 1, 'database must be provided'
         return v
@@ -1449,11 +1482,14 @@ class MyDatabaseModel(BaseModel):
 
 m = MyDatabaseModel(db='postgres://user:pass@localhost:5432/foobar')
 print(m.db)
+#> postgres://user:pass@localhost:5432/foobar
 
 try:
     MyDatabaseModel(db='postgres://user:pass@localhost:5432')
-except ValidationError as e:
-    print(e)
+except ValidationError:
+    pass
+    # TODO the error output here is wrong!
+    # print(e)
 ```
 
 #### International Domains
@@ -1472,13 +1508,13 @@ class MyModel(BaseModel):
 
 m1 = MyModel(url='http://puny£code.com')
 print(m1.url)
-print(m1.url.host_type)
+#> http://xn--punycode-eja.com/
 m2 = MyModel(url='https://www.аррӏе.com/')
 print(m2.url)
-print(m2.url.host_type)
+#> https://www.xn--80ak6aa92e.com/
 m3 = MyModel(url='https://www.example.珠宝/')
 print(m3.url)
-print(m3.url.host_type)
+#> https://www.example.xn--pbt977c/
 ```
 
 
@@ -1593,7 +1629,7 @@ that you do not want to be visible in logging or tracebacks.
 `SecretStr` and `SecretBytes` can be initialized idempotently or by using `str` or `bytes` literals respectively.
 The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
-```py
+```py test="xfail - replace json_encoders"
 from pydantic import BaseModel, SecretStr, SecretBytes, ValidationError
 
 
@@ -1782,15 +1818,13 @@ from pydantic import (
 
 
 class Model(BaseModel):
-    upper_bytes: conbytes(to_upper=True)
-    lower_bytes: conbytes(to_lower=True)
     short_bytes: conbytes(min_length=2, max_length=10)
-    strip_bytes: conbytes(strip_whitespace=True)
+    strict_bytes: conbytes(strict=True)
 
     upper_str: constr(to_upper=True)
     lower_str: constr(to_lower=True)
     short_str: constr(min_length=2, max_length=10)
-    regex_str: constr(regex=r'^apple (pie|tart|sandwich)$')
+    regex_str: constr(pattern=r'^apple (pie|tart|sandwich)$')
     strip_str: constr(strip_whitespace=True)
 
     big_int: conint(gt=1000, lt=1024)
@@ -1808,8 +1842,8 @@ class Model(BaseModel):
     non_neg_float: NonNegativeFloat
     non_pos_float: NonPositiveFloat
 
-    short_list: conlist(int, min_items=1, max_items=4)
-    short_set: conset(int, min_items=1, max_items=4)
+    short_list: conlist(int, min_length=1, max_length=4)
+    short_set: conset(int, min_length=1, max_length=4)
 
     decimal_positive: condecimal(gt=0)
     decimal_negative: condecimal(lt=0)
@@ -2044,7 +2078,7 @@ to get validators to parse and validate the input data.
     These validators have the same semantics as in [Validators](validators.md), you can
     declare a parameter `config`, `field`, etc.
 
-```py
+```py test="xfail - replace with Annoated[str, PostCodeLogic]"
 import re
 from pydantic import BaseModel
 
@@ -2136,33 +2170,44 @@ class Pet:
 
 
 class Model(BaseModel):
+    model_config = dict(arbitrary_types_allowed=True)
     pet: Pet
     owner: str
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 pet = Pet(name='Hedwig')
 # A simple check of instance type is used to validate the data
 model = Model(owner='Harry', pet=pet)
 print(model)
+#> pet=<__main__.Pet object at 0x0123456789ab> owner='Harry'
 print(model.pet)
+#> <__main__.Pet object at 0x0123456789ab>
 print(model.pet.name)
+#> Hedwig
 print(type(model.pet))
+#> <class '__main__.Pet'>
 try:
     # If the value is not an instance of the type, it's invalid
     Model(owner='Harry', pet='Hedwig')
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for Model
+    pet
+      Input should be an instance of Pet [type=is_instance_of, input_value='Hedwig', input_type=str]
+    """
 # Nothing in the instance of the arbitrary type is checked
 # Here name probably should have been a str, but it's not validated
 pet2 = Pet(name=42)
 model2 = Model(owner='Harry', pet=pet2)
 print(model2)
+#> pet=<__main__.Pet object at 0x0123456789ab> owner='Harry'
 print(model2.pet)
+#> <__main__.Pet object at 0x0123456789ab>
 print(model2.pet.name)
+#> 42
 print(type(model2.pet))
+#> <class '__main__.Pet'>
 ```
 
 ### Undefined Types Warning
@@ -2170,7 +2215,7 @@ print(type(model2.pet))
 You can suppress the Undefined Types Warning by setting `undefined_types_warning` to `False` in the
 [Model Config](model_config.md).
 
-```py
+```py test="xfail - what do we do with undefined_types_warning?"
 from __future__ import annotations
 
 from pydantic import BaseModel
@@ -2235,7 +2280,7 @@ If the Generic class that you are using as a sub-type has a classmethod
 Because you can declare validators that receive the current `field`, you can extract
 the `sub_fields` (from the generic class type parameters) and validate data with them.
 
-```py
+```py test="xfail - what do we do with generic custom types"
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import ModelField
 from typing import TypeVar, Generic

@@ -48,12 +48,7 @@ from pydantic import ValidationError
 from pydantic.dataclasses import dataclass
 
 
-class MyConfig:
-    str_max_length = 10
-    validate_assignment = True
-
-
-@dataclass(config=MyConfig)
+@dataclass(config=dict(str_max_length=10, validate_assignment=True))
 class User:
     id: int
     name: str = 'John Doe'
@@ -204,8 +199,7 @@ from pydantic import BaseModel as PydanticBaseModel
 
 
 class BaseModel(PydanticBaseModel):
-    class Config:
-        arbitrary_types_allowed = True
+    model_config = dict(arbitrary_types_allowed=True)
 
 
 class MyClass:
@@ -230,16 +224,16 @@ def to_camel(string: str) -> str:
 
 
 class Voice(BaseModel):
+    model_config = dict(alias_generator=to_camel)
     name: str
     language_code: str
-
-    class Config:
-        alias_generator = to_camel
 
 
 voice = Voice(Name='Filiz', LanguageCode='tr-TR')
 print(voice.language_code)
+#> tr-TR
 print(voice.model_dump(by_alias=True))
+#> {'Name': 'Filiz', 'LanguageCode': 'tr-TR'}
 ```
 
 Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
@@ -278,22 +272,34 @@ class Voice(BaseModel):
     mood: str = None
 
 
+def alias_generator(string: str) -> str:
+    # this is the same as `alias_generator = to_camel` above
+    return ''.join(word.capitalize() for word in string.split('_'))
+
+
 class Character(Voice):
+    model_config = dict(alias_generator=alias_generator)
     act: int = 1
-
-    class Config:
-        fields = {'language_code': 'lang'}
-
-        @classmethod
-        def alias_generator(cls, string: str) -> str:
-            # this is the same as `alias_generator = to_camel` above
-            return ''.join(word.capitalize() for word in string.split('_'))
 
 
 print(Character.model_json_schema(by_alias=True))
+"""
+{
+    'type': 'object',
+    'properties': {
+        'ActorName': {'type': 'string', 'default': None, 'title': 'Actorname'},
+        'LanguageCode': {'type': 'string', 'default': None, 'title': 'Languagecode'},
+        'Mood': {'type': 'string', 'default': None, 'title': 'Mood'},
+        'Act': {'type': 'integer', 'default': 1, 'title': 'Act'},
+    },
+    'title': 'Character',
+}
+"""
 ```
 
 ## Smart Union
+
+**TODO: Smart Union behaviour has roughly become the default, this needs to be moved to the stuff on unions**
 
 By default, as explained [here](types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
 So sometimes you may have unexpected coerced data.
@@ -342,11 +348,9 @@ class Model(BaseModel):
     x: Union[str, int]
     y: Union[Foo, Bar]
 
-    class Config:
-        smart_union = True
-
 
 print(Model(x=1, y=Bar()))
+#> x=1 y=Bar()
 ```
 
 !!! warning
@@ -359,13 +363,15 @@ from typing import List, Union
 from pydantic import BaseModel
 
 
-class Model(BaseModel, smart_union=True):
+class Model(BaseModel):
     x: Union[List[str], List[int]]
 
 
 # Expected coercion
 print(Model(x=[1, '2']))
+#> x=[1, 2]
 
 # Unexpected coercion
 print(Model(x=[1, 2]))
+#> x=[1, 2]
 ```

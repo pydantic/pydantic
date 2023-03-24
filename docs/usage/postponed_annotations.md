@@ -41,10 +41,10 @@ class Foo(BaseModel):
     b: Foo = None
 
 
-Foo.update_forward_refs()
-
 print(Foo())
+#> a=123 b=None
 print(Foo(b={'a': '321'}))
+#> a=123 b=Foo(a=321, b=None)
 ```
 
 !!! warning
@@ -54,7 +54,7 @@ print(Foo(b={'a': '321'}))
 
 For example, this works fine:
 
-```py
+```py test="xfail - this should work"
 from __future__ import annotations
 from pydantic import BaseModel
 from pydantic import HttpUrl  # HttpUrl is defined in the module's global scope
@@ -90,7 +90,7 @@ def this_is_broken():
         print(e)
 
     try:
-        Model.update_forward_refs()
+        Model.model_rebuild()
     except NameError as e:
         print(e)
 

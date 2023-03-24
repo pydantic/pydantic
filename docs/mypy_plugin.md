@@ -4,6 +4,7 @@ However, Pydantic also ships with a mypy plugin that adds a number of important 
 features to mypy that improve its ability to type-check your code.
 
 For example, consider the following script:
+
 ```py test="skip"
 from datetime import datetime
 from typing import List, Optional

@@ -30,7 +30,5 @@ module = [
 ignore_missing_imports = true
 
 [[tool.mypy.overrides]]
-module = [
-    'pydantic_core.*',
-]
-follow_imports = "skip"
+module = ['pydantic_core.*', 'devtools.*']
+follow_imports = 'skip'

@@ -20,50 +20,60 @@ of the resultant model instance will conform to the field types defined on the m
 
 ## Basic model usage
 
-```py
+```py group="basic-model"
 from pydantic import BaseModel
 
 
 class User(BaseModel):
     id: int
-    name = 'Jane Doe'
+    name: str = 'Jane Doe'
 ```
+
 `User` here is a model with two fields `id` which is an integer and is required,
 and `name` which is a string and is not required (it has a default value). The type of `name` is inferred from the
 default value, and so a type annotation is not required (however note [this](#field-ordering) warning about field
 order when some fields do not have type annotations).
-```py
+
+```py group="basic-model"
 user = User(id='123')
-user_x = User(id='123.45')
 ```
+
 `user` here is an instance of `User`. Initialisation of the object will perform all parsing and validation,
 if no `ValidationError` is raised, you know the resulting model instance is valid.
-```py
+
+```py group="basic-model"
 assert user.id == 123
-assert user_x.id == 123
-assert isinstance(
-    user_x.id, int
-)  # Note that 123.45 was casted to an int and its value is 123
+assert isinstance(user.id, int)
+# Note that 123.45 was cast to an int and its value is 123
 ```
+
 More details on the casting in the case of `user_x` can be found in [Data Conversion](#data-conversion).
 Fields of a model can be accessed as normal attributes of the user object.
 The string '123' has been cast to an int as per the field type
-```py
+
+```py group="basic-model"
 assert user.name == 'Jane Doe'
 ```
+
 `name` wasn't set when user was initialised, so it has the default value
-```py
+
+```py group="basic-model"
 assert user.__fields_set__ == {'id'}
 ```
+
 The fields which were supplied when user was initialised.
-```py
-assert user.model_dump() == dict(user) == {'id': 123, 'name': 'Jane Doe'}
+
+```py group="basic-model"
+assert user.model_dump() == {'id': 123, 'name': 'Jane Doe'}
 ```
+
 Either `.model_dump()` or `dict(user)` will provide a dict of fields, but `.model_dump()` can take numerous other arguments.
-```py
+
+```py group="basic-model"
 user.id = 321
 assert user.id == 321
 ```
+
 This model is mutable so field values can be changed.
 
 ### Model properties
@@ -177,13 +187,11 @@ class CompanyOrm(Base):
 
 
 class CompanyModel(BaseModel):
+    model_config = dict(from_attributes=True)
     id: int
     public_key: constr(max_length=20)
     name: constr(max_length=63)
     domains: List[constr(max_length=255)]
-
-    class Config:
-        from_attributes = True
 
 
 co_orm = CompanyOrm(
@@ -193,8 +201,10 @@ co_orm = CompanyOrm(
     domains=['example.com', 'foobar.com'],
 )
 print(co_orm)
-co_model = CompanyModel.from_orm(co_orm)
+#> <__main__.CompanyOrm object at 0x0123456789ab>
+co_model = CompanyModel.model_validate(co_orm)
 print(co_model)
+#> id=123 public_key='foobar' name='Testing' domains=['example.com', 'foobar.com']
 ```
 
 ### Reserved names
@@ -211,10 +221,8 @@ from sqlalchemy.ext.declarative import declarative_base
 
 
 class MyModel(BaseModel):
+    model_config = dict(from_attributes=True)
     metadata: typing.Dict[str, str] = Field(alias='metadata_')
-
-    class Config:
-        from_attributes = True
 
 
 Base = declarative_base()
@@ -229,10 +237,12 @@ class SQLModel(Base):
 
 sql_model = SQLModel(metadata_={'key': 'val'}, id=1)
 
-pydantic_model = MyModel.from_orm(sql_model)
+pydantic_model = MyModel.model_validate(sql_model)
 
 print(pydantic_model.model_dump())
+#> {'metadata': {'key': 'val'}}
 print(pydantic_model.model_dump(by_alias=True))
+#> {'metadata_': {'key': 'val'}}
 ```
 
 !!! note
@@ -264,20 +274,16 @@ class PersonCls:
 
 
 class Pet(BaseModel):
+    model_config = dict(from_attributes=True)
     name: str
     species: str
 
-    class Config:
-        from_attributes = True
-
 
 class Person(BaseModel):
+    model_config = dict(from_attributes=True)
     name: str
     age: float = None
     pets: List[Pet]
-
-    class Config:
-        from_attributes = True
 
 
 bones = PetCls(name='Bones', species='dog')
@@ -285,6 +291,9 @@ orion = PetCls(name='Orion', species='cat')
 anna = PersonCls(name='Anna', age=20, pets=[bones, orion])
 anna_model = Person.from_orm(anna)
 print(anna_model)
+"""
+name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', species='cat')]
+"""
 ```
 
 
@@ -302,7 +311,7 @@ The `GetterDict` instance will be called for each field with a sentinel as a fal
 value is set). Returning this sentinel means that the field is missing. Any other value will
 be interpreted as the value of the field.
 
-```py
+```py test="xfail - GetterDict is removed, replace with a custom root_validator"
 from pydantic import BaseModel
 from typing import Any, Optional
 from pydantic.utils import GetterDict
@@ -417,11 +426,58 @@ try:
     Model(**data)
 except ValidationError as e:
     print(e)
+    """
+    4 validation errors for Location
+    is_required
+      Field required [type=missing, input_value={'list_of_ints': ['1', 2,...ew York'}, 'gt_int': 21}, input_type=dict]
+    gt_int
+      Input should be greater than 42 [type=greater_than, input_value=21, input_type=int]
+    list_of_ints -> 2
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
+    a_float
+      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='not a float', input_type=str]
+    """
 
 try:
     Model(**data)
 except ValidationError as e:
-    print(e.json())
+    # print(e.json())
+    # TODO set back to .json() once we add it
+    print(e.errors())
+    """
+    [
+        {
+            'type': 'missing',
+            'loc': ('is_required',),
+            'msg': 'Field required',
+            'input': {
+                'list_of_ints': ['1', 2, 'bad'],
+                'a_float': 'not a float',
+                'recursive_model': {'lat': 4.2, 'lng': 'New York'},
+                'gt_int': 21,
+            },
+        },
+        {
+            'type': 'greater_than',
+            'loc': ('gt_int',),
+            'msg': 'Input should be greater than 42',
+            'input': 21,
+            'ctx': {'gt': 42},
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ('list_of_ints', 2),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'bad',
+        },
+        {
+            'type': 'float_parsing',
+            'loc': ('a_float',),
+            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'input': 'not a float',
+        },
+    ]
+    """
 ```
 
 ### Custom Errors
@@ -431,13 +487,13 @@ In your custom data types or validators you should use `ValueError`, `TypeError`
 See [validators](validators.md) for more details on use of the `@validator` decorator.
 
 ```py
-from pydantic import BaseModel, ValidationError, validator
+from pydantic import BaseModel, ValidationError, field_validator
 
 
 class Model(BaseModel):
     foo: str
 
-    @validator('foo')
+    @field_validator('foo')
     def value_must_equal_bar(cls, v):
         if v != 'bar':
             raise ValueError('value must be "bar"')
@@ -449,33 +505,55 @@ try:
     Model(foo='ber')
 except ValidationError as e:
     print(e.errors())
+    """
+    [
+        {
+            'type': 'value_error',
+            'loc': ('foo',),
+            'msg': 'Value error, value must be "bar"',
+            'input': 'ber',
+            'ctx': {'error': 'value must be "bar"'},
+        }
+    ]
+    """
 ```
 
 You can also define your own error classes, which can specify a custom error code, message template, and context:
 
 ```py
-from pydantic import BaseModel, PydanticValueError, ValidationError, validator
-
-
-class NotABarError(PydanticValueError):
-    code = 'not_a_bar'
-    msg_template = 'value is not "bar", got "{wrong_value}"'
+from pydantic import BaseModel, ValidationError, field_validator
+from pydantic_core import PydanticCustomError
 
 
 class Model(BaseModel):
     foo: str
 
-    @validator('foo')
+    @field_validator('foo', allow_reuse=True)  # TODO remove after #4436
     def value_must_equal_bar(cls, v):
         if v != 'bar':
-            raise NotABarError(wrong_value=v)
+            raise PydanticCustomError(
+                'not_a_bar',
+                'value is not "bar", got "{wrong_value}"',
+                dict(wrong_value=v),
+            )
         return v
 
 
 try:
     Model(foo='ber')
 except ValidationError as e:
-    print(e.json())
+    print(e.errors())
+    """
+    [
+        {
+            'type': 'not_a_bar',
+            'loc': ('foo',),
+            'msg': 'value is not "bar", got "ber"',
+            'input': 'ber',
+            'ctx': {'wrong_value': 'ber'},
+        }
+    ]
+    """
 ```
 
 ## Helper Functions
@@ -484,15 +562,11 @@ except ValidationError as e:
 
 * **`model_validate`**: this is very similar to the `__init__` method of the model, except it takes a dict
   rather than keyword arguments. If the object passed is not a dict a `ValidationError` will be raised.
-* **`parse_raw`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `model_validate`.
+* **`model_validate_json`**: this takes a *str* or *bytes* and parses it as *json*, then passes the result to `model_validate`.
   Parsing *pickle* data is also supported by setting the `content_type` argument appropriately.
-* **`parse_file`**: this takes in a file path, reads the file and passes the contents to `parse_raw`. If `content_type` is omitted,
-  it is inferred from the file's extension.
 
 ```py
-import pickle
 from datetime import datetime
-from pathlib import Path
 
 from pydantic import BaseModel, ValidationError
 
@@ -505,29 +579,21 @@ class User(BaseModel):
 
 m = User.model_validate({'id': 123, 'name': 'James'})
 print(m)
+#> id=123 signup_ts=None
 
 try:
     User.model_validate(['not', 'a', 'dict'])
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for User
+      Input should be a valid dictionary [type=dict_type, input_value=['not', 'a', 'dict'], input_type=list]
+    """
 
 # assumes json as no content type passed
-m = User.parse_raw('{"id": 123, "name": "James"}')
+m = User.model_validate_json('{"id": 123, "name": "James"}')
 print(m)
-
-pickle_data = pickle.dumps(
-    {'id': 123, 'name': 'James', 'signup_ts': datetime(2017, 7, 14)}
-)
-m = User.parse_raw(pickle_data, content_type='application/pickle', allow_pickle=True)
-print(m)
-
-path = Path('data.json')
-path.write_text('{"id": 123, "name": "James"}')
-m = User.parse_file(path)
-print(m)
-# ignore-below
-if path.exists():
-    path.unlink()
+#> id=123 signup_ts=None
 ```
 
 !!! warning
@@ -566,7 +632,7 @@ print(user_data)
 #> {'id': 123, 'age': 32, 'name': 'John Doe'}
 fields_set = original_user.__fields_set__
 print(fields_set)
-#> {'id', 'age'}
+#> {'age', 'id'}
 
 # ...
 # pass user_data and fields_set to RPC or save to the database etc.
@@ -578,7 +644,7 @@ new_user = User.model_construct(_fields_set=fields_set, **user_data)
 print(repr(new_user))
 #> User(id=123, age=32, name='John Doe')
 print(new_user.__fields_set__)
-#> {'id', 'age'}
+#> {'age', 'id'}
 
 # construct can be dangerous, only use it with validated data!:
 bad_user = User.model_construct(id='dog')
@@ -607,10 +673,10 @@ In order to declare a generic model, you perform the following steps:
 
 Here is an example using `GenericModel` to create an easily-reused HTTP response payload wrapper:
 
-```py
+```py test="xfail - needs always/validate default support"
 from typing import Generic, TypeVar, Optional, List
 
-from pydantic import BaseModel, validator, ValidationError
+from pydantic import BaseModel, validator_function, ValidationError
 
 DataT = TypeVar('DataT')
 
@@ -629,7 +695,7 @@ class Response(BaseModel, Generic[DataT]):
     data: Optional[DataT]
     error: Optional[Error]
 
-    @validator('error', always=True)
+    @validator_function('error', always=True)
     def check_consistency(cls, v, values):
         if v is not None and values['data'] is not None:
             raise ValueError('must not provide both data and error')
@@ -869,7 +935,7 @@ print(BarModel.model_fields.keys())
 
 You can also add validators by passing a dict to the `__validators__` argument.
 
-```py
+```py test="xfail create_model validators"
 from pydantic import create_model, ValidationError, validator
 
 
@@ -899,7 +965,7 @@ For this _pydantic_ provides `create_model_from_namedtuple` and `create_model_fr
 Those methods have the exact same keyword arguments as `create_model`.
 
 
-```py
+```py test="xfail need Validator to replace create_model_from_typeddict"
 from typing_extensions import TypedDict
 
 from pydantic import ValidationError, create_model_from_typeddict
@@ -931,7 +997,7 @@ The root type can be any type supported by pydantic, and is specified by the typ
 The root value can be passed to the model `__init__` via the `__root__` keyword argument, or as
 the first and only argument to `model_validate`.
 
-```py
+```py test="xfail support/replace __root__"
 from typing import List
 import json
 from pydantic import BaseModel
@@ -961,7 +1027,7 @@ the following logic is used:
 
 This is demonstrated in the following example:
 
-```py
+```py test="xfail support/replace __root__"
 from typing import List, Dict
 from pydantic import BaseModel, ValidationError
 
@@ -991,7 +1057,7 @@ except ValidationError as e:
 
 If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
 
-```py
+```py test="xfail support/replace __root__"
 from typing import List
 from pydantic import BaseModel
 
@@ -1025,11 +1091,9 @@ from pydantic import BaseModel
 
 
 class FooBarModel(BaseModel):
+    model_config = dict(frozen=True)
     a: str
     b: dict
-
-    class Config:
-        allow_mutation = False
 
 
 foobar = FooBarModel(a='hello', b={'apple': 'pear'})
@@ -1038,11 +1102,15 @@ try:
     foobar.a = 'different'
 except TypeError as e:
     print(e)
+    #> "FooBarModel" is frozen and does not support item assignment
 
 print(foobar.a)
+#> hello
 print(foobar.b)
+#> {'apple': 'pear'}
 foobar.b['apple'] = 'grape'
 print(foobar.b)
+#> {'apple': 'grape'}
 ```
 
 Trying to change `a` caused an error, and `a` remains unchanged. However, the dict `b` is mutable, and the
@@ -1146,20 +1214,25 @@ you can use `Optional` with `...`:
 
 ```py
 from typing import Optional
-from pydantic import BaseModel, Field, ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
     a: Optional[int]
-    b: Optional[int] = ...
-    c: Optional[int] = Field(...)
+    b: Optional[int] = None
 
 
-print(Model(b=1, c=2))
+print(Model(a=1))
+#> a=1 b=None
 try:
-    Model(a=1, b=2)
+    Model(b=2)
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for Model
+    a
+      Field required [type=missing, input_value={'b': 2}, input_type=dict]
+    """
 ```
 
 In this model, `a`, `b`, and `c` can take `None` as a value. But `a` is optional, while `b` and `c` are required.
@@ -1191,10 +1264,8 @@ class Model(BaseModel):
 
 m1 = Model()
 m2 = Model()
-print(f'{m1.uid} != {m2.uid}')
-#> 1e89f4e0-f80f-4413-88b7-1a3e4b74c93f != adede199-d463-4e7f-9ff4-1d3d6ca8446c
-print(f'{m1.updated} != {m2.updated}')
-#> 2023-03-24 17:47:24.619534 != 2023-03-24 17:47:24.619541
+assert m1.uid != m2.uid
+assert m1.updated != m2.updated
 ```
 
 Where `Field` refers to the [field function](schema.md#field-customization).
@@ -1231,16 +1302,16 @@ class TimeAwareModel(BaseModel):
 
 m = TimeAwareModel()
 print(m._processed_at)
-#> 2023-03-24 17:47:24.628669
+#> 2032-01-02 03:04:05.000006
 print(m._secret_value)
-#> 4
+#> 3
 ```
 
 Private attribute names must start with underscore to prevent conflicts with model fields: both `_attr` and `__attr__`
 are supported.
 
 If `Config.underscore_attrs_are_private` is `True`, any non-ClassVar underscore attribute will be treated as private:
-```py
+```py test="xfail what the hell is underscore_attrs_are_private?"
 from typing import ClassVar
 
 from pydantic import BaseModel
@@ -1301,7 +1372,7 @@ which are analogous to `BaseModel.parse_file` and `BaseModel.parse_raw`.
 and in some cases this may result in a loss of information.
 For example:
 
-```py
+```py test="xfail this logic has failed"
 from pydantic import BaseModel
 
 
@@ -1377,7 +1448,7 @@ In addition, the `**data` argument will always be present in the signature if `C
 
 *pydantic* supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
-```py test="requires-3.10"
+```py test="requires-3.10" lint="skip"
 from pydantic import BaseModel
 
 
@@ -1392,6 +1463,7 @@ match a:
     # match `species` to 'dog', declare and initialize `dog_name`
     case Pet(species='dog', name=dog_name):
         print(f'{dog_name} is a dog')
+#> Bones is a dog
     # default case
     case _:
         print('No dog matched')

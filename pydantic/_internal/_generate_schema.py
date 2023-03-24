@@ -180,6 +180,7 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
         strict=config['strict'],
         ser_json_timedelta=config['ser_json_timedelta'],
         ser_json_bytes=config['ser_json_bytes'],
+        from_attributes=config['from_attributes'],
     )
     str_max_length = config.get('str_max_length')
     if str_max_length is not None:

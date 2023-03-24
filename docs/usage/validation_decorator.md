@@ -43,11 +43,12 @@ except ValidationError as exc:
 ## Argument Types
 
 Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
-as `Any`. Since `validate_arguments` internally uses a standard `BaseModel`, all types listed in
-[types](types.md) can be validated, including *pydantic* models and [custom types](types.md#custom-data-types).
+as `Any`. All types listed in [types](types.md) can be validated, including *pydantic* models and
+[custom types](types.md#custom-data-types).
 As with the rest of *pydantic*, types can be coerced by the decorator before they're passed to the actual function:
 
-```py
+```py test="no-print-intercept"
+# TODO replace find_file with something that isn't affected the filesystem
 import os
 from pathlib import Path
 from typing import Pattern, Optional
@@ -68,11 +69,7 @@ def find_file(path: DirectoryPath, regex: Pattern, max=None) -> Optional[Path]:
 this_dir = os.path.dirname(__file__)
 
 print(find_file(this_dir, '^validation.*'))
-"""
-/tmp/pytest-of-samuel/pytest-131/test_readme_docs_usage_validat1/validation_decorator_43_65.py
-"""
 print(find_file(this_dir, '^foobar.*', max=3))
-#> None
 ```
 
 A few notes:
@@ -328,10 +325,22 @@ async def get_user_email(user_id: PositiveInt):
 async def main():
     email = await get_user_email(123)
     print(email)
+    #> testing@example.com
     try:
         await get_user_email(-4)
     except ValidationError as exc:
         print(exc.errors())
+        """
+        [
+            {
+                'type': 'greater_than',
+                'loc': ('user_id',),
+                'msg': 'Input should be greater than 0',
+                'input': -4,
+                'ctx': {'gt': 0},
+            }
+        ]
+        """
 
 
 asyncio.run(main())

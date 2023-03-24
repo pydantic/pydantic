@@ -22,6 +22,8 @@ class MainModel(BaseModel):
     This is the description of the main model
     """
 
+    model_config = dict(title='Main')
+
     foo_bar: FooBar = Field(...)
     gender: Gender = Field(None, alias='Gender')
     snap: int = Field(
@@ -32,12 +34,71 @@ class MainModel(BaseModel):
         lt=50,
     )
 
-    class Config:
-        title = 'Main'
-
 
 # this is equivalent to json.dumps(MainModel.model_json_schema(), indent=2):
 print(MainModel.schema_json(indent=2))
+"""
+{
+  "type": "object",
+  "properties": {
+    "foo_bar": {
+      "$ref": "#/$defs/FooBar"
+    },
+    "Gender": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Gender"
+        }
+      ],
+      "default": null
+    },
+    "snap": {
+      "type": "integer",
+      "exclusiveMaximum": 50,
+      "exclusiveMinimum": 30,
+      "default": 42,
+      "title": "The Snap",
+      "description": "this is the value of snap"
+    }
+  },
+  "required": [
+    "foo_bar"
+  ],
+  "title": "Main",
+  "description": "This is the description of the main model",
+  "$defs": {
+    "FooBar": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "title": "Count"
+        },
+        "size": {
+          "type": "number",
+          "default": null,
+          "title": "Size"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "title": "FooBar"
+    },
+    "Gender": {
+      "enum": [
+        "male",
+        "female",
+        "other",
+        "not_given"
+      ],
+      "title": "Gender",
+      "description": "An enumeration.",
+      "type": "string"
+    }
+  }
+}
+"""
 ```
 
 
@@ -244,15 +305,6 @@ except ValueError as e:
     print(e)
 
 
-# but you can set the schema attribute directly:
-# (Note: here exclusiveMaximum will not be enforce)
-class ModelA(BaseModel):
-    foo: PositiveInt = Field(..., exclusiveMaximum=10)
-
-
-print(ModelA.model_json_schema())
-
-
 # if you find yourself needing this, an alternative is to declare
 # the constraints in Field (or you could use conint())
 # here both constraints will be enforced:
@@ -263,6 +315,21 @@ class ModelB(BaseModel):
 
 
 print(ModelB.model_json_schema())
+"""
+{
+    'type': 'object',
+    'properties': {
+        'foo': {
+            'type': 'integer',
+            'exclusiveMaximum': 10,
+            'exclusiveMinimum': 0,
+            'title': 'Foo',
+        }
+    },
+    'required': ['foo'],
+    'title': 'ModelB',
+}
+"""
 ```
 
 ### typing.Annotated Fields
@@ -296,11 +363,11 @@ see [Custom Data Types](types.md#custom-data-types) for more details.
 *pydantic* will inspect the signature of `__modify_schema__` to determine whether the `field` argument should be
 included.
 
-```py output="json"
+```py output="json" test="xfail needs work" lint="skip"
 from typing import Any, Callable, Dict, Generator, Optional
 
 from pydantic import BaseModel, Field
-from pydantic.fields import ModelField
+from pydantic_core.core_schema import ValidationInfo
 
 
 class RestrictedAlphabetStr(str):
@@ -309,7 +376,7 @@ class RestrictedAlphabetStr(str):
         yield cls.validate
 
     @classmethod
-    def validate(cls, value: str, field: ModelField):
+    def validate(cls, value: str, info: ValidationInfo):
         alphabet = field.field_info.extra['alphabet']
         if any(c not in alphabet for c in value):
             raise ValueError(f'{value!r} is not restricted to {alphabet!r}')
@@ -424,7 +491,7 @@ You can customize the generated `$ref` JSON location: the definitions are always
 
 This is useful if you need to extend or modify the JSON Schema default definitions location. E.g. with OpenAPI:
 
-```py output="json"
+```py output="json" test="xfail - what happened to ref_prefix?"
 import json
 from pydantic import BaseModel
 from pydantic.json_schema import schema
@@ -450,7 +517,7 @@ To do it, use the `Config` sub-class attribute `schema_extra`.
 
 For example, you could add `examples` to the JSON Schema:
 
-```py output="json"
+```py output="json" test="xfail - replace schema_extra"
 from pydantic import BaseModel
 
 
@@ -483,7 +550,7 @@ The callable is expected to mutate the schema dictionary *in-place*; the return 
 
 For example, the `title` key can be removed from the model's `properties`:
 
-```py output="json"
+```py output="json" test="xfail - replace schema_extra"
 from typing import Dict, Any, Type
 from pydantic import BaseModel
 
