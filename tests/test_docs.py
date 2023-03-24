@@ -1,3 +1,5 @@
+from __future__ import annotations as _annotations
+
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +36,7 @@ class MockedDatetime(datetime):
         return datetime(2032, 1, 2, 3, 4, 5, 6)
 
 
+@pytest.mark.skipif(sys.platform not in {'linux', 'darwin'}, reason='Only bother on linux and macos')
 @pytest.mark.parametrize('example', find_examples('docs'), ids=str)
 def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):
     global index_main
