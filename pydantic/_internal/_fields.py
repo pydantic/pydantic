@@ -22,6 +22,22 @@ if TYPE_CHECKING:
     from ..fields import FieldInfo
 
 
+def get_type_hints_infer_globalns(
+    obj: Any,
+    localns: dict[str, Any] | None = None,
+    include_extras: bool = False,
+) -> dict[str, Any]:
+    module_name = getattr(obj, '__module__', None)
+    globalns: dict[str, Any] | None = None
+    if module_name:
+        try:
+            globalns = sys.modules[module_name].__dict__
+        except KeyError:
+            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
+            pass
+    return get_type_hints(obj, globalns=globalns, localns=localns, include_extras=include_extras)
+
+
 class _UndefinedType:
     """
     Singleton class to represent an undefined value.
@@ -123,18 +139,9 @@ def collect_fields(  # noqa: C901
     """
     from ..fields import FieldInfo
 
-    module_name = getattr(cls, '__module__', None)
-    global_ns: dict[str, Any] | None = None
-    if module_name:
-        try:
-            global_ns = sys.modules[module_name].__dict__
-        except KeyError:
-            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
-            pass
-
     # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
     try:
-        type_hints = get_type_hints(cls, global_ns, types_namespace, include_extras=True)
+        type_hints = get_type_hints_infer_globalns(cls, types_namespace, include_extras=True)
     except NameError as e:
         try:
             name = e.name

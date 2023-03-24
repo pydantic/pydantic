@@ -78,6 +78,7 @@ class ValidatedFunction:
         self.v_kwargs_name = 'kwargs'
 
         type_hints = _typing_extra.get_type_hints(function, include_extras=True)
+
         takes_args = False
         takes_kwargs = False
         fields: Dict[str, Tuple[Any, Any]] = {}

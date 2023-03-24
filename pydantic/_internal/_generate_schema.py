@@ -30,7 +30,7 @@ from ._decorators import (
     SerializerDecoratorInfo,
     ValidatorDecoratorInfo,
 )
-from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields
+from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
 
@@ -285,7 +285,7 @@ class GenerateSchema:
         elif _typing_extra.is_literal_type(obj):
             return self._literal_schema(obj)
         elif is_typeddict(obj):
-            return self._typed_dict_schema(obj)
+            return self._typed_dict_schema(obj, None)
         elif _typing_extra.is_namedtuple(obj):
             return self._namedtuple_schema(obj)
         elif _typing_extra.is_new_type(obj):
@@ -345,6 +345,8 @@ class GenerateSchema:
             return self._counter_schema(obj)
         elif origin in (typing.Dict, dict):
             return self._dict_schema(obj)
+        elif is_typeddict(origin):
+            return self._typed_dict_schema(obj, origin)
         elif issubclass(origin, typing.Dict):
             # Subclasses of typing.Dict may be handled as subclasses of dict; see note above
             return self._dict_subclass_schema(obj)
@@ -507,7 +509,7 @@ class GenerateSchema:
         return core_schema.literal_schema(*expected)
 
     def _typed_dict_schema(
-        self, typed_dict_cls: Any
+        self, typed_dict_cls: Any, origin: Any
     ) -> core_schema.TypedDictSchema | core_schema.DefinitionReferenceSchema:
         """
         Generate schema for a TypedDict.
@@ -522,6 +524,12 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
         """
+        if origin is not None:
+            typeddict_typevars_map = dict(zip(origin.__parameters__, typed_dict_cls.__args__))
+            typed_dict_cls = origin
+        else:
+            typeddict_typevars_map = {}
+
         if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
             raise PydanticUserError(
                 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
@@ -538,7 +546,10 @@ class GenerateSchema:
             recursive_schema = core_schema.definition_reference_schema(obj_ref)
             self._recursion_cache[obj_ref] = recursive_schema
 
-        for field_name, annotation in _typing_extra.get_type_hints(typed_dict_cls, include_extras=True).items():
+        for field_name, annotation in get_type_hints_infer_globalns(
+            typed_dict_cls, localns=self.types_namespace, include_extras=True
+        ).items():
+            annotation = replace_types(annotation, typeddict_typevars_map)
             required = field_name in required_keys
 
             if get_origin(annotation) == _typing_extra.Required:
@@ -568,7 +579,9 @@ class GenerateSchema:
         """
         Generate schema for a NamedTuple.
         """
-        annotations: dict[str, Any] = _typing_extra.get_type_hints(namedtuple_cls, include_extras=True)
+        annotations: dict[str, Any] = get_type_hints_infer_globalns(
+            namedtuple_cls, include_extras=True, localns=self.types_namespace
+        )
         if not annotations:
             # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
             annotations = {k: Any for k in namedtuple_cls._fields}
