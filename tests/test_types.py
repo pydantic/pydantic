@@ -1769,7 +1769,7 @@ def test_int_validation():
         g: conint(multiple_of=5) = None
 
     m = Model(a=5, b=-5, c=0, d=0, e=5, f=0, g=25)
-    assert m == {'a': 5, 'b': -5, 'c': 0, 'd': 0, 'e': 5, 'f': 0, 'g': 25}
+    assert m.model_dump() == {'a': 5, 'b': -5, 'c': 0, 'd': 0, 'e': 5, 'f': 0, 'g': 25}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-5, b=5, c=-5, d=5, e=-5, f=11, g=42)
@@ -3593,7 +3593,7 @@ def test_union_compound_types():
     assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
     assert Model(values=['L1']).model_dump() == {'values': ['L1']}
     assert Model(values=('L1',)).model_dump() == {'values': ['L1']}
-    assert Model(values={'x': ['pika']}) == {'values': {'x': ['pika']}}
+    assert Model(values={'x': ['pika']}) != {'values': {'x': ['pika']}}
     assert Model(values={'x': ('pika',)}).model_dump() == {'values': {'x': ['pika']}}
     with pytest.raises(ValidationError) as e:
         Model(values={'x': {'a': 'b'}})

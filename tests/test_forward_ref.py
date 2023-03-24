@@ -72,7 +72,7 @@ def test_forward_ref_auto_update_no_model(create_module):
 
     # now Foo is ready to use
     f = module.Foo(a={'b': {'a': {'b': {'a': None}}}})
-    assert f == {'a': {'b': {'a': {'b': {'a': None}}}}}
+    assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
 def test_forward_ref_one_of_fields_not_defined(create_module):
