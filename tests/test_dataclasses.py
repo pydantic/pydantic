@@ -72,7 +72,7 @@ def test_frozen():
         d.a = 7
 
 
-@pytest.mark.xfail(reason='validate assignment')
+@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment():
     @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
     class MyDataclass:
@@ -85,7 +85,7 @@ def test_validate_assignment():
     assert d.a == 7
 
 
-@pytest.mark.xfail(reason='validate assignment')
+@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment_error():
     @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
     class MyDataclass:
@@ -112,7 +112,7 @@ def test_not_validate_assignment():
     assert d.a == '7'
 
 
-@pytest.mark.xfail(reason='validate assignment')
+@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment_value_change():
     @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True), frozen=False)
     class MyDataclass:
@@ -480,7 +480,7 @@ def test_default_factory_singleton_field():
     assert Foo().singleton is Foo().singleton
 
 
-@pytest.mark.xfail(reason='working on V2 - json schema')
+@pytest.mark.xfail(reason='JSON schema')
 def test_schema():
     @pydantic.dataclasses.dataclass
     class User:
@@ -522,7 +522,7 @@ def test_schema():
     }
 
 
-@pytest.mark.xfail(reason='working on V2 - json schema')
+@pytest.mark.xfail(reason='JSON schema')
 def test_nested_schema():
     @pydantic.dataclasses.dataclass
     class Nested:
@@ -647,7 +647,7 @@ def test_inheritance_post_init():
     assert post_init_called
 
 
-@pytest.mark.xfail(reason='working on V2 - support hashable')
+@pytest.mark.xfail(reason='support Hashable')
 def test_hashable_required():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
@@ -664,7 +664,7 @@ def test_hashable_required():
     assert "__init__() missing 1 required positional argument: 'v'" in str(exc_info.value)
 
 
-@pytest.mark.xfail(reason='working on V2 - support hashable')
+@pytest.mark.xfail(reason='support Hashable')
 @pytest.mark.parametrize('default', [1, None, ...])
 def test_hashable_optional(default):
     @pydantic.dataclasses.dataclass
@@ -771,7 +771,7 @@ def test_override_builtin_dataclass_nested():
     assert foo.file.meta.seen_count == 7
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='JSON schema')
 def test_override_builtin_dataclass_nested_schema():
     @dataclasses.dataclass
     class Meta:
@@ -825,7 +825,7 @@ def test_inherit_builtin_dataclass():
     assert pika.z == 3
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='cannot parse a tuple into a dataclass')
 def test_dataclass_arbitrary():
     class ArbitraryType:
         def __init__(self):
@@ -916,7 +916,7 @@ def test_pydantic_callable_field():
     )
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='validate_assignment')
 def test_pickle_overriden_builtin_dataclass(create_module):
     module = create_module(
         # language=Python
@@ -950,7 +950,7 @@ class ModelForPickle(pydantic.BaseModel):
         restored_obj.dataclass.value = 'value of a wrong type'
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='JSON schema')
 def test_config_field_info_create_model():
     # works
     class A1(BaseModel):
@@ -969,11 +969,7 @@ def test_config_field_info_create_model():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def gen_2162_dataclasses():
-    # TODO fix and remove this return
-    return
-
     @dataclasses.dataclass(frozen=True)
     class StdLibFoo:
         a: str
@@ -1074,7 +1070,6 @@ def test_issue_2424():
     assert ValidatedThing(x='hi').y == ''
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_issue_2541():
     @dataclasses.dataclass(frozen=True)
     class Infos:
@@ -1088,14 +1083,14 @@ def test_issue_2541():
     class Example(BaseModel):
         item: Item
 
-    e = Example.model_validate({'item': {'name': 123, 'infos': {'id': '1'}}})
+    e = Example.model_validate({'item': {'name': '123', 'infos': {'id': '1'}}})
     assert e.item.name == '123'
     assert e.item.infos.id == 1
     with pytest.raises(dataclasses.FrozenInstanceError):
         e.item.infos.id = 2
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='JSON schema')
 def test_issue_2555():
     @dataclasses.dataclass
     class Span:
@@ -1135,7 +1130,7 @@ def test_issue_2594():
     assert isinstance(M(e={}).e, Empty)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='JSON schema')
 def test_schema_description_unset():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1151,7 +1146,7 @@ def test_schema_description_unset():
     assert 'description' not in B.__pydantic_model__.model_json_schema()
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='JSON schema')
 def test_schema_description_set():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1190,7 +1185,7 @@ def test_issue_3011():
     assert c.thing.thing_a == 'Thing A'
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='JSON schema')
 def test_issue_3162():
     @dataclasses.dataclass
     class User:
@@ -1217,7 +1212,7 @@ def test_issue_3162():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='JSON schema')
 def test_discriminated_union_basemodel_instance_value():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1279,7 +1274,7 @@ def test_post_init_after_validation():
     assert Model.model_validate_json(json_text).model_dump() == model.model_dump()
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='pydantic dataclasses currently do not preserve sunder attributes set in __new__')
 def test_keeps_custom_properties():
     class StandardClass:
         """Class which modifies instance creation."""
@@ -1305,7 +1300,7 @@ def test_keeps_custom_properties():
         assert instance.a == test_string
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_ignore_extra():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
     class Foo:
@@ -1315,7 +1310,7 @@ def test_ignore_extra():
     assert foo.__dict__ == {'x': 1, '__pydantic_initialised__': True}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_ignore_extra_subclass():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
     class Foo:
@@ -1329,7 +1324,7 @@ def test_ignore_extra_subclass():
     assert bar.__dict__ == {'x': 1, 'y': 2, '__pydantic_initialised__': True}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_allow_extra():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
     class Foo:
@@ -1339,7 +1334,7 @@ def test_allow_extra():
     assert foo.__dict__ == {'x': 1, 'y': '2', '__pydantic_initialised__': True}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_allow_extra_subclass():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
     class Foo:
@@ -1353,7 +1348,7 @@ def test_allow_extra_subclass():
     assert bar.__dict__ == {'x': 1, 'y': 2, 'z': '3', '__pydantic_initialised__': True}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_forbid_extra():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
     class Foo:
@@ -1363,7 +1358,7 @@ def test_forbid_extra():
         Foo(**{'x': '1', 'y': '2'})
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_post_init_allow_extra():
     @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
     class Foobar:
@@ -1376,13 +1371,17 @@ def test_post_init_allow_extra():
     assert Foobar(a=1, b='a', c=4).__dict__ == {'a': 2, 'b': 'a', 'c': 4, '__pydantic_initialised__': True}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='recursive references need rebuilding?')
 def test_self_reference_dataclass():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
         self_reference: 'MyDataclass'
 
-    assert MyDataclass.__pydantic_model__.model_fields['self_reference'].type_ is MyDataclass
+    annotation = MyDataclass.__pydantic_fields__['self_reference'].annotation
+    # Currently, this is true:
+    # assert isinstance(MyDataclass, PydanticForwardRef)
+    # TODO: Probably need a way to "model_rebuild" a dataclass
+    assert annotation is MyDataclass
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
@@ -1502,7 +1501,7 @@ def test_subclass_post_init_inheritance():
     assert C().a == 6  # 1 * 3 + 3
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='cannot access pydantic model config for dataclass')
 def test_config_as_type_deprecated():
     class Config:
         validate_assignment = True
