@@ -7,7 +7,7 @@
 
 {!.version.md!}
 
-*pydantic* is the most widely used data validation library for Python. 
+*pydantic* is the most widely used data validation library for Python.
 
 With *pydantic*, Python type annotations become more than tools for documentation and type checking. *pydantic* **enforces type hints** at runtime, and provides **user-friendly errors** when data is invalid.
 

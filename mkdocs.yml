@@ -42,7 +42,7 @@ extra_javascript:
 - 'extra/redirects.js'
 
 nav:
-- Get Started: 
+- Get Started:
   - Welcome to pydantic: index.md
   - Installation: install.md
   - changelog.md
