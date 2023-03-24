@@ -397,7 +397,6 @@ class BadRepr:
 
 
 def test_error_on_repr():
-
     s = SchemaValidator({'type': 'int'})
     with pytest.raises(ValidationError) as exc_info:
         s.validate_python(BadRepr())

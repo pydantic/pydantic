@@ -406,7 +406,6 @@ def test_dataclass_post_init_args_multiple():
     ],
 )
 def test_dataclass_exact_validation(input_value, expected):
-
     schema = core_schema.dataclass_schema(
         FooDataclass,
         core_schema.dataclass_args_schema(

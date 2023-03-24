@@ -9,7 +9,6 @@ class MyModel:
 
 
 def test_model_init():
-
     v = SchemaValidator(
         {
             'type': 'model',
