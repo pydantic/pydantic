@@ -3472,29 +3472,20 @@ def test_deque_success():
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
         (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
-        pytest.param(
+       (
             int,
             {1: 10, 2: 20, 3: 30}.keys(),
             deque([1, 2, 3]),
-            marks=pytest.mark.skipif(
-                condition=python_implementation() == 'PyPy', reason='PyPy does not implement a dict_keys type'
-            ),
         ),
-        pytest.param(
+        (
             int,
             {1: 10, 2: 20, 3: 30}.values(),
             deque([10, 20, 30]),
-            marks=pytest.mark.skipif(
-                condition=python_implementation() == 'PyPy', reason='PyPy does not implement a dict_values type'
-            ),
         ),
-        pytest.param(
+        (
             Tuple[int, int],
             {1: 10, 2: 20, 3: 30}.items(),
             deque([(1, 10), (2, 20), (3, 30)]),
-            marks=pytest.mark.skipif(
-                condition=python_implementation() == 'PyPy', reason='PyPy does not implement a dict_items type'
-            ),
         ),
     ),
 )
