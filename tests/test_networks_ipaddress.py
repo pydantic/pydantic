@@ -1,8 +1,10 @@
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from typing import Any, List
 
 import pytest
 
 from pydantic import BaseModel, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, ValidationError
+from pydantic.config import ConfigDict
 
 
 @pytest.mark.parametrize(
@@ -70,6 +72,102 @@ def test_ipv4address_success(value):
         ipv4: IPv4Address
 
     assert Model(ipv4=value).ipv4 == IPv4Address(value)
+
+
+@pytest.mark.parametrize(
+    'tp,value,errors',
+    [
+        (
+            IPv4Address,
+            IPv4Address('0.0.0.0'),
+            [
+                {
+                    'type': 'is_instance_of',
+                    'loc': ('v',),
+                    'msg': 'Input should be an instance of IPv4Address',
+                    'input': '0.0.0.0',
+                    'ctx': {'class': 'IPv4Address'},
+                }
+            ],
+        ),
+        (
+            IPv4Interface,
+            IPv4Interface('192.168.0.0/24'),
+            [
+                {
+                    'type': 'is_instance_of',
+                    'loc': ('v',),
+                    'msg': 'Input should be an instance of IPv4Interface',
+                    'input': '192.168.0.0/24',
+                    'ctx': {'class': 'IPv4Interface'},
+                }
+            ],
+        ),
+        (
+            IPv4Network,
+            IPv4Network('192.168.0.0/24'),
+            [
+                {
+                    'type': 'is_instance_of',
+                    'loc': ('v',),
+                    'msg': 'Input should be an instance of IPv4Network',
+                    'input': '192.168.0.0/24',
+                    'ctx': {'class': 'IPv4Network'},
+                }
+            ],
+        ),
+        (
+            IPv6Address,
+            IPv6Address('::1:0:1'),
+            [
+                {
+                    'type': 'is_instance_of',
+                    'loc': ('v',),
+                    'msg': 'Input should be an instance of IPv6Address',
+                    'input': '::1:0:1',
+                    'ctx': {'class': 'IPv6Address'},
+                }
+            ],
+        ),
+        (
+            IPv6Interface,
+            IPv6Interface('2001:db00::0/120'),
+            [
+                {
+                    'type': 'is_instance_of',
+                    'loc': ('v',),
+                    'msg': 'Input should be an instance of IPv6Interface',
+                    'input': '2001:db00::/120',
+                    'ctx': {'class': 'IPv6Interface'},
+                }
+            ],
+        ),
+        (
+            IPv6Network,
+            IPv6Network('2001:db00::0/120'),
+            [
+                {
+                    'type': 'is_instance_of',
+                    'loc': ('v',),
+                    'msg': 'Input should be an instance of IPv6Network',
+                    'input': '2001:db00::/120',
+                    'ctx': {'class': 'IPv6Network'},
+                }
+            ],
+        ),
+    ],
+)
+def test_ip_strict(tp: Any, value: Any, errors: List[Any]) -> None:
+    class Model(BaseModel):
+        v: tp
+
+        model_config = ConfigDict(strict=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=str(value))
+    assert exc_info.value.errors() == errors
+
+    assert Model(v=value).v == value
 
 
 @pytest.mark.parametrize(

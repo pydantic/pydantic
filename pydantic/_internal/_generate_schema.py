@@ -1060,6 +1060,9 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
             # for nullable schemas, metadata is automatically applied to the inner schema
             # TODO need to do the same for lists, tuples and more
             schema['schema'].update(metadata_dict)
+        elif schema['type'] == 'lax-or-strict':
+            schema['lax_schema'].update(metadata_dict)
+            schema['strict_schema'].update(metadata_dict)
         else:
             schema.update(metadata_dict)  # type: ignore[typeddict-item]
         try:

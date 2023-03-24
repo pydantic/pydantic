@@ -595,8 +595,14 @@ class GenerateJsonSchema:
             raise ValueError('Cannot generate a JsonSchema for a zero-step ChainSchema') from e
 
     def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:
+        """
+        LaxOrStrict will use the strict branch for serialization internally,
+        unless it was overridden here.
+        """
         # TODO: Need to read the default value off of model config or whatever
-        use_strict = schema.get('strict', False)  # TODO: replace this default False
+        use_strict = schema.get('strict', True)  # TODO: replace this default False
+        # If your JSON schema fails to generate it is probably
+        # because one of the following two branches failed.
         if use_strict:
             return self.generate_inner(schema['strict_schema'])
         else:
