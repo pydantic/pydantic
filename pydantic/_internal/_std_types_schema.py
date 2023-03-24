@@ -155,31 +155,32 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
     )
     # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
     lax = core_schema.union_schema(
-        core_schema.is_instance_schema(uuid_type, json_types={'str'}, metadata=metadata),
+        core_schema.is_instance_schema(uuid_type, json_types={'str'}),
         core_schema.general_after_validator_function(
             _validators.uuid_validator,
             core_schema.union_schema(
                 core_schema.str_schema(),
                 core_schema.bytes_schema(),
             ),
-            metadata=metadata,
         ),
         custom_error_type='uuid_type',
         custom_error_message='Input should be a valid UUID, string, or bytes',
         strict=True,
+        metadata=metadata,
     )
 
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=core_schema.chain_schema(
-            core_schema.is_instance_schema(uuid_type, json_types={'str'}, metadata=metadata),
+            core_schema.is_instance_schema(uuid_type, json_types={'str'}),
             core_schema.union_schema(
-                core_schema.is_instance_schema(UUID, metadata=metadata),
+                core_schema.is_instance_schema(UUID),
                 core_schema.chain_schema(
                     core_schema.str_schema(),
                     core_schema.general_plain_validator_function(_validators.uuid_validator),
                 ),
             ),
+            metadata=metadata,
         ),
     )
 

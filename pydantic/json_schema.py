@@ -600,7 +600,7 @@ class GenerateJsonSchema:
         unless it was overridden here.
         """
         # TODO: Need to read the default value off of model config or whatever
-        use_strict = schema.get('strict', True)  # TODO: replace this default False
+        use_strict = schema.get('strict', False)  # TODO: replace this default False
         # If your JSON schema fails to generate it is probably
         # because one of the following two branches failed.
         if use_strict:
