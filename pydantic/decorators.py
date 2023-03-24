@@ -375,10 +375,12 @@ def serializer(
 
     def dec(f: Callable[..., Any]) -> Any:
         res = _decorators.prepare_serializer_decorator(f, allow_reuse)
+        type_: Literal['field', 'general'] = 'field' if _decorators.is_instance_method_from_sig(f) else 'general'
 
         validator_wrapper_info = _decorators.SerializerDecoratorInfo(
             fields=fields,
             mode=mode,
+            type=type_,
             json_return_type=json_return_type,
             when_used=when_used,
             sub_path=sub_path,
