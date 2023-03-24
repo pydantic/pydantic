@@ -9,7 +9,6 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
-from platform import python_implementation
 from typing import (
     Any,
     Callable,
@@ -3472,7 +3471,7 @@ def test_deque_success():
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
         (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
-       (
+        (
             int,
             {1: 10, 2: 20, 3: 30}.keys(),
             deque([1, 2, 3]),
