@@ -265,7 +265,7 @@ def pydantic_model():
 
     class Model(BaseModel):
         field_str: str
-        field_str_con: constr(min_length=3, max_length=5, regex='^[a-z]+$')  # noqa F722
+        field_str_con: constr(min_length=3, max_length=5, regex='^[a-z]+$')
         field_int: int
         field_int_con: conint(gt=1, lt=10, multiple_of=2)
         field_float: float
