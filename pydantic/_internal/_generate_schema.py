@@ -907,7 +907,7 @@ def apply_serializers(
                 if serializer.info.type == 'field'
                 else core_schema.general_wrap_serializer_function_ser_schema
             )
-            schema['serialization'] = sf(
+            schema['serialization'] = sf(  # type: ignore[operator]
                 function,
                 schema.copy(),
                 json_return_type=serializer.info.json_return_type,
@@ -920,7 +920,7 @@ def apply_serializers(
                 if serializer.info.type == 'field'
                 else core_schema.general_plain_serializer_function_ser_schema
             )
-            schema['serialization'] = sf(
+            schema['serialization'] = sf(  # type: ignore[operator]
                 function,
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
