@@ -79,7 +79,7 @@ def prepare_dataclass(
         cls.__pydantic_validator__ = MockValidator(warning_string)
         return False
 
-    cls.__pydantic_decorators__ = decorators = _decorators.gather_decorator_functions(cls)
+    decorators = cls.__pydantic_decorators__
 
     cls.__pydantic_core_schema__ = schema = dataclass_schema(
         cls,
