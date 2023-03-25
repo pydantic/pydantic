@@ -246,10 +246,13 @@ def collect_fields(  # noqa: C901
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
             try:
-                delattr(cls, ann_name)
                 if cls.__pydantic_generic_parameters__:  # model can be parametrized
                     assert cls.__pydantic_generic_defaults__ is not None
                     cls.__pydantic_generic_defaults__[ann_name] = default
+                if not (is_dataclass and not isinstance(default, (dataclasses.Field, FieldInfo))):
+                    # for dataclasses we only delete the attribute if it is an instance of
+                    # field, e.g. `a: int = 1` should not get deleted
+                    delattr(cls, ann_name)
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
 

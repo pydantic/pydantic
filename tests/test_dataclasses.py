@@ -1609,3 +1609,23 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
 
     assert Parent(a=[]).a == expected_parent
     assert Child(a=[]).a == expected_child
+
+
+@pytest.mark.parametrize(
+    'decorator1',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+def test_dataclasses_inheritance_default_value_is_not_deleted(decorator1: Callable[[Any], Any]) -> None:
+    @decorator1
+    class Parent:
+        a: int = 1
+
+    @pydantic.dataclasses.dataclass
+    class Child(Parent):
+        pass
+
+    assert Child().a == 1
