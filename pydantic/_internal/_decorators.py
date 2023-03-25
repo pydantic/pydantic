@@ -627,7 +627,7 @@ def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ..
 """
 
 
-def make_generic_v2_field_serializer(
+def make_generic_field_serializer(
     serializer: AnySerializerFunction, mode: Literal['plain', 'wrap']
 ) -> AnyCoreSerializer:
     """
@@ -658,18 +658,19 @@ def make_generic_v2_field_serializer(
             )
         func = cast(AnyCoreSerializer, serializer)
         return func
-    assert mode == 'wrap'
-    if n_positional == 2:
-        func2 = cast(WrapSerializerWithoutInfo, serializer)
+    else:
+        assert mode == 'wrap'
+        if n_positional == 2:
+            func2 = cast(WrapSerializerWithoutInfo, serializer)
 
-        def _wrap2(value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo) -> Any:
-            return func2(value, handler)
+            def _wrap2(value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo) -> Any:
+                return func2(value, handler)
 
-        return _wrap2
-    if n_positional != 3:
-        raise TypeError(
-            f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
-            f' {_VALID_SERIALIZER_SIGNATURES}'
-        )
-    func = cast(AnyCoreSerializer, serializer)
-    return func
+            return _wrap2
+        if n_positional != 3:
+            raise TypeError(
+                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
+                f' {_VALID_SERIALIZER_SIGNATURES}'
+            )
+        func = cast(AnyCoreSerializer, serializer)
+        return func

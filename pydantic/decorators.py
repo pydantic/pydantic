@@ -387,7 +387,7 @@ def serializer(
             check_fields=check_fields,
         )
         return _decorators.PydanticDecoratorMarker(
-            res, validator_wrapper_info, shim=partial(_decorators.make_generic_v2_field_serializer, mode=mode)
+            res, validator_wrapper_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode)
         )
 
     return dec
