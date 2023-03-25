@@ -1544,9 +1544,6 @@ def test_validator_info_field_name_data_before():
     assert Model(a=b'your foobar is good', b=b'but my barbaz is better').b == 'just kidding!'
 
 
-_DECORATORS = [pydantic.dataclasses.dataclasses, dataclasses.dataclass]
-
-
 @pytest.mark.parametrize(
     'decorator1, expected_parent, expected_child',
     [
