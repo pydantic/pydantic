@@ -22,7 +22,7 @@ def test_parse_obj_as_model():
     assert parse_obj_as(Model, model_inputs) == Model(**model_inputs)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='model subclass instances fail validation')
 def test_parse_obj_preserves_subclasses():
     class ModelA(BaseModel):
         a: Mapping[int, str]

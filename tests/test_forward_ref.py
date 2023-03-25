@@ -477,13 +477,12 @@ class Filter(BaseModel):
     assert isinstance(Filter(p={'sort': 'some_field:asc', 'fields': []}), Filter)
 
 
-@pytest.mark.xfail(reason='TODO create_model')
 def test_forward_ref_with_create_model(create_module):
     @create_module
     def module():
         import pydantic
 
-        Sub = pydantic.create_model('Sub', foo='bar', __module__=__name__)
+        Sub = pydantic.create_model('Sub', foo=(str, 'bar'), __module__=__name__)
         assert Sub  # get rid of "local variable 'Sub' is assigned to but never used"
         Main = pydantic.create_model('Main', sub=('Sub', ...), __module__=__name__)
         instance = Main(sub={})
@@ -597,7 +596,7 @@ class Model(BaseModel):
     assert module.Model.__class_vars__ == {'a'}
 
 
-@pytest.mark.xfail(reason='TODO json encoding')
+@pytest.mark.xfail(reason='json encoder stuff')
 def test_json_encoder_str(create_module):
     module = create_module(
         # language=Python
@@ -617,7 +616,7 @@ class User(BaseModel):
 
 
 class Model(BaseModel):
-    model_config=ConfigDict(json_encoders={ 'User': lambda v: f'User({v.y})'})
+    model_config=ConfigDict(json_encoders={'User': lambda v: f'User({v.y})'})
     foo_user: FooUser
     user: User
 
@@ -629,7 +628,7 @@ class Model(BaseModel):
     assert m.model_dump_json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
 
 
-@pytest.mark.xfail(reason='working on v2')
+@pytest.mark.xfail(reason='json encoder stuff')
 def test_json_encoder_forward_ref(create_module):
     # TODO: Replace the use of json_encoders with a root_serializer
     module = create_module(
