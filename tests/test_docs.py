@@ -28,6 +28,11 @@ def skip_docs_tests():
     except ImportError:
         return True
 
+    try:
+        import sqlalchemy  # noqa: F401
+    except ImportError:
+        return True
+
     return False
 
 
@@ -57,8 +62,11 @@ class MockedDatetime(datetime):
         return datetime(2032, 1, 2, 3, 4, 5, 6)
 
 
-@pytest.mark.skipif(skip_docs_tests(), reason=skip_docs_tests.__doc__.strip())
-@pytest.mark.parametrize('example', find_examples('docs'), ids=str)
+skip_ = skip_docs_tests()
+
+
+@pytest.mark.skipif(skip_, reason=skip_docs_tests.__doc__.strip())
+@pytest.mark.parametrize('example', find_examples('docs', skip=skip_), ids=str)
 def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):  # noqa: C901
     global index_main
     if example.path.name == 'index.md':

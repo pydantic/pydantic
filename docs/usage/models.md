@@ -170,19 +170,20 @@ The example here uses SQLAlchemy, but the same approach should work for any ORM.
 
 ```py
 from typing import List
+from sqlalchemy import Column, Integer, String
+from sqlalchemy.dialects.postgresql import ARRAY
+from sqlalchemy.ext.declarative import declarative_base
 from pydantic import BaseModel, constr
 
+Base = declarative_base()
 
-class CompanyOrm:
-    """
-    An ORM object that we want to map to a Pydantic model.
-    """
 
-    def __init__(self, id: int, public_key: str, name: str, domains: List[str]):
-        self.id = id
-        self.public_key = public_key
-        self.name = name
-        self.domains = domains
+class CompanyOrm(Base):
+    __tablename__ = 'companies'
+    id = Column(Integer, primary_key=True, nullable=False)
+    public_key = Column(String(20), index=True, nullable=False, unique=True)
+    name = Column(String(63), unique=True)
+    domains = Column(ARRAY(String(255)))
 
 
 class CompanyModel(BaseModel):

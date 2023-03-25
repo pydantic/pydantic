@@ -127,7 +127,7 @@ jobs:
         run: pip install .
 
       - name: test
-        run: pytest --ignore=tests/mypy/ --memray
+        run: pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
 
   test:
     name: test ${{ matrix.os }} / ${{ matrix.python-version }}
