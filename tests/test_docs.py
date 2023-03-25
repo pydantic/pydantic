@@ -12,28 +12,23 @@ index_main = None
 
 
 def skip_docs_tests():
-    """
-    Only bother on linux and macos and with the required deps installed.
-    """
     if sys.platform not in {'linux', 'darwin'}:
-        return True
+        return 'not in linux or macos'
 
     try:
         import hypothesis  # noqa: F401
     except ImportError:
-        return True
+        return 'hypothesis not installed'
 
     try:
         import devtools  # noqa: F401
     except ImportError:
-        return True
+        return 'devtools not installed'
 
     try:
         import sqlalchemy  # noqa: F401
     except ImportError:
-        return True
-
-    return False
+        return 'sqlalchemy not installed'
 
 
 class GroupModuleGlobals:
@@ -62,11 +57,11 @@ class MockedDatetime(datetime):
         return datetime(2032, 1, 2, 3, 4, 5, 6)
 
 
-skip_ = skip_docs_tests()
+skip_reason = skip_docs_tests()
 
 
-@pytest.mark.skipif(skip_, reason=skip_docs_tests.__doc__.strip())
-@pytest.mark.parametrize('example', find_examples('docs', skip=skip_), ids=str)
+@pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
+@pytest.mark.parametrize('example', find_examples('docs', skip=sys.platform == 'win32'), ids=str)
 def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):  # noqa: C901
     global index_main
     if example.path.name == 'index.md':

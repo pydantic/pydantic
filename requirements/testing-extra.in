@@ -1,2 +1,4 @@
 devtools
 hypothesis
+# used in docs tests
+sqlalchemy==1.4.0
