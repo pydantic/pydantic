@@ -9,7 +9,6 @@ import re
 import sys
 import typing
 import warnings
-from inspect import Signature, signature
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
 from annotated_types import BaseMetadata, GroupedMetadata
@@ -863,6 +862,20 @@ class GenerateSchema:
         return schema
 
 
+_VALIDATOR_F_MATCH: Mapping[
+    tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
+] = {
+    ('before', True): core_schema.field_before_validator_function,
+    ('after', True): core_schema.field_after_validator_function,
+    ('plain', True): lambda f, _: core_schema.field_plain_validator_function(f),
+    ('wrap', True): core_schema.field_wrap_validator_function,
+    ('before', False): core_schema.general_before_validator_function,
+    ('after', False): core_schema.general_after_validator_function,
+    ('plain', False): lambda f, _: core_schema.general_plain_validator_function(f),
+    ('wrap', False): core_schema.general_wrap_validator_function,
+}
+
+
 def apply_validators(
     schema: core_schema.CoreSchema,
     validators: Iterable[Decorator[RootValidatorDecoratorInfo]]
@@ -872,80 +885,10 @@ def apply_validators(
     """
     Apply validators to a schema.
     """
-    f_match: Mapping[
-        tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
-    ] = {
-        ('before', True): core_schema.field_before_validator_function,
-        ('after', True): core_schema.field_after_validator_function,
-        ('plain', True): lambda f, _: core_schema.field_plain_validator_function(f),
-        ('wrap', True): core_schema.field_wrap_validator_function,
-        ('before', False): core_schema.general_before_validator_function,
-        ('after', False): core_schema.general_after_validator_function,
-        ('plain', False): lambda f, _: core_schema.general_plain_validator_function(f),
-        ('wrap', False): core_schema.general_wrap_validator_function,
-    }
     for validator in validators:
         is_field = isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo))
-        schema = f_match[(validator.info.mode, is_field)](validator.func, schema)
+        schema = _VALIDATOR_F_MATCH[(validator.info.mode, is_field)](validator.func, schema)
     return schema
-
-
-_SerializerType = Literal[
-    'field-wrap',
-    'general-wrap',
-    'field-plain',
-    'general-plain',
-]
-
-
-_VALID_SERIALIZER_SIGNATURES = """\
-Valid serializer signatures are:
-
-# an instance method with the default mode or `mode='plain'`
-@serializer('x')  # or @serialize('x', mode='plain')
-def ser_x(self, value: Any, info: pydantic.FieldSerializationInfo): ...
-
-# a static method or free-standing function with the default mode or `mode='plain'`
-@serializer('x')  # or @serialize('x', mode='plain')
-@staticmethod
-def ser_x(value: Any, info: pydantic.SerializationInfo): ...
-# equivalent to
-def ser_x(value: Any, info: pydantic.SerializationInfo): ...
-serializer('x')(ser_x)
-
-# an instance method with `mode='wrap'`
-@serializer('x', mode='wrap')
-def ser_x(self, value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
-
-# a static method or free-standing function with `mode='wrap'`
-@serializer('x', mode='wrap')
-@staticmethod
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.SerializationInfo): ...
-# equivalent to
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.SerializationInfo): ...
-serializer('x')(ser_x)
-"""
-
-
-def _is_unbound_instance_method(sig: Signature, func: Callable[..., Any]) -> bool:
-    if len(sig.parameters) < 2:
-        raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}')
-    return next(iter(sig.parameters.values())).name == 'self'
-
-
-def _infer_serializer_type_from_signature(sig: Signature, func: Callable[..., Any]) -> _SerializerType:
-    if len(sig.parameters) == 2:
-        # (value, info) -> Any
-        return 'general-plain'
-    elif len(sig.parameters) == 3:
-        # (self, value, info) -> Any or (value, nxt, info)
-        if _is_unbound_instance_method(sig, func):
-            return 'field-plain'
-        return 'general-wrap'
-    elif len(sig.parameters) == 4 and _is_unbound_instance_method(sig, func):
-        # (self, value, nxt, info) -> Any
-        return 'field-wrap'
-    raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}')
 
 
 def apply_serializers(
@@ -958,38 +901,29 @@ def apply_serializers(
         # use the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
         function = serializer.func
-        sig = signature(function)
-        type_ = _infer_serializer_type_from_signature(sig, function)
-        if serializer.info.mode == 'wrap' and type_ not in ('general-wrap', 'field-wrap'):
-            raise TypeError(
-                f'Invalid signature for wrap serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
+        if serializer.info.mode == 'wrap':
+            sf = (
+                core_schema.field_wrap_serializer_function_ser_schema
+                if serializer.info.type == 'field'
+                else core_schema.general_wrap_serializer_function_ser_schema
             )
-        elif serializer.info.mode == 'plain' and type_ not in ('general-plain', 'field-plain'):
-            raise TypeError(
-                f'Invalid signature for plain serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
-            )
-        if type_ == 'general-wrap':
-            schema['serialization'] = core_schema.general_wrap_serializer_function_ser_schema(
+            schema['serialization'] = sf(  # type: ignore[operator]
                 function,
                 schema.copy(),
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
-            )
-        elif type_ == 'field-wrap':
-            schema['serialization'] = core_schema.field_wrap_serializer_function_ser_schema(
-                function,
-                schema.copy(),
-                json_return_type=serializer.info.json_return_type,
-                when_used=serializer.info.when_used,
-            )
-        elif type_ == 'general-plain':
-            schema['serialization'] = core_schema.general_plain_serializer_function_ser_schema(
-                function, json_return_type=serializer.info.json_return_type, when_used=serializer.info.when_used
             )
         else:
-            assert type_ == 'field-plain'
-            schema['serialization'] = core_schema.field_plain_serializer_function_ser_schema(
-                function, json_return_type=serializer.info.json_return_type, when_used=serializer.info.when_used
+            assert serializer.info.mode == 'plain'
+            sf = (
+                core_schema.field_plain_serializer_function_ser_schema
+                if serializer.info.type == 'field'
+                else core_schema.general_plain_serializer_function_ser_schema
+            )
+            schema['serialization'] = sf(  # type: ignore[operator]
+                function,
+                json_return_type=serializer.info.json_return_type,
+                when_used=serializer.info.when_used,
             )
     return schema
 
