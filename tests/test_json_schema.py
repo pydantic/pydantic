@@ -984,7 +984,7 @@ def test_uuid_types(field_type, expected_schema):
     base_schema = {
         'title': 'Model',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'string', 'format': ''}},
+        'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'uuid'}},
         'required': ['a'],
     }
     base_schema['properties']['a']['format'] = expected_schema
