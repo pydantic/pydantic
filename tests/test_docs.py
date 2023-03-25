@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -8,6 +9,26 @@ import pytest
 from pytest_examples import CodeExample, EvalExample, find_examples
 
 index_main = None
+
+
+def skip_docs_tests():
+    """
+    Only bother on linux and macos and with the required deps installed.
+    """
+    if sys.platform not in {'linux', 'darwin'}:
+        return True
+
+    try:
+        import hypothesis  # noqa: F401
+    except ImportError:
+        return True
+
+    try:
+        import devtools  # noqa: F401
+    except ImportError:
+        return True
+
+    return False
 
 
 class GroupModuleGlobals:
@@ -31,12 +52,12 @@ group_globals = GroupModuleGlobals()
 
 
 class MockedDatetime(datetime):
-    @staticmethod
-    def now():
+    @classmethod
+    def now(cls, *args, **kwargs):
         return datetime(2032, 1, 2, 3, 4, 5, 6)
 
 
-@pytest.mark.skipif(sys.platform not in {'linux', 'darwin'}, reason='Only bother on linux and macos')
+@pytest.mark.skipif(skip_docs_tests(), reason=skip_docs_tests.__doc__.strip())
 @pytest.mark.parametrize('example', find_examples('docs'), ids=str)
 def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path: Path, mocker):  # noqa: C901
     global index_main
@@ -79,6 +100,7 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 
     mocker.patch('datetime.datetime', MockedDatetime)
     mocker.patch('random.randint', return_value=3)
+    os.environ['TZ'] = 'UTC'
 
     xfail = None
     if test_settings and test_settings.startswith('xfail'):
