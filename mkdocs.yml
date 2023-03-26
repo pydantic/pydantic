@@ -23,6 +23,7 @@ theme:
       name: "Switch to light mode"
   features:
     - content.tabs.link
+    - announce.dismiss
   logo: 'logo-white.svg'
   favicon: 'favicon.png'
 
@@ -90,3 +91,4 @@ plugins:
     - build/*
     - examples/*
     - requirements.txt
+    - theme/announce.md
