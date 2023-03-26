@@ -152,7 +152,7 @@ def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, 
 
     # replace ugly file path with "devtools_example.py"
     output = re.sub(r'/.+?\.py', 'devtools_example.py', p.stdout)
-    output_html = conv.convert(output, full=False).strip('\r\n')
+    output_html = conv.convert(output, full=False)
     output_file = Path('docs/plugins/devtools_output.html')
 
     if eval_example.update_examples:

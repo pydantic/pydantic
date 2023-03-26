@@ -219,6 +219,6 @@ def devtools_example(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'usage/devtools.md':
         return None
 
-    html = (THIS_DIR / 'devtools_output.html').read_text()
+    html = (THIS_DIR / 'devtools_output.html').read_text().strip('\n')
     full_html = f'<div class="highlight">\n<pre><code>{html}</code></pre>\n</div>'
     return re.sub(r'{{ *devtools_example *}}', full_html, markdown)
