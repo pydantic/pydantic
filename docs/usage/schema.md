@@ -411,7 +411,7 @@ following priority order (when there is an equivalent available):
 
 The field schema mapping from Python / *pydantic* to JSON Schema is done as follows:
 
-{!.tmp_schema_mappings.html!}
+{{ schema_mappings_table }}
 
 ## Top-level schema generation
 

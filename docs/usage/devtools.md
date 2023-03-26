@@ -48,4 +48,4 @@ print('user:', user)
 
 Will output in your terminal:
 
-{!.tmp_examples/devtools_main.html!}
+{{ devtools_example }}

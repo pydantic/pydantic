@@ -83,10 +83,10 @@ jobs:
 
     - name: install
       if: steps.cache.outputs.cache-hit != 'true'
-      run: pip install -r requirements/all.txt .
+      run: pip install -r requirements/docs.txt .
 
     - name: build site
-      run: make docs
+      run: mkdocs build
 
     - name: Store docs site
       uses: actions/upload-artifact@v3

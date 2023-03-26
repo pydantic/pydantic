@@ -5,7 +5,7 @@
 [![downloads](https://pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
-{!.version.md!}
+{{ version }}.
 
 Pydantic is the most widely used data validation library for Python.
 
