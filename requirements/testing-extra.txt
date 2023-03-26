@@ -4,6 +4,8 @@
 #
 #    pip-compile --output-file=requirements/testing-extra.txt --resolver=backtracking requirements/testing-extra.in
 #
+ansi2html==1.8.0
+    # via -r requirements/testing-extra.in
 asttokens==2.2.1
     # via devtools
 attrs==22.2.0

@@ -1,11 +1,15 @@
 from __future__ import annotations as _annotations
 
 import os
+import re
+import subprocess
 import sys
 from datetime import datetime
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 
 import pytest
+from ansi2html import Ansi2HTMLConverter
 from pytest_examples import CodeExample, EvalExample, find_examples
 
 index_main = None
@@ -125,3 +129,32 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
         if xfail:
             pytest.fail('expected xfail')
         group_globals.set(group_name, d2)
+
+
+@pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
+@pytest.mark.parametrize('example', find_examples('docs/usage/devtools.md', skip=sys.platform == 'win32'), ids=str)
+def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, tmp_path: Path):
+    if eval_example.update_examples:
+        eval_example.format(example)
+    else:
+        eval_example.lint(example)
+
+    with NamedTemporaryFile(mode='w', suffix='.py') as f:
+        f.write(example.source)
+        f.flush()
+        os.environ['PY_DEVTOOLS_HIGHLIGHT'] = 'true'
+        p = subprocess.run((sys.executable, f.name), stdout=subprocess.PIPE, check=True, encoding='utf8')
+
+    conv = Ansi2HTMLConverter()
+
+    # replace ugly file path with "devtools_example.py"
+    output = re.sub(r'/.+?\.py', 'devtools_example.py', p.stdout)
+    output_html = conv.convert(output, full=False).strip('\r\n')
+    output_file = Path('docs/plugins/devtools_output.html')
+
+    if eval_example.update_examples:
+        output_file.write_text(output_html)
+    elif not output_file.exists():
+        pytest.fail(f'output file {output_file} does not exist')
+    else:
+        assert output_html == output_file.read_text()

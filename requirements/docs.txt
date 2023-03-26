@@ -4,8 +4,6 @@
 #
 #    pip-compile --output-file=requirements/docs.txt --resolver=backtracking requirements/docs.in
 #
-ansi2html==1.8.0
-    # via -r requirements/docs.in
 attrs==22.2.0
     # via pytest
 black==23.1.0

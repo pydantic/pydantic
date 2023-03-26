@@ -2,16 +2,12 @@ import json
 import logging
 import os
 import re
-import subprocess
-import sys
 from pathlib import Path
-from tempfile import NamedTemporaryFile
-from textwrap import dedent, indent
+from textwrap import indent
 
 import autoflake  # type: ignore
 import pyupgrade._main as pyupgrade_main  # type: ignore
 import rtoml
-from ansi2html import Ansi2HTMLConverter
 from mkdocs.config import Config
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
@@ -223,22 +219,6 @@ def devtools_example(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'usage/devtools.md':
         return None
 
-    # TODO change to `{.`
-    m = re.search(r'(^ *```)py.*?\n(.+?)\1', markdown, flags=re.M | re.S)
-    if not m:
-        logger.warning('devtools example code not found')
-        return markdown
-
-    with NamedTemporaryFile(suffix='.py') as f:
-        f.write(dedent(m.group(2)).encode())
-        f.flush()
-        os.environ['PY_DEVTOOLS_HIGHLIGHT'] = 'true'
-        p = subprocess.run((sys.executable, f.name), stdout=subprocess.PIPE, check=True, encoding='utf8')
-
-    conv = Ansi2HTMLConverter()
-
-    # replace ugly file path with "devtools_example.py"
-    output = re.sub(r'/.+?\.py', 'devtools_example.py', p.stdout)
-    html = conv.convert(output, full=False).strip('\r\n')
-    full_html = f'<div class="terminal">\n<pre class="terminal-content">\n{html}\n</pre>\n</div>'
+    html = (THIS_DIR / 'devtools_output.html').read_text()
+    full_html = f'<div class="highlight">\n<pre><code>{html}</code></pre>\n</div>'
     return re.sub(r'{{ *devtools_example *}}', full_html, markdown)

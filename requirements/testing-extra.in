@@ -1,3 +1,5 @@
+# used when generate devtools docs example
+ansi2html
 devtools
 hypothesis
 # used in docs tests
