@@ -168,6 +168,7 @@ You can also create a variable with the value you want to use and declare it's t
 
 ```Python hl_lines="1 11-12"
 from typing import Any
+
 from pydantic import BaseModel
 
 
@@ -195,6 +196,7 @@ This way, the type declaration of the value is overriden inline, without requiri
 
 ```Python hl_lines="1 11"
 from typing import Any, cast
+
 from pydantic import BaseModel
 
 

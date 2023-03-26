@@ -1,8 +1,9 @@
 Custom validation and complex relationships between objects can be achieved using the `validator` decorator.
 
 ```py
-from pydantic import BaseModel, ValidationError, field_validator
 from pydantic_core.core_schema import FieldValidationInfo
+
+from pydantic import BaseModel, ValidationError, field_validator
 
 
 class UserModel(BaseModel):
@@ -90,6 +91,7 @@ Validators can do a few more complex things:
 
 ```py test="xfail - we need annotated validators for this examples"
 from typing import List
+
 from pydantic import BaseModel, ValidationError, field_validator
 
 
@@ -151,6 +153,7 @@ cause the validator not to run; instead, the list must be iterated over programm
 
 ```py test="xfail - we need annotated validators for this examples"
 from typing import List
+
 from pydantic import BaseModel, ValidationError, validator
 
 

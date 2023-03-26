@@ -6,12 +6,14 @@ Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/
 
 ```py
 from __future__ import annotations
-from typing import Any, List
+
+from typing import Any
+
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    a: List[int]
+    a: list[int]
     b: Any
 
 
@@ -31,6 +33,7 @@ When this happens, you'll need to call `update_forward_refs` after the model has
 
 ```py
 from typing import ForwardRef
+
 from pydantic import BaseModel
 
 Foo = ForwardRef('Foo')
@@ -56,8 +59,11 @@ For example, this works fine:
 
 ```py test="xfail - this should work"
 from __future__ import annotations
-from pydantic import BaseModel
-from pydantic import HttpUrl  # HttpUrl is defined in the module's global scope
+
+from pydantic import (
+    BaseModel,
+    HttpUrl,  # HttpUrl is defined in the module's global scope
+)
 
 
 def this_works():
@@ -74,6 +80,7 @@ While this will break:
 
 ```py
 from __future__ import annotations
+
 from pydantic import BaseModel
 from pydantic.errors import PydanticUserError
 
@@ -129,6 +136,7 @@ and *pydantic* versions).
 
 ```py
 from __future__ import annotations
+
 from pydantic import BaseModel
 
 

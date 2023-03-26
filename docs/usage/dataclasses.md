@@ -3,6 +3,7 @@ If you don't want to use _pydantic_'s `BaseModel` you can instead get the same d
 
 ```py
 from datetime import datetime
+
 from pydantic.dataclasses import dataclass
 
 

@@ -146,6 +146,7 @@ fail with a simple `json.dumps(foobar)`.
 
 ```py
 from datetime import datetime
+
 from pydantic import BaseModel
 
 
@@ -170,6 +171,7 @@ the values should be functions which serialise that type (see the example below)
 
 ```py
 from datetime import datetime, timedelta
+
 from pydantic import BaseModel, serializer
 
 
@@ -247,8 +249,10 @@ Subclasses of common types are automatically encoded like their super-classes:
 
 ```py
 from datetime import date, timedelta
-from pydantic import BaseModel
+
 from pydantic_core import core_schema
+
+from pydantic import BaseModel
 
 
 class DayThisYear(date):
@@ -286,6 +290,7 @@ Using the same plumbing as `copy()`, *pydantic* models support efficient picklin
 ```py test="skip"
 # TODO need to get pickling to work
 import pickle
+
 from pydantic import BaseModel
 
 

@@ -75,21 +75,23 @@ model.py:
 #   filename:  person.json
 #   timestamp: 2020-05-19T15:07:31+00:00
 from __future__ import annotations
-from typing import Any, List, Optional
+
+from typing import Any
+
 from pydantic import BaseModel, Field, conint
 
 
 class Pet(BaseModel):
-    name: Optional[str] = None
-    age: Optional[int] = None
+    name: str | None = None
+    age: int | None = None
 
 
 class Person(BaseModel):
     first_name: str = Field(..., description="The person's first name.")
     last_name: str = Field(..., description="The person's last name.")
-    age: Optional[conint(ge=0)] = Field(None, description='Age in years.')
-    pets: Optional[List[Pet]] = None
-    comment: Optional[Any] = None
+    age: conint(ge=0) | None = Field(None, description='Age in years.')
+    pets: list[Pet] | None = None
+    comment: Any | None = None
 ```
 
 More information can be found on the

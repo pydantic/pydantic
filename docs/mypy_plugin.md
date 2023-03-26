@@ -8,6 +8,7 @@ For example, consider the following script:
 ```py test="skip"
 from datetime import datetime
 from typing import List, Optional
+
 from pydantic import BaseModel
 
 

@@ -130,6 +130,7 @@ More complex hierarchical data structures can be defined using models themselves
 
 ```py
 from typing import List, Optional
+
 from pydantic import BaseModel
 
 
@@ -170,9 +171,11 @@ The example here uses SQLAlchemy, but the same approach should work for any ORM.
 
 ```py
 from typing import List
+
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.dialects.postgresql import ARRAY
 from sqlalchemy.ext.declarative import declarative_base
+
 from pydantic import BaseModel, constr
 
 Base = declarative_base()
@@ -215,9 +218,10 @@ convenient:
 ```py
 import typing
 
-from pydantic import BaseModel, Field
 import sqlalchemy as sa
 from sqlalchemy.ext.declarative import declarative_base
+
+from pydantic import BaseModel, Field
 
 
 class MyModel(BaseModel):
@@ -257,6 +261,7 @@ Here a vanilla class is used to demonstrate the principle, but any ORM class cou
 
 ```py
 from typing import List
+
 from pydantic import BaseModel
 
 
@@ -312,11 +317,11 @@ value is set). Returning this sentinel means that the field is missing. Any othe
 be interpreted as the value of the field.
 
 ```py test="xfail - GetterDict is removed, replace with a custom root_validator"
-from pydantic import BaseModel
 from typing import Any, Optional
-from pydantic.utils import GetterDict
 from xml.etree.ElementTree import fromstring
 
+from pydantic import BaseModel
+from pydantic.utils import GetterDict
 
 xmlstring = """
 <User Id="2138">
@@ -399,6 +404,7 @@ As a demonstration:
 
 ```py
 from typing import List
+
 from pydantic import BaseModel, ValidationError, conint
 
 
@@ -521,8 +527,9 @@ except ValidationError as e:
 You can also define your own error classes, which can specify a custom error code, message template, and context:
 
 ```py
-from pydantic import BaseModel, ValidationError, field_validator
 from pydantic_core import PydanticCustomError
+
+from pydantic import BaseModel, ValidationError, field_validator
 
 
 class Model(BaseModel):
@@ -674,9 +681,9 @@ In order to declare a generic model, you perform the following steps:
 Here is an example using `GenericModel` to create an easily-reused HTTP response payload wrapper:
 
 ```py test="xfail - needs always/validate default support"
-from typing import Generic, TypeVar, Optional, List
+from typing import Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, validator_function, ValidationError
+from pydantic import BaseModel, ValidationError, validator_function
 
 DataT = TypeVar('DataT')
 
@@ -733,7 +740,8 @@ To inherit from a GenericModel without replacing the `TypeVar` instance, a class
 `typing.Generic`:
 
 ```py
-from typing import TypeVar, Generic
+from typing import Generic, TypeVar
+
 from pydantic import BaseModel
 
 TypeX = TypeVar('TypeX')
@@ -757,7 +765,8 @@ You can also create a generic subclass of a `GenericModel` that partially or ful
 parameters in the superclass.
 
 ```py
-from typing import TypeVar, Generic
+from typing import Generic, TypeVar
+
 from pydantic import BaseModel
 
 TypeX = TypeVar('TypeX')
@@ -782,7 +791,7 @@ print(ChildClass[str, int](x=1, y='y', z=3))
 If the name of the concrete subclasses is important, you can also override the default behavior:
 
 ```py
-from typing import Generic, TypeVar, Type, Any, Tuple
+from typing import Any, Generic, Tuple, Type, TypeVar
 
 from pydantic import BaseModel
 
@@ -936,7 +945,7 @@ print(BarModel.model_fields.keys())
 You can also add validators by passing a dict to the `__validators__` argument.
 
 ```py test="xfail create_model validators"
-from pydantic import create_model, ValidationError, validator
+from pydantic import ValidationError, create_model, validator
 
 
 def username_alphanumeric(cls, v):
@@ -998,8 +1007,9 @@ The root value can be passed to the model `__init__` via the `__root__` keyword 
 the first and only argument to `model_validate`.
 
 ```py test="xfail support/replace __root__"
-from typing import List
 import json
+from typing import List
+
 from pydantic import BaseModel
 from pydantic.json_schema import schema
 
@@ -1028,7 +1038,8 @@ the following logic is used:
 This is demonstrated in the following example:
 
 ```py test="xfail support/replace __root__"
-from typing import List, Dict
+from typing import Dict, List
+
 from pydantic import BaseModel, ValidationError
 
 
@@ -1059,6 +1070,7 @@ If you want to access items in the `__root__` field directly or to iterate over 
 
 ```py test="xfail support/replace __root__"
 from typing import List
+
 from pydantic import BaseModel
 
 
@@ -1123,6 +1135,7 @@ Pydantic models can be used alongside Python's
 
 ```py
 import abc
+
 from pydantic import BaseModel
 
 
@@ -1214,6 +1227,7 @@ you can use `Optional` with `...`:
 
 ```py
 from typing import Optional
+
 from pydantic import BaseModel, ValidationError
 
 
@@ -1254,6 +1268,7 @@ Example of usage:
 ```py
 from datetime import datetime
 from uuid import UUID, uuid4
+
 from pydantic import BaseModel, Field
 
 
@@ -1396,6 +1411,7 @@ All *pydantic* models will have their signature generated based on their fields:
 
 ```py
 import inspect
+
 from pydantic import BaseModel, Field
 
 

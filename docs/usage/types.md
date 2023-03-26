@@ -252,6 +252,7 @@ generator or a remote data loader, you can define its type with `Iterable`:
 
 ```py
 from typing import Iterable
+
 from pydantic import BaseModel
 
 
@@ -311,7 +312,8 @@ You can create a [validator](validators.md) to validate the first value in an in
 ```py test="xfail - what's going on here?"
 import itertools
 from typing import Iterable
-from pydantic import BaseModel, field_validator, ValidationError
+
+from pydantic import BaseModel, ValidationError, field_validator
 
 
 class Model(BaseModel):
@@ -365,8 +367,9 @@ The `Union` type allows a model attribute to accept different types, e.g.:
     Know that you can also make the check slower but stricter by using [Smart Union](model_config.md#smart-union)
 
 ```py
-from uuid import UUID
 from typing import Union
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -415,8 +418,9 @@ followed by less specific types.
 In the above example, the `UUID` class should precede the `int` and `str` classes to preclude the unexpected representation as such:
 
 ```py
-from uuid import UUID
 from typing import Union
+from uuid import UUID
+
 from pydantic import BaseModel
 
 
@@ -656,6 +660,7 @@ types:
 
 ```py
 from datetime import date, datetime, time, timedelta
+
 from pydantic import BaseModel
 
 
@@ -730,6 +735,7 @@ Fields can also be of type `Callable`:
 
 ```py
 from typing import Callable
+
 from pydantic import BaseModel
 
 
@@ -755,8 +761,7 @@ that are subclasses of `T`.
 ```py
 from typing import Type
 
-from pydantic import BaseModel
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 class Foo:
@@ -823,6 +828,7 @@ except ValidationError as e:
 
 ```py
 from typing import TypeVar
+
 from pydantic import BaseModel
 
 Foobar = TypeVar('Foobar')
@@ -919,7 +925,7 @@ except ValidationError as e:
 With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
 
 ```py require="3.8"
-from typing import Optional, Literal, Union
+from typing import Literal, Optional, Union
 
 from pydantic import BaseModel
 
@@ -1290,8 +1296,9 @@ assert my_cos == my_cos_2
 [custom encoder](exporting_models.md#json_encoders) which accounts for
 the evaluated object:**
 ```py test="xfail - replace json_encoders"
-from pydantic import BaseModel, ImportString
 from types import BuiltinFunctionType
+
+from pydantic import BaseModel, ImportString
 
 
 # The following class will not successfully serialize to JSON
@@ -1626,7 +1633,7 @@ that you do not want to be visible in logging or tracebacks.
 The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
 ```py test="xfail - replace json_encoders"
-from pydantic import BaseModel, SecretStr, SecretBytes, ValidationError
+from pydantic import BaseModel, SecretBytes, SecretStr, ValidationError
 
 
 class SimpleModel(BaseModel):
@@ -1794,14 +1801,15 @@ from decimal import Decimal
 
 from pydantic import (
     BaseModel,
+    Field,
     NegativeFloat,
     NegativeInt,
-    PositiveFloat,
-    PositiveInt,
     NonNegativeFloat,
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    PositiveFloat,
+    PositiveInt,
     conbytes,
     condecimal,
     confloat,
@@ -1809,7 +1817,6 @@ from pydantic import (
     conlist,
     conset,
     constr,
-    Field,
 )
 
 
@@ -1957,8 +1964,8 @@ The following caveats apply:
 ```py
 from pydantic import (
     BaseModel,
-    StrictBytes,
     StrictBool,
+    StrictBytes,
     StrictInt,
     ValidationError,
     confloat,
@@ -2076,6 +2083,7 @@ to get validators to parse and validate the input data.
 
 ```py test="xfail - replace with Annoated[str, PostCodeLogic]"
 import re
+
 from pydantic import BaseModel
 
 # https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom#Validation
@@ -2216,7 +2224,6 @@ from __future__ import annotations
 
 from pydantic import BaseModel
 
-
 # This example shows how Book and Person types reference each other.
 # We will demonstrate how to suppress the undefined types warning
 # when define such models.
@@ -2277,9 +2284,10 @@ Because you can declare validators that receive the current `field`, you can ext
 the `sub_fields` (from the generic class type parameters) and validate data with them.
 
 ```py test="xfail - what do we do with generic custom types"
+from typing import Generic, TypeVar
+
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import ModelField
-from typing import TypeVar, Generic
 
 AgedType = TypeVar('AgedType')
 QualityType = TypeVar('QualityType')

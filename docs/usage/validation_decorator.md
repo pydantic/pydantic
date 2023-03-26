@@ -12,7 +12,7 @@ boilerplate.
 Example of usage:
 
 ```py
-from pydantic import validate_arguments, ValidationError
+from pydantic import ValidationError, validate_arguments
 
 
 @validate_arguments
@@ -51,9 +51,9 @@ As with the rest of *pydantic*, types can be coerced by the decorator before the
 # TODO replace find_file with something that isn't affected the filesystem
 import os
 from pathlib import Path
-from typing import Pattern, Optional
+from typing import Optional, Pattern
 
-from pydantic import validate_arguments, DirectoryPath
+from pydantic import DirectoryPath, validate_arguments
 
 
 @validate_arguments
@@ -188,8 +188,10 @@ as the default value of the field:
 
 ```py
 from datetime import datetime
-from pydantic import validate_arguments, Field, ValidationError
+
 from typing_extensions import Annotated
+
+from pydantic import Field, ValidationError, validate_arguments
 
 
 @validate_arguments
@@ -220,8 +222,9 @@ print(type(when()))
 The [alias](model_config.md#alias-precedence) can be used with the decorator as normal.
 
 ```py
-from pydantic import Field, validate_arguments
 from typing_extensions import Annotated
+
+from pydantic import Field, validate_arguments
 
 
 @validate_arguments
@@ -247,7 +250,7 @@ But what if you wanted to validate them without *actually* calling the function?
 To do that you can call the `validate` method bound to the decorated function.
 
 ```py
-from pydantic import validate_arguments, ValidationError
+from pydantic import ValidationError, validate_arguments
 
 
 @validate_arguments
@@ -309,6 +312,7 @@ class Connection:
 conn = Connection()
 # ignore-above
 import asyncio
+
 from pydantic import PositiveInt, ValidationError, validate_arguments
 
 

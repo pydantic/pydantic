@@ -14,9 +14,10 @@ In particular `debug()` is useful when inspecting models:
 ```py test="no-print-intercept"
 from datetime import datetime
 from typing import List
-from pydantic import BaseModel
 
 from devtools import debug
+
+from pydantic import BaseModel
 
 
 class Address(BaseModel):

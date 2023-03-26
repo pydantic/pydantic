@@ -2,6 +2,7 @@
 
 ```py output="json"
 from enum import Enum
+
 from pydantic import BaseModel, Field
 
 
@@ -339,8 +340,9 @@ Rather than assigning a `Field` value, it can be specified in the type hint with
 ```py
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
 from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field
 
 
 class Foo(BaseModel):
@@ -420,6 +422,7 @@ sub-models in its `definitions`:
 
 ```py output="json"
 import json
+
 from pydantic import BaseModel
 from pydantic.json_schema import schema
 
@@ -493,6 +496,7 @@ This is useful if you need to extend or modify the JSON Schema default definitio
 
 ```py output="json" test="xfail - what happened to ref_prefix?"
 import json
+
 from pydantic import BaseModel
 from pydantic.json_schema import schema
 
@@ -551,7 +555,8 @@ The callable is expected to mutate the schema dictionary *in-place*; the return 
 For example, the `title` key can be removed from the model's `properties`:
 
 ```py output="json" test="xfail - replace schema_extra"
-from typing import Dict, Any, Type
+from typing import Any, Dict, Type
+
 from pydantic import BaseModel
 
 

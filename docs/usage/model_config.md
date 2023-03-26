@@ -1,7 +1,7 @@
 Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
 ```py
-from pydantic import ConfigDict, BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 class Model(BaseModel):
@@ -22,7 +22,7 @@ except ValidationError as e:
 
 Also, you can specify config options as model class kwargs:
 ```py
-from pydantic import BaseModel, ValidationError, Extra
+from pydantic import BaseModel, Extra, ValidationError
 
 
 class Model(BaseModel, extra=Extra.forbid):

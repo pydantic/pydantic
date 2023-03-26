@@ -75,6 +75,9 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
             (tmp_path / 'index_main.py').write_text(index_main)
             sys.path.append(str(tmp_path))
 
+    if example.path.name == 'devtools.md':
+        pytest.skip('tested below')
+
     prefix_settings = example.prefix_settings()
     test_settings = prefix_settings.get('test')
     lint_settings = prefix_settings.get('lint')

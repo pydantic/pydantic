@@ -20,7 +20,10 @@ strategies support them without any user configuration.
 
 ```py
 import typing
-from hypothesis import given, strategies as st
+
+from hypothesis import given
+from hypothesis import strategies as st
+
 from pydantic import BaseModel, EmailStr, PaymentCardNumber, PositiveFloat
 
 
