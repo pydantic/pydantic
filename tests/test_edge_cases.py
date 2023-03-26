@@ -8,6 +8,8 @@ from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set,
 
 import pytest
 from dirty_equals import HasRepr, IsStr
+from pydantic_core import core_schema
+from typing_extensions import get_args
 
 from pydantic import (
     BaseModel,
@@ -15,6 +17,7 @@ from pydantic import (
     Extra,
     PydanticSchemaGenerationError,
     ValidationError,
+    Validator,
     constr,
     errors,
 )
@@ -576,7 +579,7 @@ def test_include_exclude_defaults():
     assert m.model_dump(exclude=['a'], exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='pydantic-core include/exclude does not wrap negative ints')
 def test_advanced_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -592,7 +595,6 @@ def test_advanced_exclude():
 
     m = Model(e='e', f=SubModel(c='foo', d=[SubSubModel(a='a', b='b'), SubSubModel(a='c', b='e')]))
 
-    # TODO: Need to add wrapping support to pydantic_core to get this test to pass
     assert m.model_dump(exclude={'f': {'c': ..., 'd': {-1: {'a'}}}}) == {
         'e': 'e',
         'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]},
@@ -600,7 +602,7 @@ def test_advanced_exclude():
     assert m.model_dump(exclude={'e': ..., 'f': {'d'}}) == {'f': {'c': 'foo'}}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='pydantic-core include/exclude does not wrap negative ints')
 def test_advanced_exclude_by_alias():
     class SubSubModel(BaseModel):
         a: str
@@ -629,7 +631,7 @@ def test_advanced_exclude_by_alias():
     assert m.model_dump(exclude=excludes, by_alias=True) == {'f_alias': {'c_alias': 'foo'}}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='pydantic-core include/exclude does not wrap negative ints')
 def test_advanced_value_include():
     class SubSubModel(BaseModel):
         a: str
@@ -647,11 +649,10 @@ def test_advanced_value_include():
 
     assert m.model_dump(include={'f'}) == {'f': {'c': 'foo', 'd': [{'a': 'a', 'b': 'b'}, {'a': 'c', 'b': 'e'}]}}
     assert m.model_dump(include={'e'}) == {'e': 'e'}
-    # TODO: Need to add wrapping support to pydantic_core to get this test to pass
     assert m.model_dump(include={'f': {'d': {0: ..., -1: {'b'}}}}) == {'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='pydantic-core include/exclude does not wrap negative ints')
 def test_advanced_value_exclude_include():
     class SubSubModel(BaseModel):
         a: str
@@ -672,7 +673,6 @@ def test_advanced_value_exclude_include():
     }
     assert m.model_dump(exclude={'e': ..., 'f': {'d'}}, include={'e', 'f'}) == {'f': {'c': 'foo'}}
 
-    # TODO: Need to add wrapping support to pydantic_core to get this test to pass
     assert m.model_dump(exclude={'f': {'d': {-1: {'a'}}}}, include={'f': {'d'}}) == {
         'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}
     }
@@ -1149,7 +1149,7 @@ def test_optional_required():
     assert exc_info.value.errors() == [{'input': {}, 'loc': ('bar',), 'msg': 'Field required', 'type': 'missing'}]
 
 
-@pytest.mark.xfail(reason='working on V2 - validators')
+@pytest.mark.xfail(reason='items yielded by __get_validators__ are not inspected for valid signatures')
 def test_invalid_validator():
     class InvalidValidator:
         @classmethod
@@ -1160,12 +1160,11 @@ def test_invalid_validator():
         def has_wrong_arguments(cls, value, bar):
             pass
 
-    with pytest.raises(errors.PydanticUserError) as exc_info:
+    with pytest.raises(errors.PydanticUserError, match='Invalid signature for validator'):
 
         class InvalidValidatorModel(BaseModel):
+            model_config = dict(arbitrary_types_allowed=True)
             x: InvalidValidator = ...
-
-    assert exc_info.value.args[0].startswith('Invalid signature for validator')
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -1191,29 +1190,28 @@ def test_multiple_errors():
 
     assert exc_info.value.errors() == [
         {
-            'input': 'foobar',
-            'loc': ('a', 'int'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
+            'loc': ('a', 'int'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'foobar',
         },
         {
-            'input': 'foobar',
+            'type': 'float_parsing',
             'loc': ('a', 'float'),
             'msg': 'Input should be a valid number, unable to parse string as an number',
-            'type': 'float_parsing',
+            'input': 'foobar',
         },
         {
-            'input': 'foobar',
+            'type': 'decimal_parsing',
             'loc': (
                 'a',
-                'function-after[DecimalValidator(allow_inf_nan=False, '
-                'check_digits=False, strict=False)(), '
-                'union[is-instance[Decimal],int,float,constrained-str]]',
+                'lax-or-strict[lax=function-after[DecimalValidator(allow_inf_nan=False, check_digits=False, strict=False)(), union[is-instance[Decimal],int,float,constrained-str]],strict=custom-error[function-after[DecimalValidator(allow_inf_nan=False, check_digits=False, strict=False)(), is-instance[Decimal]]]]',  # noqa: E501
             ),
             'msg': 'Input should be a valid decimal',
-            'type': 'decimal_parsing',
+            'input': 'foobar',
         },
     ]
+
     assert Model(a=1.5).a == 1.5
     assert Model(a=None).a is None
 
@@ -1339,7 +1337,7 @@ def test_self_recursive():
     assert m.model_dump() == {'sm': {'self': 123}}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='need to detect and error if you override __init__; need to suggest a migration path')
 def test_nested_init():
     class NestedModel(BaseModel):
         self: str
@@ -1713,12 +1711,12 @@ def test_exclude_none_recursive():
     m = ModelB(c=5, e={'a': 0})
     assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
     assert m.model_dump(exclude_none=True) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
-    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}, 'f': None}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': ModelA(a=0), 'f': None}
 
     m = ModelB(c=5, e={'b': 20}, f='test')
     assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': None, 'b': 20}, 'f': 'test'}
     assert m.model_dump(exclude_none=True) == {'c': 5, 'd': 2, 'e': {'b': 20}, 'f': 'test'}
-    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': None, 'b': 20}, 'f': 'test'}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': ModelA(b=20), 'f': 'test'}
 
 
 def test_exclude_none_with_extra():
@@ -1899,7 +1897,7 @@ def test_required_any():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='need to modify loc of ValidationError')
 def test_custom_generic_validators():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
@@ -1910,27 +1908,25 @@ def test_custom_generic_validators():
             self.t2 = t2
 
         @classmethod
-        def __get_validators__(cls):
-            yield cls.validate
+        def __get_pydantic_core_schema__(cls, source, **kwargs):
+            schema = core_schema.is_instance_schema(cls)
 
-        @classmethod
-        def validate(cls, v, field):
-            if not isinstance(v, cls):
-                raise TypeError('Invalid value')
-            if not field.sub_fields:
+            args = get_args(source)
+            if not args:
+                return schema
+
+            t1_f = Validator(args[0])
+            t2_f = Validator(args[1])
+
+            def validate(v, info):
+                if not args:
+                    return v
+                # TODO: Collect these errors, rather than stopping early, and modify the loc to make the test pass
+                t1_f(v.t1)
+                t2_f(v.t2)
                 return v
-            t1_f = field.sub_fields[0]
-            t2_f = field.sub_fields[1]
-            errors = []
-            _, error = t1_f.validate(v.t1, {}, loc='t1')
-            if error:
-                errors.append(error)
-            _, error = t2_f.validate(v.t2, {}, loc='t2')
-            if error:
-                errors.append(error)
-            if errors:
-                raise ValidationError(errors, cls)
-            return v
+
+            return core_schema.general_after_validator_function(validate, schema)
 
     class Model(BaseModel):
         a: str
@@ -1946,14 +1942,14 @@ def test_custom_generic_validators():
             'ctx': {'class': 'test_custom_generic_validators.<locals>.MyGen'},
             'input': 'invalid',
             'loc': ('gen',),
-            'msg': 'Input should be an instance of ' 'test_custom_generic_validators.<locals>.MyGen',
+            'msg': 'Input should be an instance of test_custom_generic_validators.<locals>.MyGen',
             'type': 'is_instance_of',
         },
         {
             'ctx': {'class': 'test_custom_generic_validators.<locals>.MyGen'},
             'input': 'invalid',
             'loc': ('gen2',),
-            'msg': 'Input should be an instance of ' 'test_custom_generic_validators.<locals>.MyGen',
+            'msg': 'Input should be an instance of test_custom_generic_validators.<locals>.MyGen',
             'type': 'is_instance_of',
         },
     ]
@@ -1961,7 +1957,12 @@ def test_custom_generic_validators():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='foo', gen=MyGen(t1='bar', t2='baz'), gen2=MyGen(t1='bar', t2='baz'))
     assert exc_info.value.errors() == [
-        {'loc': ('gen', 't2'), 'msg': 'value could not be parsed to a boolean', 'type': 'type_error.bool'}
+        {
+            'input': 'baz',
+            'loc': ('gen', 't2'),
+            'msg': 'Input should be a valid boolean, unable to interpret input',
+            'type': 'bool_parsing',
+        }
     ]
 
     m = Model(a='foo', gen=MyGen(t1='bar', t2=True), gen2=MyGen(t1=1, t2=2))
@@ -2068,7 +2069,7 @@ def test_hashable_optional(default):
     Model()
 
 
-@pytest.mark.xfail(reason='working on V2 - validators')
+@pytest.mark.xfail(reason='validate_all')
 def test_default_factory_called_once():
     """It should never call `default_factory` more than once even when `validate_all` is set"""
 
@@ -2098,15 +2099,14 @@ def test_default_factory_called_once():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2 - validators')
 def test_default_factory_validator_child():
     class Parent(BaseModel):
         foo: List[str] = Field(default_factory=list)
 
-        @field_validator('foo', pre=True, each_item=True)
+        @field_validator('foo', mode='before')
         @classmethod
         def mutate_foo(cls, v):
-            return f'{v}-1'
+            return [f'{x}-1' for x in v]
 
     assert Parent(foo=['a', 'b']).foo == ['a-1', 'b-1']
 
@@ -2146,7 +2146,7 @@ def test_iter_coverage():
     assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='field frozen')
 def test_frozen_config_and_field():
     class Foo(BaseModel):
         model_config = ConfigDict(frozen=False, validate_assignment=True)
@@ -2197,7 +2197,7 @@ def test_bytes_subclass():
     assert m.my_bytes.__class__ == BytesSubclass
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='subclass not preserved for field of type int')
 def test_int_subclass():
     class MyModel(BaseModel):
         my_int: int
@@ -2228,7 +2228,7 @@ def test_model_issubclass():
     assert not issubclass(Custom, BaseModel)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='"long int", see details below')
 def test_long_int():
     """
     see https://github.com/pydantic/pydantic/issues/1477 and in turn, https://github.com/python/cpython/issues/95778

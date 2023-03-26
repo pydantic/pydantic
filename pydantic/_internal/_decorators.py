@@ -4,7 +4,7 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 from __future__ import annotations as _annotations
 
 import warnings
-from inspect import Parameter, signature
+from inspect import Parameter, Signature, signature
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -20,10 +20,16 @@ from typing import (
 )
 
 from pydantic_core.core_schema import (
+    FieldPlainSerializerFunction,
     FieldValidationInfo,
     FieldValidatorFunction,
+    FieldWrapSerializerFunction,
     FieldWrapValidatorFunction,
+    GeneralPlainSerializerFunction,
+    GeneralWrapSerializerFunction,
     JsonReturnTypes,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
     ValidationInfo,
     WhenUsed,
 )
@@ -128,6 +134,7 @@ class SerializerDecoratorInfo(Representation):
         *,
         fields: tuple[str, ...],
         mode: Literal['plain', 'wrap'],
+        type: Literal['general', 'field'],
         json_return_type: JsonReturnTypes | None = None,
         when_used: WhenUsed = 'always',
         sub_path: tuple[str | int, ...] | None = None,
@@ -135,8 +142,8 @@ class SerializerDecoratorInfo(Representation):
     ) -> None:
         """
         :param mode: the pydantic-core serializer mode.
-        :param type: either 'unbound' or 'field' indicating if this validator should have
-            access to the model itself.
+        :param type: either 'general' or 'field' indicating if this serializer should have
+            access to the model instance it applies to.
         :param sub_path: Not yet supported.
         :param json_return_type: TODO
         :param when_used: TODO
@@ -148,6 +155,7 @@ class SerializerDecoratorInfo(Representation):
         self.json_return_type = json_return_type
         self.when_used = when_used
         self.check_fields = check_fields
+        self.type = type
 
 
 DecoratorInfo = Union[
@@ -563,3 +571,106 @@ def make_v1_generic_root_validator(
         return (values, fields_set)
 
     return _wrapper2
+
+
+PlainSerializerWithoutInfo = Callable[[Any], Any]
+WrapSerializerWithoutInfo = Callable[[Any, SerializerFunctionWrapHandler], Any]
+
+AnyCoreSerializer = Union[
+    FieldPlainSerializerFunction,
+    FieldWrapSerializerFunction,
+    GeneralPlainSerializerFunction,
+    GeneralWrapSerializerFunction,
+]
+
+AnySerializerFunction = Union[
+    PlainSerializerWithoutInfo,
+    WrapSerializerWithoutInfo,
+    AnyCoreSerializer,
+]
+
+
+_VALID_SERIALIZER_SIGNATURES = """\
+Valid serializer signatures are:
+
+# an instance method with the default mode or `mode='plain'`
+@serializer('x')  # or @serialize('x', mode='plain')
+def ser_x(self, value: Any, info: pydantic.FieldSerializationInfo): ...
+
+# a static method or free-standing function with the default mode or `mode='plain'`
+@serializer('x')  # or @serialize('x', mode='plain')
+@staticmethod
+def ser_x(value: Any, info: pydantic.FieldSerializationInfo): ...
+# equivalent to
+def ser_x(value: Any, info: pydantic.FieldSerializationInfo): ...
+serializer('x')(ser_x)
+
+# an instance method with `mode='wrap'`
+@serializer('x', mode='wrap')
+def ser_x(self, value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+
+# a static method or free-standing function with `mode='wrap'`
+@serializer('x', mode='wrap')
+@staticmethod
+def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+# equivalent to
+def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
+serializer('x')(ser_x)
+
+For all of these, you can also choose to omit the `info` argument, for example:
+
+@serializer('x')
+def ser_x(self, value: Any): ...
+
+@serializer('x', mode='wrap')
+def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ...
+"""
+
+
+def make_generic_field_serializer(
+    serializer: AnySerializerFunction, mode: Literal['plain', 'wrap']
+) -> AnyCoreSerializer:
+    """
+    Wrap serializers to allow ignoring the `info` argument as a convenience.
+    """
+    sig = signature(serializer)
+    is_instance = is_instance_method_from_sig(serializer)
+    if is_instance:
+        # for the errors below to exclude self
+        sig = Signature(parameters=list(sig.parameters.values())[1:])
+    n_positional = sum(
+        1
+        for param in sig.parameters.values()
+        if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+    )
+    if mode == 'plain':
+        if n_positional == 1:
+            func1 = cast(PlainSerializerWithoutInfo, serializer)
+
+            def _wrap1(value: Any, _: SerializationInfo) -> Any:
+                return func1(value)
+
+            return _wrap1
+        if n_positional != 2:
+            raise TypeError(
+                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
+                f' {_VALID_SERIALIZER_SIGNATURES}'
+            )
+        func = cast(AnyCoreSerializer, serializer)
+        return func
+    else:
+        assert mode == 'wrap'
+        if n_positional == 2:
+            func2 = cast(WrapSerializerWithoutInfo, serializer)
+
+            def _wrap2(value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo) -> Any:
+                return func2(value, handler)
+
+            return _wrap2
+        if n_positional != 3:
+            raise TypeError(
+                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
+                f' {_VALID_SERIALIZER_SIGNATURES}'
+            )
+        func = cast(AnyCoreSerializer, serializer)
+        return func

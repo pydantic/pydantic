@@ -380,7 +380,7 @@ def test_duplicates():
                 return v
 
 
-@pytest.mark.xfail(reason='working on V2 - validator always')
+@pytest.mark.xfail(reason='validator always')
 def test_validate_always():
     check_calls = 0
 
@@ -402,7 +402,7 @@ def test_validate_always():
     assert check_calls == 2
 
 
-@pytest.mark.xfail(reason='working on V2 - validator always')
+@pytest.mark.xfail(reason='validator always')
 def test_validate_always_on_inheritance():
     check_calls = 0
 
@@ -784,7 +784,7 @@ def test_key_validation():
     assert Model(foobar={1: 1}).foobar == {2: 2}
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='validator always')
 def test_validator_always_optional():
     check_calls = 0
 
@@ -804,7 +804,7 @@ def test_validator_always_optional():
     assert check_calls == 2
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='validator always')
 def test_validator_always_pre():
     check_calls = 0
 
@@ -823,7 +823,7 @@ def test_validator_always_pre():
     assert check_calls == 2
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='validator always')
 def test_validator_always_post():
     class Model(BaseModel):
         a: str = None
@@ -837,7 +837,7 @@ def test_validator_always_post():
     assert Model().a == 'default value'
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='validator always')
 def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
@@ -851,7 +851,7 @@ def test_validator_always_post_optional():
     assert Model().a == 'default value'
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='validator always')
 def test_datetime_validator():
     check_calls = 0
 
@@ -1275,7 +1275,7 @@ def test_nested_literal_validator():
 # TODO: this test fails because our union schema
 # doesn't accept `frozen` as an argument
 # Do we need to add `frozen` to every schema?
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='frozen field')
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
         x: Union[Literal[42], Literal['pika']] = Field(frozen=True)
@@ -1380,7 +1380,7 @@ def test_overridden_root_validators():
 
 # TODO: I think this is real bug in pydantic-core
 # the root validator doesn't get called on assignment
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='root validator not called during assignment')
 def test_validating_assignment_pre_root_validator_fail():
     class Model(BaseModel):
         current_value: float = Field(..., alias='current')
@@ -1439,7 +1439,7 @@ def test_root_validator_skip_on_failure_valid(kwargs: Dict[str, Any]):
             return values
 
 
-@pytest.mark.xfail(reason='working on V2 - pydantic-core bug?')
+@pytest.mark.xfail(reason='root validator not called during assignment')
 def test_root_validator_many_values_change():
     """It should run root_validator on assignment and update ALL concerned fields"""
 

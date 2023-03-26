@@ -10,6 +10,7 @@ from typing import (
     Counter,
     DefaultDict,
     Dict,
+    Generic,
     List,
     Mapping,
     Optional,
@@ -100,7 +101,8 @@ def test_default_factory_field():
 
 def test_comparing():
     m = UltraSimpleModel(a=10.2, b='100')
-    assert m == {'a': 10.2, 'b': 100}
+    assert m.model_dump() == {'a': 10.2, 'b': 100}
+    assert m != {'a': 10.2, 'b': 100}
     assert m == UltraSimpleModel(a=10.2, b=100)
 
 
@@ -759,7 +761,7 @@ def test_exclude_unset_recursive():
     m = ModelB(c=5, e={'a': 0})
     assert m.model_dump() == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
     assert m.model_dump(exclude_unset=True) == {'c': 5, 'e': {'a': 0}}
-    assert dict(m) == {'c': 5, 'd': 2, 'e': {'a': 0, 'b': 1}}
+    assert dict(m) == {'c': 5, 'd': 2, 'e': ModelA(a=0, b=1)}
 
 
 def test_dict_exclude_unset_populated_by_alias():
@@ -906,9 +908,8 @@ def test_model_iteration():
         pytest.param(
             {'foos': {0: 1}},
             TypeError,
-            '`exclude` argument must a set or dict',
+            '`exclude` argument must be a set or dict',
             id='value as int should be an error',
-            marks=pytest.mark.xfail(reason='working on V2'),
         ),
         pytest.param(
             {'foos': {'__all__': {1}}},
@@ -1392,7 +1393,7 @@ def test_base_config_type_hinting():
     get_type_hints(type(M.model_config))
 
 
-@pytest.mark.xfail(reason='https://github.com/pydantic/pydantic-core/pull/237')
+@pytest.mark.xfail(reason='frozen field; https://github.com/pydantic/pydantic-core/pull/237')
 def test_frozen_field():
     """assigning a frozen=True field should raise a TypeError"""
 
@@ -1760,3 +1761,122 @@ def test_deeper_recursive_model():
 
     m = A(b=B(c=C(a=None)))
     assert m.model_dump() == {'b': {'c': {'a': None}}}
+
+
+@pytest.fixture(scope='session', name='InnerEqualityModel')
+def inner_equality_fixture():
+    class InnerEqualityModel(BaseModel):
+        iw: int
+        ix: int = 0
+        _iy: int = PrivateAttr()
+        _iz: int = PrivateAttr(0)
+
+    return InnerEqualityModel
+
+
+@pytest.fixture(scope='session', name='EqualityModel')
+def equality_fixture(InnerEqualityModel):
+    class EqualityModel(BaseModel):
+        w: int
+        x: int = 0
+        _y: int = PrivateAttr()
+        _z: int = PrivateAttr(0)
+
+        model: InnerEqualityModel
+
+    return EqualityModel
+
+
+def test_model_equality(EqualityModel, InnerEqualityModel):
+    m1 = EqualityModel(w=0, x=0, model=InnerEqualityModel(iw=0))
+    m2 = EqualityModel(w=0, x=0, model=InnerEqualityModel(iw=0))
+    assert m1 == m2
+
+
+def test_model_equality_type(EqualityModel, InnerEqualityModel):
+    class Model1(BaseModel):
+        x: int
+
+    class Model2(BaseModel):
+        x: int
+
+    m1 = Model1(x=1)
+    m2 = Model2(x=1)
+
+    assert m1.model_dump() == m2.model_dump()
+    assert m1 != m2
+
+
+def test_model_equality_dump(EqualityModel, InnerEqualityModel):
+    inner_model = InnerEqualityModel(iw=0)
+    assert inner_model != inner_model.model_dump()
+
+    model = EqualityModel(w=0, x=0, model=inner_model)
+    assert model != dict(model)
+    assert dict(model) != model.model_dump()  # Due to presence of inner model
+
+
+def test_model_equality_fields_set(InnerEqualityModel):
+    m1 = InnerEqualityModel(iw=0)
+    m2 = InnerEqualityModel(iw=0, ix=0)
+    assert m1.__fields_set__ != m2.__fields_set__
+    assert m1 == m2
+
+
+def test_model_equality_private_attrs(InnerEqualityModel):
+    m = InnerEqualityModel(iw=0, ix=0)
+
+    m1 = m.model_copy()
+    m2 = m.model_copy()
+    m3 = m.model_copy()
+
+    m2._iy = 1
+    m3._iz = 1
+
+    models = [m1, m2, m3]
+    for i, first_model in enumerate(models):
+        for j, second_model in enumerate(models):
+            if i == j:
+                assert first_model == second_model
+            else:
+                assert first_model != second_model
+
+    m2_equal = m.model_copy()
+    m2_equal._iy = 1
+    assert m2 == m2_equal
+
+    m3_equal = m.model_copy()
+    m3_equal._iz = 1
+    assert m3 == m3_equal
+
+
+def test_model_equality_generics():
+    T = TypeVar('T')
+
+    class GenericModel(BaseModel, Generic[T]):
+        x: T
+
+    class ConcreteModel(BaseModel):
+        x: int
+
+    assert ConcreteModel(x=1) != GenericModel(x=1)
+    assert ConcreteModel(x=1) != GenericModel[Any](x=1)
+    assert ConcreteModel(x=1) != GenericModel[int](x=1)
+
+    assert GenericModel(x=1) != GenericModel(x=2)
+
+    S = TypeVar('S')
+    assert GenericModel(x=1) == GenericModel(x=1)
+    assert GenericModel(x=1) == GenericModel[S](x=1)
+    assert GenericModel(x=1) == GenericModel[Any](x=1)
+    assert GenericModel(x=1) == GenericModel[float](x=1)
+
+    assert GenericModel[int](x=1) == GenericModel[int](x=1)
+    assert GenericModel[int](x=1) == GenericModel[S](x=1)
+    assert GenericModel[int](x=1) == GenericModel[Any](x=1)
+    assert GenericModel[int](x=1) == GenericModel[float](x=1)
+
+    # Test that it works with nesting as well
+    nested_any = GenericModel[GenericModel[Any]](x=GenericModel[Any](x=1))
+    nested_int = GenericModel[GenericModel[int]](x=GenericModel[int](x=1))
+    assert nested_any == nested_int

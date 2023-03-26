@@ -855,6 +855,28 @@ def test_decimal():
     assert m.model_dump() == {'v': Decimal('1.234')}
 
 
+def test_decimal_strict():
+    class Model(BaseModel):
+        v: Decimal
+
+        model_config = ConfigDict(strict=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=1.23)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'decimal_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid Decimal instance or decimal string in JSON',
+            'input': 1.23,
+        }
+    ]
+
+    v = Decimal(1.23)
+    assert Model(v=v).v == v
+    assert Model(v=v).model_dump() == {'v': v}
+
+
 @pytest.fixture(scope='session', name='CheckModel')
 def check_model_fixture():
     class CheckModel(BaseModel):
@@ -1159,15 +1181,8 @@ def test_invalid_schema_constraints(kwargs, type_):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
 
-@pytest.mark.xfail(reason='Do we want to make this a SchemaError?')
 def test_invalid_decimal_constraint():
-    # Using the following line instead of the uncommented one below would make the test pass:
-    # with pytest.raises(TypeError, match="DecimalValidator has no attribute 'max_length'"):
-    with pytest.raises(SchemaError, match='Invalid Schema:\n.*\n  Extra inputs are not permitted'):
-        # TODO: This error comes from pydantic._internal._fields.CustomValidator._update_attrs
-        #   Should we modify how that works to produce SchemaError like in the cases above?
-        #   If so, do we need to expose a way to create a SchemaError from python?
-        #   Right now this can only be done from the Rust side of pydantic_core
+    with pytest.raises(TypeError, match="'max_length' is not a valid constraint for DecimalValidator"):
 
         class Foo(BaseModel):
             a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
@@ -1769,7 +1784,7 @@ def test_int_validation():
         g: conint(multiple_of=5) = None
 
     m = Model(a=5, b=-5, c=0, d=0, e=5, f=0, g=25)
-    assert m == {'a': 5, 'b': -5, 'c': 0, 'd': 0, 'e': 5, 'f': 0, 'g': 25}
+    assert m.model_dump() == {'a': 5, 'b': -5, 'c': 0, 'd': 0, 'e': 5, 'f': 0, 'g': 25}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-5, b=5, c=-5, d=5, e=-5, f=11, g=42)
@@ -2156,6 +2171,60 @@ def test_uuid_validation():
     ]
 
 
+def test_uuid_strict() -> None:
+    class UUIDModel(BaseModel):
+        a: UUID1
+        b: UUID3
+        c: UUID4
+        d: UUID5
+
+        model_config = ConfigDict(strict=True)
+
+    a = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # uuid1
+    b = uuid.UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')  # uuid3
+    c = uuid.UUID('260d1600-3680-4f4f-a968-f6fa622ffd8d')  # uuid4
+    d = uuid.UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')  # uuid5
+
+    with pytest.raises(ValidationError) as exc_info:
+        UUIDModel(a=str(a), b=str(b), c=str(c), d=str(d))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'is_instance_of',
+            'loc': ('a',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '7fb48116-ca6b-11ed-a439-3274d3adddac',
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'is_instance_of',
+            'loc': ('b',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '6fa459ea-ee8a-3ca4-894e-db77e160355e',
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'is_instance_of',
+            'loc': ('c',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '260d1600-3680-4f4f-a968-f6fa622ffd8d',
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'is_instance_of',
+            'loc': ('d',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '886313e1-3b8a-5372-9b90-0c9aee199e5d',
+            'ctx': {'class': 'UUID'},
+        },
+    ]
+
+    m = UUIDModel(a=a, b=b, c=c, d=d)
+    assert isinstance(m.a, type(a)) and m.a == a
+    assert isinstance(m.b, type(b)) and m.b == b
+    assert isinstance(m.c, type(c)) and m.c == c
+    assert isinstance(m.d, type(d)) and m.d == d
+
+
 @pytest.mark.parametrize(
     'enabled,str_check,result_str_check',
     [
@@ -2484,6 +2553,28 @@ def test_path_validation_fails():
     assert exc_info.value.errors() == [
         {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
     ]
+
+
+def test_path_validation_strict():
+    class Model(BaseModel):
+        foo: Path
+
+        model_config = ConfigDict(strict=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo='/test/path')
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'is_instance_of',
+            'loc': ('foo',),
+            'msg': 'Input should be an instance of Path',
+            'input': '/test/path',
+            'ctx': {'class': 'Path'},
+        }
+    ]
+
+    assert Model(foo=Path('/test/path')).foo == Path('/test/path')
 
 
 @pytest.mark.parametrize(
@@ -3373,13 +3464,42 @@ def test_deque_success():
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
         (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
-        # (float, {1.0, 2.0, 3.0}, deque([1.0, 2.0, 3.0])),
-        # (int, frozenset([1, 2, 3]), deque([1, 2, 3])),
+        (
+            int,
+            {1: 10, 2: 20, 3: 30}.keys(),
+            deque([1, 2, 3]),
+        ),
+        (
+            int,
+            {1: 10, 2: 20, 3: 30}.values(),
+            deque([10, 20, 30]),
+        ),
+        (
+            Tuple[int, int],
+            {1: 10, 2: 20, 3: 30}.items(),
+            deque([(1, 10), (2, 20), (3, 30)]),
+        ),
     ),
 )
 def test_deque_generic_success(cls, value, result):
     class Model(BaseModel):
         v: Deque[cls]
+
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize(
+    'cls,value,result',
+    (
+        (int, deque((1, 2, 3)), deque((1, 2, 3))),
+        (str, deque(('1', '2', '3')), deque(('1', '2', '3'))),
+    ),
+)
+def test_deque_generic_success_strict(cls, value: Any, result):
+    class Model(BaseModel):
+        v: Deque[cls]
+
+        model_config = ConfigDict(strict=True)
 
     assert Model(v=value).v == result
 
@@ -3458,9 +3578,9 @@ def test_deque_fails(cls, value, expected_error):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.error_count() == 1
-    # debug(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == expected_error
+    # debug(exc_info.value.errors())
+    assert len(exc_info.value.errors()) == 1
+    assert expected_error == exc_info.value.errors()[0]
 
 
 def test_deque_model():
@@ -3593,7 +3713,7 @@ def test_union_compound_types():
     assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
     assert Model(values=['L1']).model_dump() == {'values': ['L1']}
     assert Model(values=('L1',)).model_dump() == {'values': ['L1']}
-    assert Model(values={'x': ['pika']}) == {'values': {'x': ['pika']}}
+    assert Model(values={'x': ['pika']}) != {'values': {'x': ['pika']}}
     assert Model(values={'x': ('pika',)}).model_dump() == {'values': {'x': ['pika']}}
     with pytest.raises(ValidationError) as e:
         Model(values={'x': {'a': 'b'}})

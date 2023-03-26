@@ -291,12 +291,14 @@ def root_validator(
 _PlainSerializationFunction = Union[
     _core_schema.GeneralPlainSerializerFunction,
     _core_schema.FieldPlainSerializerFunction,
+    _decorators.PlainSerializerWithoutInfo,
 ]
 
 
 _WrapSerializationFunction = Union[
     _core_schema.GeneralWrapSerializerFunction,
     _core_schema.FieldWrapSerializerFunction,
+    _decorators.WrapSerializerWithoutInfo,
 ]
 
 
@@ -373,15 +375,19 @@ def serializer(
 
     def dec(f: Callable[..., Any]) -> Any:
         res = _decorators.prepare_serializer_decorator(f, allow_reuse)
+        type_: Literal['field', 'general'] = 'field' if _decorators.is_instance_method_from_sig(f) else 'general'
 
         validator_wrapper_info = _decorators.SerializerDecoratorInfo(
             fields=fields,
             mode=mode,
+            type=type_,
             json_return_type=json_return_type,
             when_used=when_used,
             sub_path=sub_path,
             check_fields=check_fields,
         )
-        return _decorators.PydanticDecoratorMarker(res, validator_wrapper_info, shim=lambda x: x)
+        return _decorators.PydanticDecoratorMarker(
+            res, validator_wrapper_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode)
+        )
 
     return dec

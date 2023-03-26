@@ -3,12 +3,12 @@ Tests for TypedDict
 """
 import sys
 import typing
-from typing import Generic, Optional, TypeVar
+from typing import Generic, List, Optional, TypeVar
 
 import pytest
 import typing_extensions
 from annotated_types import Lt
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from pydantic import BaseModel, Field, PositiveInt, ValidationError
 
@@ -412,7 +412,6 @@ def test_recursive_typeddict(create_module):
 T = TypeVar('T')
 
 
-@pytest.mark.xfail(reason='generic typed dict')
 def test_generic_typeddict_in_concrete_model():
     T = TypeVar('T')
 
@@ -422,9 +421,9 @@ def test_generic_typeddict_in_concrete_model():
     class Model(BaseModel):
         y: GenericTypedDict[int]
 
-    Model[int](y={'x': 1})
+    Model(y={'x': 1})
     with pytest.raises(ValidationError) as exc_info:
-        Model[int](y={'x': 'a'})
+        Model(y={'x': 'a'})
     assert exc_info.value.errors() == [
         {
             'input': 'a',
@@ -435,7 +434,6 @@ def test_generic_typeddict_in_concrete_model():
     ]
 
 
-@pytest.mark.xfail(reason='generic typed dict')
 def test_generic_typeddict_in_generic_model():
     T = TypeVar('T')
 
@@ -458,8 +456,7 @@ def test_generic_typeddict_in_generic_model():
     ]
 
 
-@pytest.mark.xfail(reason='Generic typed dict')
-def test_recursive_generic_typeddict(create_module):
+def test_recursive_generic_typeddict_in_module(create_module):
     @create_module
     def module():
         from typing import Generic, List, Optional, TypeVar
@@ -470,14 +467,13 @@ def test_recursive_generic_typeddict(create_module):
 
         T = TypeVar('T')
 
+        class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
+            rec: 'RecursiveGenTypedDict[T]'
+            model_config = dict(undefined_types_warning=False)
+
         class RecursiveGenTypedDict(TypedDict, Generic[T]):
-            # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
             foo: Optional['RecursiveGenTypedDict[T]']
             ls: List[T]
-
-        class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
-            # TODO: check what happens if RecursiveGenTypedDict is a forward reference
-            rec: RecursiveGenTypedDict[T]
 
     int_data: module.RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
     assert module.RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
@@ -485,6 +481,41 @@ def test_recursive_generic_typeddict(create_module):
     str_data: module.RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
     with pytest.raises(ValidationError) as exc_info:
         module.RecursiveGenTypedDictModel[int](rec=str_data)
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('rec', 'foo', 'ls', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+        {
+            'input': 'a',
+            'loc': ('rec', 'ls', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+    ]
+
+
+def test_recursive_generic_typeddict_in_function(create_module):
+    T = TypeVar('T')
+
+    class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
+        rec: 'RecursiveGenTypedDict[T]'
+        model_config = dict(undefined_types_warning=False)
+
+    class RecursiveGenTypedDict(TypedDict, Generic[T]):
+        foo: Optional['RecursiveGenTypedDict[T]']
+        ls: List[T]
+
+    RecursiveGenTypedDictModel[int].model_rebuild()
+
+    int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
+    assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
+
+    str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
+    with pytest.raises(ValidationError) as exc_info:
+        RecursiveGenTypedDictModel[int](rec=str_data)
     assert exc_info.value.errors() == [
         {
             'input': 'a',

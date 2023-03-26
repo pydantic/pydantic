@@ -95,7 +95,7 @@ filterwarnings = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['samuelcolvin', 'hramezani', 'adriangb', 'dmontagu']
+reviewers = ['samuelcolvin', 'adriangb', 'dmontagu']
 require_change_file = false
 
 [tool.ruff]

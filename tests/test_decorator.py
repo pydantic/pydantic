@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import List
 
 import pytest
+from dirty_equals import IsInstance
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import BaseModel, Extra, Field, ValidationError, validate_arguments
@@ -15,7 +16,6 @@ from pydantic.errors import PydanticUserError
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_args():
     @validate_arguments
     def foo(a: int, b: int):
@@ -28,46 +28,33 @@ def test_args():
 
     with pytest.raises(ValidationError) as exc_info:
         foo()
-
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'input': {}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 'x')
-
     assert exc_info.value.errors() == [
-        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'input': 'x',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
     ]
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match='2 positional arguments expected but 3 given'):
         foo(1, 2, 3)
 
-    assert exc_info.value.errors() == [
-        {'loc': ('args',), 'msg': '2 positional arguments expected but 3 given', 'type': 'type_error'}
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match="unexpected keyword argument: 'apple'"):
         foo(1, 2, apple=3)
 
-    assert exc_info.value.errors() == [
-        {'loc': ('kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'}
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match="multiple values for argument: 'a'"):
         foo(1, 2, a=3)
 
-    assert exc_info.value.errors() == [
-        {'loc': ('v__duplicate_kwargs',), 'msg': "multiple values for argument: 'a'", 'type': 'type_error'}
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match="multiple values for arguments: 'a', 'b'"):
         foo(1, 2, a=3, b=4)
-
-    assert exc_info.value.errors() == [
-        {'loc': ('v__duplicate_kwargs',), 'msg': "multiple values for arguments: 'a', 'b'", 'type': 'type_error'}
-    ]
 
 
 def test_wrap():
@@ -91,7 +78,6 @@ def test_wrap():
     assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_kwargs():
     @validate_arguments
     def foo(*, a: int, b: int):
@@ -104,17 +90,16 @@ def test_kwargs():
         foo(a=1, b='x')
 
     assert exc_info.value.errors() == [
-        {'loc': ('b',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'input': 'x',
+            'loc': ('b',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
     ]
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match='0 positional arguments expected but 2 given'):
         foo(1, 'x')
-
-    assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('args',), 'msg': '0 positional arguments expected but 2 given', 'type': 'type_error'},
-    ]
 
 
 def test_untyped():
@@ -126,7 +111,6 @@ def test_untyped():
     assert foo(1, {'x': 2}, c='3', d='4') == "1, {'x': 2}, 3, 4"
 
 
-@pytest.mark.xfail(reason='working on V2', strict=False)
 @pytest.mark.parametrize('validated', (True, False))
 def test_var_args_kwargs(validated):
     def foo(a, b, *args, d=3, **kwargs):
@@ -155,7 +139,7 @@ def test_field_can_provide_factory() -> None:
     assert foo(1, 2, 3) == 6
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='Using Annotated to get a field default is not working properly yet')
 def test_annotated_field_can_provide_factory() -> None:
     @validate_arguments
     def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
@@ -165,7 +149,6 @@ def test_annotated_field_can_provide_factory() -> None:
     assert foo2(1) == 100
 
 
-@pytest.mark.xfail(reason='working on V2')
 @skip_pre_38
 def test_positional_only(create_module):
     module = create_module(
@@ -181,27 +164,12 @@ def foo(a, b, /, c=None):
     assert module.foo(1, 2) == '1, 2, None'
     assert module.foo(1, 2, 44) == '1, 2, 44'
     assert module.foo(1, 2, c=44) == '1, 2, 44'
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match="positional-only argument passed as keyword argument: 'b'"):
         module.foo(1, b=2)
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('v__positional_only',),
-            'msg': "positional-only argument passed as keyword argument: 'b'",
-            'type': 'type_error',
-        }
-    ]
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match="positional-only arguments passed as keyword arguments: 'a', 'b'"):
         module.foo(a=1, b=2)
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('v__positional_only',),
-            'msg': "positional-only arguments passed as keyword arguments: 'a', 'b'",
-            'type': 'type_error',
-        }
-    ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_args_name():
     @validate_arguments
     def foo(args: int, kwargs: int):
@@ -210,23 +178,14 @@ def test_args_name():
     assert foo.model.model_fields.keys() == {'args', 'kwargs', 'v__args', 'v__kwargs', 'v__duplicate_kwargs'}
     assert foo(1, 2) == 'args=1, kwargs=2'
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match="unexpected keyword argument: 'apple'"):
         foo(1, 2, apple=4)
-    assert exc_info.value.errors() == [
-        {'loc': ('v__kwargs',), 'msg': "unexpected keyword argument: 'apple'", 'type': 'type_error'}
-    ]
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match="unexpected keyword arguments: 'apple', 'banana'"):
         foo(1, 2, apple=4, banana=5)
-    assert exc_info.value.errors() == [
-        {'loc': ('v__kwargs',), 'msg': "unexpected keyword arguments: 'apple', 'banana'", 'type': 'type_error'}
-    ]
 
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(TypeError, match='2 positional arguments expected but 3 given'):
         foo(1, 2, 3)
-    assert exc_info.value.errors() == [
-        {'loc': ('v__args',), 'msg': '2 positional arguments expected but 3 given', 'type': 'type_error'}
-    ]
 
 
 def test_v_args():
@@ -267,7 +226,6 @@ def test_v_args():
             pass
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_async():
     @validate_arguments
     async def foo(a, b):
@@ -280,10 +238,9 @@ def test_async():
     asyncio.run(run())
     with pytest.raises(ValidationError) as exc_info:
         asyncio.run(foo('x'))
-    assert exc_info.value.errors() == [{'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert exc_info.value.errors() == [{'input': {'a': 'x'}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'}]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_string_annotation():
     @validate_arguments
     def foo(a: 'List[int]', b: 'Path'):
@@ -294,12 +251,16 @@ def test_string_annotation():
     with pytest.raises(ValidationError) as exc_info:
         foo(['x'])
     assert exc_info.value.errors() == [
-        {'loc': ('a', 0), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {
+            'input': 'x',
+            'loc': ('a', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+        {'input': {'a': ['x']}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_item_method():
     class X:
         def __init__(self, v):
@@ -318,12 +279,11 @@ def test_item_method():
         x.foo()
 
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'input': {'self': IsInstance(X)}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'self': IsInstance(X)}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_class_method():
     class X:
         @classmethod
@@ -340,8 +300,8 @@ def test_class_method():
         x.foo()
 
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
+        {'input': {'cls': X}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
+        {'input': {'cls': X}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
     ]
 
 
@@ -355,12 +315,11 @@ def test_config_title():
     assert foo.model.model_json_schema()['title'] == 'Testing'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_config_title_cls():
     class Config:
         title = 'Testing'
 
-    @validate_arguments(config=Config)
+    @validate_arguments(config={'title': 'Testing'})
     def foo(a: int, b: int):
         return f'{a}, {b}'
 
@@ -379,7 +338,6 @@ def test_config_fields():
             return f'{a}, {b}'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_config_arbitrary_types_allowed():
     class EggBox:
         def __str__(self) -> str:
@@ -395,11 +353,12 @@ def test_config_arbitrary_types_allowed():
 
     assert exc_info.value.errors() == [
         {
+            'ctx': {'class': 'test_config_arbitrary_types_allowed.<locals>.EggBox'},
+            'input': 2,
             'loc': ('b',),
-            'msg': 'instance of EggBox expected',
-            'type': 'type_error.arbitrary_type',
-            'ctx': {'expected_arbitrary_type': 'EggBox'},
-        },
+            'msg': 'Input should be an instance of ' 'test_config_arbitrary_types_allowed.<locals>.EggBox',
+            'type': 'is_instance_of',
+        }
     ]
 
 
@@ -417,7 +376,7 @@ def test_validate(mocker):
     stub.assert_not_called()
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='Annotated does not seem to be respected')
 def test_annotated_use_of_alias():
     @validate_arguments
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field()], d: Annotated[int, Field(alias='')]):
@@ -454,7 +413,7 @@ def test_populate_by_name():
     assert foo(a=10, c=1) == 11
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='validate_all')
 def test_validate_all():
     # TODO remove or rename, validate_all doesn't exist anymore
     @validate_arguments(config=dict(validate_all=True))
@@ -465,7 +424,7 @@ def test_validate_all():
     assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='validate_all')
 @skip_pre_38
 def test_validate_all_positional(create_module):
     # TODO remove or rename, validate_all doesn't exist anymore
@@ -485,7 +444,7 @@ def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='config["extra"] does not seem to be respected')
 def test_validate_extra():
     class TypedTest(TypedDict):
         y: str

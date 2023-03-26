@@ -43,7 +43,7 @@ def test_model_validate_wrong_model():
     assert exc_info.value.errors() == [{'input': {'c': 123}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}]
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='__root__ model')
 def test_model_validate_root():
     class MyModel(BaseModel):
         __root__: str
@@ -53,7 +53,7 @@ def test_model_validate_root():
     assert m.__root__ == 'a'
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='__root__ model')
 def test_parse_root_list():
     class MyModel(BaseModel):
         __root__: List[str]
@@ -63,7 +63,7 @@ def test_parse_root_list():
     assert m.__root__ == ['a']
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='__root__ model')
 def test_parse_nested_root_list():
     class NestedData(BaseModel):
         id: str
@@ -79,7 +79,7 @@ def test_parse_nested_root_list():
     assert isinstance(m.nested.__root__[0], NestedData)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='__root__ model')
 def test_parse_nested_root_tuple():
     class NestedData(BaseModel):
         id: str
@@ -99,7 +99,7 @@ def test_parse_nested_root_tuple():
     assert isinstance(nested, NestedModel)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.xfail(reason='__root__ model')
 def test_parse_nested_custom_root():
     class NestedModel(BaseModel):
         __root__: List[str]

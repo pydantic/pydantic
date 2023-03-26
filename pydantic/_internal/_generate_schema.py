@@ -9,7 +9,6 @@ import re
 import sys
 import typing
 import warnings
-from inspect import Signature, signature
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
 from annotated_types import BaseMetadata, GroupedMetadata
@@ -30,7 +29,7 @@ from ._decorators import (
     SerializerDecoratorInfo,
     ValidatorDecoratorInfo,
 )
-from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields
+from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
 
@@ -285,7 +284,7 @@ class GenerateSchema:
         elif _typing_extra.is_literal_type(obj):
             return self._literal_schema(obj)
         elif is_typeddict(obj):
-            return self._typed_dict_schema(obj)
+            return self._typed_dict_schema(obj, None)
         elif _typing_extra.is_namedtuple(obj):
             return self._namedtuple_schema(obj)
         elif _typing_extra.is_new_type(obj):
@@ -345,6 +344,8 @@ class GenerateSchema:
             return self._counter_schema(obj)
         elif origin in (typing.Dict, dict):
             return self._dict_schema(obj)
+        elif is_typeddict(origin):
+            return self._typed_dict_schema(obj, origin)
         elif issubclass(origin, typing.Dict):
             # Subclasses of typing.Dict may be handled as subclasses of dict; see note above
             return self._dict_subclass_schema(obj)
@@ -507,7 +508,7 @@ class GenerateSchema:
         return core_schema.literal_schema(*expected)
 
     def _typed_dict_schema(
-        self, typed_dict_cls: Any
+        self, typed_dict_cls: Any, origin: Any
     ) -> core_schema.TypedDictSchema | core_schema.DefinitionReferenceSchema:
         """
         Generate schema for a TypedDict.
@@ -522,6 +523,12 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
         """
+        if origin is not None:
+            typeddict_typevars_map = dict(zip(origin.__parameters__, typed_dict_cls.__args__))
+            typed_dict_cls = origin
+        else:
+            typeddict_typevars_map = {}
+
         if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
             raise PydanticUserError(
                 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
@@ -538,7 +545,10 @@ class GenerateSchema:
             recursive_schema = core_schema.definition_reference_schema(obj_ref)
             self._recursion_cache[obj_ref] = recursive_schema
 
-        for field_name, annotation in _typing_extra.get_type_hints(typed_dict_cls, include_extras=True).items():
+        for field_name, annotation in get_type_hints_infer_globalns(
+            typed_dict_cls, localns=self.types_namespace, include_extras=True
+        ).items():
+            annotation = replace_types(annotation, typeddict_typevars_map)
             required = field_name in required_keys
 
             if get_origin(annotation) == _typing_extra.Required:
@@ -568,7 +578,9 @@ class GenerateSchema:
         """
         Generate schema for a NamedTuple.
         """
-        annotations: dict[str, Any] = _typing_extra.get_type_hints(namedtuple_cls, include_extras=True)
+        annotations: dict[str, Any] = get_type_hints_infer_globalns(
+            namedtuple_cls, include_extras=True, localns=self.types_namespace
+        )
         if not annotations:
             # annotations is empty, happens if namedtuple_cls defined via collections.namedtuple(...)
             annotations = {k: Any for k in namedtuple_cls._fields}
@@ -863,6 +875,20 @@ class GenerateSchema:
         return schema
 
 
+_VALIDATOR_F_MATCH: Mapping[
+    tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
+] = {
+    ('before', True): core_schema.field_before_validator_function,
+    ('after', True): core_schema.field_after_validator_function,
+    ('plain', True): lambda f, _: core_schema.field_plain_validator_function(f),
+    ('wrap', True): core_schema.field_wrap_validator_function,
+    ('before', False): core_schema.general_before_validator_function,
+    ('after', False): core_schema.general_after_validator_function,
+    ('plain', False): lambda f, _: core_schema.general_plain_validator_function(f),
+    ('wrap', False): core_schema.general_wrap_validator_function,
+}
+
+
 def apply_validators(
     schema: core_schema.CoreSchema,
     validators: Iterable[Decorator[RootValidatorDecoratorInfo]]
@@ -872,80 +898,10 @@ def apply_validators(
     """
     Apply validators to a schema.
     """
-    f_match: Mapping[
-        tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
-    ] = {
-        ('before', True): core_schema.field_before_validator_function,
-        ('after', True): core_schema.field_after_validator_function,
-        ('plain', True): lambda f, _: core_schema.field_plain_validator_function(f),
-        ('wrap', True): core_schema.field_wrap_validator_function,
-        ('before', False): core_schema.general_before_validator_function,
-        ('after', False): core_schema.general_after_validator_function,
-        ('plain', False): lambda f, _: core_schema.general_plain_validator_function(f),
-        ('wrap', False): core_schema.general_wrap_validator_function,
-    }
     for validator in validators:
         is_field = isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo))
-        schema = f_match[(validator.info.mode, is_field)](validator.func, schema)
+        schema = _VALIDATOR_F_MATCH[(validator.info.mode, is_field)](validator.func, schema)
     return schema
-
-
-_SerializerType = Literal[
-    'field-wrap',
-    'general-wrap',
-    'field-plain',
-    'general-plain',
-]
-
-
-_VALID_SERIALIZER_SIGNATURES = """\
-Valid serializer signatures are:
-
-# an instance method with the default mode or `mode='plain'`
-@serializer('x')  # or @serialize('x', mode='plain')
-def ser_x(self, value: Any, info: pydantic.FieldSerializationInfo): ...
-
-# a static method or free-standing function with the default mode or `mode='plain'`
-@serializer('x')  # or @serialize('x', mode='plain')
-@staticmethod
-def ser_x(value: Any, info: pydantic.SerializationInfo): ...
-# equivalent to
-def ser_x(value: Any, info: pydantic.SerializationInfo): ...
-serializer('x')(ser_x)
-
-# an instance method with `mode='wrap'`
-@serializer('x', mode='wrap')
-def ser_x(self, value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
-
-# a static method or free-standing function with `mode='wrap'`
-@serializer('x', mode='wrap')
-@staticmethod
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.SerializationInfo): ...
-# equivalent to
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.SerializationInfo): ...
-serializer('x')(ser_x)
-"""
-
-
-def _is_unbound_instance_method(sig: Signature, func: Callable[..., Any]) -> bool:
-    if len(sig.parameters) < 2:
-        raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}')
-    return next(iter(sig.parameters.values())).name == 'self'
-
-
-def _infer_serializer_type_from_signature(sig: Signature, func: Callable[..., Any]) -> _SerializerType:
-    if len(sig.parameters) == 2:
-        # (value, info) -> Any
-        return 'general-plain'
-    elif len(sig.parameters) == 3:
-        # (self, value, info) -> Any or (value, nxt, info)
-        if _is_unbound_instance_method(sig, func):
-            return 'field-plain'
-        return 'general-wrap'
-    elif len(sig.parameters) == 4 and _is_unbound_instance_method(sig, func):
-        # (self, value, nxt, info) -> Any
-        return 'field-wrap'
-    raise TypeError(f'Unrecognized serializer signature for {func.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}')
 
 
 def apply_serializers(
@@ -958,38 +914,29 @@ def apply_serializers(
         # use the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
         function = serializer.func
-        sig = signature(function)
-        type_ = _infer_serializer_type_from_signature(sig, function)
-        if serializer.info.mode == 'wrap' and type_ not in ('general-wrap', 'field-wrap'):
-            raise TypeError(
-                f'Invalid signature for wrap serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
+        if serializer.info.mode == 'wrap':
+            sf = (
+                core_schema.field_wrap_serializer_function_ser_schema
+                if serializer.info.type == 'field'
+                else core_schema.general_wrap_serializer_function_ser_schema
             )
-        elif serializer.info.mode == 'plain' and type_ not in ('general-plain', 'field-plain'):
-            raise TypeError(
-                f'Invalid signature for plain serializer {function.__name__}: {sig}\n{_VALID_SERIALIZER_SIGNATURES}'
-            )
-        if type_ == 'general-wrap':
-            schema['serialization'] = core_schema.general_wrap_serializer_function_ser_schema(
+            schema['serialization'] = sf(  # type: ignore[operator]
                 function,
                 schema.copy(),
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
-            )
-        elif type_ == 'field-wrap':
-            schema['serialization'] = core_schema.field_wrap_serializer_function_ser_schema(
-                function,
-                schema.copy(),
-                json_return_type=serializer.info.json_return_type,
-                when_used=serializer.info.when_used,
-            )
-        elif type_ == 'general-plain':
-            schema['serialization'] = core_schema.general_plain_serializer_function_ser_schema(
-                function, json_return_type=serializer.info.json_return_type, when_used=serializer.info.when_used
             )
         else:
-            assert type_ == 'field-plain'
-            schema['serialization'] = core_schema.field_plain_serializer_function_ser_schema(
-                function, json_return_type=serializer.info.json_return_type, when_used=serializer.info.when_used
+            assert serializer.info.mode == 'plain'
+            sf = (
+                core_schema.field_plain_serializer_function_ser_schema
+                if serializer.info.type == 'field'
+                else core_schema.general_plain_serializer_function_ser_schema
+            )
+            schema['serialization'] = sf(  # type: ignore[operator]
+                function,
+                json_return_type=serializer.info.json_return_type,
+                when_used=serializer.info.when_used,
             )
     return schema
 

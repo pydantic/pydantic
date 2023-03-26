@@ -24,6 +24,7 @@ theme:
   features:
     - content.tabs.link
     - announce.dismiss
+    - navigation.tabs
   logo: 'logo-white.svg'
   favicon: 'favicon.png'
 
@@ -42,8 +43,10 @@ extra_javascript:
 - 'extra/redirects.js'
 
 nav:
-- Overview: index.md
-- install.md
+- Get Started:
+  - Welcome to pydantic: index.md
+  - Installation: install.md
+  - changelog.md
 - Usage:
   - usage/models.md
   - 'Field Types': usage/types.md
@@ -57,15 +60,16 @@ nav:
   - 'Usage with mypy': usage/mypy.md
   - 'Usage with devtools': usage/devtools.md
   - 'Usage with rich': usage/rich.md
+- Plugins:
+  - 'Mypy plugin': mypy_plugin.md
+  - 'PyCharm plugin': pycharm_plugin.md
+  - 'Visual Studio Code': visual_studio_code.md
+  - 'Hypothesis plugin': hypothesis_plugin.md
+  - 'Code Generation': datamodel_code_generator.md
+- Contribute: contributing.md
 - Blog:
   - blog/pydantic-v2.md
-- Contributing to pydantic: contributing.md
-- 'Mypy plugin': mypy_plugin.md
-- 'PyCharm plugin': pycharm_plugin.md
-- 'Visual Studio Code': visual_studio_code.md
-- 'Hypothesis plugin': hypothesis_plugin.md
-- 'Code Generation': datamodel_code_generator.md
-- changelog.md
+
 
 markdown_extensions:
 - tables
@@ -73,6 +77,7 @@ markdown_extensions:
     base_path: docs
 - toc:
     permalink: true
+    title: Page contents
 - admonition
 - pymdownx.highlight
 - pymdownx.extra
