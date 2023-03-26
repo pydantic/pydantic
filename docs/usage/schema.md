@@ -135,7 +135,7 @@ apply the schema generation logic used for _pydantic_ models in a more ad-hoc wa
 These functions behave similarly to `BaseModel.model_json_schema` and `BaseModel.schema_json`,
 but work with arbitrary pydantic-compatible types.
 
-```py test="requires-3.8"
+```py require="3.8"
 from typing import Literal, Union
 
 from typing_extensions import Annotated

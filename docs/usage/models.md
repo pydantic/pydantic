@@ -1448,7 +1448,7 @@ In addition, the `**data` argument will always be present in the signature if `C
 
 *pydantic* supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
-```py test="requires-3.10" lint="skip"
+```py require="3.10" lint="skip"
 from pydantic import BaseModel
 
 

@@ -6,7 +6,10 @@ import subprocess
 import sys
 from pathlib import Path
 from tempfile import NamedTemporaryFile
+from textwrap import dedent, indent
 
+import autoflake  # type: ignore
+import pyupgrade._main as pyupgrade_main  # type: ignore
 import rtoml
 from ansi2html import Ansi2HTMLConverter
 from mkdocs.config import Config
@@ -38,6 +41,8 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     """
     Called on each file after it is read and before it is converted to HTML.
     """
+    markdown = upgrade_python(markdown)
+    markdown = remove_code_fence_attributes(markdown)
     if md := add_version(markdown, page):
         return md
     elif md := build_schema_mappings(markdown, page):
@@ -69,6 +74,76 @@ def remove_files(files: Files) -> None:
     logger.debug('removing files: %s', [f.src_path for f in to_remove])
     for f in to_remove:
         files.remove(f)
+
+
+MIN_MINOR_VERSION = 7
+MAX_MINOR_VERSION = 11
+
+
+def upgrade_python(markdown: str) -> str:
+    """
+    Apply pyupgrade to all python code blocks, unless explicitly skipped, create a tab for each version.
+    """
+
+    def add_tabs(match: re.Match[str]) -> str:
+        prefix = match.group(1)
+        if 'upgrade="skip"' in prefix:
+            return match.group(0)
+
+        if m := re.search(r'require="3.(\d+)"', prefix):
+            min_minor_version = int(m.group(1))
+        else:
+            min_minor_version = MIN_MINOR_VERSION
+
+        py_code = match.group(2)
+        output = []
+        last_code = py_code
+        for minor_version in range(min_minor_version, MAX_MINOR_VERSION + 1):
+            if minor_version == min_minor_version:
+                tab_code = py_code
+            else:
+                tab_code = _upgrade_code(py_code, (3, minor_version))
+                if tab_code == last_code:
+                    continue
+                last_code = tab_code
+
+            content = indent(f'{prefix}\n{tab_code}```', ' ' * 4)
+            output.append(f'=== "Python 3.{minor_version} and above"\n\n{content}')
+
+        if len(output) == 1:
+            return match.group(0)
+        else:
+            return '\n\n'.join(output)
+
+    return re.sub(r'^(``` *py.*?)\n(.+?)^```', add_tabs, markdown, flags=re.M | re.S)
+
+
+def _upgrade_code(code: str, min_version: tuple[int, int]) -> str:
+    upgraded = pyupgrade_main._fix_plugins(
+        code,
+        settings=pyupgrade_main.Settings(
+            min_version=min_version,
+            keep_percent_format=True,
+            keep_mock=False,
+            keep_runtime_typing=True,
+        ),
+    )
+    return autoflake.fix_code(upgraded, remove_all_unused_imports=True)
+
+
+def remove_code_fence_attributes(markdown: str) -> str:
+    """
+    There's no way to add attributes to code fences that works with both pycharm and mkdocs, hence we use
+    `py key="value"` to provide attributes to pytest-examples, then remove those attributes here.
+
+    https://youtrack.jetbrains.com/issue/IDEA-297873 & https://python-markdown.github.io/extensions/fenced_code_blocks/
+    """
+
+    def remove_attrs(match: re.Match[str]) -> str:
+        suffix = re.sub(r' (?:test|lint|upgrade|group)=".+?"', '', match.group(2), flags=re.M)
+        return f'{match.group(1)}{suffix}'
+
+    return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)
 
 
 def add_version(markdown: str, page: Page) -> str | None:
@@ -149,11 +224,13 @@ def devtools_example(markdown: str, page: Page) -> str | None:
         return None
 
     # TODO change to `{.`
-    m = re.search(r'^```py.*?\n(.+?)^```', markdown, flags=re.M | re.S)
-    assert m, 'devtools example code not found'
+    m = re.search(r'(^ *```)py.*?\n(.+?)\1', markdown, flags=re.M | re.S)
+    if not m:
+        logger.warning('devtools example code not found')
+        return markdown
 
     with NamedTemporaryFile(suffix='.py') as f:
-        f.write(m.group(1).encode())
+        f.write(dedent(m.group(2)).encode())
         f.flush()
         os.environ['PY_DEVTOOLS_HIGHLIGHT'] = 'true'
         p = subprocess.run((sys.executable, f.name), stdout=subprocess.PIPE, check=True, encoding='utf8')

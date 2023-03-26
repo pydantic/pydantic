@@ -312,7 +312,7 @@ class User:
 user = User(**{'birth': {'year': 1995, 'month': 3, 'day': 2}})
 ```
 
-```py test="requires-3.8"
+```py require="3.8"
 from dataclasses import InitVar
 from pathlib import Path
 from typing import Optional

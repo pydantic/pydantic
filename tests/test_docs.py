@@ -77,10 +77,11 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
     if test_settings == 'skip' and lint_settings == 'skip':
         pytest.skip('both test and lint skipped')
 
-    if test_settings == 'requires-3.10' and sys.version_info < (3, 10):
-        pytest.skip('requires python 3.10')
-    elif test_settings == 'requires-3.8' and sys.version_info < (3, 8):
-        pytest.skip('requires python 3.8')
+    require_settings = prefix_settings.get('require')
+    if require_settings:
+        major, minor = map(int, require_settings.split('.'))
+        if sys.version_info < (major, minor):
+            pytest.skip(f'requires python {require_settings}')
 
     group_name = prefix_settings.get('group')
 

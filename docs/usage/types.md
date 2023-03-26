@@ -456,7 +456,7 @@ Setting a discriminated union has many benefits:
 - only one explicit error is raised in case of failure
 - the generated JSON schema implements the [associated OpenAPI specification](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#discriminatorObject)
 
-```py test="requires-3.8"
+```py require="3.8"
 from typing import Literal, Union
 
 from pydantic import BaseModel, Field, ValidationError
@@ -510,7 +510,7 @@ except ValidationError as e:
 Only one discriminator can be set for a field but sometimes you want to combine multiple discriminators.
 In this case you can always create "intermediate" models with `__root__` and add your discriminator.
 
-```py test="requires-3.8"
+```py require="3.8"
 from typing import Literal, Union
 
 from typing_extensions import Annotated
@@ -853,7 +853,7 @@ print(Model(a=None, b=1, c=1))
 *pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to Python 3.8)
 as a lightweight way to specify that a field may accept only specific literal values:
 
-```py test="requires-3.8"
+```py require="3.8"
 from typing import Literal
 
 from pydantic import BaseModel, ValidationError
@@ -879,7 +879,7 @@ except ValidationError as e:
 One benefit of this field type is that it can be used to check for equality with one or more specific values
 without needing to declare custom validators:
 
-```py test="requires-3.8"
+```py require="3.8"
 from typing import ClassVar, List, Literal, Union
 
 from pydantic import BaseModel, ValidationError
@@ -918,7 +918,7 @@ except ValidationError as e:
 
 With proper ordering in an annotated `Union`, you can use this to parse types of decreasing specificity:
 
-```py test="requires-3.8"
+```py require="3.8"
 from typing import Optional, Literal, Union
 
 from pydantic import BaseModel

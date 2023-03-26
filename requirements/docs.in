@@ -5,3 +5,4 @@ mkdocs-exclude
 mkdocs-material
 mkdocs-simple-hooks
 rtoml
+pytest-examples

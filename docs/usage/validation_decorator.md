@@ -94,7 +94,7 @@ combinations of these:
 
 To demonstrate all the above parameter types:
 
-```py test="requires-3.8"
+```py require="3.8"
 from pydantic import validate_arguments
 
 
