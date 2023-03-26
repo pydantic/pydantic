@@ -241,7 +241,7 @@ my misgivings about marking a field as `Optional[int]` but requiring a value to 
 
 In pydantic V2, pydantic will move to match dataclasses, thus:
 
-```py title="Required vs. Nullable" test="skip" lint="skip"
+```py title="Required vs. Nullable" test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel
 
 
@@ -269,7 +269,7 @@ Fields which use a function for validation can be any of the following types:
 
 An example how a wrap validator might look:
 
-```py title="Wrap mode validator function" test="skip" lint="skip"
+```py title="Wrap mode validator function" test="skip" lint="skip" upgrade="skip"
 from datetime import datetime
 from pydantic import BaseModel, ValidationError, validator
 
@@ -299,7 +299,7 @@ pydantic-core can support alias "paths" as well as simple string aliases to flat
 
 Best demonstrated with an example:
 
-```py title="Alias paths" test="skip" lint="skip"
+```py title="Alias paths" test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, Field
 
 
@@ -362,7 +362,7 @@ See [pydantic#1549](https://github.com/pydantic/pydantic/issues/1549) for motiva
 
 Here's an example of `context` might be used:
 
-```py title="Context during Validation" test="skip" lint="skip"
+```py title="Context during Validation" test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, EmailStr, validator
 
 
@@ -409,7 +409,7 @@ All methods on models will start with `model_`, fields' names will not be allowe
 
 This will mean `BaseModel` will have roughly the following signature.
 
-```{.py .annotate title="New BaseModel methods" test="skip" lint="skip"}
+```{.py .annotate title="New BaseModel methods" test="skip" lint="skip" upgrade="skip"}
 class BaseModel:
     model_fields: List[FieldInfo]
     """previously `__fields__`, although the format will change a lot"""
@@ -541,7 +541,7 @@ docs.
 
 Thus, errors might look like:
 
-```py title="Line Errors Example" test="skip" lint="skip"
+```py title="Line Errors Example" test="skip" lint="skip" upgrade="skip"
 [
     {
         'kind': 'greater_than_equal',
@@ -613,7 +613,7 @@ an error or returning the validation result.
 
 To be clear, this isn't a real `isinstance` call, rather it is equivalent to
 
-```py title="is_instance" test="skip" lint="skip"
+```py title="is_instance" test="skip" lint="skip" upgrade="skip"
 class BaseModel:
     ...
 
@@ -653,7 +653,7 @@ item can be a string, if so a function of that name will be taken from the class
 
 Here's an example of how a custom field type could be defined:
 
-```py title="New custom field types" test="skip" lint="skip"
+```py title="New custom field types" test="skip" lint="skip" upgrade="skip"
 from pydantic import ValidationSchema
 
 
@@ -796,7 +796,7 @@ We will endeavour to read and respond to everyone.
 At the center of pydantic v2 will be a `PydanticValidator` class which looks roughly like this
 (note: this is just pseudo-code, it's not even valid python and is only supposed to be used to demonstrate the idea):
 
-```py title="PydanticValidator" test="skip" lint="skip"
+```py title="PydanticValidator" test="skip" lint="skip" upgrade="skip"
 # type identifying data which has been validated,
 # as per pydantic-core, this can include "fields_set" data
 ValidData = ...

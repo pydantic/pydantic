@@ -98,7 +98,7 @@ def upgrade_python(markdown: str) -> str:
             if minor_version == min_minor_version:
                 tab_code = py_code
             else:
-                tab_code = _upgrade_code(py_code, (3, minor_version))
+                tab_code = _upgrade_code(py_code, minor_version)
                 if tab_code == last_code:
                     continue
                 last_code = tab_code
@@ -114,11 +114,11 @@ def upgrade_python(markdown: str) -> str:
     return re.sub(r'^(``` *py.*?)\n(.+?)^```', add_tabs, markdown, flags=re.M | re.S)
 
 
-def _upgrade_code(code: str, min_version: tuple[int, int]) -> str:
+def _upgrade_code(code: str, min_version: int) -> str:
     upgraded = pyupgrade_main._fix_plugins(
         code,
         settings=pyupgrade_main.Settings(
-            min_version=min_version,
+            min_version=(3, min_version),
             keep_percent_format=True,
             keep_mock=False,
             keep_runtime_typing=True,
