@@ -1,8 +1,8 @@
-ansi2html
+autoflake
 mdx-truly-sane-lists
 mkdocs
 mkdocs-exclude
 mkdocs-material
 mkdocs-simple-hooks
 pyupgrade
-rtoml
+tomli

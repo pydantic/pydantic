@@ -7,7 +7,7 @@ from textwrap import indent
 
 import autoflake  # type: ignore
 import pyupgrade._main as pyupgrade_main  # type: ignore
-import rtoml
+import tomli
 from mkdocs.config import Config
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
@@ -161,7 +161,9 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
         return None
 
     rows = []
-    table = rtoml.load(THIS_DIR / 'schema_mappings.toml')
+    with (THIS_DIR / 'schema_mappings.toml').open('rb') as f:
+        table = tomli.load(f)
+
     for t in table.values():
         py_type = t['py_type']
         json_type = t['json_type']

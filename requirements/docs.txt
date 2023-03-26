@@ -4,7 +4,7 @@
 #
 #    pip-compile --output-file=requirements/docs.txt --resolver=backtracking requirements/docs.in
 #
-ansi2html==1.8.0
+autoflake==2.0.2
     # via -r requirements/docs.in
 certifi==2022.12.7
     # via requests
@@ -50,6 +50,8 @@ mkdocs-simple-hooks==0.1.5
     # via -r requirements/docs.in
 packaging==23.0
     # via mkdocs
+pyflakes==3.0.1
+    # via autoflake
 pygments==2.14.0
     # via mkdocs-material
 pymdown-extensions==9.10
@@ -69,12 +71,14 @@ regex==2022.10.31
     # via mkdocs-material
 requests==2.28.2
     # via mkdocs-material
-rtoml==0.9.0
-    # via -r requirements/docs.in
 six==1.16.0
     # via python-dateutil
 tokenize-rt==5.0.0
     # via pyupgrade
+tomli==2.0.1
+    # via
+    #   -r requirements/docs.in
+    #   autoflake
 urllib3==1.26.15
     # via requests
 watchdog==3.0.0
