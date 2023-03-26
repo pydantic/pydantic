@@ -4,28 +4,20 @@
 #
 #    pip-compile --output-file=requirements/docs.txt --resolver=backtracking requirements/docs.in
 #
-attrs==22.2.0
-    # via pytest
-black==23.1.0
-    # via pytest-examples
+ansi2html==1.8.0
+    # via -r requirements/docs.in
 certifi==2022.12.7
     # via requests
 charset-normalizer==3.1.0
     # via requests
 click==8.1.3
-    # via
-    #   black
-    #   mkdocs
+    # via mkdocs
 colorama==0.4.6
     # via mkdocs-material
-exceptiongroup==1.1.1
-    # via pytest
 ghp-import==2.1.0
     # via mkdocs
 idna==3.4
     # via requests
-iniconfig==2.0.0
-    # via pytest
 jinja2==3.1.2
     # via
     #   mkdocs
@@ -56,29 +48,16 @@ mkdocs-material-extensions==1.1.1
     # via mkdocs-material
 mkdocs-simple-hooks==0.1.5
     # via -r requirements/docs.in
-mypy-extensions==1.0.0
-    # via black
 packaging==23.0
-    # via
-    #   black
-    #   mkdocs
-    #   pytest
-pathspec==0.11.1
-    # via black
-platformdirs==3.2.0
-    # via black
-pluggy==1.0.0
-    # via pytest
+    # via mkdocs
 pygments==2.14.0
     # via mkdocs-material
 pymdown-extensions==9.10
     # via mkdocs-material
-pytest==7.2.2
-    # via pytest-examples
-pytest-examples==0.0.7
-    # via -r requirements/docs.in
 python-dateutil==2.8.2
     # via ghp-import
+pyupgrade==3.3.1
+    # via -r requirements/docs.in
 pyyaml==6.0
     # via
     #   mkdocs
@@ -92,14 +71,10 @@ requests==2.28.2
     # via mkdocs-material
 rtoml==0.9.0
     # via -r requirements/docs.in
-ruff==0.0.259
-    # via pytest-examples
 six==1.16.0
     # via python-dateutil
-tomli==2.0.1
-    # via
-    #   black
-    #   pytest
+tokenize-rt==5.0.0
+    # via pyupgrade
 urllib3==1.26.15
     # via requests
 watchdog==3.0.0
