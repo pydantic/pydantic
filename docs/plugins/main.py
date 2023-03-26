@@ -29,7 +29,6 @@ def on_files(files: Files, config: Config) -> Files:
     """
     After the files are loaded, but before they are read.
     """
-    remove_files(files)
     return files
 
 
@@ -61,17 +60,6 @@ def add_changelog() -> None:
         new_file.write_text(history)
 
 
-def remove_files(files: Files) -> None:
-    to_remove = []
-    for file in files:
-        if file.src_path.startswith('__pycache__/'):
-            to_remove.append(file)
-
-    logger.debug('removing files: %s', [f.src_path for f in to_remove])
-    for f in to_remove:
-        files.remove(f)
-
-
 MIN_MINOR_VERSION = 7
 MAX_MINOR_VERSION = 11
 
@@ -86,7 +74,7 @@ def upgrade_python(markdown: str) -> str:
         if 'upgrade="skip"' in prefix:
             return match.group(0)
 
-        if m := re.search(r'require="3.(\d+)"', prefix):
+        if m := re.search(r'requires="3.(\d+)"', prefix):
             min_minor_version = int(m.group(1))
         else:
             min_minor_version = MIN_MINOR_VERSION
@@ -136,7 +124,7 @@ def remove_code_fence_attributes(markdown: str) -> str:
     """
 
     def remove_attrs(match: re.Match[str]) -> str:
-        suffix = re.sub(r' (?:test|lint|upgrade|group)=".+?"', '', match.group(2), flags=re.M)
+        suffix = re.sub(r' (?:test|lint|upgrade|group|requires)=".+?"', '', match.group(2), flags=re.M)
         return f'{match.group(1)}{suffix}'
 
     return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)

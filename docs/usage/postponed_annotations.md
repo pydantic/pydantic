@@ -4,7 +4,7 @@
 Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/pep-0563/))
 "just work".
 
-```py
+```py requires="3.8" upgrade="skip"
 from __future__ import annotations
 
 from typing import Any

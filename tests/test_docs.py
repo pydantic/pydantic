@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import os
+import platform
 import re
 import subprocess
 import sys
@@ -17,6 +18,9 @@ index_main = None
 def skip_docs_tests():
     if sys.platform not in {'linux', 'darwin'}:
         return 'not in linux or macos'
+
+    if platform.python_implementation() != 'CPython':
+        return 'not cpython'
 
     try:
         import hypothesis  # noqa: F401
@@ -88,11 +92,11 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
     if test_settings == 'skip' and lint_settings == 'skip':
         pytest.skip('both test and lint skipped')
 
-    require_settings = prefix_settings.get('require')
-    if require_settings:
-        major, minor = map(int, require_settings.split('.'))
+    requires_settings = prefix_settings.get('requires')
+    if requires_settings:
+        major, minor = map(int, requires_settings.split('.'))
         if sys.version_info < (major, minor):
-            pytest.skip(f'requires python {require_settings}')
+            pytest.skip(f'requires python {requires_settings}')
 
     group_name = prefix_settings.get('group')
 

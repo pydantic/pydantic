@@ -90,6 +90,7 @@ plugins:
 - exclude:
     glob:
     - plugins/*
+    - __pycache__/*
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'
