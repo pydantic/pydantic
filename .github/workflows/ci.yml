@@ -136,13 +136,20 @@ jobs:
       matrix:
         os: [ubuntu, macos, windows]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', 'pypy3.7', 'pypy3.8', 'pypy3.9']
-        # no pydantic-core binaries for pypy on windows, so tests take absolute ages
         exclude:
+          # no pydantic-core binaries for pypy on windows, so tests take absolute ages
           - os: windows
             python-version: 'pypy3.7'
           - os: windows
             python-version: 'pypy3.8'
           - os: windows
+            python-version: 'pypy3.9'
+          # macos tests with pypy take ages (>10mins) since pypy is very slow
+          - os: macos
+            python-version: 'pypy3.7'
+          - os: macos
+            python-version: 'pypy3.8'
+          - os: macos
             python-version: 'pypy3.9'
 
     env:
