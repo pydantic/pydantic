@@ -9,7 +9,6 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import pytest
-from ansi2html import Ansi2HTMLConverter
 from pytest_examples import CodeExample, EvalExample, find_examples
 
 index_main = None
@@ -33,6 +32,11 @@ def skip_docs_tests():
         import sqlalchemy  # noqa: F401
     except ImportError:
         return 'sqlalchemy not installed'
+
+    try:
+        import ansi2html  # noqa: F401
+    except ImportError:
+        return 'ansi2html not installed'
 
 
 class GroupModuleGlobals:
@@ -137,6 +141,8 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
 @pytest.mark.parametrize('example', find_examples('docs/usage/devtools.md', skip=sys.platform == 'win32'), ids=str)
 def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, tmp_path: Path):
+    from ansi2html import Ansi2HTMLConverter
+
     if eval_example.update_examples:
         eval_example.format(example)
     else:
