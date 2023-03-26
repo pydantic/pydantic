@@ -1,5 +1,5 @@
 .DEFAULT_GOAL := all
-sources = pydantic tests docs/build
+sources = pydantic tests docs/plugins
 
 .PHONY: install
 install:
@@ -31,11 +31,11 @@ lint:
 
 .PHONY: typecheck
 typecheck:
-	mypy pydantic docs/build --disable-recursive-aliases --config-file .mypy-configs/full.toml
+	mypy pydantic --disable-recursive-aliases --config-file .mypy-configs/full.toml
 
 .PHONY: typecheck-fast
 typecheck-fast:
-	mypy pydantic docs/build --disable-recursive-aliases --config-file .mypy-configs/fast.toml
+	mypy pydantic --disable-recursive-aliases --config-file .mypy-configs/fast.toml
 
 .PHONY: test-mypy
 test-mypy:
@@ -96,11 +96,4 @@ clean:
 
 .PHONY: docs
 docs:
-	ruff docs/examples/
-	python docs/build/main.py
 	mkdocs build
-
-.PHONY: docs-serve
-docs-serve:
-	python docs/build/main.py
-	mkdocs serve

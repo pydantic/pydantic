@@ -1,6 +1,61 @@
 Custom validation and complex relationships between objects can be achieved using the `validator` decorator.
 
-{!.tmp_examples/validators_simple.md!}
+```py
+from pydantic_core.core_schema import FieldValidationInfo
+
+from pydantic import BaseModel, ValidationError, field_validator
+
+
+class UserModel(BaseModel):
+    name: str
+    username: str
+    password1: str
+    password2: str
+
+    @field_validator('name')
+    def name_must_contain_space(cls, v):
+        if ' ' not in v:
+            raise ValueError('must contain a space')
+        return v.title()
+
+    @field_validator('password2')
+    def passwords_match(cls, v, info: FieldValidationInfo):
+        if 'password1' in info.data and v != info.data['password1']:
+            raise ValueError('passwords do not match')
+        return v
+
+    @field_validator('username')
+    def username_alphanumeric(cls, v):
+        assert v.isalnum(), 'must be alphanumeric'
+        return v
+
+
+user = UserModel(
+    name='samuel colvin',
+    username='scolvin',
+    password1='zxcvbn',
+    password2='zxcvbn',
+)
+print(user)
+#> name='Samuel Colvin' username='scolvin' password1='zxcvbn' password2='zxcvbn'
+
+try:
+    UserModel(
+        name='samuel',
+        username='scolvin',
+        password1='zxcvbn',
+        password2='zxcvbn2',
+    )
+except ValidationError as e:
+    print(e)
+    """
+    2 validation errors for UserModel
+    name
+      Value error, must contain a space [type=value_error, input_value='samuel', input_type=str]
+    password2
+      Value error, passwords do not match [type=value_error, input_value='zxcvbn2', input_type=str]
+    """
+```
 
 A few things to note on validators:
 
@@ -34,7 +89,54 @@ A few things to note on validators:
 
 Validators can do a few more complex things:
 
-{!.tmp_examples/validators_pre_item.md!}
+```py test="xfail - we need annotated validators for this examples"
+from typing import List
+
+from pydantic import BaseModel, ValidationError, field_validator
+
+
+class DemoModel(BaseModel):
+    square_numbers: List[int] = []
+    cube_numbers: List[int] = []
+
+    @field_validator('square_numbers', 'cube_numbers', mode='before')
+    def split_str(cls, v):
+        if isinstance(v, str):
+            return v.split('|')
+        return v
+
+    @field_validator('cube_numbers', 'square_numbers')
+    def check_sum(cls, v):
+        if sum(v) > 42:
+            raise ValueError('sum of numbers greater than 42')
+        return v
+
+    @field_validator('square_numbers')  # TODO replace with Annotated
+    def check_squares(cls, v):
+        assert v**0.5 % 1 == 0, f'{v} is not a square number'
+        return v
+
+    @field_validator('cube_numbers')  # TODO replace with Annotated
+    def check_cubes(cls, v):
+        # 64 ** (1 / 3) == 3.9999999999999996 (!)
+        # this is not a good way of checking cubes
+        assert v ** (1 / 3) % 1 == 0, f'{v} is not a cubed number'
+        return v
+
+
+print(DemoModel(square_numbers=[1, 4, 9]))
+print(DemoModel(square_numbers='1|4|16'))
+print(DemoModel(square_numbers=[16], cube_numbers=[8, 27]))
+try:
+    DemoModel(square_numbers=[1, 4, 2])
+except ValidationError as e:
+    print(e)
+
+try:
+    DemoModel(cube_numbers=[27, 27])
+except ValidationError as e:
+    print(e)
+```
 
 A few more things to note:
 
@@ -49,7 +151,45 @@ A few more things to note:
 If using a validator with a subclass that references a `List` type field on a parent class, using `each_item=True` will
 cause the validator not to run; instead, the list must be iterated over programmatically.
 
-{!.tmp_examples/validators_subclass_each_item.md!}
+```py test="xfail - we need annotated validators for this examples"
+from typing import List
+
+from pydantic import BaseModel, ValidationError, validator
+
+
+class ParentModel(BaseModel):
+    names: List[str]
+
+
+class ChildModel(ParentModel):
+    @validator('names', each_item=True)
+    def check_names_not_empty(cls, v):
+        assert v != '', 'Empty strings are not allowed.'
+        return v
+
+
+# This will NOT raise a ValidationError because the validator was not called
+try:
+    child = ChildModel(names=['Alice', 'Bob', 'Eve', ''])
+except ValidationError as e:
+    print(e)
+else:
+    print('No ValidationError caught.')
+
+
+class ChildModel2(ParentModel):
+    @validator('names')
+    def check_names_not_empty(cls, v):
+        for name in v:
+            assert name != '', 'Empty strings are not allowed.'
+        return v
+
+
+try:
+    child = ChildModel2(names=['Alice', 'Bob', 'Eve', ''])
+except ValidationError as e:
+    print(e)
+```
 
 ## Validate Always
 
@@ -57,7 +197,23 @@ For performance reasons, by default validators are not called for fields when a 
 However there are situations where it may be useful or required to always call the validator, e.g.
 to set a dynamic default value.
 
-{!.tmp_examples/validators_always.md!}
+```py test="xfail - we need default value validation"
+from datetime import datetime
+
+from pydantic import BaseModel, validator
+
+
+class DemoModel(BaseModel):
+    ts: datetime = None
+
+    @validator('ts', pre=True, always=True)
+    def set_ts_now(cls, v):
+        return v or datetime.now()
+
+
+print(DemoModel())
+print(DemoModel(ts='2017-11-08T14:00'))
+```
 
 You'll often want to use this together with `pre`, since otherwise with `always=True`
 *pydantic* would try to validate the default `None` which would cause an error.
@@ -70,7 +226,33 @@ then call it from multiple decorators.  Obviously, this entails a lot of repetit
 boiler plate code. To circumvent this, the `allow_reuse` parameter has been added to
 `pydantic.validator` in **v1.2** (`False` by default):
 
-{!.tmp_examples/validators_allow_reuse.md!}
+```py
+from pydantic import BaseModel, field_validator
+
+
+def normalize(name: str) -> str:
+    return ' '.join((word.capitalize()) for word in name.split(' '))
+
+
+class Producer(BaseModel):
+    name: str
+
+    # validators
+    normalize_name = field_validator('name', allow_reuse=True)(normalize)
+
+
+class Consumer(BaseModel):
+    name: str
+
+    # validators
+    normalize_name = field_validator('name', allow_reuse=True)(normalize)
+
+
+jane_doe = Producer(name='JaNe DOE')
+john_doe = Consumer(name='joHN dOe')
+assert jane_doe.name == 'Jane Doe'
+assert john_doe.name == 'John Doe'
+```
 
 As it is obvious, repetition has been reduced and the models become again almost
 declarative.
@@ -84,7 +266,54 @@ declarative.
 
 Validation can also be performed on the entire model's data.
 
-{!.tmp_examples/validators_root.md!}
+```py
+from pydantic import BaseModel, ValidationError, root_validator
+
+
+class UserModel(BaseModel):
+    username: str
+    password1: str
+    password2: str
+
+    @root_validator(pre=True)
+    def check_card_number_omitted(cls, values):
+        assert 'card_number' not in values, 'card_number should not be included'
+        return values
+
+    @root_validator(skip_on_failure=True)
+    def check_passwords_match(cls, values):
+        pw1, pw2 = values.get('password1'), values.get('password2')
+        if pw1 is not None and pw2 is not None and pw1 != pw2:
+            raise ValueError('passwords do not match')
+        return values
+
+
+print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))
+#> username='scolvin' password1='zxcvbn' password2='zxcvbn'
+try:
+    UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn2')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for UserModel
+      Value error, passwords do not match [type=value_error, input_value={'username': 'scolvin', '... 'password2': 'zxcvbn2'}, input_type=dict]
+    """
+
+try:
+    UserModel(
+        username='scolvin',
+        password1='zxcvbn',
+        password2='zxcvbn',
+        card_number='1234',
+    )
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for UserModel
+      Assertion failed, card_number should not be included
+    assert 'card_number' not in {'card_number': '1234', 'password1': 'zxcvbn', 'password2': 'zxcvbn', 'username': 'scolvin'} [type=assertion_error, input_value={'username': 'scolvin', '..., 'card_number': '1234'}, input_type=dict]
+    """
+```
 
 As with field validators, root validators can have `pre=True`, in which case they're called before field
 validation occurs (and are provided with the raw input data), or `pre=False` (the default), in which case
@@ -107,4 +336,22 @@ In this case you should set `check_fields=False` on the validator.
 
 Validators also work with *pydantic* dataclasses.
 
-{!.tmp_examples/validators_dataclass.md!}
+```py test="xfail - currently decorators are messing up dataclass field defaults #5271"
+from datetime import datetime
+
+from pydantic import field_validator
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class DemoDataclass:
+    ts: datetime = None
+
+    @field_validator('ts', mode='before')
+    def set_ts_now(cls, v):
+        return v or datetime.now()
+
+
+print(DemoDataclass())
+print(DemoDataclass(ts='2017-11-08T14:00'))
+```

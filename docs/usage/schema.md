@@ -1,6 +1,106 @@
 *Pydantic* allows auto creation of JSON Schemas from models:
 
-{!.tmp_examples/schema_main.md!}
+```py output="json"
+from enum import Enum
+
+from pydantic import BaseModel, Field
+
+
+class FooBar(BaseModel):
+    count: int
+    size: float = None
+
+
+class Gender(str, Enum):
+    male = 'male'
+    female = 'female'
+    other = 'other'
+    not_given = 'not_given'
+
+
+class MainModel(BaseModel):
+    """
+    This is the description of the main model
+    """
+
+    model_config = dict(title='Main')
+
+    foo_bar: FooBar = Field(...)
+    gender: Gender = Field(None, alias='Gender')
+    snap: int = Field(
+        42,
+        title='The Snap',
+        description='this is the value of snap',
+        gt=30,
+        lt=50,
+    )
+
+
+# this is equivalent to json.dumps(MainModel.model_json_schema(), indent=2):
+print(MainModel.schema_json(indent=2))
+"""
+{
+  "type": "object",
+  "properties": {
+    "foo_bar": {
+      "$ref": "#/$defs/FooBar"
+    },
+    "Gender": {
+      "allOf": [
+        {
+          "$ref": "#/$defs/Gender"
+        }
+      ],
+      "default": null
+    },
+    "snap": {
+      "type": "integer",
+      "exclusiveMaximum": 50,
+      "exclusiveMinimum": 30,
+      "default": 42,
+      "title": "The Snap",
+      "description": "this is the value of snap"
+    }
+  },
+  "required": [
+    "foo_bar"
+  ],
+  "title": "Main",
+  "description": "This is the description of the main model",
+  "$defs": {
+    "FooBar": {
+      "type": "object",
+      "properties": {
+        "count": {
+          "type": "integer",
+          "title": "Count"
+        },
+        "size": {
+          "type": "number",
+          "default": null,
+          "title": "Size"
+        }
+      },
+      "required": [
+        "count"
+      ],
+      "title": "FooBar"
+    },
+    "Gender": {
+      "enum": [
+        "male",
+        "female",
+        "other",
+        "not_given"
+      ],
+      "title": "Gender",
+      "description": "An enumeration.",
+      "type": "string"
+    }
+  }
+}
+"""
+```
 
 
 The generated schemas are compliant with the specifications:
@@ -36,7 +136,86 @@ apply the schema generation logic used for _pydantic_ models in a more ad-hoc wa
 These functions behave similarly to `BaseModel.model_json_schema` and `BaseModel.schema_json`,
 but work with arbitrary pydantic-compatible types.
 
-{!.tmp_examples/schema_ad_hoc.md!}
+```py requires="3.8"
+from typing import Literal, Union
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field, schema_json_of
+
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+    cat_name: str
+
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']
+    dog_name: str
+
+
+Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
+
+print(schema_json_of(Pet, title='The Pet Schema', indent=2))
+"""
+{
+  "oneOf": [
+    {
+      "$ref": "#/$defs/Cat"
+    },
+    {
+      "$ref": "#/$defs/Dog"
+    }
+  ],
+  "discriminator": {
+    "propertyName": "pet_type",
+    "mapping": {
+      "cat": "#/$defs/Cat",
+      "dog": "#/$defs/Dog"
+    }
+  },
+  "$defs": {
+    "Cat": {
+      "type": "object",
+      "properties": {
+        "pet_type": {
+          "const": "cat",
+          "title": "Pet Type"
+        },
+        "cat_name": {
+          "type": "string",
+          "title": "Cat Name"
+        }
+      },
+      "required": [
+        "pet_type",
+        "cat_name"
+      ],
+      "title": "Cat"
+    },
+    "Dog": {
+      "type": "object",
+      "properties": {
+        "pet_type": {
+          "const": "dog",
+          "title": "Pet Type"
+        },
+        "dog_name": {
+          "type": "string",
+          "title": "Dog Name"
+        }
+      },
+      "required": [
+        "pet_type",
+        "dog_name"
+      ],
+      "title": "Dog"
+    }
+  },
+  "title": "The Pet Schema"
+}
+"""
+```
 
 
 ## Field customization
@@ -114,13 +293,62 @@ If *pydantic* finds constraints which are not being enforced, an error will be r
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
 to `Field()` with the raw schema attribute name:
 
-{!.tmp_examples/schema_unenforced_constraints.md!}
+```py
+from pydantic import BaseModel, Field, PositiveInt
+
+try:
+    # this won't work since PositiveInt takes precedence over the
+    # constraints defined in Field meaning they're ignored
+    class Model(BaseModel):
+        foo: PositiveInt = Field(..., lt=10)
+
+except ValueError as e:
+    print(e)
+
+
+# if you find yourself needing this, an alternative is to declare
+# the constraints in Field (or you could use conint())
+# here both constraints will be enforced:
+class ModelB(BaseModel):
+    # Here both constraints will be applied and the schema
+    # will be generated correctly
+    foo: int = Field(..., gt=0, lt=10)
+
+
+print(ModelB.model_json_schema())
+"""
+{
+    'type': 'object',
+    'properties': {
+        'foo': {
+            'type': 'integer',
+            'exclusiveMaximum': 10,
+            'exclusiveMinimum': 0,
+            'title': 'Foo',
+        }
+    },
+    'required': ['foo'],
+    'title': 'ModelB',
+}
+"""
+```
 
 ### typing.Annotated Fields
 
 Rather than assigning a `Field` value, it can be specified in the type hint with `typing.Annotated`:
 
-{!.tmp_examples/schema_annotated.md!}
+```py
+from uuid import uuid4
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, Field
+
+
+class Foo(BaseModel):
+    id: Annotated[str, Field(default_factory=lambda: uuid4().hex)]
+    name: Annotated[str, Field(max_length=256)] = 'Bar'
+```
 
 `Field` can only be supplied once per field - an error will be raised if used in `Annotated` and as the assigned value.
 Defaults can be set outside `Annotated` as the assigned value or with `Field.default_factory` inside `Annotated` - the
@@ -137,7 +365,40 @@ see [Custom Data Types](types.md#custom-data-types) for more details.
 *pydantic* will inspect the signature of `__modify_schema__` to determine whether the `field` argument should be
 included.
 
-{!.tmp_examples/schema_with_field.md!}
+```py output="json" test="xfail needs work" lint="skip"
+from typing import Any, Callable, Dict, Generator, Optional
+
+from pydantic import BaseModel, Field
+from pydantic_core.core_schema import ValidationInfo
+
+
+class RestrictedAlphabetStr(str):
+    @classmethod
+    def __get_validators__(cls) -> Generator[Callable, None, None]:
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, value: str, info: ValidationInfo):
+        alphabet = field.field_info.extra['alphabet']
+        if any(c not in alphabet for c in value):
+            raise ValueError(f'{value!r} is not restricted to {alphabet!r}')
+        return cls(value)
+
+    @classmethod
+    def __pydantic_modify_json_schema__(
+        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
+    ):
+        if field:
+            alphabet = field.field_info.extra['alphabet']
+            field_schema['examples'] = [c * 3 for c in alphabet]
+
+
+class MyModel(BaseModel):
+    value: RestrictedAlphabetStr = Field(alphabet='ABC')
+
+
+print(MyModel.schema_json(indent=2))
+```
 
 
 ## JSON Schema Types
@@ -152,14 +413,78 @@ following priority order (when there is an equivalent available):
 
 The field schema mapping from Python / *pydantic* to JSON Schema is done as follows:
 
-{!.tmp_schema_mappings.html!}
+{{ schema_mappings_table }}
 
 ## Top-level schema generation
 
 You can also generate a top-level JSON Schema that only includes a list of models and related
 sub-models in its `definitions`:
 
-{!.tmp_examples/schema_top_level.md!}
+```py output="json"
+import json
+
+from pydantic import BaseModel
+from pydantic.json_schema import schema
+
+
+class Foo(BaseModel):
+    a: str = None
+
+
+class Model(BaseModel):
+    b: Foo
+
+
+class Bar(BaseModel):
+    c: int
+
+
+top_level_schema = schema([Model, Bar], title='My Schema')
+print(json.dumps(top_level_schema, indent=2))
+"""
+{
+  "$defs": {
+    "Foo": {
+      "type": "object",
+      "properties": {
+        "a": {
+          "type": "string",
+          "default": null,
+          "title": "A"
+        }
+      },
+      "title": "Foo"
+    },
+    "Model": {
+      "type": "object",
+      "properties": {
+        "b": {
+          "$ref": "#/$defs/Foo"
+        }
+      },
+      "required": [
+        "b"
+      ],
+      "title": "Model"
+    },
+    "Bar": {
+      "type": "object",
+      "properties": {
+        "c": {
+          "type": "integer",
+          "title": "C"
+        }
+      },
+      "required": [
+        "c"
+      ],
+      "title": "Bar"
+    }
+  },
+  "title": "My Schema"
+}
+"""
+```
 
 
 ## Schema customization
@@ -169,7 +494,25 @@ You can customize the generated `$ref` JSON location: the definitions are always
 
 This is useful if you need to extend or modify the JSON Schema default definitions location. E.g. with OpenAPI:
 
-{!.tmp_examples/schema_custom.md!}
+```py output="json" test="xfail - what happened to ref_prefix?"
+import json
+
+from pydantic import BaseModel
+from pydantic.json_schema import schema
+
+
+class Foo(BaseModel):
+    a: int
+
+
+class Model(BaseModel):
+    a: Foo
+
+
+# Default location for OpenAPI
+top_level_schema = schema([Model], ref_prefix='#/components/schemas/')
+print(json.dumps(top_level_schema, indent=2))
+```
 
 
 It's also possible to extend/override the generated JSON schema in a model.
@@ -178,7 +521,29 @@ To do it, use the `Config` sub-class attribute `schema_extra`.
 
 For example, you could add `examples` to the JSON Schema:
 
-{!.tmp_examples/schema_with_example.md!}
+```py output="json" test="xfail - replace schema_extra"
+from pydantic import BaseModel
+
+
+class Person(BaseModel):
+    name: str
+    age: int
+
+    class Config:
+        # TODO: This is no longer valid in v2;
+        #   update example to use __pydantic_modify_json_schema__
+        schema_extra = {
+            'examples': [
+                {
+                    'name': 'John Doe',
+                    'age': 25,
+                }
+            ]
+        }
+
+
+print(Person.schema_json(indent=2))
+```
 
 
 For more fine-grained control, you can alternatively set `schema_extra` to a callable and post-process the generated schema.
@@ -189,4 +554,24 @@ The callable is expected to mutate the schema dictionary *in-place*; the return 
 
 For example, the `title` key can be removed from the model's `properties`:
 
-{!.tmp_examples/schema_extra_callable.md!}
+```py output="json" test="xfail - replace schema_extra"
+from typing import Any, Dict, Type
+
+from pydantic import BaseModel
+
+
+class Person(BaseModel):
+    name: str
+    age: int
+
+    class Config:
+        # TODO: This is no longer valid in v2;
+        #   update example to use __pydantic_modify_json_schema__
+        @staticmethod
+        def schema_extra(schema: Dict[str, Any], model: Type['Person']) -> None:
+            for prop in schema.get('properties', {}).values():
+                prop.pop('title', None)
+
+
+print(Person.schema_json(indent=2))
+```

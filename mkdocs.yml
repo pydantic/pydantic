@@ -72,8 +72,6 @@ nav:
 
 markdown_extensions:
 - tables
-- markdown_include.include:
-    base_path: docs
 - toc:
     permalink: true
     title: Page contents
@@ -91,7 +89,10 @@ plugins:
 - search
 - exclude:
     glob:
-    - _build/*
-    - build/*
-    - examples/*
-    - requirements.txt
+    - plugins/*
+    - __pycache__/*
+- mkdocs-simple-hooks:
+    hooks:
+      on_pre_build: 'docs.plugins.main:on_pre_build'
+      on_files: 'docs.plugins.main:on_files'
+      on_page_markdown: 'docs.plugins.main:on_page_markdown'

@@ -11,16 +11,66 @@ boilerplate.
 
 Example of usage:
 
-{!.tmp_examples/validation_decorator_main.md!}
+```py
+from pydantic import ValidationError, validate_arguments
+
+
+@validate_arguments
+def repeat(s: str, count: int, *, separator: bytes = b'') -> bytes:
+    b = s.encode()
+    return separator.join(b for _ in range(count))
+
+
+a = repeat('hello', 3)
+print(a)
+#> b'hellohellohello'
+
+b = repeat('x', '4', separator=' ')
+print(b)
+#> b'x x x x'
+
+try:
+    c = repeat('hello', 'wrong')
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for Repeat
+    count
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
+    """
+```
 
 ## Argument Types
 
 Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
-as `Any`. Since `validate_arguments` internally uses a standard `BaseModel`, all types listed in
-[types](types.md) can be validated, including *pydantic* models and [custom types](types.md#custom-data-types).
+as `Any`. All types listed in [types](types.md) can be validated, including *pydantic* models and
+[custom types](types.md#custom-data-types).
 As with the rest of *pydantic*, types can be coerced by the decorator before they're passed to the actual function:
 
-{!.tmp_examples/validation_decorator_types.md!}
+```py test="no-print-intercept"
+# TODO replace find_file with something that isn't affected the filesystem
+import os
+from pathlib import Path
+from typing import Optional, Pattern
+
+from pydantic import DirectoryPath, validate_arguments
+
+
+@validate_arguments
+def find_file(path: DirectoryPath, regex: Pattern, max=None) -> Optional[Path]:
+    for i, f in enumerate(path.glob('**/*')):
+        if max and i > max:
+            return
+        if f.is_file() and regex.fullmatch(str(f.relative_to(path))):
+            return f
+
+
+# note: this_dir is a string here
+this_dir = os.path.dirname(__file__)
+
+print(find_file(this_dir, '^validation.*'))
+print(find_file(this_dir, '^foobar.*', max=3))
+```
 
 A few notes:
 
@@ -44,7 +94,90 @@ combinations of these:
 
 To demonstrate all the above parameter types:
 
-{!.tmp_examples/validation_decorator_parameter_types.md!}
+```py requires="3.8"
+from pydantic import validate_arguments
+
+
+@validate_arguments
+def pos_or_kw(a: int, b: int = 2) -> str:
+    return f'a={a} b={b}'
+
+
+print(pos_or_kw(1))
+#> a=1 b=2
+print(pos_or_kw(a=1))
+#> a=1 b=2
+print(pos_or_kw(1, 3))
+#> a=1 b=3
+print(pos_or_kw(a=1, b=3))
+#> a=1 b=3
+
+
+@validate_arguments
+def kw_only(*, a: int, b: int = 2) -> str:
+    return f'a={a} b={b}'
+
+
+print(kw_only(a=1))
+#> a=1 b=2
+print(kw_only(a=1, b=3))
+#> a=1 b=3
+
+
+@validate_arguments
+def pos_only(a: int, b: int = 2, /) -> str:  # python 3.8 only
+    return f'a={a} b={b}'
+
+
+print(pos_only(1))
+#> a=1 b=2
+print(pos_only(1, 2))
+#> a=1 b=2
+
+
+@validate_arguments
+def var_args(*args: int) -> str:
+    return str(args)
+
+
+print(var_args(1))
+#> (1,)
+print(var_args(1, 2))
+#> (1, 2)
+print(var_args(1, 2, 3))
+#> (1, 2, 3)
+
+
+@validate_arguments
+def var_kwargs(**kwargs: int) -> str:
+    return str(kwargs)
+
+
+print(var_kwargs(a=1))
+#> {'a': 1}
+print(var_kwargs(a=1, b=2))
+#> {'a': 1, 'b': 2}
+
+
+@validate_arguments
+def armageddon(
+    a: int,
+    /,  # python 3.8 only
+    b: int,
+    c: int = None,
+    *d: int,
+    e: int,
+    f: int = None,
+    **g: int,
+) -> str:
+    return f'a={a} b={b} c={c} d={d} e={e} f={f} g={g}'
+
+
+print(armageddon(1, 2, e=3))
+#> a=1 b=2 c=None d=() e=3 f=None g={}
+print(armageddon(1, 2, 3, 4, 5, 6, e=8, f=9, g=10, spam=11))
+#> a=1 b=2 c=3 d=(4, 5, 6) e=8 f=9 g={'g': 10, 'spam': 11}
+```
 
 ## Using Field to describe function arguments
 
@@ -53,11 +186,54 @@ the field and validations. In general it should be used in a type hint with
 [Annotated](schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
 as the default value of the field:
 
-{!.tmp_examples/validation_decorator_field.md!}
+```py
+from datetime import datetime
+
+from typing_extensions import Annotated
+
+from pydantic import Field, ValidationError, validate_arguments
+
+
+@validate_arguments
+def how_many(num: Annotated[int, Field(gt=10)]):
+    return num
+
+
+try:
+    how_many(1)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for HowMany
+    num
+      Input should be greater than 10 [type=greater_than, input_value=1, input_type=int]
+    """
+
+
+@validate_arguments
+def when(dt: datetime = Field(default_factory=datetime.now)):
+    return dt
+
+
+print(type(when()))
+#> <class 'datetime.datetime'>
+```
 
 The [alias](model_config.md#alias-precedence) can be used with the decorator as normal.
 
-{!.tmp_examples/validation_decorator_field_alias.md!}
+```py
+from typing_extensions import Annotated
+
+from pydantic import Field, validate_arguments
+
+
+@validate_arguments
+def how_many(num: Annotated[int, Field(gt=10, alias='number')]):
+    return num
+
+
+how_many(number=42)
+```
 
 
 ## Usage with mypy
@@ -73,20 +249,107 @@ By default, arguments validation is done by directly calling the decorated funct
 But what if you wanted to validate them without *actually* calling the function?
 To do that you can call the `validate` method bound to the decorated function.
 
-{!.tmp_examples/validation_decorator_validate.md!}
+```py
+from pydantic import ValidationError, validate_arguments
+
+
+@validate_arguments
+def slow_sum(a: int, b: int) -> int:
+    print(f'Called with a={a}, b={b}')
+    #> Called with a=1, b=1
+    return a + b
+
+
+slow_sum(1, 1)
+
+slow_sum.validate(2, 2)
+
+try:
+    slow_sum.validate(1, 'b')
+except ValidationError as exc:
+    print(exc)
+    """
+    1 validation error for SlowSum
+    b
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='b', input_type=str]
+    """
+```
 
 ## Raw function
 
 The raw function which was decorated is accessible, this is useful if in some scenarios you trust your input
 arguments and want to call the function in the most performant way (see [notes on performance](#performance) below):
 
-{!.tmp_examples/validation_decorator_raw_function.md!}
+```py
+from pydantic import validate_arguments
+
+
+@validate_arguments
+def repeat(s: str, count: int, *, separator: bytes = b'') -> bytes:
+    b = s.encode()
+    return separator.join(b for _ in range(count))
+
+
+a = repeat('hello', 3)
+print(a)
+#> b'hellohellohello'
+
+b = repeat.raw_function('good bye', 2, separator=b', ')
+print(b)
+#> b'good bye, good bye'
+```
 
 ## Async Functions
 
 `validate_arguments` can also be used on async functions:
 
-{!.tmp_examples/validation_decorator_async.md!}
+```py
+class Connection:
+    async def execute(self, sql, *args):
+        return 'testing@example.com'
+
+
+conn = Connection()
+# ignore-above
+import asyncio
+
+from pydantic import PositiveInt, ValidationError, validate_arguments
+
+
+@validate_arguments
+async def get_user_email(user_id: PositiveInt):
+    # `conn` is some fictional connection to a database
+    email = await conn.execute('select email from users where id=$1', user_id)
+    if email is None:
+        raise RuntimeError('user not found')
+    else:
+        return email
+
+
+async def main():
+    email = await get_user_email(123)
+    print(email)
+    #> testing@example.com
+    try:
+        await get_user_email(-4)
+    except ValidationError as exc:
+        print(exc.errors())
+        """
+        [
+            {
+                'type': 'greater_than',
+                'loc': ('user_id',),
+                'msg': 'Input should be greater than 0',
+                'input': -4,
+                'ctx': {'gt': 0},
+            }
+        ]
+        """
+
+
+asyncio.run(main())
+# requires: `conn.execute()` that will return `'testing@example.com'`
+```
 
 ## Custom Config
 
@@ -100,7 +363,42 @@ setting the `Config` sub-class in normal models.
 Configuration is set using the `config` keyword argument to the decorator, it may be either a config class
 or a dict of properties which are converted to a class later.
 
-{!.tmp_examples/validation_decorator_config.md!}
+```py
+from pydantic import ValidationError, validate_arguments
+
+
+class Foobar:
+    def __init__(self, v: str):
+        self.v = v
+
+    def __add__(self, other: 'Foobar') -> str:
+        return f'{self} + {other}'
+
+    def __str__(self) -> str:
+        return f'Foobar({self.v})'
+
+
+@validate_arguments(config=dict(arbitrary_types_allowed=True))
+def add_foobars(a: Foobar, b: Foobar):
+    return a + b
+
+
+c = add_foobars(Foobar('a'), Foobar('b'))
+print(c)
+#> Foobar(a) + Foobar(b)
+
+try:
+    add_foobars(1, 2)
+except ValidationError as e:
+    print(e)
+    """
+    2 validation errors for AddFoobars
+    a
+      Input should be an instance of Foobar [type=is_instance_of, input_value=1, input_type=int]
+    b
+      Input should be an instance of Foobar [type=is_instance_of, input_value=2, input_type=int]
+    """
+```
 
 ## Limitations
 

@@ -1,12 +1,66 @@
 Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
 
-{!.tmp_examples/model_config_main.md!}
+```py
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+class Model(BaseModel):
+    model_config = ConfigDict(str_max_length=10)
+    v: str
+
+
+try:
+    m = Model(v='x' * 20)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    v
+      String should have at most 10 characters [type=string_too_long, input_value='xxxxxxxxxxxxxxxxxxxx', input_type=str]
+    """
+```
 
 Also, you can specify config options as model class kwargs:
-{!.tmp_examples/model_config_class_kwargs.md!}
+```py
+from pydantic import BaseModel, Extra, ValidationError
+
+
+class Model(BaseModel, extra=Extra.forbid):
+    a: str
+
+
+try:
+    Model(a='spam', b='oh no')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    b
+      Extra inputs are not permitted [type=extra_forbidden, input_value='oh no', input_type=str]
+    """
+```
 
 Similarly, if using the `@dataclass` decorator:
-{!.tmp_examples/model_config_dataclass.md!}
+```py
+from datetime import datetime
+
+from pydantic import ValidationError
+from pydantic.dataclasses import dataclass
+
+
+@dataclass(config=dict(str_max_length=10, validate_assignment=True))
+class User:
+    id: int
+    name: str = 'John Doe'
+    signup_ts: datetime = None
+
+
+user = User(id='42', signup_ts='2032-06-21T12:00')
+try:
+    user.name = 'x' * 20
+except ValidationError as e:
+    print(e)
+```
 
 ## Options
 
@@ -140,14 +194,47 @@ with the following means (see [#4093](https://github.com/pydantic/pydantic/pull/
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
 with custom `Config` since the config is inherited
-{!.tmp_examples/model_config_change_globally_custom.md!}
+```py
+from pydantic import BaseModel as PydanticBaseModel
+
+
+class BaseModel(PydanticBaseModel):
+    model_config = dict(arbitrary_types_allowed=True)
+
+
+class MyClass:
+    """A random class"""
+
+
+class Model(BaseModel):
+    x: MyClass
+```
 
 ## Alias Generator
 
 If data source field names do not match your code style (e. g. CamelCase fields),
 you can automatically generate aliases using `alias_generator`:
 
-{!.tmp_examples/model_config_alias_generator.md!}
+```py
+from pydantic import BaseModel
+
+
+def to_camel(string: str) -> str:
+    return ''.join(word.capitalize() for word in string.split('_'))
+
+
+class Voice(BaseModel):
+    model_config = dict(alias_generator=to_camel)
+    name: str
+    language_code: str
+
+
+voice = Voice(Name='Filiz', LanguageCode='tr-TR')
+print(voice.language_code)
+#> tr-TR
+print(voice.model_dump(by_alias=True))
+#> {'Name': 'Filiz', 'LanguageCode': 'tr-TR'}
+```
 
 Here camel case refers to ["upper camel case"](https://en.wikipedia.org/wiki/Camel_case) aka pascal case
 e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`,
@@ -175,22 +262,116 @@ the selected value is determined as follows (in descending order of priority):
 
 For example:
 
-{!.tmp_examples/model_config_alias_precedence.md!}
+```py
+from pydantic import BaseModel, Field
+
+
+class Voice(BaseModel):
+    name: str = Field(None, alias='ActorName')
+    language_code: str = None
+    mood: str = None
+
+
+def alias_generator(string: str) -> str:
+    # this is the same as `alias_generator = to_camel` above
+    return ''.join(word.capitalize() for word in string.split('_'))
+
+
+class Character(Voice):
+    model_config = dict(alias_generator=alias_generator)
+    act: int = 1
+
+
+print(Character.model_json_schema(by_alias=True))
+"""
+{
+    'type': 'object',
+    'properties': {
+        'ActorName': {'type': 'string', 'default': None, 'title': 'Actorname'},
+        'LanguageCode': {'type': 'string', 'default': None, 'title': 'Languagecode'},
+        'Mood': {'type': 'string', 'default': None, 'title': 'Mood'},
+        'Act': {'type': 'integer', 'default': 1, 'title': 'Act'},
+    },
+    'title': 'Character',
+}
+"""
+```
 
 ## Smart Union
+
+**TODO: Smart Union behaviour has roughly become the default, this needs to be moved to the stuff on unions**
 
 By default, as explained [here](types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
 So sometimes you may have unexpected coerced data.
 
-{!.tmp_examples/model_config_smart_union_off.md!}
+```py
+from typing import Union
+
+from pydantic import BaseModel
+
+
+class Foo(BaseModel):
+    pass
+
+
+class Bar(BaseModel):
+    pass
+
+
+class Model(BaseModel):
+    x: Union[str, int]
+    y: Union[Foo, Bar]
+
+
+print(Model(x=1, y=Bar()))
+#> x=1 y=Bar()
+```
 
 To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check all allowed types before even trying to coerce.
 Know that this is of course slower, especially if your `Union` is quite big.
 
-{!.tmp_examples/model_config_smart_union_on.md!}
+```py
+from typing import Union
+
+from pydantic import BaseModel
+
+
+class Foo(BaseModel):
+    pass
+
+
+class Bar(BaseModel):
+    pass
+
+
+class Model(BaseModel):
+    x: Union[str, int]
+    y: Union[Foo, Bar]
+
+
+print(Model(x=1, y=Bar()))
+#> x=1 y=Bar()
+```
 
 !!! warning
     Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
     This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
 
-{!.tmp_examples/model_config_smart_union_on_edge_case.md!}
+```py
+from typing import List, Union
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    x: Union[List[str], List[int]]
+
+
+# Expected coercion
+print(Model(x=[1, '2']))
+#> x=[1, 2]
+
+# Unexpected coercion
+print(Model(x=[1, 2]))
+#> x=[1, 2]
+```

@@ -1,2 +1,6 @@
+# used when generate devtools docs example
+ansi2html
 devtools
 hypothesis
+# used in docs tests
+sqlalchemy==1.4.0

@@ -17,12 +17,7 @@ test.py
 .hypothesis
 /htmlcov/
 /benchmarks/*.json
-/docs/.changelog.md
-/docs/.version.md
-/docs/.tmp_schema_mappings.html
-/docs/.tmp_examples/
-/docs/.tmp-projections/
-/docs/usage/.tmp-projections/
+/docs/changelog.md
 /site/
 /site.zip
 .pytest_cache/

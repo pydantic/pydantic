@@ -65,28 +65,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: set up python
-      uses: actions/setup-python@v4
+    - uses: actions/setup-python@v4
       with:
         python-version: '3.10'
 
-    - uses: actions/cache@v3
-      id: cache
-      with:
-        path: ${{ env.pythonLocation }}
-        key: >
-          docs-build-v2
-          ${{ runner.os }}
-          ${{ env.pythonLocation }}
-          ${{ hashFiles('pyproject.toml') }}
-          ${{ hashFiles('requirements/*') }}
-
     - name: install
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: pip install -r requirements/all.txt .
+      run: pip install -r requirements/docs.txt
 
-    - name: build site
-      run: make docs
+    - run: python -c 'import docs.plugins.main'
+    - run: mkdocs build --verbose
 
     - name: Store docs site
       uses: actions/upload-artifact@v3
@@ -127,7 +114,7 @@ jobs:
         run: pip install .
 
       - name: test
-        run: pytest --ignore=tests/mypy/ --memray
+        run: pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
 
   test:
     name: test ${{ matrix.os }} / ${{ matrix.python-version }}
