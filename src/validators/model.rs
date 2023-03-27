@@ -25,6 +25,7 @@ pub struct ModelValidator {
     post_init: Option<Py<PyString>>,
     name: String,
     expect_fields_set: bool,
+    frozen: bool,
 }
 
 impl BuildValidator for ModelValidator {
@@ -59,6 +60,7 @@ impl BuildValidator for ModelValidator {
             // which is not what we want here
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
             expect_fields_set,
+            frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
         }
         .into())
     }
@@ -175,6 +177,9 @@ impl ModelValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
+        if self.frozen {
+            return Err(ValError::new(ErrorType::FrozenInstance, input));
+        }
         // inner validator takes care of updating dict, here we just need to update fields_set
         let next_extra = Extra {
             self_instance: self_instance.get_attr(intern!(py, "__dict__")),
