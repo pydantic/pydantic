@@ -249,10 +249,15 @@ def collect_fields(  # noqa: C901
                 if cls.__pydantic_generic_parameters__:  # model can be parametrized
                     assert cls.__pydantic_generic_defaults__ is not None
                     cls.__pydantic_generic_defaults__[ann_name] = default
-                if not (is_dataclass and not isinstance(default, (dataclasses.Field, FieldInfo))):
+                delattr(cls, ann_name)
+                if (
+                    is_dataclass
+                    and isinstance(default, (dataclasses.Field, FieldInfo))
+                    and default.default not in (Undefined, dataclasses.MISSING)
+                ):
                     # for dataclasses we only delete the attribute if it is an instance of
                     # field, e.g. `a: int = 1` should not get deleted
-                    delattr(cls, ann_name)
+                    setattr(cls, ann_name, default.default)
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
 
