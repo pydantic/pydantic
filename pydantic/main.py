@@ -204,6 +204,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
 
     @classmethod
+    def __get_pydantic_core_schema__(cls, **kwargs) -> CoreSchema:
+        return _model_construction.model_get_pydantic_core_schema(cls, **kwargs)
+
+    @classmethod
     def model_validate(cls: type[Model], obj: Any) -> Model:
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True

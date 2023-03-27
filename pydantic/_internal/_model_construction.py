@@ -28,7 +28,7 @@ if typing.TYPE_CHECKING:
     from ..config import ConfigDict
     from ..main import BaseModel
 
-__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class', 'MockValidator'
+__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class', 'MockValidator', 'set_model_fields'
 
 IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod, PydanticDecoratorMarker)
 object_setattr = object.__setattr__
@@ -122,33 +122,39 @@ def single_underscore(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
 
 
-def deferred_model_get_pydantic_validation_schema(
-    cls: type[BaseModel], types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None, **_kwargs: Any
-) -> core_schema.CoreSchema:
+def model_get_pydantic_core_schema(
+    cls: type[BaseModel],
+    *,
+    types_namespace: dict[str, Any] | None = None,
+    typevars_map: dict[str, Any] | None = None,
+    **_kwargs: Any,
+) -> core_schema.ModelSchema:
     """
-    Used on model as `__get_pydantic_core_schema__` if not all type hints are available.
-
-    This method generates the schema for the model and also sets `model_fields`, but it does NOT build
-    the validator and set `__pydantic_validator__` as that would fail in some cases - e.g. mutually referencing
-    models.
+    Used in `BaseModel.__get_pydantic_core_schema__` to construct the model schema.
     """
     self_schema, model_ref = get_model_self_schema(cls)
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
-    fields, _ = collect_fields(cls, cls.__bases__, types_namespace)
 
-    model_config = cls.model_config
+    try:
+        fields = cls.model_fields
+    except AttributeError:
+        fields = set_model_fields(cls, cls.__bases__, types_namespace, typevars_map)
+
+    # this schema construction has to go here
+    # since in some recursive generics it can raise a PydanticUndefinedAnnotation error
     inner_schema = model_fields_schema(
         model_ref,
         fields,
         cls.__pydantic_decorators__,
-        model_config['arbitrary_types_allowed'],
+        cls.model_config['arbitrary_types_allowed'],
         types_namespace,
         typevars_map,
     )
 
-    core_config = generate_config(model_config, cls)
-    # we have to set model_fields as otherwise `repr` on the model will fail
-    cls.model_fields = fields
+    inner_schema = consolidate_refs(inner_schema)
+    inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
+
+    core_config = generate_config(cls.model_config, cls)
     model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
     js_metadata = cls.model_json_schema_metadata()
     return core_schema.model_schema(
@@ -170,28 +176,16 @@ def complete_model_class(
     typevars_map: dict[str, Any] | None = None,
 ) -> bool:
     """
-    Collect bound validator functions, build the model validation schema and set the model signature.
+    Finish building a model class.
 
     Returns `True` if the model is successfully completed, else `False`.
 
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-    self_schema, model_ref = get_model_self_schema(cls)
-    types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
     try:
-        fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
-        apply_alias_generator(cls.model_config, fields)
-        # this schema construction has to go here
-        # since in some recursive generics it can raise a PydanticUndefinedAnnotation error
-        inner_schema = model_fields_schema(
-            model_ref,
-            fields,
-            cls.__pydantic_decorators__,
-            cls.model_config['arbitrary_types_allowed'],
-            types_namespace,
-            typevars_map,
-        )
+        fields = set_model_fields(cls, bases, types_namespace, typevars_map)
+        schema = cls.__get_pydantic_core_schema__(types_namespace=types_namespace, typevars_map=typevars_map)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -207,27 +201,10 @@ def complete_model_class(
             f'before the first `{name}` instance is created.'
         )
         cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
-        # here we have to set __get_pydantic_core_schema__ so we can try to rebuild the model later
-        cls.__get_pydantic_core_schema__ = partial(  # type: ignore[attr-defined]
-            deferred_model_get_pydantic_validation_schema, cls, typevars_map=typevars_map
-        )
         return False
 
-    inner_schema = consolidate_refs(inner_schema)
-    inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
-
     core_config = generate_config(cls.model_config, cls)
-    cls.model_fields = fields
-    cls.__class_vars__.update(class_vars)
-    model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    js_metadata = cls.model_json_schema_metadata()
-    cls.__pydantic_core_schema__ = schema = core_schema.model_schema(
-        cls,
-        inner_schema,
-        config=core_config,
-        post_init=model_post_init,
-        metadata=build_metadata_dict(js_metadata=js_metadata),
-    )
+
     cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_model_complete__ = True
@@ -237,6 +214,19 @@ def complete_model_class(
         '__signature__', generate_model_signature(cls.__init__, fields, cls.model_config)
     )
     return True
+
+
+def set_model_fields(
+    cls: type[BaseModel],
+    bases: tuple[type[Any], ...],
+    types_namespace: dict[str, Any] | None,
+    typevars_map: dict[str, Any] | None,
+) -> dict[str, FieldInfo]:
+    fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+    apply_alias_generator(cls.model_config, fields)
+    cls.model_fields = fields
+    cls.__class_vars__.update(class_vars)
+    return fields
 
 
 def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:
