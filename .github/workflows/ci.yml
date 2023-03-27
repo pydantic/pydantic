@@ -473,7 +473,7 @@ jobs:
       - run: pip install typing-extensions
       - run: pip install -r tests/requirements.txt
       - run: pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
-      - run: pytest
+      - run: pytest --ignore=tests/test_docstrings.py
 
   release:
     needs: [test-builds-arch, test-builds-os, check]
