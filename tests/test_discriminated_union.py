@@ -101,7 +101,6 @@ def test_discriminated_union_root_same_discriminator():
     ]
 
 
-@pytest.mark.xfail(reason='something weird with from_attributes being included in CoreConfig')
 def test_discriminated_union_validation():
     class BlackCat(BaseModel):
         pet_type: Literal['cat']
@@ -280,7 +279,6 @@ def test_discriminated_annotated_union():
     assert isinstance(m.pet, WhiteCat)
 
 
-@pytest.mark.xfail(reason='something weird with from_attributes being included in CoreConfig')
 def test_discriminated_union_basemodel_instance_value():
     class A(BaseModel):
         foo: Literal['a']
@@ -295,7 +293,6 @@ def test_discriminated_union_basemodel_instance_value():
     assert isinstance(t, Top)
 
 
-@pytest.mark.xfail(reason='something weird with from_attributes being included in CoreConfig')
 def test_discriminated_union_basemodel_instance_value_with_alias():
     class A(BaseModel):
         literal: Literal['a'] = Field(alias='lit')
@@ -889,6 +886,7 @@ def test_wrap_function_schema() -> None:
             'dog': {'fields': {'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}}}, 'type': 'typed-dict'},
         },
         'discriminator': 'kind',
+        'from_attributes': True,
         'strict': False,
         'type': 'tagged-union',
     }
@@ -963,6 +961,7 @@ def test_lax_or_strict_definitions() -> None:
             'dog': 'DOG',
         },
         'discriminator': 'kind',
+        'from_attributes': True,
         'strict': False,
         'type': 'tagged-union',
     }
@@ -1033,6 +1032,7 @@ def test_wrapped_nullable_union() -> None:
                 'dog': 'cat',
             },
             'discriminator': 'kind',
+            'from_attributes': True,
             'strict': False,
             'type': 'tagged-union',
         },
