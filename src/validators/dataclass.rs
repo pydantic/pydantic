@@ -14,7 +14,6 @@ use crate::validators::function::convert_err;
 
 use super::arguments::{json_get, json_slice, py_get, py_slice};
 use super::model::{create_class, force_setattr};
-use super::with_default::get_default;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -221,8 +220,14 @@ impl Validator for DataclassArgsValidator {
                         }
                         // found neither, check if there is a default value, otherwise error
                         (None, None) => {
-                            if let Some(value) = get_default(py, &field.validator)? {
-                                set_item!(field, value.as_ref().clone_ref(py));
+                            if let Some(value) = field.validator.default_value(
+                                py,
+                                Some(field.name.as_str()),
+                                &extra,
+                                slots,
+                                recursion_guard,
+                            )? {
+                                set_item!(field, value);
                             } else {
                                 errors.push(ValLineError::new_with_loc(
                                     ErrorType::MissingKeywordArgument,

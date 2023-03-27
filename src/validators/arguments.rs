@@ -10,7 +10,6 @@ use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
 
-use super::with_default::get_default;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -221,11 +220,11 @@ impl Validator for ArgumentsValidator {
                             }
                         }
                         (None, None) => {
-                            if let Some(value) = get_default(py, &parameter.validator)? {
+                            if let Some(value) = parameter.validator.default_value(py, Some(parameter.name.as_str()), extra, slots, recursion_guard)? {
                                 if let Some(ref kwarg_key) = parameter.kwarg_key {
-                                    output_kwargs.set_item(kwarg_key, value.as_ref())?;
+                                    output_kwargs.set_item(kwarg_key, value)?;
                                 } else {
-                                    output_args.push(value.as_ref().clone_ref(py));
+                                    output_args.push(value);
                                 }
                             } else if parameter.kwarg_key.is_some() {
                                 errors.push(ValLineError::new_with_loc(

@@ -1,11 +1,9 @@
-use std::borrow::Cow;
-
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::{py_err, SchemaDict};
-use crate::errors::{ValError, ValResult};
+use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
+use crate::errors::{LocItem, ValError, ValResult};
 use crate::input::Input;
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
@@ -33,10 +31,10 @@ impl DefaultType {
         }
     }
 
-    pub fn default_value(&self, py: Python) -> PyResult<Option<Cow<PyObject>>> {
+    pub fn default_value(&self, py: Python) -> PyResult<Option<PyObject>> {
         match self {
-            Self::Default(ref default) => Ok(Some(Cow::Borrowed(default))),
-            Self::DefaultFactory(ref default_factory) => Ok(Some(Cow::Owned(default_factory.call0(py)?))),
+            Self::Default(ref default) => Ok(Some(default.clone_ref(py))),
+            Self::DefaultFactory(ref default_factory) => Ok(Some(default_factory.call0(py)?)),
             Self::None => Ok(None),
         }
     }
@@ -54,6 +52,7 @@ pub struct WithDefaultValidator {
     default: DefaultType,
     on_error: OnError,
     validator: Box<CombinedValidator>,
+    validate_default: bool,
     name: String,
 }
 
@@ -89,6 +88,7 @@ impl BuildValidator for WithDefaultValidator {
             default,
             on_error,
             validator,
+            validate_default: schema_or_config_same(schema, config, intern!(py, "validate_default"))?.unwrap_or(false),
             name,
         }
         .into())
@@ -108,9 +108,40 @@ impl Validator for WithDefaultValidator {
             Ok(v) => Ok(v),
             Err(e) => match self.on_error {
                 OnError::Raise => Err(e),
-                OnError::Default => Ok(self.default.default_value(py)?.unwrap().as_ref().clone()),
+                OnError::Default => Ok(self
+                    .default_value(py, None::<usize>, extra, slots, recursion_guard)?
+                    .unwrap()),
                 OnError::Omit => Err(ValError::Omit),
             },
+        }
+    }
+
+    fn default_value<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        outer_loc: Option<impl Into<LocItem>>,
+        extra: &Extra,
+        slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, Option<PyObject>> {
+        match self.default.default_value(py)? {
+            Some(dft) => {
+                if self.validate_default {
+                    match self.validate(py, dft.into_ref(py), extra, slots, recursion_guard) {
+                        Ok(v) => Ok(Some(v)),
+                        Err(e) => {
+                            if let Some(outer_loc) = outer_loc {
+                                Err(e.with_outer_location(outer_loc.into()))
+                            } else {
+                                Err(e)
+                            }
+                        }
+                    }
+                } else {
+                    Ok(Some(dft))
+                }
+            }
+            None => Ok(None),
         }
     }
 
@@ -134,13 +165,5 @@ impl WithDefaultValidator {
 
     pub fn omit_on_error(&self) -> bool {
         matches!(self.on_error, OnError::Omit)
-    }
-}
-
-pub fn get_default<'a>(py: Python<'a>, validator: &'a CombinedValidator) -> PyResult<Option<Cow<'a, PyObject>>> {
-    if let CombinedValidator::WithDefault(validator) = validator {
-        validator.default.default_value(py)
-    } else {
-        Ok(None)
     }
 }
