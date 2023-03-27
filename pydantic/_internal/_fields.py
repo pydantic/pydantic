@@ -246,10 +246,10 @@ def collect_fields(  # noqa: C901
             # 1. To match the behaviour of annotation-only fields
             # 2. To avoid false positives in the NameError check above
             try:
+                delattr(cls, ann_name)
                 if cls.__pydantic_generic_parameters__:  # model can be parametrized
                     assert cls.__pydantic_generic_defaults__ is not None
                     cls.__pydantic_generic_defaults__[ann_name] = default
-                delattr(cls, ann_name)
                 if (
                     is_dataclass
                     and isinstance(default, (dataclasses.Field, FieldInfo))
