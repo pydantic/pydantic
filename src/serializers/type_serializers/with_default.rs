@@ -34,17 +34,6 @@ impl BuildSerializer for WithDefaultSerializer {
     }
 }
 
-pub(super) fn get_default<'a>(
-    py: Python<'a>,
-    serializer: &'a CombinedSerializer,
-) -> PyResult<Option<Cow<'a, PyObject>>> {
-    if let CombinedSerializer::WithDefault(serializer) = serializer {
-        serializer.default.default_value(py)
-    } else {
-        Ok(None)
-    }
-}
-
 impl TypeSerializer for WithDefaultSerializer {
     fn to_python(
         &self,
@@ -78,5 +67,9 @@ impl TypeSerializer for WithDefaultSerializer {
 
     fn retry_with_lax_check(&self) -> bool {
         self.serializer.retry_with_lax_check()
+    }
+
+    fn get_default(&self, py: Python) -> PyResult<Option<PyObject>> {
+        self.default.default_value(py)
     }
 }

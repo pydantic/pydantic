@@ -9,7 +9,7 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
-use crate::errors::{ValError, ValResult, ValidationError};
+use crate::errors::{LocItem, ValError, ValResult, ValidationError};
 use crate::input::Input;
 use crate::questions::{Answers, Question};
 use crate::recursion_guard::RecursionGuard;
@@ -601,6 +601,18 @@ pub trait Validator: Send + Sync + Clone + Debug {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject>;
+
+    /// Get a default value, currently only used by `WithDefaultValidator`
+    fn default_value<'s, 'data>(
+        &'s self,
+        _py: Python<'data>,
+        _outer_loc: Option<impl Into<LocItem>>,
+        _extra: &Extra,
+        _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, Option<PyObject>> {
+        Ok(None)
+    }
 
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`

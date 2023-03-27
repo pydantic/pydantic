@@ -8,7 +8,6 @@ use crate::input::{GenericCollection, Input};
 use crate::recursion_guard::RecursionGuard;
 
 use super::list::{get_items_schema, length_check};
-use super::with_default::get_default;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -155,8 +154,10 @@ impl Validator for TuplePositionalValidator {
                             Err(err) => return Err(err),
                         },
                         None => {
-                            if let Some(value) = get_default(py, &validator)? {
-                                output.push(value.as_ref().clone_ref(py));
+                            if let Some(value) =
+                                validator.default_value(py, Some(index), extra, slots, recursion_guard)?
+                            {
+                                output.push(value);
                             } else {
                                 errors.push(ValLineError::new_with_loc(ErrorType::Missing, input, index));
                             }
