@@ -8,6 +8,7 @@ Public methods related to:
 from __future__ import annotations as _annotations
 
 from functools import partial
+from types import FunctionType
 from typing import Any, Callable, TypeVar, Union, overload
 from warnings import warn
 
@@ -116,21 +117,51 @@ _V1RootValidatorFunctionType = TypeVar(
 )
 
 
+# Use a single overload here to get a different signature that requires at least one field be specified
+@overload  # type: ignore[misc]
 def validator(
     __field: str,
     *fields: str,
     pre: bool = False,
+    each_item: bool = False,
+    always: bool = False,
     check_fields: bool | None = None,
     allow_reuse: bool = False,
+) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
+    ...
+
+
+def validator(
+    *fields: str,
+    pre: bool = False,
     each_item: bool = False,
+    always: bool = False,
+    check_fields: bool | None = None,
+    allow_reuse: bool = False,
 ) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
     :param fields: which field(s) the method should be called on
+    :param pre: whether or not this validator should be called before the standard validators (else after)
+    :param each_item: for complex objects (sets, lists etc.) whether to validate individual elements rather than the
+      whole object
+    :param always: whether this method and other validators should be called even if the value is missing
     :param check_fields: whether to check that the fields actually exist on the model
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
-    fields = tuple((__field, *fields))
+    if not fields:
+        raise TypeError('validator with no fields specified')
+    elif isinstance(fields[0], FunctionType):
+        raise TypeError(
+            'validators should be used with fields and keyword arguments, not bare. '
+            "E.g. usage should be `@validator('<field_name>', ...)`"
+        )
+    elif not all(isinstance(field, str) for field in fields):
+        raise TypeError(
+            'validator fields should be passed as separate string args. '
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+        )
+
     warn(
         'Pydantic V1 style `@validator` validators are deprecated.'
         ' You should migrate to Pydantic V2 style `@field_validator` validators,'
@@ -151,8 +182,9 @@ def validator(
         validator_wrapper_info = _decorators.ValidatorDecoratorInfo(
             fields=fields,
             mode=mode,
-            check_fields=check_fields,
             each_item=each_item,
+            always=always,
+            check_fields=check_fields,
         )
         return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
 
@@ -198,6 +230,18 @@ def field_validator(
     :param check_fields: whether to check that the fields actually exist on the model
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
+    if not fields:
+        raise TypeError('field_validator with no fields specified')
+    elif isinstance(fields[0], FunctionType):
+        raise TypeError(
+            'field_validators should be used with fields and keyword arguments, not bare. '
+            "E.g. usage should be `@validator('<field_name>', ...)`"
+        )
+    elif not all(isinstance(field, str) for field in fields):
+        raise TypeError(
+            'field_validator fields should be passed as separate string args. '
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+        )
 
     def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
         if _decorators.is_instance_method_from_sig(f):

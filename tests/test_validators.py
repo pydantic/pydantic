@@ -380,16 +380,116 @@ def test_duplicates():
                 return v
 
 
-@pytest.mark.xfail(reason='validator always')
+def test_use_bare():
+    with pytest.raises(TypeError, match='validators should be used with fields'):
+
+        class Model(BaseModel):
+            a: str
+
+            with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+                @validator
+                def checker(cls, v):
+                    return v
+
+
+def test_use_bare_field_validator():
+    with pytest.raises(TypeError, match='field_validators should be used with fields'):
+
+        class Model(BaseModel):
+            a: str
+
+            @field_validator
+            def checker(cls, v):
+                return v
+
+
+def test_use_no_fields():
+    with pytest.raises(TypeError, match='validator with no fields specified'):
+
+        class Model(BaseModel):
+            a: str
+
+            with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+                @validator()
+                def checker(cls, v):
+                    return v
+
+
+def test_use_no_fields_field_validator():
+    with pytest.raises(TypeError, match='field_validator with no fields specified'):
+
+        class Model(BaseModel):
+            a: str
+
+            @field_validator()
+            def checker(cls, v):
+                return v
+
+
+def test_validator_bad_fields_throws_configerror():
+    """
+    Attempts to create a validator with fields set as a list of strings,
+    rather than just multiple string args. Expects ConfigError to be raised.
+    """
+    with pytest.raises(TypeError, match='validator fields should be passed as separate string args.'):
+
+        class Model(BaseModel):
+            a: str
+            b: str
+
+            with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+                @validator(['a', 'b'])
+                def check_fields(cls, v):
+                    return v
+
+
+def test_field_validator_bad_fields_throws_configerror():
+    """
+    Attempts to create a validator with fields set as a list of strings,
+    rather than just multiple string args. Expects ConfigError to be raised.
+    """
+    with pytest.raises(TypeError, match='field_validator fields should be passed as separate string args.'):
+
+        class Model(BaseModel):
+            a: str
+            b: str
+
+            @field_validator(['a', 'b'])
+            def check_fields(cls, v):
+                return v
+
+
 def test_validate_always():
     check_calls = 0
 
     class Model(BaseModel):
         a: str = None
 
-        # TODO: we're going to have a flag to validate defaults
-        # instead
-        @field_validator('a', mode='before', always=True)
+        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+            @validator('a', pre=True, always=True)
+            @classmethod
+            def check_a(cls, v: Any):
+                nonlocal check_calls
+                check_calls += 1
+                return v or 'xxx'
+
+    assert Model().a == 'xxx'
+    assert check_calls == 1
+    assert Model(a='y').a == 'y'
+    assert check_calls == 2
+
+
+def test_field_validator_validate_default():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: str = Field(None, validate_default=True)
+
+        @field_validator('a', mode='before')
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -402,7 +502,6 @@ def test_validate_always():
     assert check_calls == 2
 
 
-@pytest.mark.xfail(reason='validator always')
 def test_validate_always_on_inheritance():
     check_calls = 0
 
@@ -410,7 +509,29 @@ def test_validate_always_on_inheritance():
         a: str = None
 
     class Model(ParentModel):
-        @field_validator('a', mode='before', always=True)
+        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+            @validator('a', pre=True, always=True)
+            @classmethod
+            def check_a(cls, v: Any):
+                nonlocal check_calls
+                check_calls += 1
+                return v or 'xxx'
+
+    assert Model().a == 'xxx'
+    assert check_calls == 1
+    assert Model(a='y').a == 'y'
+    assert check_calls == 2
+
+
+def test_field_validator_validate_default_on_inheritance():
+    check_calls = 0
+
+    class ParentModel(BaseModel):
+        a: str = Field(None, validate_default=True)
+
+    class Model(ParentModel):
+        @field_validator('a', mode='before')
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -784,14 +905,34 @@ def test_key_validation():
     assert Model(foobar={1: 1}).foobar == {2: 2}
 
 
-@pytest.mark.xfail(reason='validator always')
 def test_validator_always_optional():
     check_calls = 0
 
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', mode='before', always=True)
+        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+            @validator('a', pre=True, always=True)
+            @classmethod
+            def check_a(cls, v: Any):
+                nonlocal check_calls
+                check_calls += 1
+                return v or 'default value'
+
+    assert Model(a='y').a == 'y'
+    assert check_calls == 1
+    assert Model().a == 'default value'
+    assert check_calls == 2
+
+
+def test_field_validator_validate_default_optional():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: Optional[str] = Field(None, validate_default=True)
+
+        @field_validator('a', mode='before')
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -804,14 +945,33 @@ def test_validator_always_optional():
     assert check_calls == 2
 
 
-@pytest.mark.xfail(reason='validator always')
 def test_validator_always_pre():
     check_calls = 0
 
     class Model(BaseModel):
         a: str = None
 
-        @validator('a', always=True, mode='before')
+        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+            @validator('a', pre=True, always=True)
+            @classmethod
+            def check_a(cls, v: Any):
+                nonlocal check_calls
+                check_calls += 1
+                return v or 'default value'
+
+    assert Model(a='y').a == 'y'
+    assert Model().a == 'default value'
+    assert check_calls == 2
+
+
+def test_field_validator_validate_default_pre():
+    check_calls = 0
+
+    class Model(BaseModel):
+        a: str = Field(None, validate_default=True)
+
+        @field_validator('a', mode='before')
         @classmethod
         def check_a(cls, v: Any):
             nonlocal check_calls
@@ -823,12 +983,29 @@ def test_validator_always_pre():
     assert check_calls == 2
 
 
-@pytest.mark.xfail(reason='validator always')
 def test_validator_always_post():
     class Model(BaseModel):
-        a: str = None
+        # NOTE: Unlike in v1, you can't replicate the behavior of only applying defined validators and not standard
+        # field validation. This is why I've set the default to '' instead of None.
+        # But, I think this is a good thing, and I don't think we should try to support this.
+        a: str = ''
 
-        @validator('a', always=True)
+        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+            @validator('a', always=True)
+            @classmethod
+            def check_a(cls, v: Any):
+                return v or 'default value'
+
+    assert Model(a='y').a == 'y'
+    assert Model().a == 'default value'
+
+
+def test_field_validator_validate_default_post():
+    class Model(BaseModel):
+        a: str = Field('', validate_default=True)
+
+        @field_validator('a')
         @classmethod
         def check_a(cls, v: Any):
             return v or 'default value'
@@ -837,12 +1014,26 @@ def test_validator_always_post():
     assert Model().a == 'default value'
 
 
-@pytest.mark.xfail(reason='validator always')
 def test_validator_always_post_optional():
     class Model(BaseModel):
         a: Optional[str] = None
 
-        @validator('a', always=True, mode='before')
+        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+            @validator('a', pre=True, always=True)
+            @classmethod
+            def check_a(cls, v: Any):
+                return 'default value' if v is None else v
+
+    assert Model(a='y').a == 'y'
+    assert Model().a == 'default value'
+
+
+def test_field_validator_validate_default_post_optional():
+    class Model(BaseModel):
+        a: Optional[str] = Field(None, validate_default=True)
+
+        @field_validator('a', mode='before')
         @classmethod
         def check_a(cls, v: Any):
             return v or 'default value'
@@ -851,14 +1042,36 @@ def test_validator_always_post_optional():
     assert Model().a == 'default value'
 
 
-@pytest.mark.xfail(reason='validator always')
 def test_datetime_validator():
     check_calls = 0
 
     class Model(BaseModel):
         d: datetime = None
 
-        @validator('d', mode='before', always=True)
+        with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+            @validator('d', pre=True, always=True)
+            @classmethod
+            def check_d(cls, v: Any):
+                nonlocal check_calls
+                check_calls += 1
+                return v or datetime(2032, 1, 1)
+
+    assert Model(d='2023-01-01T00:00:00').d == datetime(2023, 1, 1)
+    assert check_calls == 1
+    assert Model().d == datetime(2032, 1, 1)
+    assert check_calls == 2
+    assert Model(d=datetime(2023, 1, 1)).d == datetime(2023, 1, 1)
+    assert check_calls == 3
+
+
+def test_datetime_field_validator():
+    check_calls = 0
+
+    class Model(BaseModel):
+        d: datetime = Field(None, validate_default=True)
+
+        @field_validator('d', mode='before')
         @classmethod
         def check_d(cls, v: Any):
             nonlocal check_calls

@@ -336,16 +336,16 @@ In this case you should set `check_fields=False` on the validator.
 
 Validators also work with *pydantic* dataclasses.
 
-```py test="xfail - currently decorators are messing up dataclass field defaults #5271"
+```py
 from datetime import datetime
 
-from pydantic import field_validator
+from pydantic import Field, field_validator
 from pydantic.dataclasses import dataclass
 
 
 @dataclass
 class DemoDataclass:
-    ts: datetime = None
+    ts: datetime = Field(None, validate_default=True)
 
     @field_validator('ts', mode='before')
     def set_ts_now(cls, v):
@@ -353,5 +353,7 @@ class DemoDataclass:
 
 
 print(DemoDataclass())
+#> DemoDataclass(ts=datetime.datetime(2032, 1, 2, 3, 4, 5, 6))
 print(DemoDataclass(ts='2017-11-08T14:00'))
+#> DemoDataclass(ts=datetime.datetime(2017, 11, 8, 14, 0))
 ```

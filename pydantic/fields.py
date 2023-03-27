@@ -42,6 +42,7 @@ class FieldInfo(_repr.Representation):
         'json_schema_extra',
         'init_var',
         'kw_only',
+        'validate_default',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -93,6 +94,7 @@ class FieldInfo(_repr.Representation):
         # currently only used on dataclasses
         self.init_var = kwargs.get('init_var', None)
         self.kw_only = kwargs.get('kw_only', None)
+        self.validate_default = kwargs.get('validate_default', None)
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
@@ -309,6 +311,7 @@ def Field(
     repr: bool = True,
     strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
+    validate_default: bool | None = None,
 ) -> Any:
     """
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
@@ -359,6 +362,7 @@ def Field(
     :param repr: show this field in the representation
     :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
     :param strict: enable or disable strict parsing mode
+    :param validate_default: whether the default value should be validated for this field
     """
     return FieldInfo.from_field(
         default,
@@ -388,6 +392,7 @@ def Field(
         repr=repr,
         json_schema_extra=json_schema_extra,
         strict=strict,
+        validate_default=validate_default,
     )
 
 
