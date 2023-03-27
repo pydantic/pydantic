@@ -451,13 +451,14 @@ class GenerateSchema:
         schema = self.generate_schema(field_info.annotation)
         schema = apply_annotations(schema, field_info.metadata)
 
-        if not field_info.is_required():
-            schema = wrap_default(field_info, schema)
-
         schema = apply_validators(
             schema, filter_field_decorator_info_by_field(decorators.field_validator.values(), name)
         )
         schema = apply_validators(schema, filter_field_decorator_info_by_field(decorators.validator.values(), name))
+
+        if not field_info.is_required():
+            schema = wrap_default(field_info, schema)
+
         schema = apply_serializers(schema, filter_field_decorator_info_by_field(decorators.serializer.values(), name))
         # use `or None` to so the core schema is minimal
         return core_schema.dataclass_field(

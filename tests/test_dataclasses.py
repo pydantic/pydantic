@@ -13,6 +13,7 @@ from typing_extensions import Literal
 import pydantic
 from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError
 from pydantic.decorators import field_validator
+from pydantic.fields import Field, FieldInfo
 
 
 def test_simple():
@@ -1434,8 +1435,14 @@ def test_validator():
     assert d.b == 5.0
 
 
-@pytest.mark.xfail(reason='validator in child not applied')
 def test_parent_post_init():
+    """
+    Test that the parent's __post_init__ gets called
+    and the order in which it gets called relative to validation.
+
+    In V1 we called it before validation, in V2 it gets called after.
+    """
+
     @dataclasses.dataclass
     class A:
         a: float
@@ -1453,14 +1460,13 @@ def test_parent_post_init():
             value += 3
             return value
 
-    assert B(a=1).a == 5  # 1 * 2 + 3
+    assert B(a=1).a == 8  # (1 + 3) * 2 = 8
 
 
-@pytest.mark.xfail(reason='validator in child not applied')
-def test_subclass_post_init():
+def test_subclass_post_init_order():
     @dataclasses.dataclass
     class A:
-        a: int = 1
+        a: float
 
     @pydantic.dataclasses.dataclass
     class B(A):
@@ -1473,14 +1479,13 @@ def test_subclass_post_init():
             value += 3
             return value
 
-    assert B().a == 5  # 1 * 2 + 3
+    assert B(a=1).a == 8  # (1 + 3) * 2 = 8
 
 
-@pytest.mark.xfail(reason='validator in child not applied')
 def test_subclass_post_init_inheritance():
     @dataclasses.dataclass
     class A:
-        a: int = 1
+        a: int
 
     @pydantic.dataclasses.dataclass
     class B(A):
@@ -1498,7 +1503,7 @@ def test_subclass_post_init_inheritance():
         def __post_init__(self):
             self.a *= 3
 
-    assert C().a == 6  # 1 * 3 + 3
+    assert C(1).a == 12  # (1 + 3) * 3
 
 
 @pytest.mark.xfail(reason='cannot access pydantic model config for dataclass')
@@ -1538,3 +1543,101 @@ def test_validator_info_field_name_data_before():
             return 'just kidding!'
 
     assert Model(a=b'your foobar is good', b=b'but my barbaz is better').b == 'just kidding!'
+
+
+@pytest.mark.parametrize(
+    'decorator1, expected_parent, expected_child',
+    [
+        (
+            pydantic.dataclasses.dataclass,
+            ['parent before', 'parent', 'parent after'],
+            ['parent before', 'child', 'parent after', 'child before', 'child after'],
+        ),
+        (dataclasses.dataclass, [], ['child before', 'child', 'child after']),
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: List[str], expected_child: List[str]):
+    """We promise that if you add a validator
+    with the same _function_ name as an existing validator
+    it replaces the existing validator and is run instead of it.
+    """
+
+    @decorator1
+    class Parent:
+        a: List[str]
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def parent_val_before(cls, v: List[str]):
+            v.append('parent before')
+            return v
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def val(cls, v: List[str]):
+            v.append('parent')
+            return v
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def parent_val_after(cls, v: List[str]):
+            v.append('parent after')
+            return v
+
+    @pydantic.dataclasses.dataclass
+    class Child(Parent):
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def child_val_before(cls, v: List[str]):
+            v.append('child before')
+            return v
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def val(cls, v: List[str]):
+            v.append('child')
+            return v
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def child_val_after(cls, v: List[str]):
+            v.append('child after')
+            return v
+
+    assert Parent(a=[]).a == expected_parent
+    assert Child(a=[]).a == expected_child
+
+
+@pytest.mark.parametrize(
+    'decorator1',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+@pytest.mark.parametrize(
+    'default',
+    [1, dataclasses.field(default=1), Field(default=1)],
+    ids=['1', 'dataclasses.field(default=1)', 'pydantic.Field(default=1)'],
+)
+def test_dataclasses_inheritance_default_value_is_not_deleted(
+    decorator1: Callable[[Any], Any], default: Literal[1]
+) -> None:
+    if decorator1 is dataclasses.dataclass and isinstance(default, FieldInfo):
+        pytest.skip(reason="stdlib dataclasses don't support Pydantic fields")
+
+    @decorator1
+    class Parent:
+        a: int = default
+
+    assert Parent.a == 1
+    assert Parent().a == 1
+
+    @pydantic.dataclasses.dataclass
+    class Child(Parent):
+        pass
+
+    assert Child.a == 1
+    assert Child().a == 1
