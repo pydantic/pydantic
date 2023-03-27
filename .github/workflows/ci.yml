@@ -39,6 +39,8 @@ jobs:
 
       - run: pip install -r tests/requirements.txt
 
+      - run: rustc --version --verbose
+
       - run: pip install -e .
         env:
           RUST_BACKTRACE: 1
