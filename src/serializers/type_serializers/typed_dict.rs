@@ -11,7 +11,6 @@ use crate::build_context::BuildContext;
 use crate::build_tools::{py_error_type, schema_or_config, SchemaDict};
 use crate::PydanticSerializationUnexpectedValue;
 
-use super::with_default::get_default;
 use super::{
     infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
     PydanticSerializer, SchemaFilter, SerializeInfer, TypeSerializer,
@@ -145,8 +144,8 @@ impl TypedDictSerializer {
 
     fn exclude_default(&self, value: &PyAny, extra: &Extra, field: &TypedDictField) -> PyResult<bool> {
         if extra.exclude_defaults {
-            if let Some(default) = get_default(value.py(), &field.serializer)? {
-                if value.eq(default.as_ref())? {
+            if let Some(default) = field.serializer.get_default(value.py())? {
+                if value.eq(default)? {
                     return Ok(true);
                 }
             }

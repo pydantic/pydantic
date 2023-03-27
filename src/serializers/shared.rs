@@ -275,6 +275,10 @@ pub(crate) trait TypeSerializer: Send + Sync + Clone + Debug {
     fn retry_with_lax_check(&self) -> bool {
         false
     }
+
+    fn get_default(&self, _py: Python) -> PyResult<Option<PyObject>> {
+        Ok(None)
+    }
 }
 
 pub(crate) struct PydanticSerializer<'py> {

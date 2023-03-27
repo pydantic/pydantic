@@ -32,6 +32,8 @@ class CoreConfig(TypedDict, total=False):
     # used on typed-dicts and tagged union keys
     from_attributes: bool
     revalidate_models: bool
+    # whether to validate default values during validation, default False
+    validate_default: bool
     # used on typed-dicts and arguments
     populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
     # fields related to string fields only
@@ -2068,6 +2070,7 @@ class WithDefaultSchema(TypedDict, total=False):
     default: Any
     default_factory: Callable[[], Any]
     on_error: Literal['raise', 'omit', 'default']  # default: 'raise'
+    validate_default: bool  # default: False
     strict: bool
     ref: str
     metadata: Any
@@ -2083,6 +2086,7 @@ def with_default_schema(
     default: Any = Omitted,
     default_factory: Callable[[], Any] | None = None,
     on_error: Literal['raise', 'omit', 'default'] | None = None,
+    validate_default: bool | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -2107,6 +2111,7 @@ def with_default_schema(
         default: The default value to use
         default_factory: A function that returns the default value to use
         on_error: What to do if the schema validation fails. One of 'raise', 'omit', 'default'
+        validate_default: Whether the default value should be validated
         strict: Whether the underlying schema should be validated with strict mode
         ref: See [TODO] for details
         metadata: See [TODO] for details
@@ -2117,6 +2122,7 @@ def with_default_schema(
         schema=schema,
         default_factory=default_factory,
         on_error=on_error,
+        validate_default=validate_default,
         strict=strict,
         ref=ref,
         metadata=metadata,

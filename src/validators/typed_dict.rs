@@ -15,7 +15,6 @@ use crate::lookup_key::LookupKey;
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
-use super::with_default::get_default;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -230,8 +229,8 @@ impl Validator for TypedDictValidator {
                             Err(err) => return Err(err),
                         }
                         continue;
-                    } else if let Some(value) = get_default(py, &field.validator)? {
-                        output_dict.set_item(&field.name_py, value.as_ref())?;
+                    } else if let Some(value) = field.validator.default_value(py, Some(field.name.as_str()), &extra, slots, recursion_guard)? {
+                        output_dict.set_item(&field.name_py, value)?;
                     } else if field.required {
                         errors.push(ValLineError::new_with_loc(
                             ErrorType::Missing,
