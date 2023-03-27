@@ -255,8 +255,9 @@ def collect_fields(  # noqa: C901
                     and isinstance(default, (dataclasses.Field, FieldInfo))
                     and default.default not in (Undefined, dataclasses.MISSING)
                 ):
-                    # for dataclasses we only delete the attribute if it is an instance of
-                    # field, e.g. `a: int = 1` should not get deleted
+                    # for dataclasses we preserve the default value if it is set
+                    # field, e.g. `a: int = 1` gets kept as is
+                    # and `a: int = field(default=1, repr=False)` gets converted to the above
                     setattr(cls, ann_name, default.default)
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
