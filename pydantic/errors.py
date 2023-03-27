@@ -7,6 +7,8 @@ __all__ = (
     'PydanticInvalidForJsonSchema',
 )
 
+import re
+
 
 class PydanticErrorMixin:
     """
@@ -34,6 +36,14 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     def __init__(self, name: str, *, message: str | None = None) -> None:
         self.name = name
         super().__init__(code=name, message=message)
+
+    @classmethod
+    def from_name_error(cls, name_error: NameError) -> PydanticUndefinedAnnotation:
+        try:
+            name = name_error.name
+        except AttributeError:
+            name = re.search(r".*'(.+?)'", str(name_error)).group(1)
+        return cls(name=name, message=str(name_error))
 
 
 class PydanticSchemaGenerationError(PydanticUserError):

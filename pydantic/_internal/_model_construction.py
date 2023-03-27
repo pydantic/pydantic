@@ -135,21 +135,19 @@ def model_get_pydantic_core_schema(
     self_schema, model_ref = get_model_self_schema(cls)
     types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
 
-    try:
-        fields = cls.model_fields
-    except AttributeError:
-        fields = set_model_fields(cls, cls.__bases__, types_namespace, typevars_map)
-
     # this schema construction has to go here
     # since in some recursive generics it can raise a PydanticUndefinedAnnotation error
-    inner_schema = model_fields_schema(
-        model_ref,
-        fields,
-        cls.__pydantic_decorators__,
-        cls.model_config['arbitrary_types_allowed'],
-        types_namespace,
-        typevars_map,
-    )
+    try:
+        inner_schema = model_fields_schema(
+            model_ref,
+            cls.model_fields,
+            cls.__pydantic_decorators__,
+            cls.model_config['arbitrary_types_allowed'],
+            types_namespace,
+            typevars_map,
+        )
+    except NameError as e:
+        raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
     inner_schema = consolidate_refs(inner_schema)
     inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
@@ -183,8 +181,14 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
+    self_schema, model_ref = get_model_self_schema(cls)
+    types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
+    fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+    apply_alias_generator(cls.model_config, fields)
+    cls.model_fields = fields
+    cls.__class_vars__.update(class_vars)
+
     try:
-        fields = set_model_fields(cls, bases, types_namespace, typevars_map)
         schema = cls.__get_pydantic_core_schema__(types_namespace=types_namespace, typevars_map=typevars_map)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:

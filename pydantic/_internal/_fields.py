@@ -8,6 +8,8 @@ import re
 import sys
 from abc import ABC, abstractmethod
 from copy import copy
+from types import GetSetDescriptorType, NoneType
+import typing
 from typing import TYPE_CHECKING, Any, ForwardRef
 
 from pydantic_core import core_schema
@@ -36,6 +38,26 @@ def get_type_hints_infer_globalns(
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
             pass
     return get_type_hints(obj, globalns=globalns, localns=localns, include_extras=include_extras)
+
+
+def collect_annotations(obj: Any):
+    """
+    Collect annotations from a class, including those from parent classes.
+
+    Unlike `typing.get_type_hints`, this function will not evaluate forward references so won't error if
+    a forward reference is not resolvable.
+    """
+    annotations = {}
+    for base in reversed(obj.__mro__):
+        ann = base.__dict__.get('__annotations__')
+        if ann is not None:
+            for name, value in ann.items():
+                if value is None:
+                    value = NoneType
+                elif isinstance(value, str):
+                    value = ForwardRef(value, is_argument=False, is_class=True)
+                annotations[name] = value
+    return annotations
 
 
 class _UndefinedType:
@@ -139,20 +161,7 @@ def collect_fields(  # noqa: C901
     """
     from ..fields import FieldInfo
 
-    # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
-    try:
-        type_hints = get_type_hints_infer_globalns(cls, types_namespace, include_extras=True)
-    except NameError as e:
-        try:
-            name = e.name
-        except AttributeError:
-            m = re.search(r".*'(.+?)'", str(e))
-            if m:
-                name = m.group(1)
-            else:
-                # should never happen
-                raise
-        raise PydanticUndefinedAnnotation(name) from e
+    type_hints = collect_annotations(cls)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -160,7 +169,7 @@ def collect_fields(  # noqa: C901
     fields: dict[str, FieldInfo] = {}
 
     # currently just used for `init=False` dataclass fields, this logic can probably be removed if
-    # we simplify this file to not be "all things to all men"
+    # we simplify this function to not be "all things to all men"
     omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
 
     class_vars: set[str] = set()
@@ -170,10 +179,6 @@ def collect_fields(  # noqa: C901
             continue
         if ann_name.startswith('_') or (omitted_fields and ann_name in omitted_fields):
             continue
-
-        # raise a PydanticUndefinedAnnotation if type is undefined
-        if isinstance(ann_type, ForwardRef):
-            raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
         if DC_KW_ONLY and ann_type is DC_KW_ONLY:
             # all field fields will be kw_only
@@ -218,9 +223,8 @@ def collect_fields(  # noqa: C901
             if ann_name in annotations or isinstance(ann_type, PydanticForwardRef):
                 field_info = FieldInfo.from_annotation(ann_type)
             else:
-                # # if field has no default value and is not in __annotations__ this means that it is
-                # # defined in a base class and we can take it from there
-                # fields[ann_name] = cls_fields[ann_name]
+                # if field has no default value and is not in __annotations__ this means that it is
+                # defined in a base class and we can take it from there
                 model_fields_lookup: dict[str, FieldInfo] = {}
                 for x in cls.__bases__[::-1]:
                     model_fields_lookup.update(getattr(x, 'model_fields', {}))
