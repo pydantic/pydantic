@@ -2558,6 +2558,7 @@ class ModelSchema(TypedDict, total=False):
     schema: Required[CoreSchema]
     post_init: str
     strict: bool
+    frozen: bool
     config: CoreConfig
     ref: str
     metadata: Any
@@ -2570,6 +2571,7 @@ def model_schema(
     *,
     post_init: str | None = None,
     strict: bool | None = None,
+    frozen: bool | None = None,
     config: CoreConfig | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -2606,6 +2608,7 @@ def model_schema(
         schema: The schema to use for the model
         post_init: The call after init to use for the model
         strict: Whether the model is strict
+        frozen: Whether the model is frozen
         config: The config to use for the model
         ref: See [TODO] for details
         metadata: See [TODO] for details
@@ -2617,6 +2620,7 @@ def model_schema(
         schema=schema,
         post_init=post_init,
         strict=strict,
+        frozen=frozen,
         config=config,
         ref=ref,
         metadata=metadata,
@@ -3349,7 +3353,8 @@ ErrorType = Literal[
     'recursion_loop',
     'dict_attributes_type',
     'missing',
-    'frozen',
+    'frozen_field',
+    'frozen_instance',
     'extra_forbidden',
     'invalid_key',
     'get_attribute_error',

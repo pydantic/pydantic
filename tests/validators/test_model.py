@@ -839,3 +839,27 @@ def test_validate_assignment_no_fields_set():
     # wrong arguments
     with pytest.raises(TypeError, match='self_instance should not be None on typed-dict validate_assignment'):
         v.validate_assignment('field_a', 'field_a', b'different')
+
+
+def test_frozen():
+    class MyModel:
+        __slots__ = {'__dict__'}
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.typed_dict_schema({'f': core_schema.typed_dict_field(core_schema.str_schema())}),
+            frozen=True,
+        )
+    )
+
+    m = v.validate_python({'f': 'x'})
+    assert m.f == 'x'
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment(m, 'f', 'y')
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'frozen_instance', 'loc': (), 'msg': 'Instance is frozen', 'input': 'y'}
+    ]
