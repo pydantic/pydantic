@@ -109,7 +109,7 @@ Pydantic uses some cool new language features, but why should I actually go and 
 **Plays nicely with your IDE/linter/brain**
 : There's no new schema definition micro-language to learn. If you know how to use Python type hints,
   you know how to use Pydantic. Data structures are just instances of classes you define with type annotations,
-  so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)),
+  so auto-completion, linting, [mypy](/mypy_plugin/), IDEs (especially [PyCharm](pycharm_plugin.md)),
   and your intuition should all work properly with your validated data.
 
 **Fast**

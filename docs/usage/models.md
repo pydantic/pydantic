@@ -1235,7 +1235,7 @@ class Model(BaseModel):
 Where `Field` refers to the [field function](schema.md#field-customization).
 
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
-with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
+with [mypy](/mypy_plugin/), and as of **v1.0** should be avoided in most cases.
 
 ### Required Optional fields
 

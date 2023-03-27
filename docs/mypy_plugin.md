@@ -1,4 +1,4 @@
-Pydantic works well with [mypy](http://mypy-lang.org/) right [out of the box](usage/mypy.md).
+Pydantic works well with [mypy](http://mypy-lang.org/) right out of the box.
 
 However, Pydantic also ships with a mypy plugin that adds a number of important pydantic-specific
 features to mypy that improve its ability to type-check your code.
@@ -25,8 +25,8 @@ print(m.middle_name)  # not a model field!
 Model()  # will raise a validation error for age and list_of_ints
 ```
 
+Without any special configuration, mypy catches one of the errors:
 
-Without any special configuration, mypy catches one of the errors (see [here](usage/mypy.md) for usage instructions):
 ```
 13: error: "Model" has no attribute "middle_name"
 ```
@@ -105,7 +105,7 @@ plugins = pydantic.mypy
 
 The plugin is compatible with mypy versions `>=0.930`.
 
-See the [mypy usage](usage/mypy.md) and [plugin configuration](#configuring-the-plugin) docs for more details.
+See the [plugin configuration](#configuring-the-plugin) docs for more details.
 
 #### Configuring the Plugin
 To change the values of the plugin settings, create a section in your mypy config file called `[pydantic-mypy]`,
@@ -155,3 +155,33 @@ init_forbid_extra = true
 init_typed = true
 warn_required_dynamic_aliases = true
 ```
+## Using mypy without the plugin
+
+You can run your code through mypy with:
+
+```bash
+mypy \
+  --ignore-missing-imports \
+  --follow-imports=skip \
+  --strict-optional \
+  pydantic_mypy_test.py
+```
+
+### Strict Optional
+
+For your code to pass with `--strict-optional`, you need to to use `Optional[]` or an alias of `Optional[]`
+for all fields with `None` as the default. (This is standard with mypy.)
+
+Pydantic provides a few useful optional or union types:
+
+* `NoneStr` aka. `Optional[str]`
+* `NoneBytes` aka. `Optional[bytes]`
+* `StrBytes` aka. `Union[str, bytes]`
+* `NoneStrBytes` aka. `Optional[StrBytes]`
+
+If these aren't sufficient you can of course define your own.
+
+### Other pydantic interfaces
+
+Pydantic [dataclasses](/usage/dataclasses/) and the [`validate_arguments` decorator](/usage/validation_decorator/)
+should also work well with mypy.
