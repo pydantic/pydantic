@@ -13,6 +13,7 @@ from typing_extensions import Literal
 import pydantic
 from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError
 from pydantic.decorators import field_validator
+from pydantic.fields import Field, FieldInfo
 
 
 def test_simple():
@@ -1616,13 +1617,27 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
     ],
     ids=['pydantic', 'stdlib'],
 )
-def test_dataclasses_inheritance_default_value_is_not_deleted(decorator1: Callable[[Any], Any]) -> None:
+@pytest.mark.parametrize(
+    'default',
+    [1, dataclasses.field(default=1), Field(default=1)],
+    ids=['1', 'dataclasses.field(default=1)', 'pydantic.Field(default=1)'],
+)
+def test_dataclasses_inheritance_default_value_is_not_deleted(
+    decorator1: Callable[[Any], Any], default: Literal[1]
+) -> None:
+    if decorator1 is dataclasses.dataclass and isinstance(default, FieldInfo):
+        pytest.skip(reason="stdlib dataclasses don't support Pydantic fields")
+
     @decorator1
     class Parent:
-        a: int = 1
+        a: int = default
+
+    assert Parent.a == 1
+    assert Parent().a == 1
 
     @pydantic.dataclasses.dataclass
     class Child(Parent):
         pass
 
+    assert Child.a == 1
     assert Child().a == 1

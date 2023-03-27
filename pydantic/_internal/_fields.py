@@ -250,17 +250,22 @@ def collect_fields(  # noqa: C901
                 if cls.__pydantic_generic_parameters__:  # model can be parametrized
                     assert cls.__pydantic_generic_defaults__ is not None
                     cls.__pydantic_generic_defaults__[ann_name] = default
-                if (
-                    is_dataclass
-                    and isinstance(default, (dataclasses.Field, FieldInfo))
-                    and default.default not in (Undefined, dataclasses.MISSING)
-                ):
-                    # for dataclasses we preserve the default value if it is set
-                    # field, e.g. `a: int = 1` gets kept as is
-                    # and `a: int = field(default=1, repr=False)` gets converted to the above
-                    setattr(cls, ann_name, default.default)
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
+
+            if is_dataclass:
+                # for dataclasses we preserve the default value if it is set
+                # field, e.g. `a: int = 1` gets kept as is
+                # and `a: int = field(default=1, repr=False)` gets converted to the above
+                if isinstance(default, (dataclasses.Field, FieldInfo)):
+                    if default.default not in (
+                        Undefined,
+                        dataclasses.MISSING,
+                    ):
+                        setattr(cls, ann_name, default.default)
+                else:
+                    # not a field default
+                    setattr(cls, ann_name, default)
 
         if init_var:
             field_info.init_var = True
