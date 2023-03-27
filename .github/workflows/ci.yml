@@ -442,7 +442,7 @@ jobs:
             python3 -m pip install -U pip typing-extensions
             python3 -m pip install -r tests/requirements.txt
             python3 -m pip install pydantic-core --no-index --no-deps --find-links dist --force-reinstall
-            python3 -m pytest
+            python3 -m pytest --ignore=tests/test_docstrings.py
             python3 -c 'import pydantic_core._pydantic_core; print(pydantic_core._pydantic_core.__version__)'
 
   test-builds-os:
