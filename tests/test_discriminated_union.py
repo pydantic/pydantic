@@ -878,12 +878,17 @@ def test_wrap_function_schema() -> None:
                     'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
                 },
                 'schema': {
-                    'fields': {'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}}},
+                    'fields': {
+                        'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}, 'type': 'typed-dict-field'}
+                    },
                     'type': 'typed-dict',
                 },
                 'type': 'function-wrap',
             },
-            'dog': {'fields': {'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}}}, 'type': 'typed-dict'},
+            'dog': {
+                'fields': {'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}, 'type': 'typed-dict-field'}},
+                'type': 'typed-dict',
+            },
         },
         'discriminator': 'kind',
         'from_attributes': True,
@@ -942,13 +947,17 @@ def test_lax_or_strict_definitions() -> None:
                 'definitions': [{'ref': 'my-str-definition', 'type': 'str'}],
                 'schema': {
                     'lax_schema': {
-                        'fields': {'kind': {'schema': {'expected': ['DOG'], 'type': 'literal'}}},
+                        'fields': {
+                            'kind': {'schema': {'expected': ['DOG'], 'type': 'literal'}, 'type': 'typed-dict-field'}
+                        },
                         'type': 'typed-dict',
                     },
                     'strict_schema': {
                         'definitions': [{'ref': 'my-int-definition', 'type': 'int'}],
                         'schema': {
-                            'fields': {'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}}},
+                            'fields': {
+                                'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}, 'type': 'typed-dict-field'}
+                            },
                             'type': 'typed-dict',
                         },
                         'type': 'definitions',
@@ -957,7 +966,10 @@ def test_lax_or_strict_definitions() -> None:
                 },
                 'type': 'definitions',
             },
-            'cat': {'fields': {'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}}}, 'type': 'typed-dict'},
+            'cat': {
+                'fields': {'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}, 'type': 'typed-dict-field'}},
+                'type': 'typed-dict',
+            },
             'dog': 'DOG',
         },
         'discriminator': 'kind',
@@ -1003,23 +1015,35 @@ def test_wrapped_nullable_union() -> None:
         'schema': {
             'choices': {
                 'ant': {
-                    'fields': {'kind': {'schema': {'expected': ['ant'], 'type': 'literal'}}},
+                    'fields': {
+                        'kind': {'schema': {'expected': ['ant'], 'type': 'literal'}, 'type': 'typed-dict-field'}
+                    },
                     'type': 'typed-dict',
                 },
                 'cat': {
                     'function': {
-                        'type': 'general',
                         'function': HasRepr(IsStr(regex=r'<function [a-z_]*\.<locals>\.<lambda> at 0x[0-9a-fA-F]+>')),
+                        'type': 'general',
                     },
                     'schema': {
                         'schema': {
                             'choices': [
                                 {
-                                    'fields': {'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}}},
+                                    'fields': {
+                                        'kind': {
+                                            'schema': {'expected': ['cat'], 'type': 'literal'},
+                                            'type': 'typed-dict-field',
+                                        }
+                                    },
                                     'type': 'typed-dict',
                                 },
                                 {
-                                    'fields': {'kind': {'schema': {'expected': ['dog'], 'type': 'literal'}}},
+                                    'fields': {
+                                        'kind': {
+                                            'schema': {'expected': ['dog'], 'type': 'literal'},
+                                            'type': 'typed-dict-field',
+                                        }
+                                    },
                                     'type': 'typed-dict',
                                 },
                             ],
