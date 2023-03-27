@@ -119,7 +119,6 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 
     mocker.patch('datetime.datetime', MockedDatetime)
     mocker.patch('random.randint', return_value=3)
-    os.environ['TZ'] = 'UTC'
 
     xfail = None
     if test_settings and test_settings.startswith('xfail'):

@@ -170,7 +170,7 @@ Serialisation can be customised on a model using the `json_encoders` config prop
 the values should be functions which serialise that type (see the example below):
 
 ```py
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from pydantic import BaseModel, serializer
 
@@ -185,7 +185,9 @@ class WithCustomEncoders(BaseModel):
         return dt.timestamp()
 
 
-m = WithCustomEncoders(dt=datetime(2032, 6, 1), diff=timedelta(hours=100))
+m = WithCustomEncoders(
+    dt=datetime(2032, 6, 1, tzinfo=timezone.utc), diff=timedelta(hours=100)
+)
 print(m.model_dump_json())
 #> b'{"dt":1969660800.0,"diff":"P4DT14400S"}'
 ```
