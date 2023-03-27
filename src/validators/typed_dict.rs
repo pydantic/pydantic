@@ -391,7 +391,11 @@ impl TypedDictValidator {
 
         if let Some(field) = self.fields.iter().find(|f| f.name == field) {
             if field.frozen {
-                Err(ValError::new_with_loc(ErrorType::Frozen, input, field.name.to_string()))
+                Err(ValError::new_with_loc(
+                    ErrorType::FrozenField,
+                    input,
+                    field.name.to_string(),
+                ))
             } else {
                 prepare_result(field.validator.validate(py, input, &extra, slots, recursion_guard))
             }
