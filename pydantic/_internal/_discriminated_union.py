@@ -138,6 +138,7 @@ class _ApplyInferredDiscriminator:
             custom_error_message=schema.get('custom_error_message'),
             custom_error_context=schema.get('custom_error_context'),
             strict=False,
+            from_attributes=True,
             ref=schema.get('ref'),
             metadata=schema.get('metadata'),
             serialization=schema.get('serialization'),
