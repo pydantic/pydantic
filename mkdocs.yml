@@ -60,12 +60,11 @@ nav:
 - Integrations:
   - 'Mypy plugin': mypy_plugin.md
   - 'PyCharm plugin': pycharm_plugin.md
-  - 'Visual Studio Code': visual_studio_code.md
   - 'Hypothesis plugin': hypothesis_plugin.md
+  - 'Visual Studio Code': visual_studio_code.md
   - 'Code Generation': datamodel_code_generator.md
-  - 'Usage with mypy': usage/mypy.md
-  - 'Usage with devtools': usage/devtools.md
-  - 'Usage with rich': usage/rich.md
+  - 'Using Pydantic with devtools': usage/devtools.md
+  - 'Using Pydantic with rich': usage/rich.md
 - Contribute: contributing.md
 - Blog:
   - blog/pydantic-v2.md
@@ -97,3 +96,6 @@ plugins:
       on_pre_build: 'docs.plugins.main:on_pre_build'
       on_files: 'docs.plugins.main:on_files'
       on_page_markdown: 'docs.plugins.main:on_page_markdown'
+- redirects:
+    redirect_maps:
+      'usage/mypy.md': 'mypy_plugin.md'
