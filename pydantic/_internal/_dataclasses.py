@@ -106,7 +106,7 @@ def prepare_dataclass(
             ' Only Extra.ignore (the default) and Extra.forbid are allowed.'
         )
 
-    if config.get('validate_assignment', False) is True:
+    if config.get('validate_assignment'):
 
         @wraps(cls.__setattr__)
         def validated_setattr(instance: Any, __field: str, __value: str) -> None:
