@@ -221,7 +221,7 @@ def root_validator(
     *,
     # if you don't specify `pre` the default is `pre=False`
     # which means you need to specify `skip_on_failure=True`
-    skip_on_failure: Literal[True] = ...,
+    skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
 ) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
     ...
@@ -230,11 +230,9 @@ def root_validator(
 @overload
 def root_validator(
     *,
-    # for pre=False you don't need to specify `skip_on_failure`
     # if you specify `pre=True` then you don't need to specify
     # `skip_on_failure`, in fact it is not allowed as an argument!
     pre: Literal[True],
-    skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
 ) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
     ...
@@ -246,7 +244,7 @@ def root_validator(
     # if you explicitly specify `pre=False` then you
     # MUST specify `skip_on_failure=True`
     pre: Literal[False],
-    skip_on_failure: Literal[True] = ...,
+    skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
 ) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
     ...
