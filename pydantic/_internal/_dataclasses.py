@@ -101,7 +101,7 @@ def prepare_dataclass(
 
     extra = config.get('extra', Extra.forbid)
     if extra != Extra.forbid:
-        raise ValueError(f'extra=Extra.{extra} is not allowed for dataclasses. Only Extra.forbid is allowed.')
+        raise ValueError(f'extra=Extra.{extra.value} is not allowed for dataclasses. Only Extra.forbid is allowed.')
 
     if config.get('validate_assignment', False) is True:
 
