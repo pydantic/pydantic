@@ -39,6 +39,7 @@ if typing.TYPE_CHECKING:
 
     from pydantic_core import CoreSchema, SchemaSerializer
 
+    from ._internal._generate_schema import GenerateSchema
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
     AnyClassMethod = classmethod[Any]
@@ -133,18 +134,12 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
 
-            # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
-            # for attributes not in `new_namespace` (e.g. private attributes)
-            for name, obj in private_attributes.items():
-                set_name = getattr(obj, '__set_name__', None)
-                if callable(set_name):
-                    set_name(cls, name)
-
+            types_namespace = _model_construction.get_model_types_namespace(cls, _typing_extra.parent_frame_namespace())
+            _model_construction.set_model_fields(cls, bases, types_namespace)
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
-                bases,
-                types_namespace=_typing_extra.parent_frame_namespace(),
+                types_namespace,
                 raise_errors=False,
             )
             return cls
@@ -204,8 +199,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **kwargs: Any) -> CoreSchema:
-        return _model_construction.model_get_pydantic_core_schema(cls, **kwargs)
+    def __get_pydantic_core_schema__(cls, source: type[BaseModel], gen_schema: GenerateSchema) -> CoreSchema:
+        return gen_schema.model_schema(cls)
 
     @classmethod
     def model_validate(cls: type[Model], obj: Any) -> Model:
@@ -427,7 +422,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        schema = cls.__get_pydantic_core_schema__()
+        schema = cls.__pydantic_core_schema__
         s = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(schema)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
@@ -550,19 +545,18 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return None
         else:
             parents_namespace = _typing_extra.parent_frame_namespace()
-            if types_namespace and parents_namespace:
+            if types_namespace:
                 types_namespace = {**parents_namespace, **types_namespace}
             elif parents_namespace:
                 types_namespace = parents_namespace
 
+            types_namespace = _model_construction.get_model_types_namespace(cls, types_namespace)
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
-                cls.__bases__,
+                types_namespace,
                 raise_errors=raise_errors,
-                types_namespace=types_namespace,
                 typevars_map=typevars_map,
-                gen_fields=False,
             )
 
     def __iter__(self) -> TupleGenerator:

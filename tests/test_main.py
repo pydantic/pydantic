@@ -49,12 +49,16 @@ def test_success():
     assert m.b == 10
 
 
-class UltraSimpleModel(BaseModel):
-    a: float
-    b: int = 10
+@pytest.fixture(name='UltraSimpleModel', scope='session')
+def ultra_simple_model_fixture():
+    class UltraSimpleModel(BaseModel):
+        a: float
+        b: int = 10
+
+    return UltraSimpleModel
 
 
-def test_ultra_simple_missing():
+def test_ultra_simple_missing(UltraSimpleModel):
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'Field required', 'type': 'missing', 'input': {}}]
@@ -65,7 +69,7 @@ def test_ultra_simple_missing():
     )
 
 
-def test_ultra_simple_failed():
+def test_ultra_simple_failed(UltraSimpleModel):
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel(a='x', b='x')
     assert exc_info.value.errors() == [
@@ -84,7 +88,7 @@ def test_ultra_simple_failed():
     ]
 
 
-def test_ultra_simple_repr():
+def test_ultra_simple_repr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
@@ -110,7 +114,7 @@ def test_default_factory_field():
     assert m.model_dump_json() == b'{"a":1}'
 
 
-def test_comparing():
+def test_comparing(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2, b='100')
     assert m.model_dump() == {'a': 10.2, 'b': 100}
     assert m != {'a': 10.2, 'b': 100}
@@ -166,6 +170,10 @@ def test_nullable_strings_fails(NoneCheckModel):
 
 @pytest.fixture(name='ParentModel', scope='session')
 def parent_sub_model_fixture():
+    class UltraSimpleModel(BaseModel):
+        a: float
+        b: int = 10
+
     class ParentModel(BaseModel):
         grape: bool
         banana: UltraSimpleModel
@@ -298,7 +306,7 @@ def test_extra_ignored():
         model.c = 1
 
 
-def test_set_attr():
+def test_set_attr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert m.model_dump() == {'a': 10.2, 'b': 10}
 
@@ -1779,17 +1787,14 @@ def test_extra_args_to_field_type_error():
 
 
 def test_deeper_recursive_model():
-    class A(BaseModel):
+    class A(BaseModel, undefined_types_warning=False):
         b: 'B'
-        model_config = {'undefined_types_warning': False}
 
-    class B(BaseModel):
+    class B(BaseModel, undefined_types_warning=False):
         c: 'C'
-        model_config = {'undefined_types_warning': False}
 
-    class C(BaseModel):
+    class C(BaseModel, undefined_types_warning=False):
         a: Optional['A']
-        model_config = {'undefined_types_warning': False}
 
     A.model_rebuild()
     B.model_rebuild()

@@ -234,10 +234,11 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, A
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
             pass
         else:
-            if globalns is None:
-                return module_globalns
-            else:
+            if globalns:
                 return {**module_globalns, **globalns}
+            else:
+                # copy module globals to make sure it can't be updated later
+                return module_globalns.copy()
 
     return globalns or {}
 

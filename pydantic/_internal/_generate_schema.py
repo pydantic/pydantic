@@ -20,7 +20,12 @@ from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _discriminated_union, _typing_extra
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
-from ._core_utils import get_type_ref, is_list_like_schema_with_items_schema
+from ._core_utils import (
+    consolidate_refs,
+    define_expected_missing_refs,
+    get_type_ref,
+    is_list_like_schema_with_items_schema,
+)
 from ._decorators import (
     Decorator,
     DecoratorInfos,
@@ -31,14 +36,14 @@ from ._decorators import (
 )
 from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticForwardRef
-from ._generics import replace_types
+from ._generics import recursively_defined_type_refs, replace_types
 
 if TYPE_CHECKING:
     from ..config import ConfigDict
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
 
-__all__ = 'model_fields_schema', 'dataclass_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
+__all__ = 'dataclass_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
 
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
@@ -118,33 +123,6 @@ def apply_each_item_validators(
     return schema
 
 
-def model_fields_schema(
-    model_ref: str,
-    fields: dict[str, FieldInfo],
-    decorators: DecoratorInfos,
-    arbitrary_types: bool,
-    types_namespace: dict[str, Any] | None,
-    typevars_map: dict[Any, Any] | None,
-) -> core_schema.CoreSchema:
-    """
-    Generate schema for the fields of a pydantic model, this is slightly different to the schema for the model itself.
-
-    This is typed_dict schema which is used to create the model.
-    """
-    schema_generator = GenerateSchema(arbitrary_types, types_namespace, typevars_map)
-    check_validator_fields_exist(
-        [*decorators.field_validator.values(), *decorators.serializer.values(), *decorators.validator.values()],
-        fields.keys(),
-    )
-    fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
-        {k: schema_generator.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
-        ref=model_ref,
-        return_fields_set=True,
-    )
-    fields_schema = apply_validators(fields_schema, decorators.root_validator.values())
-    return fields_schema
-
-
 def dataclass_schema(
     cls: type[Any],
     ref: str,
@@ -215,17 +193,59 @@ class GenerateSchema:
 
         return schema
 
-    def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
-        schema_property = getattr(obj, '__pydantic_core_schema__', None)
-        if schema_property is not None:
-            return schema_property
+    def model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
+        """
+        Generate schema for a pydantic model.
+        """
+        model_ref = get_type_ref(cls)
+        cached_def = self._recursion_cache.get(model_ref)
+        if cached_def is not None:
+            return cached_def
 
+        self._recursion_cache[model_ref] = core_schema.definition_reference_schema(model_ref)
+        fields = cls.model_fields
+        decorators = cls.__pydantic_decorators__
+        check_validator_fields_exist(
+            [*decorators.field_validator.values(), *decorators.serializer.values(), *decorators.validator.values()],
+            fields.keys(),
+        )
+        fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
+            {k: self.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
+            return_fields_set=True,
+        )
+        inner_schema = apply_validators(fields_schema, decorators.root_validator.values())
+        inner_schema = consolidate_refs(inner_schema)
+        inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
+
+        core_config = generate_config(cls.model_config, cls)
+        model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+        js_metadata = cls.model_json_schema_metadata()
+
+        return core_schema.model_schema(
+            cls,
+            inner_schema,
+            ref=model_ref,
+            config=core_config,
+            post_init=model_post_init,
+            metadata=build_metadata_dict(js_metadata=js_metadata),
+        )
+
+    def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
+        """
+        Try to generate schema from either the `__get_pydantic_core_schema__` function or
+        `__pydantic_core_schema__` property.
+
+        Note: `__get_pydantic_core_schema__` takes priority so it can decide whether to use a `__pydantic_core_schema__`
+        attribute, or generate a fresh schema.
+        """
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         if get_schema is not None:
             # Can return None to tell pydantic not to override
-            return get_schema(
-                types_namespace=self.types_namespace, source=source, generator=self, typevars_map=self.typevars_map
-            )
+            return get_schema(source=source, gen_schema=self)
+
+        schema_property = getattr(obj, '__pydantic_core_schema__', None)
+        if schema_property is not None:
+            return schema_property
 
         return None
 
@@ -246,7 +266,10 @@ class GenerateSchema:
             # or the equivalent for BaseModel
             # class Model(BaseModel):
             #   x: SomeImportedTypeAliasWithAForwardReference
-            obj = _typing_extra.evaluate_fwd_ref(obj, globalns=None, localns=self.types_namespace)
+            try:
+                obj = _typing_extra.evaluate_fwd_ref(obj, globalns=self.types_namespace)
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
 
             # if obj is still a ForwardRef, it means we can't evaluate it, raise PydanticUndefinedAnnotation
             if isinstance(obj, ForwardRef):
@@ -257,18 +280,20 @@ class GenerateSchema:
             return from_property
 
         if isinstance(obj, PydanticForwardRef):
-            if not obj.deferred_actions:
-                return obj.schema
-            resolved_model = obj.resolve_model()
-            if isinstance(resolved_model, PydanticForwardRef):
-                # If you still have a PydanticForwardRef after resolving, it should be deeply nested enough that it will
-                # eventually be substituted out. So it is safe to return an invalid schema here.
-                # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-                return core_schema.none_schema(
-                    metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
-                )
-            else:
-                return get_model_self_schema(resolved_model)[0]
+            # import traceback
+            # debug(obj, traceback.format_stack())
+            return obj.schema
+            # resolved_model = obj.resolve_model()
+            # if isinstance(resolved_model, PydanticForwardRef):
+            #     # If you still have a PydanticForwardRef after resolving, i
+            #     t should be deeply nested enough that it will
+            #     # eventually be substituted out. So it is safe to return an invalid schema here.
+            #     # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+            #     return core_schema.none_schema(
+            #         metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
+            #     )
+            # else:
+            #     return get_model_self_schema(resolved_model)[0]
 
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, dict}:
@@ -552,8 +577,7 @@ class GenerateSchema:
         if obj_ref in self._recursion_cache:
             return self._recursion_cache[obj_ref]
         else:
-            recursive_schema = core_schema.definition_reference_schema(obj_ref)
-            self._recursion_cache[obj_ref] = recursive_schema
+            self._recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
 
         for field_name, annotation in get_type_hints_infer_globalns(
             typed_dict_cls, localns=self.types_namespace, include_extras=True
@@ -1062,13 +1086,5 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
 
 def get_model_self_schema(cls: type[BaseModel]) -> tuple[core_schema.ModelSchema, str]:
     model_ref = get_type_ref(cls)
-    try:
-        model_js_metadata = cls.model_json_schema_metadata()
-    except AttributeError:
-        model_js_metadata = None
-    schema = core_schema.model_schema(
-        cls,
-        core_schema.definition_reference_schema(model_ref),
-        metadata=build_metadata_dict(js_metadata=model_js_metadata),
-    )
+    schema = core_schema.definition_reference_schema(model_ref)
     return schema, model_ref

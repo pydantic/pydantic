@@ -14,12 +14,11 @@ from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._core_metadata import build_metadata_dict
-from ._core_utils import consolidate_refs, define_expected_missing_refs
+from ._core_utils import consolidate_refs, define_expected_missing_refs, get_type_ref
 from ._decorators import PydanticDecoratorMarker
 from ._fields import Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
-from ._generate_schema import generate_config, get_model_self_schema, model_fields_schema
-from ._generics import recursively_defined_type_refs
+from ._generate_schema import GenerateSchema, generate_config
 from ._typing_extra import add_module_globals, is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
@@ -29,7 +28,7 @@ if typing.TYPE_CHECKING:
     from ..config import ConfigDict
     from ..main import BaseModel
 
-__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class', 'MockValidator'
+__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'MockValidator'
 
 IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod, PydanticDecoratorMarker)
 object_setattr = object.__setattr__
@@ -123,56 +122,31 @@ def single_underscore(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
 
 
-def model_get_pydantic_core_schema(
-    cls: type[BaseModel],
-    *,
-    types_namespace: dict[str, Any] | None = None,
-    typevars_map: dict[str, Any] | None = None,
-    **_kwargs: Any,
-) -> core_schema.ModelSchema:
+def get_model_types_namespace(cls: type[BaseModel], parent_frame_namespace: dict[str, Any] | None) -> dict[str, Any]:
+    ns = add_module_globals(cls, parent_frame_namespace)
+    self_schema = core_schema.definition_reference_schema(get_type_ref(cls))
+    ns[cls.__name__] = PydanticForwardRef(self_schema)
+    return ns
+
+
+def set_model_fields(cls: type[BaseModel], bases: tuple[type[Any], ...], types_namespace: dict[str, Any]) -> None:
     """
-    Used in `BaseModel.__get_pydantic_core_schema__` to construct the model schema.
+    Collect and set `cls.model_fields` and `cls.__class_vars__`.
     """
-    self_schema, model_ref = get_model_self_schema(cls)
-    types_namespace = {**add_module_globals(cls, types_namespace), cls.__name__: PydanticForwardRef(self_schema, cls)}
+    fields, class_vars = collect_fields(cls, bases, types_namespace)
 
-    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
-    try:
-        inner_schema = model_fields_schema(
-            model_ref,
-            cls.model_fields,
-            cls.__pydantic_decorators__,
-            cls.model_config['arbitrary_types_allowed'],
-            types_namespace,
-            typevars_map,
-        )
-    except NameError as e:
-        raise PydanticUndefinedAnnotation.from_name_error(e) from None
-
-    inner_schema = consolidate_refs(inner_schema)
-    inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
-
-    core_config = generate_config(cls.model_config, cls)
-    model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
-    js_metadata = cls.model_json_schema_metadata()
-    return core_schema.model_schema(
-        cls,
-        inner_schema,
-        config=core_config,
-        post_init=model_post_init,
-        metadata=build_metadata_dict(js_metadata=js_metadata),
-    )
+    apply_alias_generator(cls.model_config, fields)
+    cls.model_fields = fields
+    cls.__class_vars__.update(class_vars)
 
 
 def complete_model_class(
     cls: type[BaseModel],
-    name: str,
-    bases: tuple[type[Any], ...],
+    cls_name: str,
+    types_namespace: dict[str, Any] | None,
     *,
     raise_errors: bool = True,
-    types_namespace: dict[str, Any] | None = None,
     typevars_map: dict[str, Any] | None = None,
-    gen_fields: bool = True,
 ) -> bool:
     """
     Finish building a model class.
@@ -182,50 +156,37 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-
-    if gen_fields:
-        self_schema, model_ref = get_model_self_schema(cls)
-        types_namespace = {
-            **add_module_globals(cls, types_namespace),
-            cls.__name__: PydanticForwardRef(self_schema, cls),
-        }
-        fields, class_vars = collect_fields(cls, bases, types_namespace)
-
-        apply_alias_generator(cls.model_config, fields)
-        cls.model_fields = fields
-        cls.__class_vars__.update(class_vars)
-    else:
-        fields = cls.model_fields
-
+    gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace, typevars_map)
     try:
-        schema = cls.__get_pydantic_core_schema__(types_namespace=types_namespace, typevars_map=typevars_map)
+        schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
         if cls.model_config['undefined_types_warning']:
             config_warning_string = (
-                f'`{name}` has an undefined annotation: `{e.name}`. '
+                f'`{cls_name}` has an undefined annotation: `{e.name}`. '
                 f'It may be possible to resolve this by setting '
-                f'undefined_types_warning=False in the config for `{name}`.'
+                f'undefined_types_warning=False in the config for `{cls_name}`.'
             )
             # FIXME UserWarning should not be raised here, but rather warned!
             raise UserWarning(config_warning_string)
         usage_warning_string = (
-            f'`{name}` is not fully defined; you should define `{e.name}`, then call `{name}.model_rebuild()` '
-            f'before the first `{name}` instance is created.'
+            f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call `{cls_name}.model_rebuild()` '
+            f'before the first `{cls_name}` instance is created.'
         )
         cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
         return False
 
     core_config = generate_config(cls.model_config, cls)
 
+    cls.__pydantic_core_schema__ = schema
     cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute(
-        '__signature__', generate_model_signature(cls.__init__, fields, cls.model_config)
+        '__signature__', generate_model_signature(cls.__init__, cls.model_fields, cls.model_config)
     )
     return True
 
