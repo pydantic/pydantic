@@ -61,10 +61,15 @@ def inspect_namespace(  # noqa C901
 
     private_attributes: dict[str, ModelPrivateAttr] = {}
     raw_annotations = namespace.get('__annotations__', {})
+
+    ignored_names: set[str] = set()
     for var_name, value in list(namespace.items()):
         if var_name == 'model_config':
             continue
-        if isinstance(value, ModelPrivateAttr):
+        elif isinstance(value, all_ignored_types):
+            ignored_names.add(var_name)
+            continue
+        elif isinstance(value, ModelPrivateAttr):
             if var_name.startswith('__'):
                 raise NameError(
                     f'Private attributes "{var_name}" must not have dunder names; '
@@ -85,7 +90,7 @@ def inspect_namespace(  # noqa C901
                 del namespace[var_name]
         elif var_name in base_class_vars:
             continue
-        elif var_name not in raw_annotations and not isinstance(value, all_ignored_types):
+        elif var_name not in raw_annotations:
             if var_name in base_class_fields:
                 raise PydanticUserError(
                     f'Field {var_name!r} defined on a base class was overridden by a non-annotated attribute. '
@@ -101,7 +106,13 @@ def inspect_namespace(  # noqa C901
                 )
 
     for ann_name, ann_type in raw_annotations.items():
-        if single_underscore(ann_name) and ann_name not in private_attributes and not is_classvar(ann_type):
+        if (
+            single_underscore(ann_name)
+            and ann_name not in private_attributes
+            and ann_name not in ignored_names
+            and not is_classvar(ann_type)
+            and ann_type not in all_ignored_types
+        ):
             private_attributes[ann_name] = PrivateAttr()
 
     return private_attributes

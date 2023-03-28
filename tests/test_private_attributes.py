@@ -299,3 +299,24 @@ def test_private_attributes_not_dunder() -> None:
 
         class MyModel(BaseModel):
             __foo__ = PrivateAttr({'private'})
+
+
+def test_ignored_types_are_ignored() -> None:
+    class IgnoredType:
+        pass
+
+    class MyModel(BaseModel):
+        model_config = ConfigDict(ignored_types=(IgnoredType,))
+
+        _a = IgnoredType()
+        _b: int = IgnoredType()
+        _c: IgnoredType
+        _d: IgnoredType = IgnoredType()
+
+        # The following are included to document existing behavior, and can be updated
+        # if the current behavior does not match the desired behavior
+        _e: int
+        _f: int = 1
+        _g = 1  # Note: this is completely ignored, in keeping with v1
+
+    assert sorted(MyModel.__private_attributes__.keys()) == ['_e', '_f']

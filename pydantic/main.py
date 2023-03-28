@@ -70,15 +70,7 @@ class ModelMetaclass(ABCMeta):
         **kwargs: Any,
     ) -> type:
         if _base_class_defined:
-            class_vars: set[str] = set()
-            base_private_attributes: dict[str, ModelPrivateAttr] = {}
-            base_field_names: set[str] = set()
-            for base in bases:
-                if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
-                    class_vars.update(base.__class_vars__)
-                    base_private_attributes.update(base.__private_attributes__)
-                    # model_fields might not be defined yet in the case of generics, so we use getattr
-                    base_field_names.update(getattr(base, 'model_fields', {}).keys())
+            base_field_names, class_vars, base_private_attributes = _collect_bases_data(bases)
 
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
@@ -996,3 +988,16 @@ class Validator(Generic[T]):
 
     def __call__(self, __input: Any) -> T:
         return self._validator.validate_python(__input)
+
+
+def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
+    field_names: set[str] = set()
+    class_vars: set[str] = set()
+    private_attributes: dict[str, ModelPrivateAttr] = {}
+    for base in bases:
+        if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
+            # model_fields might not be defined yet in the case of generics, so we use getattr here:
+            field_names.update(getattr(base, 'model_fields', {}).keys())
+            class_vars.update(base.__class_vars__)
+            private_attributes.update(base.__private_attributes__)
+    return field_names, class_vars, private_attributes

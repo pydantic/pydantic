@@ -278,3 +278,11 @@ def test_create_model_with_slots():
         model = create_model('PartialPet', **field_definitions)
 
     assert model.model_fields.keys() == {'foobar'}
+
+
+def test_create_model_non_annotated():
+    with pytest.raises(
+        TypeError,
+        match='A non-annotated attribute was detected: `bar = 123`. All model fields require a type annotation',
+    ):
+        create_model('FooModel', foo=(str, ...), bar=123)
