@@ -1897,3 +1897,31 @@ def test_v1_validator_signature_with_config() -> None:
                 @validator('b')
                 def check_b(cls, value: Any, config: Any) -> Any:
                     ...
+
+
+def test_model_config_validate_default():
+    class Model(BaseModel):
+        x: int = -1
+
+        @field_validator('x')
+        @classmethod
+        def force_x_positive(cls, v):
+            assert v > 0
+            return v
+
+    assert Model().x == -1
+
+    class ValidatingModel(Model):
+        model_config = ConfigDict(validate_default=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ValidatingModel()
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'error': 'assert -1 > 0'},
+            'input': -1,
+            'loc': ('x',),
+            'msg': 'Assertion failed, assert -1 > 0',
+            'type': 'assertion_error',
+        }
+    ]
