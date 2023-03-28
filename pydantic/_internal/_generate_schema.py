@@ -922,13 +922,14 @@ class GenerateSchema:
             if self.model_typevars_map is not None:
                 typevar = self.model_typevars_map.lookup(typevar)
             ref = get_type_var_ref(typevar)
-            if ref not in self.typevar_definitions:
-                raise PydanticSchemaGenerationError(
-                    f'Unable to generate schema for typevar with ref {ref!r} as it is not defined in '
-                    f'definitions: {", ".join(map(repr, self.typevar_definitions.keys()))}.'
-                )
-            return core_schema.definition_reference_schema(ref)
-        elif typevar.__bound__:
+            if ref in self.typevar_definitions:
+                # raise PydanticSchemaGenerationError(
+                #     f'Unable to generate schema for typevar with ref {ref!r} as it is not defined in '
+                #     f'definitions: {", ".join(map(repr, self.typevar_definitions.keys()))}.'
+                # )
+                return core_schema.definition_reference_schema(ref)
+
+        if typevar.__bound__:
             return self.generate_schema(typevar.__bound__)
         elif typevar.__constraints__:
             return self._union_schema(typing.Union[typevar.__constraints__])

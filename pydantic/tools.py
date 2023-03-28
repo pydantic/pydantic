@@ -55,7 +55,7 @@ def schema_of(
     if hasattr(type_, '__pydantic_core_schema__'):
         core_schema = type_.__pydantic_core_schema__
     else:
-        core_schema = _generate_schema.GenerateSchema(True, None, None).generate_schema(type_)
+        core_schema = _generate_schema.GenerateSchema(True, None).generate_schema(type_)
     json_schema = json_schema_generator.generate(core_schema)
     json_schema['title'] = title
     return json_schema

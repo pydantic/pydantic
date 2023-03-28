@@ -847,7 +847,7 @@ class GenerateJsonSchema:
                 return self.field_title_should_be_set(override)
 
             # TODO: This might not be handling some schema types it should
-            if schema['type'] in {'default', 'nullable', 'model'}:
+            if schema['type'] in {'default', 'nullable'}:
                 return self.field_title_should_be_set(schema['schema'])  # type: ignore[typeddict-item]
             if _core_utils.is_function_with_inner_schema(schema):
                 return self.field_title_should_be_set(schema['schema'])
