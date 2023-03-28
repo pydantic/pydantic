@@ -17,7 +17,6 @@ from ..conftest import Err, PyAndJson, plain_repr
         [(1, 'a', True), ((1, 'a', True), {})],
         [[1, 'a', True], ((1, 'a', True), {})],
         [{'__args__': (1, 'a', True), '__kwargs__': {}}, ((1, 'a', True), {})],
-        [[1, 'a', True], ((1, 'a', True), {})],
         [(1, 'a', 'true'), ((1, 'a', True), {})],
         ['x', Err('type=arguments_type,')],
         [
