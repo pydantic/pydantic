@@ -4,7 +4,6 @@ Private logic for creating models.
 from __future__ import annotations as _annotations
 
 import typing
-import warnings
 from functools import partial
 from types import FunctionType
 from typing import Any, Callable
@@ -15,6 +14,7 @@ from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._core_metadata import build_metadata_dict
 from ._core_utils import consolidate_refs, define_expected_missing_refs
+from ._decorators import PydanticDecoratorMarker
 from ._fields import Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generate_schema import generate_config, get_model_self_schema, model_fields_schema
@@ -30,8 +30,7 @@ if typing.TYPE_CHECKING:
 
 __all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class', 'MockValidator'
 
-
-IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod)
+IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod, PydanticDecoratorMarker)
 object_setattr = object.__setattr__
 
 
@@ -47,15 +46,24 @@ def init_private_attributes(self_: Any, _context: Any) -> None:
             object_setattr(self_, name, default)
 
 
-def inspect_namespace(namespace: dict[str, Any]) -> dict[str, ModelPrivateAttr]:
+def inspect_namespace(  # noqa C901
+    namespace: dict[str, Any],
+    non_field_types: tuple[type[Any], ...],
+    base_class_vars: set[str],
+    base_class_fields: set[str],
+) -> dict[str, ModelPrivateAttr]:
     """
     iterate over the namespace and:
     * gather private attributes
     * check for items which look like fields but are not (e.g. have no annotation) and warn
     """
+    all_non_field_types = non_field_types + IGNORED_TYPES
+
     private_attributes: dict[str, ModelPrivateAttr] = {}
     raw_annotations = namespace.get('__annotations__', {})
     for var_name, value in list(namespace.items()):
+        if var_name == 'model_config':
+            continue
         if isinstance(value, ModelPrivateAttr):
             if var_name.startswith('__'):
                 raise NameError(
@@ -69,19 +77,28 @@ def inspect_namespace(namespace: dict[str, Any]) -> dict[str, ModelPrivateAttr]:
                 )
             private_attributes[var_name] = value
             del namespace[var_name]
-        elif not single_underscore(var_name):
+        elif var_name.startswith('__'):
             continue
         elif var_name.startswith('_'):
-            if var_name in raw_annotations and is_classvar(raw_annotations[var_name]):
-                continue
-            private_attributes[var_name] = PrivateAttr(default=value)
-            del namespace[var_name]
-        elif var_name not in raw_annotations and not isinstance(value, IGNORED_TYPES):
-            warnings.warn(
-                f'All fields must include a type annotation; '
-                f'{var_name!r} looks like a field but has no type annotation.',
-                DeprecationWarning,
-            )
+            if var_name in raw_annotations and not is_classvar(raw_annotations[var_name]):
+                private_attributes[var_name] = PrivateAttr(default=value)
+                del namespace[var_name]
+        elif var_name in base_class_vars:
+            continue
+        elif var_name not in raw_annotations and not isinstance(value, all_non_field_types):
+            if var_name in base_class_fields:
+                raise PydanticUserError(
+                    f'Field {var_name!r} defined on a base class was overridden by a non-annotated attribute. '
+                    f'All field definitions, including overrides, require a type annotation.',
+                )
+            elif isinstance(value, FieldInfo):
+                raise PydanticUserError(f'Field {var_name!r} requires a type annotation')
+            else:
+                raise PydanticUserError(
+                    f'A non-annotated attribute was detected: `{var_name} = {value!r}`. All model fields require a '
+                    f'type annotation; if {var_name!r} is not meant to be a field, you may be able to suppress this '
+                    f'warning by annotating it as a ClassVar or updating model_config["non_field_types"].',
+                )
 
     for ann_name, ann_type in raw_annotations.items():
         if single_underscore(ann_name) and ann_name not in private_attributes and not is_classvar(ann_type):

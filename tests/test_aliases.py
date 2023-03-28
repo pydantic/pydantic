@@ -37,16 +37,6 @@ def test_alias_generator_wrong_type_error():
     assert str(e.value) == IsStr(regex="alias_generator <function .*> must return str, not <class 'bytes'>")
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_cannot_infer_type_with_alias():
-    # TODO: I don't think we've finalized the exact error that should be raised when fields are missing annotations,
-    #   but this test should be made consistent with that once it is finalized
-    with pytest.raises(TypeError):
-
-        class Model(BaseModel):
-            a = Field('foobar', alias='_a')
-
-
 def test_basic_alias():
     class Model(BaseModel):
         a: str = Field('foobar', alias='_a')
@@ -112,7 +102,7 @@ def test_alias_override_behavior():
         x: int = Field(alias='x1', gt=0)
 
     class Child(Parent):
-        x = Field(..., alias='x2')
+        x: int = Field(..., alias='x2')
         y: int = Field(..., alias='y2')
 
     assert Parent.model_fields['x'].alias == 'x1'

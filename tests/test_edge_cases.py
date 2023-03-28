@@ -926,11 +926,29 @@ def test_inheritance():
     class Foo(BaseModel):
         a: float = ...
 
-    class Bar(Foo):
-        x: float = 12.3
-        a = 123.0
+    with pytest.raises(
+        TypeError,
+        match=(
+            "Field 'a' defined on a base class was overridden by a non-annotated attribute. "
+            'All field definitions, including overrides, require a type annotation.'
+        ),
+    ):
 
-    assert Bar().model_dump() == {'x': 12.3, 'a': 123.0}
+        class Bar(Foo):
+            x: float = 12.3
+            a = 123.0
+
+    class Bar2(Foo):
+        x: float = 12.3
+        a: float = 123.0
+
+    assert Bar2().model_dump() == {'x': 12.3, 'a': 123.0}
+
+    class Bar3(Foo):
+        x: float = 12.3
+        a: float = Field(default=123.0)
+
+    assert Bar3().model_dump() == {'x': 12.3, 'a': 123.0}
 
 
 def test_inheritance_subclass_default():
@@ -949,7 +967,7 @@ def test_inheritance_subclass_default():
         y: str
 
     class Sub(Base):
-        x = MyStr('test')
+        x: str = MyStr('test')
         y: MyStr = MyStr('test')  # force subtype
 
         model_config = dict(arbitrary_types_allowed=True)
@@ -1058,18 +1076,13 @@ def test_partial_inheritance_config():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_annotation_inheritance():
     class A(BaseModel):
         integer: int = 1
 
     class B(A):
-        integer = 2
+        integer: int = 2
 
-    if sys.version_info < (3, 10):
-        assert B.__annotations__['integer'] == int
-    else:
-        assert B.__annotations__ == {}
     assert B.model_fields['integer'].annotation == int
 
     class C(A):
@@ -1078,19 +1091,16 @@ def test_annotation_inheritance():
     assert C.__annotations__['integer'] == str
     assert C.model_fields['integer'].annotation == str
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(
+        TypeError,
+        match=(
+            "Field 'integer' defined on a base class was overridden by a non-annotated attribute. "
+            "All field definitions, including overrides, require a type annotation."
+        ),
+    ):
 
         class D(A):
             integer = 'G'
-
-    # TODO: Do we want any changes to this behavior in v2? (Currently, no error is raised)
-    #   "I think it should be an error to redefine any field without an annotation - that way we
-    #   don't need to start trying to infer the type of the default value."
-    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130681812
-    assert str(exc_info.value) == (
-        'The type of D.integer differs from the new default value; '
-        'if you wish to change the type of this field, please use a type annotation'
-    )
 
 
 def test_string_none():
@@ -1167,18 +1177,18 @@ def test_invalid_validator():
             x: InvalidValidator = ...
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_unable_to_infer():
-    with pytest.raises(errors.PydanticUserError) as exc_info:
+    with pytest.raises(
+        errors.PydanticUserError,
+        match=re.escape(
+            "A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; "
+            "if 'x' is not meant to be a field, you may be able to suppress this warning by annotating it as a "
+            "ClassVar or updating model_config[\"non_field_types\"]"
+        ),
+    ):
 
         class InvalidDefinitionModel(BaseModel):
             x = None
-
-    # TODO: Do we want any changes to this behavior in v2? (Currently, no error is raised)
-    #   "x definitely shouldn't be a field, I guess an error would be best,
-    #   but might be hard to identify 'non-field attributes reliable'?"
-    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130682562
-    assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
 
 
 def test_multiple_errors():

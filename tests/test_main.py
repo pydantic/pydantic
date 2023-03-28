@@ -1,4 +1,5 @@
 import platform
+import re
 import sys
 from collections import defaultdict
 from copy import deepcopy
@@ -24,7 +25,17 @@ from uuid import UUID, uuid4
 import pytest
 from typing_extensions import Final, Literal
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, PrivateAttr, SecretStr, ValidationError, constr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Extra,
+    Field,
+    PrivateAttr,
+    PydanticUserError,
+    SecretStr,
+    ValidationError,
+    constr,
+)
 
 
 def test_success():
@@ -698,12 +709,12 @@ def test_annotation_field_name_shadows_attribute():
 
 
 def test_value_field_name_shadows_attribute():
-    class BadModel(BaseModel):
-        model_json_schema = (
-            'abc'  # This conflicts with the BaseModel's model_json_schema() class method, but has no annotation
-        )
+    with pytest.raises(PydanticUserError, match="A non-annotated attribute was detected: `model_json_schema = 'abc'`"):
 
-    assert len(BadModel.model_fields) == 0
+        class BadModel(BaseModel):
+            model_json_schema = (
+                'abc'  # This conflicts with the BaseModel's model_json_schema() class method, but has no annotation
+            )
 
 
 def test_class_var():
@@ -853,7 +864,7 @@ def test_untouched_types():
     classproperty = _ClassPropertyDescriptor
 
     class Model(BaseModel):
-        model_config = ConfigDict(keep_untouched=(classproperty,))
+        model_config = ConfigDict(non_field_types=(classproperty,))
 
         @classproperty
         def class_name(cls) -> str:
@@ -1232,6 +1243,31 @@ def test_model_export_inclusion_inheritance():
     assert actual == expected, 'Unexpected model export result'
 
 
+def test_untyped_fields_warning():
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
+            "if 'x' is not meant to be a field, you may be able to suppress this warning by annotating it "
+            "as a ClassVar or updating model_config[\"non_field_types\"]."
+        ),
+    ):
+
+        class WarningModel(BaseModel):
+            x = 1
+
+    # Prove that annotating with ClassVar prevents the warning
+    class NonWarningModel(BaseModel):
+        x: ClassVar = 1
+
+
+def test_untyped_fields_error():
+    with pytest.raises(TypeError, match="Field 'a' requires a type annotation"):
+
+        class Model(BaseModel):
+            a = Field('foobar')
+
+
 def test_custom_init_subclass_params():
     class DerivedModel(BaseModel):
         def __init_subclass__(cls, something):
@@ -1243,7 +1279,7 @@ def test_custom_init_subclass_params():
     # to allow the special method __init_subclass__ to be defined with custom
     # parameters on extended BaseModel classes.
     class NewModel(DerivedModel, something=2):
-        something = 1
+        something: ClassVar = 1
 
     assert NewModel.something == 2
 

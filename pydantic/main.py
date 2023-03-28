@@ -11,7 +11,7 @@ from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from inspect import getdoc
-from types import prepare_class, resolve_bases
+from types import FunctionType, prepare_class, resolve_bases
 from typing import Any, Generic, TypeVar, overload
 
 import typing_extensions
@@ -56,6 +56,8 @@ _object_setattr = _model_construction.object_setattr
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _base_class_defined = False
 
+PYDANTIC_NON_FIELD_TYPES = (property, type, classmethod, staticmethod, FunctionType)
+
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
@@ -71,9 +73,20 @@ class ModelMetaclass(ABCMeta):
     ) -> type:
         if _base_class_defined:
             class_vars: set[str] = set()
+            base_private_attributes: dict[str, ModelPrivateAttr] = {}
+            base_field_names: set[str] = set()
+            for base in bases:
+                if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
+                    class_vars.update(base.__class_vars__)
+                    base_private_attributes.update(base.__private_attributes__)
+                    # model_fields might not be defined yet in the case of generics, so we use getattr
+                    base_field_names.update(getattr(base, 'model_fields', {}).keys())
+
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
-            private_attributes = _model_construction.inspect_namespace(namespace)
+            private_attributes = _model_construction.inspect_namespace(
+                namespace, config_new.get('non_field_types', ()), class_vars, base_field_names
+            )
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
                 namespace['__slots__'] = slots | private_attributes.keys()
@@ -93,11 +106,6 @@ class ModelMetaclass(ABCMeta):
             elif 'model_post_init' in namespace:
                 namespace['__pydantic_post_init__'] = namespace['model_post_init']
 
-            base_private_attributes: dict[str, ModelPrivateAttr] = {}
-            for base in bases:
-                if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
-                    base_private_attributes.update(base.__private_attributes__)
-                    class_vars.update(base.__class_vars__)
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
@@ -134,6 +142,14 @@ class ModelMetaclass(ABCMeta):
             )
 
             cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
+
+            # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
+            # for attributes not in `new_namespace` (e.g. private attributes)
+            for name, obj in private_attributes.items():
+                set_name = getattr(obj, '__set_name__', None)
+                if callable(set_name):
+                    set_name(cls, name)
+
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
