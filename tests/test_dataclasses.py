@@ -73,9 +73,8 @@ def test_frozen():
         d.a = 7
 
 
-@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment():
-    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
     class MyDataclass:
         a: int
 
@@ -86,9 +85,8 @@ def test_validate_assignment():
     assert d.a == 7
 
 
-@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment_error():
-    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
     class MyDataclass:
         a: int
 
@@ -97,7 +95,12 @@ def test_validate_assignment_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxx'
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'xxx',
+        }
     ]
 
 
@@ -113,15 +116,14 @@ def test_not_validate_assignment():
     assert d.a == '7'
 
 
-@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment_value_change():
-    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True), frozen=False)
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True), frozen=False)
     class MyDataclass:
         a: int
 
         @field_validator('a')
         @classmethod
-        def double_a(cls, v):
+        def double_a(cls, v: int) -> int:
             return v * 2
 
     d = MyDataclass(2)
@@ -132,7 +134,7 @@ def test_validate_assignment_value_change():
 
 
 def test_validate_assignment_extra():
-    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True), frozen=False)
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True, extra=Extra.allow), frozen=False)
     class MyDataclass:
         a: int
 
@@ -317,9 +319,8 @@ def test_validate_long_string_error():
     ]
 
 
-@pytest.mark.xfail(reason='validate_assignment')
-def test_validate_assigment_long_string_error():
-    @pydantic.dataclasses.dataclass(config=dict(str_max_length=3, validate_assignment=True))
+def test_validate_assignment_long_string_error():
+    @pydantic.dataclasses.dataclass(config=ConfigDict(str_max_length=3, validate_assignment=True))
     class MyDataclass:
         a: str
 
@@ -327,19 +328,19 @@ def test_validate_assigment_long_string_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxxx'
 
-    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseModel.model_config)
     assert exc_info.value.errors() == [
         {
+            'type': 'string_too_long',
             'loc': ('a',),
-            'msg': 'ensure this value has at most 3 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 3},
+            'msg': 'String should have at most 3 characters',
+            'input': 'xxxx',
+            'ctx': {'max_length': 3},
         }
     ]
 
 
-def test_no_validate_assigment_long_string_error():
-    @pydantic.dataclasses.dataclass(config=dict(str_max_length=3, validate_assignment=False))
+def test_no_validate_assignment_long_string_error():
+    @pydantic.dataclasses.dataclass(config=ConfigDict(str_max_length=3, validate_assignment=False))
     class MyDataclass:
         a: str
 
@@ -917,8 +918,7 @@ def test_pydantic_callable_field():
     )
 
 
-@pytest.mark.xfail(reason='validate_assignment')
-def test_pickle_overriden_builtin_dataclass(create_module):
+def test_pickle_overridden_builtin_dataclass(create_module: Any):
     module = create_module(
         # language=Python
         """\

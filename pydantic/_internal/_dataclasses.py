@@ -5,6 +5,7 @@ from __future__ import annotations as _annotations
 
 import typing
 import warnings
+from functools import wraps
 from typing import Any, Callable, ClassVar
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
@@ -92,9 +93,17 @@ def prepare_dataclass(
 
     core_config = generate_config(config, cls)
     cls.__pydantic_fields__ = fields
-    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
+    cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+
+    if config.get('validate_assignment', False) is True:
+
+        @wraps(cls.__setattr__)
+        def validated_setattr(instance: Any, __field: str, __value: str) -> None:
+            validator.validate_assignment(instance, __field, __value)
+
+        cls.__setattr__ = validated_setattr.__get__(None, cls)
 
     # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't copied.
 
