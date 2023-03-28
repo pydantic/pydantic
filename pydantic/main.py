@@ -536,7 +536,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         force: bool = False,
         raise_errors: bool = True,
         types_namespace: dict[str, Any] | None = None,
-        typevars_map: dict[str, Any] | None = None,
+        typevars_map: dict[typing.TypeVar, Any] | None = None,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -754,6 +754,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
             zip(cls.__pydantic_generic_parameters__ or (), typevar_values)
         )
+
         if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
             _generics.set_cached_generic_type(cls, typevar_values, submodel)
@@ -770,20 +771,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 {param: None for param in _generics.iter_contained_typevars(typevars_map.values())}
             )  # use dict as ordered set
 
-            with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
-                if maybe_self_type is not None:
-                    return maybe_self_type
+            cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
+            if cached is not None:
+                return cached
+            submodel = _generics.create_generic_submodel(model_name, origin, args, params)
 
-                cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
-                if cached is not None:
-                    return cached
-                submodel = _generics.create_generic_submodel(model_name, origin, args, params)
+            # Update cache
+            _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
-                # Update cache
-                _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
-
-                # Doing the rebuild _after_ populating the cache prevents infinite recursion
-                submodel.model_rebuild(force=True, raise_errors=False, typevars_map=typevars_map)
+            # Doing the rebuild _after_ populating the cache prevents infinite recursion
+            submodel.model_rebuild(force=True, typevars_map=typevars_map)
 
         return submodel
 

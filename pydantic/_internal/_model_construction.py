@@ -146,7 +146,7 @@ def complete_model_class(
     types_namespace: dict[str, Any] | None,
     *,
     raise_errors: bool = True,
-    typevars_map: dict[str, Any] | None = None,
+    typevars_map: dict[typing.TypeVar, Any] | None = None,
 ) -> bool:
     """
     Finish building a model class.
@@ -156,9 +156,9 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-    gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace, typevars_map)
+    gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace)
     try:
-        schema = gen_schema.generate_schema(cls)
+        schema = gen_schema.generate_top_schema(cls, typevars_map)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
@@ -179,6 +179,7 @@ def complete_model_class(
 
     core_config = generate_config(cls.model_config, cls)
 
+    # debug(schema)
     cls.__pydantic_core_schema__ = schema
     cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
