@@ -60,6 +60,11 @@ try:
     user.name = 'x' * 20
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for User
+    name
+      String should have at most 10 characters [type=string_too_long, input_value='xxxxxxxxxxxxxxxxxxxx', input_type=str]
+    """
 ```
 
 ## Options

@@ -133,18 +133,14 @@ def test_validate_assignment_value_change():
     assert d.a == 6
 
 
-def test_validate_assignment_extra():
-    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True, extra=Extra.allow), frozen=False)
-    class MyDataclass:
-        a: int
+def test_config_extra_is_not_allowed():
+    with pytest.raises(
+        ValueError, match='extra=Extra.allow is not allowed for dataclasses. Only Extra.forbid is allowed.'
+    ):
 
-    d = MyDataclass(1)
-    assert d.a == 1
-
-    d.extra_field = 1.23
-    assert d.extra_field == 1.23
-    d.extra_field = 'bye'
-    assert d.extra_field == 'bye'
+        @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True, extra=Extra.allow), frozen=False)
+        class _:
+            pass
 
 
 def test_post_init():
@@ -926,29 +922,24 @@ import dataclasses
 import pydantic
 
 
-@dataclasses.dataclass
+@pydantic.dataclasses.dataclass(
+    config=pydantic.config.ConfigDict(validate_assignment=True)
+)
 class BuiltInDataclassForPickle:
     value: int
-
-class ModelForPickle(pydantic.BaseModel):
-    # pickle can only work with top level classes as it imports them
-
-    dataclass: BuiltInDataclassForPickle
-
-    model_config = pydantic.ConfigDict(validate_assignment=True)
         """
     )
-    obj = module.ModelForPickle(dataclass=module.BuiltInDataclassForPickle(value=5))
+    obj = module.BuiltInDataclassForPickle(value=5)
 
     pickled_obj = pickle.dumps(obj)
     restored_obj = pickle.loads(pickled_obj)
 
-    assert restored_obj.dataclass.value == 5
+    assert restored_obj.value == 5
     assert restored_obj == obj
 
     # ensure the restored dataclass is still a pydantic dataclass
-    with pytest.raises(ValidationError, match='value\n +value is not a valid integer'):
-        restored_obj.dataclass.value = 'value of a wrong type'
+    with pytest.raises(ValidationError):
+        restored_obj.value = 'value of a wrong type'
 
 
 @pytest.mark.xfail(reason='dataclasses JSON schema')

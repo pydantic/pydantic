@@ -10,6 +10,8 @@ from typing import Any, Callable, ClassVar
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
 
+from pydantic.config import Extra
+
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from . import _decorators
@@ -96,6 +98,10 @@ def prepare_dataclass(
     cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+
+    extra = config.get('extra', Extra.forbid)
+    if extra != Extra.forbid:
+        raise ValueError(f'extra=Extra.{extra} is not allowed for dataclasses. Only Extra.forbid is allowed.')
 
     if config.get('validate_assignment', False) is True:
 
