@@ -1183,7 +1183,7 @@ def test_unable_to_infer():
         match=re.escape(
             "A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; "
             "if 'x' is not meant to be a field, you may be able to resolve this error by annotating it as a "
-            "ClassVar or updating model_config[\"non_field_types\"]"
+            "ClassVar or updating model_config[\"ignored_types\"]"
         ),
     ):
 

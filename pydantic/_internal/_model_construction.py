@@ -48,7 +48,7 @@ def init_private_attributes(self_: Any, _context: Any) -> None:
 
 def inspect_namespace(  # noqa C901
     namespace: dict[str, Any],
-    non_field_types: tuple[type[Any], ...],
+    ignored_types: tuple[type[Any], ...],
     base_class_vars: set[str],
     base_class_fields: set[str],
 ) -> dict[str, ModelPrivateAttr]:
@@ -57,7 +57,7 @@ def inspect_namespace(  # noqa C901
     * gather private attributes
     * check for items which look like fields but are not (e.g. have no annotation) and warn
     """
-    all_non_field_types = non_field_types + IGNORED_TYPES
+    all_ignored_types = ignored_types + IGNORED_TYPES
 
     private_attributes: dict[str, ModelPrivateAttr] = {}
     raw_annotations = namespace.get('__annotations__', {})
@@ -85,7 +85,7 @@ def inspect_namespace(  # noqa C901
                 del namespace[var_name]
         elif var_name in base_class_vars:
             continue
-        elif var_name not in raw_annotations and not isinstance(value, all_non_field_types):
+        elif var_name not in raw_annotations and not isinstance(value, all_ignored_types):
             if var_name in base_class_fields:
                 raise PydanticUserError(
                     f'Field {var_name!r} defined on a base class was overridden by a non-annotated attribute. '
@@ -97,7 +97,7 @@ def inspect_namespace(  # noqa C901
                 raise PydanticUserError(
                     f'A non-annotated attribute was detected: `{var_name} = {value!r}`. All model fields require a '
                     f'type annotation; if {var_name!r} is not meant to be a field, you may be able to resolve this '
-                    f'error by annotating it as a ClassVar or updating model_config["non_field_types"].',
+                    f'error by annotating it as a ClassVar or updating model_config["ignored_types"].',
                 )
 
     for ann_name, ann_type in raw_annotations.items():

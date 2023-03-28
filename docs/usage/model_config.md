@@ -151,7 +151,7 @@ for validation, for use with `from_attributes`; see [Data binding](models.md#dat
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
 
-**`non_field_types`**
+**`ignored_types`**
 : a tuple of types that may occur as values of class attributes without annotations; this is typically used for
 custom descriptors (classes that behave like `property`). If an attribute is set on a class without an annotation
 and has a type that is not in this tuple (or otherwise recognized by pydantic), an error will be raised.

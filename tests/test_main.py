@@ -864,7 +864,7 @@ def test_untouched_types():
     classproperty = _ClassPropertyDescriptor
 
     class Model(BaseModel):
-        model_config = ConfigDict(non_field_types=(classproperty,))
+        model_config = ConfigDict(ignored_types=(classproperty,))
 
         @classproperty
         def class_name(cls) -> str:
@@ -1249,7 +1249,7 @@ def test_untyped_fields_warning():
         match=re.escape(
             "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
             "if 'x' is not meant to be a field, you may be able to resolve this error by annotating it "
-            "as a ClassVar or updating model_config[\"non_field_types\"]."
+            "as a ClassVar or updating model_config[\"ignored_types\"]."
         ),
     ):
 

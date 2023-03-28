@@ -11,7 +11,7 @@ from copy import copy, deepcopy
 from enum import Enum
 from functools import partial
 from inspect import getdoc
-from types import FunctionType, prepare_class, resolve_bases
+from types import prepare_class, resolve_bases
 from typing import Any, Generic, TypeVar, overload
 
 import typing_extensions
@@ -56,8 +56,6 @@ _object_setattr = _model_construction.object_setattr
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _base_class_defined = False
 
-PYDANTIC_NON_FIELD_TYPES = (property, type, classmethod, staticmethod, FunctionType)
-
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
@@ -85,7 +83,7 @@ class ModelMetaclass(ABCMeta):
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
             private_attributes = _model_construction.inspect_namespace(
-                namespace, config_new.get('non_field_types', ()), class_vars, base_field_names
+                namespace, config_new.get('ignored_types', ()), class_vars, base_field_names
             )
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
