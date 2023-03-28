@@ -13,8 +13,7 @@ from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, 
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
-from pydantic_core.core_schema import dict_not_none
-from typing_extensions import Annotated, Literal, Required, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import Annotated, Literal, TypedDict, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
@@ -41,9 +40,7 @@ if TYPE_CHECKING:
 
 __all__ = 'model_fields_schema', 'dataclass_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
 
-
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
-
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, SerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
@@ -52,31 +49,6 @@ AnyFieldDecorator = Union[
     Decorator[FieldValidatorDecoratorInfo],
     Decorator[SerializerDecoratorInfo],
 ]
-
-
-class _CommonField(TypedDict, total=False):
-    schema: Required[core_schema.CoreSchema]
-    validation_alias: str | list[str | int] | list[list[str | int]]
-    serialization_alias: str
-    serialization_exclude: bool  # default: False
-    metadata: Any
-
-
-def _common_field(
-    schema: core_schema.CoreSchema,
-    *,
-    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
-    serialization_alias: str | None = None,
-    serialization_exclude: bool | None = None,
-    metadata: Any = None,
-) -> _CommonField:
-    return dict_not_none(
-        schema=schema,
-        validation_alias=validation_alias,
-        serialization_alias=serialization_alias,
-        serialization_exclude=serialization_exclude,
-        metadata=metadata,
-    )
 
 
 def check_validator_fields_against_field_name(
@@ -425,10 +397,10 @@ class GenerateSchema:
         return core_schema.typed_dict_field(
             common_field['schema'],
             required=False if not field_info.is_required() else required,
-            serialization_exclude=common_field.get('serialization_exclude'),
-            validation_alias=common_field.get('validation_alias'),
-            serialization_alias=common_field.get('serialization_alias'),
-            metadata=common_field.get('metadata'),
+            serialization_exclude=common_field['serialization_exclude'],
+            validation_alias=common_field['validation_alias'],
+            serialization_alias=common_field['serialization_alias'],
+            metadata=common_field['metadata'],
         )
 
     def generate_dc_field_schema(
@@ -446,10 +418,10 @@ class GenerateSchema:
             common_field['schema'],
             init_only=field_info.init_var or None,
             kw_only=None if field_info.kw_only else False,
-            serialization_exclude=common_field.get('serialization_exclude'),
-            validation_alias=common_field.get('validation_alias'),
-            serialization_alias=common_field.get('serialization_alias'),
-            metadata=common_field.get('metadata'),
+            serialization_exclude=common_field['serialization_exclude'],
+            validation_alias=common_field['validation_alias'],
+            serialization_alias=common_field['serialization_alias'],
+            metadata=common_field['metadata'],
         )
 
     def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
@@ -490,7 +462,7 @@ class GenerateSchema:
             extra_updates=field_info.json_schema_extra,
         )
         metadata = build_metadata_dict(js_metadata=misc)
-        return core_schema.typed_dict_field(
+        return _common_field(
             schema,
             serialization_exclude=True if field_info.exclude else None,
             validation_alias=field_info.alias,
@@ -1112,3 +1084,28 @@ def get_model_self_schema(cls: type[BaseModel]) -> tuple[core_schema.ModelSchema
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
     return schema, model_ref
+
+
+class _CommonField(TypedDict):
+    schema: core_schema.CoreSchema
+    validation_alias: str | list[str | int] | list[list[str | int]] | None
+    serialization_alias: str | None
+    serialization_exclude: bool | None
+    metadata: Any
+
+
+def _common_field(
+    schema: core_schema.CoreSchema,
+    *,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    serialization_alias: str | None = None,
+    serialization_exclude: bool | None = None,
+    metadata: Any = None,
+) -> _CommonField:
+    return {
+        'schema': schema,
+        'validation_alias': validation_alias,
+        'serialization_alias': serialization_alias,
+        'serialization_exclude': serialization_exclude,
+        'metadata': metadata,
+    }

@@ -117,8 +117,6 @@ _V1RootValidatorFunctionType = TypeVar(
 )
 
 
-# Use a single overload here to get a different signature that requires at least one field be specified
-@overload  # type: ignore[misc]
 def validator(
     __field: str,
     *fields: str,
@@ -128,20 +126,11 @@ def validator(
     check_fields: bool | None = None,
     allow_reuse: bool = False,
 ) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
-    ...
-
-
-def validator(
-    *fields: str,
-    pre: bool = False,
-    each_item: bool = False,
-    always: bool = False,
-    check_fields: bool | None = None,
-    allow_reuse: bool = False,
-) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
-    :param fields: which field(s) the method should be called on
+    :param __field: the first field the validator should be called on;
+        this is separate from `fields` to ensure an error is raised if you don't pass at least one
+    :param fields: additional field(s) the validator should be called on
     :param pre: whether or not this validator should be called before the standard validators (else after)
     :param each_item: for complex objects (sets, lists etc.) whether to validate individual elements rather than the
       whole object
@@ -149,11 +138,10 @@ def validator(
     :param check_fields: whether to check that the fields actually exist on the model
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
-    if not fields:
-        raise TypeError('validator with no fields specified')
-    elif isinstance(fields[0], FunctionType):
+    fields = tuple((__field, *fields))
+    if isinstance(fields[0], FunctionType):
         raise TypeError(
-            'validators should be used with fields and keyword arguments, not bare. '
+            'field_validators should be used with fields and keyword arguments, not bare. '
             "E.g. usage should be `@validator('<field_name>', ...)`"
         )
     elif not all(isinstance(field, str) for field in fields):
@@ -216,6 +204,7 @@ def field_validator(
 
 
 def field_validator(
+    __field: str,
     *fields: str,
     mode: Literal['before', 'after', 'wrap', 'plain'] = 'after',
     check_fields: bool | None = None,
@@ -224,15 +213,16 @@ def field_validator(
 ) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
-    :param fields: which field(s) the method should be called on
+    :param __field: the first field the field_validator should be called on;
+        this is separate from `fields` to ensure an error is raised if you don't pass at least one
+    :param fields: additional field(s) the field_validator should be called on
     :param mode: TODO
-    :param sub_path: TODO
     :param check_fields: whether to check that the fields actually exist on the model
+    :param sub_path: TODO
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
-    if not fields:
-        raise TypeError('field_validator with no fields specified')
-    elif isinstance(fields[0], FunctionType):
+    fields = tuple((__field, *fields))
+    if isinstance(fields[0], FunctionType):
         raise TypeError(
             'field_validators should be used with fields and keyword arguments, not bare. '
             "E.g. usage should be `@validator('<field_name>', ...)`"

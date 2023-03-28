@@ -1,3 +1,4 @@
+import re
 from collections import deque
 from datetime import datetime
 from enum import Enum
@@ -405,7 +406,7 @@ def test_use_bare_field_validator():
 
 
 def test_use_no_fields():
-    with pytest.raises(TypeError, match='validator with no fields specified'):
+    with pytest.raises(TypeError, match=re.escape("validator() missing 1 required positional argument: '__field'")):
 
         class Model(BaseModel):
             a: str
@@ -418,7 +419,9 @@ def test_use_no_fields():
 
 
 def test_use_no_fields_field_validator():
-    with pytest.raises(TypeError, match='field_validator with no fields specified'):
+    with pytest.raises(
+        TypeError, match=re.escape("field_validator() missing 1 required positional argument: '__field'")
+    ):
 
         class Model(BaseModel):
             a: str
