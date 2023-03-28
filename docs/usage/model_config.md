@@ -151,9 +151,10 @@ for validation, for use with `from_attributes`; see [Data binding](models.md#dat
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
 
-**`keep_untouched`**
-: a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
-not be included in the model schemas. **Note**: this means that attributes on the model with *defaults of this type*, not *annotations of this type*, will be left alone.
+**`ignored_types`**
+: a tuple of types that may occur as values of class attributes without annotations; this is typically used for
+custom descriptors (classes that behave like `property`). If an attribute is set on a class without an annotation
+and has a type that is not in this tuple (or otherwise recognized by pydantic), an error will be raised.
 
 **`schema_extra`**
 : a `dict` used to extend/update the generated JSON Schema, or a callable to post-process it; see [schema customization](schema.md#schema-customization)
