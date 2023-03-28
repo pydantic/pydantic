@@ -118,6 +118,7 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_decorators__ = _decorators.gather_decorator_functions(cls)
 
+            # FIXME all generics related attributes should be moved into a dict, like `__pydantic_decorators__`
             parent_typevars_map = {}
             for base in bases:
                 base_typevars_map = getattr(base, '__pydantic_generic_typevars_map__', None)
