@@ -118,19 +118,25 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_decorators__ = _decorators.gather_decorator_functions(cls)
 
+            parent_typevars_map = {}
+            for base in bases:
+                base_typevars_map = getattr(base, '__pydantic_generic_typevars_map__', None)
+                if base_typevars_map:
+                    parent_typevars_map.update(base_typevars_map)
+
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_parameters__ = __pydantic_generic_parameters__ or getattr(
                 cls, '__parameters__', None
             )
             cls.__pydantic_generic_defaults__ = None if not cls.__pydantic_generic_parameters__ else {}
-            cls.__pydantic_generic_typevars_map__ = (
-                None
-                if __pydantic_generic_origin__ is None
-                else dict(
+            if __pydantic_generic_origin__ is None:
+                cls.__pydantic_generic_typevars_map__ = parent_typevars_map
+            else:
+                new_typevars_map = dict(
                     zip(_generics.iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ())
                 )
-            )
+                cls.__pydantic_generic_typevars_map__ = {**parent_typevars_map, **new_typevars_map}
 
             cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
 
@@ -536,7 +542,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         force: bool = False,
         raise_errors: bool = True,
         types_namespace: dict[str, Any] | None = None,
-        typevars_map: dict[typing.TypeVar, Any] | None = None,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -556,7 +561,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 cls.__name__,
                 types_namespace,
                 raise_errors=raise_errors,
-                typevars_map=typevars_map,
             )
 
     def __iter__(self) -> TupleGenerator:
@@ -780,7 +784,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
             # Doing the rebuild _after_ populating the cache prevents infinite recursion
-            submodel.model_rebuild(force=True, typevars_map=typevars_map)
+            submodel.model_rebuild(force=True)
 
         return submodel
 
@@ -977,9 +981,7 @@ class Validator(Generic[T]):
         # But at the very least this behavior is _subtly_ different from BaseModel's.
         global_ns = sys._getframe(1).f_globals.copy()
         global_ns.update(local_ns or {})
-        gen = _generate_schema.GenerateSchema(
-            arbitrary_types=arbitrary_types, types_namespace=global_ns, typevars_map={}
-        )
+        gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=global_ns)
         schema = gen.generate_schema(__type)
         self._validator = SchemaValidator(schema, config=merged_config)
 

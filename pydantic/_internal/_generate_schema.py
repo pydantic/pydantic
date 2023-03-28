@@ -916,6 +916,7 @@ class GenerateSchema:
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         assert isinstance(typevar, typing.TypeVar)
+
         if self.typevar_definitions:
             # we've got definitions, all typevars should be defined
             if self.model_typevars_map is not None:

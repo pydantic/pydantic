@@ -146,7 +146,6 @@ def complete_model_class(
     types_namespace: dict[str, Any] | None,
     *,
     raise_errors: bool = True,
-    typevars_map: dict[typing.TypeVar, Any] | None = None,
 ) -> bool:
     """
     Finish building a model class.
@@ -157,6 +156,7 @@ def complete_model_class(
     and `get_type_hints` requires a class object.
     """
     gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace)
+    typevars_map = cls.__pydantic_generic_typevars_map__
     try:
         schema = gen_schema.generate_top_schema(cls, typevars_map)
     except PydanticUndefinedAnnotation as e:
