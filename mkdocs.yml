@@ -48,7 +48,28 @@ nav:
   - changelog.md
 - Usage:
   - usage/models.md
-  - 'Field Types': usage/types.md
+  - Field Types:
+    - Types Overview: usage/types.md
+    - Standard Library Types: usage/standard_types.md
+    - Typing Iterables: usage/typing_iterables.md
+    - Unions: usage/unions.md
+    - Enums and Choices: usage/enums.md
+    - Datetimes: usage/datetime.md
+    - Booleans: usage/booleans.md
+    - Callables: usage/callables.md
+    - Type and TypeVar: usage/typevars.md
+    - Annotated Types: usage/annotated_types.md
+    - Pydantic Types: usage/pydantic_types.md
+    - ImportString: usage/importstring.md
+    - URLs: usage/urls.md
+    - Color Types: usage/colors.md
+    - Secret Types: usage/secrets.md
+    - JSON: usage/json.md
+    - ByteSize: usage/bytes.md
+    - Payment Card Numbers: usage/payment_cards.md
+    - Constrained Types: usage/constrained.md
+    - Strict Types: usage/strict.md
+    - Custom Data Types: usage/custom.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
   - usage/schema.md
