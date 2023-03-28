@@ -223,7 +223,9 @@ class GenerateSchema:
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         if get_schema is not None:
             # Can return None to tell pydantic not to override
-            return get_schema(types_namespace=self.types_namespace, source=source, generator=self)
+            return get_schema(
+                types_namespace=self.types_namespace, source=source, generator=self, typevars_map=self.typevars_map
+            )
 
         return None
 
@@ -398,7 +400,10 @@ class GenerateSchema:
         Prepare a TypedDictField to represent a model or typeddict field.
         """
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
-        schema = self.generate_schema(field_info.annotation)
+
+        annotation = replace_types(field_info.annotation, self.typevars_map)
+
+        schema = self.generate_schema(annotation)
 
         if field_info.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)

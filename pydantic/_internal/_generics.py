@@ -202,7 +202,7 @@ def get_origin(v: Any) -> Any:
     return typing_extensions.get_origin(v)
 
 
-def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
+def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     """Return type with all occurrences of `type_map` keys recursively replaced with their values.
 
     :param type_: Any type, class or generic alias

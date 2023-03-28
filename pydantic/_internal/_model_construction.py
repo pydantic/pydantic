@@ -136,6 +136,7 @@ def model_get_pydantic_core_schema(
     self_schema, model_ref = get_model_self_schema(cls)
     types_namespace = {**add_module_globals(cls, types_namespace), cls.__name__: PydanticForwardRef(self_schema, cls)}
 
+    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
     try:
         inner_schema = model_fields_schema(
             model_ref,
@@ -188,7 +189,7 @@ def complete_model_class(
             **add_module_globals(cls, types_namespace),
             cls.__name__: PydanticForwardRef(self_schema, cls),
         }
-        fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+        fields, class_vars = collect_fields(cls, bases, types_namespace)
 
         apply_alias_generator(cls.model_config, fields)
         cls.model_fields = fields

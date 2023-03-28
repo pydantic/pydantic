@@ -42,10 +42,10 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
         try:
             name = name_error.name
         except AttributeError:
-            name = re.search(r".*'(.+?)'", str(name_error)).group(1)
+            name = re.search(r".*'(.+?)'", str(name_error)).group(1)  # type: ignore[union-attr]
         return cls(name=name, message=str(name_error))
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f'Undefined annotation: {self.message}'
 
 

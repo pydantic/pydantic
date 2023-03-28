@@ -12,7 +12,6 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import core_schema
 
 from ._forward_ref import PydanticForwardRef
-from ._generics import replace_types
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar
 
@@ -115,7 +114,6 @@ def collect_fields(  # noqa: C901
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None,
     *,
-    typevars_map: dict[str, Any] | None = None,
     is_dataclass: bool = False,
     dc_kw_only: bool | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
@@ -131,7 +129,6 @@ def collect_fields(  # noqa: C901
     :param cls: BaseModel or dataclass
     :param bases: parents of the class, generally `cls.__bases__`
     :param types_namespace: optional extra namespace to look for types in
-    :param typevars_map: TODO ???
     :param is_dataclass: whether the class is a dataclass, used to decide about kw_only setting
     :param dc_kw_only: whether the whole dataclass is kw_only
     """
@@ -252,10 +249,5 @@ def collect_fields(  # noqa: C901
         if kw_only is not None:
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
-
-    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
-    if typevars_map:
-        for field in fields.values():
-            field.annotation = replace_types(field.annotation, typevars_map)
 
     return fields, class_vars

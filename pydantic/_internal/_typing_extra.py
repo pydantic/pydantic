@@ -242,7 +242,7 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, A
     return globalns or {}
 
 
-def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None):
+def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Collect annotations from a class, including those from parent classes.
 
@@ -261,7 +261,7 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
                     value = ForwardRef(value, is_argument=False, is_class=True)
 
                 try:
-                    hints[name] = typing._eval_type(value, globalns, localns)
+                    hints[name] = typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
                 except NameError:
                     # the point of this function is to be tolerant to this case
                     hints[name] = value
