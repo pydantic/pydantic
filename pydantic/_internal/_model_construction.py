@@ -4,8 +4,6 @@ Private logic for creating models.
 from __future__ import annotations as _annotations
 
 import typing
-import warnings
-from functools import partial
 from types import FunctionType
 from typing import Any, Callable
 
@@ -13,8 +11,7 @@ from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
-from ._core_metadata import build_metadata_dict
-from ._core_utils import consolidate_refs, define_expected_missing_refs, get_type_ref
+from ._core_utils import get_type_ref
 from ._decorators import PydanticDecoratorMarker
 from ._fields import Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
