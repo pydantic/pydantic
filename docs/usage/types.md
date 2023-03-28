@@ -622,39 +622,35 @@ except ValidationError as e:
 ### Datetime Types
 
 *Pydantic* supports the following [datetime](https://docs.python.org/library/datetime.html#available-types)
-types:
+types.
 
-* `datetime` fields can be:
+`datetime` fields can be:
 
-  * `datetime`, existing `datetime` object
-  * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
-  * `str`, following formats work:
-
+* `datetime`, existing `datetime` object
+* `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
+* `str`, following formats work:
     * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
     * `int` or `float` as a string (assumed as Unix time)
 
-* `date` fields can be:
+`date` fields can be:
 
-  * `date`, existing `date` object
-  * `int` or `float`, see `datetime`
-  * `str`, following formats work:
-
+* `date`, existing `date` object
+* `int` or `float`, see `datetime`
+* `str`, following formats work:
     * `YYYY-MM-DD`
     * `int` or `float`, see `datetime`
 
-* `time` fields can be:
+`time` fields can be:
 
-  * `time`, existing `time` object
-  * `str`, following formats work:
-
+* `time`, existing `time` object
+* `str`, following formats work:
     * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
 
-* `timedelta` fields can be:
+`timedelta` fields can be:
 
-  * `timedelta`, existing `timedelta` object
-  * `int` or `float`, assumed as seconds
-  * `str`, following formats work:
-
+* `timedelta`, existing `timedelta` object
+* `int` or `float`, assumed as seconds
+* `str`, following formats work:
     * `[-][DD ][HH:MM]SS[.ffffff]`
     * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
