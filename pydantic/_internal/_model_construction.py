@@ -96,8 +96,8 @@ def inspect_namespace(  # noqa C901
             else:
                 raise PydanticUserError(
                     f'A non-annotated attribute was detected: `{var_name} = {value!r}`. All model fields require a '
-                    f'type annotation; if {var_name!r} is not meant to be a field, you may be able to suppress this '
-                    f'warning by annotating it as a ClassVar or updating model_config["non_field_types"].',
+                    f'type annotation; if {var_name!r} is not meant to be a field, you may be able to resolve this '
+                    f'error by annotating it as a ClassVar or updating model_config["non_field_types"].',
                 )
 
     for ann_name, ann_type in raw_annotations.items():
