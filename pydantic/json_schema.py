@@ -1159,7 +1159,7 @@ def schema(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-    definitions = instance.generate_definitions([x.__pydantic_core_schema__ for x in models])
+    definitions = instance.generate_definitions([x.__get_pydantic_core_schema__() for x in models])
 
     json_schema: dict[str, Any] = {}
     if definitions:

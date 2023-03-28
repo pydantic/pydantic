@@ -15,7 +15,7 @@ from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
 
-from ..errors import PydanticSchemaGenerationError, PydanticUserError
+from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaMetadata, JsonSchemaValue
 from . import _discriminated_union, _typing_extra
@@ -236,8 +236,7 @@ class GenerateSchema:
         elif isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
-
-        if isinstance(obj, ForwardRef):
+        elif isinstance(obj, ForwardRef):
             # we assume that types_namespace has the target of forward references in its scope,
             # but this could fail, for example, if calling Validator on an imported type which contains
             # forward references to other types only defined in the module from which it was imported
@@ -246,6 +245,10 @@ class GenerateSchema:
             # class Model(BaseModel):
             #   x: SomeImportedTypeAliasWithAForwardReference
             obj = _typing_extra.evaluate_fwd_ref(obj, globalns=None, localns=self.types_namespace)
+
+            # if obj is still a ForwardRef, it means we can't evaluate it, raise PydanticUndefinedAnnotation
+            if isinstance(obj, ForwardRef):
+                raise PydanticUndefinedAnnotation(obj.__forward_arg__, f'Unable to evaluate forward reference {obj}')
 
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:

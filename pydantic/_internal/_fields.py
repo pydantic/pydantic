@@ -4,21 +4,17 @@ Private logic related to fields (the `Field()` function and `FieldInfo` class), 
 from __future__ import annotations as _annotations
 
 import dataclasses
-import re
 import sys
 from abc import ABC, abstractmethod
 from copy import copy
-from types import GetSetDescriptorType, NoneType
-import typing
-from typing import TYPE_CHECKING, Any, ForwardRef
+from typing import TYPE_CHECKING, Any
 
 from pydantic_core import core_schema
 
-from ..errors import PydanticUndefinedAnnotation
 from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
 from ._repr import Representation
-from ._typing_extra import get_type_hints, is_classvar
+from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar
 
 if TYPE_CHECKING:
     from ..fields import FieldInfo
@@ -38,26 +34,6 @@ def get_type_hints_infer_globalns(
             # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
             pass
     return get_type_hints(obj, globalns=globalns, localns=localns, include_extras=include_extras)
-
-
-def collect_annotations(obj: Any):
-    """
-    Collect annotations from a class, including those from parent classes.
-
-    Unlike `typing.get_type_hints`, this function will not evaluate forward references so won't error if
-    a forward reference is not resolvable.
-    """
-    annotations = {}
-    for base in reversed(obj.__mro__):
-        ann = base.__dict__.get('__annotations__')
-        if ann is not None:
-            for name, value in ann.items():
-                if value is None:
-                    value = NoneType
-                elif isinstance(value, str):
-                    value = ForwardRef(value, is_argument=False, is_class=True)
-                annotations[name] = value
-    return annotations
 
 
 class _UndefinedType:
@@ -161,7 +137,7 @@ def collect_fields(  # noqa: C901
     """
     from ..fields import FieldInfo
 
-    type_hints = collect_annotations(cls)
+    type_hints = get_cls_type_hints_lenient(cls, types_namespace)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes

@@ -7,6 +7,7 @@ import sys
 import types
 import typing
 from collections.abc import Callable
+from types import GetSetDescriptorType
 from typing import Any, ForwardRef
 
 from typing_extensions import Annotated, Final, Literal, get_args, get_origin
@@ -30,6 +31,8 @@ __all__ = (
     'parent_frame_namespace',
     'get_type_hints',
     'EllipsisType',
+    'add_module_globals',
+    'get_cls_type_hints_lenient',
 )
 
 try:
@@ -220,6 +223,49 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
         return None
     else:
         return frame.f_locals
+
+
+def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, Any]:
+    module_name = getattr(obj, '__module__', None)
+    if module_name:
+        try:
+            module_globalns = sys.modules[module_name].__dict__
+        except KeyError:
+            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
+            pass
+        else:
+            if globalns is None:
+                return module_globalns
+            else:
+                return {**module_globalns, **globalns}
+
+    return globalns or {}
+
+
+def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None):
+    """
+    Collect annotations from a class, including those from parent classes.
+
+    Unlike `typing.get_type_hints`, this function will not evaluate forward references so won't error if
+    a forward reference is not resolvable.
+    """
+    hints = {}
+    for base in reversed(obj.__mro__):
+        ann = base.__dict__.get('__annotations__')
+        localns = dict(vars(base))
+        if ann is not None and ann is not GetSetDescriptorType:
+            for name, value in ann.items():
+                if value is None:
+                    value = NoneType
+                elif isinstance(value, str):
+                    value = ForwardRef(value, is_argument=False, is_class=True)
+
+                try:
+                    hints[name] = typing._eval_type(value, globalns, localns)
+                except NameError:
+                    # the point of this function is to be tolerant to this case
+                    hints[name] = value
+    return hints
 
 
 if sys.version_info >= (3, 10):

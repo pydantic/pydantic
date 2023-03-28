@@ -427,7 +427,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        s = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(cls.__pydantic_core_schema__)
+        schema = cls.__get_pydantic_core_schema__()
+        s = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(schema)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
 
@@ -561,6 +562,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 raise_errors=raise_errors,
                 types_namespace=types_namespace,
                 typevars_map=typevars_map,
+                gen_fields=False,
             )
 
     def __iter__(self) -> TupleGenerator:

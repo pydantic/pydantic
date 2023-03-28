@@ -33,7 +33,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     Error occurs when annotations are not yet defined
     """
 
-    def __init__(self, name: str, *, message: str | None = None) -> None:
+    def __init__(self, name: str, message: str | None = None) -> None:
         self.name = name
         super().__init__(code=name, message=message)
 
@@ -44,6 +44,9 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
         except AttributeError:
             name = re.search(r".*'(.+?)'", str(name_error)).group(1)
         return cls(name=name, message=str(name_error))
+
+    def __str__(self):
+        return f'Undefined annotation: {self.message}'
 
 
 class PydanticSchemaGenerationError(PydanticUserError):

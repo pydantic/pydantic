@@ -4,6 +4,7 @@ Private logic for creating models.
 from __future__ import annotations as _annotations
 
 import typing
+import warnings
 from functools import partial
 from types import FunctionType
 from typing import Any, Callable
@@ -19,7 +20,7 @@ from ._fields import Undefined, collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generate_schema import generate_config, get_model_self_schema, model_fields_schema
 from ._generics import recursively_defined_type_refs
-from ._typing_extra import is_classvar
+from ._typing_extra import add_module_globals, is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
@@ -28,7 +29,7 @@ if typing.TYPE_CHECKING:
     from ..config import ConfigDict
     from ..main import BaseModel
 
-__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class', 'MockValidator', 'set_model_fields'
+__all__ = 'object_setattr', 'init_private_attributes', 'inspect_namespace', 'complete_model_class', 'MockValidator'
 
 IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod, PydanticDecoratorMarker)
 object_setattr = object.__setattr__
@@ -133,10 +134,8 @@ def model_get_pydantic_core_schema(
     Used in `BaseModel.__get_pydantic_core_schema__` to construct the model schema.
     """
     self_schema, model_ref = get_model_self_schema(cls)
-    types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
+    types_namespace = {**add_module_globals(cls, types_namespace), cls.__name__: PydanticForwardRef(self_schema, cls)}
 
-    # this schema construction has to go here
-    # since in some recursive generics it can raise a PydanticUndefinedAnnotation error
     try:
         inner_schema = model_fields_schema(
             model_ref,
@@ -147,7 +146,7 @@ def model_get_pydantic_core_schema(
             typevars_map,
         )
     except NameError as e:
-        raise PydanticUndefinedAnnotation.from_name_error(e) from e
+        raise PydanticUndefinedAnnotation.from_name_error(e) from None
 
     inner_schema = consolidate_refs(inner_schema)
     inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
@@ -172,6 +171,7 @@ def complete_model_class(
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None = None,
     typevars_map: dict[str, Any] | None = None,
+    gen_fields: bool = True,
 ) -> bool:
     """
     Finish building a model class.
@@ -181,12 +181,20 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-    self_schema, model_ref = get_model_self_schema(cls)
-    types_namespace = {**(types_namespace or {}), cls.__name__: PydanticForwardRef(self_schema, cls)}
-    fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
-    apply_alias_generator(cls.model_config, fields)
-    cls.model_fields = fields
-    cls.__class_vars__.update(class_vars)
+
+    if gen_fields:
+        self_schema, model_ref = get_model_self_schema(cls)
+        types_namespace = {
+            **add_module_globals(cls, types_namespace),
+            cls.__name__: PydanticForwardRef(self_schema, cls),
+        }
+        fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+
+        apply_alias_generator(cls.model_config, fields)
+        cls.model_fields = fields
+        cls.__class_vars__.update(class_vars)
+    else:
+        fields = cls.model_fields
 
     try:
         schema = cls.__get_pydantic_core_schema__(types_namespace=types_namespace, typevars_map=typevars_map)
@@ -195,13 +203,14 @@ def complete_model_class(
             raise
         if cls.model_config['undefined_types_warning']:
             config_warning_string = (
-                f'`{name}` has an undefined annotation: `{e}`. '
+                f'`{name}` has an undefined annotation: `{e.name}`. '
                 f'It may be possible to resolve this by setting '
                 f'undefined_types_warning=False in the config for `{name}`.'
             )
+            # FIXME UserWarning should not be raised here, but rather warned!
             raise UserWarning(config_warning_string)
         usage_warning_string = (
-            f'`{name}` is not fully defined; you should define `{e}`, then call `{name}.model_rebuild()` '
+            f'`{name}` is not fully defined; you should define `{e.name}`, then call `{name}.model_rebuild()` '
             f'before the first `{name}` instance is created.'
         )
         cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
@@ -218,19 +227,6 @@ def complete_model_class(
         '__signature__', generate_model_signature(cls.__init__, fields, cls.model_config)
     )
     return True
-
-
-def set_model_fields(
-    cls: type[BaseModel],
-    bases: tuple[type[Any], ...],
-    types_namespace: dict[str, Any] | None,
-    typevars_map: dict[str, Any] | None,
-) -> dict[str, FieldInfo]:
-    fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
-    apply_alias_generator(cls.model_config, fields)
-    cls.model_fields = fields
-    cls.__class_vars__.update(class_vars)
-    return fields
 
 
 def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:

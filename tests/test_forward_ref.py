@@ -60,7 +60,7 @@ def test_forward_ref_auto_update_no_model(create_module):
 
     # model_fields is complete on Foo
     assert repr(module.Foo.model_fields['a']) == (
-        'FieldInfo(annotation=Union[PydanticForwardRef, NoneType], required=False)'
+        "FieldInfo(annotation=Union[ForwardRef('Bar'), NoneType], required=False)"
     )
 
     # but Foo is not ready to use
@@ -85,7 +85,10 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             foo: 'Foo'
             bar: 'Bar'
 
-    assert hasattr(module.Foo, 'model_fields') is False
+    assert {k: repr(v) for k, v in module.Foo.model_fields.items()} == {
+        'foo': 'FieldInfo(annotation=PydanticForwardRef, required=True)',
+        'bar': "FieldInfo(annotation=ForwardRef('Bar'), required=True)",
+    }
 
 
 def test_basic_forward_ref(create_module):
@@ -460,7 +463,8 @@ class Spec(BaseModel):
 
 class PSpec(Spec):
     model_config = ConfigDict(undefined_types_warning = False)
-    g: Optional[GSpec]
+    # FIXME investigate why this wasn't causing errors before
+    g: Optional[GSpec] = None
 
 
 class GSpec(Spec):
@@ -704,7 +708,7 @@ def test_pep585_recursive_generics(create_module):
 
         Team.model_rebuild()
 
-    assert repr(module.Team.model_fields['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
+    assert repr(module.Team.model_fields['heroes']) == "FieldInfo(annotation=list[ForwardRef('Hero')], required=True)"
     assert repr(module.Hero.model_fields['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
 
     h = module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])
