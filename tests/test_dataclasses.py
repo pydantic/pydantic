@@ -1641,3 +1641,33 @@ def test_dataclasses_inheritance_default_value_is_not_deleted(
 
     assert Child.a == 1
     assert Child().a == 1
+
+
+def test_dataclass_config_validate_default():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int = -1
+
+        @field_validator('x')
+        @classmethod
+        def force_x_positive(cls, v):
+            assert v > 0
+            return v
+
+    assert Model().x == -1
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_default=True))
+    class ValidatingModel(Model):
+        pass
+
+    with pytest.raises(ValidationError) as exc_info:
+        ValidatingModel()
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'error': 'assert -1 > 0'},
+            'input': -1,
+            'loc': ('x',),
+            'msg': 'Assertion failed, assert -1 > 0',
+            'type': 'assertion_error',
+        }
+    ]

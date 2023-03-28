@@ -59,8 +59,9 @@ class ValidatorDecoratorInfo(Representation):
         fields: tuple[str, ...],
         # pre=True/False in v1 should be converted to mode='before'/'after' in v2
         mode: Literal['before', 'after'],
-        check_fields: bool | None,
         each_item: bool,
+        always: bool,
+        check_fields: bool | None,
     ) -> None:
         """
         :param mode: the pydantic-core validator mode.
@@ -70,8 +71,9 @@ class ValidatorDecoratorInfo(Representation):
         """
         self.fields = fields
         self.mode = mode
-        self.check_fields = check_fields
         self.each_item = each_item
+        self.always = always
+        self.check_fields = check_fields
 
 
 class FieldValidatorDecoratorInfo(Representation):
