@@ -133,6 +133,63 @@ def test_validate_assignment_value_change():
     assert d.a == 6
 
 
+@pytest.mark.parametrize(
+    'config',
+    [
+        ConfigDict(validate_assignment=False),
+        ConfigDict(extra=Extra.ignore),
+        ConfigDict(validate_assignment=False, extra=Extra.ignore),
+    ],
+)
+def test_validate_assignment_extra_unknown_field_assigned_allowed(config: ConfigDict):
+    @pydantic.dataclasses.dataclass(config=config)
+    class MyDataclass:
+        a: int
+
+    d = MyDataclass(1)
+    assert d.a == 1
+
+    d.extra_field = 123
+    assert d.extra_field == 123
+
+
+@pytest.mark.parametrize(
+    'config',
+    [
+        ConfigDict(validate_assignment=True),
+        pytest.param(
+            ConfigDict(extra=Extra.forbid), marks=pytest.mark.xfail(reason='dataclasses do not respect Extra')
+        ),
+        ConfigDict(validate_assignment=True, extra=Extra.forbid),
+        ConfigDict(validate_assignment=True, extra=Extra.ignore),
+        pytest.param(
+            ConfigDict(validate_assignment=False, extra=Extra.forbid),
+            marks=pytest.mark.xfail(reason='dataclasses do not respect Extra'),
+        ),
+    ],
+)
+def test_validate_assignment_extra_unknown_field_assigned_errors(config: ConfigDict):
+    @pydantic.dataclasses.dataclass(config=config)
+    class MyDataclass:
+        a: int
+
+    d = MyDataclass(1)
+    assert d.a == 1
+
+    with pytest.raises(ValidationError) as exc_info:
+        d.extra_field = 1.23
+
+    assert exc_info.value.errors() == [
+        {
+            'type': 'no_such_attribute',
+            'loc': ('extra_field',),
+            'msg': "Object has no attribute 'extra_field'",
+            'input': 1.23,
+            'ctx': {'attribute': 'extra_field'},
+        }
+    ]
+
+
 def test_post_init():
     post_init_called = False
 
