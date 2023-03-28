@@ -1776,7 +1776,6 @@ def field_after_validator_function(
         function=fn, schema=core_schema.str_schema()
     )
     schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
-    schema = core_schema.typed_dict_schema({'a': core_schema.typed_dict_field(func_schema)})
 
     v = SchemaValidator(schema)
     assert v.validate_python({'a': b'hello '}) == {'a': 'hello world'}
