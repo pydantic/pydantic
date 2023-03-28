@@ -167,6 +167,13 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'union':
             # Reverse the choices list before extending the stack so that they get handled in the order they occur
             self._choices_to_handle.extend(choice['choices'][::-1])
+        elif choice['type'] == 'definition-ref':
+            matching_definitions = [x for x in (definitions or []) if x.get('ref') == choice['schema_ref']]
+            if len(matching_definitions) < 1:
+                raise ValueError(f"Missing definition for ref {choice['schema_ref']!r}")
+            elif len(matching_definitions) > 1:
+                raise ValueError(f"Multiple definitions for ref {choice['schema_ref']!r}")
+            self._handle_choice(matching_definitions[0])
         elif choice['type'] not in {
             'model',
             'typed-dict',
