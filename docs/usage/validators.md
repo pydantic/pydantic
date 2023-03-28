@@ -336,6 +336,8 @@ In this case you should set `check_fields=False` on the validator.
 
 Validators also work with *pydantic* dataclasses.
 
+# TODO: Change this example so that it _should_ use a validator; right now it would be better off with default_factory..
+
 ```py
 from datetime import datetime
 
