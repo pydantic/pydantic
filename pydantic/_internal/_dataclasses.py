@@ -99,9 +99,12 @@ def prepare_dataclass(
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
 
-    extra = config.get('extra', Extra.forbid)
-    if extra != Extra.forbid:
-        raise ValueError(f'extra=Extra.{extra.value} is not allowed for dataclasses. Only Extra.forbid is allowed.')
+    extra = config.get('extra', Extra.ignore)  # ignore is the default in V1
+    if extra is Extra.allow:
+        raise ValueError(
+            'extra=Extra.allow is not allowed for dataclasses.'
+            ' Only Extra.ignore (the default) and Extra.forbid are allowed.'
+        )
 
     if config.get('validate_assignment', False) is True:
 

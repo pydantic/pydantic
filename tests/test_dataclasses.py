@@ -133,16 +133,6 @@ def test_validate_assignment_value_change():
     assert d.a == 6
 
 
-def test_config_extra_is_not_allowed():
-    with pytest.raises(
-        ValueError, match='extra=Extra.allow is not allowed for dataclasses. Only Extra.forbid is allowed.'
-    ):
-
-        @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True, extra=Extra.allow), frozen=False)
-        class _:
-            pass
-
-
 def test_post_init():
     post_init_called = False
 
@@ -1316,51 +1306,27 @@ def test_ignore_extra_subclass():
     assert bar.__dict__ == {'x': 1, 'y': 2, '__pydantic_initialised__': True}
 
 
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_allow_extra():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
-    class Foo:
-        x: int
+    msg = (
+        r'extra=Extra.allow is not allowed for dataclasses.'
+        r' Only Extra.ignore (the default) and Extra.forbid are allowed.'
+    )
+    with pytest.raises(ValueError, match=re.escape(msg)):
 
-    foo = Foo(**{'x': '1', 'y': '2'})
-    assert foo.__dict__ == {'x': 1, 'y': '2', '__pydantic_initialised__': True}
-
-
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
-def test_allow_extra_subclass():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
-    class Foo:
-        x: int
-
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
-    class Bar(Foo):
-        y: int
-
-    bar = Bar(**{'x': '1', 'y': '2', 'z': '3'})
-    assert bar.__dict__ == {'x': 1, 'y': 2, 'z': '3', '__pydantic_initialised__': True}
+        @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.allow))
+        class _:
+            pass
 
 
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_forbid_extra():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.forbid))
     class Foo:
         x: int
 
-    with pytest.raises(TypeError, match=re.escape("__init__() got an unexpected keyword argument 'y'")):
+    msg = re.escape("Unexpected keyword argument [type=unexpected_keyword_argument, input_value='2', input_type=str]")
+
+    with pytest.raises(ValidationError, match=msg):
         Foo(**{'x': '1', 'y': '2'})
-
-
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
-def test_post_init_allow_extra():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
-    class Foobar:
-        a: int
-        b: str
-
-        def __post_init__(self):
-            self.a *= 2
-
-    assert Foobar(a=1, b='a', c=4).__dict__ == {'a': 2, 'b': 'a', 'c': 4, '__pydantic_initialised__': True}
 
 
 @pytest.mark.xfail(reason='recursive references need rebuilding?')
