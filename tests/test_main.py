@@ -851,7 +851,7 @@ def test_dict_with_extra_keys():
     assert m.model_dump(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
 
 
-def test_untouched_types():
+def test_ignored_types():
     from pydantic import BaseModel
 
     class _ClassPropertyDescriptor:
