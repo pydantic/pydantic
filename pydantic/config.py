@@ -60,7 +60,7 @@ class _ConfigDict(TypedDict, total=False):
     undefined_types_warning: bool  # TODO review docs
     from_attributes: bool
     alias_generator: Callable[[str], str] | None
-    keep_untouched: tuple[type, ...]  # TODO remove??
+    ignored_types: tuple[type, ...]  # TODO remove??
     json_loads: Callable[[str], Any]  # TODO decide
     json_dumps: Callable[..., str]  # TODO decide
     json_encoders: dict[type[Any] | str | ForwardRef, Callable[..., Any]]  # TODO decide
@@ -113,7 +113,7 @@ _default_config = ConfigDict(
     undefined_types_warning=True,
     from_attributes=False,
     alias_generator=None,
-    keep_untouched=(),
+    ignored_types=(),
     json_loads=json.loads,
     json_dumps=json.dumps,
     json_encoders={},
