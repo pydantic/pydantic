@@ -140,8 +140,8 @@ class Foo(BaseModel):
 
 
 class Bar(BaseModel):
-    apple = 'x'
-    banana = 'y'
+    apple: str = 'x'
+    banana: str = 'y'
 
 
 class Spam(BaseModel):
@@ -151,9 +151,16 @@ class Spam(BaseModel):
 
 m = Spam(foo={'count': 4}, bars=[{'apple': 'x1'}, {'apple': 'x2'}])
 print(m)
-#> foo=Foo(count=4, size=None) bars=[Bar(), Bar()]
+"""
+foo=Foo(count=4, size=None) bars=[Bar(apple='x1', banana='y'), Bar(apple='x2', banana='y')]
+"""
 print(m.model_dump())
-#> {'foo': {'count': 4, 'size': None}, 'bars': [{}, {}]}
+"""
+{
+    'foo': {'count': 4, 'size': None},
+    'bars': [{'apple': 'x1', 'banana': 'y'}, {'apple': 'x2', 'banana': 'y'}],
+}
+"""
 ```
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
@@ -409,8 +416,8 @@ from pydantic import BaseModel, ValidationError, conint
 
 
 class Location(BaseModel):
-    lat = 0.1
-    lng = 10.1
+    lat: float = 0.1
+    lng: float = 10.1
 
 
 class Model(BaseModel):
@@ -433,7 +440,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    4 validation errors for Location
+    5 validation errors for Location
     is_required
       Field required [type=missing, input_value={'list_of_ints': ['1', 2,...ew York'}, 'gt_int': 21}, input_type=dict]
     gt_int
@@ -442,6 +449,8 @@ except ValidationError as e:
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
     a_float
       Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='not a float', input_type=str]
+    recursive_model -> lng
+      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='New York', input_type=str]
     """
 
 try:
@@ -481,6 +490,12 @@ except ValidationError as e:
             'loc': ('a_float',),
             'msg': 'Input should be a valid number, unable to parse string as an number',
             'input': 'not a float',
+        },
+        {
+            'type': 'float_parsing',
+            'loc': ('recursive_model', 'lng'),
+            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'input': 'New York',
         },
     ]
     """
@@ -580,13 +595,13 @@ from pydantic import BaseModel, ValidationError
 
 class User(BaseModel):
     id: int
-    name = 'John Doe'
+    name: str = 'John Doe'
     signup_ts: datetime = None
 
 
 m = User.model_validate({'id': 123, 'name': 'James'})
 print(m)
-#> id=123 signup_ts=None
+#> id=123 name='James' signup_ts=None
 
 try:
     User.model_validate(['not', 'a', 'dict'])
@@ -600,7 +615,7 @@ except ValidationError as e:
 # assumes json as no content type passed
 m = User.model_validate_json('{"id": 123, "name": "James"}')
 print(m)
-#> id=123 signup_ts=None
+#> id=123 name='James' signup_ts=None
 ```
 
 !!! warning
@@ -902,7 +917,7 @@ the `create_model` method to allow models to be created on the fly.
 ```py
 from pydantic import BaseModel, create_model
 
-DynamicFoobarModel = create_model('DynamicFoobarModel', foo=(str, ...), bar=123)
+DynamicFoobarModel = create_model('DynamicFoobarModel', foo=(str, ...), bar=(int, 123))
 
 
 class StaticFoobarModel(BaseModel):
@@ -932,14 +947,14 @@ class FooModel(BaseModel):
 
 BarModel = create_model(
     'BarModel',
-    apple='russet',
-    banana='yellow',
+    apple=(str, 'russet'),
+    banana=(str, 'yellow'),
     __base__=FooModel,
 )
 print(BarModel)
 #> <class 'pydantic.main.BarModel'>
 print(BarModel.model_fields.keys())
-#> dict_keys(['foo', 'bar'])
+#> dict_keys(['foo', 'bar', 'apple', 'banana'])
 ```
 
 You can also add validators by passing a dict to the `__validators__` argument.
@@ -1167,24 +1182,24 @@ from pydantic import BaseModel, ValidationError
 
 class Model(BaseModel):
     a: int
-    b = 2
+    b: int = 2
     c: int = 1
-    d = 0
+    d: int = 0
     e: float
 
 
 print(Model.model_fields.keys())
-#> dict_keys(['a', 'c', 'e'])
+#> dict_keys(['a', 'b', 'c', 'd', 'e'])
 m = Model(e=2, a=1)
 print(m.model_dump())
-#> {'a': 1, 'c': 1, 'e': 2.0}
+#> {'a': 1, 'b': 2, 'c': 1, 'd': 0, 'e': 2.0}
 try:
     Model(a='x', b='x', c='x', d='x', e='x')
 except ValidationError as err:
     error_locations = [e['loc'] for e in err.errors()]
 
 print(error_locations)
-#> [('a',), ('c',), ('e',)]
+#> [('a',), ('b',), ('c',), ('d',), ('e',)]
 ```
 
 !!! warning
