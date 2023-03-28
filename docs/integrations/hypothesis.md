@@ -6,7 +6,7 @@ many standard library types, and generic types from the
 [`typing_extensions`](https://pypi.org/project/typing-extensions/) modules by default.
 
 From Pydantic v1.8 and [Hypothesis v5.29.0](https://hypothesis.readthedocs.io/en/latest/changes.html#v5-29-0),
-Hypothesis will automatically load support for [custom types](usage/types.md) like
+Hypothesis will automatically load support for [custom types](/usage/types/) like
 `PaymentCardNumber` and `PositiveFloat`, so that the
 [`st.builds()`](https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.builds)
 and [`st.from_type()`](https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.from_type)
@@ -50,7 +50,7 @@ def test_with_discount(instance):
 
 ### Use with JSON Schemas
 
-To test client-side code, you can use [`Model.model_json_schema()`](usage/models.md) with the
+To test client-side code, you can use [`Model.model_json_schema()`](usage/models/) with the
 [`hypothesis-jsonschema` package](https://pypi.org/project/hypothesis-jsonschema/)
 to generate arbitrary JSON instances matching the schema.
 For web API testing, [Schemathesis](https://schemathesis.readthedocs.io) provides

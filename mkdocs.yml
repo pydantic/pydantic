@@ -58,13 +58,13 @@ nav:
   - usage/validation_decorator.md
   - usage/postponed_annotations.md
 - Integrations:
-  - 'Mypy plugin': mypy_plugin.md
-  - 'PyCharm plugin': pycharm_plugin.md
-  - 'Hypothesis plugin': hypothesis_plugin.md
-  - 'Visual Studio Code': visual_studio_code.md
-  - 'Code Generation': datamodel_code_generator.md
-  - 'Using Pydantic with devtools': usage/devtools.md
-  - 'Using Pydantic with rich': usage/rich.md
+  - 'Mypy': integrations/mypy.md
+  - 'PyCharm': integrations/pycharm.md
+  - 'Hypothesis': integrations/hypothesis.md
+  - 'Visual Studio Code': integrations/visual_studio_code.md
+  - 'datamodel-code-generator': integrations/datamodel_code_generator.md
+  - 'devtools': integrations/devtools.md
+  - 'Rich': integrations/rich.md
 - Contribute: contributing.md
 - Blog:
   - blog/pydantic-v2.md
@@ -98,4 +98,11 @@ plugins:
       on_page_markdown: 'docs.plugins.main:on_page_markdown'
 - redirects:
     redirect_maps:
-      'usage/mypy.md': 'mypy_plugin.md'
+      'usage/mypy.md': 'integrations/mypy.md'
+      'mypy_plugin.md': 'integrations/mypy.md'
+      'datamodel_code_generator.md': 'integrations/datamodel_code_generator.md'
+      'visual_studio_code.md': 'integrations/visual_studio_code.md'
+      'hypothesis_plugin.md': 'integrations/hypothesis.md'
+      'pycharm_plugin.md': 'integrations/pycharm.md'
+      'usage/devtools.md': 'integrations/devtools.md'
+      'usage/rich.md': 'integrations/rich.md'
