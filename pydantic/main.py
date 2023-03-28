@@ -19,7 +19,6 @@ from pydantic_core import CoreConfig, SchemaValidator
 
 from ._internal import (
     _decorators,
-    _forward_ref,
     _generate_schema,
     _generics,
     _model_construction,
@@ -68,6 +67,7 @@ class ModelMetaclass(ABCMeta):
         __pydantic_generic_origin__: type[BaseModel] | None = None,
         __pydantic_generic_args__: tuple[Any, ...] | None = None,
         __pydantic_generic_parameters__: tuple[Any, ...] | None = None,
+        __pydantic_complete_build__: bool = True,
         **kwargs: Any,
     ) -> type:
         if _base_class_defined:
@@ -143,12 +143,13 @@ class ModelMetaclass(ABCMeta):
 
             types_namespace = _model_construction.get_model_types_namespace(cls, _typing_extra.parent_frame_namespace())
             _model_construction.set_model_fields(cls, bases, types_namespace)
-            _model_construction.complete_model_class(
-                cls,
-                cls_name,
-                types_namespace,
-                raise_errors=False,
-            )
+            if __pydantic_complete_build__:
+                _model_construction.complete_model_class(
+                    cls,
+                    cls_name,
+                    types_namespace,
+                    raise_errors=False,
+                )
             return cls
         else:
             # this is the BaseModel class itself being created, no logic required
@@ -737,9 +738,18 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
 
-    def __class_getitem__(
-        cls, typevar_values: type[Any] | tuple[type[Any], ...]
-    ) -> type[BaseModel] | _forward_ref.PydanticForwardRef:
+    def __class_getitem__(cls, typevar_values: type[Any] | tuple[type[Any], ...]) -> type[BaseModel]:
+        if not isinstance(typevar_values, tuple):
+            typevar_values = (typevar_values,)
+
+        submodel = cls.__pydantic_parameterize__(typevar_values)
+        # Doing the rebuild _after_ populating the cache prevents infinite recursion
+        if not _generics.get_in_generate_schema():
+            submodel.model_rebuild(raise_errors=False)
+        return submodel
+
+    @classmethod
+    def __pydantic_parameterize__(cls, typevar_values: tuple[type[Any], ...]) -> type[BaseModel]:
         cached = _generics.get_cached_generic_type_early(cls, typevar_values)
         if cached is not None:
             return cached
@@ -783,9 +793,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             # Update cache
             _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
-
-            # Doing the rebuild _after_ populating the cache prevents infinite recursion
-            submodel.model_rebuild(force=True)
 
         return submodel
 

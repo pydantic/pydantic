@@ -122,7 +122,7 @@ def single_underscore(name: str) -> bool:
 def get_model_types_namespace(cls: type[BaseModel], parent_frame_namespace: dict[str, Any] | None) -> dict[str, Any]:
     ns = add_module_globals(cls, parent_frame_namespace)
     self_schema = core_schema.definition_reference_schema(get_type_ref(cls))
-    ns[cls.__name__] = PydanticForwardRef(self_schema)
+    ns[cls.__name__] = PydanticForwardRef(self_schema, cls)
     return ns
 
 
@@ -143,6 +143,7 @@ def complete_model_class(
     types_namespace: dict[str, Any] | None,
     *,
     raise_errors: bool = True,
+    gen_schema: GenerateSchema | None = None,
 ) -> bool:
     """
     Finish building a model class.
@@ -152,6 +153,8 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
+    if gen_schema:
+        return
     gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace)
     typevars_map = cls.__pydantic_generic_typevars_map__
     try:
@@ -174,6 +177,11 @@ def complete_model_class(
         cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
         return False
 
+    set_model_machinery(cls, schema)
+    return True
+
+
+def set_model_machinery(cls: type[BaseModel], schema: core_schema.CoreSchema) -> bool:
     core_config = generate_config(cls.model_config, cls)
 
     # debug(schema)
@@ -186,7 +194,6 @@ def complete_model_class(
     cls.__signature__ = ClassAttribute(
         '__signature__', generate_model_signature(cls.__init__, cls.model_fields, cls.model_config)
     )
-    return True
 
 
 def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldInfo], config: ConfigDict) -> Signature:

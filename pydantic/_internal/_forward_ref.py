@@ -9,7 +9,7 @@ from typing_extensions import Literal, TypedDict
 from ._typing_extra import TypeVarType
 
 if TYPE_CHECKING:
-    pass
+    from ..main import BaseModel
 
 
 class DeferredClassGetitem(TypedDict):
@@ -34,8 +34,7 @@ class PydanticForwardRef:
     """
 
     schema: core_schema.CoreSchema
-    # model: type[BaseModel]
-    # deferred_actions: tuple[DeferredAction, ...] = ()
+    model: type[BaseModel]
 
     __name__ = 'PydanticForwardRef'
     __hash__ = object.__hash__
@@ -47,24 +46,4 @@ class PydanticForwardRef:
         """
 
     def __getitem__(self, item: Any) -> PydanticForwardRef:
-        raise NotImplementedError('TODO')
-
-    #     updated_actions = self.deferred_actions + ({'kind': 'class_getitem', 'item': item},)
-    #     return replace(self, deferred_actions=updated_actions)
-    #
-    # def replace_types(self, typevars_map: Any) -> PydanticForwardRef:
-    #     updated_actions = self.deferred_actions + ({'kind': 'replace_types', 'typevars_map': typevars_map},)
-    #     return replace(self, deferred_actions=updated_actions)
-    #
-    # def resolve_model(self) -> type[BaseModel] | PydanticForwardRef:
-    #     from ._generics import replace_types
-    #
-    #     model: type[BaseModel] | PydanticForwardRef = self.model
-    #     for action in self.deferred_actions:
-    #         if action['kind'] == 'replace_types':
-    #             model = replace_types(model, action['typevars_map'])
-    #         elif action['kind'] == 'class_getitem':
-    #             model = model[action['item']]  # type: ignore[index]
-    #         else:
-    #             raise ValueError(f'Unexpected action: {action}')
-    #     return model
+        return self.model.__class_getitem__(item)

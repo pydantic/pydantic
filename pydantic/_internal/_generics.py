@@ -110,12 +110,99 @@ else:
 _GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
 
 
+class GenericBuildContext:
+    """
+    Used to keep track of the mapping between model type vars and type vars in the context in which the model
+    parameterization is defined.
+    """
+
+    __slots__ = '_model_stack', '_current_model', '_typevars_map', '_recursion_cache'
+
+    def __init__(self):
+        self._model_stack: list[type[BaseModel]] = []
+        self._current_model = None
+        self._typevars_map = None
+        self._recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
+
+    @contextmanager
+    def new_model(self, model: type[BaseModel]) -> None:
+        if self._current_model:
+            self._model_stack.append(self._current_model)
+        self._current_model = model
+        self._set_gtvm()
+
+        yield
+
+        if self._model_stack:
+            self._current_model = self._model_stack.pop()
+            self._set_gtvm()
+        else:
+            self._current_model = None
+            self._typevars_map = None
+
+    def check_recursion_cache(self, obj: type[Any]) -> core_schema.CoreSchema | None:
+        obj_ref = get_type_ref(obj)
+        cache_ref = self._recursion_cache.get(obj_ref)
+        if cache_ref is not None:
+            return cache_ref
+        else:
+            self._recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
+            return None
+
+    def _set_gtvm(self):
+        gtvm = self._current_model.__pydantic_generic_typevars_map__
+        if gtvm:
+            self._typevars_map = {k: v for k, v in gtvm.items() if isinstance(v, typing.TypeVar)}
+        else:
+            self._typevars_map = None
+
+    def parameterize_sub_model(
+        self, sub_model: type[BaseModel]
+    ) -> tuple[type[BaseModel], str] | tuple[core_schema.CoreSchema, None]:
+        """
+        If applicable parameterize a field model with the type vars of the current model.
+        """
+        if self._current_model:
+            self_gen_args = self._current_model.__pydantic_generic_args__
+        else:
+            self_gen_args = None
+
+        sub_model_generic_params = sub_model.__pydantic_generic_parameters__
+        if not self_gen_args or not sub_model_generic_params:
+            # current model or sub model are not generic
+            model_ref = get_type_ref(sub_model)
+
+            cached_def = self._recursion_cache.get(model_ref)
+            if cached_def is not None:
+                return cached_def, None
+            else:
+                self._recursion_cache[model_ref] = core_schema.definition_reference_schema(model_ref)
+                return sub_model, model_ref
+        else:
+            args = self_gen_args[: len(sub_model_generic_params)]
+            model_ref = get_type_ref(sub_model, args)
+            cached_def = self._recursion_cache.get(model_ref)
+            if cached_def is not None:
+                return cached_def, None
+            else:
+                self._recursion_cache[model_ref] = core_schema.definition_reference_schema(model_ref)
+                param_sub_model = sub_model.__pydantic_parameterize__(args)
+                return param_sub_model, model_ref
+
+    def lookup_typevar(self, typevar: typing.TypeVar) -> typing.TypeVar:
+        if self._typevars_map is None:
+            return typevar
+        else:
+            return self._typevars_map.get(typevar, typevar)
+
+
 def create_generic_submodel(
     model_name: str, origin: type[BaseModel], args: tuple[Any, ...], params: tuple[Any, ...]
 ) -> type[BaseModel]:
     """
     Dynamically create a submodel of a provided (generic) BaseModel.
 
+    FIXME I think this is wrong
     This is used when producing concrete parametrizations of generic models. This function
     only *creates* the new subclass; the schema/validators/serialization must be updated to
     reflect a concrete parametrization elsewhere.
@@ -134,6 +221,7 @@ def create_generic_submodel(
         __pydantic_generic_origin__=origin,
         __pydantic_generic_args__=args,
         __pydantic_generic_parameters__=params,
+        __pydantic_complete_build__=False,
         **kwds,
     )
 
@@ -287,6 +375,20 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
     if actual != expected:
         description = 'many' if actual > expected else 'few'
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
+
+
+_in_generate_schema: ContextVar[bool] = ContextVar('_in_generate_schema', default=False)
+
+
+def get_in_generate_schema() -> bool:
+    return _in_generate_schema.get()
+
+
+@contextmanager
+def generate_schema_context() -> None:
+    _in_generate_schema.set(True)
+    yield
+    _in_generate_schema.set(False)
 
 
 _visit_counts_context: ContextVar[dict[str, int] | None] = ContextVar('_visit_counts_context', default=None)
