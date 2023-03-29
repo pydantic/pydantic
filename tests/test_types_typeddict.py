@@ -3,7 +3,6 @@ Tests for TypedDict
 """
 import sys
 import typing
-from pprint import pprint
 from typing import Generic, List, Optional, TypeVar
 
 import pytest
@@ -498,19 +497,94 @@ def test_recursive_generic_typeddict_in_module(create_module):
     ]
 
 
-def test_recursive_generic_typeddict_in_function(create_module):
+def test_recursive_generic_typeddict_in_function_1(create_module):
     T = TypeVar('T')
 
+    # First ordering: typed dict first
     class RecursiveGenTypedDict(TypedDict, Generic[T]):
         foo: Optional['RecursiveGenTypedDict[T]']
         ls: List[T]
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
-        rec: RecursiveGenTypedDict[T]
+        rec: 'RecursiveGenTypedDict[T]'
         model_config = dict(undefined_types_warning=False)
 
-    RecursiveGenTypedDictModel[int].model_rebuild()
-    pprint(RecursiveGenTypedDictModel[int].__pydantic_core_schema__)
+    # Note: no model_rebuild() necessary here
+    # RecursiveGenTypedDictModel.model_rebuild()
+
+    int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
+    assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
+
+    str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
+    with pytest.raises(ValidationError) as exc_info:
+        RecursiveGenTypedDictModel[int](rec=str_data)
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('rec', 'foo', 'ls', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+        {
+            'input': 'a',
+            'loc': ('rec', 'ls', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+    ]
+
+
+def test_recursive_generic_typeddict_in_function_2(create_module):
+    T = TypeVar('T')
+
+    # Second ordering: model first
+    class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
+        rec: 'RecursiveGenTypedDict[T]'
+        model_config = dict(undefined_types_warning=False)
+
+    class RecursiveGenTypedDict(TypedDict, Generic[T]):
+        foo: Optional['RecursiveGenTypedDict[T]']
+        ls: List[T]
+
+    # Note: model_rebuild() _is_ necessary here or the parametrization doesn't happen
+    RecursiveGenTypedDictModel.model_rebuild()
+
+    int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
+    assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
+
+    str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
+    with pytest.raises(ValidationError) as exc_info:
+        RecursiveGenTypedDictModel[int](rec=str_data)
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('rec', 'foo', 'ls', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+        {
+            'input': 'a',
+            'loc': ('rec', 'ls', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        },
+    ]
+
+
+def test_recursive_generic_typeddict_in_function_no_rebuild(create_module):
+    """
+    Compare with previous test; note the only thing changed is the lack of model rebuild.
+    And no validation error is raised.
+    """
+    T = TypeVar('T')
+
+    class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
+        rec: 'RecursiveGenTypedDict[T]'
+        model_config = dict(undefined_types_warning=False)
+
+    class RecursiveGenTypedDict(TypedDict, Generic[T]):
+        foo: Optional['RecursiveGenTypedDict[T]']
+        ls: List[T]
 
     int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
     assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data

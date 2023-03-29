@@ -60,7 +60,7 @@ _base_class_defined = False
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
-    def __new__(
+    def __new__(  # noqa C901
         mcs,
         cls_name: str,
         bases: tuple[type[Any], ...],
@@ -68,6 +68,7 @@ class ModelMetaclass(ABCMeta):
         __pydantic_generic_origin__: type[BaseModel] | None = None,
         __pydantic_generic_args__: tuple[Any, ...] | None = None,
         __pydantic_generic_parameters__: tuple[Any, ...] | None = None,
+        __pydantic_reset_parent_namespace__: bool = True,
         **kwargs: Any,
     ) -> type:
         if _base_class_defined:
@@ -148,7 +149,11 @@ class ModelMetaclass(ABCMeta):
                 if callable(set_name):
                     set_name(cls, name)
 
-            types_namespace = _model_construction.get_model_types_namespace(cls, _typing_extra.parent_frame_namespace())
+            if __pydantic_reset_parent_namespace__:
+                cls.__pydantic_parent_namespace__ = _typing_extra.parent_frame_namespace()
+            parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
+
+            types_namespace = _model_construction.get_model_types_namespace(cls, parent_namespace)
             _model_construction.set_model_fields(cls, bases, types_namespace)
             _model_construction.complete_model_class(
                 cls,
@@ -190,6 +195,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None]
         __pydantic_generic_parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None]
         __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None]
+        __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
@@ -558,8 +564,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return None
         else:
             parents_namespace = _typing_extra.parent_frame_namespace()
-            if types_namespace:
-                types_namespace = {**(parents_namespace or {}), **types_namespace}
+            if types_namespace and parents_namespace:
+                types_namespace = {**parents_namespace, **types_namespace}
             elif parents_namespace:
                 types_namespace = parents_namespace
 
@@ -796,7 +802,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
                 # Doing the rebuild _after_ populating the cache prevents infinite recursion
-                submodel.model_rebuild(force=True, raise_errors=False)  # , typevars_map=typevars_map
+                submodel.model_rebuild(
+                    force=True, raise_errors=False, types_namespace=cls.__pydantic_parent_namespace__
+                )
 
         return submodel
 
@@ -929,7 +937,7 @@ def create_model(
     if resolved_bases is not __base__:
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
-    return meta(__model_name, resolved_bases, namespace, **kwds)
+    return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False, **kwds)
 
 
 T = TypeVar('T')

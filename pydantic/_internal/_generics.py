@@ -133,6 +133,7 @@ def create_generic_submodel(
         __pydantic_generic_origin__=origin,
         __pydantic_generic_args__=args,
         __pydantic_generic_parameters__=params,
+        __pydantic_reset_parent_namespace__=False,
         **kwds,
     )
 
