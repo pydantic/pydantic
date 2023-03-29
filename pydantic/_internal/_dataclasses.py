@@ -65,7 +65,7 @@ def prepare_dataclass(
 
     dataclass_ref = get_type_ref(cls)
     self_schema = core_schema.definition_reference_schema(dataclass_ref)
-    types_namespace = {**(types_namespace or {}), name: PydanticForwardRef(self_schema)}
+    types_namespace = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
     try:
         fields, _ = collect_fields(cls, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
     except PydanticUndefinedAnnotation as e:

@@ -122,7 +122,7 @@ def single_underscore(name: str) -> bool:
 def get_model_types_namespace(cls: type[BaseModel], parent_frame_namespace: dict[str, Any] | None) -> dict[str, Any]:
     ns = add_module_globals(cls, parent_frame_namespace)
     self_schema = core_schema.definition_reference_schema(get_type_ref(cls))
-    ns[cls.__name__] = PydanticForwardRef(self_schema)
+    ns[cls.__name__] = PydanticForwardRef(self_schema, cls)
     return ns
 
 
@@ -153,9 +153,8 @@ def complete_model_class(
     and `get_type_hints` requires a class object.
     """
     gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace)
-    typevars_map = cls.__pydantic_generic_typevars_map__
     try:
-        schema = gen_schema.generate_top_schema(cls, typevars_map)
+        schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise

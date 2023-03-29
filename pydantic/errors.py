@@ -1,13 +1,13 @@
 from __future__ import annotations as _annotations
 
+import re
+
 __all__ = (
     'PydanticUserError',
     'PydanticSchemaGenerationError',
     'PydanticUndefinedAnnotation',
     'PydanticInvalidForJsonSchema',
 )
-
-import re
 
 
 class PydanticErrorMixin:

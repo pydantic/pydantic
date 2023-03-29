@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import typing
 from typing import Any, Callable, Union, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
@@ -57,14 +56,6 @@ def is_list_like_schema_with_items_schema(
     core_schema.ListSchema | core_schema.TupleVariableSchema | core_schema.SetSchema | core_schema.FrozenSetSchema
 ]:
     return schema['type'] in ('list', 'tuple-variable', 'set', 'frozenset')
-
-
-def get_type_var_ref(type_: typing.TypeVar) -> str:
-    """
-    Unique ref for a TypeVar
-    """
-    module_name = getattr(type_, '__module__', '<No __module__>')
-    return f'{module_name}.{type_}:{id(type_)}'
 
 
 def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:

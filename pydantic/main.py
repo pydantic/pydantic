@@ -141,6 +141,13 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
 
+            # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
+            # for attributes not in `new_namespace` (e.g. private attributes)
+            for name, obj in private_attributes.items():
+                set_name = getattr(obj, '__set_name__', None)
+                if callable(set_name):
+                    set_name(cls, name)
+
             types_namespace = _model_construction.get_model_types_namespace(cls, _typing_extra.parent_frame_namespace())
             _model_construction.set_model_fields(cls, bases, types_namespace)
             _model_construction.complete_model_class(
@@ -776,16 +783,20 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 {param: None for param in _generics.iter_contained_typevars(typevars_map.values())}
             )  # use dict as ordered set
 
-            cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
-            if cached is not None:
-                return cached
-            submodel = _generics.create_generic_submodel(model_name, origin, args, params)
+            with _generics.generic_recursion_self_type(origin, args) as maybe_self_type:
+                if maybe_self_type is not None:
+                    return maybe_self_type
 
-            # Update cache
-            _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
+                cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
+                if cached is not None:
+                    return cached
+                submodel = _generics.create_generic_submodel(model_name, origin, args, params)
 
-            # Doing the rebuild _after_ populating the cache prevents infinite recursion
-            submodel.model_rebuild(force=True)
+                # Update cache
+                _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
+
+                # Doing the rebuild _after_ populating the cache prevents infinite recursion
+                submodel.model_rebuild(force=True, raise_errors=False)  # , typevars_map=typevars_map
 
         return submodel
 
