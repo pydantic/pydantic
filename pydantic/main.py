@@ -132,7 +132,7 @@ class ModelMetaclass(ABCMeta):
             )
             cls.__pydantic_generic_defaults__ = None if not cls.__pydantic_generic_parameters__ else {}
             if __pydantic_generic_origin__ is None:
-                cls.__pydantic_generic_typevars_map__ = parent_typevars_map
+                cls.__pydantic_generic_typevars_map__ = None
             else:
                 new_typevars_map = dict(
                     zip(_generics.iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ())
@@ -559,7 +559,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         else:
             parents_namespace = _typing_extra.parent_frame_namespace()
             if types_namespace:
-                types_namespace = {**parents_namespace, **types_namespace}
+                types_namespace = {**(parents_namespace or {}), **types_namespace}
             elif parents_namespace:
                 types_namespace = parents_namespace
 
@@ -746,7 +746,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
-    ) -> type[BaseModel] | _forward_ref.PydanticForwardRef:
+    ) -> type[BaseModel] | _forward_ref.PydanticForwardRef | _forward_ref.PydanticRecursiveRef:
         cached = _generics.get_cached_generic_type_early(cls, typevar_values)
         if cached is not None:
             return cached

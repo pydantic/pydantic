@@ -113,6 +113,38 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     return schema
 
 
+def remove_unnecessary_invalid_definitions(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    valid_refs = set()
+
+    def _record_valid_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        ref: str | None = s.get('ref')  # type: ignore[assignment]
+        if ref:
+            metadata = s.get('metadata')
+            if isinstance(metadata, dict) and 'invalid' not in metadata:
+                valid_refs.add(ref)
+        return s
+
+    WalkAndApply(_record_valid_refs).walk(schema)
+
+    def _remove_invalid_defs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        if s['type'] != 'definitions':
+            return s
+
+        new_schema = s.copy()
+
+        new_definitions = []
+        for definition in s['definitions']:
+            metadata = definition.get('metadata')
+            if isinstance(metadata, dict) and 'invalid' in metadata and definition['ref'] in valid_refs:
+                continue
+            new_definitions.append(definition)
+
+        new_schema['definitions'] = new_definitions
+        return new_schema
+
+    return WalkAndApply(_remove_invalid_defs).walk(schema)
+
+
 def define_expected_missing_refs(
     schema: core_schema.CoreSchema, allowed_missing_refs: set[str]
 ) -> core_schema.CoreSchema:

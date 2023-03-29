@@ -7,14 +7,12 @@ import typing
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import SchemaSerializer, SchemaValidator
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
-from ._core_utils import get_type_ref
 from ._decorators import PydanticDecoratorMarker
 from ._fields import Undefined, collect_fields
-from ._forward_ref import PydanticForwardRef
 from ._generate_schema import GenerateSchema, generate_config
 from ._typing_extra import add_module_globals, is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
@@ -121,8 +119,7 @@ def single_underscore(name: str) -> bool:
 
 def get_model_types_namespace(cls: type[BaseModel], parent_frame_namespace: dict[str, Any] | None) -> dict[str, Any]:
     ns = add_module_globals(cls, parent_frame_namespace)
-    self_schema = core_schema.definition_reference_schema(get_type_ref(cls))
-    ns[cls.__name__] = PydanticForwardRef(self_schema, cls)
+    ns[cls.__name__] = cls
     return ns
 
 

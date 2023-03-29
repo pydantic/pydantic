@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, MutableMapping, 
 from weakref import WeakValueDictionary
 
 import typing_extensions
-from pydantic_core import core_schema
 
 from ._core_utils import get_type_ref
-from ._forward_ref import PydanticForwardRef
+from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
 from ._typing_extra import TypeVarType, typing_base
 from ._utils import all_identical, is_basemodel
 
@@ -293,7 +292,9 @@ _visit_counts_context: ContextVar[dict[str, int] | None] = ContextVar('_visit_co
 
 
 @contextmanager
-def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) -> Iterator[PydanticForwardRef | None]:
+def generic_recursion_self_type(
+    origin: type[BaseModel], args: tuple[Any, ...]
+) -> Iterator[PydanticForwardRef | PydanticRecursiveRef | None]:
     """
     This contextmanager should be placed around the recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.
@@ -316,10 +317,10 @@ def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) 
 
     try:
         type_ref = get_type_ref(origin, args_override=args)
-        if visit_counts_by_ref[type_ref] >= 2:
-            self_type = PydanticForwardRef(
-                core_schema.definition_reference_schema(type_ref), origin, ({'kind': 'class_getitem', 'item': args},)
-            )
+        if visit_counts_by_ref[type_ref] >= 1:
+            # TODO: If we can keep this with >= 1, we should be able to rework the context thing to just be a set[str]
+            # rather than a ref counter
+            self_type = PydanticRecursiveRef(type_ref=type_ref)
             yield self_type
         else:
             visit_counts_by_ref[type_ref] += 1

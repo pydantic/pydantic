@@ -25,6 +25,7 @@ from ._core_utils import (
     define_expected_missing_refs,
     get_type_ref,
     is_list_like_schema_with_items_schema,
+    remove_unnecessary_invalid_definitions,
 )
 from ._decorators import (
     Decorator,
@@ -35,7 +36,7 @@ from ._decorators import (
     ValidatorDecoratorInfo,
 )
 from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
-from ._forward_ref import PydanticForwardRef
+from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
 from ._generics import recursively_defined_type_refs, replace_types
 
 if TYPE_CHECKING:
@@ -183,6 +184,9 @@ class GenerateSchema:
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         schema = self._generate_schema(obj)
+
+        schema = remove_unnecessary_invalid_definitions(schema)
+
         modify_js_function = _get_pydantic_modify_json_schema(obj)
         if modify_js_function is None:
             # Need to do this to handle custom generics:
@@ -285,6 +289,9 @@ class GenerateSchema:
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:
             return from_property
+
+        if isinstance(obj, PydanticRecursiveRef):
+            return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
 
         if isinstance(obj, PydanticForwardRef):
             if not obj.deferred_actions:

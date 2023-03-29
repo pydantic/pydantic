@@ -34,7 +34,7 @@ class Model(BaseModel):
     a: Model
 """
     )
-    assert module.Model.model_fields['a'].annotation.__name__ == 'PydanticForwardRef'
+    assert module.Model.model_fields['a'].annotation.__name__ == 'Model'
 
 
 def test_forward_ref_auto_update_no_model(create_module):
@@ -86,7 +86,7 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             bar: 'Bar'
 
     assert {k: repr(v) for k, v in module.Foo.model_fields.items()} == {
-        'foo': 'FieldInfo(annotation=PydanticForwardRef, required=True)',
+        'foo': 'FieldInfo(annotation=Foo, required=True)',
         'bar': "FieldInfo(annotation=ForwardRef('Bar'), required=True)",
     }
 
@@ -161,15 +161,11 @@ def test_self_forward_ref_collection(create_module):
     ]
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
-    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=PydanticForwardRef, required=False)'
+    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=Foo, required=False)'
     if sys.version_info < (3, 10):
         return
-    assert repr(module.Foo.model_fields['c']) == (
-        'FieldInfo(annotation=List[PydanticForwardRef], required=False, ' 'default=[])'
-    )
-    assert repr(module.Foo.model_fields['d']) == (
-        'FieldInfo(annotation=Dict[str, PydanticForwardRef], required=False, default={})'
-    )
+    assert repr(module.Foo.model_fields['c']) == ('FieldInfo(annotation=List[Foo], required=False, ' 'default=[])')
+    assert repr(module.Foo.model_fields['d']) == ('FieldInfo(annotation=Dict[str, Foo], required=False, default={})')
 
 
 def test_self_forward_ref_local(create_module):
@@ -677,8 +673,7 @@ class SelfReferencing(BaseModel):
     SelfReferencing = module.SelfReferencing
     if sys.version_info >= (3, 10):
         assert (
-            repr(SelfReferencing.model_fields['names'])
-            == 'FieldInfo(annotation=list[PydanticForwardRef], required=True)'
+            repr(SelfReferencing.model_fields['names']) == 'FieldInfo(annotation=list[SelfReferencing], required=True)'
         )
 
     # test that object creation works

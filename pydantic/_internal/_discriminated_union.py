@@ -173,7 +173,7 @@ class _ApplyInferredDiscriminator:
                 raise ValueError(f"Missing definition for ref {choice['schema_ref']!r}")
             elif len(matching_definitions) > 1:
                 raise ValueError(f"Multiple definitions for ref {choice['schema_ref']!r}")
-            self._handle_choice(matching_definitions[0])
+            self._handle_choice(matching_definitions[0], definitions)
         elif choice['type'] not in {
             'model',
             'typed-dict',

@@ -5,6 +5,7 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
+import typing
 from abc import ABC, abstractmethod
 from copy import copy
 from typing import TYPE_CHECKING, Any
@@ -12,6 +13,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import core_schema
 
 from ._forward_ref import PydanticForwardRef
+from ._generics import replace_types
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar
 
@@ -249,5 +251,16 @@ def collect_fields(  # noqa: C901
         if kw_only is not None:
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
+
+    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None)
+    if typevars_map:
+        for field in fields.values():
+            try:
+                field.annotation = typing._eval_type(  # type: ignore[attr-defined]
+                    field.annotation, types_namespace, None
+                )
+            except NameError:
+                pass
+            field.annotation = replace_types(field.annotation, typevars_map)
 
     return fields, class_vars
