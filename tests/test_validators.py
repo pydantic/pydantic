@@ -1594,9 +1594,6 @@ def test_overridden_root_validators():
     assert validate_stub.call_args_list == [[('B', 'pre'), {}], [('B', 'post'), {}]]
 
 
-# TODO: I think this is real bug in pydantic-core
-# the root validator doesn't get called on assignment
-@pytest.mark.xfail(reason='root validator not called during assignment')
 def test_validating_assignment_pre_root_validator_fail():
     class Model(BaseModel):
         current_value: float = Field(..., alias='current')
@@ -1604,7 +1601,7 @@ def test_validating_assignment_pre_root_validator_fail():
 
         model_config = ConfigDict(validate_assignment=True)
 
-        @root_validator(pre=True, skip_on_failure=True)
+        @root_validator(pre=True)
         def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             if any(isinstance(x, str) for x in values.values()):
                 raise ValueError('values cannot be a string')
@@ -1615,9 +1612,11 @@ def test_validating_assignment_pre_root_validator_fail():
         m.current_value = '100'
     assert exc_info.value.errors() == [
         {
-            'loc': ('__root__',),
-            'msg': 'values cannot be a string',
             'type': 'value_error',
+            'loc': (),
+            'msg': 'Value error, values cannot be a string',
+            'input': {'current_value': '100', 'max_value': 200.0},
+            'ctx': {'error': 'values cannot be a string'},
         }
     ]
 
@@ -1655,7 +1654,6 @@ def test_root_validator_skip_on_failure_valid(kwargs: Dict[str, Any]):
             return values
 
 
-@pytest.mark.xfail(reason='root validator not called during assignment')
 def test_root_validator_many_values_change():
     """It should run root_validator on assignment and update ALL concerned fields"""
 
