@@ -172,7 +172,7 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
 
 
 class GenerateSchema:
-    __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map', 'recursion_cache'
+    __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions'
 
     def __init__(
         self, arbitrary_types: bool, types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None = None
@@ -180,7 +180,9 @@ class GenerateSchema:
         self.arbitrary_types = arbitrary_types
         self.types_namespace = types_namespace
         self.typevars_map = typevars_map
+
         self.recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
+        self.definitions: dict[str, core_schema.CoreSchema] = {}
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         schema = self._generate_schema(obj)
@@ -194,6 +196,9 @@ class GenerateSchema:
                 modify_js_function = _get_pydantic_modify_json_schema(obj.__origin__)
 
         CoreMetadataHandler(schema).combine_modify_js_functions(modify_js_function)
+
+        if 'ref' in schema:
+            self.definitions[schema['ref']] = schema
 
         return schema
 
@@ -436,8 +441,8 @@ class GenerateSchema:
         schema = self.generate_schema(field_info.annotation)
 
         if field_info.discriminator is not None:
-            schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator)
-        schema = apply_annotations(schema, field_info.metadata)
+            schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator, self.definitions)
+        schema = apply_annotations(schema, field_info.metadata, self.definitions)
 
         # TODO: remove this V1 compatibility shim once it's deprecated
         # push down any `each_item=True` validators
@@ -487,7 +492,7 @@ class GenerateSchema:
         """
         assert field_info.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
-        schema = apply_annotations(schema, field_info.metadata)
+        schema = apply_annotations(schema, field_info.metadata, self.definitions)
 
         schema = apply_validators(
             schema, filter_field_decorator_info_by_field(decorators.field_validator.values(), name)
@@ -537,7 +542,7 @@ class GenerateSchema:
         """
         first_arg, *other_args = get_args(annotated_type)
         schema = self.generate_schema(first_arg)
-        return apply_annotations(schema, other_args)
+        return apply_annotations(schema, other_args, self.definitions)
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -646,7 +651,7 @@ class GenerateSchema:
         field = FieldInfo.from_annotation(annotation)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = self.generate_schema(field.annotation)
-        schema = apply_annotations(schema, field.metadata)
+        schema = apply_annotations(schema, field.metadata, self.definitions)
 
         parameter_schema = core_schema.arguments_parameter(name, schema)
         if mode is not None:
@@ -980,13 +985,15 @@ def apply_serializers(
     return schema
 
 
-def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterable[Any]) -> core_schema.CoreSchema:
+def apply_annotations(
+    schema: core_schema.CoreSchema, annotations: typing.Iterable[Any], definitions: dict[str, core_schema.CoreSchema]
+) -> core_schema.CoreSchema:
     """
     Apply arguments from `Annotated` or from `FieldInfo` to a schema.
     """
     handler = CoreMetadataHandler(schema)
     for metadata in annotations:
-        schema = apply_single_annotation(schema, metadata)
+        schema = apply_single_annotation(schema, metadata, definitions)
 
         metadata_modify_js_function = _get_pydantic_modify_json_schema(metadata)
         handler.combine_modify_js_functions(metadata_modify_js_function)
@@ -994,7 +1001,9 @@ def apply_annotations(schema: core_schema.CoreSchema, annotations: typing.Iterab
     return schema
 
 
-def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> core_schema.CoreSchema:  # noqa C901
+def apply_single_annotation(  # noqa C901
+    schema: core_schema.CoreSchema, metadata: Any, definitions: dict[str, core_schema.CoreSchema]
+) -> core_schema.CoreSchema:
     if metadata is None:
         return schema
 
@@ -1008,11 +1017,11 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
 
     if isinstance(metadata, GroupedMetadata):
         # GroupedMetadata yields `BaseMetadata`s
-        return apply_annotations(schema, metadata)
+        return apply_annotations(schema, metadata, definitions)
     elif isinstance(metadata, FieldInfo):
-        schema = apply_annotations(schema, metadata.metadata)
+        schema = apply_annotations(schema, metadata.metadata, definitions)
         if metadata.discriminator is not None:
-            schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator)
+            schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator, definitions)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
 
