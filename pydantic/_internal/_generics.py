@@ -106,7 +106,11 @@ else:
                 raise KeyError(key)
 
 
-_GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
+# Despite the fact that LimitedDict _seems_ no longer necessary, I'm very nervous to actually remove it
+# and discover later on that we need to re-add all this infrastructure...
+# _GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
+
+_GENERIC_TYPES_CACHE = GenericTypesCache()
 
 
 def create_generic_submodel(
