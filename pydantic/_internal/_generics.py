@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import types
 import typing
-from collections import ChainMap, defaultdict
+from collections import ChainMap
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
@@ -289,7 +289,7 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
 
 
-_visit_counts_context: ContextVar[dict[str, int] | None] = ContextVar('_visit_counts_context', default=None)
+_generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
 
 
 @contextmanager
@@ -303,36 +303,33 @@ def generic_recursion_self_type(
     If the same origin and arguments are observed twice, it implies that a self-reference placeholder
     can be used while building the core schema, and will produce a schema_ref that will be valid in the
     final parent schema.
-
-    I believe the main reason that the same origin/args must be observed twice is that a BaseModel's
-    inner_schema will be a TypedDictSchema that doesn't include the first occurrence of the PydanticForwardRef
-    reference, so the referenced schema may not end up in the final core_schema unless you expand two
-    layers deep.
     """
-    visit_counts_by_ref = _visit_counts_context.get()
-    if visit_counts_by_ref is None:
-        visit_counts_by_ref = defaultdict(int)
-        token = _visit_counts_context.set(visit_counts_by_ref)
+    previously_seen_type_refs = _generic_recursion_cache.get()
+    if previously_seen_type_refs is None:
+        previously_seen_type_refs = set()
+        token = _generic_recursion_cache.set(previously_seen_type_refs)
     else:
         token = None
 
     try:
         type_ref = get_type_ref(origin, args_override=args)
-        if visit_counts_by_ref[type_ref] >= 1:
-            # TODO: If we can keep this with >= 1, we should be able to rework the context thing to just be a set[str]
-            # rather than a ref counter
+        if type_ref in previously_seen_type_refs:
             self_type = PydanticRecursiveRef(type_ref=type_ref)
             yield self_type
         else:
-            visit_counts_by_ref[type_ref] += 1
+            previously_seen_type_refs.add(type_ref)
             yield None
     finally:
         if token:
-            _visit_counts_context.reset(token)
+            _generic_recursion_cache.reset(token)
 
 
 def recursively_defined_type_refs() -> set[str]:
-    return set((_visit_counts_context.get() or {}).keys())
+    visited = _generic_recursion_cache.get()
+    if not visited:
+        return set()  # not in a generic recursion, so there are no types
+
+    return visited.copy()  # don't allow modifications
 
 
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
