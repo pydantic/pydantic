@@ -132,7 +132,7 @@ impl<T: Clone + std::fmt::Debug> BuildContext<T> {
     }
 
     /// find a validator/serializer by `slot_id` - this used in `Validator.complete`,
-    /// specifically `RecursiveRefValidator` to set its name
+    /// specifically `DefinitionRefValidator` to set its name
     pub fn find_validator(&self, slot_id: usize) -> PyResult<&T> {
         match self.slots.get(slot_id) {
             Some(slot) => match slot.op_val_ser {

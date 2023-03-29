@@ -85,4 +85,12 @@ impl Validator for CallValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        self.arguments_validator.complete(build_context)?;
+        match &mut self.return_validator {
+            Some(v) => v.complete(build_context),
+            None => Ok(()),
+        }
+    }
 }
