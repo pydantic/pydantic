@@ -48,9 +48,10 @@ bindings = 'pyo3'
 
 [tool.ruff]
 line-length = 120
-extend-select = ['Q', 'RUF100', 'C90']
+extend-select = ['Q', 'RUF100', 'C90', 'I']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 13 }
+isort = { known-first-party = ['pydantic-core', 'tests'] }
 
 [tool.pytest.ini_options]
 testpaths = 'tests'
@@ -85,14 +86,6 @@ line-length = 120
 target-version = ['py37', 'py38', 'py39', 'py310']
 skip-string-normalization = true
 skip-magic-trailing-comma = true
-
-[tool.isort]
-line_length = 120
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-combine_as_imports = true
-color_output = true
 
 [tool.pyright]
 include = ['pydantic_core', 'tests/test_typing.py']
