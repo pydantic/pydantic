@@ -166,7 +166,7 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:  # noqa: C901
     return {'type': 'typed-dict', 'fields': fields, 'extra_behavior': 'forbid'}
 
 
-def union_schema(union_type: UnionType) -> core_schema.UnionSchema | core_schema.RecursiveReferenceSchema:
+def union_schema(union_type: UnionType) -> core_schema.UnionSchema | core_schema.DefinitionReferenceSchema:
     return {'type': 'union', 'choices': [get_schema(arg) for arg in union_type.__args__]}
 
 

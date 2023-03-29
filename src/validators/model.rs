@@ -128,6 +128,10 @@ impl Validator for ModelValidator {
         &self.name
     }
 
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        self.validator.complete(build_context)
+    }
+
     fn validate_assignment<'s, 'data: 's>(
         &'s self,
         py: Python<'data>,

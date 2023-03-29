@@ -326,7 +326,11 @@ impl Validator for TypedDictValidator {
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.fields
             .iter_mut()
-            .try_for_each(|f| f.validator.complete(build_context))
+            .try_for_each(|f| f.validator.complete(build_context))?;
+        match &mut self.extra_validator {
+            Some(v) => v.complete(build_context),
+            None => Ok(()),
+        }
     }
 
     fn validate_assignment<'s, 'data: 's>(
