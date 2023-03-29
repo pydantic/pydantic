@@ -10,17 +10,13 @@ from typing import Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 
-from pydantic_core import (
-    PydanticCustomError,
-    SchemaValidator,
-    ValidationError,
-    ValidationError as CoreValidationError,
-    core_schema,
-)
+from pydantic_core import PydanticCustomError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import ValidationError as CoreValidationError
 
 if os.getenv('BENCHMARK_VS_PYDANTIC'):
     try:
-        from pydantic import BaseModel, StrictBool, StrictInt, StrictStr, ValidationError as PydanticValidationError
+        from pydantic import BaseModel, StrictBool, StrictInt, StrictStr
+        from pydantic import ValidationError as PydanticValidationError
     except ImportError:
         BaseModel = None
 else:

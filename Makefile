@@ -1,5 +1,4 @@
 .DEFAULT_GOAL := all
-isort = isort pydantic_core tests generate_self_schema.py
 black = black pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
 ruff = ruff pydantic_core tests generate_self_schema.py wasm-preview/run_tests.py
 
@@ -49,7 +48,6 @@ build-wasm:
 
 .PHONY: format
 format:
-	$(isort)
 	$(black)
 	$(ruff) --fix --exit-zero
 	cargo fmt
@@ -57,7 +55,6 @@ format:
 .PHONY: lint-python
 lint-python:
 	$(ruff)
-	$(isort) --check-only --df
 	$(black) --check --diff
 
 .PHONY: lint-rust
