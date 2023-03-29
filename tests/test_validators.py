@@ -1601,7 +1601,7 @@ def test_validating_assignment_pre_root_validator_fail():
 
         model_config = ConfigDict(validate_assignment=True)
 
-        @root_validator(pre=True, skip_on_failure=True)
+        @root_validator(pre=True)
         def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             if any(isinstance(x, str) for x in values.values()):
                 raise ValueError('values cannot be a string')
