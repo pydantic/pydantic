@@ -284,6 +284,9 @@ class GenerateSchema:
             if isinstance(obj, ForwardRef):
                 raise PydanticUndefinedAnnotation(obj.__forward_arg__, f'Unable to evaluate forward reference {obj}')
 
+            if self.typevars_map is not None:
+                obj = replace_types(obj, self.typevars_map)
+
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:
             return from_property
@@ -600,9 +603,6 @@ class GenerateSchema:
             elif get_origin(annotation) == _typing_extra.NotRequired:
                 required = False
                 annotation = get_args(annotation)[0]
-
-            if self.typevars_map is not None:
-                annotation = replace_types(annotation, self.typevars_map)
 
             field_info = FieldInfo.from_annotation(annotation)
             fields[field_name] = self.generate_td_field_schema(

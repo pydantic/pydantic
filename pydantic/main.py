@@ -29,7 +29,7 @@ from ._internal import (
 )
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
-from .errors import PydanticUserError
+from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata
@@ -555,7 +555,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         *,
         force: bool = False,
         raise_errors: bool = True,
-        types_namespace: dict[str, Any] | None = None,
+        _parent_namespace_depth: int = 2,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -563,11 +563,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if not force and cls.__pydantic_model_complete__:
             return None
         else:
-            parents_namespace = _typing_extra.parent_frame_namespace()
-            if types_namespace and parents_namespace:
-                types_namespace = {**parents_namespace, **types_namespace}
-            elif parents_namespace:
-                types_namespace = parents_namespace
+            if _parent_namespace_depth > 0:
+                frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+                cls_parent_ns = cls.__pydantic_parent_namespace__ or {}
+                cls.__pydantic_parent_namespace__ = {**cls_parent_ns, **frame_parent_ns}
+
+            types_namespace = cls.__pydantic_parent_namespace__
 
             types_namespace = _model_construction.get_model_types_namespace(cls, types_namespace)
             return _model_construction.complete_model_class(
@@ -796,6 +797,17 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
                 if cached is not None:
                     return cached
+
+                # Attempt to rebuild the origin in case new types have been defined
+                try:
+                    # depth 3 gets you above this __class_getitem__ call
+                    origin.model_rebuild(_parent_namespace_depth=3)
+                except PydanticUndefinedAnnotation:
+                    # It's okay if it fails, it just means there are still undefined types
+                    # that could be evaluated later.
+                    # TODO: Presumably we should error if validation is attempted here?
+                    pass
+
                 submodel = _generics.create_generic_submodel(model_name, origin, args, params)
 
                 # Update cache
@@ -803,7 +815,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
                 # Doing the rebuild _after_ populating the cache prevents infinite recursion
                 submodel.model_rebuild(
-                    force=True, raise_errors=False, types_namespace=cls.__pydantic_parent_namespace__
+                    force=True,
+                    raise_errors=False,
+                    _parent_namespace_depth=0,
                 )
 
         return submodel
