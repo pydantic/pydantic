@@ -157,10 +157,10 @@ impl FunctionAfterValidator {
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
         let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
-        let input = call(input, extra)?;
+        let v = call(input, extra)?;
         self.func
-            .call1(py, (input.to_object(py), info))
-            .map_err(|e| convert_err(py, e, input.into_ref(py)))
+            .call1(py, (v.to_object(py), info))
+            .map_err(|e| convert_err(py, e, input))
     }
 }
 
