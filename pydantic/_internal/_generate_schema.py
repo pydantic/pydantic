@@ -206,12 +206,6 @@ class GenerateSchema:
         if cached_def is not None:
             return cached_def
 
-        typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or self.typevars_map
-        fields = cls.model_fields
-        if typevars_map:
-            for field in fields.values():
-                field.annotation = replace_types(field.annotation, typevars_map)
-
         self.recursion_cache[model_ref] = core_schema.definition_reference_schema(model_ref)
         fields = cls.model_fields
         decorators = cls.__pydantic_decorators__

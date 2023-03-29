@@ -3,6 +3,7 @@ Tests for TypedDict
 """
 import sys
 import typing
+from pprint import pprint
 from typing import Generic, List, Optional, TypeVar
 
 import pytest
@@ -500,15 +501,16 @@ def test_recursive_generic_typeddict_in_module(create_module):
 def test_recursive_generic_typeddict_in_function(create_module):
     T = TypeVar('T')
 
-    class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
-        rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
-
     class RecursiveGenTypedDict(TypedDict, Generic[T]):
         foo: Optional['RecursiveGenTypedDict[T]']
         ls: List[T]
 
+    class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
+        rec: RecursiveGenTypedDict[T]
+        model_config = dict(undefined_types_warning=False)
+
     RecursiveGenTypedDictModel[int].model_rebuild()
+    pprint(RecursiveGenTypedDictModel[int].__pydantic_core_schema__)
 
     int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
     assert RecursiveGenTypedDictModel[int](rec=int_data).rec == int_data
