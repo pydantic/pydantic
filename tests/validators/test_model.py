@@ -83,8 +83,8 @@ def test_model_class_setattr():
     )
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
-    # assert m.field_a == 'test'
-    # assert m.__fields_set__ == {'field_a'}
+    assert m.field_a == 'test'
+    assert m.__fields_set__ == {'field_a'}
     assert setattr_calls == []
 
 
