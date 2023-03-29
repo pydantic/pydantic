@@ -2,6 +2,7 @@ use std::fmt::Debug;
 
 use enum_dispatch::enum_dispatch;
 
+use pyo3::exceptions::PyTypeError;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
@@ -165,28 +166,28 @@ impl SchemaValidator {
         }
     }
 
-    #[pyo3(signature = (obj, field, input, *, strict=None, context=None))]
+    #[pyo3(signature = (obj, field_name, field_value, *, strict=None, context=None))]
     pub fn validate_assignment(
         &self,
         py: Python,
         obj: &PyAny,
-        field: String,
-        input: &PyAny,
+        field_name: &str,
+        field_value: &PyAny,
         strict: Option<bool>,
         context: Option<&PyAny>,
     ) -> PyResult<PyObject> {
         let extra = Extra {
             data: None,
-            assignee_field: Some(field.as_str()),
             strict,
             context,
             field_name: None,
-            self_instance: Some(obj),
+            self_instance: None,
         };
-        let r = self
-            .validator
-            .validate(py, input, &extra, &self.slots, &mut RecursionGuard::default());
-        r.map_err(|e| self.prepare_validation_err(py, e))
+
+        let guard = &mut RecursionGuard::default();
+        self.validator
+            .validate_assignment(py, obj, field_name, field_value, &extra, &self.slots, guard)
+            .map_err(|e| self.prepare_validation_err(py, e))
     }
 
     pub fn __repr__(&self, py: Python) -> String {
@@ -459,8 +460,6 @@ pub struct Extra<'a> {
     /// Represents the fields of the model we are currently validating
     /// If there is no model this will be None
     pub field_name: Option<&'a str>,
-    /// The field being assigned to when validating assignment
-    pub assignee_field: Option<&'a str>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
     /// context used in validator functions
@@ -484,7 +483,6 @@ impl<'a> Extra<'a> {
     pub fn as_strict(&self) -> Self {
         Self {
             data: self.data,
-            assignee_field: self.assignee_field,
             strict: Some(true),
             context: self.context,
             field_name: self.field_name,
@@ -612,6 +610,22 @@ pub trait Validator: Send + Sync + Clone + Debug {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, Option<PyObject>> {
         Ok(None)
+    }
+
+    /// Validate assignment to a field of a model
+    #[allow(clippy::too_many_arguments)]
+    fn validate_assignment<'s, 'data: 's>(
+        &'s self,
+        _py: Python<'data>,
+        _obj: &'data PyAny,
+        _field_name: &'data str,
+        _field_value: &'data PyAny,
+        _extra: &Extra,
+        _slots: &'data [CombinedValidator],
+        _recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, PyObject> {
+        let py_err = PyTypeError::new_err(format!("validate_assignment is not supported for {}", self.get_name()));
+        Err(py_err.into())
     }
 
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator

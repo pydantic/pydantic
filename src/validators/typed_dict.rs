@@ -2,7 +2,8 @@ use pyo3::intern;
 use pyo3::prelude::*;
 
 use ahash::AHashSet;
-use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::exceptions::PyKeyError;
+use pyo3::types::PyTuple;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
 
 use crate::build_tools::{is_strict, py_err, schema_or_config, schema_or_config_same, SchemaDict};
@@ -162,10 +163,6 @@ impl Validator for TypedDictValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        if let Some(field) = extra.assignee_field {
-            // we're validating assignment, completely different logic
-            return self.validate_assignment(py, field, input, extra, slots, recursion_guard);
-        }
         let strict = extra.strict.unwrap_or(self.strict);
         let dict = input.validate_typed_dict(strict, self.from_attributes)?;
 
@@ -331,32 +328,21 @@ impl Validator for TypedDictValidator {
             .iter_mut()
             .try_for_each(|f| f.validator.complete(build_context))
     }
-}
 
-impl TypedDictValidator {
-    fn validate_assignment<'s, 'data>(
+    fn validate_assignment<'s, 'data: 's>(
         &'s self,
         py: Python<'data>,
-        field: &str,
-        input: &'data impl Input<'data>,
+        obj: &'data PyAny,
+        field_name: &'data str,
+        field_value: &'data PyAny,
         extra: &Extra,
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject>
-    where
-        'data: 's,
-    {
-        let dict: &PyDict = match extra.self_instance {
-            Some(d) => d.downcast()?,
-            None => {
-                return Err(
-                    PyTypeError::new_err("self_instance should not be None on typed-dict validate_assignment").into(),
-                )
-            }
-        };
+    ) -> ValResult<'data, PyObject> {
+        let dict: &PyDict = obj.downcast()?;
 
         let ok = |output: PyObject| {
-            dict.set_item(field, output)?;
+            dict.set_item(field_name, output)?;
             Ok(dict.to_object(py))
         };
 
@@ -365,7 +351,7 @@ impl TypedDictValidator {
             Err(ValError::LineErrors(line_errors)) => {
                 let errors = line_errors
                     .into_iter()
-                    .map(|e| e.with_outer_location(field.to_string().into()))
+                    .map(|e| e.with_outer_location(field_name.to_string().into()))
                     .collect();
                 Err(ValError::LineErrors(errors))
             }
@@ -374,7 +360,7 @@ impl TypedDictValidator {
 
         // by using dict but removing the field in question, we match V1 behaviour
         let data_dict = dict.copy()?;
-        if let Err(err) = data_dict.del_item(field) {
+        if let Err(err) = data_dict.del_item(field_name) {
             // KeyError is fine here as the field might not be in the dict
             if !err.get_type(py).is(PyType::new::<PyKeyError>(py)) {
                 return Err(err.into());
@@ -382,27 +368,32 @@ impl TypedDictValidator {
         }
 
         let extra = Extra {
-            field_name: Some(field),
-            assignee_field: None,
             data: Some(data_dict),
+            field_name: Some(field_name),
             ..*extra
         };
 
-        if let Some(field) = self.fields.iter().find(|f| f.name == field) {
+        let new_data = if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
             if field.frozen {
                 Err(ValError::new_with_loc(
                     ErrorType::FrozenField,
-                    input,
+                    field_value,
                     field.name.to_string(),
                 ))
             } else {
-                prepare_result(field.validator.validate(py, input, &extra, slots, recursion_guard))
+                prepare_result(
+                    field
+                        .validator
+                        .validate(py, field_value, &extra, slots, recursion_guard),
+                )
             }
         } else if self.check_extra && !self.forbid_extra {
             // this is the "allow" case of extra_behavior
             match self.extra_validator {
-                Some(ref validator) => prepare_result(validator.validate(py, input, &extra, slots, recursion_guard)),
-                None => ok(input.to_object(py)),
+                Some(ref validator) => {
+                    prepare_result(validator.validate(py, field_value, &extra, slots, recursion_guard))
+                }
+                None => ok(field_value.to_object(py)),
             }
         } else {
             // otherwise we raise an error:
@@ -410,11 +401,17 @@ impl TypedDictValidator {
             // - with ignore the model should never be overloaded, so an error is the clearest option
             Err(ValError::new_with_loc(
                 ErrorType::NoSuchAttribute {
-                    attribute: field.to_string(),
+                    attribute: field_name.to_string(),
                 },
-                input,
-                field.to_string(),
+                field_value,
+                field_name.to_string(),
             ))
+        }?;
+        if self.return_fields_set {
+            let fields_set: &PySet = PySet::new(py, &[field_name.to_string()])?;
+            Ok(PyTuple::new(py, [new_data, fields_set.to_object(py)]).to_object(py))
+        } else {
+            Ok(new_data)
         }
     }
 }

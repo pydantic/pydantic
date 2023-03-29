@@ -5,7 +5,7 @@ use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{is_strict, py_err, schema_or_config_same, SchemaDict};
+use crate::build_tools::{is_strict, py_err, safe_repr, schema_or_config_same, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
@@ -122,10 +122,6 @@ impl Validator for DataclassArgsValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        if let Some(field) = extra.assignee_field {
-            // we're validating assignment, completely different logic
-            return self.validate_assignment(py, field, input, extra, slots, recursion_guard);
-        }
         let args = input.validate_dataclass_args(&self.dataclass_name)?;
 
         let output_dict = PyDict::new(py);
@@ -298,29 +294,18 @@ impl Validator for DataclassArgsValidator {
     fn get_name(&self) -> &str {
         &self.validator_name
     }
-}
 
-impl DataclassArgsValidator {
-    fn validate_assignment<'s, 'data>(
+    fn validate_assignment<'s, 'data: 's>(
         &'s self,
         py: Python<'data>,
-        field_name: &str,
-        input: &'data impl Input<'data>,
+        obj: &'data PyAny,
+        field_name: &'data str,
+        field_value: &'data PyAny,
         extra: &Extra,
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject>
-    where
-        'data: 's,
-    {
-        let dict: &PyDict = match extra.self_instance {
-            Some(d) => d.downcast()?,
-            None => {
-                return Err(
-                    PyTypeError::new_err("self_instance should not be None on dataclass validate_assignment").into(),
-                )
-            }
-        };
+    ) -> ValResult<'data, PyObject> {
+        let dict: &PyDict = obj.downcast()?;
 
         if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
             // by using dict but removing the field in question, we match V1 behaviour
@@ -333,11 +318,13 @@ impl DataclassArgsValidator {
             }
             let next_extra = Extra {
                 field_name: Some(field_name),
-                assignee_field: None,
                 data: Some(data_dict),
                 ..*extra
             };
-            match field.validator.validate(py, input, &next_extra, slots, recursion_guard) {
+            match field
+                .validator
+                .validate(py, field_value, &next_extra, slots, recursion_guard)
+            {
                 Ok(output) => {
                     dict.set_item(field_name, output)?;
                     Ok(dict.to_object(py))
@@ -356,7 +343,7 @@ impl DataclassArgsValidator {
                 ErrorType::NoSuchAttribute {
                     attribute: field_name.to_string(),
                 },
-                input,
+                field_value,
                 field_name.to_string(),
             ))
         }
@@ -416,12 +403,7 @@ impl Validator for DataclassValidator {
     ) -> ValResult<'data, PyObject> {
         if let Some(self_instance) = extra.self_instance {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
-            // or from `validate_assignment`
-            return if extra.assignee_field.is_some() {
-                self.validate_assignment(py, self_instance, input, extra, slots, recursion_guard)
-            } else {
-                self.validate_init(py, self_instance, input, extra, slots, recursion_guard)
-            };
+            return self.validate_init(py, self_instance, input, extra, slots, recursion_guard);
         }
         let class = self.class.as_ref(py);
 
@@ -449,6 +431,34 @@ impl Validator for DataclassValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn validate_assignment<'s, 'data: 's>(
+        &'s self,
+        py: Python<'data>,
+        obj: &'data PyAny,
+        field_name: &'data str,
+        field_value: &'data PyAny,
+        extra: &Extra,
+        slots: &'data [CombinedValidator],
+        recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, PyObject> {
+        let dict_attr = intern!(py, "__dict__");
+        let dict: &PyDict = match obj.get_attr(dict_attr) {
+            Some(v) => v.downcast()?,
+            None => return Err(PyTypeError::new_err(format!("{} is not a model instance", safe_repr(obj))).into()),
+        };
+
+        let new_dict = dict.copy()?;
+        new_dict.set_item(field_name, field_value)?;
+
+        let dc_dict =
+            self.validator
+                .validate_assignment(py, new_dict, field_name, field_value, extra, slots, recursion_guard)?;
+
+        force_setattr(py, obj, dict_attr, dc_dict)?;
+
+        Ok(obj.to_object(py))
+    }
 }
 
 impl DataclassValidator {
@@ -474,25 +484,6 @@ impl DataclassValidator {
 
         Ok(self_instance.into_py(py))
     }
-
-    #[allow(clippy::too_many_arguments)]
-    fn validate_assignment<'s, 'data>(
-        &'s self,
-        py: Python<'data>,
-        self_instance: &'s PyAny,
-        input: &'data impl Input<'data>,
-        extra: &Extra,
-        slots: &'data [CombinedValidator],
-        recursion_guard: &'s mut RecursionGuard,
-    ) -> ValResult<'data, PyObject> {
-        // inner validator takes care of updating dict, here we just need to update fields_set
-        let next_extra = Extra {
-            self_instance: self_instance.get_attr(intern!(py, "__dict__")),
-            ..*extra
-        };
-        self.validator.validate(py, input, &next_extra, slots, recursion_guard)
-    }
-
     fn set_dict_call<'s, 'data>(
         &'s self,
         py: Python<'data>,

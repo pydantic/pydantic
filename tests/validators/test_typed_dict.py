@@ -3,7 +3,7 @@ import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Mapping
+from typing import Any, Mapping
 
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
@@ -277,7 +277,7 @@ def test_validate_assignment():
     assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
 
     data = {'field_a': 'test'}
-    assert v.validate_assignment(data, 'field_a', b'abc') == {'field_a': 'abc'}
+    assert v.validate_assignment(data, 'field_a', b'abc') == ({'field_a': 'abc'}, {'field_a'})
     assert data == {'field_a': 'abc'}
 
 
@@ -300,14 +300,14 @@ def test_validate_assignment_strict_field():
 
 
 def test_validate_assignment_functions():
-    calls = []
+    calls: list[Any] = []
 
     def func_a(input_value, info):
-        calls.append('func_a')
+        calls.append(('func_a', input_value))
         return input_value * 2
 
     def func_b(input_value, info):
-        calls.append('func_b')
+        calls.append(('func_b', input_value))
         return input_value / 2
 
     v = SchemaValidator(
@@ -340,13 +340,14 @@ def test_validate_assignment_functions():
         {'field_a', 'field_b'},
     )
 
-    assert calls == ['func_a', 'func_b']
+    assert calls == [('func_a', 'test'), ('func_b', 12)]
     calls.clear()
 
     assert v.validate_assignment({'field_a': 'testtest', 'field_b': 6}, 'field_a', 'new-val') == (
-        {'field_a': 'new-valnew-val', 'field_b': 6}
+        {'field_a': 'new-valnew-val', 'field_b': 6},
+        {'field_a'},
     )
-    assert calls == ['func_a']
+    assert calls == [('func_a', 'new-val')]
 
 
 def test_validate_assignment_ignore_extra():

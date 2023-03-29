@@ -714,7 +714,7 @@ def test_dataclass_validate_assignment():
     ]
 
     # wrong arguments
-    with pytest.raises(TypeError, match='self_instance should not be None on dataclass validate_assignment'):
+    with pytest.raises(TypeError, match="'field_a' is not a model instance"):
         v.validate_assignment('field_a', 'c', 123)
 
 
