@@ -1,6 +1,6 @@
 import re
 from copy import deepcopy
-from typing import Any, List
+from typing import Any, Callable, Dict, List, Set, Tuple
 
 import pytest
 
@@ -88,33 +88,121 @@ def test_model_class_setattr():
     assert setattr_calls == []
 
 
-def test_model_class_root_validator():
+def test_model_class_root_validator_wrap():
     class MyModel:
-        pass
+        def __init__(self, **kwargs: Any) -> None:
+            self.__dict__.update(kwargs)
 
-    def f(input_value, validator, info):
+    def f(
+        input_value: Dict[str, Any],
+        validator: Callable[[Dict[str, Any]], Dict[str, Any]],
+        info: core_schema.ValidationInfo,
+    ):
+        assert input_value['field_a'] == 123
         output = validator(input_value)
-        return str(output)
+        return output
 
-    v = SchemaValidator(
-        {
-            'type': 'function-wrap',
-            'function': {'type': 'general', 'function': f},
-            'schema': {
-                'type': 'model',
-                'cls': MyModel,
-                'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
-                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-                },
-            },
-        }
+    schema = core_schema.model_schema(
+        MyModel,
+        core_schema.general_wrap_validator_function(
+            f,
+            core_schema.typed_dict_schema(
+                {'field_a': core_schema.typed_dict_field(core_schema.int_schema())}, return_fields_set=True
+            ),
+        ),
     )
-    assert 'expect_fields_set:true' in plain_repr(v)
-    m = v.validate_python({'field_a': 'test'})
-    assert isinstance(m, str)
-    assert 'test_model_class_root_validator.<locals>.MyModel' in m
+
+    v = SchemaValidator(schema)
+    m = v.validate_python({'field_a': 123})
+    assert m.field_a == 123
+
+    with pytest.raises(ValidationError) as e:
+        v.validate_python({'field_a': 456})
+
+    assert e.value.errors() == [
+        {
+            'type': 'assertion_error',
+            'loc': (),
+            'msg': 'Assertion failed, assert 456 == 123',
+            'input': {'field_a': 456},
+            'ctx': {'error': 'assert 456 == 123'},
+        }
+    ]
+
+
+def test_model_class_root_validator_before():
+    class MyModel:
+        def __init__(self, **kwargs: Any) -> None:
+            self.__dict__.update(kwargs)
+
+    def f(input_value: Dict[str, Any], info: core_schema.ValidationInfo):
+        assert input_value['field_a'] == 123
+        return input_value
+
+    schema = core_schema.model_schema(
+        MyModel,
+        core_schema.general_before_validator_function(
+            f,
+            core_schema.typed_dict_schema(
+                {'field_a': core_schema.typed_dict_field(core_schema.int_schema())}, return_fields_set=True
+            ),
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    m = v.validate_python({'field_a': 123})
+    assert m.field_a == 123
+
+    with pytest.raises(ValidationError) as e:
+        v.validate_python({'field_a': 456})
+
+    assert e.value.errors() == [
+        {
+            'type': 'assertion_error',
+            'loc': (),
+            'msg': 'Assertion failed, assert 456 == 123',
+            'input': {'field_a': 456},
+            'ctx': {'error': 'assert 456 == 123'},
+        }
+    ]
+
+
+def test_model_class_root_validator_after():
+    class MyModel:
+        def __init__(self, **kwargs: Any) -> None:
+            self.__dict__.update(kwargs)
+
+    def f(input_value_and_fields_set: Tuple[Dict[str, Any], Set[str]], info: core_schema.ValidationInfo):
+        input_value, _ = input_value_and_fields_set
+        assert input_value['field_a'] == 123
+        return input_value_and_fields_set
+
+    schema = core_schema.model_schema(
+        MyModel,
+        core_schema.general_after_validator_function(
+            f,
+            core_schema.typed_dict_schema(
+                {'field_a': core_schema.typed_dict_field(core_schema.int_schema())}, return_fields_set=True
+            ),
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    m = v.validate_python({'field_a': 123})
+    assert m.field_a == 123
+
+    with pytest.raises(ValidationError) as e:
+        v.validate_python({'field_a': 456})
+
+    assert e.value.errors() == [
+        {
+            'type': 'assertion_error',
+            'loc': (),
+            'msg': 'Assertion failed, assert 456 == 123',
+            'input': {'field_a': 456},
+            'ctx': {'error': 'assert 456 == 123'},
+        }
+    ]
 
 
 @pytest.mark.parametrize('mode', ['before', 'after', 'wrap'])

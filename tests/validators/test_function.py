@@ -238,6 +238,39 @@ def test_function_wrap_invalid_location():
         v.validate_python(4)
 
 
+def test_function_after():
+    def f(input_value, _info):
+        return input_value + ' Changed'
+
+    v = SchemaValidator(
+        {'type': 'function-after', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}
+    )
+
+    assert v.validate_python('input value') == 'input value Changed'
+
+
+def test_function_after_raise():
+    def f(input_value, info):
+        raise ValueError('foobar')
+
+    v = SchemaValidator(
+        {'type': 'function-after', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        assert v.validate_python('input value') == 'input value Changed'
+    # debug(str(exc_info.value))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': (),
+            'msg': 'Value error, foobar',
+            'input': 'input value',
+            'ctx': {'error': 'foobar'},
+        }
+    ]
+
+
 def test_function_after_config():
     f_kwargs = None
 
