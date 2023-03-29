@@ -70,10 +70,13 @@ class ModelMetaclass(ABCMeta):
         **kwargs: Any,
     ) -> type:
         if _base_class_defined:
-            class_vars: set[str] = set()
+            base_field_names, class_vars, base_private_attributes = _collect_bases_data(bases)
+
             config_new = build_config(cls_name, bases, namespace, kwargs)
             namespace['model_config'] = config_new
-            private_attributes = _model_construction.inspect_namespace(namespace)
+            private_attributes = _model_construction.inspect_namespace(
+                namespace, config_new.get('ignored_types', ()), class_vars, base_field_names
+            )
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
                 namespace['__slots__'] = slots | private_attributes.keys()
@@ -93,11 +96,6 @@ class ModelMetaclass(ABCMeta):
             elif 'model_post_init' in namespace:
                 namespace['__pydantic_post_init__'] = namespace['model_post_init']
 
-            base_private_attributes: dict[str, ModelPrivateAttr] = {}
-            for base in bases:
-                if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
-                    base_private_attributes.update(base.__private_attributes__)
-                    class_vars.update(base.__class_vars__)
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
@@ -134,6 +132,14 @@ class ModelMetaclass(ABCMeta):
             )
 
             cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
+
+            # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
+            # for attributes not in `new_namespace` (e.g. private attributes)
+            for name, obj in private_attributes.items():
+                set_name = getattr(obj, '__set_name__', None)
+                if callable(set_name):
+                    set_name(cls, name)
+
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
@@ -982,3 +988,16 @@ class Validator(Generic[T]):
 
     def __call__(self, __input: Any) -> T:
         return self._validator.validate_python(__input)
+
+
+def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
+    field_names: set[str] = set()
+    class_vars: set[str] = set()
+    private_attributes: dict[str, ModelPrivateAttr] = {}
+    for base in bases:
+        if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
+            # model_fields might not be defined yet in the case of generics, so we use getattr here:
+            field_names.update(getattr(base, 'model_fields', {}).keys())
+            class_vars.update(base.__class_vars__)
+            private_attributes.update(base.__private_attributes__)
+    return field_names, class_vars, private_attributes

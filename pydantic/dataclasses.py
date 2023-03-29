@@ -10,6 +10,7 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 from typing_extensions import Literal, dataclass_transform
 
 from ._internal import _dataclasses as _pydantic_dataclasses
+from ._internal import _decorators
 from .config import ConfigDict, get_config
 from .fields import Field, FieldInfo
 
@@ -110,6 +111,7 @@ def dataclass(
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
 
     def create_dataclass(cls: type[Any]) -> PydanticDataclass:
+        decorators = _decorators.gather_decorator_functions(cls)
         if dataclasses.is_dataclass(cls) and not hasattr(cls, '__pydantic_fields__'):
             # so we don't add validation to the existing std lib dataclass, so we subclass it, but we need to
             # set `__pydantic_fields__` while subclassing so the logic below can treat the new class like its
@@ -126,8 +128,14 @@ def dataclass(
             cls = type(
                 cls.__name__,
                 (cls,),
-                {'__pydantic_fields__': fields, '__pydantic_omitted_fields__': omitted_fields or None},
+                {
+                    '__pydantic_fields__': fields,
+                    '__pydantic_omitted_fields__': omitted_fields or None,
+                    '__pydantic_decorators__': decorators,
+                },
             )
+        else:
+            setattr(cls, '__pydantic_decorators__', decorators)
 
         config_dict = get_config(config)
         _pydantic_dataclasses.prepare_dataclass(cls, config_dict, kw_only)

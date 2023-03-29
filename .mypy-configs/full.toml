@@ -28,3 +28,7 @@ module = [
     'devtools.*',
 ]
 ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ['devtools.*']
+follow_imports = 'skip'

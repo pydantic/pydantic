@@ -265,6 +265,8 @@ class GenerateJsonSchema:
         # Generate the core-schema-type-specific bits of the schema generation:
         if _core_utils.is_typed_dict_field(schema):
             json_schema = self.typed_dict_field_schema(schema)
+        elif _core_utils.is_dataclass_field(schema):
+            json_schema = self.dataclass_field_schema(schema)
         elif _core_utils.is_core_schema(schema):  # Ideally we wouldn't need this redundant typeguard..
             generate_for_schema_type = self._schema_type_to_method[schema['type']]
             json_schema = generate_for_schema_type(schema)
@@ -641,6 +643,11 @@ class GenerateJsonSchema:
 
         return json_schema
 
+    def dataclass_field_schema(self, schema: core_schema.DataclassField) -> JsonSchemaValue:
+        json_schema = self.generate_inner(schema['schema'])
+
+        return json_schema
+
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
         # Note: While it might be nice to be able to call schema['model'].model_json_schema(),
         # I don't think that is a good idea because that method does caching (which is good),
@@ -831,7 +838,7 @@ class GenerateJsonSchema:
         Intuitively, we want this to return true for schemas that wouldn't otherwise provide their own title
         (e.g., int, float, str), and false for those that would (e.g., BaseModel subclasses).
         """
-        if _core_utils.is_typed_dict_field(schema):
+        if _core_utils.is_typed_dict_field(schema) or _core_utils.is_dataclass_field(schema):
             return self.field_title_should_be_set(schema['schema'])
 
         elif _core_utils.is_core_schema(schema):

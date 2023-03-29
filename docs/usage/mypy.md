@@ -1,7 +1,25 @@
 *pydantic* models work with [mypy](http://mypy-lang.org/) provided you use the annotation-only version of
 required fields:
 
-{!.tmp_examples/mypy_main.md!}
+```py test="skip"
+from datetime import datetime
+from typing import List, Optional
+
+from pydantic import BaseModel, NoneStr
+
+
+class Model(BaseModel):
+    age: int
+    first_name = 'John'
+    last_name: NoneStr = None
+    signup_ts: Optional[datetime] = None
+    list_of_ints: List[int]
+
+
+m = Model(age=42, list_of_ints=[1, '2', b'3'])
+print(m.middle_name)  # not a model field!
+Model()  # will raise a validation error for age and list_of_ints
+```
 
 You can run your code through mypy with:
 

@@ -13,6 +13,7 @@ from typing_extensions import Literal
 import pydantic
 from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError
 from pydantic.decorators import field_validator
+from pydantic.fields import Field, FieldInfo
 
 
 def test_simple():
@@ -72,9 +73,8 @@ def test_frozen():
         d.a = 7
 
 
-@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment():
-    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
     class MyDataclass:
         a: int
 
@@ -85,9 +85,8 @@ def test_validate_assignment():
     assert d.a == 7
 
 
-@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment_error():
-    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True))
     class MyDataclass:
         a: int
 
@@ -96,7 +95,12 @@ def test_validate_assignment_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxx'
     assert exc_info.value.errors() == [
-        {'loc': ('a',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'type': 'int_parsing',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'xxx',
+        }
     ]
 
 
@@ -112,15 +116,14 @@ def test_not_validate_assignment():
     assert d.a == '7'
 
 
-@pytest.mark.xfail(reason='validate_assignment')
 def test_validate_assignment_value_change():
-    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True), frozen=False)
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_assignment=True), frozen=False)
     class MyDataclass:
         a: int
 
         @field_validator('a')
         @classmethod
-        def double_a(cls, v):
+        def double_a(cls, v: int) -> int:
             return v * 2
 
     d = MyDataclass(2)
@@ -130,18 +133,61 @@ def test_validate_assignment_value_change():
     assert d.a == 6
 
 
-def test_validate_assignment_extra():
-    @pydantic.dataclasses.dataclass(config=dict(validate_assignment=True), frozen=False)
+@pytest.mark.parametrize(
+    'config',
+    [
+        ConfigDict(validate_assignment=False),
+        ConfigDict(extra=Extra.ignore),
+        ConfigDict(validate_assignment=False, extra=Extra.ignore),
+    ],
+)
+def test_validate_assignment_extra_unknown_field_assigned_allowed(config: ConfigDict):
+    @pydantic.dataclasses.dataclass(config=config)
     class MyDataclass:
         a: int
 
     d = MyDataclass(1)
     assert d.a == 1
 
-    d.extra_field = 1.23
-    assert d.extra_field == 1.23
-    d.extra_field = 'bye'
-    assert d.extra_field == 'bye'
+    d.extra_field = 123
+    assert d.extra_field == 123
+
+
+@pytest.mark.parametrize(
+    'config',
+    [
+        ConfigDict(validate_assignment=True),
+        pytest.param(
+            ConfigDict(extra=Extra.forbid), marks=pytest.mark.xfail(reason='dataclasses do not respect Extra')
+        ),
+        ConfigDict(validate_assignment=True, extra=Extra.forbid),
+        ConfigDict(validate_assignment=True, extra=Extra.ignore),
+        pytest.param(
+            ConfigDict(validate_assignment=False, extra=Extra.forbid),
+            marks=pytest.mark.xfail(reason='dataclasses do not respect Extra'),
+        ),
+    ],
+)
+def test_validate_assignment_extra_unknown_field_assigned_errors(config: ConfigDict):
+    @pydantic.dataclasses.dataclass(config=config)
+    class MyDataclass:
+        a: int
+
+    d = MyDataclass(1)
+    assert d.a == 1
+
+    with pytest.raises(ValidationError) as exc_info:
+        d.extra_field = 1.23
+
+    assert exc_info.value.errors() == [
+        {
+            'type': 'no_such_attribute',
+            'loc': ('extra_field',),
+            'msg': "Object has no attribute 'extra_field'",
+            'input': 1.23,
+            'ctx': {'attribute': 'extra_field'},
+        }
+    ]
 
 
 def test_post_init():
@@ -316,9 +362,8 @@ def test_validate_long_string_error():
     ]
 
 
-@pytest.mark.xfail(reason='validate_assignment')
-def test_validate_assigment_long_string_error():
-    @pydantic.dataclasses.dataclass(config=dict(str_max_length=3, validate_assignment=True))
+def test_validate_assignment_long_string_error():
+    @pydantic.dataclasses.dataclass(config=ConfigDict(str_max_length=3, validate_assignment=True))
     class MyDataclass:
         a: str
 
@@ -326,19 +371,19 @@ def test_validate_assigment_long_string_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxxx'
 
-    assert issubclass(MyDataclass.__pydantic_model__.__config__, BaseModel.model_config)
     assert exc_info.value.errors() == [
         {
+            'type': 'string_too_long',
             'loc': ('a',),
-            'msg': 'ensure this value has at most 3 characters',
-            'type': 'value_error.any_str.max_length',
-            'ctx': {'limit_value': 3},
+            'msg': 'String should have at most 3 characters',
+            'input': 'xxxx',
+            'ctx': {'max_length': 3},
         }
     ]
 
 
-def test_no_validate_assigment_long_string_error():
-    @pydantic.dataclasses.dataclass(config=dict(str_max_length=3, validate_assignment=False))
+def test_no_validate_assignment_long_string_error():
+    @pydantic.dataclasses.dataclass(config=ConfigDict(str_max_length=3, validate_assignment=False))
     class MyDataclass:
         a: str
 
@@ -916,8 +961,7 @@ def test_pydantic_callable_field():
     )
 
 
-@pytest.mark.xfail(reason='validate_assignment')
-def test_pickle_overriden_builtin_dataclass(create_module):
+def test_pickle_overridden_builtin_dataclass(create_module: Any):
     module = create_module(
         # language=Python
         """\
@@ -925,29 +969,24 @@ import dataclasses
 import pydantic
 
 
-@dataclasses.dataclass
+@pydantic.dataclasses.dataclass(
+    config=pydantic.config.ConfigDict(validate_assignment=True)
+)
 class BuiltInDataclassForPickle:
     value: int
-
-class ModelForPickle(pydantic.BaseModel):
-    # pickle can only work with top level classes as it imports them
-
-    dataclass: BuiltInDataclassForPickle
-
-    model_config = pydantic.ConfigDict(validate_assignment=True)
         """
     )
-    obj = module.ModelForPickle(dataclass=module.BuiltInDataclassForPickle(value=5))
+    obj = module.BuiltInDataclassForPickle(value=5)
 
     pickled_obj = pickle.dumps(obj)
     restored_obj = pickle.loads(pickled_obj)
 
-    assert restored_obj.dataclass.value == 5
+    assert restored_obj.value == 5
     assert restored_obj == obj
 
     # ensure the restored dataclass is still a pydantic dataclass
-    with pytest.raises(ValidationError, match='value\n +value is not a valid integer'):
-        restored_obj.dataclass.value = 'value of a wrong type'
+    with pytest.raises(ValidationError):
+        restored_obj.value = 'value of a wrong type'
 
 
 @pytest.mark.xfail(reason='dataclasses JSON schema')
@@ -1324,51 +1363,27 @@ def test_ignore_extra_subclass():
     assert bar.__dict__ == {'x': 1, 'y': 2, '__pydantic_initialised__': True}
 
 
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_allow_extra():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
-    class Foo:
-        x: int
+    msg = (
+        r'extra=Extra.allow is not allowed for dataclasses.'
+        r' Only Extra.ignore (the default) and Extra.forbid are allowed.'
+    )
+    with pytest.raises(ValueError, match=re.escape(msg)):
 
-    foo = Foo(**{'x': '1', 'y': '2'})
-    assert foo.__dict__ == {'x': 1, 'y': '2', '__pydantic_initialised__': True}
-
-
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
-def test_allow_extra_subclass():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
-    class Foo:
-        x: int
-
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
-    class Bar(Foo):
-        y: int
-
-    bar = Bar(**{'x': '1', 'y': '2', 'z': '3'})
-    assert bar.__dict__ == {'x': 1, 'y': 2, 'z': '3', '__pydantic_initialised__': True}
+        @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.allow))
+        class _:
+            pass
 
 
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_forbid_extra():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.forbid))
     class Foo:
         x: int
 
-    with pytest.raises(TypeError, match=re.escape("__init__() got an unexpected keyword argument 'y'")):
+    msg = re.escape("Unexpected keyword argument [type=unexpected_keyword_argument, input_value='2', input_type=str]")
+
+    with pytest.raises(ValidationError, match=msg):
         Foo(**{'x': '1', 'y': '2'})
-
-
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
-def test_post_init_allow_extra():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.allow))
-    class Foobar:
-        a: int
-        b: str
-
-        def __post_init__(self):
-            self.a *= 2
-
-    assert Foobar(a=1, b='a', c=4).__dict__ == {'a': 2, 'b': 'a', 'c': 4, '__pydantic_initialised__': True}
 
 
 @pytest.mark.xfail(reason='recursive references need rebuilding?')
@@ -1434,8 +1449,14 @@ def test_validator():
     assert d.b == 5.0
 
 
-@pytest.mark.xfail(reason='validator in child not applied')
 def test_parent_post_init():
+    """
+    Test that the parent's __post_init__ gets called
+    and the order in which it gets called relative to validation.
+
+    In V1 we called it before validation, in V2 it gets called after.
+    """
+
     @dataclasses.dataclass
     class A:
         a: float
@@ -1453,14 +1474,13 @@ def test_parent_post_init():
             value += 3
             return value
 
-    assert B(a=1).a == 5  # 1 * 2 + 3
+    assert B(a=1).a == 8  # (1 + 3) * 2 = 8
 
 
-@pytest.mark.xfail(reason='validator in child not applied')
-def test_subclass_post_init():
+def test_subclass_post_init_order():
     @dataclasses.dataclass
     class A:
-        a: int = 1
+        a: float
 
     @pydantic.dataclasses.dataclass
     class B(A):
@@ -1473,14 +1493,13 @@ def test_subclass_post_init():
             value += 3
             return value
 
-    assert B().a == 5  # 1 * 2 + 3
+    assert B(a=1).a == 8  # (1 + 3) * 2 = 8
 
 
-@pytest.mark.xfail(reason='validator in child not applied')
 def test_subclass_post_init_inheritance():
     @dataclasses.dataclass
     class A:
-        a: int = 1
+        a: int
 
     @pydantic.dataclasses.dataclass
     class B(A):
@@ -1498,7 +1517,7 @@ def test_subclass_post_init_inheritance():
         def __post_init__(self):
             self.a *= 3
 
-    assert C().a == 6  # 1 * 3 + 3
+    assert C(1).a == 12  # (1 + 3) * 3
 
 
 @pytest.mark.xfail(reason='cannot access pydantic model config for dataclass')
@@ -1538,3 +1557,131 @@ def test_validator_info_field_name_data_before():
             return 'just kidding!'
 
     assert Model(a=b'your foobar is good', b=b'but my barbaz is better').b == 'just kidding!'
+
+
+@pytest.mark.parametrize(
+    'decorator1, expected_parent, expected_child',
+    [
+        (
+            pydantic.dataclasses.dataclass,
+            ['parent before', 'parent', 'parent after'],
+            ['parent before', 'child', 'parent after', 'child before', 'child after'],
+        ),
+        (dataclasses.dataclass, [], ['child before', 'child', 'child after']),
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: List[str], expected_child: List[str]):
+    """We promise that if you add a validator
+    with the same _function_ name as an existing validator
+    it replaces the existing validator and is run instead of it.
+    """
+
+    @decorator1
+    class Parent:
+        a: List[str]
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def parent_val_before(cls, v: List[str]):
+            v.append('parent before')
+            return v
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def val(cls, v: List[str]):
+            v.append('parent')
+            return v
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def parent_val_after(cls, v: List[str]):
+            v.append('parent after')
+            return v
+
+    @pydantic.dataclasses.dataclass
+    class Child(Parent):
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def child_val_before(cls, v: List[str]):
+            v.append('child before')
+            return v
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def val(cls, v: List[str]):
+            v.append('child')
+            return v
+
+        @field_validator('a', allow_reuse=True)
+        @classmethod
+        def child_val_after(cls, v: List[str]):
+            v.append('child after')
+            return v
+
+    assert Parent(a=[]).a == expected_parent
+    assert Child(a=[]).a == expected_child
+
+
+@pytest.mark.parametrize(
+    'decorator1',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+@pytest.mark.parametrize(
+    'default',
+    [1, dataclasses.field(default=1), Field(default=1)],
+    ids=['1', 'dataclasses.field(default=1)', 'pydantic.Field(default=1)'],
+)
+def test_dataclasses_inheritance_default_value_is_not_deleted(
+    decorator1: Callable[[Any], Any], default: Literal[1]
+) -> None:
+    if decorator1 is dataclasses.dataclass and isinstance(default, FieldInfo):
+        pytest.skip(reason="stdlib dataclasses don't support Pydantic fields")
+
+    @decorator1
+    class Parent:
+        a: int = default
+
+    assert Parent.a == 1
+    assert Parent().a == 1
+
+    @pydantic.dataclasses.dataclass
+    class Child(Parent):
+        pass
+
+    assert Child.a == 1
+    assert Child().a == 1
+
+
+def test_dataclass_config_validate_default():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        x: int = -1
+
+        @field_validator('x')
+        @classmethod
+        def force_x_positive(cls, v):
+            assert v > 0
+            return v
+
+    assert Model().x == -1
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(validate_default=True))
+    class ValidatingModel(Model):
+        pass
+
+    with pytest.raises(ValidationError) as exc_info:
+        ValidatingModel()
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'error': 'assert -1 > 0'},
+            'input': -1,
+            'loc': ('x',),
+            'msg': 'Assertion failed, assert -1 > 0',
+            'type': 'assertion_error',
+        }
+    ]

@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, 
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
-from typing_extensions import Annotated, Literal, get_args, get_origin, is_typeddict
+from typing_extensions import Annotated, Literal, TypedDict, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUserError
 from ..fields import FieldInfo
@@ -40,9 +40,7 @@ if TYPE_CHECKING:
 
 __all__ = 'model_fields_schema', 'dataclass_schema', 'GenerateSchema', 'generate_config', 'get_model_self_schema'
 
-
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
-
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, SerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
@@ -180,6 +178,8 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
         strict=config['strict'],
         ser_json_timedelta=config['ser_json_timedelta'],
         ser_json_bytes=config['ser_json_bytes'],
+        from_attributes=config['from_attributes'],
+        validate_default=config['validate_default'],
     )
     str_max_length = config.get('str_max_length')
     if str_max_length is not None:
@@ -393,6 +393,38 @@ class GenerateSchema:
         """
         Prepare a TypedDictField to represent a model or typeddict field.
         """
+        common_field = self._common_field_schema(name, field_info, decorators)
+        return core_schema.typed_dict_field(
+            common_field['schema'],
+            required=False if not field_info.is_required() else required,
+            serialization_exclude=common_field['serialization_exclude'],
+            validation_alias=common_field['validation_alias'],
+            serialization_alias=common_field['serialization_alias'],
+            metadata=common_field['metadata'],
+        )
+
+    def generate_dc_field_schema(
+        self,
+        name: str,
+        field_info: FieldInfo,
+        decorators: DecoratorInfos,
+    ) -> core_schema.DataclassField:
+        """
+        Prepare a DataclassField to represent the parameter/field, of a dataclass
+        """
+        common_field = self._common_field_schema(name, field_info, decorators)
+        return core_schema.dataclass_field(
+            name,
+            common_field['schema'],
+            init_only=field_info.init_var or None,
+            kw_only=None if field_info.kw_only else False,
+            serialization_exclude=common_field['serialization_exclude'],
+            validation_alias=common_field['validation_alias'],
+            serialization_alias=common_field['serialization_alias'],
+            metadata=common_field['metadata'],
+        )
+
+    def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
         schema = self.generate_schema(field_info.annotation)
 
@@ -405,6 +437,8 @@ class GenerateSchema:
         # note that this won't work for any Annotated types that get wrapped by a function validator
         # but that's okay because that didn't exist in V1
         this_field_validators = filter_field_decorator_info_by_field(decorators.validator.values(), name)
+        if _validators_require_validate_default(this_field_validators):
+            field_info.validate_default = True
         each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
         this_field_validators = [v for v in this_field_validators if v not in each_item_validators]
         schema = apply_each_item_validators(schema, each_item_validators)
@@ -418,7 +452,6 @@ class GenerateSchema:
         # so that it is the topmost validator for the typed-dict-field validator
         # which uses it to check if the field has a default value or not
         if not field_info.is_required():
-            required = False
             schema = wrap_default(field_info, schema)
 
         schema = apply_serializers(schema, filter_field_decorator_info_by_field(decorators.serializer.values(), name))
@@ -429,44 +462,12 @@ class GenerateSchema:
             extra_updates=field_info.json_schema_extra,
         )
         metadata = build_metadata_dict(js_metadata=misc)
-        field_schema = core_schema.typed_dict_field(schema, required=required, metadata=metadata)
-        if field_info.alias is not None:
-            field_schema['validation_alias'] = field_info.alias
-            field_schema['serialization_alias'] = field_info.alias
-        if field_info.exclude:
-            field_schema['serialization_exclude'] = True
-        return field_schema
-
-    def generate_dc_field_schema(
-        self,
-        name: str,
-        field_info: FieldInfo,
-        decorators: DecoratorInfos,
-    ) -> core_schema.DataclassField:
-        """
-        Prepare a DataclassField to represent the parameter/field, of a dataclass
-        """
-        assert field_info.annotation is not None, 'field.annotation should not be None when generating a schema'
-        schema = self.generate_schema(field_info.annotation)
-        schema = apply_annotations(schema, field_info.metadata)
-
-        if not field_info.is_required():
-            schema = wrap_default(field_info, schema)
-
-        schema = apply_validators(
-            schema, filter_field_decorator_info_by_field(decorators.field_validator.values(), name)
-        )
-        schema = apply_validators(schema, filter_field_decorator_info_by_field(decorators.validator.values(), name))
-        schema = apply_serializers(schema, filter_field_decorator_info_by_field(decorators.serializer.values(), name))
-        # use `or None` to so the core schema is minimal
-        return core_schema.dataclass_field(
-            name,
+        return _common_field(
             schema,
-            init_only=field_info.init_var or None,
-            kw_only=None if field_info.kw_only else False,
-            serialization_exclude=field_info.exclude or None,
+            serialization_exclude=True if field_info.exclude else None,
             validation_alias=field_info.alias,
             serialization_alias=field_info.alias,
+            metadata=metadata,
         )
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
@@ -904,6 +905,23 @@ def apply_validators(
     return schema
 
 
+def _validators_require_validate_default(validators: Iterable[Decorator[ValidatorDecoratorInfo]]) -> bool:
+    """
+    In v1, if any of the validators for a field had `always=True`, the default value would be validated.
+
+    This serves as an auxiliary function for re-implementing that logic, by looping over a provided
+    collection of (v1-style) ValidatorDecoratorInfo's and checking if any of them have `always=True`.
+
+    We should be able to drop this function and the associated logic calling it once we drop support
+    for v1-style validator decorators. (Or we can extend it and keep it if we add something equivalent
+    to the v1-validator `always` kwarg to `field_validator`.)
+    """
+    for validator in validators:
+        if validator.info.always:
+            return True
+    return False
+
+
 def apply_serializers(
     schema: core_schema.CoreSchema, serializers: list[Decorator[SerializerDecoratorInfo]]
 ) -> core_schema.CoreSchema:
@@ -1020,9 +1038,13 @@ def apply_single_annotation(schema: core_schema.CoreSchema, metadata: Any) -> co
 
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     if field_info.default_factory:
-        return core_schema.with_default_schema(schema, default_factory=field_info.default_factory)
+        return core_schema.with_default_schema(
+            schema, default_factory=field_info.default_factory, validate_default=field_info.validate_default
+        )
     elif field_info.default is not Undefined:
-        return core_schema.with_default_schema(schema, default=field_info.default)
+        return core_schema.with_default_schema(
+            schema, default=field_info.default, validate_default=field_info.validate_default
+        )
     else:
         return schema
 
@@ -1062,3 +1084,28 @@ def get_model_self_schema(cls: type[BaseModel]) -> tuple[core_schema.ModelSchema
         metadata=build_metadata_dict(js_metadata=model_js_metadata),
     )
     return schema, model_ref
+
+
+class _CommonField(TypedDict):
+    schema: core_schema.CoreSchema
+    validation_alias: str | list[str | int] | list[list[str | int]] | None
+    serialization_alias: str | None
+    serialization_exclude: bool | None
+    metadata: Any
+
+
+def _common_field(
+    schema: core_schema.CoreSchema,
+    *,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    serialization_alias: str | None = None,
+    serialization_exclude: bool | None = None,
+    metadata: Any = None,
+) -> _CommonField:
+    return {
+        'schema': schema,
+        'validation_alias': validation_alias,
+        'serialization_alias': serialization_alias,
+        'serialization_exclude': serialization_exclude,
+        'metadata': metadata,
+    }

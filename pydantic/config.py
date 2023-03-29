@@ -60,7 +60,7 @@ class _ConfigDict(TypedDict, total=False):
     undefined_types_warning: bool  # TODO review docs
     from_attributes: bool
     alias_generator: Callable[[str], str] | None
-    keep_untouched: tuple[type, ...]  # TODO remove??
+    ignored_types: tuple[type, ...]  # TODO remove??
     json_loads: Callable[[str], Any]  # TODO decide
     json_dumps: Callable[..., str]  # TODO decide
     json_encoders: dict[type[Any] | str | ForwardRef, Callable[..., Any]]  # TODO decide
@@ -78,6 +78,7 @@ class _ConfigDict(TypedDict, total=False):
     # new in V2
     ser_json_timedelta: Literal['iso8601', 'float']
     ser_json_bytes: Literal['utf8', 'base64']
+    validate_default: bool
 
 
 config_keys = set(_ConfigDict.__annotations__.keys())
@@ -112,7 +113,7 @@ _default_config = ConfigDict(
     undefined_types_warning=True,
     from_attributes=False,
     alias_generator=None,
-    keep_untouched=(),
+    ignored_types=(),
     json_loads=json.loads,
     json_dumps=json.dumps,
     json_encoders={},
@@ -122,6 +123,7 @@ _default_config = ConfigDict(
     post_init_call='before_validation',
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
+    validate_default=False,
 )
 
 

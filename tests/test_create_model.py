@@ -3,24 +3,27 @@ from typing import Optional, Tuple
 import pytest
 
 from pydantic import BaseModel, ConfigDict, Extra, Field, ValidationError, create_model, errors
-from pydantic.decorators import field_validator
+from pydantic.decorators import field_validator, validator
 from pydantic.fields import ModelPrivateAttr
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_create_model():
-    model = create_model('FooModel', foo=(str, ...), bar=123)
+    model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
     assert issubclass(model, BaseModel)
     assert model.model_config == BaseModel.model_config
     assert model.__name__ == 'FooModel'
     assert model.model_fields.keys() == {'foo', 'bar'}
-    assert model.__validators__ == {}
+
+    assert not model.__pydantic_decorators__.validator
+    assert not model.__pydantic_decorators__.root_validator
+    assert not model.__pydantic_decorators__.field_validator
+    assert not model.__pydantic_decorators__.serializer
+
     assert model.__module__ == 'pydantic.main'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_create_model_usage():
-    model = create_model('FooModel', foo=(str, ...), bar=123)
+    model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
     m = model(foo='hello')
     assert m.foo == 'hello'
     assert m.bar == 123
@@ -42,7 +45,7 @@ def test_create_model_pickle(create_module):
 
         from pydantic import create_model
 
-        FooModel = create_model('FooModel', foo=(str, ...), bar=123, __module__=__name__)
+        FooModel = create_model('FooModel', foo=(str, ...), bar=(int, 123), __module__=__name__)
 
         m = FooModel(foo='hello')
         d = pickle.dumps(m)
@@ -69,11 +72,10 @@ def test_config_and_base():
         create_model('FooModel', __config__=BaseModel.model_config, __base__=BaseModel)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inheritance():
     class BarModel(BaseModel):
-        x = 1
-        y = 2
+        x: int = 1
+        y: int = 2
 
     model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __base__=BarModel)
     assert model.model_fields.keys() == {'foo', 'bar', 'x', 'y'}
@@ -119,7 +121,6 @@ def test_custom_config_extras():
         model(bar=654)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators():
     class BarModel(BaseModel):
         @field_validator('a', check_fields=False)
@@ -129,24 +130,23 @@ def test_inheritance_validators():
                 raise ValueError('"foobar" not found in a')
             return v
 
-    model = create_model('FooModel', a='cake', __base__=BarModel)
+    model = create_model('FooModel', a=(str, 'cake'), __base__=BarModel)
     assert model().a == 'cake'
     assert model(a='this is foobar good').a == 'this is foobar good'
     with pytest.raises(ValidationError):
         model(a='something else')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators_always():
     class BarModel(BaseModel):
-        @field_validator('a', check_fields=False, always=True)
+        @field_validator('a', check_fields=False)
         @classmethod
         def check_a(cls, v):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
             return v
 
-    model = create_model('FooModel', a='cake', __base__=BarModel)
+    model = create_model('FooModel', a=(str, Field('cake', validate_default=True)), __base__=BarModel)
     with pytest.raises(ValidationError):
         model()
     assert model(a='this is foobar good').a == 'this is foobar good'
@@ -154,19 +154,19 @@ def test_inheritance_validators_always():
         model(a='something else')
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_inheritance_validators_all():
-    class BarModel(BaseModel):
-        @field_validator('*')
-        @classmethod
-        def check_all(cls, v):
-            return v * 2
+    with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@validator` validators are deprecated'):
+
+        class BarModel(BaseModel):
+            @validator('*')
+            @classmethod
+            def check_all(cls, v):
+                return v * 2
 
     model = create_model('FooModel', a=(int, ...), b=(int, ...), __base__=BarModel)
     assert model(a=2, b=6).model_dump() == {'a': 4, 'b': 12}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_funky_name():
     model = create_model('FooModel', **{'this-is-funky': (int, ...)})
     m = model(**{'this-is-funky': '123'})
@@ -174,29 +174,28 @@ def test_funky_name():
     with pytest.raises(ValidationError) as exc_info:
         model()
     assert exc_info.value.errors() == [
-        {'loc': ('this-is-funky',), 'msg': 'field required', 'type': 'value_error.missing'}
+        {'input': {}, 'loc': ('this-is-funky',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_repeat_base_usage():
     class Model(BaseModel):
         a: str
 
     assert Model.model_fields.keys() == {'a'}
 
-    model = create_model('FooModel', b=1, __base__=Model)
+    model = create_model('FooModel', b=(int, 1), __base__=Model)
 
     assert Model.model_fields.keys() == {'a'}
     assert model.model_fields.keys() == {'a', 'b'}
 
-    model2 = create_model('Foo2Model', c=1, __base__=Model)
+    model2 = create_model('Foo2Model', c=(int, 1), __base__=Model)
 
     assert Model.model_fields.keys() == {'a'}
     assert model.model_fields.keys() == {'a', 'b'}
     assert model2.model_fields.keys() == {'a', 'c'}
 
-    model3 = create_model('Foo2Model', d=1, __base__=model)
+    model3 = create_model('Foo2Model', d=(int, 1), __base__=model)
 
     assert Model.model_fields.keys() == {'a'}
     assert model.model_fields.keys() == {'a', 'b'}
@@ -216,21 +215,29 @@ def test_dynamic_and_static():
         assert A.model_fields[field_name].default == DynamicA.model_fields[field_name].default
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_config_field_info_create_model():
     # TODO fields doesn't exist anymore, remove test?
     # class Config:
     #     fields = {'a': {'description': 'descr'}}
-    config = ConfigDict()
+    ConfigDict()
 
-    m1 = create_model('M1', __config__=config, a=(str, ...))
-    assert m1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    m1 = create_model('M1', __config__={'title': 'abc'}, a=(str, ...))
+    assert m1.model_json_schema() == {
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'title': 'abc',
+        'type': 'object',
+    }
 
-    m2 = create_model('M2', __config__=config, a=(str, Field(...)))
-    assert m2.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
+    m2 = create_model('M2', __config__={}, a=(str, Field(description='descr')))
+    assert m2.model_json_schema() == {
+        'properties': {'a': {'description': 'descr', 'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'title': 'M2',
+        'type': 'object',
+    }
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
 def test_set_name(base):
     calls = []
@@ -270,3 +277,11 @@ def test_create_model_with_slots():
         model = create_model('PartialPet', **field_definitions)
 
     assert model.model_fields.keys() == {'foobar'}
+
+
+def test_create_model_non_annotated():
+    with pytest.raises(
+        TypeError,
+        match='A non-annotated attribute was detected: `bar = 123`. All model fields require a type annotation',
+    ):
+        create_model('FooModel', foo=(str, ...), bar=123)

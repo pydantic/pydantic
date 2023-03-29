@@ -23,13 +23,25 @@ FunctionSchemaWithInnerSchema = Union[
     core_schema.WrapValidatorFunctionSchema,
 ]
 
-
-def is_typed_dict_field(schema: CoreSchema | core_schema.TypedDictField) -> TypeGuard[core_schema.TypedDictField]:
-    return 'type' not in schema
+_CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field'}
 
 
-def is_core_schema(schema: CoreSchema | core_schema.TypedDictField) -> TypeGuard[CoreSchema]:
-    return 'type' in schema
+def is_typed_dict_field(
+    schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField,
+) -> TypeGuard[core_schema.TypedDictField]:
+    return schema['type'] == 'typed-dict-field'
+
+
+def is_dataclass_field(
+    schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField,
+) -> TypeGuard[core_schema.DataclassField]:
+    return schema['type'] == 'dataclass-field'
+
+
+def is_core_schema(
+    schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField,
+) -> TypeGuard[CoreSchema]:
+    return schema['type'] not in _CORE_SCHEMA_FIELD_TYPES
 
 
 def is_function_with_inner_schema(
