@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -88,3 +88,14 @@ def test_bool_key(py_and_json: PyAndJson):
     assert v.validate_test({'true': 1, 'off': 2}, strict=False) == {True: 1, False: 2}
     with pytest.raises(ValidationError, match='Input should be a valid boolean'):
         v.validate_test({'true': 1, 'off': 2}, strict=True)
+
+
+def test_validate_assignment_not_supported() -> None:
+    """
+    This test is not bool specific, the implementation is the
+    same for all validators (it's the default impl on the Validator trait).
+    But we need to test this somewhere, so it is going in the bool tests for now.
+    """
+    v = SchemaValidator(core_schema.bool_schema())
+    with pytest.raises(TypeError, match='validate_assignment is not supported for bool'):
+        v.validate_assignment(False, 'foo', True)

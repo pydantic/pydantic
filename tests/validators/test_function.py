@@ -234,7 +234,7 @@ def test_function_wrap_invalid_location():
         {'type': 'function-wrap', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'int'}}
     )
 
-    with pytest.raises(TypeError, match='^ValidatorCallable outer_location must be a str or int$'):
+    with pytest.raises(TypeError, match='^outer_location must be a str or int$'):
         v.validate_python(4)
 
 
@@ -733,12 +733,16 @@ def test_typed_dict_data() -> None:
     assert info_stuff == {'field_name': 'c', 'data': {'a': 1}}
 
 
-@pytest.mark.parametrize('mode', ['before', 'after', 'wrap'])
-def test_model_root_function_assignment(mode):
-    """
-    Root functional validators should not be called in validate assignment, since the input value makes no sense.
-    """
-    call_count = 0
+@pytest.mark.parametrize(
+    'mode,calls1,calls2',
+    [
+        ('before', {'value': {'x': b'input', 'y': '123'}}, {'value': {'x': 'different', 'y': 123}}),
+        ('after', {'value': {'x': 'input', 'y': 123}}, {'value': {'x': 'different', 'y': 123}}),
+        ('wrap', {'value': {'x': b'input', 'y': '123'}}, {'value': {'x': 'different', 'y': 123}}),
+    ],
+)
+def test_model_root_function_assignment(mode: str, calls1: Any, calls2: Any):
+    calls: list[Any] = []
 
     class Model:
         x: str
@@ -747,12 +751,13 @@ def test_model_root_function_assignment(mode):
         def __init__(self, **kwargs: Any) -> None:
             self.__dict__.update(kwargs)
 
-    def f(input_value: Any, *args) -> Any:
-        nonlocal call_count
-        call_count += 1
+    def f(input_value: Any, *args: Any) -> Any:
         if mode == 'wrap':
-            return args[0](input_value)
+            handler, _ = args
+            calls.append({'value': input_value})
+            return handler(input_value)
         else:
+            calls.append({'value': input_value})
             return input_value
 
     v = SchemaValidator(
@@ -775,7 +780,7 @@ def test_model_root_function_assignment(mode):
     v.validate_python({'x': b'input', 'y': '123'}, self_instance=m)
     assert m.x == 'input'
     assert m.y == 123
-    assert call_count == 1
+    assert calls == [calls1]
 
     v.validate_assignment(m, 'x', b'different')
-    assert call_count == 1
+    assert calls == [calls1, calls2]
