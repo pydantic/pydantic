@@ -1,5 +1,4 @@
 autoflake
-mdx-truly-sane-lists
 mkdocs
 mkdocs-exclude
 mkdocs-material

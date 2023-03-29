@@ -137,17 +137,16 @@ def test_inheritance_validators():
         model(a='something else')
 
 
-@pytest.mark.xfail(reason='validators do not support always=True')
 def test_inheritance_validators_always():
     class BarModel(BaseModel):
-        @field_validator('a', check_fields=False, always=True)
+        @field_validator('a', check_fields=False)
         @classmethod
         def check_a(cls, v):
             if 'foobar' not in v:
                 raise ValueError('"foobar" not found in a')
             return v
 
-    model = create_model('FooModel', a=(str, 'cake'), __base__=BarModel)
+    model = create_model('FooModel', a=(str, Field('cake', validate_default=True)), __base__=BarModel)
     with pytest.raises(ValidationError):
         model()
     assert model(a='this is foobar good').a == 'this is foobar good'
