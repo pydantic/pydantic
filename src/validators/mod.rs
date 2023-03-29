@@ -641,7 +641,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
     }
 
     /// this method must be implemented for any validator which holds references to other validators,
-    /// it is used by `RecursiveRefValidator` to set its name
+    /// it is used by `DefinitionRefValidator` to set its name
     fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }

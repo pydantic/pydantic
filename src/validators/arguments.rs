@@ -323,4 +323,17 @@ impl Validator for ArgumentsValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        self.parameters
+            .iter_mut()
+            .try_for_each(|parameter| parameter.validator.complete(build_context))?;
+        if let Some(v) = &mut self.var_args_validator {
+            v.complete(build_context)?;
+        }
+        if let Some(v) = &mut self.var_kwargs_validator {
+            v.complete(build_context)?;
+        };
+        Ok(())
+    }
 }

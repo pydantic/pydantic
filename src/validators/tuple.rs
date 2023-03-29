@@ -230,6 +230,10 @@ impl Validator for TuplePositionalValidator {
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
         self.items_validators
             .iter_mut()
-            .try_for_each(|v| v.complete(build_context))
+            .try_for_each(|v| v.complete(build_context))?;
+        match &mut self.extra_validator {
+            Some(v) => v.complete(build_context),
+            None => Ok(()),
+        }
     }
 }
