@@ -1,4 +1,6 @@
 import re
+from copy import deepcopy
+from typing import Any, List
 
 import pytest
 
@@ -768,7 +770,7 @@ def test_validate_assignment_function():
         field_b: int
         field_c: int
 
-    calls = []
+    calls: List[Any] = []
 
     def func(x, info):
         calls.append(str(info))
@@ -837,7 +839,7 @@ def test_validate_assignment_no_fields_set():
     assert not hasattr(m, '__fields_set__')
 
     # wrong arguments
-    with pytest.raises(TypeError, match='self_instance should not be None on typed-dict validate_assignment'):
+    with pytest.raises(TypeError, match="'field_a' is not a model instance"):
         v.validate_assignment('field_a', 'field_a', b'different')
 
 
@@ -863,3 +865,83 @@ def test_frozen():
     assert exc_info.value.errors() == [
         {'type': 'frozen_instance', 'loc': (), 'msg': 'Instance is frozen', 'input': 'y'}
     ]
+
+
+@pytest.mark.parametrize(
+    'function_schema,call1, call2',
+    [
+        (
+            core_schema.general_after_validator_function,
+            (({'a': 1, 'b': 2}, {'b'}), 'ValidationInfo(config=None, context=None)'),
+            (({'a': 10, 'b': 2}, {'a'}), 'ValidationInfo(config=None, context=None)'),
+        ),
+        (
+            core_schema.general_before_validator_function,
+            ({'b': 2}, 'ValidationInfo(config=None, context=None)'),
+            ({'a': 10, 'b': 2}, 'ValidationInfo(config=None, context=None)'),
+        ),
+        (
+            core_schema.general_wrap_validator_function,
+            ({'b': 2}, 'ValidationInfo(config=None, context=None)'),
+            ({'a': 10, 'b': 2}, 'ValidationInfo(config=None, context=None)'),
+        ),
+    ],
+)
+def test_validate_assignment_model_validator_function(function_schema: Any, call1: Any, call2: Any):
+    """
+    Test handling of values and fields_set for validator functions that wrap a model when using
+    validate_assignment.
+
+    Note that we are currently not exposing this functionality in conjunction with getting
+    access to `fields_set` in a model validator, so the behavior of fields set.
+    In particular, for function_after it is not clear if the fields set passed to
+    the validator should be the fields that were assigned on this call to `validate_assignment`
+    (currently always a single field) or the fields that have been assigned in the
+    model since it was created.
+    """
+
+    class Model:
+        __slots__ = ('__dict__', '__fields_set__')
+
+    calls: List[Any] = []
+
+    def f(values_or_values_and_fields_set: Any, *args: Any) -> Any:
+        if len(args) == 2:
+            # wrap
+            handler, info = args
+            calls.append((deepcopy(values_or_values_and_fields_set), str(info)))
+            return handler(values_or_values_and_fields_set)
+        else:
+            info = args[0]
+            calls.append((deepcopy(values_or_values_and_fields_set), str(info)))
+            return values_or_values_and_fields_set
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            function_schema(
+                f,
+                core_schema.typed_dict_schema(
+                    {
+                        'a': core_schema.typed_dict_field(
+                            core_schema.with_default_schema(core_schema.int_schema(), default=1)
+                        ),
+                        'b': core_schema.typed_dict_field(core_schema.int_schema()),
+                    },
+                    return_fields_set=True,
+                ),
+            ),
+        )
+    )
+
+    m = v.validate_python({'b': 2})
+    assert m.a == 1
+    assert m.b == 2
+    assert m.__fields_set__ == {'b'}
+    assert calls == [call1]
+
+    v.validate_assignment(m, 'a', 10)
+    assert m.a == 10
+    assert m.b == 2
+    assert m.__fields_set__ == {'a', 'b'}
+    assert calls == [call1, call2]
