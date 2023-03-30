@@ -112,7 +112,7 @@ def test_deque_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list/array', 'input': 'snap'}
+        {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list', 'input': 'snap'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(a=['a'])
@@ -137,7 +137,7 @@ def test_deque_validation():
     with pytest.raises(ValidationError) as exc_info:
         Model(a={'1'})
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list/array', 'input': {'1'}}
+        {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list', 'input': {'1'}}
     ]
     assert Model(a=[4, 5]).a == deque([4, 5])
     assert Model(a=(6,)).a == deque([6])

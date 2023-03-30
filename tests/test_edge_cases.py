@@ -137,7 +137,7 @@ def test_typed_list():
         Model(v=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': 1}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': 1}
     ]
 
 
@@ -2104,7 +2104,7 @@ def test_default_factory_called_once():
         MyBadModel()
     assert v == 2  # `factory` has been called to run validation
     assert exc_info.value.errors() == [
-        {'input': 2, 'loc': ('id',), 'msg': 'Input should be a valid list/array', 'type': 'list_type'}
+        {'input': 2, 'loc': ('id',), 'msg': 'Input should be a valid list', 'type': 'list_type'}
     ]
 
 
