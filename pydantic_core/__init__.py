@@ -16,6 +16,7 @@ from ._pydantic_core import (
     ValidationError,
     __version__,
     to_json,
+    to_jsonable_python,
 )
 from .core_schema import CoreConfig, CoreSchema, CoreSchemaType
 
@@ -48,6 +49,7 @@ __all__ = (
     'PydanticSerializationError',
     'PydanticSerializationUnexpectedValue',
     'to_json',
+    'to_jsonable_python',
 )
 
 

@@ -197,6 +197,43 @@ pub fn to_json(
     Ok(py_bytes.into())
 }
 
+#[allow(clippy::too_many_arguments)]
+#[pyfunction]
+#[pyo3(signature = (value, *, include = None, exclude = None, exclude_none = false, round_trip = false,
+    timedelta_mode = None, bytes_mode = None, serialize_unknown = false))]
+pub fn to_jsonable_python(
+    py: Python,
+    value: &PyAny,
+    include: Option<&PyAny>,
+    exclude: Option<&PyAny>,
+    exclude_none: Option<bool>,
+    round_trip: Option<bool>,
+    timedelta_mode: Option<&str>,
+    bytes_mode: Option<&str>,
+    serialize_unknown: Option<bool>,
+) -> PyResult<PyObject> {
+    let warnings = CollectWarnings::new(None);
+    let rec_guard = SerRecursionGuard::default();
+    let config = SerializationConfig::from_args(timedelta_mode, bytes_mode)?;
+    let extra = Extra::new(
+        py,
+        &SerMode::Json,
+        &[],
+        None,
+        &warnings,
+        None,
+        None,
+        exclude_none,
+        round_trip,
+        &config,
+        &rec_guard,
+        serialize_unknown,
+    );
+    let v = infer::infer_to_python(value, include, exclude, &extra)?;
+    warnings.final_check(py)?;
+    Ok(v)
+}
+
 /// this is ugly, but would be much better if extra could be stored in `GeneralSerializeContext`
 /// then `GeneralSerializeContext` got a `serialize_infer` method, but I couldn't get it to work
 pub(crate) struct GeneralSerializeContext {
