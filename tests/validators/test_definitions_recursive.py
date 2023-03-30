@@ -127,7 +127,7 @@ def test_nullable_error():
         {
             'type': 'none_required',
             'loc': ('sub_branch', 'none'),
-            'msg': 'Input should be None/null',
+            'msg': 'Input should be None',
             'input': {'width': 'wrong'},
         },
         {

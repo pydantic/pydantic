@@ -16,15 +16,15 @@ from ..conftest import Err, PyAndJson, infinite_generator
     [
         ([1, 2, 3], [1, 2, 3]),
         ([1, 2, '3'], [1, 2, 3]),
-        (5, Err('Input should be a valid list/array [type=list_type, input_value=5, input_type=int]')),
-        ('5', Err("Input should be a valid list/array [type=list_type, input_value='5', input_type=str]")),
+        (5, Err(r'Input should be a valid (list|array) \[type=list_type, input_value=5, input_type=int\]')),
+        ('5', Err(r"Input should be a valid (list|array) \[type=list_type, input_value='5', input_type=str\]")),
     ],
     ids=repr,
 )
-def test_list_json(py_and_json: PyAndJson, input_value, expected):
+def test_list_py_or_json(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json({'type': 'list', 'items_schema': {'type': 'int'}})
     if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+        with pytest.raises(ValidationError, match=expected.message):
             v.validate_test(input_value)
     else:
         assert v.validate_test(input_value) == expected
@@ -36,7 +36,7 @@ def test_list_strict():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python((1, 2, '33'))
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list/array', 'input': (1, 2, '33')}
+        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': (1, 2, '33')}
     ]
 
 
@@ -52,15 +52,15 @@ def gen_ints():
         ([1, 2, '3'], [1, 2, 3]),
         ((1, 2, '3'), [1, 2, 3]),
         (deque((1, 2, '3')), [1, 2, 3]),
-        ({1, 2, '3'}, Err('Input should be a valid list/array [type=list_type,')),
+        ({1, 2, '3'}, Err('Input should be a valid list [type=list_type,')),
         (gen_ints(), [1, 2, 3]),
-        (frozenset({1, 2, '3'}), Err('Input should be a valid list/array [type=list_type,')),
+        (frozenset({1, 2, '3'}), Err('Input should be a valid list [type=list_type,')),
         ({1: 10, 2: 20, '3': '30'}.keys(), [1, 2, 3]),
         ({1: 10, 2: 20, '3': '30'}.values(), [10, 20, 30]),
-        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid list/array [type=list_type,')),
+        ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid list [type=list_type,')),
         ((x for x in [1, 2, '3']), [1, 2, 3]),
-        ('456', Err("Input should be a valid list/array [type=list_type, input_value='456', input_type=str]")),
-        (b'789', Err("Input should be a valid list/array [type=list_type, input_value=b'789', input_type=bytes]")),
+        ('456', Err("Input should be a valid list [type=list_type, input_value='456', input_type=str]")),
+        (b'789', Err("Input should be a valid list [type=list_type, input_value=b'789', input_type=bytes]")),
     ],
     ids=repr,
 )
@@ -73,16 +73,29 @@ def test_list_int(input_value, expected):
         assert v.validate_python(input_value) == expected
 
 
+def test_list_json():
+    v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
+    assert v.validate_json('[1, "2", 3]') == [1, 2, 3]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('1')
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid array', 'input': 1}
+    ]
+
+
 @pytest.mark.parametrize(
     'input_value,expected',
     [
         ([], []),
         ([1, '2', b'3'], [1, '2', b'3']),
-        (frozenset([1, '2', b'3']), Err('Input should be a valid list/array [type=list_type,')),
+        (frozenset([1, '2', b'3']), Err('Input should be a valid list [type=list_type,')),
         ((), []),
         ((1, '2', b'3'), [1, '2', b'3']),
         (deque([1, '2', b'3']), [1, '2', b'3']),
-        ({1, '2', b'3'}, Err('Input should be a valid list/array [type=list_type,')),
+        ({1, '2', b'3'}, Err('Input should be a valid list [type=list_type,')),
     ],
 )
 def test_list_any(input_value, expected):
@@ -315,7 +328,7 @@ def test_sequence(MySequence):
         v.validate_python(MySequence())
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list/array', 'input': IsInstance(MySequence)}
+        {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': IsInstance(MySequence)}
     ]
 
 
@@ -332,7 +345,7 @@ def test_sequence(MySequence):
             123,
             Err(
                 '1 validation error for list[int]',
-                [{'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list/array', 'input': 123}],
+                [{'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': 123}],
             ),
         ),
     ],
