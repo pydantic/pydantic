@@ -1,9 +1,23 @@
+import re
 from types import SimpleNamespace
-from typing import Dict, List
+from typing import Any, Dict, List, TypeVar
 
 import pytest
 
 from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, root_validator
+
+Model = TypeVar('Model', bound=BaseModel)
+
+
+def deprecated_from_orm(model_typ: type[Model], obj: Any) -> Model:
+    with pytest.warns(
+        DeprecationWarning,
+        match=re.escape(
+            'The `from_orm` method is deprecated; set model_config["from_attributes"]=True '
+            'and use `model_validate` instead.'
+        ),
+    ):
+        return model_typ.from_orm(obj)
 
 
 @pytest.mark.xfail(reason='working on V2')
@@ -68,7 +82,7 @@ def test_from_attributes_root():
     pika = PokemonCls(en_name='Pikachu', jp_name='ピカチュウ')
     bulbi = PokemonCls(en_name='Bulbasaur', jp_name='フシギダネ')
 
-    pokemons = PokemonList.from_orm([pika, bulbi])
+    pokemons = deprecated_from_orm(PokemonList, [pika, bulbi])
     assert pokemons.__root__ == [
         Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
         Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
@@ -78,7 +92,7 @@ def test_from_attributes_root():
         __root__: Dict[str, Pokemon]
         model_config = ConfigDict(from_attributes=True)
 
-    pokemons = PokemonDict.from_orm({'pika': pika, 'bulbi': bulbi})
+    pokemons = deprecated_from_orm(PokemonDict, {'pika': pika, 'bulbi': bulbi})
     assert pokemons.__root__ == {
         'pika': Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
         'bulbi': Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
@@ -112,7 +126,7 @@ def test_from_attributes():
     orion = PetCls(name='Orion', species='cat')
     anna = PersonCls(name='Anna', age=20, pets=[bones, orion])
 
-    anna_model = Person.from_orm(anna)
+    anna_model = deprecated_from_orm(Person, anna)
 
     assert anna_model.model_dump() == {
         'name': 'Anna',
@@ -121,14 +135,13 @@ def test_from_attributes():
     }
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_not_from_attributes():
     class Pet(BaseModel):
         name: str
         species: str
 
     with pytest.raises(PydanticUserError):
-        Pet.from_orm(None)
+        deprecated_from_orm(Pet, None)
 
 
 def test_object_with_getattr():
@@ -150,12 +163,12 @@ def test_object_with_getattr():
         bar: int
 
     foo = FooGetAttr()
-    model = Model.from_orm(foo)
+    model = deprecated_from_orm(Model, foo)
     assert model.foo == 'Foo'
     assert model.bar == 1
     assert model.model_dump(exclude_unset=True) == {'foo': 'Foo'}
     with pytest.raises(ValidationError):
-        ModelInvalid.from_orm(foo)
+        deprecated_from_orm(ModelInvalid, foo)
 
 
 def test_properties():
@@ -171,7 +184,7 @@ def test_properties():
         x: int
         y: int
 
-    model = Model.from_orm(XyProperty())
+    model = deprecated_from_orm(Model, XyProperty())
     assert model.x == 4
     assert model.y == 5
 
@@ -186,7 +199,7 @@ def test_extra_allow():
         model_config = ConfigDict(from_attributes=True, extra='allow')
         x: int
 
-    model = Model.from_orm(TestCls())
+    model = deprecated_from_orm(Model, TestCls())
     assert model.model_dump() == {'x': 1}
 
 
@@ -200,7 +213,7 @@ def test_extra_forbid():
         model_config = ConfigDict(from_attributes=True, extra='forbid')
         x: int
 
-    model = Model.from_orm(TestCls())
+    model = deprecated_from_orm(Model, TestCls())
     assert model.model_dump() == {'x': 1}
 
 
@@ -224,7 +237,7 @@ def test_root_validator():
             validator_value = value
             return {**value, 'z': value['x'] + value['y']}
 
-    model = Model.from_orm(TestCls())
+    model = deprecated_from_orm(Model, TestCls())
     assert model.model_dump() == {'x': 1, 'y': 2, 'z': 3}
     # assert isinstance(validator_value, GetterDict)
     assert validator_value == {'x': 1, 'y': 2}
@@ -248,7 +261,7 @@ def test_custom_getter_dict():
             from_attributes = True
             getter_dict = custom_getter_dict
 
-    model = Model.from_orm(TestCls())
+    model = deprecated_from_orm(Model, TestCls())
     assert model.model_dump() == {'x': 42, 'y': 24}
 
 
@@ -280,11 +293,11 @@ def test_recursive_parsing():
 
     # test recursive parsing with object attributes
     dct = dict(bb=SimpleNamespace(aa=1))
-    assert ModelB.from_orm(dct) == ModelB(b=ModelA(a=1))
+    assert deprecated_from_orm(ModelB, dct) == ModelB(b=ModelA(a=1))
 
     # test recursive parsing with dict keys
     obj = dict(bb=dict(aa=1))
-    assert ModelB.from_orm(obj) == ModelB(b=ModelA(a=1))
+    assert deprecated_from_orm(ModelB, obj) == ModelB(b=ModelA(a=1))
 
 
 def test_nested_orm():
@@ -298,7 +311,7 @@ def test_nested_orm():
         user: User
 
     # Pass an "orm instance"
-    State.from_orm(SimpleNamespace(user=SimpleNamespace(first_name='John', last_name='Appleseed')))
+    deprecated_from_orm(State, SimpleNamespace(user=SimpleNamespace(first_name='John', last_name='Appleseed')))
 
     # Pass dictionary data directly
     State(**{'user': {'first_name': 'John', 'last_name': 'Appleseed'}})

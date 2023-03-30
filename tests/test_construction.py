@@ -80,7 +80,7 @@ def deprecated_copy(m: BaseModel, *, include=None, exclude=None, update=None, de
         DeprecationWarning,
         match=(
             'The `copy` method is deprecated; use `model_copy` instead. '
-            'See the docstring of `BaseModel.copy` for details about how to handle include / exclude / update.'
+            'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.'
         ),
     ):
         return m.copy(include=include, exclude=exclude, update=update, deep=deep)
