@@ -3,6 +3,7 @@ from decimal import Decimal
 from typing import Any, Dict
 
 import pytest
+from dirty_equals import IsStr
 
 from pydantic_core import SchemaValidator, ValidationError
 
@@ -193,7 +194,12 @@ def test_union_int_simple(py_and_json: PyAndJson):
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'xxx',
         },
-        {'type': 'list_type', 'loc': ('list[any]',), 'msg': 'Input should be a valid list/array', 'input': 'xxx'},
+        {
+            'type': 'list_type',
+            'loc': ('list[any]',),
+            'msg': IsStr(regex='Input should be a valid (list|array)'),
+            'input': 'xxx',
+        },
     ]
 
 

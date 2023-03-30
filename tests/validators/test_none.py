@@ -1,15 +1,19 @@
 import pytest
 
-from pydantic_core import ValidationError
-
-from ..conftest import PyAndJson
+from pydantic_core import SchemaValidator, ValidationError
 
 
-def test_none(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'none'})
-    assert v.validate_test(None) is None
+def test_python_none():
+    v = SchemaValidator({'type': 'none'})
+    assert v.validate_python(None) is None
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_test(1)
-    assert exc_info.value.errors() == [
-        {'type': 'none_required', 'loc': (), 'msg': 'Input should be None/null', 'input': 1}
-    ]
+        v.validate_python(1)
+    assert exc_info.value.errors() == [{'type': 'none_required', 'loc': (), 'msg': 'Input should be None', 'input': 1}]
+
+
+def test_json_none():
+    v = SchemaValidator({'type': 'none'})
+    assert v.validate_json('null') is None
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('1')
+    assert exc_info.value.errors() == [{'type': 'none_required', 'loc': (), 'msg': 'Input should be null', 'input': 1}]

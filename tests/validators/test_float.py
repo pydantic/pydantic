@@ -4,7 +4,7 @@ from decimal import Decimal
 from typing import Any, Dict
 
 import pytest
-from dirty_equals import FunctionCheck
+from dirty_equals import FunctionCheck, IsStr
 
 from pydantic_core import SchemaValidator, ValidationError
 
@@ -164,7 +164,12 @@ def test_union_float_simple(py_and_json: PyAndJson):
             'msg': 'Input should be a valid number, unable to parse string as an number',
             'input': 'xxx',
         },
-        {'type': 'list_type', 'loc': ('list[any]',), 'msg': 'Input should be a valid list/array', 'input': 'xxx'},
+        {
+            'type': 'list_type',
+            'loc': ('list[any]',),
+            'msg': IsStr(regex='Input should be a valid (list|array)'),
+            'input': 'xxx',
+        },
     ]
 
 

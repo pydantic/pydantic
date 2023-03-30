@@ -1,3 +1,4 @@
+use crate::errors::ErrorMode;
 use pyo3::exceptions::{PyException, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
@@ -125,7 +126,7 @@ impl PydanticKnownError {
 
     #[getter]
     pub fn message_template(&self) -> &'static str {
-        self.error_type.message_template()
+        self.error_type.message_template_python()
     }
 
     #[getter]
@@ -134,7 +135,7 @@ impl PydanticKnownError {
     }
 
     pub fn message(&self, py: Python) -> PyResult<String> {
-        self.error_type.render_message(py)
+        self.error_type.render_message(py, &ErrorMode::Python)
     }
 
     fn __str__(&self, py: Python) -> PyResult<String> {

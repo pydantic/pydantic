@@ -2,7 +2,7 @@ import dataclasses
 import re
 
 import pytest
-from dirty_equals import IsListOrTuple
+from dirty_equals import IsListOrTuple, IsStr
 
 from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError, core_schema
 
@@ -159,12 +159,12 @@ def test_dataclass_args_init_only(py_and_json: PyAndJson, input_value, expected)
         (
             ('hello',),
             Err(
-                'Input should be a dictionary or an instance of MyDataclass',
+                'Input should be (an object|a dictionary or an instance of MyDataclass)',
                 errors=[
                     {
                         'type': 'dataclass_type',
                         'loc': (),
-                        'msg': 'Input should be a dictionary or an instance of MyDataclass',
+                        'msg': IsStr(regex='Input should be (an object|a dictionary or an instance of MyDataclass)'),
                         'input': IsListOrTuple('hello'),
                         'ctx': {'dataclass_name': 'MyDataclass'},
                     }
@@ -180,7 +180,7 @@ def test_dataclass_args_init_only_no_fields(py_and_json: PyAndJson, input_value,
     v = py_and_json(schema)
 
     if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
+        with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_test(input_value)
 
         # debug(exc_info.value.errors())

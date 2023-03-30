@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use crate::build_tools::SchemaDict;
-use crate::errors::{ErrorType, LocItem, ValError, ValResult};
+use crate::errors::{ErrorMode, ErrorType, LocItem, ValError, ValResult};
 use crate::input::{GenericIterator, Input};
 use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
@@ -126,6 +126,7 @@ impl ValidatorIterator {
                                     return Err(ValidationError::from_val_error(
                                         py,
                                         "ValidatorIterator".to_object(py),
+                                        ErrorMode::Python,
                                         val_error,
                                         None,
                                     ));
@@ -149,6 +150,7 @@ impl ValidatorIterator {
                                 return Err(ValidationError::from_val_error(
                                     py,
                                     "ValidatorIterator".to_object(py),
+                                    ErrorMode::Python,
                                     val_error,
                                     None,
                                 ));
@@ -250,7 +252,9 @@ impl InternalValidator {
                 &self.slots,
                 &mut self.recursion_guard,
             )
-            .map_err(|e| ValidationError::from_val_error(py, self.name.to_object(py), e, outer_location))
+            .map_err(|e| {
+                ValidationError::from_val_error(py, self.name.to_object(py), ErrorMode::Python, e, outer_location)
+            })
     }
 
     pub fn validate<'s, 'data>(
@@ -271,6 +275,8 @@ impl InternalValidator {
         };
         self.validator
             .validate(py, input, &extra, &self.slots, &mut self.recursion_guard)
-            .map_err(|e| ValidationError::from_val_error(py, self.name.to_object(py), e, outer_location))
+            .map_err(|e| {
+                ValidationError::from_val_error(py, self.name.to_object(py), ErrorMode::Python, e, outer_location)
+            })
     }
 }
