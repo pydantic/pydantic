@@ -1237,7 +1237,7 @@ def test_model_instance(benchmark):
                     'bar': core_schema.typed_dict_field(core_schema.int_schema()),
                 }
             ),
-            revalidate_instances=True,
+            revalidate_instances='always',
         )
     )
     m1 = MyModel(foo=1, bar='2')
@@ -1277,7 +1277,7 @@ def test_model_instance_abc(benchmark):
                     'bar': core_schema.typed_dict_field(core_schema.int_schema()),
                 }
             ),
-            revalidate_instances=True,
+            revalidate_instances='always',
         )
     )
     m1 = MyModel(foo=1, bar='2')

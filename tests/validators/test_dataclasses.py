@@ -269,18 +269,26 @@ class DuplicateDifferent:
 @pytest.mark.parametrize(
     'revalidate_instances,input_value,expected',
     [
-        (True, {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
-        (True, FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (True, FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (True, FooDataclassMore(a='hello', b=True, c='more'), Err(r'c\s+Unexpected keyword argument')),
-        (True, DuplicateDifferent(a='hello', b=True), Err('should be a dictionary or an instance of FooDataclass')),
-        # revalidate_instances=False
-        (False, {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
-        (False, FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (False, FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (False, FooDataclassMore(a='hello', b=True, c='more'), {'a': 'hello', 'b': True, 'c': 'more'}),
-        (False, FooDataclassMore(a='hello', b='wrong', c='more'), {'a': 'hello', 'b': 'wrong', 'c': 'more'}),
-        (False, DuplicateDifferent(a='hello', b=True), Err('should be a dictionary or an instance of FooDataclass')),
+        ('always', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
+        ('always', FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('always', FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('always', FooDataclassMore(a='hello', b=True, c='more'), Err(r'c\s+Unexpected keyword argument')),
+        ('always', DuplicateDifferent(a='hello', b=True), Err('should be a dictionary or an instance of FooDataclass')),
+        # revalidate_instances='subclass-instances'
+        ('subclass-instances', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclass(a=b'hello', b='true'), {'a': b'hello', 'b': 'true'}),
+        ('subclass-instances', FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclassSame(a=b'hello', b='true'), {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclassMore(a='hello', b=True, c='more'), Err('Unexpected keyword argument')),
+        ('subclass-instances', DuplicateDifferent(a='hello', b=True), Err('dictionary or an instance of FooDataclass')),
+        # revalidate_instances='never'
+        ('never', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
+        ('never', FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('never', FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('never', FooDataclassMore(a='hello', b=True, c='more'), {'a': 'hello', 'b': True, 'c': 'more'}),
+        ('never', FooDataclassMore(a='hello', b='wrong', c='more'), {'a': 'hello', 'b': 'wrong', 'c': 'more'}),
+        ('never', DuplicateDifferent(a='hello', b=True), Err('should be a dictionary or an instance of FooDataclass')),
     ],
 )
 def test_dataclass_subclass(revalidate_instances, input_value, expected):
@@ -308,6 +316,57 @@ def test_dataclass_subclass(revalidate_instances, input_value, expected):
         dc = v.validate_python(input_value)
         assert dataclasses.is_dataclass(dc)
         assert dataclasses.asdict(dc) == expected
+
+
+def test_dataclass_subclass_strict_never_revalidate():
+    v = SchemaValidator(
+        core_schema.dataclass_schema(
+            FooDataclass,
+            core_schema.dataclass_args_schema(
+                'FooDataclass',
+                [
+                    core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+                    core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
+                ],
+            ),
+            revalidate_instances='never',
+            strict=True,
+        )
+    )
+
+    foo = FooDataclass(a='hello', b=True)
+    assert v.validate_python(foo) is foo
+    sub_foo = FooDataclassSame(a='hello', b=True)
+    assert v.validate_python(sub_foo) is sub_foo
+
+    # this fails but that's fine, in realty `ArgsKwargs` should only be used via validate_init
+    with pytest.raises(ValidationError, match='Input should be an instance of FooDataclass'):
+        v.validate_python(ArgsKwargs((), {'a': 'hello', 'b': True}))
+
+
+def test_dataclass_subclass_subclass_revalidate():
+    v = SchemaValidator(
+        core_schema.dataclass_schema(
+            FooDataclass,
+            core_schema.dataclass_args_schema(
+                'FooDataclass',
+                [
+                    core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+                    core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
+                ],
+            ),
+            revalidate_instances='subclass-instances',
+            strict=True,
+        )
+    )
+
+    foo = FooDataclass(a='hello', b=True)
+    assert v.validate_python(foo) is foo
+    sub_foo = FooDataclassSame(a='hello', b='True')
+    sub_foo2 = v.validate_python(sub_foo)
+    assert sub_foo2 is not sub_foo
+    assert type(sub_foo2) is FooDataclass
+    assert dataclasses.asdict(sub_foo2) == dict(a='hello', b=True)
 
 
 def test_dataclass_post_init():
@@ -408,12 +467,12 @@ def test_dataclass_post_init_args_multiple():
 @pytest.mark.parametrize(
     'revalidate_instances,input_value,expected',
     [
-        (True, {'a': b'hello', 'b': 'true'}, {'a': 'hello', 'b': True}),
-        (True, FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (True, FooDataclass(a=b'hello', b='true'), {'a': 'hello', 'b': True}),
-        (False, {'a': b'hello', 'b': 'true'}, {'a': 'hello', 'b': True}),
-        (False, FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (False, FooDataclass(a=b'hello', b='true'), {'a': b'hello', 'b': 'true'}),
+        ('always', {'a': b'hello', 'b': 'true'}, {'a': 'hello', 'b': True}),
+        ('always', FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('always', FooDataclass(a=b'hello', b='true'), {'a': 'hello', 'b': True}),
+        ('never', {'a': b'hello', 'b': 'true'}, {'a': 'hello', 'b': True}),
+        ('never', FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('never', FooDataclass(a=b'hello', b='true'), {'a': b'hello', 'b': 'true'}),
     ],
 )
 def test_dataclass_exact_validation(revalidate_instances, input_value, expected):
