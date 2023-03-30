@@ -171,17 +171,21 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
 
 
 class GenerateSchema:
-    __slots__ = 'arbitrary_types', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions'
+    __slots__ = '_arbitrary_types_stack', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions'
 
     def __init__(
         self, arbitrary_types: bool, types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None = None
     ):
-        self.arbitrary_types = arbitrary_types
+        self._arbitrary_types_stack: list[bool] = [arbitrary_types]  # we need a stack for recursing into child models
         self.types_namespace = types_namespace
         self.typevars_map = typevars_map
 
         self.recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
         self.definitions: dict[str, core_schema.CoreSchema] = {}
+
+    @property
+    def arbitrary_types(self) -> bool:
+        return self._arbitrary_types_stack[-1]
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         schema = self._generate_schema(obj)
@@ -217,10 +221,17 @@ class GenerateSchema:
             [*decorators.field_validator.values(), *decorators.serializer.values(), *decorators.validator.values()],
             fields.keys(),
         )
-        fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
-            {k: self.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
-            return_fields_set=True,
-        )
+        # TODO: we need to do something similar to this for pydantic dataclasses
+        #   This should be straightfoward once we expose the pydantic config on the dataclass;
+        #   I have done this in my PR for dataclasses JSON schema
+        self._arbitrary_types_stack.append(cls.model_config['arbitrary_types_allowed'])
+        try:
+            fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
+                {k: self.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
+                return_fields_set=True,
+            )
+        finally:
+            self._arbitrary_types_stack.pop()
         inner_schema = apply_validators(fields_schema, decorators.root_validator.values())
 
         inner_schema = consolidate_refs(inner_schema)

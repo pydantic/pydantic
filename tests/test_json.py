@@ -329,9 +329,6 @@ def test_custom_encode_fallback_basemodel():
     class Bar(BaseModel):
         foo: Foo
 
-        # TODO: I think this shouldn't be necessary...:
-        model_config = ConfigDict(arbitrary_types_allowed=True)
-
     assert Bar(foo=Foo(x=MyExoticType())).model_dump_json() == '{"foo":{"x":"exo"}}'
 
 
