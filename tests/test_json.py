@@ -1,8 +1,9 @@
 import re
 
 import pytest
+from dirty_equals import IsList
 
-from pydantic_core import SchemaValidator, ValidationError, to_json
+from pydantic_core import PydanticSerializationError, SchemaValidator, ValidationError, to_json, to_jsonable_python
 
 from .conftest import Err
 
@@ -184,8 +185,9 @@ class Foobar:
 def test_to_json():
     assert to_json([1, 2]) == b'[1,2]'
     assert to_json([1, 2], indent=2) == b'[\n  1,\n  2\n]'
+    assert to_json([1, b'x']) == b'[1,"x"]'
 
-    with pytest.raises(ValueError, match='Unable to serialize unknown type:'):
+    with pytest.raises(PydanticSerializationError, match=r'Unable to serialize unknown type: <.+\.Foobar'):
         to_json(Foobar())
 
     assert to_json(Foobar(), serialize_unknown=True) == b'"Foobar.__str__"'
@@ -193,3 +195,15 @@ def test_to_json():
     # kwargs required
     with pytest.raises(TypeError, match=r'to_json\(\) takes 1 positional arguments but 2 were given'):
         to_json([1, 2], 2)
+
+
+def test_to_jsonable_python():
+    assert to_jsonable_python([1, 2]) == [1, 2]
+    assert to_jsonable_python({1, 2}) == IsList(1, 2, check_order=False)
+    assert to_jsonable_python([1, b'x']) == [1, 'x']
+    assert to_jsonable_python([0, 1, 2, 3, 4], exclude={1, 3}) == [0, 2, 4]
+
+    with pytest.raises(PydanticSerializationError, match=r'Unable to serialize unknown type: <.+\.Foobar'):
+        to_jsonable_python(Foobar())
+
+    assert to_jsonable_python(Foobar(), serialize_unknown=True) == 'Foobar.__str__'
