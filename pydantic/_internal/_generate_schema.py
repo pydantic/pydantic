@@ -201,7 +201,9 @@ class GenerateSchema:
         CoreMetadataHandler(schema).combine_modify_js_functions(modify_js_function)
 
         if 'ref' in schema:
-            self.definitions[schema['ref']] = schema
+            # definitions and definition-ref schemas don't have 'ref', causing the type error ignored on the next line
+            schema_ref = schema['ref']  # type: ignore[typeddict-item]
+            self.definitions[schema_ref] = schema
 
         return schema
 
