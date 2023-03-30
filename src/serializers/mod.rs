@@ -9,7 +9,8 @@ use crate::validators::SelfValidator;
 
 use config::SerializationConfig;
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
-use extra::{CollectWarnings, Extra, SerMode, SerRecursionGuard};
+pub(crate) use extra::Extra;
+use extra::{CollectWarnings, SerMode, SerRecursionGuard};
 pub use shared::CombinedSerializer;
 use shared::{to_json_bytes, BuildSerializer, TypeSerializer};
 
@@ -78,6 +79,7 @@ impl SchemaSerializer {
             round_trip,
             &self.config,
             &rec_guard,
+            None,
         );
         let v = self.serializer.to_python(value, include, exclude, &extra)?;
         warnings.final_check(py)?;
@@ -113,6 +115,7 @@ impl SchemaSerializer {
             round_trip,
             &self.config,
             &rec_guard,
+            None,
         );
         let bytes = to_json_bytes(
             value,
@@ -156,6 +159,8 @@ impl SchemaSerializer {
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
+#[pyo3(signature = (value, *, indent = None, include = None, exclude = None, exclude_none = false, round_trip = false,
+    timedelta_mode = None, bytes_mode = None, serialize_unknown = false))]
 pub fn to_json(
     py: Python,
     value: &PyAny,
@@ -166,6 +171,7 @@ pub fn to_json(
     round_trip: Option<bool>,
     timedelta_mode: Option<&str>,
     bytes_mode: Option<&str>,
+    serialize_unknown: Option<bool>,
 ) -> PyResult<PyObject> {
     let warnings = CollectWarnings::new(None);
     let rec_guard = SerRecursionGuard::default();
@@ -182,10 +188,49 @@ pub fn to_json(
         round_trip,
         &config,
         &rec_guard,
+        serialize_unknown,
     );
     let serializer = type_serializers::any::AnySerializer::default().into();
     let bytes = to_json_bytes(value, &serializer, include, exclude, &extra, indent, 1024)?;
     warnings.final_check(py)?;
     let py_bytes = PyBytes::new(py, &bytes);
     Ok(py_bytes.into())
+}
+
+/// this is ugly, but would be much better if extra could be stored in `GeneralSerializeContext`
+/// then `GeneralSerializeContext` got a `serialize_infer` method, but I couldn't get it to work
+pub(crate) struct GeneralSerializeContext {
+    warnings: CollectWarnings,
+    rec_guard: SerRecursionGuard,
+    config: SerializationConfig,
+}
+
+impl GeneralSerializeContext {
+    pub fn new() -> Self {
+        let warnings = CollectWarnings::new(None);
+        let rec_guard = SerRecursionGuard::default();
+        let config = SerializationConfig::from_args(None, None).unwrap();
+        Self {
+            warnings,
+            rec_guard,
+            config,
+        }
+    }
+
+    pub fn extra<'py>(&'py self, py: Python<'py>, serialize_unknown: bool) -> Extra<'py> {
+        Extra::new(
+            py,
+            &SerMode::Json,
+            &[],
+            None,
+            &self.warnings,
+            None,
+            None,
+            None,
+            None,
+            &self.config,
+            &self.rec_guard,
+            Some(serialize_unknown),
+        )
+    }
 }
