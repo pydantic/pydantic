@@ -20,7 +20,7 @@ def test_serialize_decorator_always():
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
     assert MyModel(x=1234).model_dump(mode='json') == {'x': '1,234'}
-    assert MyModel(x=1234).model_dump_json() == b'{"x":"1,234"}'
+    assert MyModel(x=1234).model_dump_json() == '{"x":"1,234"}'
     m = MyModel(x=None)
     # can't use v:, on None, hence error
     error_msg = (
@@ -43,7 +43,7 @@ def test_serialize_decorator_json():
 
     assert MyModel(x=1234).model_dump() == {'x': 1234}
     assert MyModel(x=1234).model_dump(mode='json') == {'x': '1,234'}
-    assert MyModel(x=1234).model_dump_json() == b'{"x":"1,234"}'
+    assert MyModel(x=1234).model_dump_json() == '{"x":"1,234"}'
 
 
 def test_serialize_decorator_unless_none():
@@ -58,8 +58,8 @@ def test_serialize_decorator_unless_none():
     assert MyModel(x=None).model_dump() == {'x': None}
     assert MyModel(x=1234).model_dump(mode='json') == {'x': '1,234'}
     assert MyModel(x=None).model_dump(mode='json') == {'x': None}
-    assert MyModel(x=1234).model_dump_json() == b'{"x":"1,234"}'
-    assert MyModel(x=None).model_dump_json() == b'{"x":null}'
+    assert MyModel(x=1234).model_dump_json() == '{"x":"1,234"}'
+    assert MyModel(x=None).model_dump_json() == '{"x":null}'
 
 
 def test_annotated_customisation():
@@ -84,7 +84,7 @@ def test_annotated_customisation():
     m = MyModel(x='1,000')
     assert m.x == 1000
     assert m.model_dump(mode='json') == {'x': '1,000'}
-    assert m.model_dump_json() == b'{"x":"1,000"}'
+    assert m.model_dump_json() == '{"x":"1,000"}'
 
 
 def test_serialize_valid_signatures():
@@ -125,7 +125,7 @@ def test_serialize_valid_signatures():
         'f3': '3,000',
         'f4': '4,000',
     }
-    assert m.model_dump_json() == b'{"f1":"1,000","f2":"2,000","f3":"3,000","f4":"4,000"}'
+    assert m.model_dump_json() == '{"f1":"1,000","f2":"2,000","f3":"3,000","f4":"4,000"}'
 
 
 def test_invalid_signature_no_params() -> None:

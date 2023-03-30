@@ -1704,7 +1704,7 @@ def test_exclude_none():
 
     m = MyModel(b=3)
     assert m.model_dump(exclude_none=True) == {'b': 3}
-    assert m.model_dump_json(exclude_none=True) == b'{"b":3}'
+    assert m.model_dump_json(exclude_none=True) == '{"b":3}'
 
 
 def test_exclude_none_recursive():
