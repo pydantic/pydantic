@@ -2,7 +2,7 @@ import re
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError, to_json
 
 from .conftest import Err
 
@@ -174,3 +174,22 @@ def test_json_invalid():
             'ctx': {'error': 'trailing comma at line 3 column 3'},
         }
     ]
+
+
+class Foobar:
+    def __str__(self):
+        return 'Foobar.__str__'
+
+
+def test_to_json():
+    assert to_json([1, 2]) == b'[1,2]'
+    assert to_json([1, 2], indent=2) == b'[\n  1,\n  2\n]'
+
+    with pytest.raises(ValueError, match='Unable to serialize unknown type:'):
+        to_json(Foobar())
+
+    assert to_json(Foobar(), serialize_unknown=True) == b'"Foobar.__str__"'
+
+    # kwargs required
+    with pytest.raises(TypeError, match=r'to_json\(\) takes 1 positional arguments but 2 were given'):
+        to_json([1, 2], 2)
