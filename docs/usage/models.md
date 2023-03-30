@@ -698,7 +698,7 @@ Here is an example using `GenericModel` to create an easily-reused HTTP response
 ```py test="xfail - needs always/validate default support"
 from typing import Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, ValidationError, validator_function
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 DataT = TypeVar('DataT')
 
@@ -715,13 +715,13 @@ class DataModel(BaseModel):
 
 class Response(BaseModel, Generic[DataT]):
     data: Optional[DataT]
-    error: Optional[Error]
+    error: Optional[Error] = Field(always=True)
 
-    @validator_function('error', always=True)
-    def check_consistency(cls, v, values):
-        if v is not None and values['data'] is not None:
+    @field_validator('error')
+    def check_consistency(cls, v, info):
+        if v is not None and info.data['data'] is not None:
             raise ValueError('must not provide both data and error')
-        if v is None and values.get('data') is None:
+        if v is None and info.data.get('data') is None:
             raise ValueError('must provide data or error')
         return v
 
@@ -959,8 +959,8 @@ print(BarModel.model_fields.keys())
 
 You can also add validators by passing a dict to the `__validators__` argument.
 
-```py test="xfail create_model validators"
-from pydantic import ValidationError, create_model, validator
+```py rewrite_assert="false"
+from pydantic import ValidationError, create_model, field_validator
 
 
 def username_alphanumeric(cls, v):
@@ -968,17 +968,23 @@ def username_alphanumeric(cls, v):
     return v
 
 
-validators = {'username_validator': validator('username')(username_alphanumeric)}
+validators = {'username_validator': field_validator('username')(username_alphanumeric)}
 
 UserModel = create_model('UserModel', username=(str, ...), __validators__=validators)
 
 user = UserModel(username='scolvin')
 print(user)
+#> username='scolvin'
 
 try:
     UserModel(username='scolvi%n')
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for UserModel
+    username
+      Assertion failed, must be alphanumeric [type=assertion_error, input_value='scolvi%n', input_type=str]
+    """
 ```
 
 ## Model creation from `NamedTuple` or `TypedDict`
@@ -989,10 +995,10 @@ For this _pydantic_ provides `create_model_from_namedtuple` and `create_model_fr
 Those methods have the exact same keyword arguments as `create_model`.
 
 
-```py test="xfail need Validator to replace create_model_from_typeddict"
+```py
 from typing_extensions import TypedDict
 
-from pydantic import ValidationError, create_model_from_typeddict
+from pydantic import ValidationError, Validator
 
 
 class User(TypedDict):
@@ -1000,17 +1006,21 @@ class User(TypedDict):
     id: int
 
 
-class Config:
-    extra = 'forbid'
-
-
-UserM = create_model_from_typeddict(User, __config__=Config)
-print(repr(UserM(name=123, id='3')))
+UserValdiator = Validator(User)
+print(repr(UserValdiator(dict(name='Fred', id='3'))))
+#> {'name': 'Fred', 'id': 3}
 
 try:
-    UserM(name=123, id='3', other='no')
+    UserValdiator(dict(name='Fred', id='wrong', other='no'))
 except ValidationError as e:
     print(e)
+    """
+    2 validation errors for typed-dict
+    id
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
+    other
+      Extra inputs are not permitted [type=extra_forbidden, input_value='no', input_type=str]
+    """
 ```
 
 ## Custom Root Types
