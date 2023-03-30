@@ -179,7 +179,13 @@ pub(crate) fn infer_to_python_known(
                 }
                 PyList::new(py, items).into_py(py)
             }
-            ObType::Unknown => return Err(unknown_type_error(value)),
+            ObType::Unknown => {
+                return if extra.serialize_unknown {
+                    Ok(serialize_unknown(value).into_py(py))
+                } else {
+                    Err(unknown_type_error(value))
+                };
+            }
         },
         _ => match ob_type {
             ObType::Tuple => {

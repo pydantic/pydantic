@@ -108,6 +108,17 @@ def to_json(
     bytes_mode: Literal['utf8', 'base64'] = 'utf8',
     serialize_unknown: bool = False,
 ) -> bytes: ...
+def to_jsonable_python(
+    value: Any,
+    *,
+    include: IncEx = None,
+    exclude: IncEx = None,
+    exclude_none: bool = False,
+    round_trip: bool = False,
+    timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
+    bytes_mode: Literal['utf8', 'base64'] = 'utf8',
+    serialize_unknown: bool = False,
+) -> Any: ...
 
 class Url:
     @property
