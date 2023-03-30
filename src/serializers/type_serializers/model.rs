@@ -47,7 +47,7 @@ impl BuildSerializer for ModelSerializer {
 impl ModelSerializer {
     fn allow_value(&self, value: &PyAny, extra: &Extra) -> PyResult<bool> {
         match extra.check {
-            SerCheck::Strict => value.get_type().eq(self.class.as_ref(value.py())),
+            SerCheck::Strict => Ok(value.get_type().is(self.class.as_ref(value.py()))),
             SerCheck::Lax => value.is_instance(self.class.as_ref(value.py())),
             SerCheck::None => value.hasattr(intern!(value.py(), "__dict__")),
         }

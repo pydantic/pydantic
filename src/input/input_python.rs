@@ -98,8 +98,8 @@ impl<'a> Input<'a> for PyAny {
         self.is_none()
     }
 
-    fn get_attr(&self, name: &PyString) -> Option<&PyAny> {
-        self.getattr(name).ok()
+    fn input_get_attr(&self, name: &PyString) -> Option<PyResult<&PyAny>> {
+        Some(self.getattr(name))
     }
 
     fn input_is_instance(&self, class: &PyAny, _json_mask: u8) -> PyResult<bool> {
@@ -110,22 +110,18 @@ impl<'a> Input<'a> for PyAny {
         Ok(result == 1)
     }
 
-    fn is_exact_instance(&self, class: &PyType) -> PyResult<bool> {
-        self.get_type().eq(class)
+    fn is_exact_instance(&self, class: &PyType) -> bool {
+        self.get_type().is(class)
+    }
+
+    fn is_python(&self) -> bool {
+        true
     }
 
     fn input_is_subclass(&self, class: &PyType) -> PyResult<bool> {
         match self.downcast::<PyType>() {
             Ok(py_type) => py_type.is_subclass(class),
             Err(_) => Ok(false),
-        }
-    }
-
-    fn maybe_subclass_dict(&self, class: &PyType) -> PyResult<&Self> {
-        if matches!(self.is_instance(class), Ok(true)) {
-            self.getattr(intern!(self.py(), "__dict__"))
-        } else {
-            Ok(self)
         }
     }
 
