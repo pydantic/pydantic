@@ -40,24 +40,23 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     fn is_none(&self) -> bool;
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn get_attr(&self, _name: &PyString) -> Option<&PyAny> {
+    fn input_get_attr(&self, _name: &PyString) -> Option<PyResult<&PyAny>> {
         None
     }
 
     // input_ prefix to differentiate from the function on PyAny
     fn input_is_instance(&self, class: &PyAny, json_mask: u8) -> PyResult<bool>;
 
-    fn is_exact_instance(&self, _class: &PyType) -> PyResult<bool> {
-        Ok(false)
+    fn is_exact_instance(&self, _class: &PyType) -> bool {
+        false
+    }
+
+    fn is_python(&self) -> bool {
+        false
     }
 
     fn input_is_subclass(&self, _class: &PyType) -> PyResult<bool> {
         Ok(false)
-    }
-
-    // if the input is a subclass of `_class`, return `input.__dict__`, used on dataclasses
-    fn maybe_subclass_dict(&self, _class: &PyType) -> PyResult<&Self> {
-        Ok(self)
     }
 
     fn input_as_url(&self) -> Option<PyUrl> {
