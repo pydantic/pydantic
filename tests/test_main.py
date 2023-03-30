@@ -96,7 +96,7 @@ def test_ultra_simple_repr(UltraSimpleModel):
     assert repr(m.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.model_dump() == {'a': 10.2, 'b': 10}
-    assert m.model_dump_json() == b'{"a":10.2,"b":10}'
+    assert m.model_dump_json() == '{"a":10.2,"b":10}'
     assert str(m) == 'a=10.2 b=10'
 
 
@@ -111,7 +111,7 @@ def test_default_factory_field():
     assert str(m) == 'a=1'
     assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
-    assert m.model_dump_json() == b'{"a":1}'
+    assert m.model_dump_json() == '{"a":1}'
 
 
 def test_comparing(UltraSimpleModel):

@@ -161,7 +161,7 @@ class FooBarModel(BaseModel):
 
 m = FooBarModel(foo=datetime(2032, 6, 1, 12, 13, 14), bar={'whatever': 123})
 print(m.model_dump_json())
-#> b'{"foo":"2032-06-01T12:13:14","bar":{"whatever":123}}'
+#> {"foo":"2032-06-01T12:13:14","bar":{"whatever":123}}
 ```
 
 ### `json_encoders`
@@ -189,7 +189,7 @@ m = WithCustomEncoders(
     dt=datetime(2032, 6, 1, tzinfo=timezone.utc), diff=timedelta(hours=100)
 )
 print(m.model_dump_json())
-#> b'{"dt":1969660800.0,"diff":"P4DT14400S"}'
+#> {"dt":1969660800.0,"diff":"P4DT14400S"}
 ```
 
 By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
@@ -282,7 +282,7 @@ class FooModel(BaseModel):
 
 m = FooModel(date=300)
 print(m.model_dump_json())
-#> b'{"date":"2023-10-28"}'
+#> {"date":"2023-10-28"}
 ```
 
 ## `pickle.dumps(model)`
