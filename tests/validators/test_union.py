@@ -194,7 +194,7 @@ def test_nullable_via_union():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('hello')
     assert exc_info.value.errors() == [
-        {'type': 'none_required', 'loc': ('none',), 'msg': 'Input should be None/null', 'input': 'hello'},
+        {'type': 'none_required', 'loc': ('none',), 'msg': 'Input should be None', 'input': 'hello'},
         {
             'type': 'int_parsing',
             'loc': ('int',),

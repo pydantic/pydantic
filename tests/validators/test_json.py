@@ -88,12 +88,12 @@ def test_any_python(input_value, expected):
     [
         ('[1]', [1]),
         ('[1, 2, 3, "4"]', [1, 2, 3, 4]),
-        ('44', Err('Input should be a valid list/array [type=list_type, input_value=44, input_type=int')),
-        ('"x"', Err("Input should be a valid list/array [type=list_type, input_value='x', input_type=str")),
+        ('44', Err(r'Input should be a valid (list|array) \[type=list_type, input_value=44, input_type=int')),
+        ('"x"', Err(r"Input should be a valid (list|array) \[type=list_type, input_value='x', input_type=str")),
         (
             '[1, 2, 3, "err"]',
             Err(
-                'Input should be a valid integer, unable to parse string as an integer [type=int_parsing,',
+                r'Input should be a valid integer, unable to parse string as an integer \[type=int_parsing,',
                 [
                     {
                         'type': 'int_parsing',
@@ -109,7 +109,7 @@ def test_any_python(input_value, expected):
 def test_list_int(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json(core_schema.json_schema(core_schema.list_schema(core_schema.int_schema())))
     if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
+        with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_test(input_value)
 
         if expected.errors is not None:

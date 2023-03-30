@@ -10,7 +10,7 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
-use crate::errors::{LocItem, ValError, ValResult, ValidationError};
+use crate::errors::{ErrorMode, LocItem, ValError, ValResult, ValidationError};
 use crate::input::Input;
 use crate::questions::{Answers, Question};
 use crate::recursion_guard::RecursionGuard;
@@ -108,7 +108,7 @@ impl SchemaValidator {
         self_instance: Option<&PyAny>,
     ) -> PyResult<PyObject> {
         let r = self._validate(py, input, strict, context, self_instance);
-        r.map_err(|e| self.prepare_validation_err(py, e))
+        r.map_err(|e| self.prepare_validation_err(py, e, ErrorMode::Python))
     }
 
     #[pyo3(signature = (input, *, strict=None, context=None, self_instance=None))]
@@ -140,9 +140,9 @@ impl SchemaValidator {
         match input.parse_json() {
             Ok(input) => {
                 let r = self._validate(py, &input, strict, context, self_instance);
-                r.map_err(|e| self.prepare_validation_err(py, e))
+                r.map_err(|e| self.prepare_validation_err(py, e, ErrorMode::Json))
             }
-            Err(err) => Err(self.prepare_validation_err(py, err)),
+            Err(err) => Err(self.prepare_validation_err(py, err, ErrorMode::Json)),
         }
     }
 
@@ -187,7 +187,7 @@ impl SchemaValidator {
         let guard = &mut RecursionGuard::default();
         self.validator
             .validate_assignment(py, obj, field_name, field_value, &extra, &self.slots, guard)
-            .map_err(|e| self.prepare_validation_err(py, e))
+            .map_err(|e| self.prepare_validation_err(py, e, ErrorMode::Python))
     }
 
     pub fn __repr__(&self, py: Python) -> String {
@@ -237,8 +237,8 @@ impl SchemaValidator {
         )
     }
 
-    fn prepare_validation_err(&self, py: Python, error: ValError) -> PyErr {
-        ValidationError::from_val_error(py, self.title.clone_ref(py), error, None)
+    fn prepare_validation_err(&self, py: Python, error: ValError, error_mode: ErrorMode) -> PyErr {
+        ValidationError::from_val_error(py, self.title.clone_ref(py), error_mode, error, None)
     }
 }
 

@@ -7,7 +7,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{intern, FromPyObject, PyErrArguments};
 
-use crate::errors::ValError;
+use crate::errors::{ErrorMode, ValError};
 use crate::ValidationError;
 
 pub trait SchemaDict<'py> {
@@ -140,7 +140,7 @@ impl SchemaError {
         match error {
             ValError::LineErrors(raw_errors) => {
                 let line_errors = raw_errors.into_iter().map(|e| e.into_py(py)).collect();
-                let validation_error = ValidationError::new(line_errors, "Schema".to_object(py));
+                let validation_error = ValidationError::new(line_errors, "Schema".to_object(py), ErrorMode::Python);
                 let schema_error = SchemaError(SchemaErrorEnum::ValidationError(validation_error));
                 match Py::new(py, schema_error) {
                     Ok(err) => PyErr::from_value(err.into_ref(py)),

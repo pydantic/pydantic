@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::fmt;
 
 use ahash::AHashMap;
-use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
@@ -13,6 +13,23 @@ use strum_macros::EnumIter;
 
 use super::PydanticCustomError;
 
+#[derive(Clone, Debug)]
+pub enum ErrorMode {
+    Python,
+    Json,
+}
+
+impl ErrorMode {
+    pub fn from_raw(s: Option<&str>) -> PyResult<Self> {
+        match s {
+            None => Ok(Self::Python),
+            Some("python") => Ok(Self::Python),
+            Some("json") => Ok(Self::Json),
+            Some(s) => py_err!(PyValueError; "Invalid error mode: {}", s),
+        }
+    }
+}
+
 #[pyfunction]
 pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
     let mut errors: Vec<&PyDict> = Vec::with_capacity(100);
@@ -20,8 +37,8 @@ pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
         if !matches!(error_type, ErrorType::CustomError { .. }) {
             let d = PyDict::new(py);
             d.set_item("type", error_type.to_string())?;
-            d.set_item("message_template", error_type.message_template())?;
-            d.set_item("example_message", error_type.render_message(py)?)?;
+            d.set_item("message_template", error_type.message_template_python())?;
+            d.set_item("example_message", error_type.render_message(py, &ErrorMode::Python)?)?;
             d.set_item("example_context", error_type.py_dict(py)?)?;
             errors.push(d);
         }
@@ -39,91 +56,65 @@ pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
 pub enum ErrorType {
     // ---------------------
     // Assignment errors
-    #[strum(message = "Object has no attribute '{attribute}'")]
     NoSuchAttribute {
         attribute: String,
     },
     // ---------------------
     // JSON errors
-    #[strum(message = "Invalid JSON: {error}")]
     JsonInvalid {
         error: String,
     },
-    #[strum(message = "JSON input should be string, bytes or bytearray")]
     JsonType,
     // ---------------------
     // recursion error
-    #[strum(message = "Recursion error - cyclic reference detected")]
     RecursionLoop,
     // ---------------------
     // typed dict specific errors
-    #[strum(message = "Input should be a valid dictionary or instance to extract fields from")]
     DictAttributesType,
-    #[strum(message = "Field required")]
     Missing,
-    #[strum(message = "Field is frozen")]
     FrozenField,
-    #[strum(message = "Instance is frozen")]
     FrozenInstance,
-    #[strum(message = "Extra inputs are not permitted")]
     ExtraForbidden,
-    #[strum(message = "Keys should be strings")]
     InvalidKey,
-    #[strum(message = "Error extracting attribute: {error}")]
     GetAttributeError {
         error: String,
     },
     // ---------------------
     // model class specific errors
-    #[strum(message = "Input should be an instance of {class_name}")]
     ModelClassType {
         class_name: String,
     },
     // ---------------------
     // None errors
-    #[strum(message = "Input should be None/null")]
     NoneRequired,
     // boolean errors
-    #[strum(message = "Input should be a valid boolean")]
     Bool,
     // ---------------------
     // generic comparison errors - used for all inequality comparisons except int and float which have their
     // own type, bounds arguments are Strings so they can be created from any type
-    #[strum(message = "Input should be greater than {gt}")]
     GreaterThan {
         gt: Number,
     },
-    #[strum(message = "Input should be greater than or equal to {ge}")]
     GreaterThanEqual {
         ge: Number,
     },
-    #[strum(message = "Input should be less than {lt}")]
     LessThan {
         lt: Number,
     },
-    #[strum(message = "Input should be less than or equal to {le}")]
     LessThanEqual {
         le: Number,
     },
-    #[strum(message = "Input should be a multiple of {multiple_of}")]
     MultipleOf {
         multiple_of: Number,
     },
-    #[strum(message = "Input should be a finite number")]
     FiniteNumber,
     // ---------------------
     // generic length errors - used for everything with a length except strings and bytes which need custom messages
-    #[strum(
-        message = "{field_type} should have at least {min_length} item{expected_plural} after validation, not {actual_length}"
-    )]
     TooShort {
         field_type: String,
         min_length: usize,
         actual_length: usize,
     },
-    #[strum(
-        message = "{field_type} should have at most {max_length} item{expected_plural} after validation, not {actual_length}"
-    )]
     TooLong {
         field_type: String,
         max_length: usize,
@@ -131,91 +122,66 @@ pub enum ErrorType {
     },
     // ---------------------
     // generic collection and iteration errors
-    #[strum(message = "Input should be iterable")]
     IterableType,
-    #[strum(message = "Error iterating over object, error: {error}")]
     IterationError {
         error: String,
     },
     // ---------------------
     // string errors
-    #[strum(message = "Input should be a valid string")]
     StringType,
-    #[strum(message = "Input should be a string, not an instance of a subclass of str")]
     StringSubType,
-    #[strum(message = "Input should be a valid string, unable to parse raw data as a unicode string")]
     StringUnicode,
-    #[strum(message = "String should have at least {min_length} characters")]
     StringTooShort {
         min_length: usize,
     },
-    #[strum(message = "String should have at most {max_length} characters")]
     StringTooLong {
         max_length: usize,
     },
-    #[strum(message = "String should match pattern '{pattern}'")]
     StringPatternMismatch {
         pattern: String,
     },
     // ---------------------
     // dict errors
-    #[strum(message = "Input should be a valid dictionary")]
     DictType,
-    #[strum(message = "Input should be a valid mapping, error: {error}")]
     MappingType {
         error: Cow<'static, str>,
     },
     // ---------------------
     // list errors
-    #[strum(message = "Input should be a valid list/array")]
     ListType,
     // ---------------------
     // tuple errors
-    #[strum(message = "Input should be a valid tuple")]
     TupleType,
     // ---------------------
     // set errors
-    #[strum(message = "Input should be a valid set")]
     SetType,
     // ---------------------
     // bool errors
-    #[strum(message = "Input should be a valid boolean")]
     BoolType,
-    #[strum(message = "Input should be a valid boolean, unable to interpret input")]
     BoolParsing,
     // ---------------------
     // int errors
-    #[strum(message = "Input should be a valid integer")]
     IntType,
-    #[strum(message = "Input should be a valid integer, unable to parse string as an integer")]
     IntParsing,
-    #[strum(message = "Input should be a valid integer, got a number with a fractional part")]
     IntFromFloat,
     // ---------------------
     // float errors
-    #[strum(message = "Input should be a valid number")]
     FloatType,
-    #[strum(message = "Input should be a valid number, unable to parse string as an number")]
     FloatParsing,
     // ---------------------
     // bytes errors
-    #[strum(message = "Input should be a valid bytes")]
     BytesType,
-    #[strum(message = "Data should have at least {min_length} bytes")]
     BytesTooShort {
         min_length: usize,
     },
-    #[strum(message = "Data should have at most {max_length} bytes")]
     BytesTooLong {
         max_length: usize,
     },
     // ---------------------
     // python errors from functions
-    #[strum(message = "Value error, {error}")]
     ValueError {
         error: String,
     },
-    #[strum(message = "Assertion failed, {error}")]
     AssertionError {
         error: String,
     },
@@ -225,145 +191,105 @@ pub enum ErrorType {
     },
     // ---------------------
     // literals
-    #[strum(message = "Input should be {expected}")]
     LiteralError {
         expected: String,
     },
     // ---------------------
     // date errors
-    #[strum(message = "Input should be a valid date")]
     DateType,
-    #[strum(message = "Input should be a valid date in the format YYYY-MM-DD, {error}")]
     DateParsing {
         error: Cow<'static, str>,
     },
-    #[strum(message = "Input should be a valid date or datetime, {error}")]
     DateFromDatetimeParsing {
         error: String,
     },
-    #[strum(message = "Datetimes provided to dates should have zero time - e.g. be exact dates")]
     DateFromDatetimeInexact,
-    #[strum(message = "Date should be in the past")]
     DatePast,
-    #[strum(message = "Date should be in the future")]
     DateFuture,
     // ---------------------
     // date errors
-    #[strum(message = "Input should be a valid time")]
     TimeType,
-    #[strum(message = "Input should be in a valid time format, {error}")]
     TimeParsing {
         error: Cow<'static, str>,
     },
     // ---------------------
     // datetime errors
-    #[strum(message = "Input should be a valid datetime")]
     DatetimeType,
-    #[strum(message = "Input should be a valid datetime, {error}")]
     DatetimeParsing {
         error: Cow<'static, str>,
     },
-    #[strum(message = "Invalid datetime object, got {error}")]
     DatetimeObjectInvalid {
         error: String,
     },
-    #[strum(message = "Datetime should be in the past")]
     DatetimePast,
-    #[strum(message = "Datetime should be in the future")]
     DatetimeFuture,
-    #[strum(message = "Datetime should have timezone info")]
     DatetimeAware,
-    #[strum(message = "Datetime should not have timezone info")]
     DatetimeNaive,
     // ---------------------
     // timedelta errors
-    #[strum(message = "Input should be a valid timedelta")]
     TimeDeltaType,
-    #[strum(message = "Input should be a valid timedelta, {error}")]
     TimeDeltaParsing {
         error: Cow<'static, str>,
     },
     // ---------------------
     // frozenset errors
-    #[strum(message = "Input should be a valid frozenset")]
     FrozenSetType,
     // ---------------------
     // introspection types - e.g. isinstance, callable
-    #[strum(message = "Input should be an instance of {class}")]
     IsInstanceOf {
         class: String,
     },
-    #[strum(message = "Input should be a subclass of {class}")]
     IsSubclassOf {
         class: String,
     },
-    #[strum(message = "Input should be callable")]
     CallableType,
     // ---------------------
     // union errors
-    #[strum(
-        message = "Input tag '{tag}' found using {discriminator} does not match any of the expected tags: {expected_tags}"
-    )]
     UnionTagInvalid {
         discriminator: String,
         tag: String,
         expected_tags: String,
     },
-    #[strum(message = "Unable to extract tag using discriminator {discriminator}")]
     UnionTagNotFound {
         discriminator: String,
     },
     // ---------------------
     // argument errors
-    #[strum(message = "Arguments must be a tuple, list or a dictionary")]
     ArgumentsType,
-    #[strum(message = "Positional arguments must be a list or tuple")]
     PositionalArgumentsType,
-    #[strum(message = "Keyword arguments must be a dictionary")]
     KeywordArgumentsType,
-    #[strum(message = "Unexpected keyword argument")]
     UnexpectedKeywordArgument,
-    #[strum(message = "Missing required keyword argument")]
     MissingKeywordArgument,
-    #[strum(message = "Unexpected positional argument")]
     UnexpectedPositionalArgument,
-    #[strum(message = "Missing required positional argument")]
     MissingPositionalArgument,
-    #[strum(message = "Got multiple values for argument")]
     MultipleArgumentValues,
     // ---------------------
     // dataclass errors (we don't talk about ArgsKwargs here for simplicity)
-    #[strum(message = "Input should be a dictionary or an instance of {dataclass_name}")]
     DataclassType {
         dataclass_name: String,
     },
     // ---------------------
     // URL errors
-    #[strum(message = "URL input should be a string or URL")]
     UrlType,
-    #[strum(message = "Input should be a valid URL, {error}")]
     UrlParsing {
         // would be great if this could be a static cow, waiting for https://github.com/servo/rust-url/issues/801
         error: String,
     },
-    #[strum(message = "Input violated strict URL syntax rules, {error}")]
     UrlSyntaxViolation {
         error: Cow<'static, str>,
     },
-    #[strum(message = "URL should have at most {max_length} characters")]
     UrlTooLong {
         max_length: usize,
     },
-    #[strum(message = "URL scheme should be {expected_schemes}")]
     UrlScheme {
         expected_schemes: String,
     },
 }
 
 macro_rules! render {
-    ($error_type:ident, $($value:ident),* $(,)?) => {
+    ($template:ident, $($value:ident),* $(,)?) => {
         Ok(
-            $error_type.message_template()
+            $template
             $(
                 .replace(concat!("{", stringify!($value), "}"), $value)
             )*
@@ -372,9 +298,9 @@ macro_rules! render {
 }
 
 macro_rules! to_string_render {
-    ($error_type:ident, $($value:ident),* $(,)?) => {
+    ($template:ident, $($value:ident),* $(,)?) => {
         Ok(
-            $error_type.message_template()
+            $template
             $(
                 .replace(concat!("{", stringify!($value), "}"), &$value.to_string())
             )*
@@ -506,6 +432,106 @@ impl ErrorType {
         }
     }
 
+    pub fn message_template_python(&self) -> &'static str {
+        match self {
+            Self::NoSuchAttribute {..} => "Object has no attribute '{attribute}'",
+            Self::JsonInvalid {..} => "Invalid JSON: {error}",
+            Self::JsonType => "JSON input should be string, bytes or bytearray",
+            Self::RecursionLoop => "Recursion error - cyclic reference detected",
+            Self::DictAttributesType => "Input should be a valid dictionary or instance to extract fields from",
+            Self::Missing => "Field required",
+            Self::FrozenField => "Field is frozen",
+            Self::FrozenInstance => "Instance is frozen",
+            Self::ExtraForbidden => "Extra inputs are not permitted",
+            Self::InvalidKey => "Keys should be strings",
+            Self::GetAttributeError {..} => "Error extracting attribute: {error}",
+            Self::ModelClassType {..} => "Input should be an instance of {class_name}",
+            Self::NoneRequired => "Input should be None",
+            Self::Bool => "Input should be a valid boolean",
+            Self::GreaterThan {..} => "Input should be greater than {gt}",
+            Self::GreaterThanEqual {..} => "Input should be greater than or equal to {ge}",
+            Self::LessThan {..} => "Input should be less than {lt}",
+            Self::LessThanEqual {..} => "Input should be less than or equal to {le}",
+            Self::MultipleOf {..} => "Input should be a multiple of {multiple_of}",
+            Self::FiniteNumber => "Input should be a finite number",
+            Self::TooShort {..} => "{field_type} should have at least {min_length} item{expected_plural} after validation, not {actual_length}",
+            Self::TooLong {..} => "{field_type} should have at most {max_length} item{expected_plural} after validation, not {actual_length}",
+            Self::IterableType => "Input should be iterable",
+            Self::IterationError {..} => "Error iterating over object, error: {error}",
+            Self::StringType => "Input should be a valid string",
+            Self::StringSubType => "Input should be a string, not an instance of a subclass of str",
+            Self::StringUnicode => "Input should be a valid string, unable to parse raw data as a unicode string",
+            Self::StringTooShort {..} => "String should have at least {min_length} characters",
+            Self::StringTooLong {..} => "String should have at most {max_length} characters",
+            Self::StringPatternMismatch {..} => "String should match pattern '{pattern}'",
+            Self::DictType => "Input should be a valid dictionary",
+            Self::MappingType {..} => "Input should be a valid mapping, error: {error}",
+            Self::ListType => "Input should be a valid list",
+            Self::TupleType => "Input should be a valid tuple",
+            Self::SetType => "Input should be a valid set",
+            Self::BoolType => "Input should be a valid boolean",
+            Self::BoolParsing => "Input should be a valid boolean, unable to interpret input",
+            Self::IntType => "Input should be a valid integer",
+            Self::IntParsing => "Input should be a valid integer, unable to parse string as an integer",
+            Self::IntFromFloat => "Input should be a valid integer, got a number with a fractional part",
+            Self::FloatType => "Input should be a valid number",
+            Self::FloatParsing => "Input should be a valid number, unable to parse string as an number",
+            Self::BytesType => "Input should be a valid bytes",
+            Self::BytesTooShort {..} => "Data should have at least {min_length} bytes",
+            Self::BytesTooLong {..} => "Data should have at most {max_length} bytes",
+            Self::ValueError {..} => "Value error, {error}",
+            Self::AssertionError {..} => "Assertion failed, {error}",
+            Self::CustomError {..} => "",  // custom errors are handled separately
+            Self::LiteralError {..} => "Input should be {expected}",
+            Self::DateType => "Input should be a valid date",
+            Self::DateParsing {..} => "Input should be a valid date in the format YYYY-MM-DD, {error}",
+            Self::DateFromDatetimeParsing {..} => "Input should be a valid date or datetime, {error}",
+            Self::DateFromDatetimeInexact => "Datetimes provided to dates should have zero time - e.g. be exact dates",
+            Self::DatePast => "Date should be in the past",
+            Self::DateFuture => "Date should be in the future",
+            Self::TimeType => "Input should be a valid time",
+            Self::TimeParsing {..} => "Input should be in a valid time format, {error}",
+            Self::DatetimeType => "Input should be a valid datetime",
+            Self::DatetimeParsing {..} => "Input should be a valid datetime, {error}",
+            Self::DatetimeObjectInvalid {..} => "Invalid datetime object, got {error}",
+            Self::DatetimePast => "Datetime should be in the past",
+            Self::DatetimeFuture => "Datetime should be in the future",
+            Self::DatetimeAware => "Datetime should have timezone info",
+            Self::DatetimeNaive => "Datetime should not have timezone info",
+            Self::TimeDeltaType => "Input should be a valid timedelta",
+            Self::TimeDeltaParsing {..} => "Input should be a valid timedelta, {error}",
+            Self::FrozenSetType => "Input should be a valid frozenset",
+            Self::IsInstanceOf {..} => "Input should be an instance of {class}",
+            Self::IsSubclassOf {..} => "Input should be a subclass of {class}",
+            Self::CallableType => "Input should be callable",
+            Self::UnionTagInvalid {..} => "Input tag '{tag}' found using {discriminator} does not match any of the expected tags: {expected_tags}",
+            Self::UnionTagNotFound {..} => "Unable to extract tag using discriminator {discriminator}",
+            Self::ArgumentsType => "Arguments must be a tuple, list or a dictionary",
+            Self::PositionalArgumentsType => "Positional arguments must be a list or tuple",
+            Self::KeywordArgumentsType => "Keyword arguments must be a dictionary",
+            Self::UnexpectedKeywordArgument => "Unexpected keyword argument",
+            Self::MissingKeywordArgument => "Missing required keyword argument",
+            Self::UnexpectedPositionalArgument => "Unexpected positional argument",
+            Self::MissingPositionalArgument => "Missing required positional argument",
+            Self::MultipleArgumentValues => "Got multiple values for argument",
+            Self::DataclassType {..} => "Input should be a dictionary or an instance of {dataclass_name}",
+            Self::UrlType => "URL input should be a string or URL",
+            Self::UrlParsing {..} => "Input should be a valid URL, {error}",
+            Self::UrlSyntaxViolation {..} => "Input violated strict URL syntax rules, {error}",
+            Self::UrlTooLong {..} => "URL should have at most {max_length} characters",
+            Self::UrlScheme {..} => "URL scheme should be {expected_schemes}",
+        }
+    }
+
+    pub fn message_template_json(&self) -> &'static str {
+        match self {
+            Self::NoneRequired => "Input should be null",
+            Self::ListType => "Input should be a valid array",
+            Self::DataclassType { .. } => "Input should be an object",
+            _ => self.message_template_python(),
+        }
+    }
+
     pub fn valid_type(py: Python, error_type: &str) -> bool {
         let lookup = ERROR_TYPE_LOOKUP.get_or_init(py, Self::build_lookup);
         lookup.contains_key(error_type)
@@ -521,10 +547,6 @@ impl ErrorType {
         lookup
     }
 
-    pub fn message_template(&self) -> &'static str {
-        self.get_message().expect("ErrorType with no strum message")
-    }
-
     pub fn type_string(&self) -> String {
         match self {
             Self::CustomError { value_error } => value_error.error_type(),
@@ -532,24 +554,28 @@ impl ErrorType {
         }
     }
 
-    pub fn render_message(&self, py: Python) -> PyResult<String> {
+    pub fn render_message(&self, py: Python, error_mode: &ErrorMode) -> PyResult<String> {
+        let tmpl = match error_mode {
+            ErrorMode::Python => self.message_template_python(),
+            ErrorMode::Json => self.message_template_json(),
+        };
         match self {
-            Self::NoSuchAttribute { attribute } => render!(self, attribute),
-            Self::JsonInvalid { error } => render!(self, error),
-            Self::GetAttributeError { error } => render!(self, error),
-            Self::ModelClassType { class_name } => render!(self, class_name),
-            Self::GreaterThan { gt } => to_string_render!(self, gt),
-            Self::GreaterThanEqual { ge } => to_string_render!(self, ge),
-            Self::LessThan { lt } => to_string_render!(self, lt),
-            Self::LessThanEqual { le } => to_string_render!(self, le),
-            Self::MultipleOf { multiple_of } => to_string_render!(self, multiple_of),
+            Self::NoSuchAttribute { attribute } => render!(tmpl, attribute),
+            Self::JsonInvalid { error } => render!(tmpl, error),
+            Self::GetAttributeError { error } => render!(tmpl, error),
+            Self::ModelClassType { class_name } => render!(tmpl, class_name),
+            Self::GreaterThan { gt } => to_string_render!(tmpl, gt),
+            Self::GreaterThanEqual { ge } => to_string_render!(tmpl, ge),
+            Self::LessThan { lt } => to_string_render!(tmpl, lt),
+            Self::LessThanEqual { le } => to_string_render!(tmpl, le),
+            Self::MultipleOf { multiple_of } => to_string_render!(tmpl, multiple_of),
             Self::TooShort {
                 field_type,
                 min_length,
                 actual_length,
             } => {
                 let expected_plural = plural_s(min_length);
-                to_string_render!(self, field_type, min_length, actual_length, expected_plural)
+                to_string_render!(tmpl, field_type, min_length, actual_length, expected_plural)
             }
             Self::TooLong {
                 field_type,
@@ -557,39 +583,39 @@ impl ErrorType {
                 actual_length,
             } => {
                 let expected_plural = plural_s(max_length);
-                to_string_render!(self, field_type, max_length, actual_length, expected_plural)
+                to_string_render!(tmpl, field_type, max_length, actual_length, expected_plural)
             }
-            Self::IterationError { error } => render!(self, error),
-            Self::StringTooShort { min_length } => to_string_render!(self, min_length),
-            Self::StringTooLong { max_length } => to_string_render!(self, max_length),
-            Self::StringPatternMismatch { pattern } => render!(self, pattern),
-            Self::MappingType { error } => render!(self, error),
-            Self::BytesTooShort { min_length } => to_string_render!(self, min_length),
-            Self::BytesTooLong { max_length } => to_string_render!(self, max_length),
-            Self::ValueError { error } => render!(self, error),
-            Self::AssertionError { error } => render!(self, error),
+            Self::IterationError { error } => render!(tmpl, error),
+            Self::StringTooShort { min_length } => to_string_render!(tmpl, min_length),
+            Self::StringTooLong { max_length } => to_string_render!(tmpl, max_length),
+            Self::StringPatternMismatch { pattern } => render!(tmpl, pattern),
+            Self::MappingType { error } => render!(tmpl, error),
+            Self::BytesTooShort { min_length } => to_string_render!(tmpl, min_length),
+            Self::BytesTooLong { max_length } => to_string_render!(tmpl, max_length),
+            Self::ValueError { error } => render!(tmpl, error),
+            Self::AssertionError { error } => render!(tmpl, error),
             Self::CustomError { value_error } => value_error.message(py),
-            Self::LiteralError { expected } => render!(self, expected),
-            Self::DateParsing { error } => render!(self, error),
-            Self::DateFromDatetimeParsing { error } => render!(self, error),
-            Self::TimeParsing { error } => render!(self, error),
-            Self::DatetimeParsing { error } => render!(self, error),
-            Self::DatetimeObjectInvalid { error } => render!(self, error),
-            Self::TimeDeltaParsing { error } => render!(self, error),
-            Self::IsInstanceOf { class } => render!(self, class),
-            Self::IsSubclassOf { class } => render!(self, class),
+            Self::LiteralError { expected } => render!(tmpl, expected),
+            Self::DateParsing { error } => render!(tmpl, error),
+            Self::DateFromDatetimeParsing { error } => render!(tmpl, error),
+            Self::TimeParsing { error } => render!(tmpl, error),
+            Self::DatetimeParsing { error } => render!(tmpl, error),
+            Self::DatetimeObjectInvalid { error } => render!(tmpl, error),
+            Self::TimeDeltaParsing { error } => render!(tmpl, error),
+            Self::IsInstanceOf { class } => render!(tmpl, class),
+            Self::IsSubclassOf { class } => render!(tmpl, class),
             Self::UnionTagInvalid {
                 discriminator,
                 tag,
                 expected_tags,
-            } => render!(self, discriminator, tag, expected_tags),
-            Self::UnionTagNotFound { discriminator } => render!(self, discriminator),
-            Self::DataclassType { dataclass_name } => render!(self, dataclass_name),
-            Self::UrlParsing { error } => render!(self, error),
-            Self::UrlSyntaxViolation { error } => render!(self, error),
-            Self::UrlTooLong { max_length } => to_string_render!(self, max_length),
-            Self::UrlScheme { expected_schemes } => render!(self, expected_schemes),
-            _ => Ok(self.message_template().to_string()),
+            } => render!(tmpl, discriminator, tag, expected_tags),
+            Self::UnionTagNotFound { discriminator } => render!(tmpl, discriminator),
+            Self::DataclassType { dataclass_name } => render!(tmpl, dataclass_name),
+            Self::UrlParsing { error } => render!(tmpl, error),
+            Self::UrlSyntaxViolation { error } => render!(tmpl, error),
+            Self::UrlTooLong { max_length } => to_string_render!(tmpl, max_length),
+            Self::UrlScheme { expected_schemes } => render!(tmpl, expected_schemes),
+            _ => Ok(tmpl.to_string()),
         }
     }
 
