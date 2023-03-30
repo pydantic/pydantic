@@ -13,7 +13,7 @@ use crate::recursion_guard::RecursionGuard;
 use crate::validators::function::convert_err;
 
 use super::arguments::{json_get, json_slice, py_get, py_slice};
-use super::model::{create_class, force_setattr};
+use super::model::{create_class, force_setattr, Revalidate};
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
@@ -362,7 +362,7 @@ pub struct DataclassValidator {
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
     post_init: Option<Py<PyString>>,
-    revalidate: bool,
+    revalidate: Revalidate,
     name: String,
 }
 
@@ -391,7 +391,11 @@ impl BuildValidator for DataclassValidator {
             validator: Box::new(validator),
             class: class.into(),
             post_init,
-            revalidate: schema_or_config_same(schema, config, intern!(py, "revalidate_instances"))?.unwrap_or(false),
+            revalidate: Revalidate::from_str(schema_or_config_same(
+                schema,
+                config,
+                intern!(py, "revalidate_instances"),
+            )?)?,
             // as with model, get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
@@ -417,23 +421,14 @@ impl Validator for DataclassValidator {
         // same logic as on models
         let class = self.class.as_ref(py);
         if input.input_is_instance(class, 0)? {
-            if input.is_exact_instance(class) || !extra.strict.unwrap_or(self.strict) {
-                if self.revalidate {
-                    let input = input.input_get_attr(intern!(py, "__dict__")).unwrap()?;
-                    let val_output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
-                    let dc = create_class(self.class.as_ref(py))?;
-                    self.set_dict_call(py, dc.as_ref(py), val_output, input)?;
-                    Ok(dc)
-                } else {
-                    Ok(input.to_object(py))
-                }
+            if self.revalidate.should_revalidate(input, class) {
+                let input = input.input_get_attr(intern!(py, "__dict__")).unwrap()?;
+                let val_output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
+                let dc = create_class(self.class.as_ref(py))?;
+                self.set_dict_call(py, dc.as_ref(py), val_output, input)?;
+                Ok(dc)
             } else {
-                Err(ValError::new(
-                    ErrorType::ModelClassType {
-                        class_name: self.get_name().to_string(),
-                    },
-                    input,
-                ))
+                Ok(input.to_object(py))
             }
         } else if extra.strict.unwrap_or(self.strict) && input.is_python() {
             Err(ValError::new(

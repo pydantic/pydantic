@@ -17,9 +17,36 @@ use super::function::convert_err;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
 
 #[derive(Debug, Clone)]
+pub(super) enum Revalidate {
+    Always,
+    Never,
+    SubclassInstances,
+}
+
+impl Revalidate {
+    pub fn from_str(s: Option<&str>) -> PyResult<Self> {
+        match s {
+            None => Ok(Self::Never),
+            Some("always") => Ok(Self::Always),
+            Some("never") => Ok(Self::Never),
+            Some("subclass-instances") => Ok(Self::SubclassInstances),
+            Some(s) => py_err!("Invalid revalidate_instances value: {}", s),
+        }
+    }
+
+    pub fn should_revalidate<'d>(&self, input: &impl Input<'d>, class: &PyType) -> bool {
+        match self {
+            Revalidate::Always => true,
+            Revalidate::Never => false,
+            Revalidate::SubclassInstances => !input.is_exact_instance(class),
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct ModelValidator {
     strict: bool,
-    revalidate: bool,
+    revalidate: Revalidate,
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
     post_init: Option<Py<PyString>>,
@@ -50,7 +77,11 @@ impl BuildValidator for ModelValidator {
             // we don't use is_strict here since we don't want validation to be strict in this case if
             // `config.strict` is set, only if this specific field is strict
             strict: schema.get_as(intern!(py, "strict"))?.unwrap_or(false),
-            revalidate: schema_or_config_same(schema, config, intern!(py, "revalidate_instances"))?.unwrap_or(false),
+            revalidate: Revalidate::from_str(schema_or_config_same(
+                schema,
+                config,
+                intern!(py, "revalidate_instances"),
+            )?)?,
             validator: Box::new(validator),
             class: class.into(),
             post_init: schema
@@ -93,35 +124,24 @@ impl Validator for ModelValidator {
         let class = self.class.as_ref(py);
         // mask 0 so JSON is input is never true here
         if input.input_is_instance(class, 0)? {
-            // if the input is an exact instance OR we're not in strict mode, then progress
-            // which means raise ane error in the case of an instance of a subclass in strict mode
-            if input.is_exact_instance(class) || !extra.strict.unwrap_or(self.strict) {
-                if self.revalidate {
-                    let fields_set = match input.input_get_attr(intern!(py, "__fields_set__")) {
-                        Some(fields_set) => fields_set.ok(),
-                        None => None,
-                    };
-                    // get dict here so from_attributes logic doesn't apply
-                    let dict = input.input_get_attr(intern!(py, "__dict__")).unwrap()?;
-                    let output = self.validator.validate(py, dict, extra, slots, recursion_guard)?;
-                    let instance = if self.expect_fields_set {
-                        let (model_dict, validation_fields_set): (&PyAny, &PyAny) = output.extract(py)?;
-                        let fields_set = fields_set.unwrap_or(validation_fields_set);
-                        self.create_class(model_dict, Some(fields_set))?
-                    } else {
-                        self.create_class(output.as_ref(py), fields_set)?
-                    };
-                    self.call_post_init(py, instance, input, extra)
+            if self.revalidate.should_revalidate(input, class) {
+                let fields_set = match input.input_get_attr(intern!(py, "__fields_set__")) {
+                    Some(fields_set) => fields_set.ok(),
+                    None => None,
+                };
+                // get dict here so from_attributes logic doesn't apply
+                let dict = input.input_get_attr(intern!(py, "__dict__")).unwrap()?;
+                let output = self.validator.validate(py, dict, extra, slots, recursion_guard)?;
+                let instance = if self.expect_fields_set {
+                    let (model_dict, validation_fields_set): (&PyAny, &PyAny) = output.extract(py)?;
+                    let fields_set = fields_set.unwrap_or(validation_fields_set);
+                    self.create_class(model_dict, Some(fields_set))?
                 } else {
-                    Ok(input.to_object(py))
-                }
+                    self.create_class(output.as_ref(py), fields_set)?
+                };
+                self.call_post_init(py, instance, input, extra)
             } else {
-                Err(ValError::new(
-                    ErrorType::ModelClassType {
-                        class_name: self.get_name().to_string(),
-                    },
-                    input,
-                ))
+                Ok(input.to_object(py))
             }
         } else if extra.strict.unwrap_or(self.strict) && input.is_python() {
             Err(ValError::new(
