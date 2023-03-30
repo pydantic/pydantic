@@ -1,15 +1,13 @@
 import re
 from types import SimpleNamespace
-from typing import Any, Dict, List, TypeVar
+from typing import Dict, List
 
 import pytest
 
 from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, root_validator
 
-Model = TypeVar('Model', bound=BaseModel)
 
-
-def deprecated_from_orm(model_typ: type[Model], obj: Any) -> Model:
+def deprecated_from_orm(model_type, obj):
     with pytest.warns(
         DeprecationWarning,
         match=re.escape(
@@ -17,7 +15,7 @@ def deprecated_from_orm(model_typ: type[Model], obj: Any) -> Model:
             'and use `model_validate` instead.'
         ),
     ):
-        return model_typ.from_orm(obj)
+        return model_type.from_orm(obj)
 
 
 @pytest.mark.xfail(reason='working on V2')
