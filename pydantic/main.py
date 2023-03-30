@@ -295,7 +295,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
-    ) -> bytes:
+    ) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
         """
@@ -310,7 +310,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
-        )
+        ).decode()
 
     @classmethod
     def from_orm(cls: type[Model], obj: Any) -> Model:

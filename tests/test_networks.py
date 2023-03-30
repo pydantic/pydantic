@@ -652,7 +652,7 @@ def test_json():
         v: HttpUrl
 
     m = Model(v='http://foo@example.net')
-    assert m.model_dump_json() == b'{"v":"http://foo@example.net/"}'
+    assert m.model_dump_json() == '{"v":"http://foo@example.net/"}'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
