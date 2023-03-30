@@ -270,15 +270,7 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
     return hints
 
 
-if sys.version_info >= (3, 10):
-    get_type_hints = typing.get_type_hints
-
-else:
-    """
-    For older versions of python, we have a custom implementation of `get_type_hints` which is a close as possible to
-    the implementation in CPython 3.10.8.
-    """
-    fr_has_is_class = True
+if sys.version_info < (3, 9):
 
     def ForwardRefWrapper(arg: Any, is_argument: bool = True, *, is_class: bool = False) -> typing.ForwardRef:
         """
@@ -299,6 +291,18 @@ else:
         except TypeError:
             fr_has_is_class = False
             return typing.ForwardRef(arg, is_argument)
+
+    ForwardRef = ForwardRefWrapper  # noqa F811
+
+if sys.version_info >= (3, 10):
+    get_type_hints = typing.get_type_hints
+
+else:
+    """
+    For older versions of python, we have a custom implementation of `get_type_hints` which is a close as possible to
+    the implementation in CPython 3.10.8.
+    """
+    fr_has_is_class = True
 
     @typing.no_type_check
     def get_type_hints(  # noqa: C901
@@ -376,8 +380,7 @@ else:
                     if value is None:
                         value = type(None)
                     if isinstance(value, str):
-                        # CHANGED IN PYDANTIC, using ForwardRefWrapper
-                        value = ForwardRefWrapper(value, is_argument=False, is_class=True)
+                        value = ForwardRef(value, is_argument=False, is_class=True)
 
                     value = typing._eval_type(value, base_globals, base_locals)
                     hints[name] = value
@@ -412,8 +415,7 @@ else:
                 # class-level forward refs were handled above, this must be either
                 # a module-level annotation or a function argument annotation
 
-                # CHANGED IN PYDANTIC, using ForwardRefWrapper
-                value = ForwardRefWrapper(
+                value = ForwardRef(
                     value,
                     is_argument=not isinstance(obj, types.ModuleType),
                     is_class=False,
