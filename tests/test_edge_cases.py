@@ -2149,10 +2149,10 @@ def test_iter_coverage():
         x: int = 1
         y: str = 'a'
 
-    # with pytest.warns(
-    #     DeprecationWarning, match='This private method is only used for `BaseModel.copy`, which is deprecated'
-    # ):
-    assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
+    with pytest.warns(
+        DeprecationWarning, match='The private method `_iter` will be removed and should no longer be used.'
+    ):
+        assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
 
 @pytest.mark.xfail(reason='field frozen')

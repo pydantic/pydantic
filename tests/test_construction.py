@@ -386,8 +386,11 @@ def test_copy_update_exclude():
             'd': {'a': 'ax', 'b': 'bx'},
         }
 
-    assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False) == {'c', 'd'}
-    assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}
+    with pytest.warns(
+        DeprecationWarning, match='The private method `_calculate_keys` will be removed and should no longer be used.'
+    ):
+        assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False) == {'c', 'd'}
+        assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}
 
 
 def test_shallow_copy_modify(copy_method):

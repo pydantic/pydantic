@@ -8,7 +8,6 @@ import typing
 import warnings
 from abc import ABCMeta
 from copy import copy, deepcopy
-from enum import Enum
 from functools import partial
 from inspect import getdoc
 from pathlib import Path
@@ -28,9 +27,10 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
-from ._internal._deprecated import _parse as _deprecated_parse
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
+from .deprecated import copy_internals as _deprecated_copy_internals
+from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
@@ -731,7 +731,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
         values = dict(
-            self._iter(to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False),
+            _deprecated_copy_internals._iter(
+                self, to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False
+            ),
             **(update or {}),
         )
 
@@ -745,7 +747,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        return self._copy_and_set_values(values, fields_set, deep=deep)
+        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, deep=deep)
 
     @classmethod
     def schema(
@@ -782,191 +784,29 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
         cls.model_rebuild(force=True, types_namespace=localns)
 
-    # Deprecated: This private method is only used for `BaseModel.copy`, which is deprecated
-    def _iter(
-        self,
-        to_dict: bool = False,
-        by_alias: bool = False,
-        include: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-    ) -> TupleGenerator:
-        # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
-        # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
-        if exclude is not None:
-            exclude = _utils.ValueItems.merge(
-                {k: v.exclude for k, v in self.model_fields.items() if v.exclude is not None}, exclude
-            )
+    def _iter(self, *args: Any, **kwargs: Any) -> Any:
+        warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
+        return _deprecated_copy_internals._iter(self, *args, **kwargs)
 
-        if include is not None:
-            include = _utils.ValueItems.merge(
-                {k: v.include for k, v in self.model_fields.items()}, include, intersect=True
-            )
-
-        allowed_keys = self._calculate_keys(
-            include=include, exclude=exclude, exclude_unset=exclude_unset  # type: ignore
+    def _copy_and_set_values(self, *args: Any, **kwargs: Any) -> Any:
+        warnings.warn(
+            'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
+            DeprecationWarning,
         )
-        if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
-            # huge boost for plain _iter()
-            yield from self.__dict__.items()
-            return
+        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)
 
-        value_exclude = _utils.ValueItems(self, exclude) if exclude is not None else None
-        value_include = _utils.ValueItems(self, include) if include is not None else None
-
-        for field_key, v in self.__dict__.items():
-            if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
-                continue
-
-            if exclude_defaults:
-                try:
-                    field = self.model_fields[field_key]
-                except KeyError:
-                    pass
-                else:
-                    if not field.is_required() and field.default == v:
-                        continue
-
-            if by_alias and field_key in self.model_fields:
-                dict_key = self.model_fields[field_key].alias or field_key
-            else:
-                dict_key = field_key
-
-            if to_dict or value_include or value_exclude:
-                v = self._get_value(  # type: ignore[no-untyped-call]
-                    v,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    include=value_include and value_include.for_element(field_key),
-                    exclude=value_exclude and value_exclude.for_element(field_key),
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    exclude_none=exclude_none,
-                )
-            yield dict_key, v
-
-    # Deprecated: This private method is only used for `BaseModel.copy`, which is deprecated
-    def _copy_and_set_values(
-        self: Model, values: typing.Dict[str, Any], fields_set: set[str], *, deep: bool  # noqa UP006
-    ) -> Model:
-        if deep:
-            # chances of having empty dict here are quite low for using smart_deepcopy
-            values = deepcopy(values)
-
-        cls = self.__class__
-        m = cls.__new__(cls)
-        _object_setattr(m, '__dict__', values)
-        _object_setattr(m, '__fields_set__', fields_set)
-        for name in self.__private_attributes__:
-            value = getattr(self, name, Undefined)
-            if value is not Undefined:
-                if deep:
-                    value = deepcopy(value)
-                _object_setattr(m, name, value)
-
-        return m
-
-    # Deprecated: This private method is only used for `BaseModel._iter`, which is deprecated
     @classmethod
-    @typing.no_type_check
-    def _get_value(
-        cls,
-        v: Any,
-        to_dict: bool,
-        by_alias: bool,
-        include: AbstractSetIntStr | MappingIntStrAny | None,
-        exclude: AbstractSetIntStr | MappingIntStrAny | None,
-        exclude_unset: bool,
-        exclude_defaults: bool,
-        exclude_none: bool,
-    ) -> Any:
-        if isinstance(v, BaseModel):
-            if to_dict:
-                return v.model_dump(
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=include,
-                    exclude=exclude,
-                    exclude_none=exclude_none,
-                )
-            else:
-                return v.copy(include=include, exclude=exclude)
+    def _get_value(cls, *args: Any, **kwargs: Any) -> Any:
+        warnings.warn(
+            'The private method  `_get_value` will be removed and should no longer be used.', DeprecationWarning
+        )
+        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)
 
-        value_exclude = _utils.ValueItems(v, exclude) if exclude else None
-        value_include = _utils.ValueItems(v, include) if include else None
-
-        if isinstance(v, dict):
-            return {
-                k_: cls._get_value(
-                    v_,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=value_include and value_include.for_element(k_),
-                    exclude=value_exclude and value_exclude.for_element(k_),
-                    exclude_none=exclude_none,
-                )
-                for k_, v_ in v.items()
-                if (not value_exclude or not value_exclude.is_excluded(k_))
-                and (not value_include or value_include.is_included(k_))
-            }
-
-        elif _utils.sequence_like(v):
-            seq_args = (
-                cls._get_value(
-                    v_,
-                    to_dict=to_dict,
-                    by_alias=by_alias,
-                    exclude_unset=exclude_unset,
-                    exclude_defaults=exclude_defaults,
-                    include=value_include and value_include.for_element(i),
-                    exclude=value_exclude and value_exclude.for_element(i),
-                    exclude_none=exclude_none,
-                )
-                for i, v_ in enumerate(v)
-                if (not value_exclude or not value_exclude.is_excluded(i))
-                and (not value_include or value_include.is_included(i))
-            )
-
-            return v.__class__(*seq_args) if _typing_extra.is_namedtuple(v.__class__) else v.__class__(seq_args)
-
-        elif isinstance(v, Enum) and getattr(cls.model_config, 'use_enum_values', False):
-            return v.value
-
-        else:
-            return v
-
-    # Deprecated: This private method is only used for `BaseModel._iter`, which is deprecated
-    def _calculate_keys(
-        self,
-        include: MappingIntStrAny | None,
-        exclude: MappingIntStrAny | None,
-        exclude_unset: bool,
-        update: typing.Dict[str, Any] | None = None,  # noqa UP006
-    ) -> typing.AbstractSet[str] | None:
-        if include is None and exclude is None and exclude_unset is False:
-            return None
-
-        keys: typing.AbstractSet[str]
-        if exclude_unset:
-            keys = self.__fields_set__.copy()
-        else:
-            keys = self.__dict__.keys()
-
-        if include is not None:
-            keys &= include.keys()
-
-        if update:
-            keys -= update.keys()
-
-        if exclude:
-            keys -= {k for k, v in exclude.items() if _utils.ValueItems.is_true(v)}
-
-        return keys
+    def _calculate_keys(self, *args: Any, **kwargs: Any) -> Any:
+        warnings.warn(
+            'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
+        )
+        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)
 
 
 _base_class_defined = True
