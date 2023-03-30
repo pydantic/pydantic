@@ -267,16 +267,23 @@ class DuplicateDifferent:
 
 
 @pytest.mark.parametrize(
-    'input_value,expected',
+    'revalidate_instances,input_value,expected',
     [
-        ({'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
-        (FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (FooDataclassMore(a='hello', b=True, c='more'), Err(r'c\s+Unexpected keyword argument')),
-        (DuplicateDifferent(a='hello', b=True), Err('Input should be a dictionary or an instance of FooDataclass')),
+        (True, {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
+        (True, FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        (True, FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
+        (True, FooDataclassMore(a='hello', b=True, c='more'), Err(r'c\s+Unexpected keyword argument')),
+        (True, DuplicateDifferent(a='hello', b=True), Err('should be a dictionary or an instance of FooDataclass')),
+        # revalidate_instances=False
+        (False, {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
+        (False, FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        (False, FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
+        (False, FooDataclassMore(a='hello', b=True, c='more'), {'a': 'hello', 'b': True, 'c': 'more'}),
+        (False, FooDataclassMore(a='hello', b='wrong', c='more'), {'a': 'hello', 'b': 'wrong', 'c': 'more'}),
+        (False, DuplicateDifferent(a='hello', b=True), Err('should be a dictionary or an instance of FooDataclass')),
     ],
 )
-def test_dataclass_subclass(input_value, expected):
+def test_dataclass_subclass(revalidate_instances, input_value, expected):
     schema = core_schema.dataclass_schema(
         FooDataclass,
         core_schema.dataclass_args_schema(
@@ -286,12 +293,13 @@ def test_dataclass_subclass(input_value, expected):
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
             ],
         ),
+        revalidate_instances=revalidate_instances,
     )
     v = SchemaValidator(schema)
 
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
-            v.validate_python(input_value)
+            print(v.validate_python(input_value))
 
         # debug(exc_info.value.errors())
         if expected.errors is not None:
@@ -398,14 +406,17 @@ def test_dataclass_post_init_args_multiple():
 
 
 @pytest.mark.parametrize(
-    'input_value,expected',
+    'revalidate_instances,input_value,expected',
     [
-        ({'a': b'hello', 'b': 'true'}, {'a': 'hello', 'b': True}),
-        (FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
-        (FooDataclass(a=b'hello', b='true'), {'a': 'hello', 'b': True}),
+        (True, {'a': b'hello', 'b': 'true'}, {'a': 'hello', 'b': True}),
+        (True, FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        (True, FooDataclass(a=b'hello', b='true'), {'a': 'hello', 'b': True}),
+        (False, {'a': b'hello', 'b': 'true'}, {'a': 'hello', 'b': True}),
+        (False, FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
+        (False, FooDataclass(a=b'hello', b='true'), {'a': b'hello', 'b': 'true'}),
     ],
 )
-def test_dataclass_exact_validation(input_value, expected):
+def test_dataclass_exact_validation(revalidate_instances, input_value, expected):
     schema = core_schema.dataclass_schema(
         FooDataclass,
         core_schema.dataclass_args_schema(
@@ -415,6 +426,7 @@ def test_dataclass_exact_validation(input_value, expected):
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
             ],
         ),
+        revalidate_instances=revalidate_instances,
     )
 
     v = SchemaValidator(schema)
@@ -714,7 +726,7 @@ def test_dataclass_validate_assignment():
     ]
 
     # wrong arguments
-    with pytest.raises(TypeError, match="'field_a' is not a model instance"):
+    with pytest.raises(AttributeError, match="'str' object has no attribute '__dict__'"):
         v.validate_assignment('field_a', 'c', 123)
 
 

@@ -1,11 +1,11 @@
-use pyo3::exceptions::{PyKeyError, PyTypeError};
+use pyo3::exceptions::PyKeyError;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{is_strict, py_err, safe_repr, schema_or_config_same, SchemaDict};
+use crate::build_tools::{is_strict, py_err, schema_or_config_same, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
@@ -291,16 +291,6 @@ impl Validator for DataclassArgsValidator {
         }
     }
 
-    fn get_name(&self) -> &str {
-        &self.validator_name
-    }
-
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        self.fields
-            .iter_mut()
-            .try_for_each(|field| field.validator.complete(build_context))
-    }
-
     fn validate_assignment<'s, 'data: 's>(
         &'s self,
         py: Python<'data>,
@@ -354,6 +344,16 @@ impl Validator for DataclassArgsValidator {
             ))
         }
     }
+
+    fn get_name(&self) -> &str {
+        &self.validator_name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        self.fields
+            .iter_mut()
+            .try_for_each(|field| field.validator.complete(build_context))
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -362,6 +362,7 @@ pub struct DataclassValidator {
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
     post_init: Option<Py<PyString>>,
+    revalidate: bool,
     name: String,
 }
 
@@ -390,6 +391,7 @@ impl BuildValidator for DataclassValidator {
             validator: Box::new(validator),
             class: class.into(),
             post_init,
+            revalidate: schema_or_config_same(schema, config, intern!(py, "revalidate_instances"))?.unwrap_or(false),
             // as with model, get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
@@ -411,14 +413,29 @@ impl Validator for DataclassValidator {
             // in the case that self_instance is Some, we're calling validation from within `BaseModel.__init__`
             return self.validate_init(py, self_instance, input, extra, slots, recursion_guard);
         }
-        let class = self.class.as_ref(py);
 
-        // we only do the is_exact_instance in strict mode
-        // we run validation even if input is an exact class to cover the case where a vanilla dataclass has been
-        // created with invalid types
-        // in theory we could have a flag to skip validation for an exact type in some scenarios, but I'm not sure
-        // that's a good idea
-        if extra.strict.unwrap_or(self.strict) && !input.is_exact_instance(class)? {
+        // same logic as on models
+        let class = self.class.as_ref(py);
+        if input.input_is_instance(class, 0)? {
+            if input.is_exact_instance(class) || !extra.strict.unwrap_or(self.strict) {
+                if self.revalidate {
+                    let input = input.input_get_attr(intern!(py, "__dict__")).unwrap()?;
+                    let val_output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
+                    let dc = create_class(self.class.as_ref(py))?;
+                    self.set_dict_call(py, dc.as_ref(py), val_output, input)?;
+                    Ok(dc)
+                } else {
+                    Ok(input.to_object(py))
+                }
+            } else {
+                Err(ValError::new(
+                    ErrorType::ModelClassType {
+                        class_name: self.get_name().to_string(),
+                    },
+                    input,
+                ))
+            }
+        } else if extra.strict.unwrap_or(self.strict) && input.is_python() {
             Err(ValError::new(
                 ErrorType::ModelClassType {
                     class_name: self.get_name().to_string(),
@@ -426,16 +443,11 @@ impl Validator for DataclassValidator {
                 input,
             ))
         } else {
-            let input = input.maybe_subclass_dict(class)?;
             let val_output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
             let dc = create_class(self.class.as_ref(py))?;
             self.set_dict_call(py, dc.as_ref(py), val_output, input)?;
             Ok(dc)
         }
-    }
-
-    fn get_name(&self) -> &str {
-        &self.name
     }
 
     fn validate_assignment<'s, 'data: 's>(
@@ -448,11 +460,8 @@ impl Validator for DataclassValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let dict_attr = intern!(py, "__dict__");
-        let dict: &PyDict = match obj.get_attr(dict_attr) {
-            Some(v) => v.downcast()?,
-            None => return Err(PyTypeError::new_err(format!("{} is not a model instance", safe_repr(obj))).into()),
-        };
+        let dict_py_str = intern!(py, "__dict__");
+        let dict: &PyDict = obj.getattr(dict_py_str)?.downcast()?;
 
         let new_dict = dict.copy()?;
         new_dict.set_item(field_name, field_value)?;
@@ -461,9 +470,13 @@ impl Validator for DataclassValidator {
             self.validator
                 .validate_assignment(py, new_dict, field_name, field_value, extra, slots, recursion_guard)?;
 
-        force_setattr(py, obj, dict_attr, dc_dict)?;
+        force_setattr(py, obj, dict_py_str, dc_dict)?;
 
         Ok(obj.to_object(py))
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
     }
 }
 
