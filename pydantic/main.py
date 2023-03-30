@@ -152,6 +152,14 @@ class ModelMetaclass(ABCMeta):
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
+    def __subclasscheck__(self, subclass: type[Any]) -> bool:
+        """
+        Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(subclass, '__pydantic_validator__') and super().__instancecheck__(subclass)
+
     def __instancecheck__(self, instance: Any) -> bool:
         """
         Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
