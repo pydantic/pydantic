@@ -1,7 +1,9 @@
+import json
+import re
 from decimal import Decimal
 
 import pytest
-from dirty_equals import IsInstance
+from dirty_equals import HasRepr, IsInstance, IsStr
 
 from pydantic_core import (
     PydanticCustomError,
@@ -409,4 +411,99 @@ def test_error_on_repr():
     )
     assert exc_info.value.errors() == [
         {'type': 'int_type', 'loc': (), 'msg': 'Input should be a valid integer', 'input': IsInstance(BadRepr)}
+    ]
+
+
+def test_error_json():
+    s = SchemaValidator({'type': 'str', 'min_length': 3})
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python('12')
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'string_too_short',
+            'loc': (),
+            'msg': 'String should have at least 3 characters',
+            'input': '12',
+            'ctx': {'min_length': 3},
+        }
+    ]
+    assert json.loads(exc_info.value.json()) == [
+        {
+            'type': 'string_too_short',
+            'loc': [],
+            'msg': 'String should have at least 3 characters',
+            'input': '12',
+            'ctx': {'min_length': 3},
+        }
+    ]
+    assert json.loads(exc_info.value.json(include_context=False)) == [
+        {'type': 'string_too_short', 'loc': [], 'msg': 'String should have at least 3 characters', 'input': '12'}
+    ]
+    assert exc_info.value.json().startswith('[{"type":"string_too_short",')
+    assert exc_info.value.json(indent=2).startswith('[\n  {\n    "type": "string_too_short",')
+
+
+class Foobar:
+    pass
+
+
+class CustomStr:
+    def __str__(self):
+        return 'custom str'
+
+
+def test_error_json_unknown():
+    s = SchemaValidator({'type': 'str'})
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python(Foobar())
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'string_type',
+            'loc': (),
+            'msg': 'Input should be a valid string',
+            'input': HasRepr(IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I)),
+        }
+    ]
+    # insert_assert(json.loads(exc_info.value.json()))
+    assert json.loads(exc_info.value.json()) == [
+        {
+            'type': 'string_type',
+            'loc': [],
+            'msg': 'Input should be a valid string',
+            'input': IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I),
+        }
+    ]
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python(CustomStr())
+    # insert_assert(json.loads(exc_info.value.json()))
+    assert json.loads(exc_info.value.json()) == [
+        {'type': 'string_type', 'loc': [], 'msg': 'Input should be a valid string', 'input': 'custom str'}
+    ]
+
+
+def test_error_json_loc():
+    s = SchemaValidator(
+        core_schema.dict_schema(core_schema.str_schema(), core_schema.list_schema(core_schema.int_schema()))
+    )
+    with pytest.raises(ValidationError) as exc_info:
+        s.validate_python({'a': [0, 1, 'x'], 'b': [0, 'y']})
+
+    # insert_assert(json.loads(exc_info.value.json()))
+    assert json.loads(exc_info.value.json()) == [
+        {
+            'type': 'int_parsing',
+            'loc': ['a', 2],
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        },
+        {
+            'type': 'int_parsing',
+            'loc': ['b', 1],
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'y',
+        },
     ]

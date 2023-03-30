@@ -1,14 +1,19 @@
 use std::fmt;
-use std::fmt::Write;
+use std::fmt::{Display, Write};
+use std::str::from_utf8;
 
 use crate::errors::LocItem;
 use pyo3::exceptions::PyValueError;
 use pyo3::ffi;
 use pyo3::ffi::Py_ssize_t;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList};
+use pyo3::types::{PyDict, PyList, PyString};
+use serde::ser::{Error, SerializeMap, SerializeSeq};
+use serde::{Serialize, Serializer};
+use serde_json::ser::PrettyFormatter;
 
 use crate::build_tools::{py_error_type, safe_repr};
+use crate::serializers::GeneralSerializeContext;
 
 use super::line_error::ValLineError;
 use super::location::Location;
@@ -109,6 +114,40 @@ impl ValidationError {
         }
     }
 
+    pub fn json<'py>(
+        &self,
+        py: Python<'py>,
+        indent: Option<usize>,
+        include_context: Option<bool>,
+    ) -> PyResult<&'py PyString> {
+        let general_ser_context = GeneralSerializeContext::new();
+        let extra = general_ser_context.extra(py, true);
+        let serializer = ValidationErrorSerializer {
+            py,
+            line_errors: &self.line_errors,
+            include_context: include_context.unwrap_or(true),
+            extra: &extra,
+        };
+
+        let writer: Vec<u8> = Vec::with_capacity(self.line_errors.len() * 200);
+        let bytes = match indent {
+            Some(indent) => {
+                let indent = vec![b' '; indent];
+                let formatter = PrettyFormatter::with_indent(&indent);
+                let mut ser = serde_json::Serializer::with_formatter(writer, formatter);
+                serializer.serialize(&mut ser).map_err(json_py_err)?;
+                ser.into_inner()
+            }
+            None => {
+                let mut ser = serde_json::Serializer::new(writer);
+                serializer.serialize(&mut ser).map_err(json_py_err)?;
+                ser.into_inner()
+            }
+        };
+        let s = from_utf8(&bytes).map_err(json_py_err)?;
+        Ok(PyString::new(py, s))
+    }
+
     fn __repr__(&self, py: Python) -> String {
         self.display(py, None)
     }
@@ -206,5 +245,83 @@ impl PyLineError {
         }
         output.push(']');
         Ok(output)
+    }
+}
+
+pub(super) fn json_py_err(error: impl Display) -> PyErr {
+    PyValueError::new_err(format!("Error serializing ValidationError to JSON: {error}"))
+}
+
+pub(super) fn py_err_json<S>(error: PyErr) -> S::Error
+where
+    S: Serializer,
+{
+    S::Error::custom(error.to_string())
+}
+
+struct ValidationErrorSerializer<'py> {
+    py: Python<'py>,
+    line_errors: &'py [PyLineError],
+    include_context: bool,
+    extra: &'py crate::serializers::Extra<'py>,
+}
+
+impl<'py> Serialize for ValidationErrorSerializer<'py> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut seq = serializer.serialize_seq(Some(self.line_errors.len()))?;
+        for line_error in self.line_errors {
+            let line_s = PyLineErrorSerializer {
+                py: self.py,
+                line_error,
+                include_context: self.include_context,
+                extra: self.extra,
+            };
+            seq.serialize_element(&line_s)?;
+        }
+        seq.end()
+    }
+}
+
+struct PyLineErrorSerializer<'py> {
+    py: Python<'py>,
+    line_error: &'py PyLineError,
+    include_context: bool,
+    extra: &'py crate::serializers::Extra<'py>,
+}
+
+impl<'py> Serialize for PyLineErrorSerializer<'py> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let py = self.py;
+        let size = if self.include_context { 5 } else { 4 };
+        let mut map = serializer.serialize_map(Some(size))?;
+
+        map.serialize_entry("type", &self.line_error.error_type.type_string())?;
+
+        map.serialize_entry("loc", &self.line_error.location)?;
+
+        let msg = self
+            .line_error
+            .error_type
+            .render_message(py)
+            .map_err(py_err_json::<S>)?;
+        map.serialize_entry("msg", &msg)?;
+
+        map.serialize_entry(
+            "input",
+            &self.extra.serialize_infer(self.line_error.input_value.as_ref(py)),
+        )?;
+
+        if self.include_context {
+            if let Some(context) = self.line_error.error_type.py_dict(py).map_err(py_err_json::<S>)? {
+                map.serialize_entry("ctx", &self.extra.serialize_infer(context.as_ref(py)))?;
+            }
+        }
+        map.end()
     }
 }

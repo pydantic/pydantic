@@ -3,6 +3,8 @@ use std::fmt;
 
 use pyo3::prelude::*;
 use pyo3::types::PyTuple;
+use serde::ser::SerializeSeq;
+use serde::{Serialize, Serializer};
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
@@ -74,6 +76,18 @@ impl TryFrom<&PyAny> for LocItem {
     }
 }
 
+impl Serialize for LocItem {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::S(s) => serializer.serialize_str(s.as_str()),
+            Self::I(loc) => serializer.serialize_i64(*loc),
+        }
+    }
+}
+
 /// Error locations are represented by a vector of `LocItem`s.
 /// e.g. if the error occurred in the third member of a list called `foo`,
 /// the location would be `["foo", 2]`.
@@ -136,5 +150,23 @@ impl Location {
                 *self = Self::new_some(loc_item);
             }
         };
+    }
+}
+
+impl Serialize for Location {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        match self {
+            Self::Empty => serializer.serialize_seq(Some(0))?.end(),
+            Self::List(loc) => {
+                let mut seq = serializer.serialize_seq(Some(loc.len()))?;
+                for e in loc.iter().rev() {
+                    seq.serialize_element(e)?;
+                }
+                seq.end()
+            }
+        }
     }
 }

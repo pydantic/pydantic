@@ -98,6 +98,7 @@ class SchemaSerializer:
 
 def to_json(
     value: Any,
+    *,
     indent: int | None = None,
     include: IncEx = None,
     exclude: IncEx = None,
@@ -105,6 +106,7 @@ def to_json(
     round_trip: bool = False,
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
     bytes_mode: Literal['utf8', 'base64'] = 'utf8',
+    serialize_unknown: bool = False,
 ) -> bytes: ...
 
 class Url:
@@ -162,6 +164,7 @@ class ValidationError(ValueError):
     def title(self) -> str: ...
     def error_count(self) -> int: ...
     def errors(self, include_context: bool = True) -> 'list[ErrorDetails]': ...
+    def json(self, indent: 'int | None' = None, include_context: bool = False) -> str: ...
 
 class PydanticCustomError(ValueError):
     @property

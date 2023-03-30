@@ -417,7 +417,13 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             }
             seq.end()
         }
-        ObType::Unknown => return Err(py_err_se_err(unknown_type_error(value))),
+        ObType::Unknown => {
+            if extra.serialize_unknown {
+                serializer.serialize_str(&serialize_unknown(value))
+            } else {
+                return Err(py_err_se_err(unknown_type_error(value)));
+            }
+        }
     };
     extra.rec_guard.pop(value_id);
     ser_result
@@ -425,6 +431,16 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
 
 fn unknown_type_error(value: &PyAny) -> PyErr {
     PydanticSerializationError::new_err(format!("Unable to serialize unknown type: {}", safe_repr(value)))
+}
+
+fn serialize_unknown(value: &PyAny) -> Cow<str> {
+    if let Ok(s) = value.str() {
+        s.to_string_lossy()
+    } else if let Ok(name) = value.get_type().name() {
+        format!("<{name} object cannot be serialized to JSON>").into()
+    } else {
+        "<object cannot be serialized to JSON>".into()
+    }
 }
 
 pub(crate) fn infer_json_key<'py>(key: &'py PyAny, extra: &Extra) -> PyResult<Cow<'py, str>> {
@@ -500,6 +516,12 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
             let k = key.getattr(intern!(key.py(), "value"))?;
             infer_json_key(k, extra)
         }
-        ObType::Unknown => Err(unknown_type_error(key)),
+        ObType::Unknown => {
+            if extra.serialize_unknown {
+                Ok(serialize_unknown(key))
+            } else {
+                Err(unknown_type_error(key))
+            }
+        }
     }
 }

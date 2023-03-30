@@ -37,6 +37,7 @@ pub(crate) struct Extra<'a> {
     // it will be None otherwise
     pub model: Option<&'a PyAny>,
     pub field_name: Option<&'a str>,
+    pub serialize_unknown: bool,
 }
 
 impl<'a> Extra<'a> {
@@ -53,6 +54,7 @@ impl<'a> Extra<'a> {
         round_trip: Option<bool>,
         config: &'a SerializationConfig,
         rec_guard: &'a SerRecursionGuard,
+        serialize_unknown: Option<bool>,
     ) -> Self {
         Self {
             mode,
@@ -69,7 +71,12 @@ impl<'a> Extra<'a> {
             check: SerCheck::None,
             model: None,
             field_name: None,
+            serialize_unknown: serialize_unknown.unwrap_or(false),
         }
+    }
+
+    pub fn serialize_infer<'py>(&'py self, value: &'py PyAny) -> super::infer::SerializeInfer<'py> {
+        super::infer::SerializeInfer::new(value, None, None, self)
     }
 }
 
@@ -106,6 +113,7 @@ pub(crate) struct ExtraOwned {
     check: SerCheck,
     model: Option<Py<PyAny>>,
     field_name: Option<String>,
+    serialize_unknown: bool,
 }
 
 impl ExtraOwned {
@@ -124,6 +132,7 @@ impl ExtraOwned {
             check: extra.check,
             model: extra.model.map(|v| v.into()),
             field_name: extra.field_name.map(|v| v.to_string()),
+            serialize_unknown: extra.serialize_unknown,
         }
     }
 
@@ -143,6 +152,7 @@ impl ExtraOwned {
             check: self.check,
             model: self.model.as_ref().map(|m| m.as_ref(py)),
             field_name: self.field_name.as_ref().map(|n| n.as_ref()),
+            serialize_unknown: self.serialize_unknown,
         }
     }
 }
