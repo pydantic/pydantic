@@ -31,8 +31,8 @@ class CoreConfig(TypedDict, total=False):
     typed_dict_total: bool  # default: True
     # used on typed-dicts and tagged union keys
     from_attributes: bool
-    # whether instances of models and dataclasses (including subclass instances) should re-validate, default False
-    revalidate_instances: bool
+    # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
+    revalidate_instances: Literal['always', 'never', 'subclass-instances']
     # whether to validate default values during validation, default False
     validate_default: bool
     # used on typed-dicts and arguments
@@ -2563,7 +2563,7 @@ class ModelSchema(TypedDict, total=False):
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
     post_init: str
-    revalidate_instances: bool
+    revalidate_instances: Literal['always', 'never', 'subclass-instances']  # default: 'never'
     strict: bool
     frozen: bool
     config: CoreConfig
@@ -2577,7 +2577,7 @@ def model_schema(
     schema: CoreSchema,
     *,
     post_init: str | None = None,
-    revalidate_instances: bool | None = None,
+    revalidate_instances: Literal['always', 'never', 'subclass-instances'] | None = None,
     strict: bool | None = None,
     frozen: bool | None = None,
     config: CoreConfig | None = None,
@@ -2616,7 +2616,7 @@ def model_schema(
         schema: The schema to use for the model
         post_init: The call after init to use for the model
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
-          should re-validate defaults to config.revalidate_instances, else False
+          should re-validate defaults to config.revalidate_instances, else 'never'
         strict: Whether the model is strict
         frozen: Whether the model is frozen
         config: The config to use for the model
@@ -2762,7 +2762,7 @@ class DataclassSchema(TypedDict, total=False):
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
     post_init: bool  # default: False
-    revalidate_instances: bool  # default: False
+    revalidate_instances: Literal['always', 'never', 'subclass-instances']  # default: 'never'
     strict: bool  # default: False
     ref: str
     metadata: Any
@@ -2774,7 +2774,7 @@ def dataclass_schema(
     schema: CoreSchema,
     *,
     post_init: bool | None = None,
-    revalidate_instances: bool | None = None,
+    revalidate_instances: Literal['always', 'never', 'subclass-instances'] | None = None,
     strict: bool | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -2789,7 +2789,7 @@ def dataclass_schema(
         schema: The schema to use for the dataclass fields
         post_init: Whether to call `__post_init__` after validation
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
-          should re-validate defaults to config.revalidate_instances, else False
+          should re-validate defaults to config.revalidate_instances, else 'never'
         strict: Whether to require an exact instance of `cls`
         ref: See [TODO] for details
         metadata: See [TODO] for details

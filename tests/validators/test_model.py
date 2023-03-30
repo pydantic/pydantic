@@ -3,7 +3,6 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, List, Set, Tuple
 
 import pytest
-from dirty_equals import HasRepr, IsStr
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
@@ -520,7 +519,7 @@ def test_model_class_instance_subclass_revalidate():
                 'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
             },
             'post_init': 'model_post_init',
-            'revalidate_instances': True,
+            'revalidate_instances': 'always',
         }
     )
 
@@ -563,7 +562,7 @@ def test_model_class_strict():
             },
         }
     )
-    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: false'
+    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: Never'
     m = MyModel()
     m2 = v.validate_python(m)
     assert isinstance(m, MyModel)
@@ -591,20 +590,10 @@ def test_model_class_strict():
             super().__init__()
             self.field_c = 'init_c'
 
-    # instances of subclasses are not supported in strict mode
+    # instances of subclasses are allowed in strict mode
     m3 = MySubModel()
-    with pytest.raises(ValidationError, match='^1 validation error for MyModel\n') as exc_info:
-        v.validate_python(m3)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
-        {
-            'type': 'model_class_type',
-            'loc': (),
-            'msg': 'Input should be an instance of MyModel',
-            'input': HasRepr(IsStr(regex='.+MySubModel object at.+')),
-            'ctx': {'class_name': 'MyModel'},
-        }
-    ]
+    m4 = v.validate_python(m3)
+    assert m4 is m3
 
 
 def test_model_class_strict_json():
@@ -657,7 +646,7 @@ def test_internal_error():
         v.validate_python({'f': 123})
 
 
-def test_revalidate():
+def test_revalidate_always():
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
 
@@ -671,7 +660,7 @@ def test_revalidate():
         {
             'type': 'model',
             'cls': MyModel,
-            'revalidate_instances': True,
+            'revalidate_instances': 'always',
             'schema': {
                 'type': 'typed-dict',
                 'return_fields_set': True,
@@ -683,7 +672,7 @@ def test_revalidate():
             },
         }
     )
-    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: true'
+    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: Always'
 
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
@@ -717,6 +706,53 @@ def test_revalidate():
     assert m6.__fields_set__ == {'field_a', 'field_b'}
 
 
+def test_revalidate_subclass_instances():
+    class MyModel:
+        __slots__ = '__dict__', '__fields_set__'
+
+        def __init__(self):
+            self.field_a = 'init_a'
+            self.field_b = 123
+
+    class MySubModel(MyModel):
+        def __init__(self):
+            super().__init__()
+            self.field_c = 'init_c'
+
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'cls': MyModel,
+            'revalidate_instances': 'subclass-instances',
+            'schema': {
+                'type': 'typed-dict',
+                'return_fields_set': True,
+                'from_attributes': True,
+                'fields': {
+                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                },
+            },
+        }
+    )
+
+    m1 = MyModel()
+    m2 = v.validate_python(m1)
+    assert m2 is m1
+
+    m3 = MySubModel()
+    assert hasattr(m3, 'field_c')
+    m4 = v.validate_python(m3)
+    assert m4 is not m3
+    assert type(m4) is MyModel
+    assert not hasattr(m4, 'field_c')
+
+    m5 = MySubModel()
+    m5.field_b = 'not an int'
+    with pytest.raises(ValidationError, match="type=int_parsing, input_value='not an int', input_type=str"):
+        v.validate_python(m5)
+
+
 def test_revalidate_extra():
     class MyModel:
         __slots__ = '__dict__', '__fields_set__'
@@ -738,7 +774,7 @@ def test_revalidate_extra():
                     'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                 },
             },
-            'config': {'revalidate_instances': True},
+            'config': {'revalidate_instances': 'always'},
         }
     )
 
@@ -818,10 +854,10 @@ def test_revalidate_post_init():
                     'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                 },
             },
-            'config': {'revalidate_instances': True},
+            'config': {'revalidate_instances': 'always'},
         }
     )
-    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: true'
+    assert re.search(r'revalidate: \w+', repr(v)).group(0) == 'revalidate: Always'
 
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
