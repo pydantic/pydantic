@@ -146,7 +146,7 @@ def dataclass(
         else:
             setattr(cls, '__pydantic_decorators__', decorators)
 
-        config_dict = get_config(config)
+        config_dict = get_config(config, cls.__name__)
         _pydantic_dataclasses.prepare_dataclass(cls, config_dict, kw_only)
 
         if sys.version_info >= (3, 10):

@@ -1,12 +1,25 @@
+import re
 import sys
 from contextlib import nullcontext as does_not_raise
+from functools import partial
 from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union
 
 from dirty_equals import HasRepr
 
-from pydantic import BaseConfig, BaseModel, Extra, Field, PrivateAttr, PydanticSchemaGenerationError, ValidationError
-from pydantic.config import ConfigDict, _default_config
+from pydantic import (
+    BaseConfig,
+    BaseModel,
+    Extra,
+    Field,
+    PrivateAttr,
+    PydanticSchemaGenerationError,
+    ValidationError,
+    create_model,
+    validate_arguments,
+)
+from pydantic.config import ConfigDict, _default_config, get_config
+from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 
 if sys.version_info < (3, 9):
@@ -387,3 +400,116 @@ class TestsBaseConfig:
 
         with pytest.raises(AttributeError, match="'Config' object has no attribute 'missing_attribute'"):
             Config().missing_attribute
+
+
+def test_config_key_deprecation():
+    config_dict = {
+        'allow_mutation': None,
+        'error_msg_templates': None,
+        'fields': None,
+        'getter_dict': None,
+        'schema_extra': None,
+        'smart_union': None,
+        'underscore_attrs_are_private': None,
+        'allow_population_by_field_name': None,
+        'anystr_lower': None,
+        'anystr_strip_whitespace': None,
+        'anystr_upper': None,
+        'keep_untouched': None,
+        'max_anystr_length': None,
+        'min_anystr_length': None,
+        'orm_mode': None,
+        'validate_all': None,
+    }
+
+    warning_message = """
+Valid config keys have changed in V2:
+* 'allow_population_by_field_name' has been renamed to 'populate_by_name'
+* 'anystr_lower' has been renamed to 'str_to_lower'
+* 'anystr_strip_whitespace' has been renamed to 'str_strip_whitespace'
+* 'anystr_upper' has been renamed to 'str_to_upper'
+* 'keep_untouched' has been renamed to 'ignored_types'
+* 'max_anystr_length' has been renamed to 'str_max_length'
+* 'min_anystr_length' has been renamed to 'str_min_length'
+* 'orm_mode' has been renamed to 'from_attributes'
+* 'validate_all' has been renamed to 'validate_default'
+* 'allow_mutation' has been removed
+* 'error_msg_templates' has been removed
+* 'fields' has been removed
+* 'getter_dict' has been removed
+* 'schema_extra' has been removed
+* 'smart_union' has been removed
+* 'underscore_attrs_are_private' has been removed
+    """.strip()
+
+    with pytest.warns(UserWarning, match=re.escape(warning_message)):
+
+        class MyModel(BaseModel):
+            model_config = config_dict
+
+    with pytest.warns(UserWarning, match=re.escape(warning_message)):
+        create_model('MyCreatedModel', __config__=config_dict)
+
+    with pytest.warns(UserWarning, match=re.escape(warning_message)):
+
+        @pydantic_dataclass(config=config_dict)
+        class MyDataclass:
+            pass
+
+    with pytest.warns(UserWarning, match=re.escape(warning_message)):
+
+        @validate_arguments(config=config_dict)
+        def my_function():
+            pass
+
+
+def test_invalid_extra():
+    error_message = "'{label}': 'invalid-value' is not a valid value for config['extra']"
+    config_dict = {'extra': 'invalid-value'}
+
+    with pytest.raises(ValueError, match=re.escape(error_message.format(label='MyModel'))):
+
+        class MyModel(BaseModel):
+            model_config = config_dict
+
+    with pytest.raises(ValueError, match=re.escape(error_message.format(label='MyCreatedModel'))):
+        create_model('MyCreatedModel', __config__=config_dict)
+
+    with pytest.raises(ValueError, match=re.escape(error_message.format(label='MyDataclass'))):
+
+        @pydantic_dataclass(config=config_dict)
+        class MyDataclass:
+            pass
+
+    with pytest.raises(ValueError, match=re.escape(error_message.format(label='my_function'))):
+
+        @validate_arguments(config=config_dict)
+        def my_function():
+            pass
+
+    with pytest.raises(ValueError, match=re.escape(error_message.format(label='validate_arguments'))):
+        # This case happens when the function passed to `validate_arguments` has no `__name__`.
+        # This is a pretty exotic case, but it has caused issues in the past, so I wanted to add a test.
+        def my_wrapped_function():
+            pass
+
+        my_partial_function = partial(my_wrapped_function)
+        my_partial_function.__annotations__ = my_wrapped_function.__annotations__
+        validate_arguments(config=config_dict)(my_partial_function)
+
+    with pytest.raises(ValueError, match=re.escape(error_message.format(label='ConfigDict'))):
+        get_config(config_dict)
+
+
+def test_invalid_config_keys():
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            'Setting the "alias_generator" property on custom Config for'
+            ' @validate_arguments is not yet supported, please remove.'
+        ),
+    ):
+
+        @validate_arguments(config={'alias_generator': None})
+        def my_function():
+            pass
