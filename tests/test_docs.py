@@ -123,18 +123,20 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 
     xfail = None
     if test_settings and test_settings.startswith('xfail'):
-        xfail = test_settings[5:]
+        xfail = test_settings[5:].lstrip(' -')
+
+    rewrite_assertions = prefix_settings.get('rewrite_assert', 'true') == 'true'
 
     try:
         if test_settings == 'no-print-intercept':
-            d2 = eval_example.run(example, module_globals=d)
+            d2 = eval_example.run(example, module_globals=d, rewrite_assertions=rewrite_assertions)
         elif eval_example.update_examples:
-            d2 = eval_example.run_print_update(example, module_globals=d)
+            d2 = eval_example.run_print_update(example, module_globals=d, rewrite_assertions=rewrite_assertions)
         else:
-            d2 = eval_example.run_print_check(example, module_globals=d)
+            d2 = eval_example.run_print_check(example, module_globals=d, rewrite_assertions=rewrite_assertions)
     except BaseException as e:  # run_print_check raises a BaseException
         if xfail:
-            pytest.xfail(str(e))
+            pytest.xfail(f'{xfail}, {type(e).__name__}: {e}')
         raise
     else:
         if xfail:
