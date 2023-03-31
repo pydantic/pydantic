@@ -1,6 +1,7 @@
 import re
 from collections import deque
 from datetime import datetime
+from decimal import Decimal
 from enum import Enum
 from itertools import product
 from typing import Any, Deque, Dict, FrozenSet, List, Optional, Tuple, Type, Union
@@ -48,6 +49,37 @@ def test_simple():
     ]
 
 
+def test_string_validation():
+    class Model(BaseModel):
+        v: str
+
+    assert Model(v=b's').v == 's'
+
+    assert Model(v=bytearray(b's' * 5)).v == 'sssss'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=b'\x81')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'string_unicode',
+            'loc': ('v',),
+            'msg': 'Input should be a valid string, unable to parse raw data as a unicode string',
+            'input': b'\x81',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=bytearray(b'\x81' * 5))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'string_unicode',
+            'loc': ('v',),
+            'msg': 'Input should be a valid string, unable to parse raw data as a unicode string',
+            'input': b'\x81\x81\x81\x81\x81',
+        }
+    ]
+
+
 def test_int_validation():
     class Model(BaseModel):
         a: int
@@ -65,6 +97,7 @@ def test_int_validation():
     assert Model(a=3).a == 3
     assert Model(a=True).a == 1
     assert Model(a=False).a == 0
+    assert Model(a=4.0).a == 4
     with pytest.raises(ValidationError) as exc_info:
         Model(a=4.5)
     assert exc_info.value.errors() == [
@@ -73,6 +106,17 @@ def test_int_validation():
             'loc': ('a',),
             'msg': 'Input should be a valid integer, got a number with a fractional part',
             'input': 4.5,
+        }
+    ]
+    assert Model(a=Decimal(3.0)).a == 3
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=Decimal(4.5))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_from_float',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, got a number with a fractional part',
+            'input': Decimal(4.5),
         }
     ]
 

@@ -12,6 +12,8 @@ from mkdocs.config import Config
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
+from .conversion_table import table_infos
+
 logger = logging.getLogger('mkdocs.plugin')
 THIS_DIR = Path(__file__).parent
 DOCS_DIR = THIS_DIR.parent
@@ -42,6 +44,8 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     if md := add_version(markdown, page):
         return md
     elif md := build_schema_mappings(markdown, page):
+        return md
+    elif md := build_conversion_table(markdown, page):
         return md
     elif md := devtools_example(markdown, page):
         return md
@@ -165,14 +169,6 @@ def add_version(markdown: str, page: Page) -> str | None:
     return markdown
 
 
-headings = [
-    'Python type',
-    'JSON Schema Type',
-    'Additional JSON Schema',
-    'Defined in',
-]
-
-
 def md2html(s: str) -> str:
     return re.sub(r'`(.+?)`', r'<code>\1</code>', s)
 
@@ -181,6 +177,12 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'usage/schema.md':
         return None
 
+    headings = [
+        'Python type',
+        'JSON Schema Type',
+        'Additional JSON Schema',
+        'Defined in',
+    ]
     rows = []
     with (THIS_DIR / 'schema_mappings.toml').open('rb') as f:
         table = tomli.load(f)
@@ -224,6 +226,48 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
 </table>
 """
     return re.sub(r'{{ *schema_mappings_table *}}', table_text, markdown)
+
+
+def build_conversion_table(markdown: str, page: Page) -> str | None:
+    if page.file.src_uri != 'blog/pydantic-v2.md':
+        return None
+
+    headings = [
+        'Field Type',
+        'Input',
+        'Mode',
+        'Input Source',
+        'Conditions',
+    ]
+    rows = []
+
+    for t in table_infos:
+        cols = [
+            f'<code>{t.field_type.__name__}</code>',
+            f'<code>{t.input_type.__name__}</code>',
+            t.mode,
+            t.input_format,
+            md2html(t.condition) if t.condition else '-',
+        ]
+        rows.append('\n'.join(f'  <td>\n    {c}\n  </td>' for c in cols))
+
+    heading = '\n'.join(f'  <th>{h}</th>' for h in headings)
+    body = '\n</tr>\n<tr>\n'.join(rows)
+    table_text = f"""\
+<table style="width:100%">
+<thead>
+<tr>
+{heading}
+</tr>
+</thead>
+<tbody>
+<tr>
+{body}
+</tr>
+</tbody>
+</table>
+"""
+    return re.sub(r'{{ *conversion_table *}}', table_text, markdown)
 
 
 def devtools_example(markdown: str, page: Page) -> str | None:
