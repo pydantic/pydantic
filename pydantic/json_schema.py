@@ -35,13 +35,6 @@ if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
     from .main import BaseModel
 
-if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
-    _JsonSchemaCache = WeakKeyDictionary[Type[Any], Dict[Any, Any]]
-else:
-    _JsonSchemaCache = WeakKeyDictionary
-
-_JSON_SCHEMA_CACHE = _JsonSchemaCache()
-
 JsonSchemaValue = Dict[str, Any]
 
 
@@ -1222,6 +1215,10 @@ class GenerateJsonSchema:
         return f'{detail} [{kind}]'
 
 
+# ##### Start JSON Schema Generation Functions #####
+# TODO: These should be moved to the pydantic.funcs module or whatever when appropriate.
+
+
 def models_json_schema(
     models: Sequence[type[BaseModel] | type[PydanticDataclass]],
     *,
@@ -1246,6 +1243,28 @@ def models_json_schema(
     return json_schema
 
 
+# TODO: The JSON schema cache has been there from the beginning (https://github.com/pydantic/pydantic/pull/190 —
+#   — yes, I did go git-blame-spelunking to find this) but does it really make sense to still keep it around?
+#   Unless I'm unaware of some workflow that involves frequently calling `MyModel.schema_json()`, I think it doesn't.
+#   -
+#   I think people generally don't recompute the JSON schema, or if they do, are as likely to use models_json_schema,
+#   where it's not clear to me what the proper caching behavior should necessarily be.
+#   -
+#   I'll also note that the cache doesn't appear to be used at all in the (v1) FastAPI JSON schema functions
+#   pydantic.schema.schema and pydantic.schema.model_schema
+#   -
+#   I have kept this WeakKeyDictionary-based cache implementation here for now because I wrote it, and if we do end up
+#   using it, I wouldn't want to have to re-write it, but I'm in favor of removing it prior to merging this PR.
+#   And removing it should be trivial, just delete the caching-related lines here.
+
+if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
+    _JsonSchemaCache = WeakKeyDictionary[Type[Any], Dict[Any, Any]]
+else:
+    _JsonSchemaCache = WeakKeyDictionary
+
+_JSON_SCHEMA_CACHE = _JsonSchemaCache()
+
+
 def model_json_schema(
     cls: type[BaseModel] | type[PydanticDataclass],
     by_alias: bool = True,
@@ -1265,6 +1284,9 @@ def model_json_schema(
     cls_json_schema_cache[(by_alias, ref_template, schema_generator)] = json_schema
 
     return json_schema
+
+
+# ##### End JSON Schema Generation Functions #####
 
 
 _Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]
