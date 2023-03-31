@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict
 
 import pytest
 from dirty_equals import IsStrictDict
@@ -8,14 +8,15 @@ from typing_extensions import TypedDict
 from pydantic_core import SchemaSerializer, core_schema
 
 
-def test_typed_dict():
+@pytest.mark.parametrize('extra_behavior_kw', [{}, {'extra_behavior': 'ignore'}, {'extra_behavior': None}])
+def test_typed_dict(extra_behavior_kw: Dict[str, Any]):
     v = SchemaSerializer(
         core_schema.typed_dict_schema(
             {
                 'foo': core_schema.typed_dict_field(core_schema.int_schema()),
                 'bar': core_schema.typed_dict_field(core_schema.bytes_schema()),
             },
-            extra_behavior='ignore',  # this is the default
+            **extra_behavior_kw,
         )
     )
     assert v.to_python({'foo': 1, 'bar': b'more'}) == IsStrictDict(foo=1, bar=b'more')

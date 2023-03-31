@@ -8,7 +8,7 @@ use ahash::{AHashMap, AHashSet};
 use serde::ser::SerializeMap;
 
 use crate::build_context::BuildContext;
-use crate::build_tools::{py_error_type, schema_or_config, SchemaDict};
+use crate::build_tools::{py_error_type, schema_or_config, ExtraBehavior, SchemaDict};
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
@@ -80,16 +80,13 @@ impl BuildSerializer for TypedDictSerializer {
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
-        let extra_behavior = schema_or_config::<&str>(
-            schema,
-            config,
-            intern!(py, "extra_behavior"),
-            intern!(py, "typed_dict_extra_behavior"),
-        )?;
         let total =
             schema_or_config(schema, config, intern!(py, "total"), intern!(py, "typed_dict_total"))?.unwrap_or(true);
 
-        let include_extra = extra_behavior == Some("allow");
+        let include_extra = matches!(
+            ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?,
+            ExtraBehavior::Allow
+        );
 
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: AHashMap<String, TypedDictField> = AHashMap::with_capacity(fields_dict.len());

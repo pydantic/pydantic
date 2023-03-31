@@ -248,3 +248,35 @@ pub fn safe_repr(v: &PyAny) -> Cow<str> {
         "<unprintable object>".into()
     }
 }
+
+#[derive(Debug, Clone)]
+pub(crate) enum ExtraBehavior {
+    Allow,
+    Forbid,
+    Ignore,
+}
+
+impl ExtraBehavior {
+    pub fn from_schema_or_config(
+        py: Python,
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        default: Self,
+    ) -> PyResult<Self> {
+        let extra_behavior = schema_or_config::<Option<&str>>(
+            schema,
+            config,
+            intern!(py, "extra_behavior"),
+            intern!(py, "extra_fields_behavior"),
+        )?
+        .flatten();
+        let res = match extra_behavior {
+            Some("allow") => Self::Allow,
+            Some("ignore") => Self::Ignore,
+            Some("forbid") => Self::Forbid,
+            Some(v) => return py_err!("Invalid extra_behavior: `{}`", v),
+            None => default,
+        };
+        Ok(res)
+    }
+}
