@@ -6,7 +6,7 @@ use pyo3::exceptions::PyKeyError;
 use pyo3::types::PyTuple;
 use pyo3::types::{PyDict, PySet, PyString, PyType};
 
-use crate::build_tools::{is_strict, py_err, schema_or_config, schema_or_config_same, SchemaDict};
+use crate::build_tools::{is_strict, py_err, schema_or_config, schema_or_config_same, ExtraBehavior, SchemaDict};
 use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{
     AttributesGenericIterator, DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator,
@@ -31,8 +31,7 @@ struct TypedDictField {
 #[derive(Debug, Clone)]
 pub struct TypedDictValidator {
     fields: Vec<TypedDictField>,
-    check_extra: bool,
-    forbid_extra: bool,
+    extra_behavior: ExtraBehavior,
     extra_validator: Option<Box<CombinedValidator>>,
     strict: bool,
     from_attributes: bool,
@@ -50,12 +49,6 @@ impl BuildValidator for TypedDictValidator {
         let py = schema.py();
         let strict = is_strict(schema, config)?;
 
-        let extra_behavior = schema_or_config::<&str>(
-            schema,
-            config,
-            intern!(py, "extra_behavior"),
-            intern!(py, "typed_dict_extra_behavior"),
-        )?;
         let total =
             schema_or_config(schema, config, intern!(py, "total"), intern!(py, "typed_dict_total"))?.unwrap_or(true);
         let from_attributes = schema_or_config_same(schema, config, intern!(py, "from_attributes"))?.unwrap_or(false);
@@ -63,25 +56,12 @@ impl BuildValidator for TypedDictValidator {
 
         let return_fields_set = schema.get_as(intern!(py, "return_fields_set"))?.unwrap_or(false);
 
-        let (check_extra, forbid_extra) = match extra_behavior {
-            Some(s) => match s {
-                "allow" => (true, false),
-                "ignore" => (false, false),
-                "forbid" => (true, true),
-                _ => return py_err!(r#"Invalid extra_behavior: "{}""#, s),
-            },
-            None => (false, false),
-        };
+        let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
-        let extra_validator = match schema.get_item(intern!(py, "extra_validator")) {
-            Some(v) => {
-                if check_extra && !forbid_extra {
-                    Some(Box::new(build_validator(v, config, build_context)?))
-                } else {
-                    return py_err!("extra_validator can only be used if extra_behavior=allow");
-                }
-            }
-            None => None,
+        let extra_validator = match (schema.get_item(intern!(py, "extra_validator")), &extra_behavior) {
+            (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, build_context)?)),
+            (Some(_), _) => return py_err!("extra_validator can only be used if extra_behavior=allow"),
+            (_, _) => None,
         };
 
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
@@ -143,8 +123,7 @@ impl BuildValidator for TypedDictValidator {
 
         Ok(Self {
             fields,
-            check_extra,
-            forbid_extra,
+            extra_behavior,
             extra_validator,
             strict,
             from_attributes,
@@ -175,9 +154,9 @@ impl Validator for TypedDictValidator {
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
-        let mut used_keys: Option<AHashSet<&str>> = match self.check_extra {
-            true => Some(AHashSet::with_capacity(self.fields.len())),
-            false => None,
+        let mut used_keys: Option<AHashSet<&str>> = match self.extra_behavior {
+            ExtraBehavior::Allow | ExtraBehavior::Forbid => Some(AHashSet::with_capacity(self.fields.len())),
+            _ => None,
         };
 
         macro_rules! process {
@@ -257,39 +236,39 @@ impl Validator for TypedDictValidator {
                             continue;
                         }
 
-                        if self.forbid_extra {
-                            errors.push(ValLineError::new_with_loc(
-                                ErrorType::ExtraForbidden,
-                                value,
-                                raw_key.as_loc_item(),
-                            ));
-                            continue;
-                        }
-
-                        let py_key = either_str.as_py_string(py);
-                        if let Some(ref mut fs) = fields_set_vec {
-                            fs.push(py_key.into_py(py));
-                        }
-
-                        if let Some(ref validator) = self.extra_validator {
-                            match validator.validate(py, value, &extra, slots, recursion_guard) {
-                                Ok(value) => {
-                                    output_dict.set_item(py_key, value)?;
+                        // Unknown / extra field
+                        match self.extra_behavior {
+                            ExtraBehavior::Forbid => {
+                                errors.push(ValLineError::new_with_loc(
+                                    ErrorType::ExtraForbidden,
+                                    value,
+                                    raw_key.as_loc_item(),
+                                ));
+                            }
+                            ExtraBehavior::Ignore => {}
+                            ExtraBehavior::Allow => {
+                            let py_key = either_str.as_py_string(py);
+                                if let Some(ref validator) = self.extra_validator {
+                                    match validator.validate(py, value, &extra, slots, recursion_guard) {
+                                        Ok(value) => {
+                                            output_dict.set_item(py_key, value)?;
+                                            if let Some(ref mut fs) = fields_set_vec {
+                                                fs.push(py_key.into_py(py));
+                                            }
+                                        }
+                                        Err(ValError::LineErrors(line_errors)) => {
+                                            for err in line_errors {
+                                                errors.push(err.with_outer_location(raw_key.as_loc_item()));
+                                            }
+                                        }
+                                        Err(err) => return Err(err),
+                                    }
+                                } else {
+                                    output_dict.set_item(py_key, value.to_object(py))?;
                                     if let Some(ref mut fs) = fields_set_vec {
                                         fs.push(py_key.into_py(py));
                                     }
-                                }
-                                Err(ValError::LineErrors(line_errors)) => {
-                                    for err in line_errors {
-                                        errors.push(err.with_outer_location(raw_key.as_loc_item()));
-                                    }
-                                }
-                                Err(err) => return Err(err),
-                            }
-                        } else {
-                            output_dict.set_item(py_key, value.to_object(py))?;
-                            if let Some(ref mut fs) = fields_set_vec {
-                                fs.push(py_key.into_py(py));
+                                };
                             }
                         }
                     }
@@ -391,25 +370,29 @@ impl Validator for TypedDictValidator {
                         .validate(py, field_value, &extra, slots, recursion_guard),
                 )
             }
-        } else if self.check_extra && !self.forbid_extra {
-            // this is the "allow" case of extra_behavior
-            match self.extra_validator {
-                Some(ref validator) => {
-                    prepare_result(validator.validate(py, field_value, &extra, slots, recursion_guard))
-                }
-                None => ok(field_value.to_object(py)),
-            }
         } else {
-            // otherwise we raise an error:
-            // - with forbid this is obvious
-            // - with ignore the model should never be overloaded, so an error is the clearest option
-            Err(ValError::new_with_loc(
-                ErrorType::NoSuchAttribute {
-                    attribute: field_name.to_string(),
+            // Handle extra (unknown) field
+            // We partially use the extra_behavior for initialization / validation
+            // to determine how to handle assignment
+            // For models / typed dicts we forbid assigning extra attributes
+            // unless the user explicitly set extra_behavior to 'allow'
+            match self.extra_behavior {
+                ExtraBehavior::Allow => match self.extra_validator {
+                    Some(ref validator) => {
+                        prepare_result(validator.validate(py, field_value, &extra, slots, recursion_guard))
+                    }
+                    None => ok(field_value.to_object(py)),
                 },
-                field_value,
-                field_name.to_string(),
-            ))
+                ExtraBehavior::Forbid | ExtraBehavior::Ignore => {
+                    return Err(ValError::new_with_loc(
+                        ErrorType::NoSuchAttribute {
+                            attribute: field_name.to_string(),
+                        },
+                        field_value,
+                        field_name.to_string(),
+                    ))
+                }
+            }
         }?;
         if self.return_fields_set {
             let fields_set: &PySet = PySet::new(py, &[field_name.to_string()])?;

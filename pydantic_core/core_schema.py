@@ -19,6 +19,9 @@ def dict_not_none(**kwargs: Any) -> Any:
     return {k: v for k, v in kwargs.items() if v is not None}
 
 
+ExtraBehavior = Literal['allow', 'forbid', 'ignore']
+
+
 class CoreConfig(TypedDict, total=False):
     title: str
     strict: bool
@@ -27,7 +30,7 @@ class CoreConfig(TypedDict, total=False):
     # if configs are merged, which should take precedence, default 0, default means child takes precedence
     config_merge_priority: int
     # settings related to typed_dicts only
-    typed_dict_extra_behavior: Literal['allow', 'forbid', 'ignore']
+    extra_fields_behavior: ExtraBehavior
     typed_dict_total: bool  # default: True
     # used on typed-dicts and tagged union keys
     from_attributes: bool
@@ -2494,7 +2497,7 @@ class TypedDictSchema(TypedDict, total=False):
     extra_validator: CoreSchema
     return_fields_set: bool
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
-    extra_behavior: Literal['allow', 'forbid', 'ignore']
+    extra_behavior: ExtraBehavior
     total: bool  # default: True
     populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
     from_attributes: bool
@@ -2509,7 +2512,7 @@ def typed_dict_schema(
     strict: bool | None = None,
     extra_validator: CoreSchema | None = None,
     return_fields_set: bool | None = None,
-    extra_behavior: Literal['allow', 'forbid', 'ignore'] | None = None,
+    extra_behavior: ExtraBehavior | None = None,
     total: bool | None = None,
     populate_by_name: bool | None = None,
     from_attributes: bool | None = None,
@@ -2645,6 +2648,7 @@ class DataclassField(TypedDict, total=False):
     schema: Required[CoreSchema]
     kw_only: bool  # default: True
     init_only: bool  # default: False
+    frozen: bool  # default: False
     validation_alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
     serialization_alias: str
     serialization_exclude: bool  # default: False
@@ -2661,6 +2665,7 @@ def dataclass_field(
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
     metadata: Any = None,
+    frozen: bool | None = None,
 ) -> DataclassField:
     """
     Returns a schema for a dataclass field, e.g.:
@@ -2696,6 +2701,7 @@ def dataclass_field(
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
         metadata=metadata,
+        frozen=frozen,
     )
 
 
@@ -2708,6 +2714,7 @@ class DataclassArgsSchema(TypedDict, total=False):
     ref: str
     metadata: Any
     serialization: SerSchema
+    extra_behavior: ExtraBehavior
 
 
 def dataclass_args_schema(
@@ -2718,6 +2725,7 @@ def dataclass_args_schema(
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
+    extra_behavior: ExtraBehavior | None = None,
 ) -> DataclassArgsSchema:
     """
     Returns a schema for validating dataclass arguments, e.g.:
@@ -2754,6 +2762,7 @@ def dataclass_args_schema(
         ref=ref,
         metadata=metadata,
         serialization=serialization,
+        extra_behavior=extra_behavior,
     )
 
 
@@ -2764,6 +2773,7 @@ class DataclassSchema(TypedDict, total=False):
     post_init: bool  # default: False
     revalidate_instances: Literal['always', 'never', 'subclass-instances']  # default: 'never'
     strict: bool  # default: False
+    frozen: bool  # default False
     ref: str
     metadata: Any
     serialization: SerSchema
@@ -2779,6 +2789,7 @@ def dataclass_schema(
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
+    frozen: bool | None = None,
 ) -> DataclassSchema:
     """
     Returns a schema for a dataclass. As with `ModelSchema`, this schema can only be used as a field within
@@ -2805,6 +2816,7 @@ def dataclass_schema(
         ref=ref,
         metadata=metadata,
         serialization=serialization,
+        frozen=frozen,
     )
 
 

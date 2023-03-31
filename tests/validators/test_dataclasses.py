@@ -1,5 +1,6 @@
 import dataclasses
 import re
+from typing import Any, Dict, Union
 
 import pytest
 from dirty_equals import IsListOrTuple, IsStr
@@ -300,6 +301,7 @@ def test_dataclass_subclass(revalidate_instances, input_value, expected):
                 core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
             ],
+            extra_behavior='forbid',
         ),
         revalidate_instances=revalidate_instances,
     )
@@ -773,16 +775,17 @@ def test_dataclass_validate_assignment():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment(foo, 'c', 123)
+        v.validate_assignment(foo, 'c', '123')
     assert exc_info.value.errors() == [
         {
             'type': 'no_such_attribute',
             'loc': ('c',),
             'msg': "Object has no attribute 'c'",
-            'input': 123,
+            'input': '123',
             'ctx': {'attribute': 'c'},
         }
     ]
+    assert not hasattr(foo, 'c')
 
     # wrong arguments
     with pytest.raises(AttributeError, match="'str' object has no attribute '__dict__'"):
@@ -831,3 +834,180 @@ def test_validate_assignment_function():
         "ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')",
         "ValidationInfo(config=None, context=None, data={'field_a': 'x', 'field_c': 456}, field_name='field_b')",
     ]
+
+
+def test_frozen():
+    @dataclasses.dataclass
+    class MyModel:
+        f: str
+
+    v = SchemaValidator(
+        core_schema.dataclass_schema(
+            MyModel,
+            core_schema.dataclass_args_schema('MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())]),
+            frozen=True,
+        )
+    )
+
+    m = v.validate_python({'f': 'x'})
+    assert m.f == 'x'
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment(m, 'f', 'y')
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'frozen_instance', 'loc': (), 'msg': 'Instance is frozen', 'input': 'y'}
+    ]
+
+
+def test_frozen_field():
+    @dataclasses.dataclass
+    class MyModel:
+        f: str
+
+    v = SchemaValidator(
+        core_schema.dataclass_schema(
+            MyModel,
+            core_schema.dataclass_args_schema(
+                'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema(), frozen=True)]
+            ),
+        )
+    )
+
+    m = v.validate_python({'f': 'x'})
+    assert m.f == 'x'
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment(m, 'f', 'y')
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [{'type': 'frozen_field', 'loc': ('f',), 'msg': 'Field is frozen', 'input': 'y'}]
+
+
+@pytest.mark.parametrize(
+    'config,schema_extra_behavior_kw',
+    [
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {}),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': None}),
+        (core_schema.CoreConfig(), {'extra_behavior': 'ignore'}),
+        (None, {'extra_behavior': 'ignore'}),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': 'ignore'}),
+    ],
+)
+def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
+    @dataclasses.dataclass
+    class MyModel:
+        f: str
+
+    v = SchemaValidator(
+        core_schema.dataclass_schema(
+            MyModel,
+            core_schema.dataclass_args_schema(
+                'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())], **schema_extra_behavior_kw
+            ),
+        ),
+        config=config,
+    )
+
+    m: MyModel = v.validate_python({'f': 'x', 'extra_field': 123})
+    assert m.f == 'x'
+    assert not hasattr(m, 'extra_field')
+
+    v.validate_assignment(m, 'f', 'y')
+    assert m.f == 'y'
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment(m, 'not_f', 'xyz')
+
+    assert exc_info.value.errors() == [
+        {
+            'type': 'no_such_attribute',
+            'loc': ('not_f',),
+            'msg': "Object has no attribute 'not_f'",
+            'input': 'xyz',
+            'ctx': {'attribute': 'not_f'},
+        }
+    ]
+    assert not hasattr(m, 'not_f')
+
+
+@pytest.mark.parametrize(
+    'config,schema_extra_behavior_kw',
+    [
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {}),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': None}),
+        (core_schema.CoreConfig(), {'extra_behavior': 'forbid'}),
+        (None, {'extra_behavior': 'forbid'}),
+        (core_schema.CoreConfig(extra_fields_behavior='ignore'), {'extra_behavior': 'forbid'}),
+    ],
+)
+def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
+    @dataclasses.dataclass
+    class MyModel:
+        f: str
+
+    v = SchemaValidator(
+        core_schema.dataclass_schema(
+            MyModel,
+            core_schema.dataclass_args_schema(
+                'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())], **schema_extra_behavior_kw
+            ),
+        ),
+        config=config,
+    )
+
+    m: MyModel = v.validate_python({'f': 'x'})
+    assert m.f == 'x'
+
+    v.validate_assignment(m, 'f', 'y')
+    assert m.f == 'y'
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment(m, 'not_f', 'xyz')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'no_such_attribute',
+            'loc': ('not_f',),
+            'msg': "Object has no attribute 'not_f'",
+            'input': 'xyz',
+            'ctx': {'attribute': 'not_f'},
+        }
+    ]
+    assert not hasattr(m, 'not_f')
+
+
+@pytest.mark.parametrize(
+    'config,schema_extra_behavior_kw',
+    [
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {}),
+        (core_schema.CoreConfig(extra_fields_behavior='allow'), {'extra_behavior': None}),
+        (core_schema.CoreConfig(), {'extra_behavior': 'allow'}),
+        (None, {'extra_behavior': 'allow'}),
+        (core_schema.CoreConfig(extra_fields_behavior='forbid'), {'extra_behavior': 'allow'}),
+    ],
+)
+def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
+    @dataclasses.dataclass
+    class MyModel:
+        f: str
+
+    v = SchemaValidator(
+        core_schema.dataclass_schema(
+            MyModel,
+            core_schema.dataclass_args_schema(
+                'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())], **schema_extra_behavior_kw
+            ),
+        ),
+        config=config,
+    )
+
+    m: MyModel = v.validate_python({'f': 'x', 'extra_field': '123'})
+    assert m.f == 'x'
+    assert getattr(m, 'extra_field') == '123'
+
+    v.validate_assignment(m, 'f', 'y')
+    assert m.f == 'y'
+
+    v.validate_assignment(m, 'not_f', '123')
+    assert getattr(m, 'not_f') == '123'
