@@ -170,7 +170,7 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
     extra = None if config['extra'] is None else config['extra'].value
     core_config = core_schema.CoreConfig(
         title=config['title'] or cls.__name__,
-        typed_dict_extra_behavior=extra,
+        extra_fields_behavior=extra,
         allow_inf_nan=config['allow_inf_nan'],
         populate_by_name=config['populate_by_name'],
         str_strip_whitespace=config['str_strip_whitespace'],
@@ -181,14 +181,10 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
         ser_json_bytes=config['ser_json_bytes'],
         from_attributes=config['from_attributes'],
         validate_default=config['validate_default'],
+        str_max_length=config.get('str_max_length'),
+        str_min_length=config.get('str_min_length'),
     )
-    str_max_length = config.get('str_max_length')
-    if str_max_length is not None:
-        core_config['str_max_length'] = str_max_length
-    str_min_length = config.get('str_min_length')
-    if str_min_length is not None:
-        core_config['str_min_length'] = str_min_length
-
+    core_config = core_schema.CoreConfig(**core_schema.dict_not_none(**core_config))
     return core_config
 
 

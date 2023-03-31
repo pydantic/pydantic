@@ -656,7 +656,7 @@ class GenerateJsonSchema:
         json_schema = self.generate_inner(schema['schema'])
 
         if 'config' in schema:
-            if schema['config'].get('typed_dict_extra_behavior') == 'forbid':
+            if schema['config'].get('extra_fields_behavior') == 'forbid':
                 if '$ref' in json_schema:
                     # hack: update the definition from the typed_dict_schema
                     referenced_schema = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
