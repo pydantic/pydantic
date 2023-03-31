@@ -1,5 +1,10 @@
 # Rebuild lockfiles from scratch, updating all dependencies
 
+command -v pip-compile >/dev/null 2>&1 || {
+  echo >&2 "pip-compile is not installed. Install with 'pip install pip-tools'."
+  exit 1
+}
+
 echo "Updating requirements/*.txt files using pip-compile"
 # refresh the constraints / all lockfile
 pip-compile -q --resolver backtracking -o requirements/all.txt --strip-extras requirements/all.in
