@@ -2287,12 +2287,12 @@ def test_schema_for_generic_field():
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: Any, generator: GenerateSchema, **_kwargs: Any
+            cls, source: Any, gen_schema: GenerateSchema, **_kwargs: Any
         ) -> core_schema.PlainValidatorFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
             metadata = build_metadata_dict(
-                js_metadata=JsonSchemaMetadata(core_schema_override=generator.generate_schema(param))
+                js_metadata=JsonSchemaMetadata(core_schema_override=gen_schema.generate_schema(param))
             )
             return core_schema.general_plain_validator_function(
                 GenModel,
@@ -2386,12 +2386,12 @@ def test_advanced_generic_schema():
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: Any, generator: GenerateSchema, **_kwargs: Any
+            cls, source: Any, gen_schema: GenerateSchema, **_kwargs: Any
         ) -> core_schema.PlainValidatorFunctionSchema:
             if hasattr(source, '__args__'):
                 param = source.__args__[0]
                 metadata = build_metadata_dict(
-                    js_metadata=JsonSchemaMetadata(core_schema_override=generator.generate_schema(Optional[param]))
+                    js_metadata=JsonSchemaMetadata(core_schema_override=gen_schema.generate_schema(Optional[param]))
                 )
                 return core_schema.general_plain_validator_function(
                     Gen,
@@ -2418,12 +2418,12 @@ def test_advanced_generic_schema():
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: Any, generator: GenerateSchema, **_kwargs: Any
+            cls, source: Any, gen_schema: GenerateSchema, **_kwargs: Any
         ) -> core_schema.PlainValidatorFunctionSchema:
             if hasattr(source, '__args__'):
                 metadata = build_metadata_dict(
                     js_metadata=JsonSchemaMetadata(
-                        core_schema_override=generator.generate_schema(Tuple[source.__args__])
+                        core_schema_override=gen_schema.generate_schema(Tuple[source.__args__])
                     )
                 )
                 return core_schema.general_plain_validator_function(
@@ -2600,7 +2600,7 @@ def test_complex_nested_generic():
                         'title': 'Model',
                         'anyOf': [
                             {'$ref': '#/$defs/Ref_Model_'},
-                            {'allOf': [{'$ref': '#/$defs/Model'}], 'title': 'Model'},
+                            {'$ref': '#/$defs/Model'},
                         ],
                     },
                 },

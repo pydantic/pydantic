@@ -799,7 +799,7 @@ class ChildClass(BaseClass[int, TypeY], Generic[TypeY, TypeZ]):
 
 
 # Replace TypeY by str
-print(ChildClass[str, int](x=1, y='y', z=3))
+print(ChildClass[str, int](x='1', y='y', z='3'))
 #> x=1 y='y' z=3
 ```
 

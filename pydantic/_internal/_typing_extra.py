@@ -7,6 +7,7 @@ import sys
 import types
 import typing
 from collections.abc import Callable
+from types import GetSetDescriptorType
 from typing import Any, ForwardRef
 
 from typing_extensions import Annotated, Final, Literal, get_args, get_origin
@@ -30,6 +31,8 @@ __all__ = (
     'parent_frame_namespace',
     'get_type_hints',
     'EllipsisType',
+    'add_module_globals',
+    'get_cls_type_hints_lenient',
 )
 
 try:
@@ -222,15 +225,52 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
         return frame.f_locals
 
 
-if sys.version_info >= (3, 10):
-    get_type_hints = typing.get_type_hints
+def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, Any]:
+    module_name = getattr(obj, '__module__', None)
+    if module_name:
+        try:
+            module_globalns = sys.modules[module_name].__dict__
+        except KeyError:
+            # happens occasionally, see https://github.com/pydantic/pydantic/issues/2363
+            pass
+        else:
+            if globalns:
+                return {**module_globalns, **globalns}
+            else:
+                # copy module globals to make sure it can't be updated later
+                return module_globalns.copy()
 
-else:
+    return globalns or {}
+
+
+def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     """
-    For older versions of python, we have a custom implementation of `get_type_hints` which is a close as possible to
-    the implementation in CPython 3.10.8.
+    Collect annotations from a class, including those from parent classes.
+
+    Unlike `typing.get_type_hints`, this function will not evaluate forward references so won't error if
+    a forward reference is not resolvable.
     """
-    fr_has_is_class = True
+    # TODO: Try handling typevars_map here
+    hints = {}
+    for base in reversed(obj.__mro__):
+        ann = base.__dict__.get('__annotations__')
+        localns = dict(vars(base))
+        if ann is not None and ann is not GetSetDescriptorType:
+            for name, value in ann.items():
+                if value is None:
+                    value = NoneType
+                elif isinstance(value, str):
+                    value = ForwardRef(value, is_argument=False, is_class=True)
+
+                try:
+                    hints[name] = typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
+                except NameError:
+                    # the point of this function is to be tolerant to this case
+                    hints[name] = value
+    return hints
+
+
+if sys.version_info < (3, 9):
 
     def ForwardRefWrapper(arg: Any, is_argument: bool = True, *, is_class: bool = False) -> typing.ForwardRef:
         """
@@ -251,6 +291,18 @@ else:
         except TypeError:
             fr_has_is_class = False
             return typing.ForwardRef(arg, is_argument)
+
+    ForwardRef = ForwardRefWrapper  # noqa F811
+
+if sys.version_info >= (3, 10):
+    get_type_hints = typing.get_type_hints
+
+else:
+    """
+    For older versions of python, we have a custom implementation of `get_type_hints` which is a close as possible to
+    the implementation in CPython 3.10.8.
+    """
+    fr_has_is_class = True
 
     @typing.no_type_check
     def get_type_hints(  # noqa: C901
@@ -328,8 +380,7 @@ else:
                     if value is None:
                         value = type(None)
                     if isinstance(value, str):
-                        # CHANGED IN PYDANTIC, using ForwardRefWrapper
-                        value = ForwardRefWrapper(value, is_argument=False, is_class=True)
+                        value = ForwardRef(value, is_argument=False, is_class=True)
 
                     value = typing._eval_type(value, base_globals, base_locals)
                     hints[name] = value
@@ -364,8 +415,7 @@ else:
                 # class-level forward refs were handled above, this must be either
                 # a module-level annotation or a function argument annotation
 
-                # CHANGED IN PYDANTIC, using ForwardRefWrapper
-                value = ForwardRefWrapper(
+                value = ForwardRef(
                     value,
                     is_argument=not isinstance(obj, types.ModuleType),
                     is_class=False,

@@ -34,7 +34,7 @@ class Model(BaseModel):
     a: Model
 """
     )
-    assert module.Model.model_fields['a'].annotation.__name__ == 'PydanticForwardRef'
+    assert module.Model.model_fields['a'].annotation.__name__ == 'Model'
 
 
 def test_forward_ref_auto_update_no_model(create_module):
@@ -60,7 +60,7 @@ def test_forward_ref_auto_update_no_model(create_module):
 
     # model_fields is complete on Foo
     assert repr(module.Foo.model_fields['a']) == (
-        'FieldInfo(annotation=Union[PydanticForwardRef, NoneType], required=False)'
+        "FieldInfo(annotation=Union[ForwardRef('Bar'), NoneType], required=False)"
     )
 
     # but Foo is not ready to use
@@ -85,7 +85,10 @@ def test_forward_ref_one_of_fields_not_defined(create_module):
             foo: 'Foo'
             bar: 'Bar'
 
-    assert hasattr(module.Foo, 'model_fields') is False
+    assert {k: repr(v) for k, v in module.Foo.model_fields.items()} == {
+        'foo': 'FieldInfo(annotation=Foo, required=True)',
+        'bar': "FieldInfo(annotation=ForwardRef('Bar'), required=True)",
+    }
 
 
 def test_basic_forward_ref(create_module):
@@ -158,15 +161,11 @@ def test_self_forward_ref_collection(create_module):
     ]
 
     assert repr(module.Foo.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default=123)'
-    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=PydanticForwardRef, required=False)'
+    assert repr(module.Foo.model_fields['b']) == 'FieldInfo(annotation=Foo, required=False)'
     if sys.version_info < (3, 10):
         return
-    assert repr(module.Foo.model_fields['c']) == (
-        'FieldInfo(annotation=List[PydanticForwardRef], required=False, ' 'default=[])'
-    )
-    assert repr(module.Foo.model_fields['d']) == (
-        'FieldInfo(annotation=Dict[str, PydanticForwardRef], required=False, default={})'
-    )
+    assert repr(module.Foo.model_fields['c']) == ('FieldInfo(annotation=List[Foo], required=False, ' 'default=[])')
+    assert repr(module.Foo.model_fields['d']) == ('FieldInfo(annotation=Dict[str, Foo], required=False, default={})')
 
 
 def test_self_forward_ref_local(create_module):
@@ -286,7 +285,7 @@ def test_self_reference_json_schema(create_module):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
+                        'items': {'$ref': '#/$defs/Account'},
                     },
                 },
                 'required': ['name'],
@@ -321,7 +320,7 @@ class Account(BaseModel):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
+                        'items': {'$ref': '#/$defs/Account'},
                     },
                 },
                 'required': ['name'],
@@ -361,7 +360,7 @@ def test_circular_reference_json_schema(create_module):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
+                        'items': {'$ref': '#/$defs/Account'},
                     },
                 },
                 'required': ['name', 'owner'],
@@ -410,7 +409,7 @@ class Account(BaseModel):
                         'title': 'Subaccounts',
                         'default': [],
                         'type': 'array',
-                        'items': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'},
+                        'items': {'$ref': '#/$defs/Account'},
                     },
                 },
                 'required': ['name', 'owner'],
@@ -460,7 +459,8 @@ class Spec(BaseModel):
 
 class PSpec(Spec):
     model_config = ConfigDict(undefined_types_warning = False)
-    g: Optional[GSpec]
+    # FIXME investigate why this wasn't causing errors before
+    g: Optional[GSpec] = None
 
 
 class GSpec(Spec):
@@ -673,8 +673,7 @@ class SelfReferencing(BaseModel):
     SelfReferencing = module.SelfReferencing
     if sys.version_info >= (3, 10):
         assert (
-            repr(SelfReferencing.model_fields['names'])
-            == 'FieldInfo(annotation=list[PydanticForwardRef], required=True)'
+            repr(SelfReferencing.model_fields['names']) == 'FieldInfo(annotation=list[SelfReferencing], required=True)'
         )
 
     # test that object creation works
@@ -704,7 +703,7 @@ def test_pep585_recursive_generics(create_module):
 
         Team.model_rebuild()
 
-    assert repr(module.Team.model_fields['heroes']) == 'FieldInfo(annotation=list[Hero], required=True)'
+    assert repr(module.Team.model_fields['heroes']) == "FieldInfo(annotation=list[ForwardRef('Hero')], required=True)"
     assert repr(module.Hero.model_fields['teams']) == 'FieldInfo(annotation=list[Team], required=True)'
 
     h = module.Hero(name='Ivan', teams=[module.Team(name='TheBest', heroes=[])])

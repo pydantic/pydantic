@@ -113,6 +113,47 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     return schema
 
 
+def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema.CoreSchema]:
+    # Only collect valid definitions. This is equivalent to collecting all definitions for "valid" schemas,
+    # but allows us to reuse this logic while removing "invalid" definitions
+    valid_definitions = dict()
+
+    def _record_valid_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        ref: str | None = s.get('ref')  # type: ignore[assignment]
+        if ref:
+            metadata = s.get('metadata')
+            definition_is_invalid = isinstance(metadata, dict) and 'invalid' in metadata
+            if not definition_is_invalid:
+                valid_definitions[ref] = s
+        return s
+
+    WalkAndApply(_record_valid_refs).walk(schema)
+
+    return valid_definitions
+
+
+def remove_unnecessary_invalid_definitions(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    valid_refs = collect_definitions(schema).keys()
+
+    def _remove_invalid_defs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        if s['type'] != 'definitions':
+            return s
+
+        new_schema = s.copy()
+
+        new_definitions = []
+        for definition in s['definitions']:
+            metadata = definition.get('metadata')
+            if isinstance(metadata, dict) and 'invalid' in metadata and definition['ref'] in valid_refs:
+                continue
+            new_definitions.append(definition)
+
+        new_schema['definitions'] = new_definitions
+        return new_schema
+
+    return WalkAndApply(_remove_invalid_defs).walk(schema)
+
+
 def define_expected_missing_refs(
     schema: core_schema.CoreSchema, allowed_missing_refs: set[str]
 ) -> core_schema.CoreSchema:

@@ -3,7 +3,7 @@ from __future__ import annotations
 import sys
 import types
 import typing
-from collections import ChainMap, defaultdict
+from collections import ChainMap
 from contextlib import contextmanager
 from contextvars import ContextVar
 from types import prepare_class
@@ -11,10 +11,9 @@ from typing import TYPE_CHECKING, Any, Iterator, List, Mapping, MutableMapping, 
 from weakref import WeakValueDictionary
 
 import typing_extensions
-from pydantic_core import core_schema
 
 from ._core_utils import get_type_ref
-from ._forward_ref import PydanticForwardRef
+from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
 from ._typing_extra import TypeVarType, typing_base
 from ._utils import all_identical, is_basemodel
 
@@ -107,7 +106,11 @@ else:
                 raise KeyError(key)
 
 
-_GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
+# Despite the fact that LimitedDict _seems_ no longer necessary, I'm very nervous to actually remove it
+# and discover later on that we need to re-add all this infrastructure...
+# _GENERIC_TYPES_CACHE = DeepChainMap(GenericTypesCache(), LimitedDict())
+
+_GENERIC_TYPES_CACHE = GenericTypesCache()
 
 
 def create_generic_submodel(
@@ -134,6 +137,7 @@ def create_generic_submodel(
         __pydantic_generic_origin__=origin,
         __pydantic_generic_args__=args,
         __pydantic_generic_parameters__=params,
+        __pydantic_reset_parent_namespace__=False,
         **kwds,
     )
 
@@ -202,7 +206,7 @@ def get_origin(v: Any) -> Any:
     return typing_extensions.get_origin(v)
 
 
-def replace_types(type_: Any, type_map: Mapping[Any, Any]) -> Any:
+def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     """Return type with all occurrences of `type_map` keys recursively replaced with their values.
 
     :param type_: Any type, class or generic alias
@@ -289,11 +293,13 @@ def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) ->
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')
 
 
-_visit_counts_context: ContextVar[dict[str, int] | None] = ContextVar('_visit_counts_context', default=None)
+_generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_recursion_cache', default=None)
 
 
 @contextmanager
-def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) -> Iterator[PydanticForwardRef | None]:
+def generic_recursion_self_type(
+    origin: type[BaseModel], args: tuple[Any, ...]
+) -> Iterator[PydanticForwardRef | PydanticRecursiveRef | None]:
     """
     This contextmanager should be placed around the recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.
@@ -301,36 +307,33 @@ def generic_recursion_self_type(origin: type[BaseModel], args: tuple[Any, ...]) 
     If the same origin and arguments are observed twice, it implies that a self-reference placeholder
     can be used while building the core schema, and will produce a schema_ref that will be valid in the
     final parent schema.
-
-    I believe the main reason that the same origin/args must be observed twice is that a BaseModel's
-    inner_schema will be a TypedDictSchema that doesn't include the first occurrence of the PydanticForwardRef
-    reference, so the referenced schema may not end up in the final core_schema unless you expand two
-    layers deep.
     """
-    visit_counts_by_ref = _visit_counts_context.get()
-    if visit_counts_by_ref is None:
-        visit_counts_by_ref = defaultdict(int)
-        token = _visit_counts_context.set(visit_counts_by_ref)
+    previously_seen_type_refs = _generic_recursion_cache.get()
+    if previously_seen_type_refs is None:
+        previously_seen_type_refs = set()
+        token = _generic_recursion_cache.set(previously_seen_type_refs)
     else:
         token = None
 
     try:
         type_ref = get_type_ref(origin, args_override=args)
-        if visit_counts_by_ref[type_ref] >= 2:
-            self_type = PydanticForwardRef(
-                core_schema.definition_reference_schema(type_ref), origin, ({'kind': 'class_getitem', 'item': args},)
-            )
+        if type_ref in previously_seen_type_refs:
+            self_type = PydanticRecursiveRef(type_ref=type_ref)
             yield self_type
         else:
-            visit_counts_by_ref[type_ref] += 1
+            previously_seen_type_refs.add(type_ref)
             yield None
     finally:
         if token:
-            _visit_counts_context.reset(token)
+            _generic_recursion_cache.reset(token)
 
 
 def recursively_defined_type_refs() -> set[str]:
-    return set((_visit_counts_context.get() or {}).keys())
+    visited = _generic_recursion_cache.get()
+    if not visited:
+        return set()  # not in a generic recursion, so there are no types
+
+    return visited.copy()  # don't allow modifications
 
 
 def get_cached_generic_type_early(parent: type[BaseModel], typevar_values: Any) -> type[BaseModel] | None:
