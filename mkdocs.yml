@@ -68,6 +68,7 @@ nav:
   - 'Code Generation': datamodel_code_generator.md
 - Contribute: contributing.md
 - Blog:
+  - blog/pydantic-2-alpha.md
   - blog/pydantic-v2.md
 
 
