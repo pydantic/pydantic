@@ -408,15 +408,11 @@ def test_shallow_copy_modify(copy_method):
     assert y.deep['deep_thing'] == [1, 2, 3]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_construct_default_factory():
     class Model(BaseModel):
         foo: List[int] = Field(default_factory=list)
         bar: str = 'Baz'
 
-    # TODO: As part of v1 -> v2, the logic for pydantic.fields.FieldInfo.get_default changed to not
-    #  call `default_factory`. Is this really preferable? Naively, it seems to me that it is a user
-    #  mistake if calling default_factory has side effects.. But maybe there's a good reason?
     m = Model.model_construct()
     assert m.foo == []
     assert m.bar == 'Baz'

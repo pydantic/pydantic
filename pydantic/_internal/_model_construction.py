@@ -235,7 +235,7 @@ def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldI
                     continue
 
             # TODO: replace annotation with actual expected types once #1055 solved
-            kwargs = {} if field.is_required() else {'default': field.get_default()}
+            kwargs = {} if field.is_required() else {'default': field.get_default(call_default_factory=False)}
             merged_params[param_name] = Parameter(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
             )
