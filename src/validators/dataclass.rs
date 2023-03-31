@@ -5,7 +5,7 @@ use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{is_strict, py_err, schema_or_config_same, SchemaDict};
+use crate::build_tools::{is_strict, py_err, schema_or_config_same, ExtraBehavior, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
@@ -24,6 +24,7 @@ struct Field {
     init_only: bool,
     lookup_key: LookupKey,
     validator: CombinedValidator,
+    frozen: bool,
 }
 
 #[derive(Debug, Clone)]
@@ -33,6 +34,7 @@ pub struct DataclassArgsValidator {
     init_only_count: Option<usize>,
     dataclass_name: String,
     validator_name: String,
+    extra_behavior: ExtraBehavior,
 }
 
 impl BuildValidator for DataclassArgsValidator {
@@ -46,6 +48,8 @@ impl BuildValidator for DataclassArgsValidator {
         let py = schema.py();
 
         let populate_by_name = schema_or_config_same(schema, config, intern!(py, "populate_by_name"))?.unwrap_or(false);
+
+        let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
         let fields_schema: &PyList = schema.get_as_req(intern!(py, "fields"))?;
         let mut fields: Vec<Field> = Vec::with_capacity(fields_schema.len());
@@ -91,6 +95,7 @@ impl BuildValidator for DataclassArgsValidator {
                 lookup_key,
                 validator,
                 init_only: field.get_as(intern!(py, "init_only"))?.unwrap_or(false),
+                frozen: field.get_as::<bool>(intern!(py, "frozen"))?.unwrap_or(false),
             });
         }
 
@@ -108,6 +113,7 @@ impl BuildValidator for DataclassArgsValidator {
             init_only_count,
             dataclass_name,
             validator_name,
+            extra_behavior,
         }
         .into())
     }
@@ -254,11 +260,20 @@ impl Validator for DataclassArgsValidator {
                             match raw_key.strict_str() {
                                 Ok(either_str) => {
                                     if !used_keys.contains(either_str.as_cow()?.as_ref()) {
-                                        errors.push(ValLineError::new_with_loc(
-                                            ErrorType::UnexpectedKeywordArgument,
-                                            value,
-                                            raw_key.as_loc_item(),
-                                        ));
+                                        // Unknown / extra field
+                                        match self.extra_behavior {
+                                            ExtraBehavior::Forbid => {
+                                                errors.push(ValLineError::new_with_loc(
+                                                    ErrorType::UnexpectedKeywordArgument,
+                                                    value,
+                                                    raw_key.as_loc_item(),
+                                                ));
+                                            }
+                                            ExtraBehavior::Ignore => {}
+                                            ExtraBehavior::Allow => {
+                                                output_dict.set_item(either_str.as_py_string(py), value)?
+                                            }
+                                        }
                                     }
                                 }
                                 Err(ValError::LineErrors(line_errors)) => {
@@ -303,7 +318,19 @@ impl Validator for DataclassArgsValidator {
     ) -> ValResult<'data, PyObject> {
         let dict: &PyDict = obj.downcast()?;
 
+        let ok = |output: PyObject| {
+            dict.set_item(field_name, output)?;
+            Ok(dict.to_object(py))
+        };
+
         if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
+            if field.frozen {
+                return Err(ValError::new_with_loc(
+                    ErrorType::FrozenField,
+                    field_value,
+                    field.name.to_string(),
+                ));
+            }
             // by using dict but removing the field in question, we match V1 behaviour
             let data_dict = dict.copy()?;
             if let Err(err) = data_dict.del_item(field_name) {
@@ -321,10 +348,7 @@ impl Validator for DataclassArgsValidator {
                 .validator
                 .validate(py, field_value, &next_extra, slots, recursion_guard)
             {
-                Ok(output) => {
-                    dict.set_item(field_name, output)?;
-                    Ok(dict.to_object(py))
-                }
+                Ok(output) => ok(output),
                 Err(ValError::LineErrors(line_errors)) => {
                     let errors = line_errors
                         .into_iter()
@@ -335,13 +359,21 @@ impl Validator for DataclassArgsValidator {
                 Err(err) => Err(err),
             }
         } else {
-            Err(ValError::new_with_loc(
-                ErrorType::NoSuchAttribute {
-                    attribute: field_name.to_string(),
-                },
-                field_value,
-                field_name.to_string(),
-            ))
+            // Handle extra (unknown) field
+            // We partially use the extra_behavior for initialization / validation
+            // to determine how to handle assignment
+            match self.extra_behavior {
+                // For dataclasses we allow assigning unknown fields
+                // to match stdlib dataclass behavior
+                ExtraBehavior::Allow => ok(field_value.to_object(py)),
+                _ => Err(ValError::new_with_loc(
+                    ErrorType::NoSuchAttribute {
+                        attribute: field_name.to_string(),
+                    },
+                    field_value,
+                    field_name.to_string(),
+                )),
+            }
         }
     }
 
@@ -364,6 +396,7 @@ pub struct DataclassValidator {
     post_init: Option<Py<PyString>>,
     revalidate: Revalidate,
     name: String,
+    frozen: bool,
 }
 
 impl BuildValidator for DataclassValidator {
@@ -399,6 +432,7 @@ impl BuildValidator for DataclassValidator {
             // as with model, get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
+            frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
         }
         .into())
     }
@@ -455,6 +489,9 @@ impl Validator for DataclassValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
+        if self.frozen {
+            return Err(ValError::new(ErrorType::FrozenInstance, field_value));
+        }
         let dict_py_str = intern!(py, "__dict__");
         let dict: &PyDict = obj.getattr(dict_py_str)?.downcast()?;
 
