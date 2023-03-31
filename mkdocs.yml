@@ -58,6 +58,7 @@ nav:
     - Booleans: usage/booleans.md
     - Callables: usage/callables.md
     - Type and TypeVar: usage/typevars.md
+    - Literal Types: usage/literals.md
     - Annotated Types: usage/annotated_types.md
     - Pydantic Types: usage/pydantic_types.md
     - ImportString: usage/importstring.md
