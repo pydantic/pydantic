@@ -57,6 +57,16 @@ def inspect_namespace(  # noqa C901
     private_attributes: dict[str, ModelPrivateAttr] = {}
     raw_annotations = namespace.get('__annotations__', {})
 
+    if '__root__' in raw_annotations or '__root__' in namespace:
+        # TODO: Update error message with migration description and/or link to documentation
+        #   Needs to mention:
+        #   * Use root_validator to wrap input data in a dict
+        #   * Use model_serializer to extract wrapped data during dumping
+        #   * Use model_modify_json_schema (or whatever it becomes) to unwrap the JSON schema
+        raise TypeError(
+            '__root__ models are no longer supported in v2; a migration guide will be added in the near future'
+        )
+
     ignored_names: set[str] = set()
     for var_name, value in list(namespace.items()):
         if var_name == 'model_config':
