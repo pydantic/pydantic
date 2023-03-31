@@ -43,8 +43,21 @@ def test_model_validate_wrong_model():
     assert exc_info.value.errors() == [{'input': {'c': 123}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}]
 
 
+def test_root_model_error():
+    with pytest.raises(
+        TypeError,
+        match='__root__ models are no longer supported in v2',
+    ):
+
+        class MyModel(BaseModel):
+            __root__: str
+
+
 @pytest.mark.xfail(reason='__root__ model')
 def test_model_validate_root():
+    # TODO: Migrate this test and those following to use root_validator, model_serializer, etc., once ready
+    #   Probably also want to re-add some of the __root__ tests from v1 that test other behaviors,
+    #   such as serialization and JSON schema.
     class MyModel(BaseModel):
         __root__: str
 
