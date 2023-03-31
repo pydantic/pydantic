@@ -37,7 +37,7 @@ if sys.version_info >= (3, 10):
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
-    ) -> Callable[[type[_T]], PydanticDataclass]:
+    ) -> Callable[[type[_T]], type[PydanticDataclass]]:
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
@@ -54,7 +54,7 @@ if sys.version_info >= (3, 10):
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
-    ) -> PydanticDataclass:
+    ) -> type[PydanticDataclass]:
         ...
 
 else:
@@ -71,7 +71,7 @@ else:
         frozen: bool = False,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
-    ) -> Callable[[type[_T]], PydanticDataclass]:
+    ) -> Callable[[type[_T]], type[PydanticDataclass]]:
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
@@ -87,7 +87,7 @@ else:
         frozen: bool = False,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
-    ) -> PydanticDataclass:
+    ) -> type[PydanticDataclass]:
         ...
 
 
@@ -104,15 +104,24 @@ def dataclass(
     config: ConfigDict | type[object] | None = None,
     validate_on_init: bool | None = None,
     kw_only: bool = False,
-) -> Callable[[type[_T]], PydanticDataclass] | PydanticDataclass:
+) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
     """
     Like the python standard lib dataclasses but enhanced with validation.
     """
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
 
-    def create_dataclass(cls: type[Any]) -> PydanticDataclass:
+    def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
+        # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator
+        # Otherwise, classes with no __doc__ will have their signature added into the JSON schema description,
+        # since dataclasses.dataclass will set this as the __doc__
+        original_doc = cls.__doc__
+
         decorators = _decorators.gather_decorator_functions(cls)
         if dataclasses.is_dataclass(cls) and not hasattr(cls, '__pydantic_fields__'):
+            # don't preserve the docstring for vanilla dataclasses, as it may include the signature
+            # this matches v1 behavior, and there was an explicit test for it
+            original_doc = None
+
             # so we don't add validation to the existing std lib dataclass, so we subclass it, but we need to
             # set `__pydantic_fields__` while subclassing so the logic below can treat the new class like its
             # parent is a pydantic dataclass
@@ -145,7 +154,7 @@ def dataclass(
         else:
             kwargs = {}
 
-        return dataclasses.dataclass(  # type: ignore[call-overload]
+        cls = dataclasses.dataclass(  # type: ignore[call-overload]
             cls,
             init=init,
             repr=repr,
@@ -155,6 +164,8 @@ def dataclass(
             frozen=frozen,
             **kwargs,
         )
+        cls.__doc__ = original_doc
+        return cls
 
     if _cls is None:
         return create_dataclass

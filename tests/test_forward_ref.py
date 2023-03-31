@@ -368,7 +368,7 @@ def test_circular_reference_json_schema(create_module):
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
-                'properties': {'account': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'}},
+                'properties': {'account': {'$ref': '#/$defs/Account'}},
                 'required': ['account'],
             },
         },
@@ -417,7 +417,7 @@ class Account(BaseModel):
             'Owner': {
                 'title': 'Owner',
                 'type': 'object',
-                'properties': {'account': {'allOf': [{'$ref': '#/$defs/Account'}], 'title': 'Account'}},
+                'properties': {'account': {'$ref': '#/$defs/Account'}},
                 'required': ['account'],
             },
         },

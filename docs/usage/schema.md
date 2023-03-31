@@ -424,7 +424,7 @@ sub-models in its `definitions`:
 import json
 
 from pydantic import BaseModel
-from pydantic.json_schema import schema
+from pydantic.json_schema import models_json_schema
 
 
 class Foo(BaseModel):
@@ -439,7 +439,7 @@ class Bar(BaseModel):
     c: int
 
 
-top_level_schema = schema([Model, Bar], title='My Schema')
+top_level_schema = models_json_schema([Model, Bar], title='My Schema')
 print(json.dumps(top_level_schema, indent=2))
 """
 {
@@ -498,7 +498,7 @@ This is useful if you need to extend or modify the JSON Schema default definitio
 import json
 
 from pydantic import BaseModel
-from pydantic.json_schema import schema
+from pydantic.json_schema import models_json_schema
 
 
 class Foo(BaseModel):
@@ -510,7 +510,7 @@ class Model(BaseModel):
 
 
 # Default location for OpenAPI
-top_level_schema = schema([Model], ref_prefix='#/components/schemas/')
+top_level_schema = models_json_schema([Model], ref_prefix='#/components/schemas/')
 print(json.dumps(top_level_schema, indent=2))
 ```
 
