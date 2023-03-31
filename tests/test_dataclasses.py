@@ -136,7 +136,6 @@ def test_validate_assignment_value_change():
 @pytest.mark.parametrize(
     'config',
     [
-        ConfigDict(validate_assignment=True),
         ConfigDict(validate_assignment=False),
         ConfigDict(extra=None),
         ConfigDict(extra=Extra.forbid),
@@ -145,8 +144,6 @@ def test_validate_assignment_value_change():
         ConfigDict(validate_assignment=False, extra=Extra.forbid),
         ConfigDict(validate_assignment=False, extra=Extra.ignore),
         ConfigDict(validate_assignment=False, extra=Extra.allow),
-        ConfigDict(validate_assignment=True, extra=None),
-        ConfigDict(validate_assignment=True, extra=Extra.ignore),
         ConfigDict(validate_assignment=True, extra=Extra.allow),
     ],
 )
@@ -165,7 +162,10 @@ def test_validate_assignment_extra_unknown_field_assigned_allowed(config: Config
 @pytest.mark.parametrize(
     'config',
     [
+        ConfigDict(validate_assignment=True),
+        ConfigDict(validate_assignment=True, extra=None),
         ConfigDict(validate_assignment=True, extra=Extra.forbid),
+        ConfigDict(validate_assignment=True, extra=Extra.ignore),
     ],
 )
 def test_validate_assignment_extra_unknown_field_assigned_errors(config: ConfigDict):
@@ -1434,7 +1434,7 @@ def test_extra_forbid_list_no_error():
 
 
 def test_extra_forbid_list_error():
-    @pydantic.dataclasses.dataclass
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.forbid))
     class Bar:
         ...
 
