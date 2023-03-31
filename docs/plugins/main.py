@@ -37,6 +37,7 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     Called on each file after it is read and before it is converted to HTML.
     """
     markdown = upgrade_python(markdown)
+    markdown = insert_json_output(markdown)
     markdown = remove_code_fence_attributes(markdown)
     if md := add_version(markdown, page):
         return md
@@ -115,6 +116,26 @@ def _upgrade_code(code: str, min_version: int) -> str:
     return autoflake.fix_code(upgraded, remove_all_unused_imports=True)
 
 
+def insert_json_output(markdown: str) -> str:
+    """
+    Find `output="json"` code fence tags and replace with a separate JSON section
+    """
+
+    def replace_json(m: re.Match[str]) -> str:
+        start, attrs, code = m.groups()
+
+        def replace_last_print(m2: re.Match[str]) -> str:
+            ind, json_text = m2.groups()
+            json_text = indent(json.dumps(json.loads(json_text), indent=2), ind)
+            # no trailing fence as that's not part of code
+            return f'\n{ind}```\n\n{ind}JSON output:\n\n{ind}```json\n{json_text}\n'
+
+        code = re.sub(r'\n( *)"""(.*?)\1"""\n$', replace_last_print, code, flags=re.S)
+        return f'{start}{attrs}{code}{start}\n'
+
+    return re.sub(r'(^ *```)([^\n]*?output="json"[^\n]*?\n)(.+?)\1', replace_json, markdown, flags=re.M | re.S)
+
+
 def remove_code_fence_attributes(markdown: str) -> str:
     """
     There's no way to add attributes to code fences that works with both pycharm and mkdocs, hence we use
@@ -124,7 +145,7 @@ def remove_code_fence_attributes(markdown: str) -> str:
     """
 
     def remove_attrs(match: re.Match[str]) -> str:
-        suffix = re.sub(r' (?:test|lint|upgrade|group|requires)=".+?"', '', match.group(2), flags=re.M)
+        suffix = re.sub(r' (?:test|lint|upgrade|group|requires|output)=".+?"', '', match.group(2), flags=re.M)
         return f'{match.group(1)}{suffix}'
 
     return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)
