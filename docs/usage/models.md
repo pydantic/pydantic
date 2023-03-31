@@ -323,48 +323,46 @@ The `GetterDict` instance will be called for each field with a sentinel as a fal
 value is set). Returning this sentinel means that the field is missing. Any other value will
 be interpreted as the value of the field.
 
-```py test="xfail - GetterDict is removed, replace with a custom root_validator"
-from typing import Any, Optional
+```py
+from collections.abc import Mapping
+from typing import Optional
 from xml.etree.ElementTree import fromstring
 
-from pydantic import BaseModel
-from pydantic.utils import GetterDict
+from pydantic import BaseModel, Field
 
 xmlstring = """
 <User Id="2138">
-    <FirstName />
-    <LoggedIn Value="true" />
+    <FirstName>John</FirstName>
+    <LastName>Foobar</LastName>
 </User>
 """
 
 
-class UserGetter(GetterDict):
-    def get(self, key: str, default: Any) -> Any:
-        # element attributes
-        if key in {'Id', 'Status'}:
-            return self._obj.attrib.get(key, default)
+class XmlMapping(Mapping):
+    def __init__(self, xmlstring):
+        self._xml = fromstring(xmlstring)
 
-        # element children
+    def __getitem__(self, key):
+        if key in {'Id', 'Status'}:
+            return self._xml.attrib.get(key)
         else:
-            try:
-                return self._obj.find(key).attrib['Value']
-            except (AttributeError, KeyError):
-                return default
+            return self._xml.find(key).text
+
+    def __len__(self):
+        return len(self._xml.attrib) + len(self._xml)
+
+    def __iter__(self):
+        ...
 
 
 class User(BaseModel):
-    Id: int
-    Status: Optional[str]
-    FirstName: Optional[str]
-    LastName: Optional[str]
-    LoggedIn: bool
-
-    class Config:
-        from_attributes = True
-        getter_dict = UserGetter
+    id: int = Field(alias='Id')
+    first_name: Optional[str] = Field(None, alias='FirstName')
+    last_name: Optional[str] = Field(None, alias='LastName')
 
 
-user = User.from_orm(fromstring(xmlstring))
+print(User.model_validate(XmlMapping(xmlstring)))
+#> id=2138 first_name='John' last_name='Foobar'
 ```
 
 
@@ -695,7 +693,7 @@ In order to declare a generic model, you perform the following steps:
 
 Here is an example using `GenericModel` to create an easily-reused HTTP response payload wrapper:
 
-```py test="xfail - needs always/validate default support"
+```py test="xfail looks like an error with generics!"
 from typing import Generic, List, Optional, TypeVar
 
 from pydantic import BaseModel, Field, ValidationError, field_validator
@@ -714,8 +712,8 @@ class DataModel(BaseModel):
 
 
 class Response(BaseModel, Generic[DataT]):
-    data: Optional[DataT]
-    error: Optional[Error] = Field(always=True)
+    data: Optional[DataT] = None
+    error: Optional[Error] = Field(validate_default=True)
 
     @field_validator('error')
     def check_consistency(cls, v, info):
@@ -1412,7 +1410,7 @@ which are analogous to `BaseModel.parse_file` and `BaseModel.parse_raw`.
 and in some cases this may result in a loss of information.
 For example:
 
-```py test="xfail this logic has failed"
+```py
 from pydantic import BaseModel
 
 
@@ -1422,7 +1420,8 @@ class Model(BaseModel):
     c: str
 
 
-print(Model(a=3.1415, b=' 2.72 ', c=123).model_dump())
+print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
+#> {'a': 3, 'b': 2.72, 'c': 'binary data'}
 ```
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See
