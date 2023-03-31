@@ -1,3 +1,5 @@
+# Rebuild lockfiles from scratch, updating all dependencies
+
 echo "Updating requirements/*.txt files using pip-compile"
 # refresh the constraints / all lockfile
 pip-compile -q --resolver backtracking -o requirements/all.txt --strip-extras requirements/all.in

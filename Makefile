@@ -8,12 +8,12 @@ install:
 	pip install -e .
 
 .PHONY: refresh-lockfiles
-refresh-lockfiles:
+refresh-lockfiles:       ## Sync lockfiles with requirements files.
 	bash requirements/refresh.sh
 
 
 .PHONY: rebuild-lockfiles
-rebuild-lockfiles:
+rebuild-lockfiles:       ## Rebuild lockfiles from scratch, updating all dependencies
 	bash requirements/rebuild.sh
 
 .PHONY: format

@@ -1,3 +1,5 @@
+# Sync lockfiles with requirements files.
+
 echo "Recreating requirements/*.txt files using pip-compile"
 
 # delete the lockfiles
