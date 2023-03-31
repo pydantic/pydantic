@@ -243,13 +243,15 @@ class FieldInfo(_repr.Representation):
             metadata.append(_fields.PydanticGeneralMetadata(**general_metadata))
         return metadata
 
-    def get_default(self, force_call_default_factory: bool = False) -> Any:
-        # we generally don't want to call default_factory as it may have side effects,
-        # so we default to None as a least-worst alternative
-        # However, we keep `force_call_default_factory` for the purposes of model_construct
+    def get_default(self, *, call_default_factory: bool = False) -> Any:
+        """
+        We expose an option for whether to call the default_factory (if present), as calling it may
+        result in side effects that we want to avoid. However, there are times when it really should
+        be called (namely, when instantiating a model via `model_construct`).
+        """
         if self.default_factory is None:
             return _utils.smart_deepcopy(self.default)
-        elif force_call_default_factory:
+        elif call_default_factory:
             return self.default_factory()
         else:
             return None
