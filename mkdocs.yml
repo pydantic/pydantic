@@ -23,6 +23,7 @@ theme:
       name: "Switch to light mode"
   features:
     - content.tabs.link
+    - announce.dismiss
     - navigation.tabs
   logo: 'logo-white.svg'
   favicon: 'favicon.png'
@@ -78,7 +79,6 @@ markdown_extensions:
 - admonition
 - pymdownx.highlight
 - pymdownx.extra
-- mdx_truly_sane_lists
 - pymdownx.emoji:
     emoji_index: !!python/name:materialx.emoji.twemoji
     emoji_generator: !!python/name:materialx.emoji.to_svg
@@ -89,6 +89,7 @@ plugins:
 - search
 - exclude:
     glob:
+    - theme/announce.html
     - plugins/*
     - __pycache__/*
 - mkdocs-simple-hooks:

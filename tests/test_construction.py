@@ -258,7 +258,7 @@ def test_copy_update_unset(copy_method):
 
     assert (
         copy_method(Foo(foo='hello'), update={'bar': 'world'}).model_dump_json(exclude_unset=True)
-        == b'{"foo":"hello","bar":"world"}'
+        == '{"foo":"hello","bar":"world"}'
     )
 
 

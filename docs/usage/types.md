@@ -305,59 +305,6 @@ for i in m.infinite:
     pydantic can't validate the values automatically for you because it would require
     consuming the infinite generator.
 
-#### Validating the first value
-
-You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
-
-```py test="xfail - what's going on here?"
-import itertools
-from typing import Iterable
-
-from pydantic import BaseModel, ValidationError, field_validator
-
-
-class Model(BaseModel):
-    infinite: Iterable[int]
-
-    @field_validator('infinite')
-    # You don't need to add the "ModelField", but it will help your
-    # editor give you completion and catch errors
-    def infinite_first_int(cls, iterable, field):
-        first_value = next(iterable)
-        if field.sub_fields:
-            # The Iterable had a parameter type, in this case it's int
-            # We use it to validate the first value
-            sub_field = field.sub_fields[0]
-            v, error = sub_field.validate(first_value, {}, loc='first_value')
-            if error:
-                raise ValidationError([error], cls)
-        # This creates a new generator that returns the first value and then
-        # the rest of the values from the (already started) iterable
-        return itertools.chain([first_value], iterable)
-
-
-def infinite_ints():
-    i = 0
-    while True:
-        yield i
-        i += 1
-
-
-m = Model(infinite=infinite_ints())
-print(m)
-
-
-def infinite_strs():
-    while True:
-        yield from 'allthesingleladies'
-
-
-try:
-    Model(infinite=infinite_strs())
-except ValidationError as e:
-    print(e)
-```
-
 ### Unions
 
 The `Union` type allows a model attribute to accept different types, e.g.:
@@ -622,39 +569,35 @@ except ValidationError as e:
 ### Datetime Types
 
 *Pydantic* supports the following [datetime](https://docs.python.org/library/datetime.html#available-types)
-types:
+types.
 
-* `datetime` fields can be:
+`datetime` fields can be:
 
-  * `datetime`, existing `datetime` object
-  * `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
-  * `str`, following formats work:
-
+* `datetime`, existing `datetime` object
+* `int` or `float`, assumed as Unix time, i.e. seconds (if >= `-2e10` or <= `2e10`) or milliseconds (if < `-2e10`or > `2e10`) since 1 January 1970
+* `str`, following formats work:
     * `YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
     * `int` or `float` as a string (assumed as Unix time)
 
-* `date` fields can be:
+`date` fields can be:
 
-  * `date`, existing `date` object
-  * `int` or `float`, see `datetime`
-  * `str`, following formats work:
-
+* `date`, existing `date` object
+* `int` or `float`, see `datetime`
+* `str`, following formats work:
     * `YYYY-MM-DD`
     * `int` or `float`, see `datetime`
 
-* `time` fields can be:
+`time` fields can be:
 
-  * `time`, existing `time` object
-  * `str`, following formats work:
-
+* `time`, existing `time` object
+* `str`, following formats work:
     * `HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]`
 
-* `timedelta` fields can be:
+`timedelta` fields can be:
 
-  * `timedelta`, existing `timedelta` object
-  * `int` or `float`, assumed as seconds
-  * `str`, following formats work:
-
+* `timedelta`, existing `timedelta` object
+* `int` or `float`, assumed as seconds
+* `str`, following formats work:
     * `[-][DD ][HH:MM]SS[.ffffff]`
     * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
@@ -1292,49 +1235,25 @@ my_cos_2 = ImportThings(obj='math.cos')
 assert my_cos == my_cos_2
 ```
 
-**Serializing an `ImportString` type to json is possible with a
-[custom encoder](exporting_models.md#json_encoders) which accounts for
-the evaluated object:**
-```py test="xfail - replace json_encoders"
-from types import BuiltinFunctionType
+**Serializing an `ImportString` type to json is possible with a`serializer` (TODO link).
 
-from pydantic import BaseModel, ImportString
+```py output="json"
+from pydantic import BaseModel, ImportString, serializer
 
 
-# The following class will not successfully serialize to JSON
-# Since "obj" is evaluated to an object, not a pydantic `ImportString`
-class WithCustomEncodersBad(BaseModel):
-    obj: ImportString
-
-    class Config:
-        json_encoders = {ImportString: lambda x: str(x)}
-
-
-# Create an instance
-m = WithCustomEncodersBad(obj='math.cos')
-
-try:
-    m.json()
-except TypeError as e:
-    print(e)
-
-# Let's do some sanity checks to verify that m.obj is not an "ImportString"
-print(isinstance(m.obj, ImportString))
-print(isinstance(m.obj, BuiltinFunctionType))
-
-
-# So now that we know that after an ImportString is evaluated by Pydantic
-# it results in its underlying object, we can configure our json encoder
-# to account for those specific types
 class WithCustomEncodersGood(BaseModel):
     obj: ImportString
 
-    class Config:
-        json_encoders = {BuiltinFunctionType: lambda x: str(x)}
+    @serializer('obj')
+    def serialize_obj(cls, v):
+        return str(v)
 
 
 m = WithCustomEncodersGood(obj='math.cos')
-print(m.json())
+print(m.model_dump_json())
+"""
+{"obj":"SerializationInfo(include=None, exclude=None, mode='json', by_alias=False, exclude_unset=False, exclude_defaults=False, exclude_none=False, round_trip=False)"}
+"""
 ```
 
 ### URLs
@@ -1632,8 +1551,8 @@ that you do not want to be visible in logging or tracebacks.
 `SecretStr` and `SecretBytes` can be initialized idempotently or by using `str` or `bytes` literals respectively.
 The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
-```py test="xfail - replace json_encoders"
-from pydantic import BaseModel, SecretBytes, SecretStr, ValidationError
+```py
+from pydantic import BaseModel, SecretBytes, SecretStr, ValidationError, serializer
 
 
 class SimpleModel(BaseModel):
@@ -1645,18 +1564,31 @@ sm = SimpleModel(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
 
 # Standard access methods will not display the secret
 print(sm)
+#> password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
 print(sm.password)
+#> **********
 print(sm.model_dump())
+#> {'password': SecretStr('**********'), 'password_bytes': SecretBytes(b'**********')}
 print(sm.model_dump_json())
+#> {"password":"**********","password_bytes":"**********"}
 
 # Use get_secret_value method to see the secret's content.
 print(sm.password.get_secret_value())
+#> IAmSensitive
 print(sm.password_bytes.get_secret_value())
+#> b'IAmSensitiveBytes'
 
 try:
     SimpleModel(password=[1, 2, 3], password_bytes=[1, 2, 3])
 except ValidationError as e:
     print(e)
+    """
+    2 validation errors for SimpleModel
+    password
+      Input should be a valid string [type=string_type, input_value=[1, 2, 3], input_type=list]
+    password_bytes
+      Input should be a valid bytes [type=bytes_type, input_value=[1, 2, 3], input_type=list]
+    """
 
 
 # If you want the secret to be dumped as plain-text using the json method,
@@ -1665,22 +1597,24 @@ class SimpleModelDumpable(BaseModel):
     password: SecretStr
     password_bytes: SecretBytes
 
-    class Config:
-        json_encoders = {
-            SecretStr: lambda v: v.get_secret_value() if v else None,
-            SecretBytes: lambda v: v.get_secret_value() if v else None,
-        }
+    @serializer('password', 'password_bytes')
+    def serialize_secret(v):
+        return v.get_secret_value() if v else None
 
 
 sm2 = SimpleModelDumpable(password='IAmSensitive', password_bytes=b'IAmSensitiveBytes')
 
 # Standard access methods will not display the secret
 print(sm2)
+#> password=SecretStr('**********') password_bytes=SecretBytes(b'**********')
 print(sm2.password)
+#> **********
 print(sm2.model_dump())
+#> {'password': 'IAmSensitive', 'password_bytes': b'IAmSensitiveBytes'}
 
 # But the json method will
 print(sm2.model_dump_json())
+#> {"password":"IAmSensitive","password_bytes":"IAmSensitiveBytes"}
 ```
 
 ### Json Type

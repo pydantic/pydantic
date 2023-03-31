@@ -29,7 +29,7 @@ from ._internal import (
 )
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
-from .errors import PydanticUserError
+from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata
@@ -39,6 +39,7 @@ if typing.TYPE_CHECKING:
 
     from pydantic_core import CoreSchema, SchemaSerializer
 
+    from ._internal._generate_schema import GenerateSchema
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
     AnyClassMethod = classmethod[Any]
@@ -59,7 +60,7 @@ _base_class_defined = False
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
-    def __new__(
+    def __new__(  # noqa C901
         mcs,
         cls_name: str,
         bases: tuple[type[Any], ...],
@@ -67,6 +68,7 @@ class ModelMetaclass(ABCMeta):
         __pydantic_generic_origin__: type[BaseModel] | None = None,
         __pydantic_generic_args__: tuple[Any, ...] | None = None,
         __pydantic_generic_parameters__: tuple[Any, ...] | None = None,
+        __pydantic_reset_parent_namespace__: bool = True,
         **kwargs: Any,
     ) -> type:
         if _base_class_defined:
@@ -117,19 +119,26 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_decorators__ = _decorators.gather_decorator_functions(cls)
 
+            # FIXME all generics related attributes should be moved into a dict, like `__pydantic_decorators__`
+            parent_typevars_map = {}
+            for base in bases:
+                base_typevars_map = getattr(base, '__pydantic_generic_typevars_map__', None)
+                if base_typevars_map:
+                    parent_typevars_map.update(base_typevars_map)
+
             cls.__pydantic_generic_args__ = __pydantic_generic_args__
             cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
             cls.__pydantic_generic_parameters__ = __pydantic_generic_parameters__ or getattr(
                 cls, '__parameters__', None
             )
             cls.__pydantic_generic_defaults__ = None if not cls.__pydantic_generic_parameters__ else {}
-            cls.__pydantic_generic_typevars_map__ = (
-                None
-                if __pydantic_generic_origin__ is None
-                else dict(
+            if __pydantic_generic_origin__ is None:
+                cls.__pydantic_generic_typevars_map__ = None
+            else:
+                new_typevars_map = dict(
                     zip(_generics.iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ())
                 )
-            )
+                cls.__pydantic_generic_typevars_map__ = {**parent_typevars_map, **new_typevars_map}
 
             cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
 
@@ -140,11 +149,16 @@ class ModelMetaclass(ABCMeta):
                 if callable(set_name):
                     set_name(cls, name)
 
+            if __pydantic_reset_parent_namespace__:
+                cls.__pydantic_parent_namespace__ = _typing_extra.parent_frame_namespace()
+            parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
+
+            types_namespace = _model_construction.get_model_types_namespace(cls, parent_namespace)
+            _model_construction.set_model_fields(cls, bases, types_namespace)
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
-                bases,
-                types_namespace=_typing_extra.parent_frame_namespace(),
+                types_namespace,
                 raise_errors=False,
             )
             return cls
@@ -181,6 +195,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None]
         __pydantic_generic_parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None]
         __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None]
+        __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
@@ -202,6 +217,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: type[BaseModel], gen_schema: GenerateSchema) -> CoreSchema:
+        return gen_schema.model_schema(cls)
 
     @classmethod
     def model_validate(cls: type[Model], obj: Any) -> Model:
@@ -295,7 +314,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
-    ) -> bytes:
+    ) -> str:
         """
         Generate a JSON representation of the model, `include` and `exclude` arguments as per `dict()`.
         """
@@ -310,7 +329,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             exclude_none=exclude_none,
             round_trip=round_trip,
             warnings=warnings,
-        )
+        ).decode()
 
     @classmethod
     def from_orm(cls: type[Model], obj: Any) -> Model:
@@ -423,7 +442,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cached = cls.__schema_cache__.get((by_alias, ref_template))
         if cached is not None:
             return cached
-        s = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(cls.__pydantic_core_schema__)
+        schema = cls.__pydantic_core_schema__
+        s = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(schema)
         cls.__schema_cache__[(by_alias, ref_template)] = s
         return s
 
@@ -535,8 +555,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         *,
         force: bool = False,
         raise_errors: bool = True,
-        types_namespace: dict[str, Any] | None = None,
-        typevars_map: dict[str, Any] | None = None,
+        _parent_namespace_depth: int = 2,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -544,19 +563,19 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if not force and cls.__pydantic_model_complete__:
             return None
         else:
-            parents_namespace = _typing_extra.parent_frame_namespace()
-            if types_namespace and parents_namespace:
-                types_namespace = {**parents_namespace, **types_namespace}
-            elif parents_namespace:
-                types_namespace = parents_namespace
+            if _parent_namespace_depth > 0:
+                frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+                cls_parent_ns = cls.__pydantic_parent_namespace__ or {}
+                cls.__pydantic_parent_namespace__ = {**cls_parent_ns, **frame_parent_ns}
 
+            types_namespace = cls.__pydantic_parent_namespace__
+
+            types_namespace = _model_construction.get_model_types_namespace(cls, types_namespace)
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
-                cls.__bases__,
+                types_namespace,
                 raise_errors=raise_errors,
-                types_namespace=types_namespace,
-                typevars_map=typevars_map,
             )
 
     def __iter__(self) -> TupleGenerator:
@@ -734,7 +753,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
-    ) -> type[BaseModel] | _forward_ref.PydanticForwardRef:
+    ) -> type[BaseModel] | _forward_ref.PydanticForwardRef | _forward_ref.PydanticRecursiveRef:
         cached = _generics.get_cached_generic_type_early(cls, typevar_values)
         if cached is not None:
             return cached
@@ -754,6 +773,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
             zip(cls.__pydantic_generic_parameters__ or (), typevar_values)
         )
+
         if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
             _generics.set_cached_generic_type(cls, typevar_values, submodel)
@@ -777,13 +797,28 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 cached = _generics.get_cached_generic_type_late(cls, typevar_values, origin, args)
                 if cached is not None:
                     return cached
+
+                # Attempt to rebuild the origin in case new types have been defined
+                try:
+                    # depth 3 gets you above this __class_getitem__ call
+                    origin.model_rebuild(_parent_namespace_depth=3)
+                except PydanticUndefinedAnnotation:
+                    # It's okay if it fails, it just means there are still undefined types
+                    # that could be evaluated later.
+                    # TODO: Presumably we should error if validation is attempted here?
+                    pass
+
                 submodel = _generics.create_generic_submodel(model_name, origin, args, params)
 
                 # Update cache
                 _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
                 # Doing the rebuild _after_ populating the cache prevents infinite recursion
-                submodel.model_rebuild(force=True, raise_errors=False, typevars_map=typevars_map)
+                submodel.model_rebuild(
+                    force=True,
+                    raise_errors=False,
+                    _parent_namespace_depth=0,
+                )
 
         return submodel
 
@@ -916,7 +951,7 @@ def create_model(
     if resolved_bases is not __base__:
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
-    return meta(__model_name, resolved_bases, namespace, **kwds)
+    return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False, **kwds)
 
 
 T = TypeVar('T')
@@ -980,9 +1015,7 @@ class Validator(Generic[T]):
         # But at the very least this behavior is _subtly_ different from BaseModel's.
         global_ns = sys._getframe(1).f_globals.copy()
         global_ns.update(local_ns or {})
-        gen = _generate_schema.GenerateSchema(
-            arbitrary_types=arbitrary_types, types_namespace=global_ns, typevars_map={}
-        )
+        gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=global_ns)
         schema = gen.generate_schema(__type)
         self._validator = SchemaValidator(schema, config=merged_config)
 

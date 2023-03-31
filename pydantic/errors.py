@@ -1,5 +1,7 @@
 from __future__ import annotations as _annotations
 
+import re
+
 __all__ = (
     'PydanticUserError',
     'PydanticSchemaGenerationError',
@@ -31,9 +33,20 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     Error occurs when annotations are not yet defined
     """
 
-    def __init__(self, name: str, *, message: str | None = None) -> None:
+    def __init__(self, name: str, message: str | None = None) -> None:
         self.name = name
         super().__init__(code=name, message=message)
+
+    @classmethod
+    def from_name_error(cls, name_error: NameError) -> PydanticUndefinedAnnotation:
+        try:
+            name = name_error.name
+        except AttributeError:
+            name = re.search(r".*'(.+?)'", str(name_error)).group(1)  # type: ignore[union-attr]
+        return cls(name=name, message=str(name_error))
+
+    def __str__(self) -> str:
+        return f'Undefined annotation: {self.message}'
 
 
 class PydanticSchemaGenerationError(PydanticUserError):

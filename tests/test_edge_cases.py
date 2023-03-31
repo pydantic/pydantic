@@ -137,7 +137,7 @@ def test_typed_list():
         Model(v=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': 1}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': 1}
     ]
 
 
@@ -1704,7 +1704,7 @@ def test_exclude_none():
 
     m = MyModel(b=3)
     assert m.model_dump(exclude_none=True) == {'b': 3}
-    assert m.model_dump_json(exclude_none=True) == b'{"b":3}'
+    assert m.model_dump_json(exclude_none=True) == '{"b":3}'
 
 
 def test_exclude_none_recursive():
@@ -2079,7 +2079,6 @@ def test_hashable_optional(default):
     Model()
 
 
-@pytest.mark.xfail(reason='validate_all')
 def test_default_factory_called_once():
     """It should never call `default_factory` more than once even when `validate_all` is set"""
 
@@ -2091,21 +2090,21 @@ def test_default_factory_called_once():
         return v
 
     class MyModel(BaseModel):
-        model_config = ConfigDict(validate_all=True)
+        model_config = ConfigDict(validate_default=True)
         id: int = Field(default_factory=factory)
 
     m1 = MyModel()
     assert m1.id == 1
 
     class MyBadModel(BaseModel):
-        model_config = ConfigDict(validate_all=True)
+        model_config = ConfigDict(validate_default=True)
         id: List[str] = Field(default_factory=factory)
 
     with pytest.raises(ValidationError) as exc_info:
         MyBadModel()
     assert v == 2  # `factory` has been called to run validation
     assert exc_info.value.errors() == [
-        {'loc': ('id',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+        {'input': 2, 'loc': ('id',), 'msg': 'Input should be a valid list', 'type': 'list_type'}
     ]
 
 

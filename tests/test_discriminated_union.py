@@ -942,10 +942,10 @@ def test_lax_or_strict_definitions() -> None:
     )
     discriminated_schema = apply_discriminator(core_schema.union_schema(cat, dog), 'kind')
     assert discriminated_schema == {
-        'choices': {
-            'DOG': {
-                'definitions': [{'ref': 'my-str-definition', 'type': 'str'}],
-                'schema': {
+        'definitions': [{'ref': 'my-str-definition', 'type': 'str'}],
+        'schema': {
+            'choices': {
+                'DOG': {
                     'lax_schema': {
                         'fields': {
                             'kind': {'schema': {'expected': ['DOG'], 'type': 'literal'}, 'type': 'typed-dict-field'}
@@ -964,18 +964,20 @@ def test_lax_or_strict_definitions() -> None:
                     },
                     'type': 'lax-or-strict',
                 },
-                'type': 'definitions',
+                'cat': {
+                    'fields': {
+                        'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}, 'type': 'typed-dict-field'}
+                    },
+                    'type': 'typed-dict',
+                },
+                'dog': 'DOG',
             },
-            'cat': {
-                'fields': {'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}, 'type': 'typed-dict-field'}},
-                'type': 'typed-dict',
-            },
-            'dog': 'DOG',
+            'discriminator': 'kind',
+            'from_attributes': True,
+            'strict': False,
+            'type': 'tagged-union',
         },
-        'discriminator': 'kind',
-        'from_attributes': True,
-        'strict': False,
-        'type': 'tagged-union',
+        'type': 'definitions',
     }
 
 

@@ -5,6 +5,7 @@ import platform
 import sys
 from collections import deque
 from enum import Enum, IntEnum
+from pprint import pprint
 from typing import (
     Any,
     Callable,
@@ -1914,6 +1915,27 @@ def test_multi_inheritance_generic_binding():
     assert not issubclass(B[float], C)
 
 
+def test_parent_field_parametrization():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+    class B(A, Generic[T]):
+        b: T
+
+    with pytest.raises(ValidationError) as exc_info:
+        B[int](a='a', b=1)
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
 def test_multi_inheritance_generic_defaults():
     T = TypeVar('T')
 
@@ -2029,6 +2051,7 @@ def test_double_typevar_substitution() -> None:
     class GenericPydanticModel(BaseModel, Generic[T]):
         x: T = []
 
+    pprint(GenericPydanticModel[List[T]].__pydantic_core_schema__)
     assert GenericPydanticModel[List[T]](x=[1, 2, 3]).model_dump() == {'x': [1, 2, 3]}
 
 
