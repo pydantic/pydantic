@@ -10,8 +10,7 @@ from typing import Any, Callable, ClassVar
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
 
-from pydantic.config import Extra
-
+from ..config import ConfigDict
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from . import _decorators
@@ -24,7 +23,6 @@ from ._model_construction import MockValidator
 __all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
 
 if typing.TYPE_CHECKING:
-    from ..config import ConfigDict
 
     class StandardDataclass(typing.Protocol):
         __dataclass_fields__: ClassVar[dict[str, Any]]
@@ -98,13 +96,6 @@ def prepare_dataclass(
     cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
-
-    extra = config.get('extra', Extra.ignore)  # ignore is the default in V1
-    if extra is Extra.allow:
-        raise ValueError(
-            'extra=Extra.allow is not allowed for dataclasses.'
-            ' Only Extra.ignore (the default) and Extra.forbid are allowed.'
-        )
 
     if config.get('validate_assignment'):
 

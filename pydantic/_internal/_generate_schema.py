@@ -167,9 +167,10 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
     """
     Create a pydantic-core config from a pydantic config.
     """
+    extra = None if config['extra'] is None else config['extra'].value
     core_config = core_schema.CoreConfig(
         title=config['title'] or cls.__name__,
-        typed_dict_extra_behavior=config['extra'].value,
+        typed_dict_extra_behavior=extra,
         allow_inf_nan=config['allow_inf_nan'],
         populate_by_name=config['populate_by_name'],
         str_strip_whitespace=config['str_strip_whitespace'],
