@@ -11,9 +11,9 @@ else:
     from typing import TypedDict
 
 if sys.version_info < (3, 11):
-    from typing_extensions import Literal, TypeAlias
+    from typing_extensions import Literal, NotRequired, TypeAlias
 else:
-    from typing import Literal, TypeAlias
+    from typing import Literal, NotRequired, TypeAlias
 
 __all__ = (
     '__version__',
@@ -210,8 +210,10 @@ class PydanticSerializationUnexpectedValue(ValueError):
 
 class ErrorTypeInfo(TypedDict):
     type: ErrorType
-    message_template: str
-    example_message: str
+    message_template_python: str
+    example_message_python: str
+    message_template_json: NotRequired[str]
+    example_message_json: NotRequired[str]
     example_context: 'dict[str, str | int | float] | None'
 
 class ArgsKwargs:

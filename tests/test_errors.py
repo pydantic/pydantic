@@ -364,29 +364,41 @@ def test_all_errors():
     assert errors[:4] == [
         {
             'type': 'no_such_attribute',
-            'message_template': "Object has no attribute '{attribute}'",
-            'example_message': "Object has no attribute ''",
+            'message_template_python': "Object has no attribute '{attribute}'",
+            'example_message_python': "Object has no attribute ''",
             'example_context': {'attribute': ''},
         },
         {
             'type': 'json_invalid',
-            'message_template': 'Invalid JSON: {error}',
-            'example_message': 'Invalid JSON: ',
+            'message_template_python': 'Invalid JSON: {error}',
+            'example_message_python': 'Invalid JSON: ',
             'example_context': {'error': ''},
         },
         {
             'type': 'json_type',
-            'message_template': 'JSON input should be string, bytes or bytearray',
-            'example_message': 'JSON input should be string, bytes or bytearray',
+            'message_template_python': 'JSON input should be string, bytes or bytearray',
+            'example_message_python': 'JSON input should be string, bytes or bytearray',
             'example_context': None,
         },
         {
             'type': 'recursion_loop',
-            'message_template': 'Recursion error - cyclic reference detected',
-            'example_message': 'Recursion error - cyclic reference detected',
+            'message_template_python': 'Recursion error - cyclic reference detected',
+            'example_message_python': 'Recursion error - cyclic reference detected',
             'example_context': None,
         },
     ]
+
+    none_required = next(e for e in errors if e['type'] == 'none_required')
+    # insert_assert(none_required)
+    assert none_required == {
+        'type': 'none_required',
+        'message_template_python': 'Input should be None',
+        'example_message_python': 'Input should be None',
+        'message_template_json': 'Input should be null',
+        'example_message_json': 'Input should be null',
+        'example_context': None,
+    }
+
     error_types = [e['type'] for e in errors]
     if error_types != list(core_schema.ErrorType.__args__):
         literal = ''.join(f'\n    {e!r},' for e in error_types)

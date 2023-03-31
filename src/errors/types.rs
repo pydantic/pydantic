@@ -37,8 +37,17 @@ pub fn list_all_errors(py: Python) -> PyResult<&PyList> {
         if !matches!(error_type, ErrorType::CustomError { .. }) {
             let d = PyDict::new(py);
             d.set_item("type", error_type.to_string())?;
-            d.set_item("message_template", error_type.message_template_python())?;
-            d.set_item("example_message", error_type.render_message(py, &ErrorMode::Python)?)?;
+            let message_template_python = error_type.message_template_python();
+            d.set_item("message_template_python", message_template_python)?;
+            d.set_item(
+                "example_message_python",
+                error_type.render_message(py, &ErrorMode::Python)?,
+            )?;
+            let message_template_json = error_type.message_template_json();
+            if message_template_python != message_template_json {
+                d.set_item("message_template_json", message_template_json)?;
+                d.set_item("example_message_json", error_type.render_message(py, &ErrorMode::Json)?)?;
+            }
             d.set_item("example_context", error_type.py_dict(py)?)?;
             errors.push(d);
         }
