@@ -171,7 +171,7 @@ class ConfigMetaclass(type):
         try:
             return _default_config[item]  # type: ignore[literal-required]
         except KeyError as exc:
-            raise AttributeError(f"type object '{self.__name__}' has no attribute {exc}")
+            raise AttributeError(f"type object '{self.__name__}' has no attribute {exc}") from exc
 
 
 class BaseConfig(metaclass=ConfigMetaclass):
@@ -193,7 +193,7 @@ class BaseConfig(metaclass=ConfigMetaclass):
                 return getattr(type(self), item)
             except AttributeError:
                 # reraising changes the displayed text to reflect that `self` is not a type
-                raise AttributeError(str(exc))
+                raise AttributeError(str(exc)) from exc
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         warnings.warn(
@@ -273,5 +273,5 @@ def prepare_config(config: ConfigDict | dict[str, Any], error_label: str) -> Non
     if extra is not None and not isinstance(extra, Extra):
         try:
             config['extra'] = Extra(extra)
-        except ValueError:
-            raise ValueError(f'{error_label!r}: {extra!r} is not a valid value for config[{"extra"!r}]')
+        except ValueError as e:
+            raise ValueError(f'{error_label!r}: {extra!r} is not a valid value for config[{"extra"!r}]') from e
