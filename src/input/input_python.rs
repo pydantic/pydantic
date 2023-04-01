@@ -79,7 +79,7 @@ impl<'a> Input<'a> for PyAny {
     fn as_loc_item(&self) -> LocItem {
         if let Ok(py_str) = self.downcast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
-        } else if let Ok(key_int) = self.extract::<usize>() {
+        } else if let Ok(key_int) = self.extract::<i64>() {
             key_int.into()
         } else {
             safe_repr(self).to_string().into()

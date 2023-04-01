@@ -696,7 +696,7 @@ def test_dataclass_self_init_alias():
             'Foo',
             [
                 core_schema.dataclass_field(name='a', schema=core_schema.str_schema(), validation_alias='aAlias'),
-                core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), validation_alias='bAlias'),
+                core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), validation_alias=['bAlias', 0]),
             ],
         ),
     )
@@ -707,9 +707,62 @@ def test_dataclass_self_init_alias():
 
     Foo.__init__ = __init__
 
-    foo = Foo(aAlias=b'hello', bAlias='True')
+    foo = Foo(aAlias=b'hello', bAlias=['True'])
     assert dataclasses.is_dataclass(foo)
     assert dataclasses.asdict(foo) == {'a': 'hello', 'b': True}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(aAlias=b'hello', bAlias=['wrong'])
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'bool_parsing',
+            'loc': ('bAlias', 0),
+            'msg': 'Input should be a valid boolean, unable to interpret input',
+            'input': 'wrong',
+        }
+    ]
+
+
+def test_dataclass_self_init_alias_field_name():
+    @dataclasses.dataclass(init=False)
+    class Foo:
+        a: str
+        b: bool
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.str_schema(), validation_alias='aAlias'),
+                core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), validation_alias=['bAlias', 0]),
+            ],
+        ),
+    )
+    v = SchemaValidator(schema, {'loc_by_alias': False})
+
+    def __init__(self, *args, **kwargs):
+        v.validate_python(ArgsKwargs(args, kwargs), self_instance=self)
+
+    Foo.__init__ = __init__
+
+    foo = Foo(aAlias=b'hello', bAlias=['True'])
+    assert dataclasses.asdict(foo) == {'a': 'hello', 'b': True}
+
+    with pytest.raises(ValidationError) as exc_info:
+        Foo(aAlias=b'hello', bAlias=['wrong'])
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'bool_parsing',
+            'loc': ('b',),
+            'msg': 'Input should be a valid boolean, unable to interpret input',
+            'input': 'wrong',
+        }
+    ]
 
 
 def test_dataclass_self_init_post_init():
