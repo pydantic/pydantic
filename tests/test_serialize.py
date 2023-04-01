@@ -7,14 +7,20 @@ import pytest
 from pydantic_core import PydanticSerializationError, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, FieldSerializationInfo, SerializationInfo, SerializerFunctionWrapHandler, serializer
+from pydantic import (
+    BaseModel,
+    FieldSerializationInfo,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
+    field_serializer,
+)
 
 
 def test_serialize_decorator_always():
     class MyModel(BaseModel):
         x: Optional[int]
 
-        @serializer('x', json_return_type='str')
+        @field_serializer('x', json_return_type='str')
         def customise_x_serialisation(v, _info):
             return f'{v:,}'
 
@@ -37,7 +43,7 @@ def test_serialize_decorator_json():
     class MyModel(BaseModel):
         x: int
 
-        @serializer('x', json_return_type='str', when_used='json')
+        @field_serializer('x', json_return_type='str', when_used='json')
         def customise_x_serialisation(v, _info):
             return f'{v:,}'
 
@@ -50,7 +56,7 @@ def test_serialize_decorator_unless_none():
     class MyModel(BaseModel):
         x: Optional[int]
 
-        @serializer('x', when_used='unless-none')
+        @field_serializer('x', when_used='unless-none')
         def customise_x_serialisation(v, _info):
             return f'{v:,}'
 
@@ -100,22 +106,22 @@ def test_serialize_valid_signatures():
         f3: int
         f4: int
 
-        @serializer('f1')
+        @field_serializer('f1')
         def ser_f1(self, v: Any, info: FieldSerializationInfo) -> Any:
             assert self.f1 == 1_000
             assert v == 1_000
             assert info.field_name == 'f1'
             return f'{v:,}'
 
-        @serializer('f2', mode='wrap')
+        @field_serializer('f2', mode='wrap')
         def ser_f2(self, v: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo) -> Any:
             assert self.f2 == 2_000
             assert v == 2_000
             assert info.field_name == 'f2'
             return f'{nxt(v):,}'
 
-        ser_f3 = serializer('f3')(ser_plain)
-        ser_f4 = serializer('f4', mode='wrap')(ser_wrap)
+        ser_f3 = field_serializer('f3')(ser_plain)
+        ser_f4 = field_serializer('f4', mode='wrap')(ser_wrap)
 
     m = MyModel(**{f'f{x}': x * 1_000 for x in range(1, 9)})
 
@@ -135,7 +141,7 @@ def test_invalid_signature_no_params() -> None:
             x: int
 
             # caught by type checkers
-            @serializer('x')
+            @field_serializer('x')
             def no_args() -> Any:  # pragma: no cover
                 ...
 
@@ -147,7 +153,7 @@ def test_invalid_signature_single_params() -> None:
             x: int
 
             # not caught by type checkers
-            @serializer('x')
+            @field_serializer('x')
             def no_args(self) -> Any:  # pragma: no cover
                 ...
 
@@ -159,7 +165,7 @@ def test_invalid_signature_too_many_params_1() -> None:
             x: int
 
             # caught by type checkers
-            @serializer('x')
+            @field_serializer('x')
             def no_args(self, value: Any, nxt: Any, info: Any, extra_param: Any) -> Any:  # pragma: no cover
                 ...
 
@@ -171,7 +177,7 @@ def test_invalid_signature_too_many_params_2() -> None:
             x: int
 
             # caught by type checkers
-            @serializer('x')
+            @field_serializer('x')
             @staticmethod
             def no_args(not_self: Any, value: Any, nxt: Any, info: Any) -> Any:  # pragma: no cover
                 ...
@@ -184,7 +190,7 @@ def test_invalid_signature_bad_plain_signature() -> None:
             x: int
 
             # caught by type checkers
-            @serializer('x', mode='plain')
+            @field_serializer('x', mode='plain')
             def no_args(self, value: Any, nxt: Any, info: Any) -> Any:  # pragma: no cover
                 ...
 
@@ -193,7 +199,7 @@ def test_serialize_ignore_info_plain():
     class MyModel(BaseModel):
         x: int
 
-        @serializer('x')
+        @field_serializer('x')
         def ser_x(v: Any) -> str:
             return f'{v:,}'
 
@@ -204,8 +210,31 @@ def test_serialize_ignore_info_wrap():
     class MyModel(BaseModel):
         x: int
 
-        @serializer('x', mode='wrap')
+        @field_serializer('x', mode='wrap')
         def ser_x(v: Any, handler: SerializerFunctionWrapHandler) -> str:
             return f'{handler(v):,}'
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}
+
+
+def test_serialize_decorator_self_info():
+    class MyModel(BaseModel):
+        x: Optional[int]
+
+        @field_serializer('x', json_return_type='str')
+        def customise_x_serialisation(self, v, info):
+            return f'{info.mode}:{v:,}'
+
+    assert MyModel(x=1234).model_dump() == {'x': 'python:1,234'}
+    assert MyModel(x=1234).model_dump(mode='foobar') == {'x': 'foobar:1,234'}
+
+
+def test_serialize_decorator_self_no_info():
+    class MyModel(BaseModel):
+        x: Optional[int]
+
+        @field_serializer('x', json_return_type='str')
+        def customise_x_serialisation(self, v):
+            return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}

@@ -13,7 +13,7 @@ from uuid import UUID
 import pytest
 from pydantic_core import SchemaSerializer
 
-from pydantic import BaseModel, ConfigDict, NameEmail, serializer
+from pydantic import BaseModel, ConfigDict, NameEmail, field_serializer
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
@@ -141,7 +141,7 @@ def test_subclass_custom_encoding():
         a: SubDt
         b: SubDelta
 
-        @serializer('a', when_used='json')
+        @field_serializer('a', when_used='json')
         def serialize_a(self, v: SubDt, _info):
             return v.strftime('%a, %d %b %C %H:%M:%S')
 
@@ -180,11 +180,11 @@ def test_custom_encoder():
         y: Decimal
         z: date
 
-        @serializer('x')
+        @field_serializer('x')
         def serialize_x(self, v: timedelta, _info):
             return f'{v.total_seconds():0.3f}s'
 
-        @serializer('y')
+        @field_serializer('y')
         def serialize_y(self, v: Decimal, _info):
             return 'a decimal'
 
@@ -221,12 +221,12 @@ def test_json_encoder_simple_inheritance():
         dt: datetime = datetime.now()
         timedt: timedelta = timedelta(hours=100)
 
-        @serializer('dt')
+        @field_serializer('dt')
         def serialize_dt(self, _v: datetime, _info):
             return 'parent_encoder'
 
     class Child(Parent):
-        @serializer('timedt')
+        @field_serializer('timedt')
         def serialize_timedt(self, _v: timedelta, _info):
             return 'child_encoder'
 
@@ -237,12 +237,12 @@ def test_json_encoder_inheritance_override():
     class Parent(BaseModel):
         dt: datetime = datetime.now()
 
-        @serializer('dt')
+        @field_serializer('dt')
         def serialize_dt(self, _v: datetime, _info):
             return 'parent_encoder'
 
     class Child(Parent):
-        @serializer('dt')
+        @field_serializer('dt')
         def serialize_dt(self, _v: datetime, _info):
             return 'child_encoder'
 
@@ -281,15 +281,15 @@ def test_json_nested_encode_models():
         phone: Phone
         friend: Optional['User'] = None
 
-        @serializer('birthday')
+        @field_serializer('birthday')
         def serialize_birthday(self, v: datetime, _info):
             return v.timestamp()
 
-        @serializer('phone', when_used='unless-none')
+        @field_serializer('phone', when_used='unless-none')
         def serialize_phone(self, v: Phone, _info):
             return v.number
 
-        @serializer('friend', when_used='unless-none')
+        @field_serializer('friend', when_used='unless-none')
         def serialize_user(self, v, _info):
             return v.SSN
 
@@ -320,7 +320,7 @@ def test_custom_encode_fallback_basemodel():
     class Foo(BaseModel):
         x: MyExoticType
 
-        @serializer('x')
+        @field_serializer('x')
         def serialize_x(self, _v: MyExoticType, _info):
             return 'exo'
 

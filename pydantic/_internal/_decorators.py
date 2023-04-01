@@ -4,6 +4,7 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 from __future__ import annotations as _annotations
 
 import warnings
+from functools import wraps
 from inspect import Parameter, Signature, signature
 from typing import (
     TYPE_CHECKING,
@@ -640,6 +641,7 @@ def make_generic_field_serializer(
     if is_instance:
         # for the errors below to exclude self
         sig = Signature(parameters=list(sig.parameters.values())[1:])
+
     n_positional = sum(
         1
         for param in sig.parameters.values()
@@ -649,6 +651,7 @@ def make_generic_field_serializer(
         if n_positional == 1:
             func1 = cast(PlainSerializerWithoutInfo, serializer)
 
+            @wraps(func1)
             def _wrap1(value: Any, _: SerializationInfo) -> Any:
                 return func1(value)
 
@@ -665,6 +668,7 @@ def make_generic_field_serializer(
         if n_positional == 2:
             func2 = cast(WrapSerializerWithoutInfo, serializer)
 
+            @wraps(func2)
             def _wrap2(value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo) -> Any:
                 return func2(value, handler)
 

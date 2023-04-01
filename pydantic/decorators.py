@@ -339,7 +339,7 @@ _WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerial
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
@@ -352,7 +352,7 @@ def serializer(
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     mode: Literal['plain'],
@@ -366,7 +366,7 @@ def serializer(
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     mode: Literal['wrap'],
@@ -379,7 +379,7 @@ def serializer(
     ...
 
 
-def serializer(
+def field_serializer(
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
