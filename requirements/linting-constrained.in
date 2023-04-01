@@ -1,0 +1,2 @@
+-r linting.in
+-c all.txt
