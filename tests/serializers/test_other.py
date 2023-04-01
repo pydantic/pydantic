@@ -6,7 +6,7 @@ from ..conftest import plain_repr
 
 
 def test_chain():
-    s = SchemaSerializer(core_schema.chain_schema(core_schema.str_schema(), core_schema.int_schema()))
+    s = SchemaSerializer(core_schema.chain_schema([core_schema.str_schema(), core_schema.int_schema()]))
 
     # insert_assert(plain_repr(s))
     assert plain_repr(s) == 'SchemaSerializer(serializer=Int(IntSerializer),slots=[])'

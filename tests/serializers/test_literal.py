@@ -6,7 +6,7 @@ from ..conftest import plain_repr
 
 
 def test_int_literal():
-    s = SchemaSerializer(core_schema.literal_schema(1, 2, 3))
+    s = SchemaSerializer(core_schema.literal_schema([1, 2, 3]))
     r = plain_repr(s)
     assert 'expected_int:{' in r
     assert 'expected_str:{}' in r
@@ -25,7 +25,7 @@ def test_int_literal():
 
 
 def test_str_literal():
-    s = SchemaSerializer(core_schema.literal_schema('a', 'b', 'c'))
+    s = SchemaSerializer(core_schema.literal_schema(['a', 'b', 'c']))
     r = plain_repr(s)
     assert 'expected_str:{' in r
     assert 'expected_int:{}' in r
@@ -44,7 +44,7 @@ def test_str_literal():
 
 
 def test_other_literal():
-    s = SchemaSerializer(core_schema.literal_schema('a', 1))
+    s = SchemaSerializer(core_schema.literal_schema(['a', 1]))
     assert 'expected_int:{1},expected_str:{"a"},expected_py:None' in plain_repr(s)
 
     assert s.to_python('a') == 'a'
@@ -60,4 +60,4 @@ def test_other_literal():
 
 def test_empty_literal():
     with pytest.raises(SchemaError, match='`expected` should have length > 0'):
-        SchemaSerializer(core_schema.literal_schema())
+        SchemaSerializer(core_schema.literal_schema([]))

@@ -122,7 +122,7 @@ def test_list_int(py_and_json: PyAndJson, input_value, expected):
 def test_dict_key(py_and_json: PyAndJson):
     v = py_and_json(
         core_schema.dict_schema(
-            core_schema.json_schema(core_schema.tuple_positional_schema(core_schema.int_schema())),
+            core_schema.json_schema(core_schema.tuple_positional_schema([core_schema.int_schema()])),
             core_schema.int_schema(),
         )
     )

@@ -163,7 +163,7 @@ def test_build_error():
 
 
 def test_literal_none():
-    v = SchemaValidator(core_schema.literal_schema(None))
+    v = SchemaValidator(core_schema.literal_schema([None]))
     assert v.isinstance_python(None) is True
     assert v.isinstance_python(0) is False
     assert v.isinstance_json('null') is True
@@ -172,7 +172,7 @@ def test_literal_none():
 
 
 def test_union():
-    v = SchemaValidator(core_schema.union_schema(core_schema.literal_schema('a', 'b'), core_schema.int_schema()))
+    v = SchemaValidator(core_schema.union_schema([core_schema.literal_schema(['a', 'b']), core_schema.int_schema()]))
     assert v.validate_python('a') == 'a'
     assert v.validate_python(4) == 4
     with pytest.raises(ValidationError) as exc_info:
@@ -199,7 +199,7 @@ def test_enum():
     class FooEnum(Enum):
         foo = 'foo_value'
 
-    v = SchemaValidator(core_schema.literal_schema(FooEnum.foo))
+    v = SchemaValidator(core_schema.literal_schema([FooEnum.foo]))
     assert v.validate_python(FooEnum.foo) == FooEnum.foo
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('foo_value')
