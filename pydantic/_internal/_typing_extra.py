@@ -105,7 +105,7 @@ elif sys.version_info[:2] == (3, 8):
         # can change on very subtle changes like use of types in other modules,
         # hopefully this check avoids that issue.
         if is_literal_type(type_):  # pragma: no cover
-            return all_literal_values(type_) == (None,)
+            return all_literal_values(type_) == [None]
         return False
 
 else:
@@ -129,17 +129,17 @@ def literal_values(type_: type[Any]) -> tuple[Any, ...]:
     return get_args(type_)
 
 
-def all_literal_values(type_: type[Any]) -> tuple[Any, ...]:
+def all_literal_values(type_: type[Any]) -> list[Any]:
     """
     This method is used to retrieve all Literal values as
     Literal can be used recursively (see https://www.python.org/dev/peps/pep-0586)
     e.g. `Literal[Literal[Literal[1, 2, 3], "foo"], 5, None]`
     """
     if not is_literal_type(type_):
-        return (type_,)
+        return [type_]
 
     values = literal_values(type_)
-    return tuple(x for value in values for x in all_literal_values(value))
+    return list(x for value in values for x in all_literal_values(value))
 
 
 def is_annotated(ann_type: Any) -> bool:

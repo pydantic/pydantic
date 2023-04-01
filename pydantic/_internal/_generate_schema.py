@@ -160,6 +160,7 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
             ser_json_timedelta=config['ser_json_timedelta'],
             ser_json_bytes=config['ser_json_bytes'],
             from_attributes=config['from_attributes'],
+            loc_by_alias=config['loc_by_alias'],
             validate_default=config['validate_default'],
             str_max_length=config.get('str_max_length'),
             str_min_length=config.get('str_min_length'),
@@ -543,7 +544,7 @@ class GenerateSchema:
         if len(choices) == 1:
             s = choices[0]
         else:
-            s = core_schema.union_schema(*choices)
+            s = core_schema.union_schema(choices)
 
         if nullable:
             s = core_schema.nullable_schema(s)
@@ -563,7 +564,7 @@ class GenerateSchema:
         """
         expected = _typing_extra.all_literal_values(literal_type)
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
-        return core_schema.literal_schema(*expected)
+        return core_schema.literal_schema(expected)
 
     def _typed_dict_schema(
         self, typed_dict_cls: Any, origin: Any
@@ -707,7 +708,7 @@ class GenerateSchema:
                 return core_schema.tuple_variable_schema()
             else:
                 # special case for `tuple[()]` which means `tuple[]` - an empty tuple
-                return core_schema.tuple_positional_schema()
+                return core_schema.tuple_positional_schema([])
         elif params[-1] is Ellipsis:
             if len(params) == 2:
                 sv = core_schema.tuple_variable_schema(self.generate_schema(params[0]))
@@ -716,13 +717,13 @@ class GenerateSchema:
             # not sure this case is valid in python, but may as well support it here since pydantic-core does
             *items_schema, extra_schema = params
             return core_schema.tuple_positional_schema(
-                *[self.generate_schema(p) for p in items_schema], extra_schema=self.generate_schema(extra_schema)
+                [self.generate_schema(p) for p in items_schema], extra_schema=self.generate_schema(extra_schema)
             )
         elif len(params) == 1 and params[0] == ():
             # special case for `Tuple[()]` which means `Tuple[]` - an empty tuple
-            return core_schema.tuple_positional_schema()
+            return core_schema.tuple_positional_schema([])
         else:
-            return core_schema.tuple_positional_schema(*[self.generate_schema(p) for p in params])
+            return core_schema.tuple_positional_schema([self.generate_schema(p) for p in params])
 
     def _dict_schema(self, dict_type: Any) -> core_schema.DictSchema:
         """
@@ -813,7 +814,7 @@ class GenerateSchema:
                 return core_schema.is_subclass_schema(type_param.__bound__)
             elif type_param.__constraints__:
                 return core_schema.union_schema(
-                    *[self.generate_schema(typing.Type[c]) for c in type_param.__constraints__]
+                    [self.generate_schema(typing.Type[c]) for c in type_param.__constraints__]
                 )
             else:
                 return self._type_schema()
@@ -832,11 +833,13 @@ class GenerateSchema:
             from ._validators import sequence_validator
 
             return core_schema.chain_schema(
-                core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence'),
-                core_schema.general_wrap_validator_function(
-                    sequence_validator,
-                    core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True),
-                ),
+                [
+                    core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence'),
+                    core_schema.general_wrap_validator_function(
+                        sequence_validator,
+                        core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True),
+                    ),
+                ]
             )
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
