@@ -51,7 +51,7 @@ class _ConfigDict(TypedDict, total=False):
     str_strip_whitespace: bool
     str_min_length: int
     str_max_length: int | None
-    extra: Extra
+    extra: Extra | None
     frozen: bool
     populate_by_name: bool
     use_enum_values: bool
@@ -104,7 +104,8 @@ _default_config = ConfigDict(
     str_strip_whitespace=False,
     str_min_length=0,
     str_max_length=None,
-    extra=Extra.ignore,
+    # let the model / dataclass decide how to handle it
+    extra=None,
     frozen=False,
     populate_by_name=False,
     use_enum_values=False,
@@ -234,7 +235,7 @@ def build_config(
 
 
 def prepare_config(config: ConfigDict, cls_name: str) -> None:
-    if not isinstance(config['extra'], Extra):
+    if not isinstance(config['extra'], (Extra, type(None))):
         try:
             config['extra'] = Extra(config['extra'])
         except ValueError:

@@ -146,27 +146,25 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
     """
     Create a pydantic-core config from a pydantic config.
     """
-    core_config = core_schema.CoreConfig(
-        title=config['title'] or cls.__name__,
-        typed_dict_extra_behavior=config['extra'].value,
-        allow_inf_nan=config['allow_inf_nan'],
-        populate_by_name=config['populate_by_name'],
-        str_strip_whitespace=config['str_strip_whitespace'],
-        str_to_lower=config['str_to_lower'],
-        str_to_upper=config['str_to_upper'],
-        strict=config['strict'],
-        ser_json_timedelta=config['ser_json_timedelta'],
-        ser_json_bytes=config['ser_json_bytes'],
-        from_attributes=config['from_attributes'],
-        validate_default=config['validate_default'],
+    extra = None if config['extra'] is None else config['extra'].value
+    core_config = core_schema.CoreConfig(  # type: ignore[misc]
+        **core_schema.dict_not_none(
+            title=config['title'] or cls.__name__,
+            extra_fields_behavior=extra,
+            allow_inf_nan=config['allow_inf_nan'],
+            populate_by_name=config['populate_by_name'],
+            str_strip_whitespace=config['str_strip_whitespace'],
+            str_to_lower=config['str_to_lower'],
+            str_to_upper=config['str_to_upper'],
+            strict=config['strict'],
+            ser_json_timedelta=config['ser_json_timedelta'],
+            ser_json_bytes=config['ser_json_bytes'],
+            from_attributes=config['from_attributes'],
+            validate_default=config['validate_default'],
+            str_max_length=config.get('str_max_length'),
+            str_min_length=config.get('str_min_length'),
+        )
     )
-    str_max_length = config.get('str_max_length')
-    if str_max_length is not None:
-        core_config['str_max_length'] = str_max_length
-    str_min_length = config.get('str_min_length')
-    if str_min_length is not None:
-        core_config['str_min_length'] = str_min_length
-
     return core_config
 
 
