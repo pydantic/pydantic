@@ -6,6 +6,7 @@ from copy import copy, deepcopy
 from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
 import pytest
+from dirty_equals import IsList
 from pydantic_core import PydanticCustomError
 from typing_extensions import Annotated, Literal
 
@@ -359,14 +360,14 @@ def test_class_attribute():
 
 def test_all_literal_values():
     L1 = Literal['1']
-    assert all_literal_values(L1) == ('1',)
+    assert all_literal_values(L1) == ['1']
 
     L2 = Literal['2']
     L12 = Literal[L1, L2]
-    assert sorted(all_literal_values(L12)) == sorted(('1', '2'))
+    assert all_literal_values(L12) == IsList('1', '2', check_order=False)
 
     L312 = Literal['3', Literal[L1, L2]]
-    assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
+    assert all_literal_values(L312) == IsList('3', '1', '2', check_order=False)
 
 
 @pytest.mark.parametrize(

@@ -71,7 +71,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 
     enum_ref = f'{getattr(enum_type, "__module__", None)}.{enum_type.__qualname__}:{id(enum_type)}'
     literal_schema = core_schema.literal_schema(
-        *[m.value for m in enum_type.__members__.values()],
+        [m.value for m in enum_type.__members__.values()],
         ref=enum_ref,
     )
     js_metadata = JsonSchemaMetadata(
@@ -88,9 +88,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         js_metadata['extra_updates'] = {'type': 'integer'}
         lax = core_schema.chain_schema(
-            core_schema.int_schema(),
-            literal_schema,
-            core_schema.general_plain_validator_function(to_enum),
+            [core_schema.int_schema(), literal_schema, core_schema.general_plain_validator_function(to_enum)],
             metadata=metadata,
         )
         json_type = 'int'
@@ -99,9 +97,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # TODO: add test for StrEnum in 3.11, and also for enums that inherit from str/int
         js_metadata['extra_updates'] = {'type': 'string'}
         lax = core_schema.chain_schema(
-            core_schema.str_schema(),
-            literal_schema,
-            core_schema.general_plain_validator_function(to_enum),
+            [core_schema.str_schema(), literal_schema, core_schema.general_plain_validator_function(to_enum)],
             metadata=metadata,
         )
         json_type = 'str'
@@ -128,10 +124,12 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
     lax = core_schema.general_after_validator_function(
         decimal_validator,
         core_schema.union_schema(
-            core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
-            core_schema.int_schema(),
-            core_schema.float_schema(),
-            core_schema.str_schema(strip_whitespace=True),
+            [
+                core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
+                core_schema.int_schema(),
+                core_schema.float_schema(),
+                core_schema.str_schema(strip_whitespace=True),
+            ],
             strict=True,
         ),
     )
@@ -155,14 +153,13 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
     )
     # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
     lax = core_schema.union_schema(
-        core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-        core_schema.general_after_validator_function(
-            _validators.uuid_validator,
-            core_schema.union_schema(
-                core_schema.str_schema(),
-                core_schema.bytes_schema(),
+        [
+            core_schema.is_instance_schema(uuid_type, json_types={'str'}),
+            core_schema.general_after_validator_function(
+                _validators.uuid_validator,
+                core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()]),
             ),
-        ),
+        ],
         custom_error_type='uuid_type',
         custom_error_message='Input should be a valid UUID, string, or bytes',
         strict=True,
@@ -172,14 +169,20 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=core_schema.chain_schema(
-            core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-            core_schema.union_schema(
-                core_schema.is_instance_schema(UUID),
-                core_schema.chain_schema(
-                    core_schema.str_schema(),
-                    core_schema.general_plain_validator_function(_validators.uuid_validator),
+            [
+                core_schema.is_instance_schema(uuid_type, json_types={'str'}),
+                core_schema.union_schema(
+                    [
+                        core_schema.is_instance_schema(UUID),
+                        core_schema.chain_schema(
+                            [
+                                core_schema.str_schema(),
+                                core_schema.general_plain_validator_function(_validators.uuid_validator),
+                            ]
+                        ),
+                    ]
                 ),
-            ),
+            ],
             metadata=metadata,
         ),
     )
@@ -190,12 +193,14 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
     metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=PurePath, type='string', format='path'))
     # TODO, is this actually faster than `function_after(...)` as above?
     lax = core_schema.union_schema(
-        core_schema.is_instance_schema(path_type, json_types={'str'}, metadata=metadata),
-        core_schema.general_after_validator_function(
-            _validators.path_validator,
-            core_schema.str_schema(),
-            metadata=metadata,
-        ),
+        [
+            core_schema.is_instance_schema(path_type, json_types={'str'}, metadata=metadata),
+            core_schema.general_after_validator_function(
+                _validators.path_validator,
+                core_schema.str_schema(),
+                metadata=metadata,
+            ),
+        ],
         custom_error_type='path_type',
         custom_error_message='Input is not a valid path',
         strict=True,
@@ -267,11 +272,13 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
                 metadata=metadata,
             ),
             strict_schema=core_schema.chain_schema(
-                core_schema.is_instance_schema(deque, json_types={'list'}),
-                core_schema.list_schema(inner_schema, allow_any_iter=True),
-                core_schema.general_plain_validator_function(
-                    _validators.deque_typed_validator,
-                ),
+                [
+                    core_schema.is_instance_schema(deque, json_types={'list'}),
+                    core_schema.list_schema(inner_schema, allow_any_iter=True),
+                    core_schema.general_plain_validator_function(
+                        _validators.deque_typed_validator,
+                    ),
+                ],
                 metadata=metadata,
             ),
             serialization=_deque_ser_schema(inner_schema),
@@ -319,8 +326,10 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
             strict_schema=core_schema.general_after_validator_function(
                 lambda x, _: OrderedDict(x),
                 core_schema.chain_schema(
-                    core_schema.is_instance_schema(OrderedDict, json_types={'dict'}),
-                    core_schema.dict_schema(inner_schema),
+                    [
+                        core_schema.is_instance_schema(OrderedDict, json_types={'dict'}),
+                        core_schema.dict_schema(inner_schema),
+                    ],
                 ),
             ),
         )

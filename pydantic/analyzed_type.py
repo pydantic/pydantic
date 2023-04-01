@@ -84,6 +84,7 @@ def _translate_config(config: ConfigDict) -> core_schema.CoreConfig:
         ser_json_timedelta=config['ser_json_timedelta'] if 'ser_json_timedelta' in config else unset,
         ser_json_bytes=config['ser_json_bytes'] if 'ser_json_bytes' in config else unset,
         from_attributes=config['from_attributes'] if 'from_attributes' in config else unset,
+        loc_by_alias=config['loc_by_alias'] if 'loc_by_alias' in config else unset,
         validate_default=config['validate_default'] if 'validate_default' in config else unset,
         str_max_length=(
             config['str_max_length'] if 'str_max_length' in config and config['str_max_length'] is not None else unset

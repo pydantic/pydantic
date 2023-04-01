@@ -443,8 +443,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return core_schema.general_after_validator_function(
             validator,
             core_schema.union_schema(
-                core_schema.is_instance_schema(cls),
-                cls._pre_core_schema(),
+                [core_schema.is_instance_schema(cls), cls._pre_core_schema()],
                 strict=True,
                 custom_error_type=cls._error_kind,
             ),
