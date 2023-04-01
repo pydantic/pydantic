@@ -1,9 +1,8 @@
 from __future__ import annotations as _annotations
 
-import json
 import warnings
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef
+from typing import TYPE_CHECKING, Any, Callable
 
 from typing_extensions import Literal, Protocol, TypedDict
 
@@ -62,24 +61,16 @@ class _ConfigDict(TypedDict, total=False):
     # to construct error `loc`s, default True
     loc_by_alias: bool
     alias_generator: Callable[[str], str] | None
-    ignored_types: tuple[type, ...]  # TODO remove??
-    json_loads: Callable[[str], Any]  # TODO decide
-    json_dumps: Callable[..., str]  # TODO decide
-    json_encoders: dict[type[Any] | str | ForwardRef, Callable[..., Any]]  # TODO decide
+    ignored_types: tuple[type, ...]
     allow_inf_nan: bool
 
-    strict: bool
-
-    # whether inherited models as fields should be reconstructed as base model,
-    # and whether such a copy should be shallow or deep
-    copy_on_model_validation: Literal['none', 'deep', 'shallow']  # TODO remove???
-
-    # whether dataclass `__post_init__` should be run before or after validation
-    post_init_call: Literal['before_validation', 'after_validation']  # TODO remove
-
     # new in V2
+    strict: bool
+    # whether instances of models and dataclasses (including subclass instances) should re-validate, default 'never'
+    revalidate_instances: Literal['always', 'never', 'subclass-instances']
     ser_json_timedelta: Literal['iso8601', 'float']
     ser_json_bytes: Literal['utf8', 'base64']
+    # whether to validate default values during validation, default False
     validate_default: bool
 
 
@@ -101,6 +92,11 @@ else:
             'schema_extra',
             'smart_union',
             'underscore_attrs_are_private',
+            'json_loads',
+            'json_dumps',
+            'json_encoders',
+            'copy_on_model_validation',
+            'post_init_call',
         }
         _V2_RENAMED_KEYS = {
             'allow_population_by_field_name': 'populate_by_name',
@@ -142,6 +138,7 @@ _default_config = ConfigDict(
     # let the model / dataclass decide how to handle it
     extra=None,
     frozen=False,
+    revalidate_instances='never',
     populate_by_name=False,
     use_enum_values=False,
     validate_assignment=False,
@@ -151,13 +148,8 @@ _default_config = ConfigDict(
     loc_by_alias=True,
     alias_generator=None,
     ignored_types=(),
-    json_loads=json.loads,
-    json_dumps=json.dumps,
-    json_encoders={},
     allow_inf_nan=True,
     strict=False,
-    copy_on_model_validation='shallow',
-    post_init_call='before_validation',
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
     validate_default=False,
@@ -259,13 +251,6 @@ def build_config(
 
     config_new.update(config_kwargs)
     new_model_config = ConfigDict(config_new)  # type: ignore
-    # merge `json_encoders`-dict in correct order
-    json_encoders = {}
-    for c in configs_ordered:
-        json_encoders.update(c.get('json_encoders', {}))
-
-    if json_encoders:
-        new_model_config['json_encoders'] = json_encoders
 
     prepare_config(new_model_config, cls_name)
     return new_model_config

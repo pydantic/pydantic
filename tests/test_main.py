@@ -1032,25 +1032,30 @@ def test_field_exclude():
     assert my_user.model_dump() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
 
 
-@pytest.mark.skip(reason='not implemented')
-def test_model_exclude_copy_on_model_validation_shallow():
-    """When `Config.copy_on_model_validation` is set and `Config.copy_on_model_validation_shallow` is set,
-    do the same as the previous test but perform a shallow copy"""
-
+def test_revalidate_instances_never():
     class User(BaseModel):
-        model_config = ConfigDict(copy_on_model_validation='shallow')
-
         hobbies: List[str]
 
     my_user = User(hobbies=['scuba diving'])
 
     class Transaction(BaseModel):
-        user: User = Field(...)
+        user: User
 
     t = Transaction(user=my_user)
 
-    assert t.user is not my_user
-    assert t.user.hobbies is my_user.hobbies  # unlike above, this should be a shallow copy
+    assert t.user is my_user
+    assert t.user.hobbies is my_user.hobbies
+
+    class SubUser(User):
+        sins: List[str]
+
+    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+
+    t = Transaction(user=my_sub_user)
+
+    assert t.user is my_sub_user
+    assert t.user.hobbies is my_sub_user.hobbies
+
 
 
 @pytest.mark.skip(reason='not implemented')

@@ -102,12 +102,6 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if config_new['json_encoders']:
-                json_encoder = partial(custom_pydantic_encoder, config_new['json_encoders'])
-            else:
-                json_encoder = pydantic_encoder  # type: ignore[assignment]
-            namespace['__json_encoder__'] = staticmethod(json_encoder)
-
             if '__hash__' not in namespace and config_new['frozen']:
 
                 def hash_func(self_: Any) -> int:
@@ -184,7 +178,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
         """metadata for `@validator`, `@root_validator` and `@serializer` decorators"""
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
-        __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
@@ -671,7 +664,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 content_type=content_type,
                 encoding=encoding,
                 allow_pickle=allow_pickle,
-                json_loads=cls.model_config['json_loads'],
             )
         except (ValueError, TypeError) as exc:
             import json
@@ -716,7 +708,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             content_type=content_type,
             encoding=encoding,
             allow_pickle=allow_pickle,
-            json_loads=cls.model_config['json_loads'],
         )
         return cls.parse_obj(obj)
 
@@ -787,13 +778,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def schema_json(
         cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
     ) -> str:
+        import json
+
         warnings.warn(
             'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.',
             DeprecationWarning,
         )
         from .json import pydantic_encoder
 
-        return cls.model_config['json_dumps'](
+        return json.dumps(
             cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
             default=pydantic_encoder,
             **dumps_kwargs,
