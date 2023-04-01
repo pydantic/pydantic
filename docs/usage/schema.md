@@ -1,6 +1,7 @@
 *Pydantic* allows auto creation of JSON Schemas from models:
 
 ```py output="json"
+import json
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -36,8 +37,7 @@ class MainModel(BaseModel):
     )
 
 
-# this is equivalent to json.dumps(MainModel.model_json_schema(), indent=2):
-print(MainModel.schema_json(indent=2))
+print(json.dumps(MainModel.model_json_schema(), indent=2))
 """
 {
   "type": "object",

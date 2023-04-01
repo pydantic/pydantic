@@ -166,7 +166,7 @@ def test_ref_template():
         'anyOf': [{'$ref': '#/$defs/KeyLimePie'}, {'type': 'null'}],
         'default': None,
     }
-    json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
+    json_schema = json.dumps(ApplePie.model_json_schema(ref_template='foobar/{model}.json'))
     assert 'foobar/KeyLimePie.json' in json_schema
     assert '#/$defs/KeyLimePie' not in json_schema
 
@@ -505,7 +505,12 @@ def test_json_schema():
     #     Decision: What we have in v1 is not bad enough to be worth changing
     #     (i.e., keep it as only 'number'; maybe add a comment that other things could be okay)
 
-    assert json.loads(Model.schema_json(indent=2)) == {
+    with pytest.warns(
+        DeprecationWarning,
+        match=re.escape('The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.'),
+    ):
+        schema_json = Model.schema_json(indent=2)
+    assert json.loads(schema_json) == {
         'title': 'Model',
         'type': 'object',
         'properties': {
@@ -771,16 +776,16 @@ def test_date_types(field_type, expected_schema):
         (condate(), {}),
         (
             condate(gt=date(2010, 1, 1), lt=date(2021, 2, 2)),
-            {'exclusiveMinimum': '2010-01-01', 'exclusiveMaximum': '2021-02-02'},
+            {'exclusiveMinimum': date(2010, 1, 1), 'exclusiveMaximum': date(2021, 2, 2)},
         ),
-        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': '2010-01-01', 'maximum': '2021-02-02'}),
+        (condate(ge=date(2010, 1, 1), le=date(2021, 2, 2)), {'minimum': date(2010, 1, 1), 'maximum': date(2021, 2, 2)}),
     ],
 )
 def test_date_constrained_types(field_type, expected_schema):
     class Model(BaseModel):
         a: field_type
 
-    assert json.loads(Model.schema_json()) == {
+    assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'date', **expected_schema}},
