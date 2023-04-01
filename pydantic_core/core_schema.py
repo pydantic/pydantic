@@ -1043,7 +1043,7 @@ class LiteralSchema(TypedDict, total=False):
 
 
 def literal_schema(
-    *expected: Any, ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
+    expected: list[Any], ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
 ) -> LiteralSchema:
     """
     Returns a schema that matches a literal value, e.g.:
@@ -1051,7 +1051,7 @@ def literal_schema(
     ```py
     from pydantic_core import SchemaValidator, core_schema
 
-    schema = core_schema.literal_schema('hello', 'world')
+    schema = core_schema.literal_schema(['hello', 'world'])
     v = SchemaValidator(schema)
     assert v.validate_python('hello') == 'hello'
     ```
@@ -1062,9 +1062,7 @@ def literal_schema(
         metadata: See [TODO] for details
         serialization: Custom serialization schema
     """
-    return dict_not_none(
-        type='literal', expected=list(expected), ref=ref, metadata=metadata, serialization=serialization
-    )
+    return dict_not_none(type='literal', expected=expected, ref=ref, metadata=metadata, serialization=serialization)
 
 
 # must match input/parse_json.rs::JsonType::try_from
@@ -1284,7 +1282,7 @@ class TuplePositionalSchema(TypedDict, total=False):
 
 
 def tuple_positional_schema(
-    *items_schema: CoreSchema,
+    items_schema: list[CoreSchema],
     extra_schema: CoreSchema | None = None,
     strict: bool | None = None,
     ref: str | None = None,
@@ -1298,7 +1296,7 @@ def tuple_positional_schema(
     from pydantic_core import SchemaValidator, core_schema
 
     schema = core_schema.tuple_positional_schema(
-        core_schema.int_schema(), core_schema.str_schema()
+        [core_schema.int_schema(), core_schema.str_schema()]
     )
     v = SchemaValidator(schema)
     assert v.validate_python((1, 'hello')) == (1, 'hello')
@@ -1317,7 +1315,7 @@ def tuple_positional_schema(
     """
     return dict_not_none(
         type='tuple-positional',
-        items_schema=list(items_schema),
+        items_schema=items_schema,
         extra_schema=extra_schema,
         strict=strict,
         ref=ref,
@@ -2194,7 +2192,7 @@ class UnionSchema(TypedDict, total=False):
 
 
 def union_schema(
-    *choices: CoreSchema,
+    choices: list[CoreSchema],
     auto_collapse: bool | None = None,
     custom_error_type: str | None = None,
     custom_error_message: str | None = None,
@@ -2210,14 +2208,14 @@ def union_schema(
     ```py
     from pydantic_core import SchemaValidator, core_schema
 
-    schema = core_schema.union_schema(core_schema.str_schema(), core_schema.int_schema())
+    schema = core_schema.union_schema([core_schema.str_schema(), core_schema.int_schema()])
     v = SchemaValidator(schema)
     assert v.validate_python('hello') == 'hello'
     assert v.validate_python(1) == 1
     ```
 
     Args:
-        *choices: The schemas to match
+        choices: The schemas to match
         auto_collapse: whether to automatically collapse unions with one element to the inner validator, default true
         custom_error_type: The custom error type to use if the validation fails
         custom_error_message: The custom error message to use if the validation fails
@@ -2229,7 +2227,7 @@ def union_schema(
     """
     return dict_not_none(
         type='union',
-        choices=list(choices),
+        choices=choices,
         auto_collapse=auto_collapse,
         custom_error_type=custom_error_type,
         custom_error_message=custom_error_message,
@@ -2349,7 +2347,7 @@ class ChainSchema(TypedDict, total=False):
 
 
 def chain_schema(
-    *steps: CoreSchema, ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
+    steps: list[CoreSchema], ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
 ) -> ChainSchema:
     """
     Returns a schema that chains the provided validation schemas, e.g.:
@@ -2363,7 +2361,7 @@ def chain_schema(
 
     fn_schema = core_schema.general_plain_validator_function(function=fn)
     schema = core_schema.chain_schema(
-        fn_schema, fn_schema, fn_schema, core_schema.str_schema()
+        [fn_schema, fn_schema, fn_schema, core_schema.str_schema()]
     )
     v = SchemaValidator(schema)
     assert v.validate_python('hello') == 'hello world world world'
@@ -2375,7 +2373,7 @@ def chain_schema(
         metadata: See [TODO] for details
         serialization: Custom serialization schema
     """
-    return dict_not_none(type='chain', steps=list(steps), ref=ref, metadata=metadata, serialization=serialization)
+    return dict_not_none(type='chain', steps=steps, ref=ref, metadata=metadata, serialization=serialization)
 
 
 class LaxOrStrictSchema(TypedDict, total=False):
@@ -2846,7 +2844,7 @@ def arguments_parameter(
     param = core_schema.arguments_parameter(
         name='a', schema=core_schema.str_schema(), mode='positional_only'
     )
-    schema = core_schema.arguments_schema(param)
+    schema = core_schema.arguments_schema([param])
     v = SchemaValidator(schema)
     assert v.validate_python(('hello',)) == (('hello',), {})
     ```
@@ -2872,7 +2870,7 @@ class ArgumentsSchema(TypedDict, total=False):
 
 
 def arguments_schema(
-    *arguments: ArgumentsParameter,
+    arguments: list[ArgumentsParameter],
     populate_by_name: bool | None = None,
     var_args_schema: CoreSchema | None = None,
     var_kwargs_schema: CoreSchema | None = None,
@@ -2892,7 +2890,7 @@ def arguments_schema(
     param_b = core_schema.arguments_parameter(
         name='b', schema=core_schema.bool_schema(), mode='positional_only'
     )
-    schema = core_schema.arguments_schema(param_a, param_b)
+    schema = core_schema.arguments_schema([param_a, param_b])
     v = SchemaValidator(schema)
     assert v.validate_python(('hello', True)) == (('hello', True), {})
     ```
@@ -2908,7 +2906,7 @@ def arguments_schema(
     """
     return dict_not_none(
         type='arguments',
-        arguments_schema=list(arguments),
+        arguments_schema=arguments,
         populate_by_name=populate_by_name,
         var_args_schema=var_args_schema,
         var_kwargs_schema=var_kwargs_schema,
@@ -2949,7 +2947,7 @@ def call_schema(
     param_b = core_schema.arguments_parameter(
         name='b', schema=core_schema.bool_schema(), mode='positional_only'
     )
-    args_schema = core_schema.arguments_schema(param_a, param_b)
+    args_schema = core_schema.arguments_schema([param_a, param_b])
 
     schema = core_schema.call_schema(
         arguments=args_schema,

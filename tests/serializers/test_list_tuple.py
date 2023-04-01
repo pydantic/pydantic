@@ -377,7 +377,7 @@ def test_tuple_pos_dict_key():
     s = SchemaSerializer(
         core_schema.dict_schema(
             core_schema.tuple_positional_schema(
-                core_schema.int_schema(), core_schema.str_schema(), extra_schema=core_schema.int_schema()
+                [core_schema.int_schema(), core_schema.str_schema()], extra_schema=core_schema.int_schema()
             ),
             core_schema.int_schema(),
         )
