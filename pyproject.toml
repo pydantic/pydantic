@@ -126,6 +126,13 @@ exclude_lines = [
     '\(Protocol\):$',
 ]
 
+[tool.coverage.paths]
+source = [
+    'pydantic/',
+    '/Users/runner/work/pydantic/pydantic/pydantic/',
+    'D:\a\pydantic\pydantic\pydantic',
+]
+
 [tool.black]
 color = true
 line-length = 120
