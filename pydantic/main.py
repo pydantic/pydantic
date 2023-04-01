@@ -792,7 +792,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         warnings.warn(
             'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.', DeprecationWarning
         )
-        cls.model_rebuild(force=True, types_namespace=localns)
+        if localns:
+            raise TypeError('`localns` arguments are not longer accepted.')
+        cls.model_rebuild(force=True)
 
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
