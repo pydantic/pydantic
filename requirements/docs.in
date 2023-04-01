@@ -2,6 +2,7 @@ autoflake
 mkdocs
 mkdocs-exclude
 mkdocs-material
+mkdocs-redirects
 mkdocs-simple-hooks
 pyupgrade
 tomli

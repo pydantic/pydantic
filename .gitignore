@@ -32,3 +32,4 @@ pydantic/*.so
 /codecov.sh
 /worktrees/
 /.ruff_cache/
+.DS_Store
