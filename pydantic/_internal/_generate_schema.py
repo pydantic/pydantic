@@ -30,9 +30,9 @@ from ._core_utils import (
 from ._decorators import (
     Decorator,
     DecoratorInfos,
+    FieldSerializerDecoratorInfo,
     FieldValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
-    SerializerDecoratorInfo,
     ValidatorDecoratorInfo,
 )
 from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
@@ -48,12 +48,12 @@ __all__ = 'dataclass_schema', 'GenerateSchema', 'generate_config'
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
-FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, SerializerDecoratorInfo]
+FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
 AnyFieldDecorator = Union[
     Decorator[ValidatorDecoratorInfo],
     Decorator[FieldValidatorDecoratorInfo],
-    Decorator[SerializerDecoratorInfo],
+    Decorator[FieldSerializerDecoratorInfo],
 ]
 
 
@@ -979,7 +979,7 @@ def _validators_require_validate_default(validators: Iterable[Decorator[Validato
 
 
 def apply_serializers(
-    schema: core_schema.CoreSchema, serializers: list[Decorator[SerializerDecoratorInfo]]
+    schema: core_schema.CoreSchema, serializers: list[Decorator[FieldSerializerDecoratorInfo]]
 ) -> core_schema.CoreSchema:
     """
     Apply serializers to a schema.

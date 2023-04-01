@@ -53,6 +53,8 @@ class ValidatorDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
+    __slots__ = 'fields', 'mode', 'each_item', 'always', 'check_fields'
+
     def __init__(
         self,
         *,
@@ -81,6 +83,8 @@ class FieldValidatorDecoratorInfo(Representation):
     A container for data from `@field_validator` so that we can access it
     while building the pydantic-core schema.
     """
+
+    __slots__ = 'fields', 'mode', 'sub_path', 'check_fields'
 
     def __init__(
         self,
@@ -122,11 +126,13 @@ class RootValidatorDecoratorInfo(Representation):
         self.mode = mode
 
 
-class SerializerDecoratorInfo(Representation):
+class FieldSerializerDecoratorInfo(Representation):
     """
-    A container for data from `@serializer` so that we can access it
+    A container for data from `@field_serializer` so that we can access it
     while building the pydantic-core schema.
     """
+
+    __slots__ = 'fields', 'sub_path', 'mode', 'json_return_type', 'when_used', 'check_fields', 'type'
 
     json_return_type: JsonReturnTypes | None
     when_used: WhenUsed
@@ -142,15 +148,6 @@ class SerializerDecoratorInfo(Representation):
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
     ) -> None:
-        """
-        :param mode: the pydantic-core serializer mode.
-        :param type: either 'general' or 'field' indicating if this serializer should have
-            access to the model instance it applies to.
-        :param sub_path: Not yet supported.
-        :param json_return_type: TODO
-        :param when_used: TODO
-        :param check_fields: whether to check that the fields actually exist on the model.
-        """
         self.fields = fields
         self.sub_path = sub_path
         self.mode = mode
@@ -160,8 +157,36 @@ class SerializerDecoratorInfo(Representation):
         self.type = type
 
 
+class ModelSerializerDecoratorInfo(Representation):
+    """
+    A container for data from `@model_serializer` so that we can access it
+    while building the pydantic-core schema.
+    """
+
+    __slots__ = 'mode', 'json_return_type', 'when_used'
+
+    mode: Literal['plain', 'wrap']
+    json_return_type: JsonReturnTypes | None
+    when_used: WhenUsed
+
+    def __init__(
+        self,
+        *,
+        mode: Literal['plain', 'wrap'],
+        json_return_type: JsonReturnTypes | None = None,
+        when_used: WhenUsed = 'always',
+    ) -> None:
+        self.mode = mode
+        self.json_return_type = json_return_type
+        self.when_used = when_used
+
+
 DecoratorInfo = Union[
-    ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, RootValidatorDecoratorInfo, SerializerDecoratorInfo
+    ValidatorDecoratorInfo,
+    FieldValidatorDecoratorInfo,
+    RootValidatorDecoratorInfo,
+    FieldSerializerDecoratorInfo,
+    ModelSerializerDecoratorInfo,
 ]
 
 ReturnType = TypeVar('ReturnType')
@@ -232,7 +257,7 @@ AnyDecorator = Union[
     Decorator[ValidatorDecoratorInfo],
     Decorator[FieldValidatorDecoratorInfo],
     Decorator[RootValidatorDecoratorInfo],
-    Decorator[SerializerDecoratorInfo],
+    Decorator[FieldSerializerDecoratorInfo],
 ]
 
 
@@ -243,7 +268,7 @@ class DecoratorInfos(Representation):
     validator: dict[str, Decorator[ValidatorDecoratorInfo]]
     field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]]
     root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]]
-    serializer: dict[str, Decorator[SerializerDecoratorInfo]]
+    serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]]
 
     def __init__(self) -> None:
         self.validator = {}
@@ -287,7 +312,7 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
             elif isinstance(info, RootValidatorDecoratorInfo):
                 res.root_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
             else:
-                assert isinstance(info, SerializerDecoratorInfo)
+                assert isinstance(info, FieldSerializerDecoratorInfo)
                 res.serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
             # replace our marker with the bound, concrete function
             setattr(cls, var_name, func)
@@ -694,6 +719,59 @@ def make_generic_field_serializer(
                     return func4(self, value, handler)
 
                 return wrap_field_serializer_in_wrap_mode
+
+        if n_positional != 3:
+            raise TypeError(
+                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
+                f' {_VALID_SERIALIZER_SIGNATURES}'
+            )
+        func = cast(AnyCoreSerializer, serializer)
+        return func
+
+
+def make_generic_model_serializer(
+    serializer: AnySerializerFunction, mode: Literal['plain', 'wrap']
+) -> AnyCoreSerializer:
+    """
+    Wrap serializers to allow ignoring the `info` argument as a convenience.
+    """
+    sig = signature(serializer)
+    is_instance = is_instance_method_from_sig(serializer)
+    if is_instance:
+        # for the errors below to exclude self
+        sig = Signature(parameters=list(sig.parameters.values())[1:])
+
+    n_positional = sum(
+        1
+        for param in sig.parameters.values()
+        if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+    )
+    if mode == 'plain':
+        if n_positional == 1:
+            func1 = cast(GenericPlainSerializerFunctionWithoutInfo, serializer)
+
+            def wrap_generic_serializer_single_argument(value: Any, _: SerializationInfo) -> Any:
+                return func1(value)
+
+            return wrap_generic_serializer_single_argument
+        if n_positional != 2:
+            raise TypeError(
+                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
+                f' {_VALID_SERIALIZER_SIGNATURES}'
+            )
+        func = cast(AnyCoreSerializer, serializer)
+        return func
+    else:
+        assert mode == 'wrap'
+        if n_positional == 2:
+            func2 = cast(GeneralWrapSerializerFunctionWithoutInfo, serializer)
+
+            def wrap_general_serializer_in_wrap_mode(
+                value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo
+            ) -> Any:
+                return func2(value, handler)
+
+            return wrap_general_serializer_in_wrap_mode
 
         if n_positional != 3:
             raise TypeError(
