@@ -172,7 +172,7 @@ the values should be functions which serialise that type (see the example below)
 ```py
 from datetime import datetime, timedelta, timezone
 
-from pydantic import BaseModel, serializer
+from pydantic import BaseModel, field_serializer
 
 
 class WithCustomEncoders(BaseModel):
@@ -180,7 +180,7 @@ class WithCustomEncoders(BaseModel):
     dt: datetime
     diff: timedelta
 
-    @serializer('dt')
+    @field_serializer('dt')
     def serialize_dt(self, dt: datetime, _info):
         return dt.timestamp()
 

@@ -323,14 +323,16 @@ def root_validator(
 _PlainSerializationFunction = Union[
     _core_schema.GeneralPlainSerializerFunction,
     _core_schema.FieldPlainSerializerFunction,
-    _decorators.PlainSerializerWithoutInfo,
+    _decorators.GenericPlainSerializerFunctionWithoutInfo,
+    _decorators.FieldPlainSerializerFunctionWithoutInfo,
 ]
 
 
 _WrapSerializationFunction = Union[
     _core_schema.GeneralWrapSerializerFunction,
     _core_schema.FieldWrapSerializerFunction,
-    _decorators.WrapSerializerWithoutInfo,
+    _decorators.GeneralWrapSerializerFunctionWithoutInfo,
+    _decorators.FieldWrapSerializerFunctionWithoutInfo,
 ]
 
 
@@ -339,7 +341,7 @@ _WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerial
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
@@ -352,7 +354,7 @@ def serializer(
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     mode: Literal['plain'],
@@ -366,7 +368,7 @@ def serializer(
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     mode: Literal['wrap'],
@@ -379,7 +381,7 @@ def serializer(
     ...
 
 
-def serializer(
+def field_serializer(
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
@@ -409,7 +411,7 @@ def serializer(
         res = _decorators.prepare_serializer_decorator(f, allow_reuse)
         type_: Literal['field', 'general'] = 'field' if _decorators.is_instance_method_from_sig(f) else 'general'
 
-        validator_wrapper_info = _decorators.SerializerDecoratorInfo(
+        serializer_dec_info = _decorators.SerializerDecoratorInfo(
             fields=fields,
             mode=mode,
             type=type_,
@@ -419,7 +421,7 @@ def serializer(
             check_fields=check_fields,
         )
         return _decorators.PydanticDecoratorMarker(
-            res, validator_wrapper_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode)
+            res, serializer_dec_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode, type=type_)
         )
 
     return dec

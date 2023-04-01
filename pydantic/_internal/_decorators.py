@@ -575,8 +575,10 @@ def make_v1_generic_root_validator(
     return _wrapper2
 
 
-PlainSerializerWithoutInfo = Callable[[Any], Any]
-WrapSerializerWithoutInfo = Callable[[Any, SerializerFunctionWrapHandler], Any]
+GenericPlainSerializerFunctionWithoutInfo = Callable[[Any], Any]
+FieldPlainSerializerFunctionWithoutInfo = Callable[[Any, Any], Any]
+FieldWrapSerializerFunctionWithoutInfo = Callable[[Any, Any, SerializerFunctionWrapHandler], Any]
+GeneralWrapSerializerFunctionWithoutInfo = Callable[[Any, SerializerFunctionWrapHandler], Any]
 
 AnyCoreSerializer = Union[
     FieldPlainSerializerFunction,
@@ -586,8 +588,8 @@ AnyCoreSerializer = Union[
 ]
 
 AnySerializerFunction = Union[
-    PlainSerializerWithoutInfo,
-    WrapSerializerWithoutInfo,
+    GenericPlainSerializerFunctionWithoutInfo,
+    GeneralWrapSerializerFunctionWithoutInfo,
     AnyCoreSerializer,
 ]
 
@@ -630,7 +632,7 @@ def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ..
 
 
 def make_generic_field_serializer(
-    serializer: AnySerializerFunction, mode: Literal['plain', 'wrap']
+    serializer: AnySerializerFunction, mode: Literal['plain', 'wrap'], type: Literal['field', 'general']
 ) -> AnyCoreSerializer:
     """
     Wrap serializers to allow ignoring the `info` argument as a convenience.
@@ -640,6 +642,7 @@ def make_generic_field_serializer(
     if is_instance:
         # for the errors below to exclude self
         sig = Signature(parameters=list(sig.parameters.values())[1:])
+
     n_positional = sum(
         1
         for param in sig.parameters.values()
@@ -647,12 +650,21 @@ def make_generic_field_serializer(
     )
     if mode == 'plain':
         if n_positional == 1:
-            func1 = cast(PlainSerializerWithoutInfo, serializer)
+            if type == 'general':
+                func1 = cast(GenericPlainSerializerFunctionWithoutInfo, serializer)
 
-            def _wrap1(value: Any, _: SerializationInfo) -> Any:
-                return func1(value)
+                def wrap_generic_serializer_single_argument(value: Any, _: SerializationInfo) -> Any:
+                    return func1(value)
 
-            return _wrap1
+                return wrap_generic_serializer_single_argument
+            else:
+                assert type == 'field'
+                func2 = cast(FieldPlainSerializerFunctionWithoutInfo, serializer)
+
+                def wrap_field_serializer_single_argument(self: Any, value: Any, _: SerializationInfo) -> Any:
+                    return func2(self, value)
+
+                return wrap_field_serializer_single_argument
         if n_positional != 2:
             raise TypeError(
                 f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
@@ -663,12 +675,26 @@ def make_generic_field_serializer(
     else:
         assert mode == 'wrap'
         if n_positional == 2:
-            func2 = cast(WrapSerializerWithoutInfo, serializer)
+            if type == 'general':
+                func3 = cast(GeneralWrapSerializerFunctionWithoutInfo, serializer)
 
-            def _wrap2(value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo) -> Any:
-                return func2(value, handler)
+                def wrap_general_serializer_in_wrap_mode(
+                    value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo
+                ) -> Any:
+                    return func3(value, handler)
 
-            return _wrap2
+                return wrap_general_serializer_in_wrap_mode
+            else:
+                assert type == 'field'
+                func4 = cast(FieldWrapSerializerFunctionWithoutInfo, serializer)
+
+                def wrap_field_serializer_in_wrap_mode(
+                    self: Any, value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo
+                ) -> Any:
+                    return func4(self, value, handler)
+
+                return wrap_field_serializer_in_wrap_mode
+
         if n_positional != 3:
             raise TypeError(
                 f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'

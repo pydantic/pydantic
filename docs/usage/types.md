@@ -1238,13 +1238,13 @@ assert my_cos == my_cos_2
 **Serializing an `ImportString` type to json is possible with a`serializer` (TODO link).
 
 ```py output="json"
-from pydantic import BaseModel, ImportString, serializer
+from pydantic import BaseModel, ImportString, field_serializer
 
 
 class WithCustomEncodersGood(BaseModel):
     obj: ImportString
 
-    @serializer('obj')
+    @field_serializer('obj')
     def serialize_obj(cls, v):
         return str(v)
 
@@ -1552,7 +1552,13 @@ that you do not want to be visible in logging or tracebacks.
 The `SecretStr` and `SecretBytes` will be formatted as either `'**********'` or `''` on conversion to json.
 
 ```py
-from pydantic import BaseModel, SecretBytes, SecretStr, ValidationError, serializer
+from pydantic import (
+    BaseModel,
+    SecretBytes,
+    SecretStr,
+    ValidationError,
+    field_serializer,
+)
 
 
 class SimpleModel(BaseModel):
@@ -1597,7 +1603,7 @@ class SimpleModelDumpable(BaseModel):
     password: SecretStr
     password_bytes: SecretBytes
 
-    @serializer('password', 'password_bytes')
+    @field_serializer('password', 'password_bytes')
     def serialize_secret(v):
         return v.get_secret_value() if v else None
 
