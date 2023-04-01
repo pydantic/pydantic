@@ -745,7 +745,7 @@ def test_var_kwargs(py_and_json: PyAndJson, input_value, expected):
         [{'__args__': None, '__kwargs__': {'Foo': 1}}, ((), {'a': 1})],
         [
             {'__args__': None, '__kwargs__': {'a': 1}},
-            Err('a\n  Missing required keyword argument [type=missing_keyword_argument,'),
+            Err('Foo\n  Missing required keyword argument [type=missing_keyword_argument,'),
         ],
     ],
     ids=repr,

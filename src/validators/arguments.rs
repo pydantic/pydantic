@@ -27,6 +27,7 @@ pub struct ArgumentsValidator {
     positional_params_count: usize,
     var_args_validator: Option<Box<CombinedValidator>>,
     var_kwargs_validator: Option<Box<CombinedValidator>>,
+    loc_by_alias: bool,
 }
 
 impl BuildValidator for ArgumentsValidator {
@@ -114,6 +115,7 @@ impl BuildValidator for ArgumentsValidator {
                 Some(v) => Some(Box::new(build_validator(v, config, build_context)?)),
                 None => None,
             },
+            loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
         }
         .into())
     }
@@ -176,15 +178,15 @@ impl Validator for ArgumentsValidator {
                     let mut kw_value = None;
                     if let Some(kwargs) = $args.kwargs {
                         if let Some(ref lookup_key) = parameter.kw_lookup_key {
-                            if let Some((key, value)) = lookup_key.$get_method(kwargs)? {
-                                used_kwargs.insert(key);
-                                kw_value = Some(value);
+                            if let Some((lookup_path, value)) = lookup_key.$get_method(kwargs)? {
+                                used_kwargs.insert(lookup_path.first_key());
+                                kw_value = Some((lookup_path, value));
                             }
                         }
                     }
 
                     match (pos_value, kw_value) {
-                        (Some(_), Some(kw_value)) => {
+                        (Some(_), Some((_, kw_value))) => {
                             errors.push(ValLineError::new_with_loc(
                                 ErrorType::MultipleArgumentValues,
                                 kw_value,
@@ -203,18 +205,16 @@ impl Validator for ArgumentsValidator {
                                 Err(err) => return Err(err),
                             }
                         }
-                        (None, Some(kw_value)) => {
+                        (None, Some((lookup_path, kw_value))) => {
                             match parameter
                                 .validator
                                 .validate(py, kw_value, extra, slots, recursion_guard)
                             {
                                 Ok(value) => output_kwargs.set_item(parameter.kwarg_key.as_ref().unwrap(), value)?,
                                 Err(ValError::LineErrors(line_errors)) => {
-                                    errors.extend(
-                                        line_errors
-                                            .into_iter()
-                                            .map(|err| err.with_outer_location(parameter.name.clone().into())),
-                                    );
+                                    errors.extend(line_errors.into_iter().map(|err| {
+                                        lookup_path.apply_error_loc(err, self.loc_by_alias, &parameter.name)
+                                    }));
                                 }
                                 Err(err) => return Err(err),
                             }
@@ -226,11 +226,12 @@ impl Validator for ArgumentsValidator {
                                 } else {
                                     output_args.push(value);
                                 }
-                            } else if parameter.kwarg_key.is_some() {
-                                errors.push(ValLineError::new_with_loc(
+                            } else if let Some(ref lookup_key) = parameter.kw_lookup_key {
+                                errors.push(lookup_key.error(
                                     ErrorType::MissingKeywordArgument,
                                     input,
-                                    parameter.name.clone(),
+                                    self.loc_by_alias,
+                                    &parameter.name,
                                 ));
                             } else {
                                 errors.push(ValLineError::new_with_loc(ErrorType::MissingPositionalArgument, input, index));

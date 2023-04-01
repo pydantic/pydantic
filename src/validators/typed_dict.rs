@@ -36,6 +36,7 @@ pub struct TypedDictValidator {
     strict: bool,
     from_attributes: bool,
     return_fields_set: bool,
+    loc_by_alias: bool,
 }
 
 impl BuildValidator for TypedDictValidator {
@@ -128,6 +129,7 @@ impl BuildValidator for TypedDictValidator {
             strict,
             from_attributes,
             return_fields_set,
+            loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
         }
         .into())
     }
@@ -180,11 +182,11 @@ impl Validator for TypedDictValidator {
                             continue;
                         }
                     };
-                    if let Some((used_key, value)) = op_key_value {
+                    if let Some((lookup_path, value)) = op_key_value {
                         if let Some(ref mut used_keys) = used_keys {
                             // key is "used" whether or not validation passes, since we want to skip this key in
                             // extra logic either way
-                            used_keys.insert(used_key);
+                            used_keys.insert(lookup_path.first_key());
                         }
                         match field
                             .validator
@@ -199,7 +201,7 @@ impl Validator for TypedDictValidator {
                             Err(ValError::Omit) => continue,
                             Err(ValError::LineErrors(line_errors)) => {
                                 for err in line_errors {
-                                    errors.push(err.with_outer_location(field.name.clone().into()));
+                                    errors.push(lookup_path.apply_error_loc(err, self.loc_by_alias, &field.name));
                                 }
                             }
                             Err(err) => return Err(err),
@@ -208,10 +210,11 @@ impl Validator for TypedDictValidator {
                     } else if let Some(value) = field.validator.default_value(py, Some(field.name.as_str()), &extra, slots, recursion_guard)? {
                         output_dict.set_item(&field.name_py, value)?;
                     } else if field.required {
-                        errors.push(ValLineError::new_with_loc(
+                        errors.push(field.lookup_key.error(
                             ErrorType::Missing,
                             input,
-                            field.name.clone(),
+                            self.loc_by_alias,
+                            &field.name
                         ));
                     }
                 }
@@ -289,26 +292,6 @@ impl Validator for TypedDictValidator {
             Ok((output_dict, fields_set).to_object(py))
         } else {
             Ok(output_dict.to_object(py))
-        }
-    }
-
-    fn get_name(&self) -> &str {
-        Self::EXPECTED_TYPE
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        match question {
-            Question::ReturnFieldsSet => self.return_fields_set,
-        }
-    }
-
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        self.fields
-            .iter_mut()
-            .try_for_each(|f| f.validator.complete(build_context))?;
-        match &mut self.extra_validator {
-            Some(v) => v.complete(build_context),
-            None => Ok(()),
         }
     }
 
@@ -399,6 +382,26 @@ impl Validator for TypedDictValidator {
             Ok(PyTuple::new(py, [new_data, fields_set.to_object(py)]).to_object(py))
         } else {
             Ok(new_data)
+        }
+    }
+
+    fn get_name(&self) -> &str {
+        Self::EXPECTED_TYPE
+    }
+
+    fn ask(&self, question: &Question) -> bool {
+        match question {
+            Question::ReturnFieldsSet => self.return_fields_set,
+        }
+    }
+
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        self.fields
+            .iter_mut()
+            .try_for_each(|f| f.validator.complete(build_context))?;
+        match &mut self.extra_validator {
+            Some(v) => v.complete(build_context),
+            None => Ok(()),
         }
     }
 }

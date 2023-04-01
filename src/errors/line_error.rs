@@ -98,6 +98,14 @@ impl<'a> ValLineError<'a> {
         }
     }
 
+    pub fn new_with_full_loc(error_type: ErrorType, input: &'a impl Input<'a>, location: Location) -> ValLineError<'a> {
+        Self {
+            error_type,
+            input_value: input.as_error_value(),
+            location,
+        }
+    }
+
     pub fn new_custom_input(error_type: ErrorType, input_value: InputValue<'a>) -> ValLineError<'a> {
         Self {
             error_type,
