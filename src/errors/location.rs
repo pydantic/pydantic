@@ -1,8 +1,9 @@
+use pyo3::exceptions::PyTypeError;
 use pyo3::once_cell::GILOnceCell;
 use std::fmt;
 
 use pyo3::prelude::*;
-use pyo3::types::PyTuple;
+use pyo3::types::{PyList, PyString, PyTuple};
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 
@@ -82,12 +83,14 @@ impl ToPyObject for LocItem {
 impl TryFrom<&PyAny> for LocItem {
     type Error = PyErr;
 
-    fn try_from(value: &PyAny) -> PyResult<Self> {
-        if let Ok(str) = value.extract::<String>() {
-            Ok(str.into())
+    fn try_from(loc_item: &PyAny) -> PyResult<Self> {
+        if let Ok(py_str) = loc_item.downcast::<PyString>() {
+            let str = py_str.to_str()?.to_string();
+            Ok(Self::S(str))
+        } else if let Ok(int) = loc_item.extract::<i64>() {
+            Ok(Self::I(int))
         } else {
-            let int = value.extract::<usize>()?;
-            Ok(int.into())
+            Err(PyTypeError::new_err("Item in a location must be a string or int"))
         }
     }
 }
@@ -194,6 +197,31 @@ impl Serialize for Location {
                 }
                 seq.end()
             }
+        }
+    }
+}
+
+impl TryFrom<Option<&PyAny>> for Location {
+    type Error = PyErr;
+
+    fn try_from(location: Option<&PyAny>) -> PyResult<Self> {
+        if let Some(location) = location {
+            let loc_vec: Vec<LocItem> = if let Ok(tuple) = location.downcast::<PyTuple>() {
+                tuple.iter().map(LocItem::try_from).collect::<PyResult<_>>()?
+            } else if let Ok(list) = location.downcast::<PyList>() {
+                list.iter().map(LocItem::try_from).collect::<PyResult<_>>()?
+            } else {
+                return Err(PyTypeError::new_err(
+                    "Location must be a list or tuple of strings and ints",
+                ));
+            };
+            if loc_vec.is_empty() {
+                Ok(Self::Empty)
+            } else {
+                Ok(Self::List(loc_vec))
+            }
+        } else {
+            Ok(Self::Empty)
         }
     }
 }
