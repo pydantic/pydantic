@@ -112,6 +112,7 @@ target-version = "py37"
 
 [tool.coverage.run]
 source = ['pydantic']
+omit = ['pydantic/deprecated/*']
 branch = true
 context = '${CONTEXT}'
 
@@ -123,14 +124,6 @@ exclude_lines = [
     'if TYPE_CHECKING:',
     '@overload',
     '\(Protocol\):$',
-]
-
-
-[tool.coverage.paths]
-source = [
-    'pydantic/',
-    '/Users/runner/work/pydantic/pydantic/pydantic/',
-    'D:\a\pydantic\pydantic\pydantic',
 ]
 
 [tool.black]

@@ -623,11 +623,17 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         exclude_none: bool = False,
         # TODO: What do we do about the following arguments?
         #   Do they need to go on model_config now, and get used by the serializer?
-        encoder: typing.Callable[[Any], Any] | None = None,
-        models_as_dict: bool = True,
+        encoder: typing.Callable[[Any], Any] | None = Undefined,  # type: ignore[assignment]
+        models_as_dict: bool = Undefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
     ) -> str:
         warnings.warn('The `json` method is deprecated; use `model_dump_json` instead.', DeprecationWarning)
+        if encoder is not Undefined:
+            raise TypeError('The `encoder` argument is no longer supported; use field serializers instead.')
+        if models_as_dict is not Undefined:
+            raise TypeError('The `models_as_dict` argument is no longer supported; use a model serializer instead.')
+        if dumps_kwargs:
+            raise TypeError('`dumps_kwargs` keyword arguments are no longer supported.')
         return self.model_dump_json(
             include=include,
             exclude=exclude,
@@ -653,7 +659,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
-            'The `parse_raw` method is deprecated; load the data and use `model_validate` instead.', DeprecationWarning
+            'The `parse_raw` method is deprecated; if your data is JSON use `model_json_validate`, '
+            'otherwise load the data then use `model_validate` instead.',
+            DeprecationWarning,
         )
         try:
             obj = _deprecated_parse.load_str_bytes(
@@ -665,10 +673,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 json_loads=cls.model_config['json_loads'],
             )
         except (ValueError, TypeError, UnicodeDecodeError) as e:
-            # TODO: this used to raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
-            #   Do we want to make it possible to instantiate from python, just for deprecated functionality?
+            # TODO: raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
+            # waiting for pydantic/pydantic-core#510
             raise e
-        return cls.parse_obj(obj)
+        return cls.model_validate(obj)
 
     @classmethod
     def parse_file(
@@ -681,7 +689,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
-            'The `parse_file` method is deprecated; load the data and use `model_validate` instead.', DeprecationWarning
+            'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
+            'use `model_json_validate` otherwise `model_validate` instead.',
+            DeprecationWarning,
         )
         obj = _deprecated_parse.load_file(
             path,
