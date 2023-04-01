@@ -3,17 +3,18 @@ use std::fmt::{Display, Write};
 use std::str::from_utf8;
 
 use crate::errors::LocItem;
-use pyo3::exceptions::PyValueError;
-use pyo3::ffi;
+use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
 use pyo3::ffi::Py_ssize_t;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
+use pyo3::{ffi, intern};
 use serde::ser::{Error, SerializeMap, SerializeSeq};
 use serde::{Serialize, Serializer};
 use serde_json::ser::PrettyFormatter;
 
-use crate::build_tools::{py_error_type, safe_repr};
+use crate::build_tools::{py_error_type, safe_repr, SchemaDict};
 use crate::serializers::GeneralSerializeContext;
+use crate::PydanticCustomError;
 
 use super::line_error::ValLineError;
 use super::location::Location;
@@ -96,11 +97,11 @@ impl<'a> IntoPy<ValError<'a>> for ValidationError {
 #[pymethods]
 impl ValidationError {
     #[new]
-    fn py_new(line_errors: Vec<PyLineError>, title: PyObject, error_mode: Option<&str>) -> PyResult<Self> {
+    fn py_new(title: PyObject, line_errors: &PyList, error_mode: Option<&str>) -> PyResult<Self> {
         Ok(Self {
-            line_errors,
+            line_errors: line_errors.iter().map(PyLineError::try_from).collect::<PyResult<_>>()?,
             title,
-            error_mode: ErrorMode::from_raw(error_mode)?,
+            error_mode: ErrorMode::try_from(error_mode)?,
         })
     }
 
@@ -232,6 +233,43 @@ impl<'a> IntoPy<ValLineError<'a>> for PyLineError {
             location: self.location,
             input_value: self.input_value.into(),
         }
+    }
+}
+
+impl TryFrom<&PyAny> for PyLineError {
+    type Error = PyErr;
+
+    fn try_from(value: &PyAny) -> PyResult<Self> {
+        let dict: &PyDict = value.downcast()?;
+        let py = value.py();
+
+        let type_raw = dict
+            .get_item(intern!(py, "type"))
+            .ok_or_else(|| PyKeyError::new_err("type"))?;
+
+        let error_type = if let Ok(type_str) = type_raw.downcast::<PyString>() {
+            let context: Option<&PyDict> = dict.get_as(intern!(py, "ctx"))?;
+            ErrorType::new(py, type_str.to_str()?, context)?
+        } else if let Ok(custom_error) = type_raw.extract::<PydanticCustomError>() {
+            ErrorType::new_custom_error(custom_error)
+        } else {
+            return Err(PyTypeError::new_err(
+                "`type` should be a `str` or `PydanticCustomError`",
+            ));
+        };
+
+        let location = Location::try_from(dict.get_item("loc"))?;
+
+        let input_value = match dict.get_item("input") {
+            Some(i) => i.into_py(py),
+            None => py.None(),
+        };
+
+        Ok(Self {
+            error_type,
+            location,
+            input_value,
+        })
     }
 }
 
