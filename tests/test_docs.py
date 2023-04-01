@@ -146,7 +146,7 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
 
 @pytest.mark.skipif(bool(skip_reason), reason=skip_reason or 'not skipping')
 @pytest.mark.parametrize(
-    'example', find_examples(str(DOCS_ROOT / 'usage/devtools.md'), skip=sys.platform == 'win32'), ids=str
+    'example', find_examples(str(DOCS_ROOT / 'integrations/devtools.md'), skip=sys.platform == 'win32'), ids=str
 )
 def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, tmp_path: Path):
     from ansi2html import Ansi2HTMLConverter
