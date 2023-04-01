@@ -4,7 +4,6 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 from __future__ import annotations as _annotations
 
 import warnings
-from functools import wraps
 from inspect import Parameter, Signature, signature
 from typing import (
     TYPE_CHECKING,
@@ -651,11 +650,10 @@ def make_generic_field_serializer(
         if n_positional == 1:
             func1 = cast(PlainSerializerWithoutInfo, serializer)
 
-            @wraps(func1)
-            def _wrap1(value: Any, _: SerializationInfo) -> Any:
+            def wrap_serializer_single_argument(value: Any, _: SerializationInfo) -> Any:
                 return func1(value)
 
-            return _wrap1
+            return wrap_serializer_single_argument
         if n_positional != 2:
             raise TypeError(
                 f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
@@ -668,11 +666,12 @@ def make_generic_field_serializer(
         if n_positional == 2:
             func2 = cast(WrapSerializerWithoutInfo, serializer)
 
-            @wraps(func2)
-            def _wrap2(value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo) -> Any:
+            def wrap_serializer_in_wrap_mode(
+                value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo
+            ) -> Any:
                 return func2(value, handler)
 
-            return _wrap2
+            return wrap_serializer_in_wrap_mode
         if n_positional != 3:
             raise TypeError(
                 f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
