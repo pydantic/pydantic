@@ -59,7 +59,7 @@ impl LookupKey {
         if let Ok(alias_py) = value.downcast::<PyString>() {
             let alias: &str = alias_py.extract()?;
             match alt_alias {
-                Some(alt_alias) => Ok(LookupKey::Choice {
+                Some(alt_alias) => Ok(Self::Choice {
                     key1: alias.to_string(),
                     py_key1: alias_py.into_py(py),
                     path1: LookupPath::from_str(py, alias, Some(alias_py)),
@@ -85,7 +85,7 @@ impl LookupKey {
             if let Some(alt_alias) = alt_alias {
                 locs.push(LookupPath::from_str(py, alt_alias, None))
             }
-            Ok(LookupKey::PathChoices(locs))
+            Ok(Self::PathChoices(locs))
         }
     }
 
@@ -98,7 +98,7 @@ impl LookupKey {
             Some(py_key) => py_key.into_py(py),
             None => py_string!(py, key),
         };
-        LookupKey::Simple {
+        Self::Simple {
             key: key.to_string(),
             py_key,
             path: LookupPath::from_str(py, key, opt_py_key),
@@ -110,11 +110,11 @@ impl LookupKey {
         dict: &'data PyDict,
     ) -> PyResult<Option<(&'s LookupPath, &'data PyAny)>> {
         match self {
-            LookupKey::Simple { py_key, path, .. } => match dict.get_item(py_key) {
+            Self::Simple { py_key, path, .. } => match dict.get_item(py_key) {
                 Some(value) => Ok(Some((path, value))),
                 None => Ok(None),
             },
-            LookupKey::Choice {
+            Self::Choice {
                 py_key1,
                 path1,
                 py_key2,
@@ -127,7 +127,7 @@ impl LookupKey {
                     None => Ok(None),
                 },
             },
-            LookupKey::PathChoices(path_choices) => {
+            Self::PathChoices(path_choices) => {
                 for path in path_choices {
                     // iterate over the path and plug each value into the py_any from the last step, starting with dict
                     // this could just be a loop but should be somewhat faster with a functional design
@@ -147,11 +147,11 @@ impl LookupKey {
         dict: &'data PyMapping,
     ) -> PyResult<Option<(&'s LookupPath, &'data PyAny)>> {
         match self {
-            LookupKey::Simple { py_key, path, .. } => match dict.get_item(py_key) {
+            Self::Simple { py_key, path, .. } => match dict.get_item(py_key) {
                 Ok(value) => Ok(Some((path, value))),
                 _ => Ok(None),
             },
-            LookupKey::Choice {
+            Self::Choice {
                 py_key1,
                 path1,
                 py_key2,
@@ -164,7 +164,7 @@ impl LookupKey {
                     _ => Ok(None),
                 },
             },
-            LookupKey::PathChoices(path_choices) => {
+            Self::PathChoices(path_choices) => {
                 for path in path_choices {
                     // iterate over the path and plug each value into the py_any from the last step, starting with dict
                     // this could just be a loop but should be somewhat faster with a functional design
@@ -191,11 +191,11 @@ impl LookupKey {
         }
 
         match self {
-            LookupKey::Simple { py_key, path, .. } => match py_get_attrs(obj, py_key)? {
+            Self::Simple { py_key, path, .. } => match py_get_attrs(obj, py_key)? {
                 Some(value) => Ok(Some((path, value))),
                 None => Ok(None),
             },
-            LookupKey::Choice {
+            Self::Choice {
                 py_key1,
                 path1,
                 py_key2,
@@ -208,7 +208,7 @@ impl LookupKey {
                     None => Ok(None),
                 },
             },
-            LookupKey::PathChoices(path_choices) => {
+            Self::PathChoices(path_choices) => {
                 'outer: for path in path_choices {
                     // similar to above, but using `py_get_attrs`, we can't use try_fold because of the extra Err
                     // so we have to loop manually
@@ -236,11 +236,11 @@ impl LookupKey {
         dict: &'data JsonObject,
     ) -> PyResult<Option<(&'s LookupPath, &'data JsonInput)>> {
         match self {
-            LookupKey::Simple { key, path, .. } => match dict.get(key) {
+            Self::Simple { key, path, .. } => match dict.get(key) {
                 Some(value) => Ok(Some((path, value))),
                 None => Ok(None),
             },
-            LookupKey::Choice {
+            Self::Choice {
                 key1,
                 path1,
                 key2,
@@ -253,7 +253,7 @@ impl LookupKey {
                     None => Ok(None),
                 },
             },
-            LookupKey::PathChoices(path_choices) => {
+            Self::PathChoices(path_choices) => {
                 for path in path_choices {
                     let mut path_iter = path.iter();
 
@@ -307,7 +307,7 @@ impl fmt::Display for LookupPath {
             if i != 0 {
                 write!(f, ".")?;
             }
-            write!(f, "{}", item)?;
+            write!(f, "{item}")?;
         }
         Ok(())
     }
