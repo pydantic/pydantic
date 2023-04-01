@@ -985,18 +985,19 @@ except ValidationError as e:
     """
 ```
 
-## Model creation from `NamedTuple` or `TypedDict`
+## Using Pydantic without creating a BaseModel
 
-Sometimes you already use in your application classes that inherit from `NamedTuple` or `TypedDict`
-and you don't want to duplicate all your information to have a `BaseModel`.
-For this _pydantic_ provides `create_model_from_namedtuple` and `create_model_from_typeddict` methods.
-Those methods have the exact same keyword arguments as `create_model`.
+You may have types that are not `BaseModel`s that you want to validate data against.
+Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
 
+To do this Pydantic provides `AnalyzedType`. An `AnalyzedType` instance behaves nearly the same as a `BaseModel` instance, with the difference that `AnalyzedType` is not an actual type so you cannot use it in type annotations and such.
 
 ```py
+from typing import List
+
 from typing_extensions import TypedDict
 
-from pydantic import ValidationError, Validator
+from pydantic import AnalyzedType, ValidationError
 
 
 class User(TypedDict):
@@ -1004,22 +1005,24 @@ class User(TypedDict):
     id: int
 
 
-UserValdiator = Validator(User)
-print(repr(UserValdiator(dict(name='Fred', id='3'))))
-#> {'name': 'Fred', 'id': 3}
+UserListValidator = AnalyzedType(List[User])
+print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
+#> [{'name': 'Fred', 'id': 3}]
 
 try:
-    UserValdiator(dict(name='Fred', id='wrong', other='no'))
+    UserListValidator.validate_python([{'name': 'Fred', 'id': 'wrong', 'other': 'no'}])
 except ValidationError as e:
     print(e)
     """
-    2 validation errors for typed-dict
-    id
+    2 validation errors for list[typed-dict]
+    0 -> id
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
-    other
+    0 -> other
       Extra inputs are not permitted [type=extra_forbidden, input_value='no', input_type=str]
     """
 ```
+
+For many use cases `AnalyzedType` can replace BaseModels with a `__root__` field in Pydantic V1.
 
 ## Custom Root Types
 

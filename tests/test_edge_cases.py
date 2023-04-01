@@ -12,12 +12,12 @@ from pydantic_core import core_schema
 from typing_extensions import get_args
 
 from pydantic import (
+    AnalyzedType,
     BaseModel,
     ConfigDict,
     Extra,
     PydanticSchemaGenerationError,
     ValidationError,
-    Validator,
     constr,
     errors,
 )
@@ -1925,8 +1925,8 @@ def test_custom_generic_validators():
             if not args:
                 return schema
 
-            t1_f = Validator(args[0])
-            t2_f = Validator(args[1])
+            t1_f = AnalyzedType(args[0]).validate_python
+            t2_f = AnalyzedType(args[1]).validate_python
 
             def validate(v, info):
                 if not args:

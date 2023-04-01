@@ -3,7 +3,6 @@ from __future__ import annotations
 import inspect
 import math
 import re
-import sys
 import warnings
 from dataclasses import is_dataclass
 from enum import Enum
@@ -18,11 +17,9 @@ from typing import (
     NewType,
     Sequence,
     Tuple,
-    Type,
     Union,
     cast,
 )
-from weakref import WeakKeyDictionary
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from typing_extensions import Literal, TypedDict
@@ -32,8 +29,6 @@ from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
     from . import ConfigDict
-    from ._internal._dataclasses import PydanticDataclass
-    from .main import BaseModel
 
 JsonSchemaValue = Dict[str, Any]
 
@@ -1213,80 +1208,6 @@ class GenerateJsonSchema:
         if kind in self.ignored_warning_kinds:
             return None
         return f'{detail} [{kind}]'
-
-
-# ##### Start JSON Schema Generation Functions #####
-# TODO: These should be moved to the pydantic.funcs module or whatever when appropriate.
-
-
-def models_json_schema(
-    models: Sequence[type[BaseModel] | type[PydanticDataclass]],
-    *,
-    by_alias: bool = True,
-    title: str | None = None,
-    description: str | None = None,
-    ref_template: str = DEFAULT_REF_TEMPLATE,
-    schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-) -> dict[str, Any]:
-    # TODO: Put this in the "methods" module once that is created?
-    instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-    definitions = instance.generate_definitions([x.__pydantic_core_schema__ for x in models])
-
-    json_schema: dict[str, Any] = {}
-    if definitions:
-        json_schema['$defs'] = definitions
-    if title:
-        json_schema['title'] = title
-    if description:
-        json_schema['description'] = description
-
-    return json_schema
-
-
-# TODO: The JSON schema cache has been there from the beginning (https://github.com/pydantic/pydantic/pull/190 —
-#   — yes, I did go git-blame-spelunking to find this) but does it really make sense to still keep it around?
-#   Unless I'm unaware of some workflow that involves frequently calling `MyModel.schema_json()`, I think it doesn't.
-#   -
-#   I think people generally don't recompute the JSON schema, or if they do, are as likely to use models_json_schema,
-#   where it's not clear to me what the proper caching behavior should necessarily be.
-#   -
-#   I'll also note that the cache doesn't appear to be used at all in the (v1) FastAPI JSON schema functions
-#   pydantic.schema.schema and pydantic.schema.model_schema
-#   -
-#   I have kept this WeakKeyDictionary-based cache implementation here for now because I wrote it, and if we do end up
-#   using it, I wouldn't want to have to re-write it, but I'm in favor of removing it prior to merging this PR.
-#   And removing it should be trivial, just delete the caching-related lines here.
-
-if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
-    _JsonSchemaCache = WeakKeyDictionary[Type[Any], Dict[Any, Any]]
-else:
-    _JsonSchemaCache = WeakKeyDictionary
-
-_JSON_SCHEMA_CACHE = _JsonSchemaCache()
-
-
-def model_json_schema(
-    cls: type[BaseModel] | type[PydanticDataclass],
-    by_alias: bool = True,
-    ref_template: str = DEFAULT_REF_TEMPLATE,
-    schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-) -> dict[str, Any]:
-    # TODO: Put this in the "methods" module once that is created
-    cls_json_schema_cache = _JSON_SCHEMA_CACHE.get(cls)
-    if cls_json_schema_cache is None:
-        _JSON_SCHEMA_CACHE[cls] = cls_json_schema_cache = {}
-
-    cached = cls_json_schema_cache.get((by_alias, ref_template, schema_generator))
-    if cached is not None:
-        return cached
-
-    json_schema = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(cls.__pydantic_core_schema__)
-    cls_json_schema_cache[(by_alias, ref_template, schema_generator)] = json_schema
-
-    return json_schema
-
-
-# ##### End JSON Schema Generation Functions #####
 
 
 _Json = Union[Dict[str, Any], List[Any], str, int, float, bool, None]

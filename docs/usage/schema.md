@@ -423,8 +423,7 @@ sub-models in its `definitions`:
 ```py output="json"
 import json
 
-from pydantic import BaseModel
-from pydantic.json_schema import models_json_schema
+from pydantic import AnalyzedType, BaseModel
 
 
 class Foo(BaseModel):
@@ -439,7 +438,8 @@ class Bar(BaseModel):
     c: int
 
 
-top_level_schema = models_json_schema([Model, Bar], title='My Schema')
+analyzed_types = [AnalyzedType(tp) for tp in [Model, Bar]]
+top_level_schema = AnalyzedType.json_schemas(analyzed_types, title='My Schema')
 print(json.dumps(top_level_schema, indent=2))
 """
 {
