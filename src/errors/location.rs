@@ -6,6 +6,8 @@ use pyo3::types::PyTuple;
 use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 
+use crate::lookup_key::{LookupPath, PathItem};
+
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
 #[derive(Clone)]
@@ -51,6 +53,20 @@ impl From<i64> for LocItem {
 impl From<usize> for LocItem {
     fn from(u: usize) -> Self {
         Self::I(u as i64)
+    }
+}
+
+/// eventually it might be good to combine PathItem and LocItem
+impl From<PathItem> for LocItem {
+    fn from(path_item: PathItem) -> Self {
+        match path_item {
+            PathItem::S(s, _) => s.into(),
+            PathItem::Pos(val) => val.into(),
+            PathItem::Neg(val) => {
+                let neg_value = -(val as i64);
+                neg_value.into()
+            }
+        }
     }
 }
 
@@ -120,6 +136,17 @@ impl ToPyObject for Location {
                 .get_or_init(py, || PyTuple::empty(py).to_object(py))
                 .clone_ref(py),
         }
+    }
+}
+
+impl From<&LookupPath> for Location {
+    fn from(lookup_path: &LookupPath) -> Self {
+        let v = lookup_path
+            .iter()
+            .rev()
+            .map(|path_item| path_item.clone().into())
+            .collect();
+        Self::List(v)
     }
 }
 

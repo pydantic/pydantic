@@ -64,14 +64,21 @@ def test_dict_value_error(py_and_json: PyAndJson):
 def test_dict_error_key_int():
     v = SchemaValidator({'type': 'dict', 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
-        v.validate_python({1: 2, 3: 'wrong'})
+        v.validate_python({1: 2, 3: 'wrong', -4: 'wrong2'})
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
             'type': 'int_parsing',
             'loc': (3,),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'wrong',
-        }
+        },
+        {
+            'type': 'int_parsing',
+            'loc': (-4,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'wrong2',
+        },
     ]
 
 
