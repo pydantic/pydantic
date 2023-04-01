@@ -329,11 +329,9 @@ def test_config_title_cls():
 
 
 def test_config_fields():
-    with pytest.raises(
-        PydanticUserError, match='Setting the "fields" and "alias_generator" property on custom Config for @'
-    ):
+    with pytest.raises(PydanticUserError, match='Setting the "alias_generator" property on custom Config for @'):
 
-        @validate_arguments(config=dict(fields={'b': 'bang'}))
+        @validate_arguments(config=dict(alias_generator=lambda x: x))
         def foo(a: int, b: int):
             return f'{a}, {b}'
 

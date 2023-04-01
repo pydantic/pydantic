@@ -1226,10 +1226,9 @@ def test_multiple_errors():
     assert Model(a=None).a is None
 
 
-def test_validate_all():
-    # TODO remove or rename, validate_all doesn't exist anymore
+def test_validate_default():
     class Model(BaseModel):
-        model_config = ConfigDict(validate_all=True)
+        model_config = ConfigDict(validate_default=True)
         a: int
         b: int
 
@@ -1250,7 +1249,7 @@ def test_force_extra():
 
 
 def test_illegal_extra_value():
-    with pytest.raises(ValueError, match='is not a valid value for "extra"'):
+    with pytest.raises(ValueError, match=re.escape("is not a valid value for config['extra']")):
 
         class Model(BaseModel):
             model_config = ConfigDict(extra='foo')
