@@ -45,9 +45,11 @@ def test_repeated_ref():
     with pytest.raises(SchemaError, match='SchemaError: Duplicate ref: `foobar`'):
         SchemaSerializer(
             core_schema.tuple_positional_schema(
-                core_schema.int_schema(ref='foobar'),
-                core_schema.definition_reference_schema('foobar'),
-                core_schema.int_schema(ref='foobar'),
+                [
+                    core_schema.int_schema(ref='foobar'),
+                    core_schema.definition_reference_schema('foobar'),
+                    core_schema.int_schema(ref='foobar'),
+                ]
             )
         )
 
@@ -56,11 +58,13 @@ def test_repeat_after():
     with pytest.raises(SchemaError, match='SchemaError: Duplicate ref: `foobar`'):
         SchemaSerializer(
             core_schema.tuple_positional_schema(
-                core_schema.definitions_schema(
-                    core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
-                    [core_schema.int_schema(ref='foobar')],
-                ),
-                core_schema.int_schema(ref='foobar'),
+                [
+                    core_schema.definitions_schema(
+                        core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
+                        [core_schema.int_schema(ref='foobar')],
+                    ),
+                    core_schema.int_schema(ref='foobar'),
+                ]
             )
         )
 
@@ -94,15 +98,17 @@ def test_deep():
 def test_use_after():
     v = SchemaSerializer(
         core_schema.tuple_positional_schema(
-            core_schema.definitions_schema(
+            [
+                core_schema.definitions_schema(
+                    core_schema.definition_reference_schema('foobar'),
+                    [
+                        core_schema.int_schema(
+                            ref='foobar', serialization=core_schema.to_string_ser_schema(when_used='always')
+                        )
+                    ],
+                ),
                 core_schema.definition_reference_schema('foobar'),
-                [
-                    core_schema.int_schema(
-                        ref='foobar', serialization=core_schema.to_string_ser_schema(when_used='always')
-                    )
-                ],
-            ),
-            core_schema.definition_reference_schema('foobar'),
+            ]
         )
     )
     assert v.to_python((1, 2)) == ('1', '2')

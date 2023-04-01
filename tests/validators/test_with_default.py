@@ -328,7 +328,7 @@ def test_validate_default():
 def test_validate_default_factory():
     v = SchemaValidator(
         core_schema.tuple_positional_schema(
-            core_schema.with_default_schema(core_schema.int_schema(), default_factory=lambda: '42')
+            [core_schema.with_default_schema(core_schema.int_schema(), default_factory=lambda: '42')]
         ),
         config=dict(validate_default=True),
     )
@@ -339,7 +339,7 @@ def test_validate_default_factory():
 def test_validate_default_error_tuple():
     v = SchemaValidator(
         core_schema.tuple_positional_schema(
-            core_schema.with_default_schema(core_schema.int_schema(), default='wrong', validate_default=True)
+            [core_schema.with_default_schema(core_schema.int_schema(), default='wrong', validate_default=True)]
         )
     )
     assert v.validate_python(('2',)) == (2,)

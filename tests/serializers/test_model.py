@@ -65,10 +65,12 @@ class DataClass:
 def test_dataclass():
     schema = core_schema.call_schema(
         core_schema.arguments_schema(
-            core_schema.arguments_parameter('foo', core_schema.int_schema()),
-            core_schema.arguments_parameter('bar', core_schema.str_schema()),
-            core_schema.arguments_parameter('spam', core_schema.bytes_schema(), mode='keyword_only'),
-            core_schema.arguments_parameter('frog', core_schema.int_schema(), mode='keyword_only'),
+            [
+                core_schema.arguments_parameter('foo', core_schema.int_schema()),
+                core_schema.arguments_parameter('bar', core_schema.str_schema()),
+                core_schema.arguments_parameter('spam', core_schema.bytes_schema(), mode='keyword_only'),
+                core_schema.arguments_parameter('frog', core_schema.int_schema(), mode='keyword_only'),
+            ]
         ),
         DataClass,
         serialization=core_schema.model_ser_schema(
