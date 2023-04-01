@@ -7,7 +7,6 @@ import typing
 import warnings
 from abc import ABCMeta
 from copy import copy, deepcopy
-from functools import partial
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
@@ -32,7 +31,6 @@ from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
-from .json import custom_pydantic_encoder, pydantic_encoder
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata
 
 if typing.TYPE_CHECKING:
@@ -61,7 +59,7 @@ _base_class_defined = False
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
-    def __new__(  # noqa C901
+    def __new__(  # C901
         mcs,
         cls_name: str,
         bases: tuple[type[Any], ...],
