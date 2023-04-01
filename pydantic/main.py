@@ -13,8 +13,8 @@ from pathlib import Path
 from types import prepare_class, resolve_bases
 from typing import Any, Generic
 
+import pydantic_core
 import typing_extensions
-from pydantic_core import SchemaValidator
 
 from ._internal import (
     _decorators,
@@ -38,7 +38,7 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMet
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from pydantic_core import CoreSchema, SchemaSerializer
+    from pydantic_core import CoreConfig, CoreSchema, SchemaSerializer, SchemaValidator
 
     from ._internal._generate_schema import GenerateSchema
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
@@ -673,10 +673,26 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 allow_pickle=allow_pickle,
                 json_loads=cls.model_config['json_loads'],
             )
-        except (ValueError, TypeError, UnicodeDecodeError) as e:
-            # TODO: raise ValidationError([ErrorWrapper(e, loc=ROOT_KEY)], cls)
-            # waiting for pydantic/pydantic-core#510
-            raise e
+        except (ValueError, TypeError) as exc:
+            import json
+
+            # try to match V1
+            if isinstance(exc, UnicodeDecodeError):
+                type_str = 'value_error.unicodedecode'
+            elif isinstance(exc, json.JSONDecodeError):
+                type_str = 'value_error.jsondecode'
+            elif isinstance(exc, ValueError):
+                type_str = 'value_error'
+            else:
+                type_str = 'type_error'
+
+            # ctx is missing here, but since we've added `input` to the error, we're not pretending it's the same
+            error = {
+                'type': pydantic_core.PydanticCustomError(type_str, str(exc)),
+                'loc': ('__root__',),
+                'input': b,
+            }
+            raise pydantic_core.ValidationError(cls.__name__, [error])
         return cls.model_validate(obj)
 
     @classmethod
