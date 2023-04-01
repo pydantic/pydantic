@@ -41,19 +41,17 @@ from pydantic import (
 )
 from pydantic._internal._core_metadata import build_metadata_dict
 from pydantic._internal._generate_schema import GenerateSchema
+from pydantic.analyzed_type import AnalyzedType
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import (
-    _JSON_SCHEMA_CACHE,
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     JsonSchemaMetadata,
     PydanticJsonSchemaWarning,
-    model_json_schema,
-    models_json_schema,
 )
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from pydantic.types import (
@@ -93,27 +91,12 @@ except ImportError:
 T = TypeVar('T')
 
 
-def test_key():
-    class ApplePie(BaseModel):
-        """
-        This is a test.
-        """
+def model_json_schema(type: Type[Any], **kwargs: Any) -> Dict[str, Any]:
+    return AnalyzedType(type).json_schema(**kwargs)
 
-        a: float
-        b: int = 10
 
-    s = {
-        'type': 'object',
-        'properties': {'a': {'type': 'number', 'title': 'A'}, 'b': {'type': 'integer', 'title': 'B', 'default': 10}},
-        'required': ['a'],
-        'title': 'ApplePie',
-        'description': 'This is a test.',
-    }
-
-    assert _JSON_SCHEMA_CACHE.get(ApplePie) is None
-    assert ApplePie.model_json_schema() == s
-    assert _JSON_SCHEMA_CACHE[ApplePie].keys() == {(True, '#/$defs/{model}', GenerateJsonSchema)}
-    assert ApplePie.model_json_schema() == s
+def models_json_schema(types: List[Type[Any]], **kwargs: Any) -> Dict[str, Any]:
+    return AnalyzedType.json_schemas([AnalyzedType(tp) for tp in types], **kwargs)
 
 
 def test_by_alias():

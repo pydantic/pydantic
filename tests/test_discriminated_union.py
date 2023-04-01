@@ -8,7 +8,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, Validator
+from pydantic import AnalyzedType, BaseModel, ConfigDict, Field, ValidationError
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 
@@ -83,7 +83,7 @@ def test_discriminated_union_root_same_discriminator():
     class Dog(BaseModel):
         pet_type: Literal['dog']
 
-    CatDog = Validator(Annotated[Union[Cat, Dog], Field(..., discriminator='pet_type')])
+    CatDog = AnalyzedType(Annotated[Union[Cat, Dog], Field(..., discriminator='pet_type')]).validate_python
     CatDog({'pet_type': 'blackcat'})
     CatDog({'pet_type': 'whitecat'})
     CatDog({'pet_type': 'dog'})

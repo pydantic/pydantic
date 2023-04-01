@@ -4,7 +4,7 @@ from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Tuple, Type
 import pytest
 from typing_extensions import TypeAlias, TypedDict
 
-from pydantic import BaseModel, Validator
+from pydantic import AnalyzedType, BaseModel
 
 ItemType = TypeVar('ItemType')
 
@@ -51,7 +51,7 @@ class SomeNamedTuple(NamedTuple):
     ],
 )
 def test_types(tp: Any, val: Any, expected: Any):
-    v = Validator(tp)
+    v = AnalyzedType(tp).validate_python
     assert expected == v(val)
 
 
@@ -60,7 +60,7 @@ OuterDict = Dict[str, 'IntList']
 
 
 def test_global_namespace_variables():
-    v = Validator(OuterDict)
+    v = AnalyzedType(OuterDict).validate_python
     res = v({'foo': [1, '2']})
     assert res == {'foo': [1, 2]}
 
@@ -69,7 +69,7 @@ def test_local_namespace_variables():
     IntList = List[int]
     OuterDict = Dict[str, 'IntList']
 
-    v = Validator(OuterDict)
+    v = AnalyzedType(OuterDict).validate_python
 
     res = v({'foo': [1, '2']})
     assert res == {'foo': [1, 2]}
@@ -78,7 +78,7 @@ def test_local_namespace_variables():
 @pytest.mark.skipif(sys.version_info < (3, 9), reason="ForwardRef doesn't accept module as a parameter in Python < 3.9")
 def test_top_level_fwd_ref():
     FwdRef = ForwardRef('OuterDict', module=__name__)
-    v: Validator[OuterDict] = Validator(FwdRef)
+    v = AnalyzedType(FwdRef).validate_python
 
     res = v({'foo': [1, '2']})
     assert res == {'foo': [1, 2]}
@@ -89,6 +89,6 @@ MyUnion: TypeAlias = 'Union[str, int]'
 
 def test_type_alias():
     MyList = List[MyUnion]
-    v: Validator[MyList] = Validator(MyList)
+    v = AnalyzedType(MyList).validate_python
     res = v([1, '2'])
     assert res == [1, '2']
