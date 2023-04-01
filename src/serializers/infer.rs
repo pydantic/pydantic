@@ -294,7 +294,16 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
     exclude: Option<&PyAny>,
     extra: &Extra,
 ) -> Result<S::Ok, S::Error> {
-    let value_id = extra.rec_guard.add(value).map_err(py_err_se_err)?;
+    let value_id = match extra.rec_guard.add(value).map_err(py_err_se_err) {
+        Ok(v) => v,
+        Err(e) => {
+            return if extra.serialize_unknown {
+                serializer.serialize_str("...")
+            } else {
+                Err(e)
+            }
+        }
+    };
     macro_rules! serialize {
         ($t:ty) => {
             match value.extract::<$t>() {

@@ -457,6 +457,19 @@ def test_error_json():
     assert exc_info.value.json(indent=2).startswith('[\n  {\n    "type": "string_too_short",')
 
 
+def test_error_json_cycle():
+    s = SchemaValidator({'type': 'str', 'min_length': 3})
+    cycle = []
+    cycle.append(cycle)
+    msg = '[type=string_type, input_value=[[...]], input_type=list]'
+    with pytest.raises(ValidationError, match=re.escape(msg)) as exc_info:
+        s.validate_python(cycle)
+
+    assert json.loads(exc_info.value.json()) == [
+        {'type': 'string_type', 'loc': [], 'msg': 'Input should be a valid string', 'input': ['...']}
+    ]
+
+
 class Foobar:
     pass
 
