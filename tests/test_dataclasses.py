@@ -14,6 +14,7 @@ import pydantic
 from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError
 from pydantic.decorators import field_validator
 from pydantic.fields import Field, FieldInfo
+from pydantic.json_schema import model_json_schema
 
 
 def test_simple():
@@ -525,7 +526,6 @@ def test_default_factory_singleton_field():
     assert Foo().singleton is Foo().singleton
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_schema():
     @pydantic.dataclasses.dataclass
     class User:
@@ -538,36 +538,36 @@ def test_schema():
         )
         height: Optional[int] = pydantic.Field(None, title='The height in cm', ge=50, le=300)
 
-    user = User(id=123)
-    assert user.__pydantic_model__.model_json_schema() == {
-        'title': 'User',
-        'type': 'object',
+    User(id=123)
+    assert model_json_schema(User) == {
         'properties': {
-            'id': {'title': 'Id', 'type': 'integer'},
-            'name': {'title': 'Name', 'default': 'John Doe', 'type': 'string'},
-            'aliases': {
-                'title': 'Aliases',
-                'type': 'object',
-                'additionalProperties': {'type': 'string'},
-            },
-            'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
             'age': {
+                'anyOf': [{'type': 'integer'}, {'type': 'null'}],
+                'default': None,
                 'title': 'The age of the user',
                 'description': 'do not lie!',
-                'type': 'integer',
+            },
+            'aliases': {
+                'additionalProperties': {'type': 'string'},
+                'default': {'John': 'Joey'},
+                'title': 'Aliases',
+                'type': 'object',
             },
             'height': {
+                'anyOf': [{'maximum': 300, 'minimum': 50, 'type': 'integer'}, {'type': 'null'}],
+                'default': None,
                 'title': 'The height in cm',
-                'minimum': 50,
-                'maximum': 300,
-                'type': 'integer',
             },
+            'id': {'title': 'Id', 'type': 'integer'},
+            'name': {'default': 'John Doe', 'title': 'Name', 'type': 'string'},
+            'signup_ts': {'default': None, 'format': 'date-time', 'title': 'Signup Ts', 'type': 'string'},
         },
         'required': ['id'],
+        'title': 'User',
+        'type': 'object',
     }
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_nested_schema():
     @pydantic.dataclasses.dataclass
     class Nested:
@@ -577,19 +577,19 @@ def test_nested_schema():
     class Outer:
         n: Nested
 
-    assert Outer.__pydantic_model__.model_json_schema() == {
-        'title': 'Outer',
-        'type': 'object',
-        'properties': {'n': {'$ref': '#/definitions/Nested'}},
-        'required': ['n'],
-        'definitions': {
+    assert model_json_schema(Outer) == {
+        '$defs': {
             'Nested': {
-                'title': 'Nested',
-                'type': 'object',
                 'properties': {'number': {'title': 'Number', 'type': 'integer'}},
                 'required': ['number'],
+                'title': 'Nested',
+                'type': 'object',
             }
         },
+        'properties': {'n': {'$ref': '#/$defs/Nested'}},
+        'required': ['n'],
+        'title': 'Outer',
+        'type': 'object',
     }
 
 
@@ -816,7 +816,6 @@ def test_override_builtin_dataclass_nested():
     assert foo.file.meta.seen_count == 7
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_override_builtin_dataclass_nested_schema():
     @dataclasses.dataclass
     class Meta:
@@ -829,11 +828,14 @@ def test_override_builtin_dataclass_nested_schema():
         meta: Meta
 
     FileChecked = pydantic.dataclasses.dataclass(File)
-    assert FileChecked.__pydantic_model__.model_json_schema() == {
-        'definitions': {
+    assert model_json_schema(FileChecked) == {
+        '$defs': {
             'Meta': {
                 'properties': {
-                    'modified_date': {'format': 'date-time', 'title': 'Modified ' 'Date', 'type': 'string'},
+                    'modified_date': {
+                        'anyOf': [{'format': 'date-time', 'type': 'string'}, {'type': 'null'}],
+                        'title': 'Modified Date',
+                    },
                     'seen_count': {'title': 'Seen Count', 'type': 'integer'},
                 },
                 'required': ['modified_date', 'seen_count'],
@@ -841,10 +843,7 @@ def test_override_builtin_dataclass_nested_schema():
                 'type': 'object',
             }
         },
-        'properties': {
-            'filename': {'title': 'Filename', 'type': 'string'},
-            'meta': {'$ref': '#/definitions/Meta'},
-        },
+        'properties': {'filename': {'title': 'Filename', 'type': 'string'}, 'meta': {'$ref': '#/$defs/Meta'}},
         'required': ['filename', 'meta'],
         'title': 'File',
         'type': 'object',
@@ -989,25 +988,6 @@ class BuiltInDataclassForPickle:
         restored_obj.value = 'value of a wrong type'
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
-def test_config_field_info_create_model():
-    # works
-    class A1(BaseModel):
-        a: str
-
-        model_config = ConfigDict(fields={'a': {'description': 'descr'}})
-
-    assert A1.model_json_schema()['properties'] == {'a': {'title': 'A', 'description': 'descr', 'type': 'string'}}
-
-    @pydantic.dataclasses.dataclass(config=A1.model_config)
-    class A2:
-        a: str
-
-    assert A2.__pydantic_model__.model_json_schema()['properties'] == {
-        'a': {'title': 'A', 'description': 'descr', 'type': 'string'}
-    }
-
-
 def gen_2162_dataclasses():
     @dataclasses.dataclass(frozen=True)
     class StdLibFoo:
@@ -1129,8 +1109,7 @@ def test_issue_2541():
         e.item.infos.id = 2
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
-def test_issue_2555():
+def test_complex_nested_vanilla_dataclass():
     @dataclasses.dataclass
     class Span:
         first: int
@@ -1153,8 +1132,40 @@ def test_issue_2555():
     class M(pydantic.BaseModel):
         s: Sentence
 
-    assert M.model_json_schema()
-    pytest.fail('TODO check the schema is actually right')
+    assert M.model_json_schema() == {
+        '$defs': {
+            'BinaryRelation': {
+                'properties': {
+                    'label': {'title': 'Label', 'type': 'string'},
+                    'object': {'$ref': '#/$defs/LabeledSpan'},
+                    'subject': {'$ref': '#/$defs/LabeledSpan'},
+                },
+                'required': ['subject', 'object', 'label'],
+                'title': 'BinaryRelation',
+                'type': 'object',
+            },
+            'LabeledSpan': {
+                'properties': {
+                    'first': {'title': 'First', 'type': 'integer'},
+                    'label': {'title': 'Label', 'type': 'string'},
+                    'last': {'title': 'Last', 'type': 'integer'},
+                },
+                'required': ['first', 'last', 'label'],
+                'title': 'LabeledSpan',
+                'type': 'object',
+            },
+            'Sentence': {
+                'properties': {'relations': {'$ref': '#/$defs/BinaryRelation'}},
+                'required': ['relations'],
+                'title': 'Sentence',
+                'type': 'object',
+            },
+        },
+        'properties': {'s': {'$ref': '#/$defs/Sentence'}},
+        'required': ['s'],
+        'title': 'M',
+        'type': 'object',
+    }
 
 
 def test_issue_2594():
@@ -1169,23 +1180,21 @@ def test_issue_2594():
     assert isinstance(M(e={}).e, Empty)
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_schema_description_unset():
     @pydantic.dataclasses.dataclass
     class A:
         x: int
 
-    assert 'description' not in A.__pydantic_model__.model_json_schema()
+    assert 'description' not in model_json_schema(A)
 
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
     class B:
         x: int
 
-    assert 'description' not in B.__pydantic_model__.model_json_schema()
+    assert 'description' not in model_json_schema(B)
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_schema_description_set():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1193,7 +1202,7 @@ def test_schema_description_set():
 
         x: int
 
-    assert A.__pydantic_model__.model_json_schema()['description'] == 'my description'
+    assert model_json_schema(A)['description'] == 'my description'
 
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
@@ -1202,7 +1211,7 @@ def test_schema_description_set():
 
         x: int
 
-    assert A.__pydantic_model__.model_json_schema()['description'] == 'my description'
+    assert model_json_schema(A)['description'] == 'my description'
 
 
 def test_issue_3011():
@@ -1224,7 +1233,6 @@ def test_issue_3011():
     assert c.thing.thing_a == 'Thing A'
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_issue_3162():
     @dataclasses.dataclass
     class User:
@@ -1236,22 +1244,21 @@ def test_issue_3162():
         other_user: User
 
     assert Users.model_json_schema() == {
-        'title': 'Users',
-        'type': 'object',
-        'properties': {'user': {'$ref': '#/definitions/User'}, 'other_user': {'$ref': '#/definitions/User'}},
-        'required': ['user', 'other_user'],
-        'definitions': {
+        '$defs': {
             'User': {
-                'title': 'User',
-                'type': 'object',
                 'properties': {'id': {'title': 'Id', 'type': 'integer'}, 'name': {'title': 'Name', 'type': 'string'}},
                 'required': ['id', 'name'],
+                'title': 'User',
+                'type': 'object',
             }
         },
+        'properties': {'other_user': {'$ref': '#/$defs/User'}, 'user': {'$ref': '#/$defs/User'}},
+        'required': ['user', 'other_user'],
+        'title': 'Users',
+        'type': 'object',
     }
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_discriminated_union_basemodel_instance_value():
     @pydantic.dataclasses.dataclass
     class A:
@@ -1267,30 +1274,20 @@ def test_discriminated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
-    assert Top.__pydantic_model__.model_json_schema() == {
+    assert model_json_schema(Top) == {
         'title': 'Top',
         'type': 'object',
         'properties': {
             'sub': {
                 'title': 'Sub',
-                'discriminator': {'propertyName': 'l', 'mapping': {'a': '#/definitions/A', 'b': '#/definitions/B'}},
-                'oneOf': [{'$ref': '#/definitions/A'}, {'$ref': '#/definitions/B'}],
+                'discriminator': {'mapping': {'a': '#/$defs/A', 'b': '#/$defs/B'}, 'propertyName': 'l'},
+                'oneOf': [{'$ref': '#/$defs/A'}, {'$ref': '#/$defs/B'}],
             }
         },
         'required': ['sub'],
-        'definitions': {
-            'A': {
-                'title': 'A',
-                'type': 'object',
-                'properties': {'l': {'title': 'L', 'enum': ['a'], 'type': 'string'}},
-                'required': ['l'],
-            },
-            'B': {
-                'title': 'B',
-                'type': 'object',
-                'properties': {'l': {'title': 'L', 'enum': ['b'], 'type': 'string'}},
-                'required': ['l'],
-            },
+        '$defs': {
+            'A': {'properties': {'l': {'const': 'a', 'title': 'L'}}, 'required': ['l'], 'title': 'A', 'type': 'object'},
+            'B': {'properties': {'l': {'const': 'b', 'title': 'L'}}, 'required': ['l'], 'title': 'B', 'type': 'object'},
         },
     }
 
@@ -1529,20 +1526,19 @@ def test_subclass_post_init_inheritance():
     assert C(1).a == 12  # (1 + 3) * 3
 
 
-@pytest.mark.xfail(reason='cannot access pydantic model config for dataclass')
 def test_config_as_type_deprecated():
     class Config:
         validate_assignment = True
 
-    match = 'dataclass: support for "config" as "type" is deprecated and will be removed in a future version'
-
-    with pytest.warns(DeprecationWarning, match=match):
+    with pytest.warns(
+        DeprecationWarning, match='Support for "config" as "type" is deprecated and will be removed in a future version'
+    ):
 
         @pydantic.dataclasses.dataclass(config=Config)
         class MyDataclass:
             a: int
 
-        assert MyDataclass.__pydantic_model__.model_config == ConfigDict(validate_assignment=True)
+    assert MyDataclass.__pydantic_config__ == ConfigDict(validate_assignment=True)
 
 
 def test_validator_info_field_name_data_before():

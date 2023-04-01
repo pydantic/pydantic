@@ -32,7 +32,7 @@ from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
 from .json import custom_pydantic_encoder, pydantic_encoder
-from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata, model_json_schema
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -106,7 +106,6 @@ class ModelMetaclass(ABCMeta):
             else:
                 json_encoder = pydantic_encoder  # type: ignore[assignment]
             namespace['__json_encoder__'] = staticmethod(json_encoder)
-            namespace['__schema_cache__'] = {}
 
             if '__hash__' not in namespace and config_new['frozen']:
 
@@ -185,7 +184,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """metadata for `@validator`, `@root_validator` and `@serializer` decorators"""
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
-        __schema_cache__: typing.ClassVar[dict[Any, Any]] = {}
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
@@ -439,13 +437,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         with your desired modifications, then override this method on a custom base class and set the default
         value of `schema_generator` to be your subclass.
         """
-        cached = cls.__schema_cache__.get((by_alias, ref_template))
-        if cached is not None:
-            return cached
-        schema = cls.__pydantic_core_schema__
-        s = schema_generator(by_alias=by_alias, ref_template=ref_template).generate(schema)
-        cls.__schema_cache__[(by_alias, ref_template)] = s
-        return s
+        return model_json_schema(cls, by_alias, ref_template, schema_generator)
 
     @classmethod
     def model_json_schema_metadata(cls) -> JsonSchemaMetadata | None:

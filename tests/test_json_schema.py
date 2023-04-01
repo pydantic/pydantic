@@ -31,22 +31,29 @@ import pytest
 from pydantic_core import core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, Extra, Field, ImportString, ValidationError
+from pydantic import (
+    BaseModel,
+    Extra,
+    Field,
+    ImportString,
+    ValidationError,
+    field_validator,
+)
 from pydantic._internal._core_metadata import build_metadata_dict
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
-from pydantic.decorators import field_validator
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.fields import FieldInfo
 from pydantic.json_schema import (
+    _JSON_SCHEMA_CACHE,
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     JsonSchemaMetadata,
     PydanticJsonSchemaWarning,
-    model_schema,
-    schema,
+    model_json_schema,
+    models_json_schema,
 )
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
 from pydantic.types import (
@@ -102,9 +109,10 @@ def test_key():
         'title': 'ApplePie',
         'description': 'This is a test.',
     }
-    assert ApplePie.__schema_cache__.keys() == set()
+
+    assert _JSON_SCHEMA_CACHE.get(ApplePie) is None
     assert ApplePie.model_json_schema() == s
-    assert ApplePie.__schema_cache__.keys() == {(True, '#/$defs/{model}')}
+    assert _JSON_SCHEMA_CACHE[ApplePie].keys() == {(True, '#/$defs/{model}', GenerateJsonSchema)}
     assert ApplePie.model_json_schema() == s
 
 
@@ -1339,7 +1347,7 @@ def test_schema_from_models():
         name: str
         ingredients: List[Ingredient]
 
-    model_schema = schema(
+    model_schema = models_json_schema(
         [Model, Pizza], title='Multi-model schema', description='Single JSON Schema with multiple definitions'
     )
     assert model_schema == {
@@ -1405,7 +1413,7 @@ def test_schema_with_refs():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = schema([Bar, Baz], ref_template=ref_template)
+    model_schema = models_json_schema([Bar, Baz], ref_template=ref_template)
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1440,7 +1448,7 @@ def test_schema_with_custom_ref_template():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
+    model_schema = models_json_schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1476,11 +1484,11 @@ def test_schema_ref_template_key_error():
         c: Bar
 
     with pytest.raises(KeyError):
-        schema([Bar, Baz], ref_template='/schemas/{bad_name}.json#/')
+        models_json_schema([Bar, Baz], ref_template='/schemas/{bad_name}.json#/')
 
 
 def test_schema_no_definitions():
-    model_schema = schema([], title='Schema without definitions')
+    model_schema = models_json_schema([], title='Schema without definitions')
     assert model_schema == {'title': 'Schema without definitions'}
 
 
@@ -1780,7 +1788,6 @@ def test_field_with_validator():
         something: Optional[int] = None
 
         @field_validator('something')
-        @classmethod
         def check_field(cls, v, info):
             return v
 
@@ -1800,15 +1807,15 @@ def test_unparameterized_schema_generation():
     class BarList(BaseModel):
         d: list
 
-    assert model_schema(FooList) == {
+    assert model_json_schema(FooList) == {
         'title': 'FooList',
         'type': 'object',
         'properties': {'d': {'items': {}, 'title': 'D', 'type': 'array'}},
         'required': ['d'],
     }
 
-    foo_list_schema = model_schema(FooList)
-    bar_list_schema = model_schema(BarList)
+    foo_list_schema = model_json_schema(FooList)
+    bar_list_schema = model_json_schema(BarList)
     bar_list_schema['title'] = 'FooList'  # to check for equality
     assert foo_list_schema == bar_list_schema
 
@@ -1818,16 +1825,16 @@ def test_unparameterized_schema_generation():
     class BarDict(BaseModel):
         d: dict
 
-    model_schema(Foo)
-    assert model_schema(FooDict) == {
+    model_json_schema(Foo)
+    assert model_json_schema(FooDict) == {
         'title': 'FooDict',
         'type': 'object',
         'properties': {'d': {'title': 'D', 'type': 'object'}},
         'required': ['d'],
     }
 
-    foo_dict_schema = model_schema(FooDict)
-    bar_dict_schema = model_schema(BarDict)
+    foo_dict_schema = model_json_schema(FooDict)
+    bar_dict_schema = model_json_schema(BarDict)
     bar_dict_schema['title'] = 'FooDict'  # to check for equality
     assert foo_dict_schema == bar_dict_schema
 
@@ -2050,13 +2057,12 @@ def test_subfield_field_info():
     }
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_dataclass():
     @dataclass
     class Model:
         a: bool
 
-    assert schema([Model]) == {
+    assert models_json_schema([Model]) == {
         '$defs': {
             'Model': {
                 'title': 'Model',
@@ -2067,7 +2073,7 @@ def test_dataclass():
         }
     }
 
-    assert model_schema(Model) == {
+    assert model_json_schema(Model) == {
         'title': 'Model',
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'boolean'}},
@@ -2207,7 +2213,7 @@ class NestedModel(BaseModel):
     )
 
     models = [module.ModelOne, module.ModelTwo, module.NestedModel]
-    model_names = set(schema(models)['$defs'].keys())
+    model_names = set(models_json_schema(models)['$defs'].keys())
     expected_model_names = {
         'ModelOne',
         'ModelTwo',
@@ -2617,7 +2623,7 @@ def test_complex_nested_generic():
     }
 
 
-@pytest.mark.xfail(reason='need to pass FieldInfo when calling __pydantic_modify_json_schema__')
+@pytest.mark.xfail(reason='__pydantic_modify_json_schema__ does not receive FieldInfo')
 def test_schema_with_field_parameter():
     # TODO: Update so that __pydantic_modify_json_schema__ gets called with the FieldInfo when handling fields
     class RestrictedAlphabetStr(str):
@@ -3273,7 +3279,6 @@ def test_alias_same():
     }
 
 
-@pytest.mark.xfail(reason='dataclasses JSON schema')
 def test_nested_python_dataclasses():
     """
     Test schema generation for nested python dataclasses
@@ -3287,21 +3292,27 @@ def test_nested_python_dataclasses():
 
     @python_dataclass
     class NestedModel:
+        """
+        Custom description
+        """
+
+        # Note: the Custom description will not be preserved as this is a vanilla dataclass
+        # This is the same behavior as in v1
         child: List[ChildModel]
 
-    assert model_schema(dataclass(NestedModel)) == {
-        'title': 'NestedModel',
-        'type': 'object',
-        'properties': {'child': {'title': 'Child', 'type': 'array', 'items': {'$ref': '#/$defs/ChildModel'}}},
-        'required': ['child'],
+    assert model_json_schema(dataclass(NestedModel)) == {
         '$defs': {
             'ChildModel': {
-                'title': 'ChildModel',
-                'type': 'object',
                 'properties': {'name': {'title': 'Name', 'type': 'string'}},
                 'required': ['name'],
+                'title': 'ChildModel',
+                'type': 'object',
             }
         },
+        'properties': {'child': {'items': {'$ref': '#/$defs/ChildModel'}, 'title': 'Child', 'type': 'array'}},
+        'required': ['child'],
+        'title': 'NestedModel',
+        'type': 'object',
     }
 
 

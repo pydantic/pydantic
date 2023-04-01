@@ -189,6 +189,8 @@ class _ApplyInferredDiscriminator:
             'typed-dict',
             'tagged-union',
             'lax-or-strict',
+            'dataclass',
+            'dataclass-args',
         } and not _core_utils.is_function_with_inner_schema(choice):
             # We should eventually handle 'definition-ref' as well
             raise TypeError(
@@ -268,6 +270,12 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'model':
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=choice['cls'].__name__)
 
+        elif choice['type'] == 'dataclass':
+            return self._infer_discriminator_values_for_choice(choice['schema'], source_name=choice['cls'].__name__)
+
+        elif choice['type'] == 'dataclass-args':
+            return self._infer_discriminator_values_for_dataclass_choice(choice, source_name=source_name)
+
         elif choice['type'] == 'typed-dict':
             return self._infer_discriminator_values_for_typed_dict_choice(choice, source_name=source_name)
 
@@ -284,14 +292,26 @@ class _ApplyInferredDiscriminator:
         This method just extracts the _infer_discriminator_values_for_choice logic specific to TypedDictSchema
         for the sake of readability.
         """
-        if source_name is None:
-            source = 'TypedDict'  # We may eventually want to provide a more useful name
-        else:
-            source = f'Model {source_name!r}'
-
+        source = 'TypedDict' if source_name is None else f'Model {source_name!r}'
         field = choice['fields'].get(self.discriminator)
         if field is None:
             raise PydanticUserError(f'{source} needs a discriminator field for key {self.discriminator!r}')
+        return self._infer_discriminator_values_for_field(field, source)
+
+    def _infer_discriminator_values_for_dataclass_choice(
+        self, choice: core_schema.DataclassArgsSchema, source_name: str | None = None
+    ) -> list[str | int]:
+        source = 'DataclassArgs' if source_name is None else f'Dataclass {source_name!r}'
+        for field in choice['fields']:
+            if field['name'] == self.discriminator:
+                break
+        else:
+            raise PydanticUserError(f'{source} needs a discriminator field for key {self.discriminator!r}')
+        return self._infer_discriminator_values_for_field(field, source)
+
+    def _infer_discriminator_values_for_field(
+        self, field: core_schema.TypedDictField | core_schema.DataclassField, source: str
+    ) -> list[str | int]:
         alias = field.get('validation_alias', self.discriminator)
         if not isinstance(alias, str):
             raise TypeError(f'Alias {alias!r} is not supported in a discriminated union')
@@ -302,9 +322,11 @@ class _ApplyInferredDiscriminator:
                 f'Aliases for discriminator {self.discriminator!r} must be the same '
                 f'(got {alias}, {self._discriminator_alias})'
             )
-        return self._infer_discriminator_values_for_field(field['schema'], source)
+        return self._infer_discriminator_values_for_inner_schema(field['schema'], source)
 
-    def _infer_discriminator_values_for_field(self, schema: core_schema.CoreSchema, source: str) -> list[str | int]:
+    def _infer_discriminator_values_for_inner_schema(
+        self, schema: core_schema.CoreSchema, source: str
+    ) -> list[str | int]:
         """
         When inferring discriminator values for a field, we typically extract the expected values from a literal schema.
         This function does that, but also handles nested unions and defaults.
@@ -325,13 +347,13 @@ class _ApplyInferredDiscriminator:
             # For example, this lets us handle `Union[Literal['key'], Union[Literal['Key'], Literal['KEY']]]`
             values = []
             for choice in schema['choices']:
-                choice_values = self._infer_discriminator_values_for_field(choice, source)
+                choice_values = self._infer_discriminator_values_for_inner_schema(choice, source)
                 values.extend(choice_values)
             return values
 
         elif schema['type'] == 'default':
             # This will happen if the field has a default value; we ignore it while extracting the discriminator values
-            return self._infer_discriminator_values_for_field(schema['schema'], source)
+            return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
 
         else:
             raise PydanticUserError(f'{source} needs field {self.discriminator!r} to be of type `Literal`')

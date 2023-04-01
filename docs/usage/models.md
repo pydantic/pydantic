@@ -1034,7 +1034,7 @@ import json
 from typing import List
 
 from pydantic import BaseModel
-from pydantic.json_schema import schema
+from pydantic.json_schema import models_json_schema
 
 
 class Pets(BaseModel):
@@ -1045,7 +1045,7 @@ print(Pets(__root__=['dog', 'cat']))
 print(Pets(__root__=['dog', 'cat']).model_dump_json())
 print(Pets.model_validate(['dog', 'cat']))
 print(Pets.model_json_schema())
-pets_schema = schema([Pets])
+pets_schema = models_json_schema([Pets])
 print(json.dumps(pets_schema, indent=2))
 ```
 

@@ -5,8 +5,7 @@ import typing
 from typing import Any
 
 import typing_extensions
-from pydantic_core import CoreSchema
-from pydantic_core.core_schema import TypedDictField
+from pydantic_core import CoreSchema, core_schema
 
 from ._typing_extra import EllipsisType
 
@@ -37,7 +36,7 @@ class CoreMetadataHandler:
 
     __slots__ = ('_schema',)
 
-    def __init__(self, schema: CoreSchema | TypedDictField):
+    def __init__(self, schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField):
         self._schema = schema
 
         metadata = schema.get('metadata')

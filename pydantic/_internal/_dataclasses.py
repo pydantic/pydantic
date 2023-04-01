@@ -39,6 +39,7 @@ if typing.TYPE_CHECKING:
         __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
         """metadata for `@validator`, `@root_validator` and `@serializer` decorators"""
         __pydantic_fields__: typing.ClassVar[dict[str, FieldInfo]]
+        __pydantic_config__: typing.ClassVar[ConfigDict]
 
 
 def prepare_dataclass(
@@ -96,6 +97,7 @@ def prepare_dataclass(
     cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+    cls.__pydantic_config__ = config
 
     if config.get('validate_assignment'):
 
