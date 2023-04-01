@@ -12,7 +12,7 @@ from mkdocs.config import Config
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
-from .conversion_table import table_infos
+from .conversion_table import table
 
 logger = logging.getLogger('mkdocs.plugin')
 THIS_DIR = Path(__file__).parent
@@ -229,7 +229,7 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
 
 
 def build_conversion_table(markdown: str, page: Page) -> str | None:
-    if page.file.src_uri != 'blog/pydantic-v2.md':
+    if page.file.src_uri != 'usage/conversion_table.md':
         return None
 
     headings = [
@@ -241,13 +241,13 @@ def build_conversion_table(markdown: str, page: Page) -> str | None:
     ]
     rows = []
 
-    for t in table_infos:
+    for row in table:
         cols = [
-            f'<code>{t.field_type.__name__}</code>',
-            f'<code>{t.input_type.__name__}</code>',
-            t.mode,
-            t.input_format,
-            md2html(t.condition) if t.condition else '-',
+            f'<code>{row.field_type.__name__}</code>',
+            f'<code>{row.input_type.__name__}</code>',
+            row.mode,
+            row.input_format,
+            md2html(row.condition) if row.condition else '-',
         ]
         rows.append('\n'.join(f'  <td>\n    {c}\n  </td>' for c in cols))
 

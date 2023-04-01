@@ -2076,6 +2076,9 @@ def test_strict_int():
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=3.14159)
 
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
+        Model(v=2**64)
+
 
 def test_strict_float():
     class Model(BaseModel):

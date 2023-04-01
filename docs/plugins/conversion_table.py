@@ -9,20 +9,20 @@ from pydantic_core import CoreSchema, core_schema
 class Row:
     field_type: type[Any]
     input_type: type[Any]
-    mode: Literal['lax', 'strict', 'both']
-    input_format: Literal['python', 'JSON', 'python, JSON']
+    mode: Literal['lax', 'strict']
+    input_format: Literal['python', 'JSON', 'python & JSON']
     condition: str | None = None
     valid_examples: list[Any] | None = None
     invalid_examples: list[Any] | None = None
     core_schema: type[CoreSchema] = None
 
 
-table_infos: list[Row] = [
+table: list[Row] = [
     Row(
         str,
         str,
-        'both',
-        'python, JSON',
+        'strict',
+        'python & JSON',
         core_schema=core_schema.StringSchema,
     ),
     Row(
@@ -31,7 +31,7 @@ table_infos: list[Row] = [
         'lax',
         'python',
         condition='assumes UTF-8, error on unicode decoding error',
-        valid_examples=[b's'],
+        valid_examples=[b'this is bytes'],
         invalid_examples=[b'\x81'],
         core_schema=core_schema.StringSchema,
     ),
@@ -41,14 +41,14 @@ table_infos: list[Row] = [
         'lax',
         'python',
         condition='assumes UTF-8, error on unicode decoding error',
-        valid_examples=[bytearray(b's' * 5)],
+        valid_examples=[bytearray(b'this is bytearray' * 3)],
         invalid_examples=[bytearray(b'\x81' * 5)],
         core_schema=core_schema.StringSchema,
     ),
     Row(
         bytes,
         bytes,
-        'both',
+        'strict',
         'python',
         core_schema=core_schema.BytesSchema,
     ),
@@ -56,7 +56,7 @@ table_infos: list[Row] = [
         bytes,
         str,
         'lax',
-        'python, JSON',
+        'python & JSON',
         valid_examples=['foo'],
         core_schema=core_schema.BytesSchema,
     ),
@@ -65,22 +65,31 @@ table_infos: list[Row] = [
         bytearray,
         'lax',
         'python',
-        valid_examples=[bytearray(b's' * 5)],
+        valid_examples=[bytearray(b'this is bytearray' * 3)],
         core_schema=core_schema.BytesSchema,
     ),
     Row(
         int,
         int,
-        'both',
-        'python, JSON',
-        condition='max abs value 2^64 - i64 is used internally',
+        'strict',
+        'python & JSON',
+        condition='max abs value `2^64` - `i64` is used internally, `bool` explicitly forbidden',
+        invalid_examples=[2**64],
+        core_schema=core_schema.IntSchema,
+    ),
+    Row(
+        int,
+        int,
+        'lax',
+        'python & JSON',
+        condition='`i64`. Limits `numbers > (2 ^ 63) - 1` to `(2 ^ 63) - 1`',
         core_schema=core_schema.IntSchema,
     ),
     Row(
         int,
         float,
         'lax',
-        'python, JSON',
+        'python & JSON',
         condition='`i64`, must be exact int, e.g. `val % 1 == 0`, `nan`, `inf` raise errors',
         valid_examples=[2.0],
         invalid_examples=[2.1, 2.2250738585072011e308, float('nan'), float('inf')],
@@ -90,7 +99,7 @@ table_infos: list[Row] = [
         int,
         Decimal,
         'lax',
-        'python, JSON',
+        'python & JSON',
         condition='`i64`, must be exact int, e.g. `val % 1 == 0`',
         valid_examples=[Decimal(2.0)],
         invalid_examples=[Decimal(2.1)],
@@ -100,7 +109,7 @@ table_infos: list[Row] = [
         int,
         bool,
         'lax',
-        'python, JSON',
+        'python & JSON',
         valid_examples=[True, False],
         core_schema=core_schema.IntSchema,
     ),
@@ -108,7 +117,7 @@ table_infos: list[Row] = [
         int,
         str,
         'lax',
-        'python, JSON',
+        'python & JSON',
         condition='`i64`, must be numeric only, e.g. `[0-9]+`',
         valid_examples=['123'],
         invalid_examples=['test'],
