@@ -2,7 +2,7 @@ import decimal
 import sys
 from typing import Any
 
-from pydantic_core import ErrorDetails
+from pydantic_core import ErrorDetails, InitErrorDetails
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
 
 if sys.version_info < (3, 9):
@@ -169,12 +169,6 @@ class MultiHostUrl:
 class SchemaError(Exception):
     def error_count(self) -> int: ...
     def errors(self) -> 'list[ErrorDetails]': ...
-
-class InitErrorDetails(TypedDict):
-    type: 'str | PydanticCustomError'
-    loc: NotRequired['tuple[int | str, ...]']
-    input: Any
-    ctx: NotRequired['dict[str, str | int | float]']
 
 class ValidationError(ValueError):
     def __init__(

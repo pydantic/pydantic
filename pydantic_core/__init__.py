@@ -42,6 +42,7 @@ __all__ = (
     'ArgsKwargs',
     'SchemaError',
     'ErrorDetails',
+    'InitErrorDetails',
     'ValidationError',
     'PydanticCustomError',
     'PydanticKnownError',
@@ -57,5 +58,12 @@ class ErrorDetails(_TypedDict):
     type: str
     loc: 'tuple[int | str, ...]'
     msg: str
+    input: _Any
+    ctx: _NotRequired['dict[str, str | int | float]']
+
+
+class InitErrorDetails(_TypedDict):
+    type: 'str | PydanticCustomError'
+    loc: _NotRequired['tuple[int | str, ...]']
     input: _Any
     ctx: _NotRequired['dict[str, str | int | float]']
