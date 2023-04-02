@@ -429,14 +429,15 @@ def field_serializer(
 
 
 def model_serializer(
+    __f: Callable[..., Any] = None,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     allow_reuse: bool = False,
-) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]]:
+) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
     """
-    Function decorate to add functions which will be called to serialize the model.
+    Function decorate to add a function which will be called to serialize the model.
 
     :param mode: `'plain'` means the function will be called instead of the default serialization logic,
         `'wrap'` means the function will be called with an argument to optionally call the default serialization logic.
@@ -446,6 +447,9 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker[Any]:
+        if isinstance(f, (staticmethod, classmethod)) or not _decorators.is_instance_method_from_sig(f):
+            raise TypeError('`@model_serializer` must be applied to instance methods')
+
         res = _decorators.prepare_serializer_decorator(f, allow_reuse)
 
         dec_info = _decorators.ModelSerializerDecoratorInfo(
@@ -457,4 +461,7 @@ def model_serializer(
             res, dec_info, shim=partial(_decorators.make_generic_model_serializer, mode=mode)
         )
 
-    return dec
+    if __f is None:
+        return dec
+    else:
+        return dec(__f)

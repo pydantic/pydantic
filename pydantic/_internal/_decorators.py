@@ -683,8 +683,7 @@ def make_generic_field_serializer(
     Wrap serializers to allow ignoring the `info` argument as a convenience.
     """
     sig = signature(serializer)
-    is_instance = is_instance_method_from_sig(serializer)
-    if is_instance:
+    if is_instance_method_from_sig(serializer):
         # for the errors below to exclude self
         sig = Signature(parameters=list(sig.parameters.values())[1:])
 
@@ -756,10 +755,6 @@ def make_generic_model_serializer(
     Wrap serializers to allow ignoring the `info` argument as a convenience.
     """
     sig = signature(serializer)
-    is_instance = is_instance_method_from_sig(serializer)
-    if is_instance:
-        # for the errors below to exclude self
-        sig = Signature(parameters=list(sig.parameters.values())[1:])
 
     n_positional = sum(
         1
@@ -770,15 +765,12 @@ def make_generic_model_serializer(
         if n_positional == 1:
             func1 = cast(GenericPlainSerializerFunctionWithoutInfo, serializer)
 
-            def wrap_generic_serializer_single_argument(value: Any, _: SerializationInfo) -> Any:
+            def wrap_model_serializer_single_argument(value: Any, _: SerializationInfo) -> Any:
                 return func1(value)
 
-            return wrap_generic_serializer_single_argument
+            return wrap_model_serializer_single_argument
         if n_positional != 2:
-            raise TypeError(
-                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
-                f' {_VALID_SERIALIZER_SIGNATURES}'
-            )
+            raise TypeError(f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}')
         func = cast(AnyCoreSerializer, serializer)
         return func
     else:
@@ -786,17 +778,14 @@ def make_generic_model_serializer(
         if n_positional == 2:
             func2 = cast(GeneralWrapSerializerFunctionWithoutInfo, serializer)
 
-            def wrap_general_serializer_in_wrap_mode(
+            def wrap_model_serializer_in_wrap_mode(
                 value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo
             ) -> Any:
                 return func2(value, handler)
 
-            return wrap_general_serializer_in_wrap_mode
+            return wrap_model_serializer_in_wrap_mode
 
         if n_positional != 3:
-            raise TypeError(
-                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
-                f' {_VALID_SERIALIZER_SIGNATURES}'
-            )
+            raise TypeError(f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}')
         func = cast(AnyCoreSerializer, serializer)
         return func
