@@ -13,7 +13,7 @@ use serde::{Serialize, Serializer};
 use serde_json::ser::PrettyFormatter;
 
 use crate::build_tools::{py_error_type, safe_repr, SchemaDict};
-use crate::serializers::GeneralSerializeContext;
+use crate::serializers::{SerMode, SerializationState};
 use crate::PydanticCustomError;
 
 use super::line_error::ValLineError;
@@ -140,8 +140,8 @@ impl ValidationError {
         indent: Option<usize>,
         include_context: Option<bool>,
     ) -> PyResult<&'py PyString> {
-        let general_ser_context = GeneralSerializeContext::new();
-        let extra = general_ser_context.extra(py, true);
+        let state = SerializationState::new(None, None);
+        let extra = state.extra(py, &SerMode::Json, None, None, Some(true), None);
         let serializer = ValidationErrorSerializer {
             py,
             line_errors: &self.line_errors,

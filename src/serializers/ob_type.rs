@@ -43,6 +43,8 @@ pub struct ObTypeLookup {
     enum_type: usize,
     // generator
     generator: usize,
+    // path
+    path: usize,
 }
 
 static TYPE_LOOKUP: GILOnceCell<ObTypeLookup> = GILOnceCell::new();
@@ -80,6 +82,7 @@ impl ObTypeLookup {
             multi_host_url: PyMultiHostUrl::new(lib_url, None).into_py(py).as_ref(py).get_type_ptr() as usize,
             enum_type: py.import("enum").unwrap().getattr("Enum").unwrap().get_type_ptr() as usize,
             generator: py.import("types").unwrap().getattr("GeneratorType").unwrap().as_ptr() as usize,
+            path: py.import("pathlib").unwrap().getattr("Path").unwrap().as_ptr() as usize,
         }
     }
 
@@ -126,6 +129,7 @@ impl ObTypeLookup {
             ObType::Model => is_pydantic_model(op_value),
             ObType::Enum => self.enum_type == ob_type,
             ObType::Generator => self.generator == ob_type,
+            ObType::Path => self.path == ob_type,
             ObType::Unknown => false,
         };
 
@@ -212,6 +216,8 @@ impl ObTypeLookup {
             ObType::Enum
         } else if ob_type == self.generator || is_generator(op_value) {
             ObType::Generator
+        } else if ob_type == self.path {
+            ObType::Path
         } else {
             // this allows for subtypes of the supported class types,
             // if `ob_type` didn't match any member of self, we try again with the next base type pointer
@@ -306,6 +312,8 @@ pub enum ObType {
     Enum,
     // generator type
     Generator,
+    // Path
+    Path,
     // unknown type
     Unknown,
 }

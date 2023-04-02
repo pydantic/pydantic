@@ -8,9 +8,10 @@ use pyo3::types::{
     PyTime, PyTuple,
 };
 
-use serde::ser::{Serialize, SerializeMap, SerializeSeq, Serializer};
+use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
 use crate::build_tools::{py_err, safe_repr};
+use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
 use crate::url::{PyMultiHostUrl, PyUrl};
 
@@ -179,12 +180,18 @@ pub(crate) fn infer_to_python_known(
                 }
                 PyList::new(py, items).into_py(py)
             }
+            ObType::Path => value.str()?.into_py(py),
             ObType::Unknown => {
-                return if extra.serialize_unknown {
-                    Ok(serialize_unknown(value).into_py(py))
+                if let Some(fallback) = extra.fallback {
+                    let next_value = fallback.call1((value,))?;
+                    let next_result = infer_to_python(next_value, include, exclude, extra);
+                    extra.rec_guard.pop(value_id);
+                    return next_result;
+                } else if extra.serialize_unknown {
+                    serialize_unknown(value).into_py(py)
                 } else {
-                    Err(unknown_type_error(value))
-                };
+                    return Err(unknown_type_error(value));
+                }
             }
         },
         _ => match ob_type {
@@ -231,6 +238,16 @@ pub(crate) fn infer_to_python_known(
                     extra,
                 );
                 iter.into_py(py)
+            }
+            ObType::Unknown => {
+                if let Some(fallback) = extra.fallback {
+                    let next_value = fallback.call1((value,))?;
+                    let next_result = infer_to_python(next_value, include, exclude, extra);
+                    extra.rec_guard.pop(value_id);
+                    return next_result;
+                } else {
+                    value.into_py(py)
+                }
             }
             _ => value.into_py(py),
         },
@@ -432,11 +449,25 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             }
             seq.end()
         }
+        ObType::Path => {
+            let s = value.str().map_err(py_err_se_err)?.to_str().map_err(py_err_se_err)?;
+            serializer.serialize_str(s)
+        }
         ObType::Unknown => {
-            if extra.serialize_unknown {
+            if let Some(fallback) = extra.fallback {
+                let next_value = fallback.call1((value,)).map_err(py_err_se_err)?;
+                let next_result = infer_serialize(next_value, serializer, include, exclude, extra);
+                extra.rec_guard.pop(value_id);
+                return next_result;
+            } else if extra.serialize_unknown {
                 serializer.serialize_str(&serialize_unknown(value))
             } else {
-                return Err(py_err_se_err(unknown_type_error(value)));
+                let msg = format!(
+                    "{}Unable to serialize unknown type: {}",
+                    SERIALIZATION_ERR_MARKER,
+                    safe_repr(value)
+                );
+                return Err(S::Error::custom(msg));
             }
         }
     };
@@ -452,9 +483,9 @@ fn serialize_unknown(value: &PyAny) -> Cow<str> {
     if let Ok(s) = value.str() {
         s.to_string_lossy()
     } else if let Ok(name) = value.get_type().name() {
-        format!("<{name} object cannot be serialized to JSON>").into()
+        format!("<Unserializable {name} object>").into()
     } else {
-        "<object cannot be serialized to JSON>".into()
+        "<Unserializable object>".into()
     }
 }
 
@@ -531,8 +562,14 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
             let k = key.getattr(intern!(key.py(), "value"))?;
             infer_json_key(k, extra)
         }
+        ObType::Path => Ok(key.str()?.to_string_lossy()),
         ObType::Unknown => {
-            if extra.serialize_unknown {
+            if let Some(fallback) = extra.fallback {
+                let next_key = fallback.call1((key,))?;
+                // totally unnecessary step to placate rust's lifetime rules
+                let next_key = next_key.to_object(key.py()).into_ref(key.py());
+                infer_json_key(next_key, extra)
+            } else if extra.serialize_unknown {
                 Ok(serialize_unknown(key))
             } else {
                 Err(unknown_type_error(key))
