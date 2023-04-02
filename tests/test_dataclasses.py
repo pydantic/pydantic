@@ -11,9 +11,10 @@ import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import AnalyzedType, BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError
+from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError
 from pydantic.decorators import field_validator
 from pydantic.fields import Field, FieldInfo
+from pydantic.json_schema import model_json_schema
 
 
 def test_simple():
@@ -538,7 +539,7 @@ def test_schema():
         height: Optional[int] = pydantic.Field(None, title='The height in cm', ge=50, le=300)
 
     User(id=123)
-    assert AnalyzedType(User).json_schema() == {
+    assert model_json_schema(User) == {
         'properties': {
             'age': {
                 'anyOf': [{'type': 'integer'}, {'type': 'null'}],
@@ -576,7 +577,7 @@ def test_nested_schema():
     class Outer:
         n: Nested
 
-    assert AnalyzedType(Outer).json_schema() == {
+    assert model_json_schema(Outer) == {
         '$defs': {
             'Nested': {
                 'properties': {'number': {'title': 'Number', 'type': 'integer'}},
@@ -827,7 +828,7 @@ def test_override_builtin_dataclass_nested_schema():
         meta: Meta
 
     FileChecked = pydantic.dataclasses.dataclass(File)
-    assert AnalyzedType(FileChecked).json_schema() == {
+    assert model_json_schema(FileChecked) == {
         '$defs': {
             'Meta': {
                 'properties': {
@@ -1184,14 +1185,14 @@ def test_schema_description_unset():
     class A:
         x: int
 
-    assert 'description' not in AnalyzedType(A).json_schema()
+    assert 'description' not in model_json_schema(A)
 
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
     class B:
         x: int
 
-    assert 'description' not in AnalyzedType(B).json_schema()
+    assert 'description' not in model_json_schema(B)
 
 
 def test_schema_description_set():
@@ -1201,7 +1202,7 @@ def test_schema_description_set():
 
         x: int
 
-    assert AnalyzedType(A).json_schema()['description'] == 'my description'
+    assert model_json_schema(A)['description'] == 'my description'
 
     @pydantic.dataclasses.dataclass
     @dataclasses.dataclass
@@ -1210,7 +1211,7 @@ def test_schema_description_set():
 
         x: int
 
-    assert AnalyzedType(A).json_schema()['description'] == 'my description'
+    assert model_json_schema(A)['description'] == 'my description'
 
 
 def test_issue_3011():
@@ -1273,7 +1274,7 @@ def test_discriminated_union_basemodel_instance_value():
 
     t = Top(sub=A(l='a'))
     assert isinstance(t, Top)
-    assert AnalyzedType(Top).json_schema() == {
+    assert model_json_schema(Top) == {
         'title': 'Top',
         'type': 'object',
         'properties': {

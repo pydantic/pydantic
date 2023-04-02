@@ -40,6 +40,8 @@ class MainModel(BaseModel):
 print(json.dumps(MainModel.model_json_schema(), indent=2))
 """
 {
+  "title": "Main",
+  "description": "This is the description of the main model",
   "type": "object",
   "properties": {
     "foo_bar": {
@@ -65,10 +67,9 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
   "required": [
     "foo_bar"
   ],
-  "title": "Main",
-  "description": "This is the description of the main model",
   "$defs": {
     "FooBar": {
+      "title": "FooBar",
       "type": "object",
       "properties": {
         "count": {
@@ -83,8 +84,7 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
       },
       "required": [
         "count"
-      ],
-      "title": "FooBar"
+      ]
     },
     "Gender": {
       "enum": [
@@ -176,6 +176,7 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
   },
   "$defs": {
     "Cat": {
+      "title": "Cat",
       "type": "object",
       "properties": {
         "pet_type": {
@@ -190,10 +191,10 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
       "required": [
         "pet_type",
         "cat_name"
-      ],
-      "title": "Cat"
+      ]
     },
     "Dog": {
+      "title": "Dog",
       "type": "object",
       "properties": {
         "pet_type": {
@@ -208,8 +209,7 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
       "required": [
         "pet_type",
         "dog_name"
-      ],
-      "title": "Dog"
+      ]
     }
   },
   "title": "The Pet Schema"
@@ -318,6 +318,7 @@ class ModelB(BaseModel):
 print(ModelB.model_json_schema())
 """
 {
+    'title': 'ModelB',
     'type': 'object',
     'properties': {
         'foo': {
@@ -328,7 +329,6 @@ print(ModelB.model_json_schema())
         }
     },
     'required': ['foo'],
-    'title': 'ModelB',
 }
 """
 ```
@@ -387,10 +387,11 @@ class RestrictedAlphabetStr(str):
     @classmethod
     def __pydantic_modify_json_schema__(
         cls, field_schema: Dict[str, Any], field: Optional[ModelField]
-    ):
+    ) -> Dict[str, Any]:
         if field:
             alphabet = field.field_info.extra['alphabet']
             field_schema['examples'] = [c * 3 for c in alphabet]
+        return field_schema
 
 
 class MyModel(BaseModel):
@@ -423,7 +424,8 @@ sub-models in its `definitions`:
 ```py output="json"
 import json
 
-from pydantic import AnalyzedType, BaseModel
+from pydantic import BaseModel
+from pydantic.json_schema import models_json_schema
 
 
 class Foo(BaseModel):
@@ -438,13 +440,13 @@ class Bar(BaseModel):
     c: int
 
 
-analyzed_types = [AnalyzedType(tp) for tp in [Model, Bar]]
-top_level_schema = AnalyzedType.json_schemas(analyzed_types, title='My Schema')
+top_level_schema = models_json_schema([Model, Bar], title='My Schema')
 print(json.dumps(top_level_schema, indent=2))
 """
 {
   "$defs": {
     "Foo": {
+      "title": "Foo",
       "type": "object",
       "properties": {
         "a": {
@@ -452,10 +454,10 @@ print(json.dumps(top_level_schema, indent=2))
           "default": null,
           "title": "A"
         }
-      },
-      "title": "Foo"
+      }
     },
     "Model": {
+      "title": "Model",
       "type": "object",
       "properties": {
         "b": {
@@ -464,10 +466,10 @@ print(json.dumps(top_level_schema, indent=2))
       },
       "required": [
         "b"
-      ],
-      "title": "Model"
+      ]
     },
     "Bar": {
+      "title": "Bar",
       "type": "object",
       "properties": {
         "c": {
@@ -477,8 +479,7 @@ print(json.dumps(top_level_schema, indent=2))
       },
       "required": [
         "c"
-      ],
-      "title": "Bar"
+      ]
     }
   },
   "title": "My Schema"

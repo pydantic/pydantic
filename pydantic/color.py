@@ -10,7 +10,7 @@ eg. Color((0, 255, 255)).as_named() == 'cyan' because "cyan" comes after "aqua".
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import Any, Dict, Optional, Tuple, Union, cast
+from typing import Any, Optional, Tuple, Union, cast
 
 from pydantic_core import PydanticCustomError, core_schema
 
@@ -84,8 +84,9 @@ class Color(_repr.Representation):
         self._original = value
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema: Dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> dict[str, Any]:
         field_schema.update(type='string', format='color')
+        return field_schema
 
     def original(self) -> ColorType:
         """

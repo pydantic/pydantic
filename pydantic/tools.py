@@ -41,7 +41,8 @@ def schema_of(
     else:
         core_schema = _generate_schema.GenerateSchema(True, None).generate_schema(type_)
     json_schema = json_schema_generator.generate(core_schema)
-    json_schema['title'] = title
+    if title is not None:
+        json_schema['title'] = title
     return json_schema
 
 
