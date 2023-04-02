@@ -433,16 +433,16 @@ def model_serializer(
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     allow_reuse: bool = False,
 ) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
     """
     Function decorate to add a function which will be called to serialize the model.
 
+    (`when_used` is not permitted here since it make no sense)
+
     :param mode: `'plain'` means the function will be called instead of the default serialization logic,
         `'wrap'` means the function will be called with an argument to optionally call the default serialization logic.
     :param json_return_type: The type that the function returns if the serialization mode is JSON.
-    :param when_used: When the function should be called
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
 
@@ -455,7 +455,6 @@ def model_serializer(
         dec_info = _decorators.ModelSerializerDecoratorInfo(
             mode=mode,
             json_return_type=json_return_type,
-            when_used=when_used,
         )
         return _decorators.PydanticDecoratorMarker(
             res, dec_info, shim=partial(_decorators.make_generic_model_serializer, mode=mode)

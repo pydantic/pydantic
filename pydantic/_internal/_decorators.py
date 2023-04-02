@@ -180,18 +180,15 @@ class ModelSerializerDecoratorInfo(Representation):
 
     mode: Literal['plain', 'wrap']
     json_return_type: JsonReturnTypes | None
-    when_used: WhenUsed
 
     def __init__(
         self,
         *,
         mode: Literal['plain', 'wrap'],
         json_return_type: JsonReturnTypes | None = None,
-        when_used: WhenUsed = 'always',
     ) -> None:
         self.mode = mode
         self.json_return_type = json_return_type
-        self.when_used = when_used
 
 
 DecoratorInfo = Union[

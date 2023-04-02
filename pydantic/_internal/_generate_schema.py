@@ -1036,14 +1036,12 @@ def apply_model_serializers(
             ser_schema = core_schema.general_wrap_serializer_function_ser_schema(
                 serializer.func,
                 json_return_type=serializer.info.json_return_type,
-                when_used=serializer.info.when_used,
             )
         else:
             # plain
             ser_schema = core_schema.general_plain_serializer_function_ser_schema(
                 serializer.func,
                 json_return_type=serializer.info.json_return_type,
-                when_used=serializer.info.when_used,
             )
         schema['serialization'] = ser_schema  # type: ignore[operator]
     return schema
