@@ -59,7 +59,7 @@ _base_class_defined = False
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
-    def __new__(  # C901
+    def __new__(
         mcs,
         cls_name: str,
         bases: tuple[type[Any], ...],
