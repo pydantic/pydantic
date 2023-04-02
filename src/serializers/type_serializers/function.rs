@@ -10,7 +10,7 @@ use pyo3::types::PyString;
 use serde::ser::Error;
 
 use crate::build_context::BuildContext;
-use crate::build_tools::{function_name, py_error_type, SchemaDict};
+use crate::build_tools::{destructure_function_schema, function_name, py_error_type, SchemaDict};
 use crate::serializers::extra::{ExtraOwned, SerMode};
 use crate::serializers::filter::AnyFilter;
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
@@ -71,18 +71,6 @@ impl BuildSerializer for FunctionPlainSerializerBuilder {
     }
 }
 
-fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, &PyAny)> {
-    let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
-    let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
-    let func_type: &str = func_dict.get_as_req(intern!(schema.py(), "type"))?;
-    let is_field_serializer = match func_type {
-        "field" => true,
-        "general" => false,
-        _ => unreachable!(),
-    };
-    Ok((is_field_serializer, function))
-}
-
 #[derive(Debug, Clone)]
 pub struct FunctionPlainSerializer {
     func: PyObject,
@@ -95,13 +83,19 @@ pub struct FunctionPlainSerializer {
 
 impl BuildSerializer for FunctionPlainSerializer {
     const EXPECTED_TYPE: &'static str = "function-plain";
+
+    /// NOTE! `schema` here is the actual `CoreSchema`, not `schema.serialization` as in the other builders
+    /// (done this way to match `FunctionWrapSerializer` which requires the full schema)
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
         _build_context: &mut BuildContext<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
-        let (is_field_serializer, function) = destructure_function_schema(schema)?;
+
+        let ser_schema: &PyDict = schema.get_as_req(intern!(py, "serialization"))?;
+
+        let (is_field_serializer, function) = destructure_function_schema(ser_schema)?;
         let function_name = function_name(function)?;
 
         let name = format!("plain_function[{function_name}]");
@@ -109,8 +103,8 @@ impl BuildSerializer for FunctionPlainSerializer {
             func: function.into_py(py),
             function_name,
             name,
-            json_return_ob_type: get_json_return_type(schema)?,
-            when_used: WhenUsed::new(schema, WhenUsed::Always)?,
+            json_return_ob_type: get_json_return_type(ser_schema)?,
+            when_used: WhenUsed::new(ser_schema, WhenUsed::Always)?,
             is_field_serializer,
         }
         .into())
@@ -157,9 +151,10 @@ macro_rules! function_type_serializer {
                     Ok(v) => {
                         let next_value = v.as_ref(py);
                         match extra.mode {
+                            // None for include/exclude here, as filtering should be done
                             SerMode::Json => match self.json_return_ob_type {
-                                Some(ref ob_type) => infer_to_python_known(ob_type, next_value, include, exclude, extra),
-                                None => infer_to_python(next_value, include, exclude, extra),
+                                Some(ref ob_type) => infer_to_python_known(ob_type, next_value, None, None, extra),
+                                None => infer_to_python(next_value, None, None, extra),
                             },
                             _ => Ok(next_value.to_object(py)),
                         }
@@ -222,11 +217,12 @@ macro_rules! function_type_serializer {
                 match self.call(value, include, exclude, extra) {
                     Ok(v) => {
                         let next_value = v.as_ref(py);
+                            // None for include/exclude here, as filtering should be done
                         match self.json_return_ob_type {
                             Some(ref ob_type) => {
-                                infer_serialize_known(ob_type, next_value, serializer, include, exclude, extra)
+                                infer_serialize_known(ob_type, next_value, serializer, None, None, extra)
                             }
-                            None => infer_serialize(next_value, serializer, include, exclude, extra),
+                            None => infer_serialize(next_value, serializer, None, None, extra),
                         }
                     }
                     Err(err) => match err.value(py).extract::<PydanticSerializationUnexpectedValue>() {
@@ -281,26 +277,41 @@ pub struct FunctionWrapSerializer {
 
 impl BuildSerializer for FunctionWrapSerializer {
     const EXPECTED_TYPE: &'static str = "function-wrap";
+
+    /// NOTE! `schema` here is the actual `CoreSchema`, not `schema.serialization` as in the other builders
+    /// (done this way since we need the `CoreSchema`)
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
         build_context: &mut BuildContext<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
+        let ser_schema: &PyDict = schema.get_as_req(intern!(py, "serialization"))?;
 
-        let (is_field_serializer, function) = destructure_function_schema(schema)?;
+        let (is_field_serializer, function) = destructure_function_schema(ser_schema)?;
         let function_name = function_name(function)?;
 
-        let serializer_schema: &PyDict = schema.get_as_req(intern!(py, "schema"))?;
-        let serializer = CombinedSerializer::build(serializer_schema, config, build_context)?;
+        // try to get `schema.serialization.schema`, otherwise use `schema` with `serialization` key removed
+        let inner_schema: &PyDict = if let Some(s) = ser_schema.get_as(intern!(py, "schema"))? {
+            s
+        } else {
+            // we copy the schema so we can modify it without affecting the original
+            let schema_copy = schema.copy()?;
+            // remove the serialization key from the schema so we don't recurse
+            schema_copy.del_item(intern!(py, "serialization"))?;
+            schema_copy
+        };
+
+        let serializer = CombinedSerializer::build(inner_schema, config, build_context)?;
+
         let name = format!("wrap_function[{function_name}, {}]", serializer.get_name());
         Ok(Self {
             serializer: Box::new(serializer),
             func: function.into_py(py),
             function_name,
             name,
-            json_return_ob_type: get_json_return_type(schema)?,
-            when_used: WhenUsed::new(schema, WhenUsed::Always)?,
+            json_return_ob_type: get_json_return_type(ser_schema)?,
+            when_used: WhenUsed::new(ser_schema, WhenUsed::Always)?,
             is_field_serializer,
         }
         .into())
@@ -385,7 +396,7 @@ impl SerializationCallable {
                 Err(PydanticOmit::new_err())
             }
         } else {
-            let v = self.serializer.to_python(value, None, None, &extra)?;
+            let v = self.serializer.to_python(value, include, exclude, &extra)?;
             extra.warnings.final_check(py)?;
             Ok(Some(v))
         }

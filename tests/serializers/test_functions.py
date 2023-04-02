@@ -1,5 +1,7 @@
 import json
+import sys
 from collections import deque
+from pathlib import Path
 
 import pytest
 
@@ -280,13 +282,51 @@ def test_wrong_return_type():
         s.to_json(123)
 
 
+def test_wrong_return_type_str():
+    def f(value, _):
+        if value == 666:
+            return value
+        else:
+            return str(value)
+
+    s = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.general_plain_serializer_function_ser_schema(f, json_return_type='str_subclass')
+        )
+    )
+    assert s.to_python(123) == '123'
+    assert s.to_python(123, mode='json') == '123'
+    assert s.to_json(123) == b'"123"'
+
+    assert s.to_python(666) == 666
+
+    with pytest.raises(TypeError, match="^'int' object cannot be converted to 'PyString'$"):
+        s.to_python(666, mode='json')
+
+    m = "^Error serializing to JSON: 'int' object cannot be converted to 'PyString'$"
+    with pytest.raises(PydanticSerializationError, match=m):
+        s.to_json(666)
+
+
 def test_function_wrap():
     def f(value, serializer, _info):
         return f'result={serializer(len(value))} repr={serializer!r}'
 
     s = SchemaSerializer(
+        core_schema.int_schema(serialization=core_schema.general_wrap_serializer_function_ser_schema(f))
+    )
+    assert s.to_python('foo') == 'result=3 repr=SerializationCallable(serializer=int)'
+    assert s.to_python('foo', mode='json') == 'result=3 repr=SerializationCallable(serializer=int)'
+    assert s.to_json('foo') == b'"result=3 repr=SerializationCallable(serializer=int)"'
+
+
+def test_function_wrap_custom_schema():
+    def f(value, serializer, _info):
+        return f'result={serializer(len(value))} repr={serializer!r}'
+
+    s = SchemaSerializer(
         core_schema.any_schema(
-            serialization=core_schema.general_wrap_serializer_function_ser_schema(f, core_schema.int_schema())
+            serialization=core_schema.general_wrap_serializer_function_ser_schema(f, schema=core_schema.int_schema())
         )
     )
     assert s.to_python('foo') == 'result=3 repr=SerializationCallable(serializer=int)'
@@ -308,7 +348,7 @@ def test_function_wrap_fallback():
 
     s = SchemaSerializer(
         core_schema.any_schema(
-            serialization=core_schema.general_wrap_serializer_function_ser_schema(f, core_schema.any_schema())
+            serialization=core_schema.general_wrap_serializer_function_ser_schema(f, schema=core_schema.any_schema())
         )
     )
     assert s.to_python('foo') == 'result=foo'
@@ -344,7 +384,7 @@ def test_deque():
     s = SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.general_wrap_serializer_function_ser_schema(
-                serialize_deque, core_schema.any_schema()
+                serialize_deque, schema=core_schema.any_schema()
             )
         )
     )
@@ -372,7 +412,7 @@ def test_custom_mapping():
     s = SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.general_wrap_serializer_function_ser_schema(
-                serialize_custom_mapping, core_schema.int_schema()
+                serialize_custom_mapping, schema=core_schema.int_schema()
             )
         )
     )
@@ -382,3 +422,102 @@ def test_custom_mapping():
     assert s.to_python({'a': 1, 'b': 2}, mode='json', include={'a'}) == 'a=1'
     assert s.to_json({'a': 1, 'b': 2}) == b'"a=1 b=2"'
     assert s.to_json({'a': 1, 'b': 2}, exclude={'b'}) == b'"a=1"'
+
+
+def test_function_wrap_model():
+    calls = 0
+
+    def wrap_function(value, handler, _info):
+        nonlocal calls
+        calls += 1
+        return handler(value)
+
+    class MyModel:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.typed_dict_schema(
+                {
+                    'a': core_schema.typed_dict_field(core_schema.any_schema()),
+                    'b': core_schema.typed_dict_field(core_schema.any_schema()),
+                    'c': core_schema.typed_dict_field(core_schema.any_schema(), serialization_exclude=True),
+                }
+            ),
+            serialization=core_schema.general_wrap_serializer_function_ser_schema(wrap_function),
+        )
+    )
+    m = MyModel(a=1, b=b'foobar', c='excluded')
+    assert calls == 0
+    assert s.to_python(m) == {'a': 1, 'b': b'foobar'}
+    assert calls == 1
+    assert s.to_python(m, mode='json') == {'a': 1, 'b': 'foobar'}
+    assert calls == 2
+    assert s.to_json(m) == b'{"a":1,"b":"foobar"}'
+    assert calls == 3
+
+    assert s.to_python(m, exclude={'b'}) == {'a': 1}
+    assert calls == 4
+    assert s.to_python(m, mode='json', exclude={'b'}) == {'a': 1}
+    assert calls == 5
+    assert s.to_json(m, exclude={'b'}) == b'{"a":1}'
+    assert calls == 6
+
+
+def test_function_plain_model():
+    calls = 0
+
+    def wrap_function(value, _info):
+        nonlocal calls
+        calls += 1
+        return value.__dict__
+
+    class MyModel:
+        def __init__(self, **kwargs):
+            self.__dict__.update(kwargs)
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.typed_dict_schema(
+                {
+                    'a': core_schema.typed_dict_field(core_schema.any_schema()),
+                    'b': core_schema.typed_dict_field(core_schema.any_schema()),
+                    'c': core_schema.typed_dict_field(core_schema.any_schema(), serialization_exclude=True),
+                }
+            ),
+            serialization=core_schema.general_plain_serializer_function_ser_schema(wrap_function),
+        )
+    )
+    m = MyModel(a=1, b=b'foobar', c='not excluded')
+    assert calls == 0
+    assert s.to_python(m) == {'a': 1, 'b': b'foobar', 'c': 'not excluded'}
+    assert calls == 1
+    assert s.to_python(m, mode='json') == {'a': 1, 'b': 'foobar', 'c': 'not excluded'}
+    assert calls == 2
+    assert s.to_json(m) == b'{"a":1,"b":"foobar","c":"not excluded"}'
+    assert calls == 3
+
+    assert s.to_python(m, exclude={'b'}) == {'a': 1, 'b': b'foobar', 'c': 'not excluded'}
+    assert calls == 4
+    assert s.to_python(m, mode='json', exclude={'b'}) == {'a': 1, 'b': 'foobar', 'c': 'not excluded'}
+    assert calls == 5
+    assert s.to_json(m, exclude={'b'}) == b'{"a":1,"b":"foobar","c":"not excluded"}'
+    assert calls == 6
+
+
+@pytest.mark.skipif(sys.platform == 'win32', reason='Path output different on windows')
+def test_wrap_return_type():
+    def to_path(value, handler, _info):
+        return Path(handler(value)).with_suffix('.new')
+
+    s = SchemaSerializer(
+        core_schema.str_schema(
+            serialization=core_schema.general_wrap_serializer_function_ser_schema(to_path, json_return_type='path')
+        )
+    )
+    assert s.to_python('foobar') == Path('foobar.new')
+    assert s.to_python('foobar', mode='json') == 'foobar.new'
+    assert s.to_json('foobar') == b'"foobar.new"'
