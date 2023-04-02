@@ -237,7 +237,7 @@ def test_ser_function_wrap():
     s = SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.general_wrap_serializer_function_ser_schema(
-                f, core_schema.str_schema(), when_used='json'
+                f, schema=core_schema.str_schema(), when_used='json'
             )
         )
     )
