@@ -1,3 +1,4 @@
+import platform
 import re
 from types import SimpleNamespace
 from typing import Dict, List
@@ -325,6 +326,7 @@ def test_parse_raw_pass():
     assert model.model_dump() == {'x': 1, 'y': 2}
 
 
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='Different error str on PyPy')
 def test_parse_raw_pass_fail():
     class Model(BaseModel):
         x: int
