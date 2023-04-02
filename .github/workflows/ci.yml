@@ -122,21 +122,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', 'pypy3.7', 'pypy3.8', 'pypy3.9']
-        exclude:
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
-          - os: windows
-            python-version: 'pypy3.7'
-          - os: windows
-            python-version: 'pypy3.8'
-          - os: windows
-            python-version: 'pypy3.9'
           # macos tests with pypy take ages (>10mins) since pypy is very slow
-          - os: macos
+          # so we only test pypy on ubuntu
+          - os: ubuntu
             python-version: 'pypy3.7'
-          - os: macos
+          - os: ubuntu
             python-version: 'pypy3.8'
-          - os: macos
+          - os: ubuntu
             python-version: 'pypy3.9'
 
     env:
@@ -165,6 +160,8 @@ jobs:
     - run: mkdir coverage
 
     - name: test without deps
+      # speed up by skipping this step on pypy
+      if: '!startsWith(matrix.python-version, "pypy")'
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
