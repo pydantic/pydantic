@@ -53,6 +53,14 @@ class ValidatorDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
+    __slots__ = 'fields', 'mode', 'each_item', 'always', 'check_fields'
+
+    fields: tuple[str, ...]
+    mode: Literal['before', 'after']
+    each_item: bool
+    always: bool
+    check_fields: bool | None
+
     def __init__(
         self,
         *,
@@ -82,6 +90,13 @@ class FieldValidatorDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
+    __slots__ = 'fields', 'mode', 'sub_path', 'check_fields'
+
+    fields: tuple[str, ...]
+    mode: Literal['before', 'after', 'wrap', 'plain']
+    sub_path: tuple[str | int, ...] | None
+    check_fields: bool | None
+
     def __init__(
         self,
         *,
@@ -91,13 +106,10 @@ class FieldValidatorDecoratorInfo(Representation):
         check_fields: bool | None,
     ) -> None:
         """
+        :param fields: the fields this validator applies to.
         :param mode: the pydantic-core validator mode.
-        :param type: either 'unbound' or 'field' indicating if this validator should have
-            access to the model itself.
         :param sub_path: Not yet supported.
         :param check_fields: whether to check that the fields actually exist on the model.
-        :param wrap: a callback to apply V1 compatibility shims or allow extra signatures
-            that pydantic-core does not recognize.
         """
         self.fields = fields
         self.mode = mode
@@ -122,14 +134,21 @@ class RootValidatorDecoratorInfo(Representation):
         self.mode = mode
 
 
-class SerializerDecoratorInfo(Representation):
+class FieldSerializerDecoratorInfo(Representation):
     """
-    A container for data from `@serializer` so that we can access it
+    A container for data from `@field_serializer` so that we can access it
     while building the pydantic-core schema.
     """
 
+    __slots__ = 'fields', 'sub_path', 'mode', 'json_return_type', 'when_used', 'check_fields', 'type'
+
+    fields: tuple[str, ...]
+    mode: Literal['plain', 'wrap']
+    type: Literal['general', 'field']
     json_return_type: JsonReturnTypes | None
     when_used: WhenUsed
+    sub_path: tuple[str | int, ...] | None
+    check_fields: bool | None
 
     def __init__(
         self,
@@ -142,15 +161,6 @@ class SerializerDecoratorInfo(Representation):
         sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
     ) -> None:
-        """
-        :param mode: the pydantic-core serializer mode.
-        :param type: either 'general' or 'field' indicating if this serializer should have
-            access to the model instance it applies to.
-        :param sub_path: Not yet supported.
-        :param json_return_type: TODO
-        :param when_used: TODO
-        :param check_fields: whether to check that the fields actually exist on the model.
-        """
         self.fields = fields
         self.sub_path = sub_path
         self.mode = mode
@@ -160,8 +170,33 @@ class SerializerDecoratorInfo(Representation):
         self.type = type
 
 
+class ModelSerializerDecoratorInfo(Representation):
+    """
+    A container for data from `@model_serializer` so that we can access it
+    while building the pydantic-core schema.
+    """
+
+    __slots__ = 'mode', 'json_return_type', 'when_used'
+
+    mode: Literal['plain', 'wrap']
+    json_return_type: JsonReturnTypes | None
+
+    def __init__(
+        self,
+        *,
+        mode: Literal['plain', 'wrap'],
+        json_return_type: JsonReturnTypes | None = None,
+    ) -> None:
+        self.mode = mode
+        self.json_return_type = json_return_type
+
+
 DecoratorInfo = Union[
-    ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, RootValidatorDecoratorInfo, SerializerDecoratorInfo
+    ValidatorDecoratorInfo,
+    FieldValidatorDecoratorInfo,
+    RootValidatorDecoratorInfo,
+    FieldSerializerDecoratorInfo,
+    ModelSerializerDecoratorInfo,
 ]
 
 ReturnType = TypeVar('ReturnType')
@@ -232,7 +267,8 @@ AnyDecorator = Union[
     Decorator[ValidatorDecoratorInfo],
     Decorator[FieldValidatorDecoratorInfo],
     Decorator[RootValidatorDecoratorInfo],
-    Decorator[SerializerDecoratorInfo],
+    Decorator[FieldSerializerDecoratorInfo],
+    Decorator[ModelSerializerDecoratorInfo],
 ]
 
 
@@ -243,27 +279,31 @@ class DecoratorInfos(Representation):
     validator: dict[str, Decorator[ValidatorDecoratorInfo]]
     field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]]
     root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]]
-    serializer: dict[str, Decorator[SerializerDecoratorInfo]]
+    field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]]
+    model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]]
 
     def __init__(self) -> None:
         self.validator = {}
         self.field_validator = {}
         self.root_validator = {}
-        self.serializer = {}
+        self.field_serializer = {}
+        self.model_serializer = {}
 
 
 def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
-    # We want to collect all DecFunc instances that exist as
-    # attributes in the namespace of the class (a BaseModel or dataclass)
-    # that called us
-    # But we want to collect these in the order of the bases
-    # So instead of getting them all from the leaf class (the class that called us),
-    # we traverse the bases from root (the oldest ancestor class) to leaf
-    # and collect all of the instances as we go, taking care to replace
-    # any duplicate ones with the last one we see to mimick how function overriding
-    # works with inheritance.
-    # If we do replace any functions we put the replacement into the position
-    # the replaced function was in; that is, we maintain the order.
+    """
+    We want to collect all DecFunc instances that exist as
+    attributes in the namespace of the class (a BaseModel or dataclass)
+    that called us
+    But we want to collect these in the order of the bases
+    So instead of getting them all from the leaf class (the class that called us),
+    we traverse the bases from root (the oldest ancestor class) to leaf
+    and collect all of the instances as we go, taking care to replace
+    any duplicate ones with the last one we see to mimic how function overriding
+    works with inheritance.
+    If we do replace any functions we put the replacement into the position
+    the replaced function was in; that is, we maintain the order.
+    """
 
     # reminder: dicts are ordered and replacement does not alter the order
     res = DecoratorInfos()
@@ -273,7 +313,8 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
             res.validator.update(existing.validator)
             res.field_validator.update(existing.field_validator)
             res.root_validator.update(existing.root_validator)
-            res.serializer.update(existing.serializer)
+            res.field_serializer.update(existing.field_serializer)
+            res.model_serializer.update(existing.model_serializer)
 
     for var_name, var_value in vars(cls).items():
         if isinstance(var_value, PydanticDecoratorMarker):
@@ -286,9 +327,11 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
                 res.field_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
             elif isinstance(info, RootValidatorDecoratorInfo):
                 res.root_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
+            elif isinstance(info, FieldSerializerDecoratorInfo):
+                res.field_serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
             else:
-                assert isinstance(info, SerializerDecoratorInfo)
-                res.serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
+                assert isinstance(info, ModelSerializerDecoratorInfo)
+                res.model_serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
             # replace our marker with the bound, concrete function
             setattr(cls, var_name, func)
 
@@ -298,16 +341,15 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
 _FUNCS: set[str] = set()
 
 
-_SerializerType = TypeVar('_SerializerType', bound=Callable[..., Any])
-
-
-def prepare_serializer_decorator(function: _SerializerType, allow_reuse: bool) -> _SerializerType:
+def prepare_serializer_decorator(
+    function: Callable[..., Any] | classmethod[Any] | staticmethod[Any], allow_reuse: bool
+) -> Callable[..., Any] | classmethod[Any]:
     """
     Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
     """
     if isinstance(function, staticmethod):
-        function = function.__func__  # type: ignore[assignment]
+        function = function.__func__
     if not allow_reuse and not in_ipython():
         ref = f'{function.__module__}::{function.__qualname__}'
         if ref in _FUNCS:
@@ -638,8 +680,7 @@ def make_generic_field_serializer(
     Wrap serializers to allow ignoring the `info` argument as a convenience.
     """
     sig = signature(serializer)
-    is_instance = is_instance_method_from_sig(serializer)
-    if is_instance:
+    if is_instance_method_from_sig(serializer):
         # for the errors below to exclude self
         sig = Signature(parameters=list(sig.parameters.values())[1:])
 
@@ -700,5 +741,48 @@ def make_generic_field_serializer(
                 f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
                 f' {_VALID_SERIALIZER_SIGNATURES}'
             )
+        func = cast(AnyCoreSerializer, serializer)
+        return func
+
+
+def make_generic_model_serializer(
+    serializer: AnySerializerFunction, mode: Literal['plain', 'wrap']
+) -> AnyCoreSerializer:
+    """
+    Wrap serializers to allow ignoring the `info` argument as a convenience.
+    """
+    sig = signature(serializer)
+
+    n_positional = sum(
+        1
+        for param in sig.parameters.values()
+        if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+    )
+    if mode == 'plain':
+        if n_positional == 1:
+            func1 = cast(GenericPlainSerializerFunctionWithoutInfo, serializer)
+
+            def wrap_model_serializer_single_argument(value: Any, _: SerializationInfo) -> Any:
+                return func1(value)
+
+            return wrap_model_serializer_single_argument
+        if n_positional != 2:
+            raise TypeError(f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}')
+        func = cast(AnyCoreSerializer, serializer)
+        return func
+    else:
+        assert mode == 'wrap'
+        if n_positional == 2:
+            func2 = cast(GeneralWrapSerializerFunctionWithoutInfo, serializer)
+
+            def wrap_model_serializer_in_wrap_mode(
+                value: Any, handler: SerializerFunctionWrapHandler, _: SerializationInfo
+            ) -> Any:
+                return func2(value, handler)
+
+            return wrap_model_serializer_in_wrap_mode
+
+        if n_positional != 3:
+            raise TypeError(f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}')
         func = cast(AnyCoreSerializer, serializer)
         return func

@@ -687,13 +687,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 type_str = 'type_error'
 
             # ctx is missing here, but since we've added `input` to the error, we're not pretending it's the same
-            error = {
+            error: pydantic_core.InitErrorDetails = {
                 'type': pydantic_core.PydanticCustomError(type_str, str(exc)),
                 'loc': ('__root__',),
                 'input': b,
             }
-            # TODO type ignore waiting for pydantic/pydantic-core#513
-            raise pydantic_core.ValidationError(cls.__name__, [error])  # type: ignore[list-item]
+            raise pydantic_core.ValidationError(cls.__name__, [error])
         return cls.model_validate(obj)
 
     @classmethod

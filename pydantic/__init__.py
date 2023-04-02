@@ -12,7 +12,7 @@ from . import dataclasses
 from .analyzed_type import AnalyzedType
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
-from .decorators import field_serializer, field_validator, root_validator, validator
+from .decorators import field_serializer, field_validator, model_serializer, root_validator, validator
 from .errors import *
 from .fields import Field, PrivateAttr
 from .main import *
@@ -34,6 +34,7 @@ __all__ = [
     'validator',
     'field_validator',
     'field_serializer',
+    'model_serializer',
     'ValidationInfo',
     'FieldValidationInfo',
     'SerializationInfo',

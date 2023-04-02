@@ -221,7 +221,7 @@ def _deque_ser_schema(
     inner_schema: core_schema.CoreSchema | None = None,
 ) -> core_schema.WrapSerializerFunctionSerSchema:
     return core_schema.general_wrap_serializer_function_ser_schema(
-        _serializers.serialize_deque, inner_schema or core_schema.any_schema()
+        _serializers.serialize_deque, schema=inner_schema or core_schema.any_schema()
     )
 
 

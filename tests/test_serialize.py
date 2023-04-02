@@ -9,10 +9,12 @@ from typing_extensions import Annotated
 
 from pydantic import (
     BaseModel,
+    Field,
     FieldSerializationInfo,
     SerializationInfo,
     SerializerFunctionWrapHandler,
     field_serializer,
+    model_serializer,
 )
 
 
@@ -238,3 +240,157 @@ def test_serialize_decorator_self_no_info():
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
+
+
+def test_model_serializer_plain():
+    class MyModel(BaseModel):
+        a: int
+        b: bytes
+
+        @model_serializer
+        def _serialize(self):
+            if self.b == b'custom':
+                return f'MyModel(a={self.a!r}, b={self.b!r})'
+            else:
+                return self.__dict__
+
+    m = MyModel(a=1, b='boom')
+    assert m.model_dump() == {'a': 1, 'b': b'boom'}
+    assert m.model_dump(mode='json') == {'a': 1, 'b': 'boom'}
+    assert m.model_dump_json() == '{"a":1,"b":"boom"}'
+
+    assert m.model_dump(exclude={'a'}) == {'a': 1, 'b': b'boom'}  # exclude is ignored as we used self.__dict__
+    assert m.model_dump(mode='json', exclude={'a'}) == {'a': 1, 'b': 'boom'}
+    assert m.model_dump_json(exclude={'a'}) == '{"a":1,"b":"boom"}'
+
+    m = MyModel(a=1, b='custom')
+    assert m.model_dump() == "MyModel(a=1, b=b'custom')"
+    assert m.model_dump(mode='json') == "MyModel(a=1, b=b'custom')"
+    assert m.model_dump_json() == '"MyModel(a=1, b=b\'custom\')"'
+
+
+def test_model_serializer_plain_info():
+    class MyModel(BaseModel):
+        a: int
+        b: bytes
+
+        @model_serializer
+        def _serialize(self, info):
+            if info.exclude:
+                return {k: v for k, v in self.__dict__.items() if k not in info.exclude}
+            else:
+                return self.__dict__
+
+    m = MyModel(a=1, b='boom')
+    assert m.model_dump() == {'a': 1, 'b': b'boom'}
+    assert m.model_dump(mode='json') == {'a': 1, 'b': 'boom'}
+    assert m.model_dump_json() == '{"a":1,"b":"boom"}'
+
+    assert m.model_dump(exclude={'a'}) == {'b': b'boom'}  # exclude is not ignored
+    assert m.model_dump(mode='json', exclude={'a'}) == {'b': 'boom'}
+    assert m.model_dump_json(exclude={'a'}) == '{"b":"boom"}'
+
+
+def test_model_serializer_wrap():
+    class MyModel(BaseModel):
+        a: int
+        b: bytes
+        c: bytes = Field(exclude=True)
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler):
+            d = handler(self)
+            d['extra'] = 42
+            return d
+
+    m = MyModel(a=1, b='boom', c='excluded')
+    assert m.model_dump() == {'a': 1, 'b': b'boom', 'extra': 42}
+    assert m.model_dump(mode='json') == {'a': 1, 'b': 'boom', 'extra': 42}
+    assert m.model_dump_json() == '{"a":1,"b":"boom","extra":42}'
+
+    assert m.model_dump(exclude={'a'}) == {'b': b'boom', 'extra': 42}
+    assert m.model_dump(mode='json', exclude={'a'}) == {'b': 'boom', 'extra': 42}
+    assert m.model_dump_json(exclude={'a'}) == '{"b":"boom","extra":42}'
+
+
+def test_model_serializer_wrap_info():
+    class MyModel(BaseModel):
+        a: int
+        b: bytes
+        c: bytes = Field(exclude=True)
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            d = handler(self)
+            d['info'] = f'mode={info.mode} exclude={info.exclude}'
+            return d
+
+    m = MyModel(a=1, b='boom', c='excluded')
+    assert m.model_dump() == {'a': 1, 'b': b'boom', 'info': 'mode=python exclude=None'}
+    assert m.model_dump(mode='json') == {'a': 1, 'b': 'boom', 'info': 'mode=json exclude=None'}
+    assert m.model_dump_json() == '{"a":1,"b":"boom","info":"mode=json exclude=None"}'
+
+    assert m.model_dump(exclude={'a'}) == {'b': b'boom', 'info': "mode=python exclude={'a'}"}
+    assert m.model_dump(mode='json', exclude={'a'}) == {'b': 'boom', 'info': "mode=json exclude={'a'}"}
+    assert m.model_dump_json(exclude={'a'}) == '{"b":"boom","info":"mode=json exclude={\'a\'}"}'
+
+
+def test_model_serializer_plain_json_return_type():
+    class MyModel(BaseModel):
+        a: int
+
+        @model_serializer(json_return_type='str_subclass')
+        def _serialize(self):
+            if self.a == 666:
+                return self.a
+            else:
+                return f'MyModel(a={self.a!r})'
+
+    m = MyModel(a=1)
+    assert m.model_dump() == 'MyModel(a=1)'
+    assert m.model_dump(mode='json') == 'MyModel(a=1)'
+    assert m.model_dump_json() == '"MyModel(a=1)"'
+
+    m = MyModel(a=666)
+    assert m.model_dump() == 666
+    with pytest.raises(TypeError, match="^'int' object cannot be converted to 'PyString'$"):
+        m.model_dump(mode='json')
+
+    msg = "^Error serializing to JSON: 'int' object cannot be converted to 'PyString'$"
+    with pytest.raises(PydanticSerializationError, match=msg):
+        m.model_dump_json()
+
+
+def test_model_serializer_wrong_args():
+    m = r'Unrecognized serializer signature for ' r'<.+MyModel._serialize at 0x\w+> with `mode=plain`:\(self, x, y, z\)'
+    with pytest.raises(TypeError, match=m):
+
+        class MyModel(BaseModel):
+            a: int
+
+            @model_serializer
+            def _serialize(self, x, y, z):
+                return self
+
+
+def test_model_serializer_no_self():
+    with pytest.raises(TypeError, match='`@model_serializer` must be applied to instance methods'):
+
+        class MyModel(BaseModel):
+            a: int
+
+            @model_serializer
+            def _serialize(slf, x, y, z):
+                return slf
+
+
+def test_model_serializer_classmethod():
+    with pytest.raises(TypeError, match='`@model_serializer` must be applied to instance methods'):
+
+        class MyModel(BaseModel):
+            a: int
+
+            @model_serializer
+            @classmethod
+            def _serialize(self, x, y, z):
+                return self
