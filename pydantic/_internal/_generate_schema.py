@@ -1033,7 +1033,7 @@ def apply_model_serializers(
         serializer = list(serializers)[-1]
 
         if serializer.info.mode == 'wrap':
-            ser_schema = core_schema.general_wrap_serializer_function_ser_schema(
+            ser_schema: core_schema.SerSchema = core_schema.general_wrap_serializer_function_ser_schema(
                 serializer.func,
                 json_return_type=serializer.info.json_return_type,
             )
@@ -1043,7 +1043,7 @@ def apply_model_serializers(
                 serializer.func,
                 json_return_type=serializer.info.json_return_type,
             )
-        schema['serialization'] = ser_schema  # type: ignore[operator]
+        schema['serialization'] = ser_schema
     return schema
 
 
