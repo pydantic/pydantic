@@ -9,6 +9,7 @@ import re
 import sys
 import typing
 import warnings
+from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
 from annotated_types import BaseMetadata, GroupedMetadata
@@ -71,7 +72,7 @@ def check_validator_fields_against_field_name(
     return False
 
 
-def check_validator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields: Iterable[str]) -> None:
+def check_decorator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields: Iterable[str]) -> None:
     fields = set(fields)
     for dec in decorators:
         if isinstance(dec.info, ValidatorDecoratorInfo) and dec.info.fields == ('*',):
@@ -218,8 +219,12 @@ class GenerateSchema:
         self.recursion_cache[model_ref] = core_schema.definition_reference_schema(model_ref)
         fields = cls.model_fields
         decorators = cls.__pydantic_decorators__
-        check_validator_fields_exist(
-            [*decorators.field_validator.values(), *decorators.serializer.values(), *decorators.validator.values()],
+        check_decorator_fields_exist(
+            chain(
+                decorators.field_validator.values(),
+                decorators.field_serializer.values(),
+                decorators.validator.values(),
+            ),
             fields.keys(),
         )
         # TODO: we need to do something similar to this for pydantic dataclasses
@@ -512,7 +517,9 @@ class GenerateSchema:
         if not field_info.is_required():
             schema = wrap_default(field_info, schema)
 
-        schema = apply_serializers(schema, filter_field_decorator_info_by_field(decorators.serializer.values(), name))
+        schema = apply_serializers(
+            schema, filter_field_decorator_info_by_field(decorators.field_serializer.values(), name)
+        )
         misc = JsonSchemaMetadata(
             title=field_info.title,
             description=field_info.description,

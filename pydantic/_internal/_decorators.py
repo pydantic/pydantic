@@ -55,6 +55,12 @@ class ValidatorDecoratorInfo(Representation):
 
     __slots__ = 'fields', 'mode', 'each_item', 'always', 'check_fields'
 
+    fields: tuple[str, ...]
+    mode: Literal['before', 'after']
+    each_item: bool
+    always: bool
+    check_fields: bool | None
+
     def __init__(
         self,
         *,
@@ -86,6 +92,11 @@ class FieldValidatorDecoratorInfo(Representation):
 
     __slots__ = 'fields', 'mode', 'sub_path', 'check_fields'
 
+    fields: tuple[str, ...]
+    mode: Literal['before', 'after', 'wrap', 'plain']
+    sub_path: tuple[str | int, ...] | None
+    check_fields: bool | None
+
     def __init__(
         self,
         *,
@@ -95,13 +106,10 @@ class FieldValidatorDecoratorInfo(Representation):
         check_fields: bool | None,
     ) -> None:
         """
+        :param fields: the fields this validator applies to.
         :param mode: the pydantic-core validator mode.
-        :param type: either 'unbound' or 'field' indicating if this validator should have
-            access to the model itself.
         :param sub_path: Not yet supported.
         :param check_fields: whether to check that the fields actually exist on the model.
-        :param wrap: a callback to apply V1 compatibility shims or allow extra signatures
-            that pydantic-core does not recognize.
         """
         self.fields = fields
         self.mode = mode
@@ -134,8 +142,13 @@ class FieldSerializerDecoratorInfo(Representation):
 
     __slots__ = 'fields', 'sub_path', 'mode', 'json_return_type', 'when_used', 'check_fields', 'type'
 
+    fields: tuple[str, ...]
+    mode: Literal['plain', 'wrap']
+    type: Literal['general', 'field']
     json_return_type: JsonReturnTypes | None
     when_used: WhenUsed
+    sub_path: tuple[str | int, ...] | None
+    check_fields: bool | None
 
     def __init__(
         self,
@@ -258,6 +271,7 @@ AnyDecorator = Union[
     Decorator[FieldValidatorDecoratorInfo],
     Decorator[RootValidatorDecoratorInfo],
     Decorator[FieldSerializerDecoratorInfo],
+    Decorator[ModelSerializerDecoratorInfo],
 ]
 
 
@@ -268,27 +282,31 @@ class DecoratorInfos(Representation):
     validator: dict[str, Decorator[ValidatorDecoratorInfo]]
     field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]]
     root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]]
-    serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]]
+    field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]]
+    model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]]
 
     def __init__(self) -> None:
         self.validator = {}
         self.field_validator = {}
         self.root_validator = {}
-        self.serializer = {}
+        self.field_serializer = {}
+        self.model_serializer = {}
 
 
 def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
-    # We want to collect all DecFunc instances that exist as
-    # attributes in the namespace of the class (a BaseModel or dataclass)
-    # that called us
-    # But we want to collect these in the order of the bases
-    # So instead of getting them all from the leaf class (the class that called us),
-    # we traverse the bases from root (the oldest ancestor class) to leaf
-    # and collect all of the instances as we go, taking care to replace
-    # any duplicate ones with the last one we see to mimick how function overriding
-    # works with inheritance.
-    # If we do replace any functions we put the replacement into the position
-    # the replaced function was in; that is, we maintain the order.
+    """
+    We want to collect all DecFunc instances that exist as
+    attributes in the namespace of the class (a BaseModel or dataclass)
+    that called us
+    But we want to collect these in the order of the bases
+    So instead of getting them all from the leaf class (the class that called us),
+    we traverse the bases from root (the oldest ancestor class) to leaf
+    and collect all of the instances as we go, taking care to replace
+    any duplicate ones with the last one we see to mimic how function overriding
+    works with inheritance.
+    If we do replace any functions we put the replacement into the position
+    the replaced function was in; that is, we maintain the order.
+    """
 
     # reminder: dicts are ordered and replacement does not alter the order
     res = DecoratorInfos()
@@ -298,7 +316,8 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
             res.validator.update(existing.validator)
             res.field_validator.update(existing.field_validator)
             res.root_validator.update(existing.root_validator)
-            res.serializer.update(existing.serializer)
+            res.field_serializer.update(existing.field_serializer)
+            res.model_serializer.update(existing.model_serializer)
 
     for var_name, var_value in vars(cls).items():
         if isinstance(var_value, PydanticDecoratorMarker):
@@ -311,9 +330,11 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
                 res.field_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
             elif isinstance(info, RootValidatorDecoratorInfo):
                 res.root_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
+            elif isinstance(info, FieldSerializerDecoratorInfo):
+                res.field_serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
             else:
-                assert isinstance(info, FieldSerializerDecoratorInfo)
-                res.serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
+                assert isinstance(info, ModelSerializerDecoratorInfo)
+                res.model_serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
             # replace our marker with the bound, concrete function
             setattr(cls, var_name, func)
 
@@ -323,10 +344,9 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
 _FUNCS: set[str] = set()
 
 
-_SerializerType = TypeVar('_SerializerType', bound=Callable[..., Any])
-
-
-def prepare_serializer_decorator(function: _SerializerType, allow_reuse: bool) -> _SerializerType:
+def prepare_serializer_decorator(
+    function: Callable[..., Any] | classmethod[Any] | staticmethod[Any], allow_reuse: bool
+) -> Callable[..., Any] | classmethod[Any]:
     """
     Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.

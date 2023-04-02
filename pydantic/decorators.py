@@ -389,7 +389,7 @@ def field_serializer(
     sub_path: tuple[str | int, ...] | None = None,
     check_fields: bool | None = None,
     allow_reuse: bool = False,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to serialize fields.
     Four signatures are supported:
@@ -408,7 +408,7 @@ def field_serializer(
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
 
-    def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker:
+    def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
         res = _decorators.prepare_serializer_decorator(f, allow_reuse)
         type_: Literal['field', 'general'] = 'field' if _decorators.is_instance_method_from_sig(f) else 'general'
 
@@ -454,7 +454,7 @@ def model_serializer(
             when_used=when_used,
         )
         return _decorators.PydanticDecoratorMarker(
-            res, dec_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode)
+            res, dec_info, shim=partial(_decorators.make_generic_model_serializer, mode=mode)
         )
 
     return dec
