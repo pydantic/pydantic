@@ -8,12 +8,61 @@ use pyo3::{intern, AsPyPointer};
 use ahash::AHashSet;
 use serde::ser::Error;
 
-use crate::build_tools::py_err;
-
 use super::config::SerializationConfig;
-use super::errors::{PydanticSerializationUnexpectedValue, UNEXPECTED_TYPE_SER};
+use super::errors::{PydanticSerializationUnexpectedValue, UNEXPECTED_TYPE_SER_MARKER};
 use super::ob_type::ObTypeLookup;
 use super::shared::CombinedSerializer;
+
+/// this is ugly, would be much better if extra could be stored in `SerializationState`
+/// then `SerializationState` got a `serialize_infer` method, but I couldn't get it to work
+pub(crate) struct SerializationState {
+    warnings: CollectWarnings,
+    rec_guard: SerRecursionGuard,
+    config: SerializationConfig,
+}
+
+impl SerializationState {
+    pub fn new(timedelta_mode: Option<&str>, bytes_mode: Option<&str>) -> Self {
+        let warnings = CollectWarnings::new(None);
+        let rec_guard = SerRecursionGuard::default();
+        let config = SerializationConfig::from_args(timedelta_mode, bytes_mode).unwrap();
+        Self {
+            warnings,
+            rec_guard,
+            config,
+        }
+    }
+
+    pub fn extra<'py>(
+        &'py self,
+        py: Python<'py>,
+        mode: &'py SerMode,
+        exclude_none: Option<bool>,
+        round_trip: Option<bool>,
+        serialize_unknown: Option<bool>,
+        fallback: Option<&'py PyAny>,
+    ) -> Extra<'py> {
+        Extra::new(
+            py,
+            mode,
+            &[],
+            None,
+            &self.warnings,
+            None,
+            None,
+            exclude_none,
+            round_trip,
+            &self.config,
+            &self.rec_guard,
+            serialize_unknown,
+            fallback,
+        )
+    }
+
+    pub fn final_check(&self, py: Python) -> PyResult<()> {
+        self.warnings.final_check(py)
+    }
+}
 
 /// Useful things which are passed around by type_serializers
 #[derive(Clone)]
@@ -38,6 +87,7 @@ pub(crate) struct Extra<'a> {
     pub model: Option<&'a PyAny>,
     pub field_name: Option<&'a str>,
     pub serialize_unknown: bool,
+    pub fallback: Option<&'a PyAny>,
 }
 
 impl<'a> Extra<'a> {
@@ -55,6 +105,7 @@ impl<'a> Extra<'a> {
         config: &'a SerializationConfig,
         rec_guard: &'a SerRecursionGuard,
         serialize_unknown: Option<bool>,
+        fallback: Option<&'a PyAny>,
     ) -> Self {
         Self {
             mode,
@@ -72,6 +123,7 @@ impl<'a> Extra<'a> {
             model: None,
             field_name: None,
             serialize_unknown: serialize_unknown.unwrap_or(false),
+            fallback,
         }
     }
 
@@ -111,9 +163,10 @@ pub(crate) struct ExtraOwned {
     config: SerializationConfig,
     rec_guard: SerRecursionGuard,
     check: SerCheck,
-    model: Option<Py<PyAny>>,
+    model: Option<PyObject>,
     field_name: Option<String>,
     serialize_unknown: bool,
+    fallback: Option<PyObject>,
 }
 
 impl ExtraOwned {
@@ -133,6 +186,7 @@ impl ExtraOwned {
             model: extra.model.map(|v| v.into()),
             field_name: extra.field_name.map(|v| v.to_string()),
             serialize_unknown: extra.serialize_unknown,
+            fallback: extra.fallback.map(|v| v.into()),
         }
     }
 
@@ -153,6 +207,7 @@ impl ExtraOwned {
             model: self.model.as_ref().map(|m| m.as_ref(py)),
             field_name: self.field_name.as_ref().map(|n| n.as_ref()),
             serialize_unknown: self.serialize_unknown,
+            fallback: self.fallback.as_ref().map(|m| m.as_ref(py)),
         }
     }
 }
@@ -248,7 +303,7 @@ impl CollectWarnings {
             // note: I think this should never actually happen since we use `to_python(..., mode='json')` during
             // JSON serialisation to "try" union branches, but it's here for completeness/correctness
             // in particular, in future we could allow errors instead of warnings on fallback
-            Err(S::Error::custom(UNEXPECTED_TYPE_SER))
+            Err(S::Error::custom(UNEXPECTED_TYPE_SER_MARKER))
         } else {
             self.fallback_warning(field_type, value);
             Ok(())
@@ -315,9 +370,9 @@ impl SerRecursionGuard {
         let id = value.as_ptr() as usize;
         let mut info = self.info.borrow_mut();
         if !info.ids.insert(id) {
-            py_err!(PyValueError; "Circular reference detected (id repeated)")
+            Err(PyValueError::new_err("Circular reference detected (id repeated)"))
         } else if info.depth > Self::MAX_DEPTH {
-            py_err!(PyValueError; "Circular reference detected (depth exceeded)")
+            Err(PyValueError::new_err("Circular reference detected (depth exceeded)"))
         } else {
             info.depth += 1;
             Ok(id)

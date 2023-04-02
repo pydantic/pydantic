@@ -424,6 +424,14 @@ def test_error_on_repr():
     assert exc_info.value.errors() == [
         {'type': 'int_type', 'loc': (), 'msg': 'Input should be a valid integer', 'input': IsInstance(BadRepr)}
     ]
+    assert json.loads(exc_info.value.json()) == [
+        {
+            'type': 'int_type',
+            'loc': [],
+            'msg': 'Input should be a valid integer',
+            'input': '<Unserializable BadRepr object>',
+        }
+    ]
 
 
 def test_error_json():

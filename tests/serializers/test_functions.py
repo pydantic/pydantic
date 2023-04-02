@@ -294,6 +294,38 @@ def test_function_wrap():
     assert s.to_json('foo') == b'"result=3 repr=SerializationCallable(serializer=int)"'
 
 
+class Foobar:
+    def __str__(self):
+        return 'foobar!'
+
+
+def test_function_wrap_fallback():
+    def f(value, serializer, _info):
+        return f'result={serializer(value)}'
+
+    def fallback(v):
+        return f'fallback:{v}'
+
+    s = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.general_wrap_serializer_function_ser_schema(f, core_schema.any_schema())
+        )
+    )
+    assert s.to_python('foo') == 'result=foo'
+    assert s.to_python('foo', mode='json') == 'result=foo'
+    assert s.to_json('foo') == b'"result=foo"'
+
+    assert s.to_python(Foobar()) == 'result=foobar!'
+    with pytest.raises(PydanticSerializationError, match='Error calling function `f`'):
+        assert s.to_python(Foobar(), mode='json') == 'result=foobar!'
+    with pytest.raises(PydanticSerializationError, match='Error calling function `f`'):
+        assert s.to_json(Foobar()) == b'"result=foobar!"'
+
+    assert s.to_python(Foobar(), fallback=fallback) == 'result=fallback:foobar!'
+    assert s.to_python(Foobar(), mode='json', fallback=fallback) == 'result=fallback:foobar!'
+    assert s.to_json(Foobar(), fallback=fallback) == b'"result=fallback:foobar!"'
+
+
 def test_deque():
     def serialize_deque(value, serializer, info: core_schema.SerializationInfo):
         items = []
