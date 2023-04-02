@@ -1,3 +1,4 @@
+import platform
 import re
 from types import SimpleNamespace
 from typing import Dict, List
@@ -313,3 +314,34 @@ def test_nested_orm():
 
     # Pass dictionary data directly
     State(**{'user': {'first_name': 'John', 'last_name': 'Appleseed'}})
+
+
+def test_parse_raw_pass():
+    class Model(BaseModel):
+        x: int
+        y: int
+
+    with pytest.warns(DeprecationWarning, match='The `parse_raw` method is deprecated'):
+        model = Model.parse_raw('{"x": 1, "y": 2}')
+    assert model.model_dump() == {'x': 1, 'y': 2}
+
+
+@pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='Different error str on PyPy')
+def test_parse_raw_pass_fail():
+    class Model(BaseModel):
+        x: int
+        y: int
+
+    with pytest.warns(DeprecationWarning, match='The `parse_raw` method is deprecated'):
+        with pytest.raises(ValidationError, match='1 validation error for Model') as exc_info:
+            Model.parse_raw('invalid')
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error.jsondecode',
+            'loc': ('__root__',),
+            'msg': 'Expecting value: line 1 column 1 (char 0)',
+            'input': 'invalid',
+        }
+    ]
