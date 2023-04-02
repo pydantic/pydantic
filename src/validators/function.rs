@@ -3,7 +3,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
-use crate::build_tools::{function_name, py_err, SchemaDict};
+use crate::build_tools::{destructure_function_schema, function_name, py_err, SchemaDict};
 use crate::errors::{
     ErrorType, LocItem, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
@@ -13,18 +13,6 @@ use crate::recursion_guard::RecursionGuard;
 
 use super::generator::InternalValidator;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
-
-fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, &PyAny)> {
-    let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
-    let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
-    let func_type: &str = func_dict.get_as_req(intern!(schema.py(), "type"))?;
-    let is_field_validator = match func_type {
-        "field" => true,
-        "general" => false,
-        _ => unreachable!(),
-    };
-    Ok((is_field_validator, function))
-}
 
 macro_rules! impl_build {
     ($impl_name:ident, $name:literal) => {

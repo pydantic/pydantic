@@ -148,18 +148,22 @@ impl CombinedSerializer {
             let op_ser_type: Option<&str> = ser_schema.get_as(type_key)?;
             match op_ser_type {
                 Some("function-plain") => {
-                    // `function` is a special case, not included in `find_serializer` since it means something
-                    // different in `schema.type`
+                    // `function-plain` is a special case, not included in `find_serializer` since it means
+                    // something different in `schema.type`
+                    // NOTE! we use the `schema` here, not `ser_schema`
                     return super::type_serializers::function::FunctionPlainSerializer::build(
-                        ser_schema,
+                        schema,
                         config,
                         build_context,
                     )
                     .map_err(|err| py_error_type!("Error building `function-plain` serializer:\n  {}", err));
                 }
                 Some("function-wrap") => {
+                    // `function-wrap` is also a special case, not included in `find_serializer` since it mean
+                    // something different in `schema.type`
+                    // NOTE! we use the `schema` here, not `ser_schema`
                     return super::type_serializers::function::FunctionWrapSerializer::build(
-                        ser_schema,
+                        schema,
                         config,
                         build_context,
                     )

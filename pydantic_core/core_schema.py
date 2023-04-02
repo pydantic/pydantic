@@ -203,6 +203,7 @@ class FieldPlainSerializerFunctionSchema(TypedDict):
 
 # must match `src/serializers/ob_type.rs::ObType`
 JsonReturnTypes = Literal[
+    'none',
     'int',
     'int_subclass',
     'bool',
@@ -228,6 +229,7 @@ JsonReturnTypes = Literal[
     'dataclass',
     'model',
     'enum',
+    'path',
 ]
 
 WhenUsed = Literal['always', 'unless-none', 'json', 'json-unless-none']
@@ -333,20 +335,20 @@ class FieldWrapSerializerFunctionSchema(TypedDict):
 class WrapSerializerFunctionSerSchema(TypedDict, total=False):
     type: Required[Literal['function-wrap']]
     function: Required[Union[GeneralWrapSerializerFunctionSchema, FieldWrapSerializerFunctionSchema]]
-    schema: Required[CoreSchema]
+    schema: CoreSchema  # if ommited, the schema on which this serializer is defined is used
     json_return_type: JsonReturnTypes
     when_used: WhenUsed  # default: 'always'
 
 
 def general_wrap_serializer_function_ser_schema(
     function: GeneralWrapSerializerFunction,
-    schema: CoreSchema,
     *,
+    schema: CoreSchema | None = None,
     json_return_type: JsonReturnTypes | None = None,
     when_used: WhenUsed = 'always',
 ) -> WrapSerializerFunctionSerSchema:
     """
-    Returns a schema for serialization with a function.
+    Returns a schema for serialization with a general wrap function.
 
     Args:
         function: The function to use for serialization
@@ -368,13 +370,13 @@ def general_wrap_serializer_function_ser_schema(
 
 def field_wrap_serializer_function_ser_schema(
     function: FieldWrapSerializerFunction,
-    schema: CoreSchema,
     *,
+    schema: CoreSchema | None = None,
     json_return_type: JsonReturnTypes | None = None,
     when_used: WhenUsed = 'always',
 ) -> WrapSerializerFunctionSerSchema:
     """
-    Returns a schema to serialize a field from a model, TypedDict or dataclass.
+    Returns a schema to serialize a field from a model, TypedDict or dataclass using a wrap function.
 
     Args:
         function: The function to use for serialization

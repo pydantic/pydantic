@@ -99,6 +99,18 @@ pub fn is_strict(schema: &PyDict, config: Option<&PyDict>) -> PyResult<bool> {
     Ok(schema_or_config_same(schema, config, intern!(py, "strict"))?.unwrap_or(false))
 }
 
+pub fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, &PyAny)> {
+    let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
+    let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
+    let func_type: &str = func_dict.get_as_req(intern!(schema.py(), "type"))?;
+    let is_field_serializer = match func_type {
+        "field" => true,
+        "general" => false,
+        _ => unreachable!(),
+    };
+    Ok((is_field_serializer, function))
+}
+
 enum SchemaErrorEnum {
     Message(String),
     ValidationError(ValidationError),
