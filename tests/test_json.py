@@ -182,19 +182,27 @@ class Foobar:
         return 'Foobar.__str__'
 
 
+def fallback_func(v):
+    return f'fallback:{type(v).__name__}'
+
+
 def test_to_json():
     assert to_json([1, 2]) == b'[1,2]'
     assert to_json([1, 2], indent=2) == b'[\n  1,\n  2\n]'
     assert to_json([1, b'x']) == b'[1,"x"]'
 
+    # kwargs required
+    with pytest.raises(TypeError, match=r'to_json\(\) takes 1 positional arguments but 2 were given'):
+        to_json([1, 2], 2)
+
+
+def test_to_json_fallback():
     with pytest.raises(PydanticSerializationError, match=r'Unable to serialize unknown type: <.+\.Foobar'):
         to_json(Foobar())
 
     assert to_json(Foobar(), serialize_unknown=True) == b'"Foobar.__str__"'
-
-    # kwargs required
-    with pytest.raises(TypeError, match=r'to_json\(\) takes 1 positional arguments but 2 were given'):
-        to_json([1, 2], 2)
+    assert to_json(Foobar(), serialize_unknown=True, fallback=fallback_func) == b'"fallback:Foobar"'
+    assert to_json(Foobar(), fallback=fallback_func) == b'"fallback:Foobar"'
 
 
 def test_to_jsonable_python():
@@ -203,7 +211,77 @@ def test_to_jsonable_python():
     assert to_jsonable_python([1, b'x']) == [1, 'x']
     assert to_jsonable_python([0, 1, 2, 3, 4], exclude={1, 3}) == [0, 2, 4]
 
+
+def test_to_jsonable_python_fallback():
     with pytest.raises(PydanticSerializationError, match=r'Unable to serialize unknown type: <.+\.Foobar'):
         to_jsonable_python(Foobar())
 
     assert to_jsonable_python(Foobar(), serialize_unknown=True) == 'Foobar.__str__'
+    assert to_jsonable_python(Foobar(), serialize_unknown=True, fallback=fallback_func) == 'fallback:Foobar'
+    assert to_jsonable_python(Foobar(), fallback=fallback_func) == 'fallback:Foobar'
+
+
+def test_cycle_same():
+    def fallback_func_passthrough(obj):
+        return obj
+
+    f = Foobar()
+
+    with pytest.raises(ValueError, match=r'Circular reference detected \(id repeated\)'):
+        to_jsonable_python(f, fallback=fallback_func_passthrough)
+
+    with pytest.raises(ValueError, match=r'Circular reference detected \(id repeated\)'):
+        to_json(f, fallback=fallback_func_passthrough)
+
+
+def test_cycle_change():
+    def fallback_func_change_id(obj):
+        return Foobar()
+
+    f = Foobar()
+
+    with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
+        to_jsonable_python(f, fallback=fallback_func_change_id)
+
+    with pytest.raises(ValueError, match=r'Circular reference detected \(depth exceeded\)'):
+        to_json(f, fallback=fallback_func_change_id)
+
+
+class FoobarHash:
+    def __str__(self):
+        return 'Foobar.__str__'
+
+    def __hash__(self):
+        return 1
+
+
+def test_json_key_fallback():
+    x = {FoobarHash(): 1}
+
+    assert to_jsonable_python(x, serialize_unknown=True) == {'Foobar.__str__': 1}
+    assert to_jsonable_python(x, fallback=fallback_func) == {'fallback:FoobarHash': 1}
+    assert to_json(x, serialize_unknown=True) == b'{"Foobar.__str__":1}'
+    assert to_json(x, fallback=fallback_func) == b'{"fallback:FoobarHash":1}'
+
+
+class BadRepr:
+    def __repr__(self):
+        raise ValueError('bad repr')
+
+    def __hash__(self):
+        return 1
+
+
+def test_bad_repr():
+    b = BadRepr()
+
+    error_msg = '^Unable to serialize unknown type: <unprintable BadRepr object>$'
+    with pytest.raises(PydanticSerializationError, match=error_msg):
+        to_jsonable_python(b)
+
+    assert to_jsonable_python(b, serialize_unknown=True) == '<Unserializable BadRepr object>'
+
+    with pytest.raises(PydanticSerializationError, match=error_msg):
+        to_json(b)
+
+    assert to_json(b, serialize_unknown=True) == b'"<Unserializable BadRepr object>"'

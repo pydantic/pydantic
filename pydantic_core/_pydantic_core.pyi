@@ -1,6 +1,6 @@
 import decimal
 import sys
-from typing import Any
+from typing import Any, Callable
 
 from pydantic_core import ErrorDetails, InitErrorDetails
 from pydantic_core.core_schema import CoreConfig, CoreSchema, ErrorType
@@ -80,6 +80,7 @@ class SchemaSerializer:
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
+        fallback: 'Callable[[Any], Any] | None' = None,
     ) -> Any: ...
     def to_json(
         self,
@@ -94,6 +95,7 @@ class SchemaSerializer:
         exclude_none: bool = False,
         round_trip: bool = False,
         warnings: bool = True,
+        fallback: 'Callable[[Any], Any] | None' = None,
     ) -> bytes: ...
 
 def to_json(
@@ -107,6 +109,7 @@ def to_json(
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
     bytes_mode: Literal['utf8', 'base64'] = 'utf8',
     serialize_unknown: bool = False,
+    fallback: 'Callable[[Any], Any] | None' = None,
 ) -> bytes: ...
 def to_jsonable_python(
     value: Any,
@@ -118,6 +121,7 @@ def to_jsonable_python(
     timedelta_mode: Literal['iso8601', 'float'] = 'iso8601',
     bytes_mode: Literal['utf8', 'base64'] = 'utf8',
     serialize_unknown: bool = False,
+    fallback: 'Callable[[Any], Any] | None' = None,
 ) -> Any: ...
 
 class Url:

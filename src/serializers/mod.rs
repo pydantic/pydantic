@@ -9,8 +9,8 @@ use crate::validators::SelfValidator;
 
 use config::SerializationConfig;
 pub use errors::{PydanticSerializationError, PydanticSerializationUnexpectedValue};
-pub(crate) use extra::Extra;
-use extra::{CollectWarnings, SerMode, SerRecursionGuard};
+use extra::{CollectWarnings, SerRecursionGuard};
+pub(crate) use extra::{Extra, SerMode, SerializationState};
 pub use shared::CombinedSerializer;
 use shared::{to_json_bytes, BuildSerializer, TypeSerializer};
 
@@ -50,6 +50,9 @@ impl SchemaSerializer {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (value, *, mode = None, include = None, exclude = None, by_alias = None,
+        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = true,
+        fallback = None))]
     pub fn to_python(
         &self,
         py: Python,
@@ -63,6 +66,7 @@ impl SchemaSerializer {
         exclude_none: Option<bool>,
         round_trip: Option<bool>,
         warnings: Option<bool>,
+        fallback: Option<&PyAny>,
     ) -> PyResult<PyObject> {
         let mode: SerMode = mode.into();
         let warnings = CollectWarnings::new(warnings);
@@ -80,6 +84,7 @@ impl SchemaSerializer {
             &self.config,
             &rec_guard,
             None,
+            fallback,
         );
         let v = self.serializer.to_python(value, include, exclude, &extra)?;
         warnings.final_check(py)?;
@@ -87,6 +92,9 @@ impl SchemaSerializer {
     }
 
     #[allow(clippy::too_many_arguments)]
+    #[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = None,
+        exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = true,
+        fallback = None))]
     pub fn to_json(
         &mut self,
         py: Python,
@@ -100,6 +108,7 @@ impl SchemaSerializer {
         exclude_none: Option<bool>,
         round_trip: Option<bool>,
         warnings: Option<bool>,
+        fallback: Option<&PyAny>,
     ) -> PyResult<PyObject> {
         let warnings = CollectWarnings::new(warnings);
         let rec_guard = SerRecursionGuard::default();
@@ -116,6 +125,7 @@ impl SchemaSerializer {
             &self.config,
             &rec_guard,
             None,
+            fallback,
         );
         let bytes = to_json_bytes(
             value,
@@ -160,7 +170,7 @@ impl SchemaSerializer {
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
 #[pyo3(signature = (value, *, indent = None, include = None, exclude = None, exclude_none = false, round_trip = false,
-    timedelta_mode = None, bytes_mode = None, serialize_unknown = false))]
+    timedelta_mode = None, bytes_mode = None, serialize_unknown = false, fallback = None))]
 pub fn to_json(
     py: Python,
     value: &PyAny,
@@ -172,27 +182,20 @@ pub fn to_json(
     timedelta_mode: Option<&str>,
     bytes_mode: Option<&str>,
     serialize_unknown: Option<bool>,
+    fallback: Option<&PyAny>,
 ) -> PyResult<PyObject> {
-    let warnings = CollectWarnings::new(None);
-    let rec_guard = SerRecursionGuard::default();
-    let config = SerializationConfig::from_args(timedelta_mode, bytes_mode)?;
-    let extra = Extra::new(
+    let state = SerializationState::new(timedelta_mode, bytes_mode);
+    let extra = state.extra(
         py,
         &SerMode::Json,
-        &[],
-        None,
-        &warnings,
-        None,
-        None,
         exclude_none,
         round_trip,
-        &config,
-        &rec_guard,
         serialize_unknown,
+        fallback,
     );
     let serializer = type_serializers::any::AnySerializer::default().into();
     let bytes = to_json_bytes(value, &serializer, include, exclude, &extra, indent, 1024)?;
-    warnings.final_check(py)?;
+    state.final_check(py)?;
     let py_bytes = PyBytes::new(py, &bytes);
     Ok(py_bytes.into())
 }
@@ -200,7 +203,7 @@ pub fn to_json(
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
 #[pyo3(signature = (value, *, include = None, exclude = None, exclude_none = false, round_trip = false,
-    timedelta_mode = None, bytes_mode = None, serialize_unknown = false))]
+    timedelta_mode = None, bytes_mode = None, serialize_unknown = false, fallback = None))]
 pub fn to_jsonable_python(
     py: Python,
     value: &PyAny,
@@ -211,63 +214,18 @@ pub fn to_jsonable_python(
     timedelta_mode: Option<&str>,
     bytes_mode: Option<&str>,
     serialize_unknown: Option<bool>,
+    fallback: Option<&PyAny>,
 ) -> PyResult<PyObject> {
-    let warnings = CollectWarnings::new(None);
-    let rec_guard = SerRecursionGuard::default();
-    let config = SerializationConfig::from_args(timedelta_mode, bytes_mode)?;
-    let extra = Extra::new(
+    let state = SerializationState::new(timedelta_mode, bytes_mode);
+    let extra = state.extra(
         py,
         &SerMode::Json,
-        &[],
-        None,
-        &warnings,
-        None,
-        None,
         exclude_none,
         round_trip,
-        &config,
-        &rec_guard,
         serialize_unknown,
+        fallback,
     );
     let v = infer::infer_to_python(value, include, exclude, &extra)?;
-    warnings.final_check(py)?;
+    state.final_check(py)?;
     Ok(v)
-}
-
-/// this is ugly, but would be much better if extra could be stored in `GeneralSerializeContext`
-/// then `GeneralSerializeContext` got a `serialize_infer` method, but I couldn't get it to work
-pub(crate) struct GeneralSerializeContext {
-    warnings: CollectWarnings,
-    rec_guard: SerRecursionGuard,
-    config: SerializationConfig,
-}
-
-impl GeneralSerializeContext {
-    pub fn new() -> Self {
-        let warnings = CollectWarnings::new(None);
-        let rec_guard = SerRecursionGuard::default();
-        let config = SerializationConfig::from_args(None, None).unwrap();
-        Self {
-            warnings,
-            rec_guard,
-            config,
-        }
-    }
-
-    pub fn extra<'py>(&'py self, py: Python<'py>, serialize_unknown: bool) -> Extra<'py> {
-        Extra::new(
-            py,
-            &SerMode::Json,
-            &[],
-            None,
-            &self.warnings,
-            None,
-            None,
-            None,
-            None,
-            &self.config,
-            &self.rec_guard,
-            Some(serialize_unknown),
-        )
-    }
 }

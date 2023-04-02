@@ -6,7 +6,8 @@ use pyo3::prelude::*;
 use serde::ser;
 
 /// `UNEXPECTED_TYPE_SER` is a special prefix to denote a `PydanticSerializationUnexpectedValue` error.
-pub(super) static UNEXPECTED_TYPE_SER: &str = "__PydanticSerializationUnexpectedValue__";
+pub(super) static UNEXPECTED_TYPE_SER_MARKER: &str = "__PydanticSerializationUnexpectedValue__";
+pub(super) static SERIALIZATION_ERR_MARKER: &str = "__PydanticSerializationError__";
 
 // convert a `PyErr` or `PyDowncastError` into a serde serialization error
 pub(super) fn py_err_se_err<T: ser::Error, E: fmt::Display>(py_error: E) -> T {
@@ -16,12 +17,14 @@ pub(super) fn py_err_se_err<T: ser::Error, E: fmt::Display>(py_error: E) -> T {
 /// convert a serde serialization error into a `PyErr`
 pub(super) fn se_err_py_err(error: serde_json::Error) -> PyErr {
     let s = error.to_string();
-    if let Some(msg) = s.strip_prefix(UNEXPECTED_TYPE_SER) {
+    if let Some(msg) = s.strip_prefix(UNEXPECTED_TYPE_SER_MARKER) {
         if msg.is_empty() {
             PydanticSerializationUnexpectedValue::new_err(None)
         } else {
             PydanticSerializationUnexpectedValue::new_err(Some(msg.to_string()))
         }
+    } else if let Some(msg) = s.strip_prefix(SERIALIZATION_ERR_MARKER) {
+        PydanticSerializationError::new_err(msg.to_string())
     } else {
         let msg = format!("Error serializing to JSON: {s}");
         PydanticSerializationError::new_err(msg)
