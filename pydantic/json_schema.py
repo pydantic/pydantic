@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations as _annotations
 
 import inspect
 import math
@@ -21,13 +21,15 @@ from typing import (
     cast,
 )
 
-from pydantic_core import CoreSchema, CoreSchemaType, core_schema
+import pydantic_core
 from typing_extensions import Literal, TypedDict
 
 from ._internal import _core_metadata, _core_utils, _typing_extra, _utils
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
+    from pydantic_core import CoreSchema, CoreSchemaType, core_schema
+
     from . import ConfigDict
 
 JsonSchemaValue = Dict[str, Any]
@@ -191,7 +193,7 @@ class GenerateJsonSchema:
 
     def build_schema_type_to_method(self) -> dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]]:
         mapping: dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]] = {}
-        for key in _typing_extra.all_literal_values(CoreSchemaType):  # type: ignore[arg-type]
+        for key in _typing_extra.all_literal_values(pydantic_core.CoreSchemaType):  # type: ignore[arg-type]
             method_name = f"{key.replace('-', '_')}_schema"
             try:
                 mapping[key] = getattr(self, method_name)
@@ -487,7 +489,7 @@ class GenerateJsonSchema:
 
         try:
             encoded_default = self.encode_default(default)
-        except TypeError:
+        except pydantic_core.PydanticSerializationError:
             self.emit_warning(
                 'non-serializable-default',
                 f'Default value {default} is not JSON serializable; excluding default from JSON schema',
@@ -1074,27 +1076,7 @@ class GenerateJsonSchema:
         return self.definitions.get(self.json_to_defs_refs[json_ref])
 
     def encode_default(self, dft: Any) -> Any:
-        # TODO: Add something equivalent to pydantic_encoder to pydantic_core, and use that instead
-        from .json import pydantic_encoder
-        from .main import BaseModel
-
-        if isinstance(dft, BaseModel) or is_dataclass(dft):
-            dft = cast('dict[str, Any]', pydantic_encoder(dft))
-
-        if isinstance(dft, dict):
-            return {self.encode_default(k): self.encode_default(v) for k, v in dft.items()}
-        elif isinstance(dft, Enum):
-            return dft.value
-        elif isinstance(dft, (int, float, str)):
-            return dft
-        elif isinstance(dft, (list, tuple)):
-            t = dft.__class__
-            seq_args = (self.encode_default(v) for v in dft)
-            return t(*seq_args) if _typing_extra.is_namedtuple(t) else t(seq_args)
-        elif dft is None:
-            return None
-        else:
-            return pydantic_encoder(dft)
+        return pydantic_core.to_jsonable_python(dft)
 
     def update_with_validations(
         self, json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: dict[str, str]

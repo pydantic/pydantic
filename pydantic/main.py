@@ -782,7 +782,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.',
             DeprecationWarning,
         )
-        from .json import pydantic_encoder
+        from .deprecated.json import pydantic_encoder
 
         return json.dumps(
             cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),

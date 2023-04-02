@@ -17,7 +17,7 @@ from pydantic import BaseModel, ConfigDict, NameEmail, field_serializer
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.json import pydantic_encoder, timedelta_isoformat
+from pydantic.deprecated.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 
 try:

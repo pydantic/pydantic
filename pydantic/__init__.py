@@ -77,7 +77,6 @@ __all__ = [
     'MySQLDsn',
     'MariaDBDsn',
     'validate_email',
-    # parse
     # tools
     'parse_obj_as',
     'schema_of',
