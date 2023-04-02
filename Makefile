@@ -67,7 +67,7 @@ test-fastapi:
 	./tests/test_fastapi.sh
 
 .PHONY: all
-all: lint typecheck testcov
+all: lint typecheck-fast testcov
 
 .PHONY: clean
 clean:

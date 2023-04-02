@@ -38,7 +38,7 @@ from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMet
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from pydantic_core import CoreConfig, CoreSchema, SchemaSerializer, SchemaValidator
+    from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
     from ._internal._generate_schema import GenerateSchema
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
@@ -692,7 +692,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 'loc': ('__root__',),
                 'input': b,
             }
-            raise pydantic_core.ValidationError(cls.__name__, [error])
+            # TODO type ignore waiting for pydantic/pydantic-core#513
+            raise pydantic_core.ValidationError(cls.__name__, [error])  # type: ignore[list-item]
         return cls.model_validate(obj)
 
     @classmethod
