@@ -70,12 +70,12 @@ This has a number of big advantages:
 * **Maintainability** - we're hoping that, long term, V2 is easier to extend without the risk of introducing bugs or breaking changes.
 
 With the use of `pydantic-core`, the majority of the logic in the Pydantic library is dedicated to generating
-"pydantic core schema" &mdash; the schema used define the behaviour of `pydantic-core` validators and serializers.  
+"pydantic core schema" &mdash; the schema used define the behaviour of the new, high-performance `pydantic-core` validators and serializers.  
 
 ### Ready for experimentation
 
 * **BaseModel** - the core of validation in Pydantic V1 remains, albeit with new method names.
-* **dataclasses** - Pydantic dataclasses are improved and ready to test.
+* **Dataclasses** - Pydantic dataclasses are improved and ready to test.
 * **Serialization** - dumping/serialization/marshalling is significantly more flexible, and ready to test.
 * **strict mode** - one of the biggest additions in Pydantic V2 is strict mode, which is ready to test.
 * **JSON Schema** - generation of JSON Schema is much improved and ready to test.
