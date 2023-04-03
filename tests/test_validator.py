@@ -1,10 +1,13 @@
+import json
 import sys
 from typing import Any, Dict, ForwardRef, Generic, List, NamedTuple, Tuple, TypeVar, Union
 
 import pytest
+from pydantic_core import ValidationError
 from typing_extensions import TypeAlias, TypedDict
 
 from pydantic import AnalyzedType, BaseModel
+from pydantic.config import ConfigDict
 
 ItemType = TypeVar('ItemType')
 
@@ -92,3 +95,85 @@ def test_type_alias():
     v = AnalyzedType(MyList).validate_python
     res = v([1, '2'])
     assert res == [1, '2']
+
+
+def test_validate_python_strict() -> None:
+    class Model(TypedDict):
+        x: int
+
+    lax_validator = AnalyzedType(Model, config=ConfigDict(strict=False))
+    strict_validator = AnalyzedType(Model, config=ConfigDict(strict=True))
+
+    assert lax_validator.validate_python({'x': '1'}, strict=None) == Model(x=1)
+    assert lax_validator.validate_python({'x': '1'}, strict=False) == Model(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        lax_validator.validate_python({'x': '1'}, strict=True)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        strict_validator.validate_python({'x': '1'})
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+    assert strict_validator.validate_python({'x': '1'}, strict=False) == Model(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        strict_validator.validate_python({'x': '1'}, strict=True)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+
+def test_validate_json_strict() -> None:
+    class Model(TypedDict):
+        x: int
+
+    lax_validator = AnalyzedType(Model, config=ConfigDict(strict=False))
+    strict_validator = AnalyzedType(Model, config=ConfigDict(strict=True))
+
+    assert lax_validator.validate_json(json.dumps({'x': '1'}), strict=None) == Model(x=1)
+    assert lax_validator.validate_json(json.dumps({'x': '1'}), strict=False) == Model(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        lax_validator.validate_json(json.dumps({'x': '1'}), strict=True)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        strict_validator.validate_json(json.dumps({'x': '1'}), strict=None)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+    assert strict_validator.validate_json(json.dumps({'x': '1'}), strict=False) == Model(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        strict_validator.validate_json(json.dumps({'x': '1'}), strict=True)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+
+def test_merge_config() -> None:
+    class Model(BaseModel):
+        x: int
+        y: str
+
+        model_config = ConfigDict(strict=True, title='FooModel')
+
+    analyzed = AnalyzedType(Model, config=ConfigDict(strict=False, str_max_length=20))
+
+    # strict=False gets applied to the outer Model but not to the inner typeddict validator
+    # so we're allowed to validate a dict but `x` still must be an int
+    analyzed.validate_python({'x': 1, 'y': '2'})
+    assert analyzed.json_schema()['title'] == 'FooModel'
+    with pytest.raises(ValidationError) as exc_info:
+        analyzed.validate_python({'x': 1, 'y': 'x' * 21})
+    assert exc_info.value.errors() == [
+        {
+            'type': 'string_too_long',
+            'loc': ('y',),
+            'msg': 'String should have at most 20 characters',
+            'input': 'xxxxxxxxxxxxxxxxxxxxx',
+            'ctx': {'max_length': 20},
+        }
+    ]

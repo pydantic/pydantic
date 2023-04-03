@@ -1,3 +1,4 @@
+import json
 import platform
 import re
 import sys
@@ -1947,3 +1948,79 @@ def test_model_equality_generics():
     nested_any = GenericModel[GenericModel[Any]](x=GenericModel[Any](x=1))
     nested_int = GenericModel[GenericModel[int]](x=GenericModel[int](x=1))
     assert nested_any == nested_int
+
+
+def test_model_validate_strict() -> None:
+    class LaxModel(BaseModel):
+        x: int
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        x: int
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel.model_validate({'x': '1'}, strict=None) == LaxModel(x=1)
+    assert LaxModel.model_validate({'x': '1'}, strict=False) == LaxModel(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        LaxModel.model_validate({'x': '1'}, strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'model_class_type',
+            'loc': (),
+            'msg': 'Input should be an instance of LaxModel',
+            'input': {'x': '1'},
+            'ctx': {'class_name': 'LaxModel'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel.model_validate({'x': '1'})
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+    assert StrictModel.model_validate({'x': '1'}, strict=False) == StrictModel(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        LaxModel.model_validate({'x': '1'}, strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'model_class_type',
+            'loc': (),
+            'msg': 'Input should be an instance of LaxModel',
+            'input': {'x': '1'},
+            'ctx': {'class_name': 'LaxModel'},
+        }
+    ]
+
+
+def test_model_validate_json_strict() -> None:
+    class LaxModel(BaseModel):
+        x: int
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        x: int
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel.model_validate_json(json.dumps({'x': '1'}), strict=None) == LaxModel(x=1)
+    assert LaxModel.model_validate_json(json.dumps({'x': '1'}), strict=False) == LaxModel(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        LaxModel.model_validate_json(json.dumps({'x': '1'}), strict=True)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel.model_validate_json(json.dumps({'x': '1'}), strict=None)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+    assert StrictModel.model_validate_json(json.dumps({'x': '1'}), strict=False) == StrictModel(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel.model_validate_json(json.dumps({'x': '1'}), strict=True)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
