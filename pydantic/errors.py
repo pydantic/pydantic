@@ -6,12 +6,13 @@ from typing_extensions import Literal
 
 __all__ = (
     'PydanticUserError',
-    'PydanticSchemaGenerationError',
     'PydanticUndefinedAnnotation',
+    'PydanticSchemaGenerationError',
     'PydanticInvalidForJsonSchema',
 )
 
-PYDANTIC_INTERNAL_DOCS_URL = 'https://docs.pydantic.dev/errors'
+# TODO set up a cloudflare worker to redirect to the correct page
+PYDANTIC_INTERNAL_DOCS_URL = 'https://e.pydantic.dev/d/'
 PydanticErrorCodes = Literal[
     'decorator-missing-field',
     'dataclass-not-fully-defined',
@@ -31,6 +32,15 @@ PydanticErrorCodes = Literal[
     'schema-for-unknown-type',
     'create-model-field-definitions',
     'create-model-config-base',
+    'validator-no-fields',
+    'validator-invalid-fields',
+    'validator-instance-method',
+    'root-validator-pre-skip',
+    'model-serializer-instance-method',
+    'validator-field-config-info',
+    'validator-v1-signature',
+    'field-serializer-signature',
+    'model-serializer-signature',
 ]
 
 
@@ -47,7 +57,7 @@ class PydanticErrorMixin:
         if self.code is None:
             return self.message
         else:
-            return f'{self.message}\n\nFor more information see {PYDANTIC_INTERNAL_DOCS_URL}#{self.code}'
+            return f'{self.message}\n\nFor more information see {PYDANTIC_INTERNAL_DOCS_URL}{self.code}'
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):

@@ -187,7 +187,8 @@ def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, 
 def test_error_codes():
     error_text = (DOCS_ROOT / 'usage/errors.md').read_text()
 
-    documented_error_codes = set(re.findall(r'^## .+ \{#(.+?)}$', error_text, flags=re.MULTILINE))
+    code_error_codes = PydanticErrorCodes.__args__
 
-    code_error_codes = set(PydanticErrorCodes.__args__)
+    documented_error_codes = tuple(re.findall(r'^## .+ \{#(.+?)}$', error_text, flags=re.MULTILINE))
+
     assert code_error_codes == documented_error_codes, 'Error codes in code and docs do not match'

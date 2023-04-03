@@ -137,7 +137,7 @@ def test_serialize_valid_signatures():
 
 
 def test_invalid_signature_no_params() -> None:
-    with pytest.raises(TypeError, match='Unrecognized serializer signature'):
+    with pytest.raises(TypeError, match='Unrecognized field_serializer signature'):
 
         class _(BaseModel):
             x: int
@@ -149,7 +149,7 @@ def test_invalid_signature_no_params() -> None:
 
 
 def test_invalid_signature_single_params() -> None:
-    with pytest.raises(TypeError, match='Unrecognized serializer signature'):
+    with pytest.raises(TypeError, match='Unrecognized field_serializer signature'):
 
         class _(BaseModel):
             x: int
@@ -161,7 +161,7 @@ def test_invalid_signature_single_params() -> None:
 
 
 def test_invalid_signature_too_many_params_1() -> None:
-    with pytest.raises(TypeError, match='Unrecognized serializer signature'):
+    with pytest.raises(TypeError, match='Unrecognized field_serializer signature'):
 
         class _(BaseModel):
             x: int
@@ -173,7 +173,7 @@ def test_invalid_signature_too_many_params_1() -> None:
 
 
 def test_invalid_signature_too_many_params_2() -> None:
-    with pytest.raises(TypeError, match='Unrecognized serializer signature'):
+    with pytest.raises(TypeError, match='Unrecognized field_serializer signature'):
 
         class _(BaseModel):
             x: int
@@ -186,7 +186,7 @@ def test_invalid_signature_too_many_params_2() -> None:
 
 
 def test_invalid_signature_bad_plain_signature() -> None:
-    with pytest.raises(TypeError, match='Unrecognized serializer signature for'):
+    with pytest.raises(TypeError, match='Unrecognized field_serializer signature for'):
 
         class _(BaseModel):
             x: int
@@ -362,7 +362,10 @@ def test_model_serializer_plain_json_return_type():
 
 
 def test_model_serializer_wrong_args():
-    m = r'Unrecognized serializer signature for ' r'<.+MyModel._serialize at 0x\w+> with `mode=plain`:\(self, x, y, z\)'
+    m = (
+        r'Unrecognized model_serializer signature for '
+        r'<.+MyModel._serialize at 0x\w+> with `mode=plain`:\(self, x, y, z\)'
+    )
     with pytest.raises(TypeError, match=m):
 
         class MyModel(BaseModel):
