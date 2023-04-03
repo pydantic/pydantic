@@ -5,7 +5,7 @@ from typing import Dict, List
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, root_validator
+from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, model_serializer, root_validator
 
 
 def deprecated_from_orm(model_type, obj):
@@ -62,7 +62,6 @@ def test_getdict():
     assert repr(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_from_attributes_root():
     class PokemonCls:
         def __init__(self, *, en_name: str, jp_name: str):
@@ -75,24 +74,55 @@ def test_from_attributes_root():
         jp_name: str
 
     class PokemonList(BaseModel):
-        __root__: List[Pokemon]
+        root: List[Pokemon]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer
+        def _serialize(self, info):
+            if info.mode == 'json':
+                return self.root
+            return self.__dict__
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
+
         model_config = ConfigDict(from_attributes=True)
 
     pika = PokemonCls(en_name='Pikachu', jp_name='ピカチュウ')
     bulbi = PokemonCls(en_name='Bulbasaur', jp_name='フシギダネ')
 
     pokemons = deprecated_from_orm(PokemonList, [pika, bulbi])
-    assert pokemons.__root__ == [
+    assert pokemons.root == [
         Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
         Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
     ]
 
     class PokemonDict(BaseModel):
-        __root__: Dict[str, Pokemon]
+        root: Dict[str, Pokemon]
         model_config = ConfigDict(from_attributes=True)
 
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer
+        def _serialize(self, info):
+            if info.mode == 'json':
+                return self.root
+            return self.__dict__
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
+
     pokemons = deprecated_from_orm(PokemonDict, {'pika': pika, 'bulbi': bulbi})
-    assert pokemons.__root__ == {
+    assert pokemons.root == {
         'pika': Pokemon(en_name='Pikachu', jp_name='ピカチュウ'),
         'bulbi': Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
     }
