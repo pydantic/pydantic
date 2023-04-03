@@ -4,6 +4,8 @@ import json
 import warnings
 from typing import Any, Callable, Type, TypeVar, Union
 
+from pydantic.config import ConfigDict
+
 from . import AnalyzedType
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
@@ -36,13 +38,14 @@ def schema_of(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
-    if title is not None:  # pragma: no cover
+    if not isinstance(title, (str, type(None))):  # pragma: no cover
         warnings.warn(
             'The type_name parameter is deprecated. parse_obj_as no longer creates temporary models',
             DeprecationWarning,
             stacklevel=2,
         )
-    return AnalyzedType(type_).json_schema(
+    config = ConfigDict(title=title)  # type: ignore[typeddict-item]
+    return AnalyzedType(type_, config=config).json_schema(
         by_alias=by_alias,
         schema_generator=schema_generator,
         ref_template=ref_template,
