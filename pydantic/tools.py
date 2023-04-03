@@ -38,7 +38,7 @@ def schema_of(
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
     if not isinstance(title, (str, type(None))):  # pragma: no cover
         warnings.warn(
-            'The type_name parameter is deprecated. parse_obj_as no longer creates temporary models',
+            'Passing a callable for the `title` parameter is deprecated and no longer supported',
             DeprecationWarning,
             stacklevel=2,
         )
