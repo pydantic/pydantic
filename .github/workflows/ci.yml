@@ -348,9 +348,10 @@ jobs:
       - name: install
         run: pip install -U twine build packaging
 
-      - name: check tag
-        id: check-tag
-        run: ./tests/check_tag.py
+      - name: check GITHUB_REF matches package version
+        uses: samuelcolvin/check-python-version@v3
+        with:
+          version_file_path: pydantic/version.py
 
       - name: build
         run: python -m build
