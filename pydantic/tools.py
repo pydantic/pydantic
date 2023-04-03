@@ -36,19 +36,21 @@ def schema_of(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
     """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
-    if not isinstance(title, (str, type(None))):  # pragma: no cover
-        warnings.warn(
-            'Passing a callable for the `title` parameter is deprecated and no longer supported',
-            DeprecationWarning,
-            stacklevel=2,
-        )
     res = AnalyzedType(type_).json_schema(
         by_alias=by_alias,
         schema_generator=schema_generator,
         ref_template=ref_template,
     )
-    if title:
-        res['title'] = title
+    if title is not None:
+        warnings.warn(
+            'Passing a callable for the `title` parameter is deprecated and no longer supported',
+            DeprecationWarning,
+            stacklevel=2,
+        )
+        if isinstance(title, str):
+            res['title'] = title
+        else:
+            res['title'] = title(type_)
     return res
 
 
