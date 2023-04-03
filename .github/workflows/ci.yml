@@ -73,7 +73,7 @@ jobs:
       run: pip install -r requirements/docs.txt
 
     - run: python -c 'import docs.plugins.main'
-    - run: mkdocs build --verbose --broken
+    - run: mkdocs build --verbose
 
     - name: Store docs site
       uses: actions/upload-artifact@v3
@@ -121,20 +121,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu]
-        python-version: ['3.10']
-#        os: [ubuntu, macos, windows]
-#        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-#        include:
-#          # no pydantic-core binaries for pypy on windows, so tests take absolute ages
-#          # macos tests with pypy take ages (>10mins) since pypy is very slow
-#          # so we only test pypy on ubuntu
-#          - os: ubuntu
-#            python-version: 'pypy3.7'
-#          - os: ubuntu
-#            python-version: 'pypy3.8'
-#          - os: ubuntu
-#            python-version: 'pypy3.9'
+        os: [ubuntu, macos, windows]
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        include:
+          # no pydantic-core binaries for pypy on windows, so tests take absolute ages
+          # macos tests with pypy take ages (>10mins) since pypy is very slow
+          # so we only test pypy on ubuntu
+          - os: ubuntu
+            python-version: 'pypy3.7'
+          - os: ubuntu
+            python-version: 'pypy3.8'
+          - os: ubuntu
+            python-version: 'pypy3.9'
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -313,11 +311,11 @@ jobs:
       result: ${{ steps.all-green.outputs.result }}
 
     needs:
-#      - lint
+      - lint
       - docs-build
-#      - test
-#      - test-memray
-#      - test-mypy
+      - test
+      - test-memray
+      - test-mypy
       - test-fastapi
 
     runs-on: ubuntu-latest
@@ -332,10 +330,9 @@ jobs:
 
   deploy:
     name: Deploy
-    needs:
-      - check
-#    if: "needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')"
-    if: "always() && needs.check.outputs.result == 'success'"
+    needs: [check]
+    # `always()` is required to trigger this task even though test-fastapi is skipped
+    if: "always() && needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
     steps:
@@ -355,10 +352,10 @@ jobs:
       - name: install
         run: pip install -U twine build packaging
 
-#      - name: check GITHUB_REF matches package version
-#        uses: samuelcolvin/check-python-version@v3
-#        with:
-#          version_file_path: pydantic/version.py
+      - name: check GITHUB_REF matches package version
+        uses: samuelcolvin/check-python-version@v3
+        with:
+          version_file_path: pydantic/version.py
 
       - name: build
         run: python -m build
@@ -366,17 +363,17 @@ jobs:
       - run: ls -lh dist
       - run: twine check dist/*
 
-#      - name: upload to pypi
-#        run: twine upload dist/*
-#        env:
-#          TWINE_USERNAME: __token__
-#          TWINE_PASSWORD: ${{ secrets.pypi_token }}
-#
-#      - name: publish docs
-#        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
-#        uses: cloudflare/wrangler-action@2.0.0
-#        with:
-#          apiToken: ${{ secrets.cloudflare_api_token }}
-#          command: pages publish --project-name=pydantic-docs --branch=main site
-#        env:
-#          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
+      - name: upload to pypi
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+
+      - name: publish docs
+        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.cloudflare_api_token }}
+          command: pages publish --project-name=pydantic-docs --branch=main site
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
