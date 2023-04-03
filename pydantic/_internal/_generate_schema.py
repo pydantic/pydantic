@@ -1110,7 +1110,7 @@ def apply_single_annotation(  # noqa C901
         return schema
 
     handler = CoreMetadataHandler(schema)
-    update_schema_function = handler.cs_update_function
+    update_schema_function = handler.metadata.get('pydantic_cs_update_function')
     if update_schema_function is not None:
         new_schema = update_schema_function(schema, **metadata_dict)
         if new_schema is not None:
