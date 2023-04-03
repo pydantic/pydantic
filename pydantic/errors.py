@@ -4,6 +4,8 @@ import re
 
 from typing_extensions import Literal
 
+from .version import VERSION
+
 __all__ = (
     'PydanticUserError',
     'PydanticUndefinedAnnotation',
@@ -12,7 +14,7 @@ __all__ = (
 )
 
 # TODO set up a cloudflare worker to redirect to the correct page
-PYDANTIC_INTERNAL_DOCS_URL = 'https://e.pydantic.dev/d/'
+DEV_ERROR_DOCS_URL = f'https://e.pydantic.dev/{VERSION}/d/'
 PydanticErrorCodes = Literal[
     'decorator-missing-field',
     'dataclass-not-fully-defined',
@@ -57,7 +59,7 @@ class PydanticErrorMixin:
         if self.code is None:
             return self.message
         else:
-            return f'{self.message}\n\nFor more information see {PYDANTIC_INTERNAL_DOCS_URL}{self.code}'
+            return f'{self.message}\n\nFor more information see {DEV_ERROR_DOCS_URL}{self.code}'
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
