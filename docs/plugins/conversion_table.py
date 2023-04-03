@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
-from typing import Any, Literal
+from typing import Any, Literal, Mapping
 
 from pydantic_core import CoreSchema, core_schema
 
@@ -56,8 +56,16 @@ table: list[Row] = [
     Row(
         bytes,
         str,
+        'strict',
+        'JSON',
+        valid_examples=['foo'],
+        core_schema=core_schema.BytesSchema,
+    ),
+    Row(
+        bytes,
+        str,
         'lax',
-        'python & JSON',
+        'python',
         valid_examples=['foo'],
         core_schema=core_schema.BytesSchema,
     ),
@@ -262,8 +270,18 @@ table: list[Row] = [
     Row(
         date,
         str,
+        'strict',
+        'JSON',
+        condition='format `YYYY-MM-DD`',
+        valid_examples=['2017-05-05'],
+        invalid_examples=['2017-5-5', '2017/05/05'],
+        core_schema=core_schema.DateSchema,
+    ),
+    Row(
+        date,
+        str,
         'lax',
-        'python & JSON',
+        'python',
         condition='format `YYYY-MM-DD`',
         valid_examples=['2017-05-05'],
         invalid_examples=['2017-5-5', '2017/05/05'],
@@ -336,8 +354,18 @@ table: list[Row] = [
     Row(
         datetime,
         str,
+        'strict',
+        'JSON',
+        condition='format YYYY-MM-DDTHH:MM:SS.f etc. see [speedate](https://docs.rs/speedate/latest/speedate/)',
+        valid_examples=['2017-05-05 10:10:10', '2017-05-05T10:10:10.0002', '2017-05-05 10:10:10+00:00'],
+        invalid_examples=['2017-5-5T10:10:10'],
+        core_schema=core_schema.DatetimeSchema,
+    ),
+    Row(
+        datetime,
+        str,
         'lax',
-        'python & JSON',
+        'python',
         condition='format YYYY-MM-DDTHH:MM:SS.f etc. see [speedate](https://docs.rs/speedate/latest/speedate/)',
         valid_examples=['2017-05-05 10:10:10', '2017-05-05T10:10:10.0002', '2017-05-05 10:10:10+00:00'],
         invalid_examples=['2017-5-5T10:10:10'],
@@ -392,8 +420,18 @@ table: list[Row] = [
     Row(
         time,
         str,
+        'strict',
+        'JSON',
+        condition='format HH:MM:SS.FFFFFF etc. see [speedate](https://docs.rs/speedate/latest/speedate/)',
+        valid_examples=['10:10:10.0002'],
+        invalid_examples=['1:1:1'],
+        core_schema=core_schema.TimeSchema,
+    ),
+    Row(
+        time,
+        str,
         'lax',
-        'python & JSON',
+        'python',
         condition='format HH:MM:SS.FFFFFF etc. see [speedate](https://docs.rs/speedate/latest/speedate/)',
         valid_examples=['10:10:10.0002'],
         invalid_examples=['1:1:1'],
@@ -449,8 +487,18 @@ table: list[Row] = [
     Row(
         timedelta,
         str,
+        'strict',
+        'JSON',
+        condition='format ISO8601 etc. see [speedate](https://docs.rs/speedate/latest/speedate/)',
+        valid_examples=['1 days 10:10', '1 d 10:10'],
+        invalid_examples=['1 10:10'],
+        core_schema=core_schema.TimedeltaSchema,
+    ),
+    Row(
+        timedelta,
+        str,
         'lax',
-        'python & JSON',
+        'python',
         condition='format ISO8601 etc. see [speedate](https://docs.rs/speedate/latest/speedate/)',
         valid_examples=['1 days 10:10', '1 d 10:10'],
         invalid_examples=['1 10:10'],
@@ -492,5 +540,29 @@ table: list[Row] = [
         condition='interpreted as seconds',
         valid_examples=[Decimal(123_000.0002)],
         core_schema=core_schema.TimedeltaSchema,
+    ),
+    Row(
+        dict,
+        dict,
+        'strict',
+        'python',
+        core_schema=core_schema.DictSchema,
+    ),
+    Row(
+        dict,
+        dict,
+        'strict',
+        'JSON',
+        valid_examples=['{"v": {"1": 1, "2": 2}}'],
+        core_schema=core_schema.DictSchema,
+    ),
+    Row(
+        dict,
+        Mapping,
+        'lax',
+        'python',
+        condition='must implement the mapping interface and have an `items()` method',
+        valid_examples=[],
+        core_schema=core_schema.DictSchema,
     ),
 ]
