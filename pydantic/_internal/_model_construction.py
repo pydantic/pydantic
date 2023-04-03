@@ -9,7 +9,7 @@ from typing import Any, Callable
 
 from pydantic_core import SchemaSerializer, SchemaValidator
 
-from ..errors import PydanticUndefinedAnnotation, PydanticUserError
+from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._decorators import PydanticDecoratorMarker
 from ._fields import Undefined, collect_fields
@@ -100,14 +100,18 @@ def inspect_namespace(  # noqa C901
                 raise PydanticUserError(
                     f'Field {var_name!r} defined on a base class was overridden by a non-annotated attribute. '
                     f'All field definitions, including overrides, require a type annotation.',
+                    code='model-field-overridden',
                 )
             elif isinstance(value, FieldInfo):
-                raise PydanticUserError(f'Field {var_name!r} requires a type annotation')
+                raise PydanticUserError(
+                    f'Field {var_name!r} requires a type annotation', code='model-field-missing-annotation'
+                )
             else:
                 raise PydanticUserError(
                     f'A non-annotated attribute was detected: `{var_name} = {value!r}`. All model fields require a '
-                    f'type annotation; if {var_name!r} is not meant to be a field, you may be able to resolve this '
-                    f'error by annotating it as a ClassVar or updating model_config["ignored_types"].',
+                    f'type annotation; if `{var_name}` is not meant to be a field, you may be able to resolve this '
+                    f'error by annotating it as a `ClassVar` or updating `model_config["ignored_types"]`.',
+                    code='model-field-missing-annotation',
                 )
 
     for ann_name, ann_type in raw_annotations.items():
@@ -179,7 +183,9 @@ def complete_model_class(
             f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call `{cls_name}.model_rebuild()` '
             f'before the first `{cls_name}` instance is created.'
         )
-        cls.__pydantic_validator__ = MockValidator(usage_warning_string)  # type: ignore[assignment]
+        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
+            usage_warning_string, code='model-not-fully-defined'
+        )
         return False
 
     core_config = generate_config(cls.model_config, cls)
@@ -270,16 +276,17 @@ class MockValidator:
     Mocker for `pydantic_core.SchemaValidator` which just raises an error when one of its methods is accessed.
     """
 
-    __slots__ = ('_error_message',)
+    __slots__ = '_error_message', '_code'
 
-    def __init__(self, error_message: str) -> None:
+    def __init__(self, error_message: str, *, code: PydanticErrorCodes) -> None:
         self._error_message = error_message
+        self._code = code
 
     def __getattr__(self, item: str) -> None:
         __tracebackhide__ = True
         # raise an AttributeError if `item` doesn't exist
         getattr(SchemaValidator, item)
-        raise PydanticUserError(self._error_message)
+        raise PydanticUserError(self._error_message, code=self._code)
 
 
 def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> None:

@@ -67,8 +67,8 @@ def test_typeddict_all(TypedDictAll):
         class M(BaseModel):
             d: MyDict
 
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
+    except PydanticUserError as e:
+        assert e.message == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
     else:
         assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 

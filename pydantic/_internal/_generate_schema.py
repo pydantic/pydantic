@@ -85,7 +85,8 @@ def check_decorator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields
             if field not in fields:
                 raise PydanticUserError(
                     f'Validators defined with incorrect fields: {dec.unwrapped_func.__name__}'
-                    " (use check_fields=False if you're inheriting from the model and intended this)"
+                    " (use check_fields=False if you're inheriting from the model and intended this)",
+                    code='decorator-missing-field',
                 )
 
 
@@ -601,7 +602,8 @@ class GenerateSchema:
 
         if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
             raise PydanticUserError(
-                'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
+                'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.',
+                code='typed-dict-version',
             )
 
         required_keys: frozenset[str] = typed_dict_cls.__required_keys__

@@ -295,7 +295,9 @@ class _ApplyInferredDiscriminator:
         source = 'TypedDict' if source_name is None else f'Model {source_name!r}'
         field = choice['fields'].get(self.discriminator)
         if field is None:
-            raise PydanticUserError(f'{source} needs a discriminator field for key {self.discriminator!r}')
+            raise PydanticUserError(
+                f'{source} needs a discriminator field for key {self.discriminator!r}', code='discriminator-no-field'
+            )
         return self._infer_discriminator_values_for_field(field, source)
 
     def _infer_discriminator_values_for_dataclass_choice(
@@ -306,7 +308,9 @@ class _ApplyInferredDiscriminator:
             if field['name'] == self.discriminator:
                 break
         else:
-            raise PydanticUserError(f'{source} needs a discriminator field for key {self.discriminator!r}')
+            raise PydanticUserError(
+                f'{source} needs a discriminator field for key {self.discriminator!r}', code='discriminator-no-field'
+            )
         return self._infer_discriminator_values_for_field(field, source)
 
     def _infer_discriminator_values_for_field(
@@ -314,13 +318,16 @@ class _ApplyInferredDiscriminator:
     ) -> list[str | int]:
         alias = field.get('validation_alias', self.discriminator)
         if not isinstance(alias, str):
-            raise TypeError(f'Alias {alias!r} is not supported in a discriminated union')
+            raise PydanticUserError(
+                f'Alias {alias!r} is not supported in a discriminated union', code='discriminator-alias-type'
+            )
         if self._discriminator_alias is None:
             self._discriminator_alias = alias
         elif self._discriminator_alias != alias:
             raise PydanticUserError(
                 f'Aliases for discriminator {self.discriminator!r} must be the same '
-                f'(got {alias}, {self._discriminator_alias})'
+                f'(got {alias}, {self._discriminator_alias})',
+                code='discriminator-alias',
             )
         return self._infer_discriminator_values_for_inner_schema(field['schema'], source)
 
@@ -356,7 +363,10 @@ class _ApplyInferredDiscriminator:
             return self._infer_discriminator_values_for_inner_schema(schema['schema'], source)
 
         else:
-            raise PydanticUserError(f'{source} needs field {self.discriminator!r} to be of type `Literal`')
+            raise PydanticUserError(
+                f'{source} needs field {self.discriminator!r} to be of type `Literal`',
+                code='discriminator-needs-literal',
+            )
 
     def _set_unique_choice_for_values(self, choice: core_schema.CoreSchema, values: Sequence[str | int]) -> None:
         """

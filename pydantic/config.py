@@ -240,7 +240,7 @@ def build_config(
     config_dict_from_namespace = namespace.get('model_config')
 
     if config_class_from_namespace and config_dict_from_namespace:
-        raise PydanticUserError('"Config" and "model_config" cannot be used together')
+        raise PydanticUserError('"Config" and "model_config" cannot be used together', code='config-both')
 
     config_from_namespace = config_dict_from_namespace or get_config(config_class_from_namespace)
 
