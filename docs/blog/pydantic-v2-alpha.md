@@ -111,8 +111,11 @@ a full migration guide, but for now the following pointers should be some help w
   as long as you've set `from_attributes=True` in the model config.
 * The `__eq__` method has changed for models; models are no longer considered equal to the dicts.
 * Custom `__init__` overrides won't be called. This should be replaced with a `@root_validator`.
-* Support for `__root__` models has been removed. However, you can effectively achieve something equivalent through the use of 
-  `@root_validator`, `@model_serializer`, and `__pydantic_modify_json_schema__`. More details will be available soon.
+* Due to inconsistency with the rest of the library, we have removed the special behavior of models
+  using the `__root__` field, and have disallowed the use of an attribute with this name to prevent confusion.
+  However, you can achieve equivalent behavior with a "standard" field name through the use of `@root_validator`,
+  `@model_serializer`, and `__pydantic_modify_json_schema__`. You can see an example of this
+  [here](https://github.com/pydantic/pydantic/blob/2b9459f20d094a46fa3093b43c34444240f03646/tests/test_parse.py#L95-L113).
 
 ### Changes to Pydantic Dataclasses
 
