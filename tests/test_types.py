@@ -1161,7 +1161,6 @@ def test_int_enum_type():
     [
         ({'max_length': 5}, int),
         ({'min_length': 2}, float),
-        ({'frozen': True}, bool),
         ({'pattern': '^foo$'}, int),
         ({'gt': 2}, str),
         ({'lt': 5}, bytes),

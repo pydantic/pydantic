@@ -1496,7 +1496,6 @@ def test_base_config_type_hinting():
     get_type_hints(type(M.model_config))
 
 
-@pytest.mark.xfail(reason='frozen field; https://github.com/pydantic/pydantic-core/pull/237')
 def test_frozen_field():
     """assigning a frozen=True field should raise a TypeError"""
 
@@ -1510,8 +1509,9 @@ def test_frozen_field():
     r.val = 101
     assert r.val == 101
     assert r.id == 1
-    with pytest.raises(TypeError, match='"id" has frozen set to True and cannot be assigned'):
+    with pytest.raises(ValidationError) as exc_info:
         r.id = 2
+    assert exc_info.value.errors() == [{'input': 2, 'loc': ('id',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
 
 
 def test_repr_field():

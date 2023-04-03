@@ -466,6 +466,7 @@ class GenerateSchema:
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
+            frozen=common_field['frozen'],
             metadata=common_field['metadata'],
         )
 
@@ -487,6 +488,7 @@ class GenerateSchema:
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
+            frozen=common_field['frozen'],
             metadata=common_field['metadata'],
         )
 
@@ -497,7 +499,7 @@ class GenerateSchema:
 
         if field_info.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator, self.definitions)
-        schema = apply_annotations(schema, field_info.metadata, self.definitions)
+        schema, field_annotations = apply_annotations(schema, field_info.metadata, self.definitions)
 
         # TODO: remove this V1 compatibility shim once it's deprecated
         # push down any `each_item=True` validators
@@ -537,6 +539,7 @@ class GenerateSchema:
             validation_alias=field_info.alias,
             serialization_alias=field_info.alias,
             metadata=metadata,
+            frozen=field_annotations.get('frozen'),
         )
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
@@ -567,7 +570,8 @@ class GenerateSchema:
         """
         first_arg, *other_args = get_args(annotated_type)
         schema = self.generate_schema(first_arg)
-        return apply_annotations(schema, other_args, self.definitions)
+        schema, _ = apply_annotations(schema, other_args, self.definitions)
+        return schema
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -673,7 +677,7 @@ class GenerateSchema:
         field = FieldInfo.from_annotation(annotation)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = self.generate_schema(field.annotation)
-        schema = apply_annotations(schema, field.metadata, self.definitions)
+        schema, _ = apply_annotations(schema, field.metadata, self.definitions)
 
         parameter_schema = core_schema.arguments_parameter(name, schema)
         if mode is not None:
@@ -1048,45 +1052,54 @@ def apply_model_serializers(
     return schema
 
 
+class _FieldAnnotations(TypedDict, total=False):
+    frozen: bool | None
+
+
 def apply_annotations(
     schema: core_schema.CoreSchema, annotations: typing.Iterable[Any], definitions: dict[str, core_schema.CoreSchema]
-) -> core_schema.CoreSchema:
+) -> tuple[core_schema.CoreSchema, _FieldAnnotations]:
     """
     Apply arguments from `Annotated` or from `FieldInfo` to a schema.
     """
+    field_annotations = _FieldAnnotations()
     handler = CoreMetadataHandler(schema)
     for metadata in annotations:
-        schema = apply_single_annotation(schema, metadata, definitions)
+        schema, field_single_annotations = apply_single_annotation(schema, metadata, definitions)
+        field_annotations.update(field_single_annotations)
 
         metadata_modify_js_function = _get_pydantic_modify_json_schema(metadata)
         handler.combine_modify_js_functions(metadata_modify_js_function)
 
-    return schema
+    return schema, field_annotations
+
+
+_FIELD_SPECIFIC_ANNOTATIONS = {'frozen'}
 
 
 def apply_single_annotation(  # noqa C901
     schema: core_schema.CoreSchema, metadata: Any, definitions: dict[str, core_schema.CoreSchema]
-) -> core_schema.CoreSchema:
+) -> tuple[core_schema.CoreSchema, _FieldAnnotations]:
     if metadata is None:
-        return schema
+        return schema, _FieldAnnotations()
 
     metadata_schema = getattr(metadata, '__pydantic_core_schema__', None)
     if metadata_schema is not None:
-        return metadata_schema
+        return metadata_schema, _FieldAnnotations()
 
     metadata_get_schema = getattr(metadata, '__get_pydantic_core_schema__', None)
     if metadata_get_schema is not None:
-        return metadata_get_schema(schema)
+        return metadata_get_schema(schema), _FieldAnnotations()
 
     if isinstance(metadata, GroupedMetadata):
         # GroupedMetadata yields `BaseMetadata`s
         return apply_annotations(schema, metadata, definitions)
     elif isinstance(metadata, FieldInfo):
-        schema = apply_annotations(schema, metadata.metadata, definitions)
+        schema, field_annotations = apply_annotations(schema, metadata.metadata, definitions)
         if metadata.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator, definitions)
         # TODO setting a default here needs to be tested
-        return wrap_default(metadata, schema)
+        return wrap_default(metadata, schema), field_annotations
 
     if isinstance(metadata, PydanticGeneralMetadata):
         metadata_dict = metadata.__dict__
@@ -1100,12 +1113,17 @@ def apply_single_annotation(  # noqa C901
         # PEP 593: "If a library (or tool) encounters a typehint Annotated[T, x] and has no
         # special logic for metadata x, it should ignore it and simply treat the type as T."
         # Allow, but ignore, any unknown metadata.
-        return schema
+        return schema, _FieldAnnotations()
 
     # TODO we need a way to remove metadata which this line currently prevents
     metadata_dict = {k: v for k, v in metadata_dict.items() if v is not None}
+
+    # Distribute annotations to the field vs. wrapped schema as appropriate:
+    frozen = metadata_dict.pop('frozen', None)
+    field_annotations = _FieldAnnotations(frozen=frozen)
+
     if not metadata_dict:
-        return schema
+        return schema, field_annotations
 
     handler = CoreMetadataHandler(schema)
     update_schema_function = handler.update_cs_function
@@ -1126,7 +1144,7 @@ def apply_single_annotation(  # noqa C901
             # TODO: Generate an easier-to-understand ValueError here saying the field constraints are not enforced
             # The relevant test is: `tests.test_schema.test_unenforced_constraints_schema
             raise e
-    return schema
+    return schema, field_annotations
 
 
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
@@ -1170,6 +1188,7 @@ class _CommonField(TypedDict):
     validation_alias: str | list[str | int] | list[list[str | int]] | None
     serialization_alias: str | None
     serialization_exclude: bool | None
+    frozen: bool | None
     metadata: Any
 
 
@@ -1179,6 +1198,7 @@ def _common_field(
     validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
+    frozen: bool | None = None,
     metadata: Any = None,
 ) -> _CommonField:
     return {
@@ -1186,5 +1206,6 @@ def _common_field(
         'validation_alias': validation_alias,
         'serialization_alias': serialization_alias,
         'serialization_exclude': serialization_exclude,
+        'frozen': frozen,
         'metadata': metadata,
     }

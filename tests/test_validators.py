@@ -1488,17 +1488,14 @@ def test_nested_literal_validator():
     ]
 
 
-# TODO: this test fails because our union schema
-# doesn't accept `frozen` as an argument
-# Do we need to add `frozen` to every schema?
-@pytest.mark.xfail(reason='frozen field')
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
         x: Union[Literal[42], Literal['pika']] = Field(frozen=True)
 
     m = Model(x=42)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError) as exc_info:
         m.x += 1
+    assert exc_info.value.errors() == [{'input': 43, 'loc': ('x',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
 
 
 def test_field_that_is_being_validated_is_excluded_from_validator_values():
