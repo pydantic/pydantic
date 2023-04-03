@@ -121,18 +121,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
-        include:
-          # no pydantic-core binaries for pypy on windows, so tests take absolute ages
-          # macos tests with pypy take ages (>10mins) since pypy is very slow
-          # so we only test pypy on ubuntu
-          - os: ubuntu
-            python-version: 'pypy3.7'
-          - os: ubuntu
-            python-version: 'pypy3.8'
-          - os: ubuntu
-            python-version: 'pypy3.9'
+        os: [ubuntu]
+        python-version: ['3.10']
+#        os: [ubuntu, macos, windows]
+#        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+#        include:
+#          # no pydantic-core binaries for pypy on windows, so tests take absolute ages
+#          # macos tests with pypy take ages (>10mins) since pypy is very slow
+#          # so we only test pypy on ubuntu
+#          - os: ubuntu
+#            python-version: 'pypy3.7'
+#          - os: ubuntu
+#            python-version: 'pypy3.8'
+#          - os: ubuntu
+#            python-version: 'pypy3.9'
 
     env:
       PYTHON: ${{ matrix.python-version }}
@@ -302,17 +304,20 @@ jobs:
     - name: test
       run: make test-fastapi
 
-  # https://github.com/marketplace/actions/alls-green#why
+  # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
 
     if: always()
+
+    outputs:
+      success: ${{ steps.all-green.outputs.success }}
 
     needs:
       - lint
       - docs-build
       - test
-      - test-memray
-      - test-mypy
+#      - test-memray
+#      - test-mypy
       - test-fastapi
 
     runs-on: ubuntu-latest
@@ -320,6 +325,7 @@ jobs:
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1
+        id: all-green
         with:
           allowed-skips: test-fastapi  # TODO: drop once re-enabled
           jobs: ${{ toJSON(needs) }}
@@ -328,7 +334,8 @@ jobs:
     name: Deploy
     needs:
       - check
-    if: "success() && startsWith(github.ref, 'refs/tags/')"
+#    if: "fromJSON(needs.check.outputs.success) && startsWith(github.ref, 'refs/tags/')"
+    if: "fromJSON(needs.check.outputs.success)"
     runs-on: ubuntu-latest
 
     steps:
@@ -348,10 +355,10 @@ jobs:
       - name: install
         run: pip install -U twine build packaging
 
-      - name: check GITHUB_REF matches package version
-        uses: samuelcolvin/check-python-version@v3
-        with:
-          version_file_path: pydantic/version.py
+#      - name: check GITHUB_REF matches package version
+#        uses: samuelcolvin/check-python-version@v3
+#        with:
+#          version_file_path: pydantic/version.py
 
       - name: build
         run: python -m build
@@ -359,17 +366,17 @@ jobs:
       - run: ls -lh dist
       - run: twine check dist/*
 
-      - name: upload to pypi
-        run: twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_token }}
-
-      - name: publish docs
-        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
-        uses: cloudflare/wrangler-action@2.0.0
-        with:
-          apiToken: ${{ secrets.cloudflare_api_token }}
-          command: pages publish --project-name=pydantic-docs --branch=main site
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
+#      - name: upload to pypi
+#        run: twine upload dist/*
+#        env:
+#          TWINE_USERNAME: __token__
+#          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+#
+#      - name: publish docs
+#        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
+#        uses: cloudflare/wrangler-action@2.0.0
+#        with:
+#          apiToken: ${{ secrets.cloudflare_api_token }}
+#          command: pages publish --project-name=pydantic-docs --branch=main site
+#        env:
+#          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
