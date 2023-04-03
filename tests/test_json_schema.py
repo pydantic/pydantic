@@ -498,7 +498,7 @@ def test_json_schema():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
-            'b': {'title': 'B', 'default': 12.34, 'type': 'number'},
+            'b': {'title': 'B', 'default': '12.34', 'type': 'number'},
         },
     }
 
@@ -2341,10 +2341,9 @@ def test_namedtuple_default():
         y: float
 
     class LocationBase(BaseModel):
-        coords: Coordinates = Coordinates(0, 0)
+        coords: Coordinates = Coordinates(34, 42)
 
     assert LocationBase(coords=Coordinates(1, 2)).coords == Coordinates(1, 2)
-    # assert LocationBase.__pydantic_core_schema__ == {}
 
     assert LocationBase.model_json_schema() == {
         'title': 'LocationBase',
@@ -2352,7 +2351,7 @@ def test_namedtuple_default():
         'properties': {
             'coords': {
                 'title': 'Coords',
-                'default': Coordinates(x=0, y=0),
+                'default': [34, 42],
                 'type': 'array',
                 'prefixItems': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
                 'minItems': 2,
