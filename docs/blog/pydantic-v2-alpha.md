@@ -178,9 +178,9 @@ The following config settings have been renamed:
 
 ### AnalyzedType
 
-PydanticV1 treated non-`BaseModel` types as second class citizens.
+Pydantic V1 didn't have good support for validation or serializing non-`BaseModel`.
 To work with them you had to create a "root" model or use the utility functions in `pydantic.tools` (`parse_obj_as` and `schema_of`).
-In Pydantic V2 this is _a lot_ easier: the `AnalyzedType` class lets you build an object that behaves almost like a `BaseModel`class which you can use for a lot of the use cases of root models and as a complete replacement for `parse_obj_as` and `schema_of`.
+In Pydantic V2 this is _a lot_ easier: the `AnalyzedType` class lets you build an object that behaves almost like a `BaseModel` class which you can use for a lot of the use cases of root models and as a complete replacement for `parse_obj_as` and `schema_of`.
 
 ```python
 from typing import List
