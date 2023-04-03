@@ -42,14 +42,14 @@ def schema_of(
         ref_template=ref_template,
     )
     if title is not None:
-        warnings.warn(
-            'Passing a callable for the `title` parameter is deprecated and no longer supported',
-            DeprecationWarning,
-            stacklevel=2,
-        )
         if isinstance(title, str):
             res['title'] = title
         else:
+            warnings.warn(
+                'Passing a callable for the `title` parameter is deprecated and no longer supported',
+                DeprecationWarning,
+                stacklevel=2,
+            )
             res['title'] = title(type_)
     return res
 
