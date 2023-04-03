@@ -211,8 +211,6 @@ class WalkAndApply:
         return self._walk(schema)
 
     def _walk(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        if isinstance(schema, tuple):
-            print('fail')
         schema = schema.copy()
         if self.apply_before_recurse:
             schema = self.f(schema)
