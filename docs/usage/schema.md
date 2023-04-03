@@ -94,7 +94,6 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
         "not_given"
       ],
       "title": "Gender",
-      "description": "An enumeration.",
       "type": "string"
     }
   }

@@ -250,15 +250,19 @@ def test_choices():
         },
         'required': ['foo', 'bar'],
         '$defs': {
-            'FooEnum': {'title': 'FooEnum', 'description': 'An enumeration.', 'enum': ['f', 'b']},
-            'BarEnum': {'title': 'BarEnum', 'description': 'An enumeration.', 'type': 'integer', 'enum': [1, 2]},
-            'SpamEnum': {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']},
+            'FooEnum': {'title': 'FooEnum', 'enum': ['f', 'b']},
+            'BarEnum': {'title': 'BarEnum', 'type': 'integer', 'enum': [1, 2]},
+            'SpamEnum': {'title': 'SpamEnum', 'type': 'string', 'enum': ['f', 'b']},
         },
     }
 
 
 def test_enum_modify_schema():
     class SpamEnum(str, Enum):
+        """
+        Spam enum.
+        """
+
         foo = 'f'
         bar = 'b'
 
@@ -277,7 +281,7 @@ def test_enum_modify_schema():
         '$defs': {
             'SpamEnum': {
                 '$comment': 'comment',
-                'description': 'An enumeration.',
+                'description': 'Spam enum.',
                 'enum': ['f', 'b'],
                 'title': 'SpamEnum',
                 'tsEnumNames': ['foo', 'bar'],
@@ -303,7 +307,6 @@ def test_enum_schema_custom_field():
     assert Model.model_json_schema() == {
         '$defs': {
             'FooBarEnum': {
-                'description': 'An enumeration.',
                 'enum': ['foo', 'bar'],
                 'title': 'FooBarEnum',
                 'type': 'string',
@@ -361,7 +364,6 @@ def test_enum_and_model_have_same_behaviour():
                 'type': 'object',
             },
             'Names': {
-                'description': 'An enumeration.',
                 'enum': ['Rick', 'Morty', 'Summer'],
                 'title': 'Names',
                 'type': 'string',
@@ -400,7 +402,6 @@ def test_enum_includes_extra_without_other_params():
     assert Foo.model_json_schema() == {
         '$defs': {
             'Names': {
-                'description': 'An enumeration.',
                 'enum': ['Rick', 'Morty', 'Summer'],
                 'title': 'Names',
                 'type': 'string',
@@ -428,7 +429,6 @@ def test_list_enum_schema_extras():
     assert Model.model_json_schema() == {
         '$defs': {
             'FoodChoice': {
-                'description': 'An enumeration.',
                 'enum': ['spam', 'egg', 'chips'],
                 'title': 'FoodChoice',
                 'type': 'string',
@@ -2486,7 +2486,6 @@ def test_advanced_generic_schema():
         '$defs': {
             'CustomType': {
                 'title': 'CustomType title',
-                'description': 'An enumeration.',
                 'enum': ['a', 'b'],
                 'type': 'string',
             }
