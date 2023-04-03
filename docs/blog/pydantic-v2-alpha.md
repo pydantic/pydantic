@@ -65,25 +65,25 @@ The biggest change to Pydantic V2 is [`pydantic-core`](https://github.com/pydant
 all validation logic has been rewritten in Rust and moved to a separate package, `pydantic-core`.
 This has a number of big advantages:
 
-* **Performance** - Pydantic V2 5-50x faster than Pydantic V1.
+* **Performance** - Pydantic V2 is 5-50x faster than Pydantic V1.
 * **Safety** - Pydantic V2 should have far fewer bugs long term.
-* **Maintainability** - we're hoping that long term, V2 is easier to extend without the risk of introducing bugs or breaking changes.
+* **Maintainability** - we're hoping that, long term, V2 is easier to extend without the risk of introducing bugs or breaking changes.
 
-With the use of `pydantic-core`, the majority of the logic in the pydantic library is dedicated to generating
-"pydantic core schema" - the schema used define the behaviour of `pydantic-core` validators and serializers.  
+With the use of `pydantic-core`, the majority of the logic in the Pydantic library is dedicated to generating
+"pydantic core schema" &mdash; the schema used define the behaviour of `pydantic-core` validators and serializers.  
 
 ### Ready for experimentation
 
-* **BaseModel** - the core of validation in Pydantic V1, remains albeit with new method names.
+* **BaseModel** - the core of validation in Pydantic V1 remains, albeit with new method names.
 * **dataclasses** - Pydantic dataclasses are improved and ready to test.
 * **Serialization** - dumping/serialization/marshalling is significantly more flexible, and ready to test.
 * **strict mode** - one of the biggest additions in Pydantic V2 is strict mode, which is ready to test.
 * **JSON Schema** - generation of JSON Schema is much improved and ready to test.
 * **Generic Models** - are much improved and ready to test.
 * **Recursive Models** - and validation of recursive data structures is much improved and ready to test.
-* **Custom Types** - custom types have a new interface and area ready to test.
-* **Custom Field Modifiers** - used via `Annotated[]` are working and in use in pydantic itself. 
-* **Validation without a BaseModel** - the new `AnalyzedType` class allows validation without the need for a `BaseModel` class, it's ready to test
+* **Custom Types** - custom types have a new interface and are ready to test.
+* **Custom Field Modifiers** - used via `Annotated[]` are working and in use in Pydantic itself. 
+* **Validation without a BaseModel** - the new `AnalyzedType` class allows validation without the need for a `BaseModel` class, and it's ready to test.
 * **TypedDict** - we now have full support for `TypedDict` via `AnalyzedType`, it's ready to test.
 
 ### Still under construction
@@ -92,8 +92,8 @@ With the use of `pydantic-core`, the majority of the logic in the pydantic libra
 * **Conversion Table** - a big addition to the documentation will be a conversion table showing how types are coerced, this is a WIP.
 * **BaseSettings** - `BaseSettings` will move to a separate `pydantic-settings` package, it's not yet ready to test.
 * **validate_arguments** - the `validate_arguments` decorator remains and is working, but hasn't been updated yet.
-* **Hypothesis Plugin** - the Hypothesis plugin is yet to be updated
-* **computed fields** - we know a lot of people are waiting for this, we will include it in V2
+* **Hypothesis Plugin** - the Hypothesis plugin is yet to be updated.
+* **computed fields** - we know a lot of people are waiting for this, we will include it in Pydantic V2.
 * **Error messages** - could use some love, and links to docs in error messages are still to be added.
 * **Migration Guide** - we have some pointers below, but this needs completing.
 
@@ -104,13 +104,13 @@ a full migration guide, but for now the following pointers should be some help w
 
 ### Changes to BaseModel
 
-* Various method names have been changed; BaseModel methods all start with `model_` now. 
-  Where possible, we have retained the old method names to help ease migration, but calling them will result in DeprecationWarnings.
+* Various method names have been changed; `BaseModel` methods all start with `model_` now. 
+  Where possible, we have retained the old method names to help ease migration, but calling them will result in `DeprecationWarning`s.
   * Some of the built-in data loading functionality has been slated for removal. 
-    In particular, parse_raw and parse_file are now deprecated. You should load the data and then pass it to model_validate.
+    In particular, `parse_raw` and `parse_file` are now deprecated. You should load the data and then pass it to `model_validate`.
 * The `from_orm` method has been removed; you can now just use `model_validate` (equivalent to `parse_obj` from v1) to achieve something similar, 
   as long as you've set `from_attributes=True` in the model config.
-* The `__eq__` method has changed for models; models are no longer considered equal to the dicts
+* The `__eq__` method has changed for models; models are no longer considered equal to the dicts.
 * Custom `__init__` overrides won't be called. This should be replaced with a `@root_validator`.
 * Support for `__root__` models has been removed. However, you can effectively achieve something equivalent through the use of 
   `@root_validator`, `@model_serializer`, and `__pydantic_modify_json_schema__`. More details will be available soon.
@@ -118,14 +118,14 @@ a full migration guide, but for now the following pointers should be some help w
 ### Changes to Pydantic Dataclasses
 
 * The `__post_init__` in Pydantic dataclasses will now be called after validation, rather than before.
-* We no longer support extra='allow' for Pydantic dataclasses, where extra attributes passed to the initializer would be 
-  stored as extra fields on the dataclass. extra='ignore' is still supported for the purposes of allowing extra fields while parsing data; they just aren't stored.
+* We no longer support `extra='allow'` for Pydantic dataclasses, where extra attributes passed to the initializer would be 
+  stored as extra fields on the dataclass. `extra='ignore'` is still supported for the purposes of allowing extra fields while parsing data; they just aren't stored.
 * `__post_init_post_parse__` has been removed.
 * Nested dataclasses no longer accept tuples as input, only dict.
 
 ### Changes to Config
 
-* To specify config on a model, it is now deprecated to create a class called `Config` in the namespace of the parent BaseModel subclass. 
+* To specify config on a model, it is now deprecated to create a class called `Config` in the namespace of the parent `BaseModel` subclass. 
   Instead, you just need to set a class attribute called `model_config` to be a dict with the key/value pairs you want to be used as the config.
   
 The following config settings have been removed:
@@ -133,10 +133,10 @@ The following config settings have been removed:
 * `allow_mutation`
 * `error_msg_templates`
 * `fields` — this was the source of various bugs, so has been removed. You should be able to use `Annotated` on fields to modify them as desired.
-* `getter_dict` — orm_mode has been removed, and this implementation detail is no longer necessary
-* `schema_extra` — you should now use the `json_schema_extra` keyword argument to `pydantic.Field`
-* `smart_union`
-* `underscore_attrs_are_private` — the v2 behavior is now the same as if this was always set to True in v1
+* `getter_dict` — `orm_mode` has been removed, and this implementation detail is no longer necessary.
+* `schema_extra` — you should now use the `json_schema_extra` keyword argument to `pydantic.Field`.
+* `smart_union`.
+* `underscore_attrs_are_private` — the Pydantic V2 behavior is now the same as if this was always set to True in Pydantic V1.
 
 The following config settings have been renamed:
 
@@ -159,14 +159,14 @@ The following config settings have been renamed:
 * `each_item` validators are deprecated and should be replaced with a type annotation using Annotated to apply a validator 
   or with a validator that operates on all items at the top level.
 * Changes to `@validator`-decorated function signatures.
-* The stricturl type has been removed.
+* The `stricturl` type has been removed.
 * Root validators can no longer be run with `skip_on_failure=False`.
 
 ### Changes to Validation of specific types
 
-* Integers outside the valid range of 64 bit integers will cause ValidationErrors during parsing. 
-  To work around this, use an IsInstance validator (more details to come).
-* Subclasses of built-ins won't validate into their subclass types; you'll need to use an IsInstance validator to validate these types.
+* Integers outside the valid range of 64 bit integers will cause `ValidationError`s during parsing. 
+  To work around this, use an `IsInstance` validator (more details to come).
+* Subclasses of built-ins won't validate into their subclass types; you'll need to use an `IsInstance` validator to validate these types.
 
 ### Changes to Generic models
 
