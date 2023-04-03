@@ -73,7 +73,7 @@ jobs:
       run: pip install -r requirements/docs.txt
 
     - run: python -c 'import docs.plugins.main'
-    - run: mkdocs build --verbose
+    - run: mkdocs build --verbose --broken
 
     - name: Store docs site
       uses: actions/upload-artifact@v3
@@ -185,7 +185,7 @@ jobs:
         path: coverage
 
   test-mypy:
-    name: mypy v${{ matrix.mypy-version }} / ${{ matrix.python-version }}
+    name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
