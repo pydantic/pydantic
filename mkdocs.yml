@@ -57,6 +57,7 @@ nav:
   - usage/dataclasses.md
   - usage/validation_decorator.md
   - usage/postponed_annotations.md
+  - usage/errors.md
 - Integrations:
   - 'Mypy': integrations/mypy.md
   - 'PyCharm': integrations/pycharm.md
