@@ -89,7 +89,8 @@ With the use of `pydantic-core`, the majority of the logic in the Pydantic libra
 
 * **Documentation** - we're working hard on full documentation for V2, but it's not ready yet.
 * **Conversion Table** - a big addition to the documentation will be a conversion table showing how types are coerced, this is a WIP.
-* **BaseSettings** - `BaseSettings` will move to a separate `pydantic-settings` package, it's not yet ready to test.
+* **BaseSettings** - `BaseSettings` will move to a separate `pydantic-settings` package, it's not yet ready to test. 
+  **Notice:** since `pydantic-settings` is not yet ready to release, there's no support for `BaseSettings` in the first alpha release.
 * **validate_arguments** - the `validate_arguments` decorator remains and is working, but hasn't been updated yet.
 * **Hypothesis Plugin** - the Hypothesis plugin is yet to be updated.
 * **computed fields** - we know a lot of people are waiting for this, we will include it in Pydantic V2.
