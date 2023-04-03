@@ -935,6 +935,42 @@ def test_strict_datetime():
     ]
 
 
+def test_strict_time():
+    class Model(BaseModel):
+        v: Annotated[time, Field(strict=True)]
+
+    assert Model(v=time(10, 10, 10)).v == time(10, 10, 10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='10:10:10')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'time_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid time',
+            'input': '10:10:10',
+        }
+    ]
+
+
+def test_strict_timedelta():
+    class Model(BaseModel):
+        v: Annotated[timedelta, Field(strict=True)]
+
+    assert Model(v=timedelta(days=1)).v == timedelta(days=1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='1 days')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'time_delta_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid timedelta',
+            'input': '1 days',
+        }
+    ]
+
+
 @pytest.fixture(scope='session', name='CheckModel')
 def check_model_fixture():
     class CheckModel(BaseModel):
@@ -947,6 +983,8 @@ def check_model_fixture():
         decimal_check: condecimal(allow_inf_nan=False) = Decimal('42.24')
         date_check: date = date(2017, 5, 5)
         datetime_check: datetime = datetime(2017, 5, 5, 10, 10, 10)
+        time_check: time = time(10, 10, 10)
+        timedelta_check: timedelta = timedelta(days=1)
 
     return CheckModel
 
@@ -1092,6 +1130,27 @@ class BoolCastable:
         ('datetime_check', Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10)),
         ('datetime_check', '2017-5-5T10:10:10', ValidationError),
         ('datetime_check', b'2017-5-5T10:10:10', ValidationError),
+        ('time_check', time(10, 10, 10), time(10, 10, 10)),
+        ('time_check', '10:10:10.0002', time(10, 10, 10, microsecond=200)),
+        ('time_check', b'10:10:10.0002', time(10, 10, 10, microsecond=200)),
+        ('time_check', 3720, time(1, 2)),
+        ('time_check', 3720.0002, time(1, 2, microsecond=200)),
+        ('time_check', Decimal(3720.0002), time(1, 2, microsecond=200)),
+        ('time_check', '1:1:1', ValidationError),
+        ('time_check', b'1:1:1', ValidationError),
+        ('time_check', -1, ValidationError),
+        ('time_check', 86400, ValidationError),
+        ('time_check', 86400.0, ValidationError),
+        ('time_check', Decimal(86400), ValidationError),
+        ('timedelta_check', timedelta(days=1), timedelta(days=1)),
+        ('timedelta_check', '1 days 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', '1 d 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', b'1 days 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', 123_000, timedelta(days=1, seconds=36600)),
+        ('timedelta_check', 123_000.0002, timedelta(days=1, seconds=36600, microseconds=200)),
+        ('timedelta_check', Decimal(123_000.0002), timedelta(days=1, seconds=36600, microseconds=200)),
+        ('timedelta_check', '1 10:10', ValidationError),
+        ('timedelta_check', b'1 10:10', ValidationError),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
