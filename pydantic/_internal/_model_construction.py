@@ -159,9 +159,8 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-    gen_schema = GenerateSchema(
-        cls.model_config['arbitrary_types_allowed'], types_namespace, cls.__pydantic_generic_typevars_map__
-    )
+    typevars_map = cls.__pydantic_generic_metadata__.get('typevars_map')
+    gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace, typevars_map)
     try:
         schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:

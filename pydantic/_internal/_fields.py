@@ -174,7 +174,7 @@ def collect_fields(  # noqa: C901
 
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
         # "... shadows an attribute" errors
-        generic_origin = getattr(cls, '__pydantic_generic_origin__', None)
+        generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
         for base in bases:
             if hasattr(base, ann_name):
                 if base is generic_origin:
@@ -191,7 +191,7 @@ def collect_fields(  # noqa: C901
         try:
             default = getattr(cls, ann_name, Undefined)
             if default is Undefined and generic_origin:
-                default = (generic_origin.__pydantic_generic_defaults__ or {}).get(ann_name, Undefined)
+                default = (generic_origin.__pydantic_generic_metadata__.get('defaults') or {}).get(ann_name, Undefined)
             if default is Undefined:
                 raise AttributeError
         except AttributeError:
@@ -226,9 +226,10 @@ def collect_fields(  # noqa: C901
             # 2. To avoid false positives in the NameError check above
             try:
                 delattr(cls, ann_name)
-                if cls.__pydantic_generic_parameters__:  # model can be parametrized
-                    assert cls.__pydantic_generic_defaults__ is not None
-                    cls.__pydantic_generic_defaults__[ann_name] = default
+                generic_metadata = cls.__pydantic_generic_metadata__
+                if generic_metadata.get('parameters'):  # model can be parametrized
+                    assert generic_metadata.get('defaults') is not None
+                    generic_metadata['defaults'][ann_name] = default
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
 
@@ -252,7 +253,7 @@ def collect_fields(  # noqa: C901
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
 
-    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None)
+    typevars_map = getattr(cls, '__pydantic_generic_metadata__', {}).get('typevars_map')
     if typevars_map:
         for field in fields.values():
             try:

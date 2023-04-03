@@ -56,6 +56,27 @@ _object_setattr = _model_construction.object_setattr
 _base_class_defined = False
 
 
+def build_generic_metadata(
+    metadata: _generics.PydanticGenericMetadata, bases: tuple[type[Any], ...], parameters: tuple[Any, ...] | None
+) -> _generics.PydanticGenericMetadata:
+    if metadata.get('origin') is None:
+        metadata['typevars_map'] = None
+    else:
+        parent_typevars_map = {}
+        for base in bases:
+            base_typevars_map = getattr(base, '__pydantic_generic_metadata__', {}).get('typevars_map')
+            if base_typevars_map:
+                parent_typevars_map.update(base_typevars_map)
+        new_typevars_map = dict(
+            zip(_generics.iter_contained_typevars(metadata.get('origin')), metadata.get('args') or ())
+        )
+        metadata['typevars_map'] = {**parent_typevars_map, **new_typevars_map}
+
+    metadata['parameters'] = metadata.get('parameters') or parameters
+    metadata['defaults'] = None if not metadata.get('parameters') else {}
+    return metadata
+
+
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
     def __new__(
@@ -63,9 +84,7 @@ class ModelMetaclass(ABCMeta):
         cls_name: str,
         bases: tuple[type[Any], ...],
         namespace: dict[str, Any],
-        __pydantic_generic_origin__: type[BaseModel] | None = None,
-        __pydantic_generic_args__: tuple[Any, ...] | None = None,
-        __pydantic_generic_parameters__: tuple[Any, ...] | None = None,
+        __pydantic_generic_metadata__: _generics.PydanticGenericMetadata | None = None,
         __pydantic_reset_parent_namespace__: bool = True,
         **kwargs: Any,
     ) -> type:
@@ -110,26 +129,10 @@ class ModelMetaclass(ABCMeta):
 
             cls.__pydantic_decorators__ = _decorators.gather_decorator_functions(cls)
 
-            # FIXME all generics related attributes should be moved into a dict, like `__pydantic_decorators__`
-            parent_typevars_map = {}
-            for base in bases:
-                base_typevars_map = getattr(base, '__pydantic_generic_typevars_map__', None)
-                if base_typevars_map:
-                    parent_typevars_map.update(base_typevars_map)
-
-            cls.__pydantic_generic_args__ = __pydantic_generic_args__
-            cls.__pydantic_generic_origin__ = __pydantic_generic_origin__
-            cls.__pydantic_generic_parameters__ = __pydantic_generic_parameters__ or getattr(
-                cls, '__parameters__', None
+            # Use the getattr below to grab the __parameters__ from the `typing.Generic` parent class
+            cls.__pydantic_generic_metadata__ = build_generic_metadata(
+                __pydantic_generic_metadata__ or {}, bases, getattr(cls, '__parameters__', None)
             )
-            cls.__pydantic_generic_defaults__ = None if not cls.__pydantic_generic_parameters__ else {}
-            if __pydantic_generic_origin__ is None:
-                cls.__pydantic_generic_typevars_map__ = None
-            else:
-                new_typevars_map = dict(
-                    zip(_generics.iter_contained_typevars(__pydantic_generic_origin__), __pydantic_generic_args__ or ())
-                )
-                cls.__pydantic_generic_typevars_map__ = {**parent_typevars_map, **new_typevars_map}
 
             cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
 
@@ -179,11 +182,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
         __fields_set__: set[str] = set()
-        __pydantic_generic_args__: typing.ClassVar[tuple[Any, ...] | None]
-        __pydantic_generic_defaults__: typing.ClassVar[dict[str, Any] | None]
-        __pydantic_generic_origin__: typing.ClassVar[type[BaseModel] | None]
-        __pydantic_generic_parameters__: typing.ClassVar[tuple[_typing_extra.TypeVarType, ...] | None]
-        __pydantic_generic_typevars_map__: typing.ClassVar[dict[_typing_extra.TypeVarType, Any] | None]
+        __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
@@ -423,8 +422,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         # When comparing instances of generic types for equality, as long as all field values are equal,
         # only require their generic origin types to be equal, rather than exact type equality.
         # This prevents headaches like MyGeneric(x=1) != MyGeneric[Any](x=1).
-        self_type = getattr(self, '__pydantic_generic_origin__', None) or self.__class__
-        other_type = getattr(other, '__pydantic_generic_origin__', None) or other.__class__
+        self_type = self.__pydantic_generic_metadata__.get('origin') or self.__class__
+        other_type = other.__pydantic_generic_metadata__.get('origin') or other.__class__
 
         if self_type != other_type:
             return False
@@ -502,7 +501,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             raise TypeError('Type parameters should be placed on typing.Generic, not BaseModel')
         if not hasattr(cls, '__parameters__'):
             raise TypeError(f'{cls} cannot be parametrized because it does not inherit from typing.Generic')
-        if not cls.__pydantic_generic_parameters__ and Generic not in cls.__bases__:
+        if not cls.__pydantic_generic_metadata__.get('parameters') and Generic not in cls.__bases__:
             raise TypeError(f'{cls} is not a generic class')
 
         if not isinstance(typevar_values, tuple):
@@ -511,20 +510,20 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         # Build map from generic typevars to passed params
         typevars_map: dict[_typing_extra.TypeVarType, type[Any]] = dict(
-            zip(cls.__pydantic_generic_parameters__ or (), typevar_values)
+            zip(cls.__pydantic_generic_metadata__.get('parameters') or (), typevar_values)
         )
 
         if _utils.all_identical(typevars_map.keys(), typevars_map.values()) and typevars_map:
             submodel = cls  # if arguments are equal to parameters it's the same object
             _generics.set_cached_generic_type(cls, typevar_values, submodel)
         else:
-            parent_args = cls.__pydantic_generic_args__
+            parent_args = cls.__pydantic_generic_metadata__.get('args')
             if not parent_args:
                 args = typevar_values
             else:
                 args = tuple(_generics.replace_types(arg, typevars_map) for arg in parent_args)
 
-            origin = cls.__pydantic_generic_origin__ or cls
+            origin = cls.__pydantic_generic_metadata__.get('origin') or cls
             model_name = origin.model_parametrized_name(args)
             params = tuple(
                 {param: None for param in _generics.iter_contained_typevars(typevars_map.values())}
