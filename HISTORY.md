@@ -1,3 +1,9 @@
+## v2.0a1 (2023-04-03)
+
+First pre-release of Pydantic V2!
+
+See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
+
 ## v1.10.7 (2023-03-22)
 
 * Fix creating schema from model using `ConstrainedStr` with `regex` as dict key, #5223 by @matejetz
