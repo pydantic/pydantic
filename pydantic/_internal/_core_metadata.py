@@ -105,35 +105,23 @@ class CoreMetadataHandler:
         """
         return self._metadata.get(_JS_PREFER_POSITIONAL_ARGUMENTS_FIELD)
 
-    def combine_js_modify_functions(
-        self, js_modify_function: typing.Callable[[JsonSchemaValue], JsonSchemaValue] | None, before: bool = False
+    def compose_js_modify_functions(
+        self, js_modify_function: typing.Callable[[JsonSchemaValue], JsonSchemaValue] | None, inner: bool = False
     ) -> None:
         """
         Composes the provided js_modify_function with the existing js_modify_function.
 
         This operation is performed in-place and modifies the wrapped schema's metadata.
 
-        If before is True, the provided js_modify_function will be called first.
+        If `inner` is True, the provided js_modify_function will be called on the input schema first.
         """
-        if js_modify_function is None:
-            return  # nothing to do
 
-        origin_js_modify_function = self.js_modify_function
-        if origin_js_modify_function is None:
-            self._metadata[_JS_MODIFY_FUNCTION_FIELD] = js_modify_function
-            return
+        if inner:
+            outer_func, inner_func = self.js_modify_function, js_modify_function
+        else:
+            outer_func, inner_func = js_modify_function, self.js_modify_function
 
-        def combined_js_modify_function(schema: JsonSchemaValue) -> JsonSchemaValue:
-            assert origin_js_modify_function is not None  # for mypy
-            assert js_modify_function is not None  # for mypy
-            if before:
-                schema = js_modify_function(schema)
-            schema = origin_js_modify_function(schema)
-            if not before:
-                schema = js_modify_function(schema)
-            return schema
-
-        self._metadata[_JS_MODIFY_FUNCTION_FIELD] = combined_js_modify_function
+        self._metadata[_JS_MODIFY_FUNCTION_FIELD] = compose_js_modify_functions(outer_func, inner_func)
 
     def apply_js_modify_function(self, schema: JsonSchemaValue) -> JsonSchemaValue:
         """
@@ -182,3 +170,24 @@ def build_metadata_dict(
         metadata = {**initial_metadata, **metadata}
 
     return metadata
+
+
+def compose_js_modify_functions(
+    outer: typing.Callable[[JsonSchemaValue], JsonSchemaValue] | None,
+    inner: typing.Callable[[JsonSchemaValue], JsonSchemaValue] | None,
+) -> typing.Callable[[JsonSchemaValue], JsonSchemaValue] | None:
+    """
+    Composes the provided `outer` and `inner` js_modify_functions.
+
+    The `outer` function will be called on the result of calling the `inner` function on the provided schema.
+    """
+    if outer is None:
+        return inner
+    if inner is None:
+        return outer
+
+    def combined_js_modify_function(schema: JsonSchemaValue) -> JsonSchemaValue:
+        assert outer is not None and inner is not None  # for mypy
+        return outer(inner(schema))
+
+    return combined_js_modify_function

@@ -119,7 +119,7 @@ pluggy==1.0.0
     # via pytest
 pre-commit==2.21.0
     # via -r requirements/linting.in
-pydantic-core==0.20.0
+pydantic-core==0.22.0
     # via -r requirements/linting.in
 pyflakes==3.0.1
     # via autoflake

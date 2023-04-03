@@ -201,7 +201,7 @@ class GenerateSchema:
             if hasattr(obj, '__origin__'):
                 js_modify_function = _get_pydantic_modify_json_schema(obj.__origin__)
 
-        CoreMetadataHandler(schema).combine_js_modify_functions(js_modify_function)
+        CoreMetadataHandler(schema).compose_js_modify_functions(js_modify_function)
 
         if 'ref' in schema:
             # definitions and definition-ref schemas don't have 'ref', causing the type error ignored on the next line
@@ -1061,7 +1061,7 @@ def apply_annotations(
         schema = apply_single_annotation(schema, metadata, definitions)
 
         metadata_js_modify_function = _get_pydantic_modify_json_schema(metadata)
-        handler.combine_js_modify_functions(metadata_js_modify_function)
+        handler.compose_js_modify_functions(metadata_js_modify_function)
 
     return schema
 

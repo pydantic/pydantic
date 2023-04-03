@@ -264,6 +264,9 @@ def test_enum_modify_schema():
 
         @classmethod
         def __pydantic_modify_json_schema__(cls, field_schema):
+            existing_comment = field_schema.get('$comment', '')
+            field_schema['$comment'] = existing_comment + 'comment'  # make sure this function is only called once
+
             field_schema['tsEnumNames'] = [e.name for e in cls]
             return field_schema
 
@@ -273,6 +276,7 @@ def test_enum_modify_schema():
     assert Model.model_json_schema() == {
         '$defs': {
             'SpamEnum': {
+                '$comment': 'comment',
                 'description': 'An enumeration.',
                 'enum': ['f', 'b'],
                 'title': 'SpamEnum',
