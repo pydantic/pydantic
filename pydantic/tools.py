@@ -4,8 +4,6 @@ import json
 import warnings
 from typing import Any, Callable, Type, TypeVar, Union
 
-from pydantic.config import ConfigDict
-
 from . import AnalyzedType
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
@@ -44,12 +42,14 @@ def schema_of(
             DeprecationWarning,
             stacklevel=2,
         )
-    config = ConfigDict(title=title)  # type: ignore[typeddict-item]
-    return AnalyzedType(type_, config=config).json_schema(
+    res = AnalyzedType(type_).json_schema(
         by_alias=by_alias,
         schema_generator=schema_generator,
         ref_template=ref_template,
     )
+    if title:
+        res['title'] = title
+    return res
 
 
 def schema_json_of(
