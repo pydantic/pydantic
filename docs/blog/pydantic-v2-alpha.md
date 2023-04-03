@@ -178,13 +178,9 @@ The following config settings have been renamed:
 
 ### AnalyzedType
 
-In Pydantic V1 if you wanted to validate a non-`BaseModel` type (like `Dict[str, int]` or `List[SomeModel]`) you had to use a "root" model.
-In Pydantic V2 this is _a lot_ easier: the `AnalyzedType` class lets you build an object that behaves almost like a `BaseModel`class.
-Going forward `AnalyzedType` will be the recommended way to do Pydantic things with non-`BaseModel` types, including:
-
-* Arbitrary types like `List[int]`
-* `TypedDict`
-* Advanced functionality for `pydantic.dataclasses.dataclasses` like generating a JSON schema.
+PydanticV1 treated non-`BaseModel` types as second class citizens.
+To work with them you had to create a "root" model or use the utility functions in `pydantic.tools` (`parse_obj_as` and `schema_of`).
+In Pydantic V2 this is _a lot_ easier: the `AnalyzedType` class lets you build an object that behaves almost like a `BaseModel`class which you can use for a lot of the use cases of root models and as a complete replacement for `parse_obj_as` and `schema_of`.
 
 ```python
 from typing import List
