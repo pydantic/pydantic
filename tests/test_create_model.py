@@ -17,7 +17,7 @@ def test_create_model():
     assert not model.__pydantic_decorators__.validator
     assert not model.__pydantic_decorators__.root_validator
     assert not model.__pydantic_decorators__.field_validator
-    assert not model.__pydantic_decorators__.serializer
+    assert not model.__pydantic_decorators__.field_serializer
 
     assert model.__module__ == 'pydantic.main'
 
