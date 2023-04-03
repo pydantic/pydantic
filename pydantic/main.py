@@ -213,16 +213,24 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return gen_schema.model_schema(cls)
 
     @classmethod
-    def model_validate(cls: type[Model], obj: Any) -> Model:
+    def model_validate(
+        cls: type[Model], obj: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None
+    ) -> Model:
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        return cls.__pydantic_validator__.validate_python(obj)
+        return cls.__pydantic_validator__.validate_python(obj, strict=strict, context=context)
 
     @classmethod
-    def model_validate_json(cls: type[Model], json_data: str | bytes | bytearray) -> Model:
+    def model_validate_json(
+        cls: type[Model],
+        json_data: str | bytes | bytearray,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> Model:
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        return cls.__pydantic_validator__.validate_json(json_data)
+        return cls.__pydantic_validator__.validate_json(json_data, strict=strict, context=context)
 
     if typing.TYPE_CHECKING:
         # model_after_init is called after at the end of `__init__` if it's defined

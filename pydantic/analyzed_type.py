@@ -92,6 +92,8 @@ def _translate_config(config: ConfigDict) -> core_schema.CoreConfig:
         ),
         str_min_length=config['str_min_length'] if 'str_min_length' in config else unset,
     )
+    for k in [k for k in core_config if core_config[k] is unset]:
+        core_config.pop(k)
     return CoreConfig(**core_config)  # type: ignore[misc]
 
 
@@ -130,26 +132,28 @@ class AnalyzedType(Generic[T]):
             core_schema = _get_schema(__type, core_config, parent_depth=_parent_depth + 1)
 
         validator: SchemaValidator
-        try:
+        if hasattr(__type, '__pydantic_validator__') and config is None:
             validator = __type.__pydantic_validator__
-        except AttributeError:
+        else:
             validator = SchemaValidator(core_schema, core_config)
 
         serializer: SchemaSerializer
-        try:
+        if hasattr(__type, '__pydantic_serializer__') and config is None:
             serializer = __type.__pydantic_serializer__
-        except AttributeError:
+        else:
             serializer = SchemaSerializer(core_schema, core_config)
 
         self.core_schema = core_schema
         self.validator = validator
         self.serializer = serializer
 
-    def validate_python(self, __object: Any) -> T:
-        return self.validator.validate_python(__object)
+    def validate_python(self, __object: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
+        return self.validator.validate_python(__object, strict=strict, context=context)
 
-    def validate_json(self, __data: str | bytes) -> T:
-        return self.validator.validate_json(__data)
+    def validate_json(
+        self, __data: str | bytes, *, strict: bool | None = None, context: dict[str, Any] | None = None
+    ) -> T:
+        return self.validator.validate_json(__data, strict=strict, context=context)
 
     def dump_python(
         self,
