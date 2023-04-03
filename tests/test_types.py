@@ -902,6 +902,8 @@ class BoolCastable:
     [
         ('bool_check', True, True),
         ('bool_check', 1, True),
+        ('bool_check', 1.0, True),
+        ('bool_check', Decimal(1), True),
         ('bool_check', 'y', True),
         ('bool_check', 'Y', True),
         ('bool_check', 'yes', True),
@@ -919,6 +921,8 @@ class BoolCastable:
         ('bool_check', b'TRUE', True),
         ('bool_check', False, False),
         ('bool_check', 0, False),
+        ('bool_check', 0.0, False),
+        ('bool_check', Decimal(0), False),
         ('bool_check', 'n', False),
         ('bool_check', 'N', False),
         ('bool_check', 'no', False),
@@ -943,15 +947,20 @@ class BoolCastable:
         ('bool_check', b'2', ValidationError),
         ('bool_check', '2', ValidationError),
         ('bool_check', 2, ValidationError),
+        ('bool_check', 2.0, ValidationError),
+        ('bool_check', Decimal(2), ValidationError),
         ('bool_check', b'\x81', ValidationError),
         ('bool_check', BoolCastable(), ValidationError),
         ('str_check', 's', 's'),
         ('str_check', '  s  ', 's'),
         ('str_check', b's', 's'),
         ('str_check', b'  s  ', 's'),
+        ('str_check', bytearray(b's' * 5), 'sssss'),
         ('str_check', 1, ValidationError),
         ('str_check', 'x' * 11, ValidationError),
         ('str_check', b'x' * 11, ValidationError),
+        ('str_check', b'\x81', ValidationError),
+        ('str_check', bytearray(b'\x81' * 5), ValidationError),
         ('bytes_check', 's', b's'),
         ('bytes_check', '  s  ', b'  s  '),
         ('bytes_check', b's', b's'),
@@ -965,6 +974,8 @@ class BoolCastable:
         ('int_check', 1, 1),
         ('int_check', 1.0, 1),
         ('int_check', 1.9, ValidationError),
+        ('int_check', Decimal(1), 1),
+        ('int_check', Decimal(1.9), ValidationError),
         ('int_check', '1', 1),
         ('int_check', '1.9', ValidationError),
         ('int_check', b'1', 1),
@@ -973,10 +984,15 @@ class BoolCastable:
         ('int_check', b'12', 12),
         ('float_check', 1, 1.0),
         ('float_check', 1.0, 1.0),
+        ('float_check', Decimal(1.0), 1.0),
         ('float_check', '1.0', 1.0),
         ('float_check', '1', 1.0),
         ('float_check', b'1.0', 1.0),
         ('float_check', b'1', 1.0),
+        ('float_check', True, 1.0),
+        ('float_check', False, 0.0),
+        ('float_check', 't', ValidationError),
+        ('float_check', b't', ValidationError),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
@@ -2079,6 +2095,9 @@ def test_strict_int():
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=2**64)
 
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
+        Model(v=True)
+
 
 def test_strict_float():
     class Model(BaseModel):
@@ -2090,6 +2109,9 @@ def test_strict_float():
     with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
         Model(v='3.14159')
 
+    with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
+        Model(v=True)
+
 
 def test_bool_unhashable_fails():
     class Model(BaseModel):
@@ -2097,7 +2119,6 @@ def test_bool_unhashable_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v={})
-    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {'type': 'bool_type', 'loc': ('v',), 'msg': 'Input should be a valid boolean', 'input': {}}
     ]
