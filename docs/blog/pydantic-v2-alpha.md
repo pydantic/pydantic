@@ -15,7 +15,7 @@
 
 We're excited to announce the first alpha release of Pydantic V2!
 
-This first Pydantic V2 alpha is no April Fool's joke, for a start we missed our April 1st target date :cry:.
+This first Pydantic V2 alpha is no April Fool's joke &mdash; for a start we missed our April 1st target date :cry:.
 After a year's work, we invite you to explore the improvements we've made and give us your feedback. 
 We look forward to hearing your thoughts and working together to improve the library.
 
@@ -49,8 +49,8 @@ we encourage you to share your feedback with us.
 
 Please let us know:
 
-* If you don't like the changes, so we can make sure pydantic remains a library you enjoy using.
-* If this breaks your usage of pydantic so we can fix it, or at least describe a migration path.
+* If you don't like the changes, so we can make sure Pydantic remains a library you enjoy using.
+* If this breaks your usage of Pydantic so we can fix it, or at least describe a migration path.
 
 Thank you for your support, and we look forward to your feedback.
 
@@ -108,7 +108,7 @@ a full migration guide, but for now the following pointers should be some help w
   Where possible, we have retained the old method names to help ease migration, but calling them will result in `DeprecationWarning`s.
   * Some of the built-in data loading functionality has been slated for removal. 
     In particular, `parse_raw` and `parse_file` are now deprecated. You should load the data and then pass it to `model_validate`.
-* The `from_orm` method has been removed; you can now just use `model_validate` (equivalent to `parse_obj` from v1) to achieve something similar, 
+* The `from_orm` method has been removed; you can now just use `model_validate` (equivalent to `parse_obj` from Pydantic V1) to achieve something similar, 
   as long as you've set `from_attributes=True` in the model config.
 * The `__eq__` method has changed for models; models are no longer considered equal to the dicts.
 * Custom `__init__` overrides won't be called. This should be replaced with a `@root_validator`.
@@ -130,13 +130,13 @@ a full migration guide, but for now the following pointers should be some help w
   
 The following config settings have been removed:
 
-* `allow_mutation`
-* `error_msg_templates`
+* `allow_mutation`.
+* `error_msg_templates`.
 * `fields` — this was the source of various bugs, so has been removed. You should be able to use `Annotated` on fields to modify them as desired.
 * `getter_dict` — `orm_mode` has been removed, and this implementation detail is no longer necessary.
 * `schema_extra` — you should now use the `json_schema_extra` keyword argument to `pydantic.Field`.
 * `smart_union`.
-* `underscore_attrs_are_private` — the Pydantic V2 behavior is now the same as if this was always set to True in Pydantic V1.
+* `underscore_attrs_are_private` — the Pydantic V2 behavior is now the same as if this was always set to `True` in Pydantic V1.
 
 The following config settings have been renamed:
 
@@ -156,7 +156,7 @@ The following config settings have been renamed:
   This was necessary to prevent certain common bugs (such as calling functions with invalid signatures) from 
   being unintentionally converted into `ValidationError` and displayed to users. 
   If you really want `TypeError` to be converted to a `ValidationError` you should use a `try: except:` block that will catch it and do the conversion.
-* `each_item` validators are deprecated and should be replaced with a type annotation using Annotated to apply a validator 
+* `each_item` validators are deprecated and should be replaced with a type annotation using `Annotated` to apply a validator 
   or with a validator that operates on all items at the top level.
 * Changes to `@validator`-decorated function signatures.
 * The `stricturl` type has been removed.
