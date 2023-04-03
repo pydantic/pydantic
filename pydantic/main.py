@@ -25,13 +25,12 @@ from ._internal import (
     _utils,
 )
 from ._internal._fields import Undefined
-from .analyzed_type import AnalyzedType
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
 from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
-from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMetadata
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaValue, model_json_schema
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -365,27 +364,22 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         with your desired modifications, then override this method on a custom base class and set the default
         value of `schema_generator` to be your subclass.
         """
-        return AnalyzedType(cls).json_schema(
-            by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator
-        )
+        return model_json_schema(cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
 
     @classmethod
-    def model_json_schema_metadata(cls) -> JsonSchemaMetadata | None:
+    def model_modify_json_schema(cls, json_schema: JsonSchemaValue) -> JsonSchemaValue:
         """
-        Overriding this method provides a simple way to modify certain aspects of the JSON schema generation.
+        Overriding this method provides a simple way to modify the JSON schema generated for the model.
 
-        This is a convenience method primarily intended to control how the "generic" properties
-        of the JSON schema are populated, or apply minor transformations through `extra_updates` or
-        `modify_js_function`. See https://json-schema.org/understanding-json-schema/reference/generic.html
-        and the comments surrounding the definition of `JsonSchemaMetadata` for more details.
+        This is a convenience method primarily intended to control how the "generic" properties of the JSON schema
+        are populated. See https://json-schema.org/understanding-json-schema/reference/generic.html for more details.
 
-        If you want to make more sweeping changes to how the JSON schema is generated, you will probably
-        want to subclass `GenerateJsonSchema` and pass your subclass in the `schema_generator` argument to the
-        `model_json_schema` method.
+        If you want to make more sweeping changes to how the JSON schema is generated, you will probably want to create
+        a subclass of `GenerateJsonSchema` and pass it as `schema_generator` in `BaseModel.model_json_schema`.
         """
-        title = cls.model_config['title'] or cls.__name__
-        description = getdoc(cls) or None
-        return {'title': title, 'description': description}
+        metadata = {'title': cls.model_config['title'] or cls.__name__, 'description': getdoc(cls) or None}
+        metadata = {k: v for k, v in metadata.items() if v is not None}
+        return {**metadata, **json_schema}
 
     @classmethod
     def model_rebuild(

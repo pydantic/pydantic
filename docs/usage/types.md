@@ -2065,6 +2065,7 @@ class PostCode(str):
             # some example postcodes
             examples=['SP11 9DG', 'w1j7bu'],
         )
+        return field_schema
 
     @classmethod
     def validate(cls, v):

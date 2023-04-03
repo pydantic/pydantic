@@ -13,6 +13,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from dirty_equals import HasRepr, IsInstance, IsStr
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import TypedDictField
 
@@ -48,7 +49,7 @@ class FastAPIGenerateJsonSchema(GenerateJsonSchema):
     def handle_invalid_for_json_schema(self, schema: CoreSchema | TypedDictField, error_info: str) -> JsonSchemaValue:
         # NOTE: I think it may be a good idea to rework this method to either not use CoreMetadataHandler,
         #    and/or to make CoreMetadataHandler a public API.
-        if CoreMetadataHandler(schema).get_modify_js_function():
+        if CoreMetadataHandler(schema).metadata.get('pydantic_js_modify_function') is not None:
             # Since there is a json schema modify function, assume that this type is meant to be handled,
             # and the modify function will set all properties as appropriate
             return {}
@@ -106,32 +107,24 @@ def test_collect_errors() -> None:
 
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    expected_schema = {
+    schema = Model.model_json_schema(schema_generator=FastAPIGenerateJsonSchema)
+    assert schema == {
+        'title': 'Model',
         'type': 'object',
         'properties': {
             'f1': {'type': 'integer', 'default': 1, 'title': 'F1'},
             'f2': {
-                'error': PydanticInvalidForJsonSchema(
-                    "Cannot generate a JsonSchema for core_schema.IsInstanceSchema "
-                    "(<class 'tests.test_fastapi_json_schema.test_collect_errors.<locals>.Car'>)"
-                ),
+                'error': HasRepr(IsStr(regex=r'PydanticInvalidForJsonSchema\(.*\)')),
                 'title': 'F2',
             },
         },
         'required': ['f2'],
-        'title': 'Model',
     }
-    actual_schema = Model.model_json_schema(schema_generator=FastAPIGenerateJsonSchema)
-    assert repr(actual_schema) == repr(expected_schema)
 
-    actual_collected_errors = collect_errors(actual_schema)
-    expected_collected_errors = [
+    collected_errors = collect_errors(schema)
+    assert collected_errors == [
         ErrorDetails(
             path=['properties', 'f2'],
-            error=PydanticInvalidForJsonSchema(
-                "Cannot generate a JsonSchema for core_schema.IsInstanceSchema "
-                "(<class 'tests.test_fastapi_json_schema.test_collect_errors.<locals>.Car'>)"
-            ),
+            error=IsInstance(PydanticInvalidForJsonSchema),
         )
     ]
-    assert repr(actual_collected_errors) == repr(expected_collected_errors)
