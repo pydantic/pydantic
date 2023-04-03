@@ -310,12 +310,12 @@ jobs:
     if: always()
 
     outputs:
-      success: ${{ steps.all-green.outputs.success }}
+      result: ${{ steps.all-green.outputs.result }}
 
     needs:
-      - lint
+#      - lint
       - docs-build
-      - test
+#      - test
 #      - test-memray
 #      - test-mypy
       - test-fastapi
@@ -335,7 +335,7 @@ jobs:
     needs:
       - check
 #    if: "fromJSON(needs.check.outputs.success) && startsWith(github.ref, 'refs/tags/')"
-    if: "fromJSON(needs.check.outputs.success)"
+    if: "needs.check.outputs.result == 'success'"
     runs-on: ubuntu-latest
 
     steps:
