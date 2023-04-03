@@ -35,8 +35,10 @@ from pydantic import (
     PydanticUserError,
     SecretStr,
     ValidationError,
+    ValidationInfo,
     constr,
 )
+from pydantic.decorators import field_validator
 
 
 def test_success():
@@ -2024,3 +2026,37 @@ def test_model_validate_json_strict() -> None:
     assert exc_info.value.errors() == [
         {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
+
+
+def test_validate_python_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def val_x(cls, v: int, info: ValidationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    Model.model_validate({'x': 1})
+    Model.model_validate({'x': 1}, context=None)
+    Model.model_validate({'x': 1}, context={'foo': 'bar'})
+    assert contexts == []
+
+
+def test_validate_json_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def val_x(cls, v: int, info: ValidationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    Model.model_validate_json(json.dumps({'x': 1}))
+    Model.model_validate_json(json.dumps({'x': 1}), context=None)
+    Model.model_validate_json(json.dumps({'x': 1}), context={'foo': 'bar'})
+    assert contexts == []

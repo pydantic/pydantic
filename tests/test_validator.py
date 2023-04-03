@@ -6,8 +6,9 @@ import pytest
 from pydantic_core import ValidationError
 from typing_extensions import TypeAlias, TypedDict
 
-from pydantic import AnalyzedType, BaseModel
+from pydantic import AnalyzedType, BaseModel, ValidationInfo
 from pydantic.config import ConfigDict
+from pydantic.decorators import field_validator
 
 ItemType = TypeVar('ItemType')
 
@@ -151,6 +152,42 @@ def test_validate_json_strict() -> None:
     assert exc_info.value.errors() == [
         {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
+
+
+def test_validate_python_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def val_x(cls, v: int, info: ValidationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    validator = AnalyzedType(Model)
+    validator.validate_python({'x': 1})
+    validator.validate_python({'x': 1}, context=None)
+    validator.validate_python({'x': 1}, context={'foo': 'bar'})
+    assert contexts == []
+
+
+def test_validate_json_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def val_x(cls, v: int, info: ValidationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    validator = AnalyzedType(Model)
+    validator.validate_json(json.dumps({'x': 1}))
+    validator.validate_json(json.dumps({'x': 1}), context=None)
+    validator.validate_json(json.dumps({'x': 1}), context={'foo': 'bar'})
+    assert contexts == []
 
 
 def test_merge_config() -> None:
