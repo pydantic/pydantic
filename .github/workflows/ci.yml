@@ -183,7 +183,7 @@ jobs:
         path: coverage
 
   test-mypy:
-    name: mypy v${{ matrix.mypy-version }} / ${{ matrix.python-version }}
+    name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -302,10 +302,13 @@ jobs:
     - name: test
       run: make test-fastapi
 
-  # https://github.com/marketplace/actions/alls-green#why
+  # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
 
     if: always()
+
+    outputs:
+      result: ${{ steps.all-green.outputs.result }}
 
     needs:
       - lint
@@ -320,15 +323,16 @@ jobs:
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1
+        id: all-green
         with:
           allowed-skips: test-fastapi  # TODO: drop once re-enabled
           jobs: ${{ toJSON(needs) }}
 
   deploy:
     name: Deploy
-    needs:
-      - check
-    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    needs: [check]
+    # `always()` is required to trigger this task even though test-fastapi is skipped
+    if: "always() && needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
     steps:
