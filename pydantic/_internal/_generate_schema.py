@@ -1074,9 +1074,6 @@ def apply_annotations(
     return schema, field_annotations
 
 
-_FIELD_SPECIFIC_ANNOTATIONS = {'frozen'}
-
-
 def apply_single_annotation(  # noqa C901
     schema: core_schema.CoreSchema, metadata: Any, definitions: dict[str, core_schema.CoreSchema]
 ) -> tuple[core_schema.CoreSchema, _FieldAnnotations]:
