@@ -2,7 +2,7 @@ from typing import List, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, parse_obj_as
+from pydantic import BaseModel, ValidationError, model_serializer, parse_obj_as, root_validator
 
 
 class Model(BaseModel):
@@ -53,52 +53,126 @@ def test_root_model_error():
             __root__: str
 
 
-@pytest.mark.xfail(reason='__root__ model')
 def test_model_validate_root():
-    # TODO: Migrate this test and those following to use root_validator, model_serializer, etc., once ready
-    #   Probably also want to re-add some of the __root__ tests from v1 that test other behaviors,
-    #   such as serialization and JSON schema.
     class MyModel(BaseModel):
-        __root__: str
+        root: str
 
+        # Note that the following three definitions require no changes across all __root__ models
+        # I couldn't see a nice way to create a decorator that reduces the boilerplate,
+        # but if we want to discourage this pattern, perhaps that's okay?
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
+
+    # Validation
     m = MyModel.model_validate('a')
-    assert m.model_dump() == {'__root__': 'a'}
-    assert m.__root__ == 'a'
+    assert m.root == 'a'
+
+    # Serialization
+    # TODO: Possible concern — `model_dump` is annotated as returning dict[str, Any] — is that okay, given
+    #   model_serializer could change that? Should we try to reflect it in the mypy plugin?
+    assert m.model_dump() == {'root': 'a'}
+    assert m.model_dump_json() == '"a"'
+
+    # JSON schema
+    assert m.model_json_schema() == {'title': 'Root', 'type': 'string'}
 
 
-@pytest.mark.xfail(reason='__root__ model')
 def test_parse_root_list():
     class MyModel(BaseModel):
-        __root__: List[str]
+        root: List[str]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     m = MyModel.model_validate(['a'])
-    assert m.model_dump() == {'__root__': ['a']}
-    assert m.__root__ == ['a']
+    assert m.model_dump() == {'root': ['a']}
+    assert m.model_dump_json() == '["a"]'
+    assert m.root == ['a']
 
 
-@pytest.mark.xfail(reason='__root__ model')
 def test_parse_nested_root_list():
     class NestedData(BaseModel):
         id: str
 
     class NestedModel(BaseModel):
-        __root__: List[NestedData]
+        root: List[NestedData]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     class MyModel(BaseModel):
         nested: NestedModel
 
     m = MyModel.model_validate({'nested': [{'id': 'foo'}]})
     assert isinstance(m.nested, NestedModel)
-    assert isinstance(m.nested.__root__[0], NestedData)
+    assert isinstance(m.nested.root[0], NestedData)
 
 
-@pytest.mark.xfail(reason='__root__ model')
 def test_parse_nested_root_tuple():
     class NestedData(BaseModel):
         id: str
 
     class NestedModel(BaseModel):
-        __root__: Tuple[int, NestedData]
+        root: Tuple[int, NestedData]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     class MyModel(BaseModel):
         nested: List[NestedModel]
@@ -106,26 +180,59 @@ def test_parse_nested_root_tuple():
     data = [0, {'id': 'foo'}]
     m = MyModel.model_validate({'nested': [data]})
     assert isinstance(m.nested[0], NestedModel)
-    assert isinstance(m.nested[0].__root__[1], NestedData)
+    assert isinstance(m.nested[0].root[1], NestedData)
 
     nested = parse_obj_as(NestedModel, data)
     assert isinstance(nested, NestedModel)
 
 
-@pytest.mark.xfail(reason='__root__ model')
 def test_parse_nested_custom_root():
     class NestedModel(BaseModel):
-        __root__: List[str]
+        root: List[str]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     class MyModel(BaseModel):
-        __root__: NestedModel
+        root: NestedModel
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     nested = ['foo', 'bar']
     m = MyModel.model_validate(nested)
     assert isinstance(m, MyModel)
-    assert isinstance(m.__root__, NestedModel)
-    assert isinstance(m.__root__.__root__, List)
-    assert isinstance(m.__root__.__root__[0], str)
+    assert isinstance(m.root, NestedModel)
+    assert isinstance(m.root.root, List)
+    assert isinstance(m.root.root[0], str)
 
 
 def test_json():
