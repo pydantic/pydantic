@@ -9,6 +9,7 @@ import re
 import sys
 import typing
 import warnings
+from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
@@ -262,6 +263,58 @@ class GenerateSchema:
             metadata=build_metadata_dict(js_modify_function=cls.model_modify_json_schema),
         )
         return apply_model_serializers(model_schema, decorators.model_serializer.values())
+
+    def callable_schema(self, function: Callable[..., Any], validate_return: bool) -> core_schema.CallSchema:
+        """
+        Generate schema for a Callable.
+
+        TODO support functional validators once we support them in Config
+        """
+        sig = signature(function)
+
+        type_hints = _typing_extra.get_type_hints(function)
+        mode_lookup: dict[_ParameterKind, str] = {
+            Parameter.POSITIONAL_ONLY: 'positional_only',
+            Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',
+            Parameter.KEYWORD_ONLY: 'keyword_only',
+        }
+
+        arguments_list: list[core_schema.ArgumentsParameter] = []
+        var_args_schema: core_schema.CoreSchema | None = None
+        var_kwargs_schema: core_schema.CoreSchema | None = None
+
+        for i, (name, p) in enumerate(sig.parameters.items()):
+            if p.annotation is sig.empty:
+                annotation = Any
+            else:
+                annotation = type_hints[name]
+
+            arg_schema = self.generate_schema(annotation)
+
+            parameter_mode = mode_lookup.get(p.kind)
+            if parameter_mode is not None:
+                if p.default is not p.empty:
+                    arg_schema = core_schema.with_default_schema(arg_schema, default=p.default)
+                arguments_list.append(core_schema.arguments_parameter(name, arg_schema, mode=parameter_mode))
+            elif p.kind == Parameter.VAR_POSITIONAL:
+                var_args_schema = arg_schema
+            else:
+                assert p.kind == Parameter.VAR_KEYWORD, p.kind
+                var_kwargs_schema = arg_schema
+
+        return_schema: core_schema.CoreSchema | None = None
+        if validate_return:
+            return_hint = type_hints.get('return')
+            if return_hint is not None:
+                return_schema = self.generate_schema(return_hint)
+
+        return core_schema.call_schema(
+            core_schema.arguments_schema(
+                arguments_list, var_args_schema=var_args_schema, var_kwargs_schema=var_kwargs_schema
+            ),
+            function,
+            return_schema=return_schema,
+        )
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """

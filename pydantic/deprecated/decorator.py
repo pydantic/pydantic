@@ -1,14 +1,12 @@
-"""
-TODO this should be removed when we implement `validate` #4669
-"""
+import warnings
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
-from ._internal import _typing_extra, _utils
-from .config import Extra, get_config
-from .decorators import field_validator
-from .errors import PydanticUserError
-from .main import BaseModel, create_model
+from .._internal import _typing_extra, _utils
+from ..config import Extra, get_config
+from ..decorators import field_validator
+from ..errors import PydanticUserError
+from ..main import BaseModel, create_model
 
 __all__ = ('validate_arguments',)
 
@@ -33,6 +31,7 @@ def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'Config
     """
     Decorator to validate the arguments passed to a function.
     """
+    warnings.warn('The `validate_arguments` method is deprecated; use `validate_call` instead.', DeprecationWarning)
 
     def validate(_func: 'AnyCallable') -> 'AnyCallable':
         vd = ValidatedFunction(_func, config)
