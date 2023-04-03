@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import date, datetime
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -155,7 +156,7 @@ table: list[Row] = [
         str,
         'lax',
         'python & JSON',
-        condition='must match `[0-9]+(\.[0-9]+)?`',
+        condition='must match `[0-9]+(\\.[0-9]+)?`',
         valid_examples=['3.141'],
         invalid_examples=['test'],
         core_schema=core_schema.FloatSchema,
@@ -165,7 +166,7 @@ table: list[Row] = [
         bytes,
         'lax',
         'python',
-        condition='must match `[0-9]+(\.[0-9]+)?`',
+        condition='must match `[0-9]+(\\.[0-9]+)?`',
         valid_examples=[b'3.141'],
         invalid_examples=[b'test'],
         core_schema=core_schema.FloatSchema,
@@ -233,5 +234,152 @@ table: list[Row] = [
         valid_examples=['f', 'n', 'no', 'off', 'false', 't', 'y', 'on', 'yes', 'true'],
         invalid_examples=['test'],
         core_schema=core_schema.BoolSchema,
+    ),
+    Row(
+        None,
+        None,
+        'stric',
+        'python & JSON',
+        core_schema=core_schema.NoneSchema,
+    ),
+    Row(
+        date,
+        date,
+        'stric',
+        'python',
+        core_schema=core_schema.DateSchema,
+    ),
+    Row(
+        date,
+        datetime,
+        'lax',
+        'python',
+        condition='must be exact date, eg. no H, M, S, f',
+        valid_examples=[datetime(2017, 5, 5)],
+        invalid_examples=[datetime(2017, 5, 5, 10)],
+        core_schema=core_schema.DateSchema,
+    ),
+    Row(
+        date,
+        str,
+        'lax',
+        'python & JSON',
+        condition='format `YYYY-MM-DD`',
+        valid_examples=['2017-05-05'],
+        invalid_examples=['2017-5-5', '2017/05/05'],
+        core_schema=core_schema.DateSchema,
+    ),
+    Row(
+        date,
+        bytes,
+        'lax',
+        'python',
+        condition='format `YYYY-MM-DD` (UTF-8)',
+        valid_examples=[b'2017-05-05'],
+        invalid_examples=[b'2017-5-5', b'2017/05/05'],
+        core_schema=core_schema.DateSchema,
+    ),
+    Row(
+        date,
+        int,
+        'lax',
+        'python & JSON',
+        condition=(
+            'interpreted as seconds or ms from epoch, '
+            'see [speedate](https://docs.rs/speedate/latest/speedate/), must be exact date'
+        ),
+        valid_examples=[1493942400000, 1493942400],
+        invalid_examples=[1493942401000],
+        core_schema=core_schema.DateSchema,
+    ),
+    Row(
+        date,
+        float,
+        'lax',
+        'python & JSON',
+        condition=(
+            'interpreted as seconds or ms from epoch, '
+            'see [speedate](https://docs.rs/speedate/latest/speedate/), must be exact date'
+        ),
+        valid_examples=[1493942400000.0, 1493942400.0],
+        invalid_examples=[1493942401000.0],
+        core_schema=core_schema.DateSchema,
+    ),
+    Row(
+        date,
+        Decimal,
+        'lax',
+        'python & JSON',
+        condition=(
+            'interpreted as seconds or ms from epoch, '
+            'see [speedate](https://docs.rs/speedate/latest/speedate/), must be exact date'
+        ),
+        valid_examples=[Decimal(1493942400000), Decimal(1493942400)],
+        invalid_examples=[Decimal(1493942401000)],
+        core_schema=core_schema.DateSchema,
+    ),
+    Row(
+        datetime,
+        datetime,
+        'stric',
+        'python',
+        core_schema=core_schema.DatetimeSchema,
+    ),
+    Row(
+        datetime,
+        date,
+        'lax',
+        'python',
+        valid_examples=[date(2017, 5, 5)],
+        core_schema=core_schema.DatetimeSchema,
+    ),
+    Row(
+        datetime,
+        str,
+        'lax',
+        'python & JSON',
+        condition='format YYYY-MM-DDTHH:MM:SS.f etc. see [speedate](https://docs.rs/speedate/latest/speedate/)',
+        valid_examples=['2017-05-05 10:10:10', '2017-05-05T10:10:10.0002', '2017-05-05 10:10:10+00:00'],
+        invalid_examples=['2017-5-5T10:10:10'],
+        core_schema=core_schema.DatetimeSchema,
+    ),
+    Row(
+        datetime,
+        bytes,
+        'lax',
+        'python',
+        condition=(
+            'format YYYY-MM-DDTHH:MM:SS.f etc. see [speedate](https://docs.rs/speedate/latest/speedate/), (UTF-8)'
+        ),
+        valid_examples=[b'2017-05-05 10:10:10', b'2017-05-05T10:10:10.0002', b'2017-05-05 10:10:10+00:00'],
+        invalid_examples=[b'2017-5-5T10:10:10'],
+        core_schema=core_schema.DatetimeSchema,
+    ),
+    Row(
+        datetime,
+        int,
+        'lax',
+        'python & JSON',
+        condition='interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/)',
+        valid_examples=[1493979010000, 1493979010],
+        core_schema=core_schema.DatetimeSchema,
+    ),
+    Row(
+        datetime,
+        float,
+        'lax',
+        'python & JSON',
+        condition='interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/)',
+        valid_examples=[1493979010000.0, 1493979010.0],
+        core_schema=core_schema.DatetimeSchema,
+    ),
+    Row(
+        datetime,
+        Decimal,
+        'lax',
+        'python & JSON',
+        condition='interpreted as seconds or ms from epoch, see [speedate](https://docs.rs/speedate/latest/speedate/)',
+        valid_examples=[Decimal(1493979010000), Decimal(1493979010)],
+        core_schema=core_schema.DatetimeSchema,
     ),
 ]

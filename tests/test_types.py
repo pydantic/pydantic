@@ -5,7 +5,7 @@ import re
 import sys
 import uuid
 from collections import OrderedDict, deque
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
@@ -877,6 +877,64 @@ def test_decimal_strict():
     assert Model(v=v).model_dump() == {'v': v}
 
 
+def test_strict_date():
+    class Model(BaseModel):
+        v: Annotated[date, Field(strict=True)]
+
+    assert Model(v=date(2017, 5, 5)).v == date(2017, 5, 5)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=datetime(2017, 5, 5))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'date_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid date',
+            'input': datetime(2017, 5, 5),
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='2017-05-05')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'date_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid date',
+            'input': '2017-05-05',
+        }
+    ]
+
+
+def test_strict_datetime():
+    class Model(BaseModel):
+        v: Annotated[datetime, Field(strict=True)]
+
+    assert Model(v=datetime(2017, 5, 5, 10, 10, 10)).v == datetime(2017, 5, 5, 10, 10, 10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=date(2017, 5, 5))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'datetime_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid datetime',
+            'input': date(2017, 5, 5),
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='2017-05-05T10:10:10')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'datetime_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid datetime',
+            'input': '2017-05-05T10:10:10',
+        }
+    ]
+
+
 @pytest.fixture(scope='session', name='CheckModel')
 def check_model_fixture():
     class CheckModel(BaseModel):
@@ -887,6 +945,8 @@ def check_model_fixture():
         float_check: float = 1.0
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
         decimal_check: condecimal(allow_inf_nan=False) = Decimal('42.24')
+        date_check: date = date(2017, 5, 5)
+        datetime_check: datetime = datetime(2017, 5, 5, 10, 10, 10)
 
     return CheckModel
 
@@ -1006,6 +1066,32 @@ class BoolCastable:
         ('decimal_check', Decimal('42.24'), Decimal('42.24')),
         ('decimal_check', 'not a valid decimal', ValidationError),
         ('decimal_check', 'NaN', ValidationError),
+        ('date_check', date(2017, 5, 5), date(2017, 5, 5)),
+        ('date_check', datetime(2017, 5, 5), date(2017, 5, 5)),
+        ('date_check', '2017-05-05', date(2017, 5, 5)),
+        ('date_check', b'2017-05-05', date(2017, 5, 5)),
+        ('date_check', 1493942400000, date(2017, 5, 5)),
+        ('date_check', 1493942400, date(2017, 5, 5)),
+        ('date_check', 1493942400000.0, date(2017, 5, 5)),
+        ('date_check', Decimal(1493942400000), date(2017, 5, 5)),
+        ('date_check', datetime(2017, 5, 5, 10), ValidationError),
+        ('date_check', '2017-5-5', ValidationError),
+        ('date_check', b'2017-5-5', ValidationError),
+        ('date_check', 1493942401000, ValidationError),
+        ('date_check', 1493942401000.0, ValidationError),
+        ('date_check', Decimal(1493942401000), ValidationError),
+        ('datetime_check', datetime(2017, 5, 5, 10, 10, 10), datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', date(2017, 5, 5), datetime(2017, 5, 5, 0, 0, 0)),
+        ('datetime_check', '2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
+        ('datetime_check', '2017-05-05 10:10:10', datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', '2017-05-05 10:10:10+00:00', datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
+        ('datetime_check', b'2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
+        ('datetime_check', 1493979010000, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', 1493979010, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', 1493979010000.0, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', '2017-5-5T10:10:10', ValidationError),
+        ('datetime_check', b'2017-5-5T10:10:10', ValidationError),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
