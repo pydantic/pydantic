@@ -66,8 +66,7 @@ all validation logic has been rewritten in Rust and moved to a separate package,
 This has a number of big advantages:
 
 * **Performance** - Pydantic V2 is 5-50x faster than Pydantic V1.
-* **Safety** - Pydantic V2 should have far fewer bugs long term.
-* **Maintainability** - we're hoping that, long term, V2 is easier to extend without the risk of introducing bugs or breaking changes.
+* **Safety & maintainability** - We've made changes to the architecture that we think will help us maintain Pydantic V2 with far fewer bugs in the long term.
 
 With the use of `pydantic-core`, the majority of the logic in the Pydantic library is dedicated to generating
 "pydantic core schema" &mdash; the schema used define the behaviour of the new, high-performance `pydantic-core` validators and serializers.  
@@ -77,7 +76,7 @@ With the use of `pydantic-core`, the majority of the logic in the Pydantic libra
 * **BaseModel** - the core of validation in Pydantic V1 remains, albeit with new method names.
 * **Dataclasses** - Pydantic dataclasses are improved and ready to test.
 * **Serialization** - dumping/serialization/marshalling is significantly more flexible, and ready to test.
-* **strict mode** - one of the biggest additions in Pydantic V2 is strict mode, which is ready to test.
+* **Strict mode** - one of the biggest additions in Pydantic V2 is strict mode, which is ready to test.
 * **JSON Schema** - generation of JSON Schema is much improved and ready to test.
 * **Generic Models** - are much improved and ready to test.
 * **Recursive Models** - and validation of recursive data structures is much improved and ready to test.
