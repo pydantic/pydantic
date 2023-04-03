@@ -12,7 +12,7 @@ if typing.TYPE_CHECKING:
     from ..json_schema import JsonSchemaValue
 
 
-class CoreMetadata(typing.TypedDict, total=False):
+class CoreMetadata(typing_extensions.TypedDict, total=False):
     # `pydantic_cs_update_function Retrieves the function that will be used to update the CoreSchema.
     # This is generally obtained from a `__pydantic_update_schema__` function
     pydantic_cs_update_function: UpdateCoreSchemaCallable | None
