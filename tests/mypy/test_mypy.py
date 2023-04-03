@@ -44,9 +44,7 @@ cases = [
     ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
     ('mypy-default.ini', 'fail4.py', 'fail4.txt'),
     ('mypy-default.ini', 'plugin_success.py', 'plugin_success.txt'),
-    pytest.param(
-        'mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py', None, marks=pytest.mark.xfail(reason='TODO dataclasses')
-    ),
+    pytest.param('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py', None),
     pytest.param(
         'pyproject-default.toml',
         'success.py',

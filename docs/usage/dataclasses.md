@@ -348,13 +348,13 @@ When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.da
 
 _Pydantic_ dataclasses do not feature a `.json()` function. To dump them as JSON, you will need to make use of the `pydantic_encoder` as follows:
 
-```py
+```py output="json"
 import dataclasses
-import json
 from typing import List
 
+import pydantic_core
+
 from pydantic.dataclasses import dataclass
-from pydantic.json import pydantic_encoder
 
 
 @dataclass
@@ -365,7 +365,8 @@ class User:
 
 
 user = User(id='42')
-print(json.dumps(user, indent=4, default=pydantic_encoder))
+# TODO replace this with methods or equivalent
+print(pydantic_core.to_json(user, indent=4).decode())
 """
 {
     "id": 42,

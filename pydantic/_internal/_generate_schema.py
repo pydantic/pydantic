@@ -164,6 +164,7 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
             ser_json_bytes=config['ser_json_bytes'],
             from_attributes=config['from_attributes'],
             loc_by_alias=config['loc_by_alias'],
+            revalidate_instances=config['revalidate_instances'],
             validate_default=config['validate_default'],
             str_max_length=config.get('str_max_length'),
             str_min_length=config.get('str_min_length'),

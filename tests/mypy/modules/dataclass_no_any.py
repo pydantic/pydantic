@@ -6,6 +6,6 @@ class Foo:
     foo: int
 
 
-@dataclass(config={})
+@dataclass(config=dict(title='Bar Title'))
 class Bar:
     bar: str
