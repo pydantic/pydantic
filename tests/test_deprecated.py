@@ -81,11 +81,13 @@ def test_from_attributes_root():
         def populate_root(cls, values):
             return {'root': values}
 
-        @model_serializer
-        def _serialize(self, info):
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
             if info.mode == 'json':
-                return self.root
-            return self.__dict__
+                return data['root']
+            else:
+                return data
 
         @classmethod
         def model_modify_json_schema(cls, json_schema):
@@ -111,11 +113,13 @@ def test_from_attributes_root():
         def populate_root(cls, values):
             return {'root': values}
 
-        @model_serializer
-        def _serialize(self, info):
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
             if info.mode == 'json':
-                return self.root
-            return self.__dict__
+                return data['root']
+            else:
+                return data
 
         @classmethod
         def model_modify_json_schema(cls, json_schema):

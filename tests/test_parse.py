@@ -65,11 +65,13 @@ def test_model_validate_root():
         def populate_root(cls, values):
             return {'root': values}
 
-        @model_serializer
-        def _serialize(self, info):
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
             if info.mode == 'json':
-                return self.root
-            return self.__dict__
+                return data['root']
+            else:
+                return data
 
         @classmethod
         def model_modify_json_schema(cls, json_schema):
@@ -98,11 +100,13 @@ def test_parse_root_list():
         def populate_root(cls, values):
             return {'root': values}
 
-        @model_serializer
-        def _serialize(self, info):
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
             if info.mode == 'json':
-                return self.root
-            return self.__dict__
+                return data['root']
+            else:
+                return data
 
         @classmethod
         def model_modify_json_schema(cls, json_schema):
@@ -126,11 +130,13 @@ def test_parse_nested_root_list():
         def populate_root(cls, values):
             return {'root': values}
 
-        @model_serializer
-        def _serialize(self, info):
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
             if info.mode == 'json':
-                return self.root
-            return self.__dict__
+                return data['root']
+            else:
+                return data
 
         @classmethod
         def model_modify_json_schema(cls, json_schema):
@@ -156,11 +162,13 @@ def test_parse_nested_root_tuple():
         def populate_root(cls, values):
             return {'root': values}
 
-        @model_serializer
-        def _serialize(self, info):
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
             if info.mode == 'json':
-                return self.root
-            return self.__dict__
+                return data['root']
+            else:
+                return data
 
         @classmethod
         def model_modify_json_schema(cls, json_schema):
@@ -187,11 +195,13 @@ def test_parse_nested_custom_root():
         def populate_root(cls, values):
             return {'root': values}
 
-        @model_serializer
-        def _serialize(self, info):
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
             if info.mode == 'json':
-                return self.root
-            return self.__dict__
+                return data['root']
+            else:
+                return data
 
         @classmethod
         def model_modify_json_schema(cls, json_schema):
@@ -205,11 +215,13 @@ def test_parse_nested_custom_root():
         def populate_root(cls, values):
             return {'root': values}
 
-        @model_serializer
-        def _serialize(self, info):
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
             if info.mode == 'json':
-                return self.root
-            return self.__dict__
+                return data['root']
+            else:
+                return data
 
         @classmethod
         def model_modify_json_schema(cls, json_schema):
