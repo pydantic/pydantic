@@ -34,7 +34,7 @@ To get started with the Pydantic V2 alpha, install it from PyPI.
 We recommend using a virtual environment to isolate your testing environment:
 
 ```bash
-pip install --pre -U "pydantic>=2.0"
+pip install --pre -U "pydantic>=2.0a1"
 ```
 
 Note that there are still some rough edges and incomplete features, and while trying out the Pydantic V2 alpha releases you may experience errors. 
