@@ -74,9 +74,9 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     literal_schema = core_schema.literal_schema(
         [m.value for m in enum_type.__members__.values()],
     )
-    description = None if enum_type.__doc__ is None else inspect.cleandoc(enum_type.__doc__ or 'An enumeration.')
-    if description == 'An enumeration.':
-        description = None  # don't use the default docstring provided by python
+    description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
+    if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
+        description = None
     updates = {'title': enum_type.__name__, 'description': description}
     updates = {k: v for k, v in updates.items() if v is not None}
     metadata = build_metadata_dict(
