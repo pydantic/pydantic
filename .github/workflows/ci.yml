@@ -335,13 +335,10 @@ jobs:
     needs:
       - check
 #    if: "needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')"
-    if: "always()"
+    if: "always() && needs.check.outputs.result == 'success'"
     runs-on: ubuntu-latest
 
     steps:
-      - run: |
-          echo "check result: '${{ needs.check.outputs.result }}' ${{ needs.check.outputs.result == 'success' }}"
-
       - uses: actions/checkout@v3
 
       - name: set up python
