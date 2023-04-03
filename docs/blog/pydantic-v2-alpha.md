@@ -81,7 +81,7 @@ With the use of `pydantic-core`, the majority of the logic in the Pydantic libra
 * **Generic Models** - are much improved and ready to test.
 * **Recursive Models** - and validation of recursive data structures is much improved and ready to test.
 * **Custom Types** - custom types have a new interface and are ready to test.
-* **Custom Field Modifiers** - used via `Annotated[]` are working and in use in Pydantic itself. 
+* **Custom Field Modifiers** - used via `Annotated[]` are working and in use in Pydantic itself.
 * **Validation without a BaseModel** - the new `AnalyzedType` class allows validation without the need for a `BaseModel` class, and it's ready to test.
 * **TypedDict** - we now have full support for `TypedDict` via `AnalyzedType`, it's ready to test.
 
@@ -178,4 +178,22 @@ The following config settings have been renamed:
 
 ### AnalyzedType
 
-TODO we need to give a brief into to this and how to use it.
+In Pydantic V1 if you wanted to validate a non-`BaseModel` type (like `Dict[str, int]` or `List[SomeModel]`) you had to use a "root" model.
+In Pydantic V2 this is _a lot_ easier: the `AnalyzedType` class lets you build an object that behaves almost like a `BaseModel`class.
+Going forward `AnalyzedType` will be the recommended way to do Pydantic things with non-`BaseModel` types, including:
+
+* Arbitrary types like `List[int]`
+* `TypedDict`
+* Advanced functionality for `pydantic.dataclasses.dataclasses` like generating a JSON schema.
+
+```python
+from typing import List
+from pydantic import AnalyzedType
+
+validator = AnalyzedType(List[int])
+assert validator.validate_python(['1', '2', '3']) == [1, 2, 3]
+print(validator.json_schema())
+# {'type': 'array', 'items': {'type': 'integer'}}
+```
+
+Note that this API is provisional and may change before the final release of Pydantic V2.
