@@ -7,7 +7,6 @@ import typing
 import warnings
 from abc import ABCMeta
 from copy import copy, deepcopy
-from functools import partial
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
@@ -31,7 +30,6 @@ from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
-from .json import custom_pydantic_encoder, pydantic_encoder
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaValue, model_json_schema
 
 if typing.TYPE_CHECKING:
@@ -60,7 +58,7 @@ _base_class_defined = False
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
-    def __new__(  # noqa C901
+    def __new__(
         mcs,
         cls_name: str,
         bases: tuple[type[Any], ...],
@@ -100,12 +98,6 @@ class ModelMetaclass(ABCMeta):
 
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
-
-            if config_new['json_encoders']:
-                json_encoder = partial(custom_pydantic_encoder, config_new['json_encoders'])
-            else:
-                json_encoder = pydantic_encoder  # type: ignore[assignment]
-            namespace['__json_encoder__'] = staticmethod(json_encoder)
 
             if '__hash__' not in namespace and config_new['frozen']:
 
@@ -183,7 +175,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
         """metadata for `@validator`, `@root_validator` and `@serializer` decorators"""
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
-        __json_encoder__: typing.ClassVar[typing.Callable[[Any], Any]] = lambda x: x  # noqa: E731
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
@@ -221,16 +212,24 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return gen_schema.model_schema(cls)
 
     @classmethod
-    def model_validate(cls: type[Model], obj: Any) -> Model:
+    def model_validate(
+        cls: type[Model], obj: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None
+    ) -> Model:
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        return cls.__pydantic_validator__.validate_python(obj)
+        return cls.__pydantic_validator__.validate_python(obj, strict=strict, context=context)
 
     @classmethod
-    def model_validate_json(cls: type[Model], json_data: str | bytes | bytearray) -> Model:
+    def model_validate_json(
+        cls: type[Model],
+        json_data: str | bytes | bytearray,
+        *,
+        strict: bool | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> Model:
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        return cls.__pydantic_validator__.validate_json(json_data)
+        return cls.__pydantic_validator__.validate_json(json_data, strict=strict, context=context)
 
     if typing.TYPE_CHECKING:
         # model_after_init is called after at the end of `__init__` if it's defined
@@ -665,7 +664,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 content_type=content_type,
                 encoding=encoding,
                 allow_pickle=allow_pickle,
-                json_loads=cls.model_config['json_loads'],
             )
         except (ValueError, TypeError) as exc:
             import json
@@ -710,7 +708,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             content_type=content_type,
             encoding=encoding,
             allow_pickle=allow_pickle,
-            json_loads=cls.model_config['json_loads'],
         )
         return cls.parse_obj(obj)
 
@@ -781,13 +778,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def schema_json(
         cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
     ) -> str:
+        import json
+
         warnings.warn(
             'The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.',
             DeprecationWarning,
         )
-        from .json import pydantic_encoder
+        from .deprecated.json import pydantic_encoder
 
-        return cls.model_config['json_dumps'](
+        return json.dumps(
             cls.model_json_schema(by_alias=by_alias, ref_template=ref_template),
             default=pydantic_encoder,
             **dumps_kwargs,

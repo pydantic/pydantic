@@ -164,6 +164,7 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
             ser_json_bytes=config['ser_json_bytes'],
             from_attributes=config['from_attributes'],
             loc_by_alias=config['loc_by_alias'],
+            revalidate_instances=config['revalidate_instances'],
             validate_default=config['validate_default'],
             str_max_length=config.get('str_max_length'),
             str_min_length=config.get('str_min_length'),
@@ -200,7 +201,7 @@ class GenerateSchema:
             if hasattr(obj, '__origin__'):
                 js_modify_function = _get_pydantic_modify_json_schema(obj.__origin__)
 
-        CoreMetadataHandler(schema).combine_js_modify_functions(js_modify_function)
+        CoreMetadataHandler(schema).compose_js_modify_functions(js_modify_function)
 
         if 'ref' in schema:
             # definitions and definition-ref schemas don't have 'ref', causing the type error ignored on the next line
@@ -1060,7 +1061,7 @@ def apply_annotations(
         schema = apply_single_annotation(schema, metadata, definitions)
 
         metadata_js_modify_function = _get_pydantic_modify_json_schema(metadata)
-        handler.combine_js_modify_functions(metadata_js_modify_function)
+        handler.compose_js_modify_functions(metadata_js_modify_function)
 
     return schema
 
@@ -1109,7 +1110,7 @@ def apply_single_annotation(  # noqa C901
         return schema
 
     handler = CoreMetadataHandler(schema)
-    update_schema_function = handler.cs_update_function
+    update_schema_function = handler.metadata.get('pydantic_cs_update_function')
     if update_schema_function is not None:
         new_schema = update_schema_function(schema, **metadata_dict)
         if new_schema is not None:

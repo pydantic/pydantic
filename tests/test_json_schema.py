@@ -250,20 +250,27 @@ def test_choices():
         },
         'required': ['foo', 'bar'],
         '$defs': {
-            'FooEnum': {'title': 'FooEnum', 'description': 'An enumeration.', 'enum': ['f', 'b']},
-            'BarEnum': {'title': 'BarEnum', 'description': 'An enumeration.', 'type': 'integer', 'enum': [1, 2]},
-            'SpamEnum': {'title': 'SpamEnum', 'description': 'An enumeration.', 'type': 'string', 'enum': ['f', 'b']},
+            'FooEnum': {'title': 'FooEnum', 'enum': ['f', 'b']},
+            'BarEnum': {'title': 'BarEnum', 'type': 'integer', 'enum': [1, 2]},
+            'SpamEnum': {'title': 'SpamEnum', 'type': 'string', 'enum': ['f', 'b']},
         },
     }
 
 
 def test_enum_modify_schema():
     class SpamEnum(str, Enum):
+        """
+        Spam enum.
+        """
+
         foo = 'f'
         bar = 'b'
 
         @classmethod
         def __pydantic_modify_json_schema__(cls, field_schema):
+            existing_comment = field_schema.get('$comment', '')
+            field_schema['$comment'] = existing_comment + 'comment'  # make sure this function is only called once
+
             field_schema['tsEnumNames'] = [e.name for e in cls]
             return field_schema
 
@@ -273,7 +280,8 @@ def test_enum_modify_schema():
     assert Model.model_json_schema() == {
         '$defs': {
             'SpamEnum': {
-                'description': 'An enumeration.',
+                '$comment': 'comment',
+                'description': 'Spam enum.',
                 'enum': ['f', 'b'],
                 'title': 'SpamEnum',
                 'tsEnumNames': ['foo', 'bar'],
@@ -299,7 +307,6 @@ def test_enum_schema_custom_field():
     assert Model.model_json_schema() == {
         '$defs': {
             'FooBarEnum': {
-                'description': 'An enumeration.',
                 'enum': ['foo', 'bar'],
                 'title': 'FooBarEnum',
                 'type': 'string',
@@ -357,7 +364,6 @@ def test_enum_and_model_have_same_behaviour():
                 'type': 'object',
             },
             'Names': {
-                'description': 'An enumeration.',
                 'enum': ['Rick', 'Morty', 'Summer'],
                 'title': 'Names',
                 'type': 'string',
@@ -396,7 +402,6 @@ def test_enum_includes_extra_without_other_params():
     assert Foo.model_json_schema() == {
         '$defs': {
             'Names': {
-                'description': 'An enumeration.',
                 'enum': ['Rick', 'Morty', 'Summer'],
                 'title': 'Names',
                 'type': 'string',
@@ -424,7 +429,6 @@ def test_list_enum_schema_extras():
     assert Model.model_json_schema() == {
         '$defs': {
             'FoodChoice': {
-                'description': 'An enumeration.',
                 'enum': ['spam', 'egg', 'chips'],
                 'title': 'FoodChoice',
                 'type': 'string',
@@ -491,7 +495,7 @@ def test_json_schema():
         'type': 'object',
         'properties': {
             'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
-            'b': {'title': 'B', 'default': 12.34, 'type': 'number'},
+            'b': {'title': 'B', 'default': '12.34', 'type': 'number'},
         },
     }
 
@@ -2334,10 +2338,9 @@ def test_namedtuple_default():
         y: float
 
     class LocationBase(BaseModel):
-        coords: Coordinates = Coordinates(0, 0)
+        coords: Coordinates = Coordinates(34, 42)
 
     assert LocationBase(coords=Coordinates(1, 2)).coords == Coordinates(1, 2)
-    # assert LocationBase.__pydantic_core_schema__ == {}
 
     assert LocationBase.model_json_schema() == {
         'title': 'LocationBase',
@@ -2345,7 +2348,7 @@ def test_namedtuple_default():
         'properties': {
             'coords': {
                 'title': 'Coords',
-                'default': Coordinates(x=0, y=0),
+                'default': [34, 42],
                 'type': 'array',
                 'prefixItems': [{'title': 'X', 'type': 'number'}, {'title': 'Y', 'type': 'number'}],
                 'minItems': 2,
@@ -2483,7 +2486,6 @@ def test_advanced_generic_schema():
         '$defs': {
             'CustomType': {
                 'title': 'CustomType title',
-                'description': 'An enumeration.',
                 'enum': ['a', 'b'],
                 'type': 'string',
             }

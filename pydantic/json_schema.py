@@ -1,4 +1,4 @@
-from __future__ import annotations
+from __future__ import annotations as _annotations
 
 import inspect
 import math
@@ -24,13 +24,15 @@ from typing import (
 )
 from weakref import WeakKeyDictionary
 
-from pydantic_core import CoreSchema, CoreSchemaType, core_schema
+import pydantic_core
 from typing_extensions import Literal
 
 from ._internal import _core_metadata, _core_utils, _typing_extra
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
+    from pydantic_core import CoreSchema, CoreSchemaType, core_schema
+
     from . import ConfigDict
     from ._internal._dataclasses import PydanticDataclass
     from .main import BaseModel
@@ -110,7 +112,7 @@ class GenerateJsonSchema:
 
     def build_schema_type_to_method(self) -> dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]]:
         mapping: dict[CoreSchemaType, Callable[[CoreSchema], JsonSchemaValue]] = {}
-        for key in _typing_extra.all_literal_values(CoreSchemaType):  # type: ignore[arg-type]
+        for key in _typing_extra.all_literal_values(pydantic_core.CoreSchemaType):  # type: ignore[arg-type]
             method_name = f"{key.replace('-', '_')}_schema"
             try:
                 mapping[key] = getattr(self, method_name)
@@ -193,8 +195,9 @@ class GenerateJsonSchema:
 
         # Generate the JSON schema, accounting for the json_schema_override and core_schema_override
         metadata_handler = _core_metadata.CoreMetadataHandler(schema)
-        js_override = metadata_handler.js_override
-        js_cs_override = metadata_handler.js_cs_override
+        js_override = metadata_handler.get_js_override()
+        js_cs_override = metadata_handler.get_js_cs_override()
+
         if js_override is not None:
             json_schema = js_override
         elif js_cs_override is not None:
@@ -401,7 +404,7 @@ class GenerateJsonSchema:
 
         try:
             encoded_default = self.encode_default(default)
-        except TypeError:
+        except pydantic_core.PydanticSerializationError:
             self.emit_warning(
                 'non-serializable-default',
                 f'Default value {default} is not JSON serializable; excluding default from JSON schema',
@@ -642,7 +645,8 @@ class GenerateJsonSchema:
         return json_schema
 
     def arguments_schema(self, schema: core_schema.ArgumentsSchema) -> JsonSchemaValue:
-        prefer_positional = _core_metadata.CoreMetadataHandler(schema).js_prefer_positional_arguments
+        metadata = _core_metadata.CoreMetadataHandler(schema).metadata
+        prefer_positional = metadata.get('pydantic_js_prefer_positional_arguments')
 
         arguments = schema['arguments_schema']
         kw_only_arguments = [a for a in arguments if a.get('mode') == 'keyword_only']
@@ -801,7 +805,7 @@ class GenerateJsonSchema:
             if schema.get('ref'):  # things with refs, such as models and enums, should not have titles set
                 return False
 
-            js_cs_override = _core_metadata.CoreMetadataHandler(schema).js_cs_override
+            js_cs_override = _core_metadata.CoreMetadataHandler(schema).get_js_cs_override()
             if js_cs_override:
                 return self.field_title_should_be_set(js_cs_override)
 
@@ -985,27 +989,7 @@ class GenerateJsonSchema:
         return self.definitions.get(self.json_to_defs_refs[json_ref])
 
     def encode_default(self, dft: Any) -> Any:
-        # TODO: Add something equivalent to pydantic_encoder to pydantic_core, and use that instead
-        from .json import pydantic_encoder
-        from .main import BaseModel
-
-        if isinstance(dft, BaseModel) or is_dataclass(dft):
-            dft = cast('dict[str, Any]', pydantic_encoder(dft))
-
-        if isinstance(dft, dict):
-            return {self.encode_default(k): self.encode_default(v) for k, v in dft.items()}
-        elif isinstance(dft, Enum):
-            return dft.value
-        elif isinstance(dft, (int, float, str)):
-            return dft
-        elif isinstance(dft, (list, tuple)):
-            t = dft.__class__
-            seq_args = (self.encode_default(v) for v in dft)
-            return t(*seq_args) if _typing_extra.is_namedtuple(t) else t(seq_args)
-        elif dft is None:
-            return None
-        else:
-            return pydantic_encoder(dft)
+        return pydantic_core.to_jsonable_python(dft)
 
     def update_with_validations(
         self, json_schema: JsonSchemaValue, core_schema: CoreSchema, mapping: dict[str, str]
@@ -1096,7 +1080,7 @@ class GenerateJsonSchema:
     def handle_invalid_for_json_schema(
         self, schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField, error_info: str
     ) -> JsonSchemaValue:
-        if _core_metadata.CoreMetadataHandler(schema).js_modify_function is not None:
+        if _core_metadata.CoreMetadataHandler(schema).metadata.get('pydantic_js_modify_function') is not None:
             # Since there is a json schema modify function, assume that this type is meant to be handled,
             # and the modify function will set all properties as appropriate
             return {}
@@ -1152,19 +1136,7 @@ def models_json_schema(
     return json_schema
 
 
-# TODO: The JSON schema cache has been there from the beginning (https://github.com/pydantic/pydantic/pull/190 —
-#   — yes, I did go git-blame-spelunking to find this) but does it really make sense to still keep it around?
-#   Unless I'm unaware of some workflow that involves frequently calling `MyModel.schema_json()`, I think it doesn't.
-#   -
-#   I think people generally don't recompute the JSON schema, or if they do, are as likely to use models_json_schema,
-#   where it's not clear to me what the proper caching behavior should necessarily be.
-#   -
-#   I'll also note that the cache doesn't appear to be used at all in the (v1) FastAPI JSON schema functions
-#   pydantic.schema.schema and pydantic.schema.model_schema
-#   -
-#   I have kept this WeakKeyDictionary-based cache implementation here for now because I wrote it, and if we do end up
-#   using it, I wouldn't want to have to re-write it, but I'm in favor of removing it prior to merging this PR.
-#   And removing it should be trivial, just delete the caching-related lines here.
+# TODO: Consider removing this cache, as it already gets used pretty infrequently.
 
 if sys.version_info >= (3, 9):  # Typing for weak dictionaries available at 3.9
     _JsonSchemaCache = WeakKeyDictionary[Type[Any], Dict[Any, Any]]
