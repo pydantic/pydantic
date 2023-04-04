@@ -13,7 +13,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import core_schema
 
 from ._forward_ref import PydanticForwardRef
-from ._generics import replace_types
+from ._generics import get_typevars_map, replace_types
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar
 
@@ -190,8 +190,6 @@ def collect_fields(  # noqa: C901
 
         try:
             default = getattr(cls, ann_name, Undefined)
-            if default is Undefined and generic_origin:
-                default = (generic_origin.__pydantic_generic_metadata__.get('defaults') or {}).get(ann_name, Undefined)
             if default is Undefined:
                 raise AttributeError
         except AttributeError:
@@ -226,10 +224,6 @@ def collect_fields(  # noqa: C901
             # 2. To avoid false positives in the NameError check above
             try:
                 delattr(cls, ann_name)
-                generic_metadata = cls.__pydantic_generic_metadata__
-                if generic_metadata.get('parameters'):  # model can be parametrized
-                    assert generic_metadata.get('defaults') is not None
-                    generic_metadata['defaults'][ann_name] = default
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
 
@@ -253,15 +247,17 @@ def collect_fields(  # noqa: C901
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
 
-    typevars_map = getattr(cls, '__pydantic_generic_metadata__', {}).get('typevars_map')
-    if typevars_map:
-        for field in fields.values():
-            try:
-                field.annotation = typing._eval_type(  # type: ignore[attr-defined]
-                    field.annotation, types_namespace, None
-                )
-            except NameError:
-                pass
-            field.annotation = replace_types(field.annotation, typevars_map)
+    generic_metadata = getattr(cls, '__pydantic_generic_metadata__', None)
+    if generic_metadata:
+        typevars_map = get_typevars_map(generic_metadata['origin'], generic_metadata['args'])
+        if typevars_map:
+            for field in fields.values():
+                try:
+                    field.annotation = typing._eval_type(  # type: ignore[attr-defined]
+                        field.annotation, types_namespace, None
+                    )
+                except NameError:
+                    pass
+                field.annotation = replace_types(field.annotation, typevars_map)
 
     return fields, class_vars

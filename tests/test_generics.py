@@ -2,6 +2,7 @@ import gc
 import itertools
 import json
 import platform
+import re
 import sys
 from collections import deque
 from enum import Enum, IntEnum
@@ -1895,6 +1896,24 @@ def test_generic_subclass_with_extra_type():
     assert B[int, str].__name__ == 'B[int, str]', B[int, str].__name__
     assert issubclass(B[str, int], B)
     assert issubclass(B[str, int], A)
+
+
+def test_generic_subclass_with_extra_type_requires_all_params():
+    T = TypeVar('T')
+    S = TypeVar('S')
+
+    class A(BaseModel, Generic[T]):
+        ...
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape(
+            'All parameters must be present on typing.Generic; you should inherit from typing.Generic[~T, ~S]'
+        ),
+    ):
+
+        class B(A[T], Generic[S]):
+            ...
 
 
 def test_multi_inheritance_generic_binding():

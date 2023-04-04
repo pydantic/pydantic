@@ -2,15 +2,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Union, cast
+from typing import Any, Callable, Union, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
 from typing_extensions import TypeGuard, get_args
 
 from . import _repr
-
-if TYPE_CHECKING:
-    from ._generics import PydanticGenericMetadata
 
 AnyFunctionSchema = Union[
     core_schema.AfterValidatorFunctionSchema,
@@ -68,10 +65,12 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     This `args_override` argument was added for the purpose of creating valid recursive references
     when creating generic models without needing to create a concrete class.
     """
-    generic_metadata: PydanticGenericMetadata = {}
-    generic_metadata = getattr(type_, '__pydantic_generic_metadata__', generic_metadata)
-    origin = generic_metadata.get('origin') or type_
-    args = generic_metadata.get('args') or args_override or ()
+    origin = type_
+    args = args_override or ()
+    generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
+    if generic_metadata:
+        origin = generic_metadata['origin'] or origin
+        args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
     qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
