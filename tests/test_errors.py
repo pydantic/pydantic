@@ -589,3 +589,35 @@ def test_raise_validation_error_custom():
             'ctx': {'foo': 'X', 'bar': 42},
         }
     ]
+
+
+def test_loc_with_dots():
+    v = SchemaValidator(
+        core_schema.typed_dict_schema(
+            {
+                'a': core_schema.typed_dict_field(
+                    core_schema.tuple_positional_schema([core_schema.int_schema(), core_schema.int_schema()]),
+                    validation_alias='foo.bar',
+                )
+            }
+        )
+    )
+    assert v.validate_python({'foo.bar': (41, 42)}) == {'a': (41, 42)}
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'foo.bar': ('x', 42)})
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': ('foo.bar', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        }
+    ]
+    # insert_assert(str(exc_info.value))
+    assert str(exc_info.value) == (
+        "1 validation error for typed-dict\n"
+        "`foo.bar`.0\n"
+        "  Input should be a valid integer, unable to parse string as an integer "
+        "[type=int_parsing, input_value='x', input_type=str]"
+    )

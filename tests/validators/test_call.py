@@ -15,7 +15,7 @@ from ..conftest import Err, PyAndJson, plain_repr
         [(1, 2, 3), 6],
         [{'a': 1, 'b': 1, 'c': 1}, 3],
         [{'__args__': (1,), '__kwargs__': {'b': 1, 'c': 1}}, 3],
-        [(1, 2, 'x'), Err('arguments -> 2\n  Input should be a valid integer,')],
+        [(1, 2, 'x'), Err('arguments.2\n  Input should be a valid integer,')],
         [(3, 3, 4), 10],
         [(3, 3, 5), Err('return-value\n  Input should be less than or equal to 10')],
     ],

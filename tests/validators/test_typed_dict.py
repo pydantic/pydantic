@@ -414,7 +414,7 @@ def test_json_error():
 
 
 def test_missing_schema_key():
-    with pytest.raises(SchemaError, match='typed-dict -> fields -> x -> schema\n  Field required'):
+    with pytest.raises(SchemaError, match='typed-dict.fields.x.schema\n  Field required'):
         SchemaValidator({'type': 'typed-dict', 'fields': {'x': {'type': 'str'}}})
 
 
@@ -605,10 +605,10 @@ def test_alias_allow_pop(py_and_json: PyAndJson):
     'input_value,expected',
     [
         ({'foo': {'bar': '123'}}, {'field_a': 123}),
-        ({'x': '123'}, Err(r'foo -> bar\n +Field required \[type=missing,')),
-        ({'foo': '123'}, Err(r'foo -> bar\n +Field required \[type=missing,')),
-        ({'foo': [1, 2, 3]}, Err(r'foo -> bar\n +Field required \[type=missing,')),
-        ({'foo': {'bat': '123'}}, Err(r'foo -> bar\n +Field required \[type=missing,')),
+        ({'x': '123'}, Err(r'foo.bar\n +Field required \[type=missing,')),
+        ({'foo': '123'}, Err(r'foo.bar\n +Field required \[type=missing,')),
+        ({'foo': [1, 2, 3]}, Err(r'foo.bar\n +Field required \[type=missing,')),
+        ({'foo': {'bat': '123'}}, Err(r'foo.bar\n +Field required \[type=missing,')),
     ],
     ids=repr,
 )
@@ -709,7 +709,7 @@ def test_aliases_path_negative(input_value, expected):
     [
         ({'foo': [1, 42, 'xx']}, {'field_a': 42}),
         ({'foo': [42, 'xxx', 42]}, Err(r'Input should be a valid integer,')),
-        ({'foo': [42]}, Err(r'foo -> -2\n +Field required \[type=missing,')),
+        ({'foo': [42]}, Err(r'foo.-2\n +Field required \[type=missing,')),
     ],
     ids=repr,
 )
