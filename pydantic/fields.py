@@ -479,13 +479,3 @@ def PrivateAttr(
         default,
         default_factory=default_factory,
     )
-
-
-def is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
-    if not _typing_extra.is_finalvar(type_):
-        return False
-    if val is Undefined:
-        return False
-    if isinstance(val, FieldInfo) and (val.default is Undefined and val.default_factory is None):
-        return False
-    return True
