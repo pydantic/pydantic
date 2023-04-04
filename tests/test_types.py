@@ -985,6 +985,7 @@ def check_model_fixture():
         datetime_check: datetime = datetime(2017, 5, 5, 10, 10, 10)
         time_check: time = time(10, 10, 10)
         timedelta_check: timedelta = timedelta(days=1)
+        list_check: List[str] = ['1', '2']
 
     return CheckModel
 
@@ -1151,6 +1152,13 @@ class BoolCastable:
         ('timedelta_check', Decimal(123_000.0002), timedelta(days=1, seconds=36600, microseconds=200)),
         ('timedelta_check', '1 10:10', ValidationError),
         ('timedelta_check', b'1 10:10', ValidationError),
+        ('list_check', ['1', '2'], ['1', '2']),
+        ('list_check', ('1', '2'), ['1', '2']),
+        ('list_check', {'1': 1, '2': 2}.keys(), ['1', '2']),
+        ('list_check', {'1': '1', '2': '2'}.values(), ['1', '2']),
+        ('list_check', {'1', '2'}, ValidationError),
+        ('list_check', frozenset(['1', '2']), ValidationError),
+        ('list_check', {'1': 1, '2': 2}, ValidationError),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
