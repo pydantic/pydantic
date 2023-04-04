@@ -42,8 +42,8 @@ build-coverage:
 
 .PHONY: build-wasm
 build-wasm:
-	@echo 'This requires python 3.10, maturin and emsdk to be installed'
-	maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.10
+	@echo 'This requires python 3.11, maturin and emsdk to be installed'
+	maturin build --release --target wasm32-unknown-emscripten --out dist -i 3.11
 	ls -lh dist
 
 .PHONY: format
