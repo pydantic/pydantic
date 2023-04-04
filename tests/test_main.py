@@ -1496,7 +1496,6 @@ def test_base_config_type_hinting():
     get_type_hints(type(M.model_config))
 
 
-@pytest.mark.xfail(reason='frozen field; https://github.com/pydantic/pydantic-core/pull/237')
 def test_frozen_field():
     """assigning a frozen=True field should raise a TypeError"""
 
@@ -1510,8 +1509,9 @@ def test_frozen_field():
     r.val = 101
     assert r.val == 101
     assert r.id == 1
-    with pytest.raises(TypeError, match='"id" has frozen set to True and cannot be assigned'):
+    with pytest.raises(ValidationError) as exc_info:
         r.id = 2
+    assert exc_info.value.errors() == [{'input': 2, 'loc': ('id',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
 
 
 def test_repr_field():
@@ -1719,7 +1719,6 @@ def test_new_union_origin():
     # }
 
 
-@pytest.mark.xfail(reason='implement final')
 @pytest.mark.parametrize(
     'ann',
     [Final, Final[int]],
@@ -1737,15 +1736,12 @@ def test_final_field_decl_without_default_val(ann, value):
         if value is not None:
             a = value
 
-    Model.model_rebuild(ann=ann)
-
     assert 'a' not in Model.__class_vars__
     assert 'a' in Model.model_fields
 
     assert Model.model_fields['a'].final
 
 
-@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 @pytest.mark.parametrize(
     'ann',
     [Final, Final[int]],
@@ -1755,27 +1751,25 @@ def test_final_field_decl_with_default_val(ann):
     class Model(BaseModel):
         a: ann = 10
 
-    Model.model_rebuild(ann=ann)
-
     assert 'a' in Model.__class_vars__
     assert 'a' not in Model.model_fields
 
 
-@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 def test_final_field_reassignment():
     class Model(BaseModel):
+        model_config = ConfigDict(validate_assignment=True)
+
         a: Final[int]
 
     obj = Model(a=10)
 
     with pytest.raises(
-        TypeError,
-        match=r'^"Model" object "a" field is final and does not support reassignment$',
-    ):
+        ValidationError,
+    ) as exc_info:
         obj.a = 20
+    assert exc_info.value.errors() == [{'input': 20, 'loc': ('a',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
 
 
-@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 def test_field_by_default_is_not_final():
     class Model(BaseModel):
         a: int

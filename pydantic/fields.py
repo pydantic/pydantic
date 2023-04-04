@@ -43,6 +43,8 @@ class FieldInfo(_repr.Representation):
         'init_var',
         'kw_only',
         'validate_default',
+        'frozen',
+        'final',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -60,7 +62,6 @@ class FieldInfo(_repr.Representation):
         'allow_inf_nan': None,
         'min_items': None,
         'max_items': None,
-        'frozen': None,
         'max_digits': None,
         'decimal_places': None,
     }
@@ -95,6 +96,8 @@ class FieldInfo(_repr.Representation):
         self.init_var = kwargs.get('init_var', None)
         self.kw_only = kwargs.get('kw_only', None)
         self.validate_default = kwargs.get('validate_default', None)
+        self.frozen = kwargs.get('frozen', None)
+        self.final = kwargs.get('final', None)
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
@@ -124,16 +127,25 @@ class FieldInfo(_repr.Representation):
         >>>     foo: typing.Annotated[int, annotated_types.Gt(42)]
         >>>     bar: typing.Annotated[int, Field(gt=42)]
         """
+        final = False
+        if _typing_extra.is_finalvar(annotation):
+            final = True
+            if annotation is not typing_extensions.Final:
+                annotation = typing_extensions.get_args(annotation)[0]
+
         if _typing_extra.is_annotated(annotation):
             first_arg, *extra_args = typing_extensions.get_args(annotation)
+            if _typing_extra.is_finalvar(annotation):
+                final = True
             field_info = cls._find_field_info_arg(extra_args)
             if field_info:
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
+                new_field_info.final = final
                 new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                 return new_field_info
 
-        return cls(annotation=annotation)
+        return cls(annotation=annotation, final=final)
 
     @classmethod
     def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
@@ -147,14 +159,22 @@ class FieldInfo(_repr.Representation):
         """
         import dataclasses
 
+        final = False
+        if _typing_extra.is_finalvar(annotation):
+            final = True
+            if annotation is not typing_extensions.Final:
+                annotation = typing_extensions.get_args(annotation)[0]
+
         if isinstance(default, cls):
             default.annotation, annotation_metadata = cls._extract_metadata(annotation)
             default.metadata += annotation_metadata
+            default.final = final
             return default
         elif isinstance(default, dataclasses.Field):
             pydantic_field = cls.from_dataclass_field(default)
             pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
+            pydantic_field.final = final
             return pydantic_field
         else:
             if _typing_extra.is_annotated(annotation):
@@ -169,7 +189,7 @@ class FieldInfo(_repr.Representation):
                     new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                     return new_field_info
 
-            return cls(annotation=annotation, default=default)
+            return cls(annotation=annotation, default=default, final=final)
 
     @classmethod
     def from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
@@ -278,6 +298,8 @@ class FieldInfo(_repr.Representation):
             elif s == 'metadata' and not self.metadata:
                 continue
             elif s == 'repr' and self.repr is True:
+                continue
+            elif s == 'final':
                 continue
             if s == 'default_factory' and self.default_factory is not None:
                 yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
@@ -457,3 +479,13 @@ def PrivateAttr(
         default,
         default_factory=default_factory,
     )
+
+
+def is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
+    if not _typing_extra.is_finalvar(type_):
+        return False
+    if val is Undefined:
+        return False
+    if isinstance(val, FieldInfo) and (val.default is Undefined and val.default_factory is None):
+        return False
+    return True
