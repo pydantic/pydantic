@@ -26,7 +26,7 @@ include = [
 ]
 
 [dependencies]
-pyo3 = "0.18.1"
+pyo3 = "0.18.2"
 regex = "1.6.0"
 strum = { version = "0.24.1", features = ["derive"] }
 strum_macros = "0.24.3"
@@ -53,9 +53,6 @@ extension-module = ["pyo3/extension-module"]
 auto-initialize = ["pyo3/auto-initialize"]
 default = ["mimalloc", "extension-module", "mimalloc/local_dynamic_tls", "pyo3/generate-import-lib"]
 
-[package.metadata.maturin]
-name = "pydantic_core._pydantic_core"
-
 [profile.release]
 lto = "fat"
 codegen-units = 1
@@ -65,4 +62,4 @@ strip = true
 [build-dependencies]
 version_check = "0.9.4"
 # used where logic has to be version/distribution specific, e.g. pypy
-pyo3-build-config = "0.18.1"
+pyo3-build-config = "0.18.2"
