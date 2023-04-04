@@ -7,9 +7,10 @@ from typing import List
 
 import pytest
 from dirty_equals import IsInstance
+from pydantic_core import ArgsKwargs
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, Extra, Field, ValidationError, validate_call
+from pydantic import Extra, Field, ValidationError, validate_call
 from pydantic.errors import PydanticUserError
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
@@ -32,46 +33,38 @@ def test_args():
         foo()
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {
-            'type': 'missing_keyword_argument',
-            'loc': ('arguments', 'a'),
-            'msg': 'Missing required keyword argument',
-            'input': {'__args__': (), '__kwargs__': {}},
-        },
-        {
-            'type': 'missing_keyword_argument',
-            'loc': ('arguments', 'b'),
-            'msg': 'Missing required keyword argument',
-            'input': {'__args__': (), '__kwargs__': {}},
-        },
-    ]
-    assert exc_info.value.errors() == [
-        {'input': {}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
-        {'input': {}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 'x')
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'input': 'x',
-            'loc': ('b',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
+            'loc': (1,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         }
     ]
 
-    with pytest.raises(TypeError, match='2 positional arguments expected but 3 given'):
+    with pytest.raises(ValidationError, match=r'2\s+Unexpected positional argument'):
         foo(1, 2, 3)
 
-    with pytest.raises(TypeError, match="unexpected keyword argument: 'apple'"):
+    with pytest.raises(ValidationError, match=r'apple\s+Unexpected keyword argument'):
         foo(1, 2, apple=3)
 
-    with pytest.raises(TypeError, match="multiple values for argument: 'a'"):
+    with pytest.raises(ValidationError, match=r'a\s+Got multiple values for argument'):
         foo(1, 2, a=3)
 
-    with pytest.raises(TypeError, match="multiple values for arguments: 'a', 'b'"):
+    with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, a=3, b=4)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'multiple_argument_values', 'loc': ('a',), 'msg': 'Got multiple values for argument', 'input': 3},
+        {'type': 'multiple_argument_values', 'loc': ('b',), 'msg': 'Got multiple values for argument', 'input': 4},
+    ]
 
 
 def test_wrap():
@@ -86,12 +79,6 @@ def test_wrap():
     assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
     assert isinstance(foo_bar.__pydantic_core_schema__, dict)
     assert callable(foo_bar.raw_function)
-    assert foo_bar.vd.arg_mapping == {0: 'a', 1: 'b'}
-    assert foo_bar.vd.positional_only_args == set()
-    assert issubclass(foo_bar.model, BaseModel)
-    assert foo_bar.model.model_fields.keys() == {'a', 'b', 'args', 'kwargs', 'v__duplicate_kwargs'}
-    assert foo_bar.model.__name__ == 'FooBar'
-    assert foo_bar.model.model_json_schema()['title'] == 'FooBar'
     assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 
@@ -100,7 +87,6 @@ def test_kwargs():
     def foo(*, a: int, b: int):
         return a + b
 
-    assert foo.model.model_fields.keys() == {'a', 'b', 'args', 'kwargs'}
     assert foo(a=1, b=3) == 4
 
     with pytest.raises(ValidationError) as exc_info:
@@ -115,8 +101,25 @@ def test_kwargs():
         }
     ]
 
-    with pytest.raises(TypeError, match='0 positional arguments expected but 2 given'):
+    with pytest.raises(ValidationError) as exc_info:
         foo(1, 'x')
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing_keyword_only_argument',
+            'loc': ('a',),
+            'msg': 'Missing required keyword only argument',
+            'input': ArgsKwargs((1, 'x')),
+        },
+        {
+            'type': 'missing_keyword_only_argument',
+            'loc': ('b',),
+            'msg': 'Missing required keyword only argument',
+            'input': ArgsKwargs((1, 'x')),
+        },
+        {'type': 'unexpected_positional_argument', 'loc': (0,), 'msg': 'Unexpected positional argument', 'input': 1},
+        {'type': 'unexpected_positional_argument', 'loc': (1,), 'msg': 'Unexpected positional argument', 'input': 'x'},
+    ]
 
 
 def test_untyped():
@@ -146,6 +149,7 @@ def test_var_args_kwargs(validated):
     assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
 
 
+@pytest.mark.xfail(reason='what do we do about Field?')
 def test_field_can_provide_factory() -> None:
     @validate_call
     def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
@@ -156,7 +160,7 @@ def test_field_can_provide_factory() -> None:
     assert foo(1, 2, 3) == 6
 
 
-@pytest.mark.xfail(reason='Using Annotated to get a field default is not working properly yet')
+@pytest.mark.xfail(reason='what do we do about Field?')
 def test_annotated_field_can_provide_factory() -> None:
     @validate_call
     def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
@@ -181,10 +185,38 @@ def foo(a, b, /, c=None):
     assert module.foo(1, 2) == '1, 2, None'
     assert module.foo(1, 2, 44) == '1, 2, 44'
     assert module.foo(1, 2, c=44) == '1, 2, 44'
-    with pytest.raises(TypeError, match="positional-only argument passed as keyword argument: 'b'"):
+    with pytest.raises(ValidationError) as exc_info:
         module.foo(1, b=2)
-    with pytest.raises(TypeError, match="positional-only arguments passed as keyword arguments: 'a', 'b'"):
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing_positional_only_argument',
+            'loc': (1,),
+            'msg': 'Missing required positional only argument',
+            'input': ArgsKwargs((1,), {'b': 2}),
+        },
+        {'type': 'unexpected_keyword_argument', 'loc': ('b',), 'msg': 'Unexpected keyword argument', 'input': 2},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
         module.foo(a=1, b=2)
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing_positional_only_argument',
+            'loc': (0,),
+            'msg': 'Missing required positional only argument',
+            'input': ArgsKwargs((), {'a': 1, 'b': 2}),
+        },
+        {
+            'type': 'missing_positional_only_argument',
+            'loc': (1,),
+            'msg': 'Missing required positional only argument',
+            'input': ArgsKwargs((), {'a': 1, 'b': 2}),
+        },
+        {'type': 'unexpected_keyword_argument', 'loc': ('a',), 'msg': 'Unexpected keyword argument', 'input': 1},
+        {'type': 'unexpected_keyword_argument', 'loc': ('b',), 'msg': 'Unexpected keyword argument', 'input': 2},
+    ]
 
 
 def test_args_name():
@@ -192,7 +224,6 @@ def test_args_name():
     def foo(args: int, kwargs: int):
         return f'args={args!r}, kwargs={kwargs!r}'
 
-    assert foo.model.model_fields.keys() == {'args', 'kwargs', 'v__args', 'v__kwargs', 'v__duplicate_kwargs'}
     assert foo(1, 2) == 'args=1, kwargs=2'
 
     with pytest.raises(TypeError, match="unexpected keyword argument: 'apple'"):

@@ -45,10 +45,11 @@ def validate_call(
         gen_schema = _generate_schema.GenerateSchema(arbitrary_types_allowed, namespace)
         schema = gen_schema.callable_schema(function, validate_return)
         validator = pydantic_core.SchemaValidator(schema)
+        ArgsKwargs = pydantic_core.ArgsKwargs
 
         @wraps(function)
         def wrapper_function(*args: Params.args, **kwargs: Params.kwargs) -> ReturnType:
-            return validator.validate_python({'__args__': args, '__kwargs__': kwargs})
+            return validator.validate_python(ArgsKwargs(args, kwargs))
 
         wrapper_function.raw_function = function  # type: ignore[attr-defined]
         wrapper_function.__pydantic_core_schema__ = schema  # type: ignore[attr-defined]
