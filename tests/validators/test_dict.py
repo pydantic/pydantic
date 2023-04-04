@@ -128,7 +128,7 @@ def test_mapping():
 def test_key_error():
     v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_python({'1': True}) == {1: 1}
-    with pytest.raises(ValidationError, match=re.escape('x -> [key]\n  Input should be a valid integer')) as exc_info:
+    with pytest.raises(ValidationError, match=re.escape('x.[key]\n  Input should be a valid integer')) as exc_info:
         v.validate_python({'x': 1})
     assert exc_info.value.errors() == [
         {

@@ -167,14 +167,12 @@ def test_function_wrap_str():
 
 
 def test_function_wrap_not_callable():
-    with pytest.raises(
-        SchemaError, match='function-wrap -> function -> typed-dict -> function\n  Input should be callable'
-    ):
+    with pytest.raises(SchemaError, match='function-wrap.function.typed-dict.function\n  Input should be callable'):
         SchemaValidator(
             {'type': 'function-wrap', 'function': {'type': 'general', 'function': []}, 'schema': {'type': 'str'}}
         )
 
-    with pytest.raises(SchemaError, match='function-wrap -> function\n  Field required'):
+    with pytest.raises(SchemaError, match='function-wrap.function\n  Field required'):
         SchemaValidator({'type': 'function-wrap', 'schema': {'type': 'str'}})
 
 
@@ -332,7 +330,7 @@ def test_function_plain():
 
 
 def test_plain_with_schema():
-    with pytest.raises(SchemaError, match='function-plain -> schema\n  Extra inputs are not permitted'):
+    with pytest.raises(SchemaError, match='function-plain.schema\n  Extra inputs are not permitted'):
         SchemaValidator(
             {
                 'type': 'function-plain',

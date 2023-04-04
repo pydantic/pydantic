@@ -241,7 +241,7 @@ def test_no_choices():
 
     assert str(exc_info.value) == (
         'Invalid Schema:\n'
-        'union -> choices\n'
+        'union.choices\n'
         "  Field required [type=missing, input_value={'type': 'union'}, input_type=dict]"
     )
     assert exc_info.value.error_count() == 1

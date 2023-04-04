@@ -27,6 +27,7 @@ pub enum LocItem {
 impl fmt::Display for LocItem {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Self::S(s) if s.contains('.') => write!(f, "`{s}`"),
             Self::S(s) => write!(f, "{s}"),
             Self::I(i) => write!(f, "{i}"),
         }
@@ -158,7 +159,7 @@ impl fmt::Display for Location {
         match self {
             Self::List(loc) => {
                 let loc_str = loc.iter().rev().map(|i| i.to_string()).collect::<Vec<_>>();
-                writeln!(f, "{}", loc_str.join(" -> "))
+                writeln!(f, "{}", loc_str.join("."))
             }
             Self::Empty => Ok(()),
         }

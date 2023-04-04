@@ -197,7 +197,7 @@ def test_function_args_str():
 
 
 def test_invalid_return_type():
-    with pytest.raises(SchemaError, match='function-plain -> json_return_type\n  Input should be'):
+    with pytest.raises(SchemaError, match=r'function-plain\.json_return_type\n  Input should be'):
         SchemaSerializer(
             core_schema.any_schema(
                 serialization=core_schema.general_plain_serializer_function_ser_schema(
