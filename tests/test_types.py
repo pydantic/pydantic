@@ -986,6 +986,9 @@ def check_model_fixture():
         time_check: time = time(10, 10, 10)
         timedelta_check: timedelta = timedelta(days=1)
         list_check: List[str] = ['1', '2']
+        tuple_check: Tuple[str, ...] = ('1', '2')
+        set_check: Set[str] = {'1', '2'}
+        frozenset_check: FrozenSet[str] = frozenset(['1', '2'])
 
     return CheckModel
 
@@ -1159,6 +1162,27 @@ class BoolCastable:
         ('list_check', {'1', '2'}, ValidationError),
         ('list_check', frozenset(['1', '2']), ValidationError),
         ('list_check', {'1': 1, '2': 2}, ValidationError),
+        ('tuple_check', ('1', '2'), ('1', '2')),
+        ('tuple_check', ['1', '2'], ('1', '2')),
+        ('tuple_check', {'1': 1, '2': 2}.keys(), ('1', '2')),
+        ('tuple_check', {'1': '1', '2': '2'}.values(), ('1', '2')),
+        ('tuple_check', {'1', '2'}, ValidationError),
+        ('tuple_check', frozenset(['1', '2']), ValidationError),
+        ('tuple_check', {'1': 1, '2': 2}, ValidationError),
+        ('set_check', {'1', '2'}, {'1', '2'}),
+        ('set_check', ['1', '2', '1', '2'], {'1', '2'}),
+        ('set_check', ('1', '2', '1', '2'), {'1', '2'}),
+        ('set_check', frozenset(['1', '2']), {'1', '2'}),
+        ('set_check', {'1': 1, '2': 2}.keys(), {'1', '2'}),
+        ('set_check', {'1': '1', '2': '2'}.values(), {'1', '2'}),
+        ('set_check', {'1': 1, '2': 2}, ValidationError),
+        ('frozenset_check', frozenset(['1', '2']), frozenset(['1', '2'])),
+        ('frozenset_check', ['1', '2', '1', '2'], frozenset(['1', '2'])),
+        ('frozenset_check', ('1', '2', '1', '2'), frozenset(['1', '2'])),
+        ('frozenset_check', {'1', '2'}, frozenset(['1', '2'])),
+        ('frozenset_check', {'1': 1, '2': 2}.keys(), frozenset(['1', '2'])),
+        ('frozenset_check', {'1': '1', '2': '2'}.values(), frozenset(['1', '2'])),
+        ('frozenset_check', {'1': 1, '2': 2}, ValidationError),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
