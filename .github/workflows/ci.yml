@@ -278,7 +278,7 @@ jobs:
             platform: linux
           - os: windows
             ls: dir
-            interpreter: 3.7 3.8 3.9 3.10 3.11
+            interpreter: 3.7 3.8 3.9 3.10 3.11 pypy3.8 pypy3.9
           - os: windows
             ls: dir
             target: i686
