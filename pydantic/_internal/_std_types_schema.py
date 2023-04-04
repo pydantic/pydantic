@@ -19,9 +19,10 @@ from uuid import UUID
 from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Literal, get_args
 
-from ..json_schema import JsonSchemaMetadata
+from ..json_schema import update_json_schema
 from . import _serializers, _validators
 from ._core_metadata import build_metadata_dict
+from ._core_utils import get_type_ref
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -69,39 +70,34 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         except ValueError:
             raise PydanticCustomError('enum', 'Input is not a valid enum member')
 
-    enum_ref = f'{getattr(enum_type, "__module__", None)}.{enum_type.__qualname__}:{id(enum_type)}'
+    enum_ref = get_type_ref(enum_type)
     literal_schema = core_schema.literal_schema(
-        *[m.value for m in enum_type.__members__.values()],
-        ref=enum_ref,
+        [m.value for m in enum_type.__members__.values()],
     )
-    js_metadata = JsonSchemaMetadata(
-        core_schema_override=literal_schema.copy(),
-        source_class=enum_type,
-        title=enum_type.__name__,
-        description=inspect.cleandoc(enum_type.__doc__ or 'An enumeration.'),
+    description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
+    if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
+        description = None
+    updates = {'title': enum_type.__name__, 'description': description}
+    updates = {k: v for k, v in updates.items() if v is not None}
+    metadata = build_metadata_dict(
+        js_cs_override=literal_schema.copy(), js_modify_function=lambda s: update_json_schema(s, updates)
     )
-    metadata = build_metadata_dict(js_metadata=js_metadata)
 
     lax: CoreSchema
     json_type: Literal['int', 'float', 'str']
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
-        js_metadata['extra_updates'] = {'type': 'integer'}
+        updates['type'] = 'integer'
         lax = core_schema.chain_schema(
-            core_schema.int_schema(),
-            literal_schema,
-            core_schema.general_plain_validator_function(to_enum),
+            [core_schema.int_schema(), literal_schema, core_schema.general_plain_validator_function(to_enum)],
             metadata=metadata,
         )
         json_type = 'int'
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
-        # TODO: add test for StrEnum in 3.11, and also for enums that inherit from str/int
-        js_metadata['extra_updates'] = {'type': 'string'}
+        updates['type'] = 'string'
         lax = core_schema.chain_schema(
-            core_schema.str_schema(),
-            literal_schema,
-            core_schema.general_plain_validator_function(to_enum),
+            [core_schema.str_schema(), literal_schema, core_schema.general_plain_validator_function(to_enum)],
             metadata=metadata,
         )
         json_type = 'str'
@@ -111,6 +107,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=core_schema.is_instance_schema(enum_type, json_types={json_type}),
+        ref=enum_ref,
         metadata=metadata,
     )
 
@@ -119,19 +116,19 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decimal]) -> core_schema.LaxOrStrictSchema:
     decimal_validator = _validators.DecimalValidator()
     metadata = build_metadata_dict(
-        update_cs_function=decimal_validator.__pydantic_update_schema__,
-        js_metadata=JsonSchemaMetadata(
-            # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
-            core_schema_override=lambda: decimal_validator.json_schema_override_schema()
-        ),
+        cs_update_function=decimal_validator.__pydantic_update_schema__,
+        # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
+        js_cs_override=lambda: decimal_validator.json_schema_override_schema(),
     )
     lax = core_schema.general_after_validator_function(
         decimal_validator,
         core_schema.union_schema(
-            core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
-            core_schema.int_schema(),
-            core_schema.float_schema(),
-            core_schema.str_schema(strip_whitespace=True),
+            [
+                core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
+                core_schema.int_schema(),
+                core_schema.float_schema(),
+                core_schema.str_schema(strip_whitespace=True),
+            ],
             strict=True,
         ),
     )
@@ -148,21 +145,16 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
 
 @schema_function(UUID)
 def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> core_schema.LaxOrStrictSchema:
-    metadata = build_metadata_dict(
-        js_metadata=JsonSchemaMetadata(
-            source_class=UUID, type='string', format='uuid', modify_js_function=lambda schema: schema.pop('anyOf', None)
-        )
-    )
+    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'uuid'})
     # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
     lax = core_schema.union_schema(
-        core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-        core_schema.general_after_validator_function(
-            _validators.uuid_validator,
-            core_schema.union_schema(
-                core_schema.str_schema(),
-                core_schema.bytes_schema(),
+        [
+            core_schema.is_instance_schema(uuid_type, json_types={'str'}),
+            core_schema.general_after_validator_function(
+                _validators.uuid_validator,
+                core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()]),
             ),
-        ),
+        ],
         custom_error_type='uuid_type',
         custom_error_message='Input should be a valid UUID, string, or bytes',
         strict=True,
@@ -172,14 +164,20 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=core_schema.chain_schema(
-            core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-            core_schema.union_schema(
-                core_schema.is_instance_schema(UUID),
-                core_schema.chain_schema(
-                    core_schema.str_schema(),
-                    core_schema.general_plain_validator_function(_validators.uuid_validator),
+            [
+                core_schema.is_instance_schema(uuid_type, json_types={'str'}),
+                core_schema.union_schema(
+                    [
+                        core_schema.is_instance_schema(UUID),
+                        core_schema.chain_schema(
+                            [
+                                core_schema.str_schema(),
+                                core_schema.general_plain_validator_function(_validators.uuid_validator),
+                            ]
+                        ),
+                    ]
                 ),
-            ),
+            ],
             metadata=metadata,
         ),
     )
@@ -187,15 +185,17 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
 
 @schema_function(PurePath)
 def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) -> core_schema.LaxOrStrictSchema:
-    metadata = build_metadata_dict(js_metadata=JsonSchemaMetadata(source_class=PurePath, type='string', format='path'))
+    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'path'})
     # TODO, is this actually faster than `function_after(...)` as above?
     lax = core_schema.union_schema(
-        core_schema.is_instance_schema(path_type, json_types={'str'}, metadata=metadata),
-        core_schema.general_after_validator_function(
-            _validators.path_validator,
-            core_schema.str_schema(),
-            metadata=metadata,
-        ),
+        [
+            core_schema.is_instance_schema(path_type, json_types={'str'}, metadata=metadata),
+            core_schema.general_after_validator_function(
+                _validators.path_validator,
+                core_schema.str_schema(),
+                metadata=metadata,
+            ),
+        ],
         custom_error_type='path_type',
         custom_error_message='Input is not a valid path',
         strict=True,
@@ -216,7 +216,7 @@ def _deque_ser_schema(
     inner_schema: core_schema.CoreSchema | None = None,
 ) -> core_schema.WrapSerializerFunctionSerSchema:
     return core_schema.general_wrap_serializer_function_ser_schema(
-        _serializers.serialize_deque, inner_schema or core_schema.any_schema()
+        _serializers.serialize_deque, schema=inner_schema or core_schema.any_schema()
     )
 
 
@@ -252,13 +252,8 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
     else:
         # `Deque[Something]`
         inner_schema = schema_generator.generate_schema(arg)
-        metadata = build_metadata_dict(
-            js_metadata=JsonSchemaMetadata(
-                # Use a lambda here so `apply_metadata` is called on the decimal_validator
-                # before the override is generated
-                core_schema_override=lambda: core_schema.list_schema(inner_schema)
-            ),
-        )
+        # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
+        metadata = build_metadata_dict(js_cs_override=lambda: core_schema.list_schema(inner_schema))
         return core_schema.lax_or_strict_schema(
             lax_schema=core_schema.general_after_validator_function(
                 _validators.deque_typed_validator,
@@ -267,11 +262,13 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
                 metadata=metadata,
             ),
             strict_schema=core_schema.chain_schema(
-                core_schema.is_instance_schema(deque, json_types={'list'}),
-                core_schema.list_schema(inner_schema, allow_any_iter=True),
-                core_schema.general_plain_validator_function(
-                    _validators.deque_typed_validator,
-                ),
+                [
+                    core_schema.is_instance_schema(deque, json_types={'list'}),
+                    core_schema.list_schema(inner_schema, allow_any_iter=True),
+                    core_schema.general_plain_validator_function(
+                        _validators.deque_typed_validator,
+                    ),
+                ],
                 metadata=metadata,
             ),
             serialization=_deque_ser_schema(inner_schema),
@@ -319,8 +316,10 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
             strict_schema=core_schema.general_after_validator_function(
                 lambda x, _: OrderedDict(x),
                 core_schema.chain_schema(
-                    core_schema.is_instance_schema(OrderedDict, json_types={'dict'}),
-                    core_schema.dict_schema(inner_schema),
+                    [
+                        core_schema.is_instance_schema(OrderedDict, json_types={'dict'}),
+                        core_schema.dict_schema(inner_schema),
+                    ],
                 ),
             ),
         )
@@ -336,9 +335,7 @@ def make_strict_ip_schema(tp: type[Any], metadata: Any) -> CoreSchema:
 
 @schema_function(IPv4Address)
 def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(
-        js_metadata=JsonSchemaMetadata(source_class=IPv4Address, type='string', format='ipv4')
-    )
+    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv4'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(_validators.ip_v4_address_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv4Address, metadata=metadata),
@@ -348,9 +345,7 @@ def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv4Interface)
 def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(
-        js_metadata=JsonSchemaMetadata(source_class=IPv4Interface, type='string', format='ipv4interface')
-    )
+    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv4interface'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(
             _validators.ip_v4_interface_validator, metadata=metadata
@@ -362,9 +357,7 @@ def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 
 @schema_function(IPv4Network)
 def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(
-        js_metadata=JsonSchemaMetadata(source_class=IPv4Network, type='string', format='ipv4network')
-    )
+    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv4network'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(_validators.ip_v4_network_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv4Network, metadata=metadata),
@@ -374,9 +367,7 @@ def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv6Address)
 def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(
-        js_metadata=JsonSchemaMetadata(source_class=IPv6Address, type='string', format='ipv6')
-    )
+    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv6'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(_validators.ip_v6_address_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv6Address, metadata=metadata),
@@ -386,9 +377,7 @@ def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv6Interface)
 def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(
-        js_metadata=JsonSchemaMetadata(source_class=IPv6Interface, type='string', format='ipv6interface')
-    )
+    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv6interface'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(
             _validators.ip_v6_interface_validator, metadata=metadata
@@ -400,9 +389,7 @@ def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 
 @schema_function(IPv6Network)
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(
-        js_metadata=JsonSchemaMetadata(source_class=IPv6Network, type='string', format='ipv6network')
-    )
+    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv6network'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(_validators.ip_v6_network_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv6Network, metadata=metadata),

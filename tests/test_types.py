@@ -299,7 +299,7 @@ def test_constrained_list_constraints():
         ConListModelBoth(v=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': 1}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': 1}
     ]
 
 
@@ -369,7 +369,7 @@ def test_conlist():
         Model(foo=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('foo',), 'msg': 'Input should be a valid list/array', 'input': 1}
+        {'type': 'list_type', 'loc': ('foo',), 'msg': 'Input should be a valid list', 'input': 1}
     ]
 
 
@@ -1339,7 +1339,7 @@ def test_list_fails(value):
         {
             'type': 'list_type',
             'loc': ('v',),
-            'msg': 'Input should be a valid list/array',
+            'msg': 'Input should be a valid list',
             'input': value,
         }
     ]
@@ -1486,7 +1486,7 @@ def test_list_type_fails():
         Model(v='123')
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': '123'}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': '123'}
     ]
 
 
@@ -1756,7 +1756,7 @@ def test_sequence_generator_fails():
                 {
                     'type': 'list_type',
                     'loc': ('v', 0),
-                    'msg': 'Input should be a valid list/array',
+                    'msg': 'Input should be a valid list',
                     'input': {'a': 1, 'b': 2},
                 }
             ],
@@ -3296,7 +3296,7 @@ def test_generic_without_params_error():
         {
             'type': 'list_type',
             'loc': ('generic_list',),
-            'msg': 'Input should be a valid list/array',
+            'msg': 'Input should be a valid list',
             'input': 0,
         },
         {
@@ -3513,7 +3513,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             {
                 'type': 'list_type',
                 'loc': ('v',),
-                'msg': 'Input should be a valid list/array',
+                'msg': 'Input should be a valid list',
                 'input': {1, 2, 3},
             },
         ),
@@ -3523,7 +3523,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             {
                 'type': 'list_type',
                 'loc': ('v',),
-                'msg': 'Input should be a valid list/array',
+                'msg': 'Input should be a valid list',
                 'input': frozenset((1, 2, 3)),
             },
         ),
@@ -3563,7 +3563,7 @@ def test_deque_generic_success_strict(cls, value: Any, result):
             {
                 'type': 'list_type',
                 'loc': ('v', 0),
-                'msg': 'Input should be a valid list/array',
+                'msg': 'Input should be a valid list',
                 'input': {
                     'a': 1,
                     'b': 2,
@@ -3598,7 +3598,7 @@ def test_deque_json():
     class Model(BaseModel):
         v: Deque[int]
 
-    assert Model(v=deque((1, 2, 3))).model_dump_json() == b'{"v":[1,2,3]}'
+    assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__, Literal[None]))
@@ -3645,21 +3645,21 @@ def test_none(value_type):
         )
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'none_required', 'loc': ('my_none',), 'msg': 'Input should be None/null', 'input': 'qwe'},
-        {'type': 'none_required', 'loc': ('my_none_list', 0), 'msg': 'Input should be None/null', 'input': 1},
+        {'type': 'none_required', 'loc': ('my_none',), 'msg': 'Input should be None', 'input': 'qwe'},
+        {'type': 'none_required', 'loc': ('my_none_list', 0), 'msg': 'Input should be None', 'input': 1},
         {
             'type': 'none_required',
             'loc': ('my_none_list', 2),
-            'msg': 'Input should be None/null',
+            'msg': 'Input should be None',
             'input': 'qwe',
         },
         {
             'type': 'none_required',
             'loc': ('my_none_dict', 'a'),
-            'msg': 'Input should be None/null',
+            'msg': 'Input should be None',
             'input': 1,
         },
-        {'type': 'none_required', 'loc': ('my_json_none',), 'msg': 'Input should be None/null', 'input': 'a'},
+        {'type': 'none_required', 'loc': ('my_json_none',), 'msg': 'Input should be None', 'input': 'a'},
     ]
 
 
@@ -3728,13 +3728,13 @@ def test_union_compound_types():
         {
             'type': 'list_type',
             'loc': ('values', 'list[str]'),
-            'msg': 'Input should be a valid list/array',
+            'msg': 'Input should be a valid list',
             'input': {'x': {'a': 'b'}},
         },
         {
             'type': 'list_type',
             'loc': ('values', 'dict[str,list[str]]', 'x'),
-            'msg': 'Input should be a valid list/array',
+            'msg': 'Input should be a valid list',
             'input': {'a': 'b'},
         },
     ]

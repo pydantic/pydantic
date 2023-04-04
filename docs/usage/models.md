@@ -140,8 +140,8 @@ class Foo(BaseModel):
 
 
 class Bar(BaseModel):
-    apple = 'x'
-    banana = 'y'
+    apple: str = 'x'
+    banana: str = 'y'
 
 
 class Spam(BaseModel):
@@ -151,9 +151,16 @@ class Spam(BaseModel):
 
 m = Spam(foo={'count': 4}, bars=[{'apple': 'x1'}, {'apple': 'x2'}])
 print(m)
-#> foo=Foo(count=4, size=None) bars=[Bar(), Bar()]
+"""
+foo=Foo(count=4, size=None) bars=[Bar(apple='x1', banana='y'), Bar(apple='x2', banana='y')]
+"""
 print(m.model_dump())
-#> {'foo': {'count': 4, 'size': None}, 'bars': [{}, {}]}
+"""
+{
+    'foo': {'count': 4, 'size': None},
+    'bars': [{'apple': 'x1', 'banana': 'y'}, {'apple': 'x2', 'banana': 'y'}],
+}
+"""
 ```
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
@@ -294,7 +301,7 @@ class Person(BaseModel):
 bones = PetCls(name='Bones', species='dog')
 orion = PetCls(name='Orion', species='cat')
 anna = PersonCls(name='Anna', age=20, pets=[bones, orion])
-anna_model = Person.from_orm(anna)
+anna_model = Person.model_validate(anna)
 print(anna_model)
 """
 name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', species='cat')]
@@ -316,48 +323,46 @@ The `GetterDict` instance will be called for each field with a sentinel as a fal
 value is set). Returning this sentinel means that the field is missing. Any other value will
 be interpreted as the value of the field.
 
-```py test="xfail - GetterDict is removed, replace with a custom root_validator"
-from typing import Any, Optional
+```py
+from collections.abc import Mapping
+from typing import Optional
 from xml.etree.ElementTree import fromstring
 
-from pydantic import BaseModel
-from pydantic.utils import GetterDict
+from pydantic import BaseModel, Field
 
 xmlstring = """
 <User Id="2138">
-    <FirstName />
-    <LoggedIn Value="true" />
+    <FirstName>John</FirstName>
+    <LastName>Foobar</LastName>
 </User>
 """
 
 
-class UserGetter(GetterDict):
-    def get(self, key: str, default: Any) -> Any:
-        # element attributes
-        if key in {'Id', 'Status'}:
-            return self._obj.attrib.get(key, default)
+class XmlMapping(Mapping):
+    def __init__(self, xmlstring):
+        self._xml = fromstring(xmlstring)
 
-        # element children
+    def __getitem__(self, key):
+        if key in {'Id', 'Status'}:
+            return self._xml.attrib.get(key)
         else:
-            try:
-                return self._obj.find(key).attrib['Value']
-            except (AttributeError, KeyError):
-                return default
+            return self._xml.find(key).text
+
+    def __len__(self):
+        return len(self._xml.attrib) + len(self._xml)
+
+    def __iter__(self):
+        ...
 
 
 class User(BaseModel):
-    Id: int
-    Status: Optional[str]
-    FirstName: Optional[str]
-    LastName: Optional[str]
-    LoggedIn: bool
-
-    class Config:
-        from_attributes = True
-        getter_dict = UserGetter
+    id: int = Field(alias='Id')
+    first_name: Optional[str] = Field(None, alias='FirstName')
+    last_name: Optional[str] = Field(None, alias='LastName')
 
 
-user = User.from_orm(fromstring(xmlstring))
+print(User.model_validate(XmlMapping(xmlstring)))
+#> id=2138 first_name='John' last_name='Foobar'
 ```
 
 
@@ -409,8 +414,8 @@ from pydantic import BaseModel, ValidationError, conint
 
 
 class Location(BaseModel):
-    lat = 0.1
-    lng = 10.1
+    lat: float = 0.1
+    lng: float = 10.1
 
 
 class Model(BaseModel):
@@ -433,7 +438,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    4 validation errors for Location
+    5 validation errors for Location
     is_required
       Field required [type=missing, input_value={'list_of_ints': ['1', 2,...ew York'}, 'gt_int': 21}, input_type=dict]
     gt_int
@@ -442,6 +447,8 @@ except ValidationError as e:
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
     a_float
       Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='not a float', input_type=str]
+    recursive_model -> lng
+      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='New York', input_type=str]
     """
 
 try:
@@ -481,6 +488,12 @@ except ValidationError as e:
             'loc': ('a_float',),
             'msg': 'Input should be a valid number, unable to parse string as an number',
             'input': 'not a float',
+        },
+        {
+            'type': 'float_parsing',
+            'loc': ('recursive_model', 'lng'),
+            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'input': 'New York',
         },
     ]
     """
@@ -580,13 +593,13 @@ from pydantic import BaseModel, ValidationError
 
 class User(BaseModel):
     id: int
-    name = 'John Doe'
+    name: str = 'John Doe'
     signup_ts: datetime = None
 
 
 m = User.model_validate({'id': 123, 'name': 'James'})
 print(m)
-#> id=123 signup_ts=None
+#> id=123 name='James' signup_ts=None
 
 try:
     User.model_validate(['not', 'a', 'dict'])
@@ -600,7 +613,7 @@ except ValidationError as e:
 # assumes json as no content type passed
 m = User.model_validate_json('{"id": 123, "name": "James"}')
 print(m)
-#> id=123 signup_ts=None
+#> id=123 name='James' signup_ts=None
 ```
 
 !!! warning
@@ -680,10 +693,10 @@ In order to declare a generic model, you perform the following steps:
 
 Here is an example using `GenericModel` to create an easily-reused HTTP response payload wrapper:
 
-```py test="xfail - needs always/validate default support"
+```py test="xfail looks like an error with generics!"
 from typing import Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, ValidationError, validator_function
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 DataT = TypeVar('DataT')
 
@@ -699,14 +712,14 @@ class DataModel(BaseModel):
 
 
 class Response(BaseModel, Generic[DataT]):
-    data: Optional[DataT]
-    error: Optional[Error]
+    data: Optional[DataT] = None
+    error: Optional[Error] = Field(validate_default=True)
 
-    @validator_function('error', always=True)
-    def check_consistency(cls, v, values):
-        if v is not None and values['data'] is not None:
+    @field_validator('error')
+    def check_consistency(cls, v, info):
+        if v is not None and info.data['data'] is not None:
             raise ValueError('must not provide both data and error')
-        if v is None and values.get('data') is None:
+        if v is None and info.data.get('data') is None:
             raise ValueError('must provide data or error')
         return v
 
@@ -784,7 +797,7 @@ class ChildClass(BaseClass[int, TypeY], Generic[TypeY, TypeZ]):
 
 
 # Replace TypeY by str
-print(ChildClass[str, int](x=1, y='y', z=3))
+print(ChildClass[str, int](x='1', y='y', z='3'))
 #> x=1 y='y' z=3
 ```
 
@@ -902,7 +915,7 @@ the `create_model` method to allow models to be created on the fly.
 ```py
 from pydantic import BaseModel, create_model
 
-DynamicFoobarModel = create_model('DynamicFoobarModel', foo=(str, ...), bar=123)
+DynamicFoobarModel = create_model('DynamicFoobarModel', foo=(str, ...), bar=(int, 123))
 
 
 class StaticFoobarModel(BaseModel):
@@ -932,20 +945,20 @@ class FooModel(BaseModel):
 
 BarModel = create_model(
     'BarModel',
-    apple='russet',
-    banana='yellow',
+    apple=(str, 'russet'),
+    banana=(str, 'yellow'),
     __base__=FooModel,
 )
 print(BarModel)
 #> <class 'pydantic.main.BarModel'>
 print(BarModel.model_fields.keys())
-#> dict_keys(['foo', 'bar'])
+#> dict_keys(['foo', 'bar', 'apple', 'banana'])
 ```
 
 You can also add validators by passing a dict to the `__validators__` argument.
 
-```py test="xfail create_model validators"
-from pydantic import ValidationError, create_model, validator
+```py rewrite_assert="false"
+from pydantic import ValidationError, create_model, field_validator
 
 
 def username_alphanumeric(cls, v):
@@ -953,31 +966,38 @@ def username_alphanumeric(cls, v):
     return v
 
 
-validators = {'username_validator': validator('username')(username_alphanumeric)}
+validators = {'username_validator': field_validator('username')(username_alphanumeric)}
 
 UserModel = create_model('UserModel', username=(str, ...), __validators__=validators)
 
 user = UserModel(username='scolvin')
 print(user)
+#> username='scolvin'
 
 try:
     UserModel(username='scolvi%n')
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for UserModel
+    username
+      Assertion failed, must be alphanumeric [type=assertion_error, input_value='scolvi%n', input_type=str]
+    """
 ```
 
-## Model creation from `NamedTuple` or `TypedDict`
+## Using Pydantic without creating a BaseModel
 
-Sometimes you already use in your application classes that inherit from `NamedTuple` or `TypedDict`
-and you don't want to duplicate all your information to have a `BaseModel`.
-For this _pydantic_ provides `create_model_from_namedtuple` and `create_model_from_typeddict` methods.
-Those methods have the exact same keyword arguments as `create_model`.
+You may have types that are not `BaseModel`s that you want to validate data against.
+Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
 
+To do this Pydantic provides `AnalyzedType`. An `AnalyzedType` instance behaves nearly the same as a `BaseModel` instance, with the difference that `AnalyzedType` is not an actual type so you cannot use it in type annotations and such.
 
-```py test="xfail need Validator to replace create_model_from_typeddict"
+```py
+from typing import List
+
 from typing_extensions import TypedDict
 
-from pydantic import ValidationError, create_model_from_typeddict
+from pydantic import AnalyzedType, ValidationError
 
 
 class User(TypedDict):
@@ -985,18 +1005,24 @@ class User(TypedDict):
     id: int
 
 
-class Config:
-    extra = 'forbid'
-
-
-UserM = create_model_from_typeddict(User, __config__=Config)
-print(repr(UserM(name=123, id='3')))
+UserListValidator = AnalyzedType(List[User])
+print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
+#> [{'name': 'Fred', 'id': 3}]
 
 try:
-    UserM(name=123, id='3', other='no')
+    UserListValidator.validate_python([{'name': 'Fred', 'id': 'wrong', 'other': 'no'}])
 except ValidationError as e:
     print(e)
+    """
+    2 validation errors for list[typed-dict]
+    0 -> id
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
+    0 -> other
+      Extra inputs are not permitted [type=extra_forbidden, input_value='no', input_type=str]
+    """
 ```
+
+For many use cases `AnalyzedType` can replace BaseModels with a `__root__` field in Pydantic V1.
 
 ## Custom Root Types
 
@@ -1011,7 +1037,7 @@ import json
 from typing import List
 
 from pydantic import BaseModel
-from pydantic.json_schema import schema
+from pydantic.json_schema import models_json_schema
 
 
 class Pets(BaseModel):
@@ -1022,7 +1048,7 @@ print(Pets(__root__=['dog', 'cat']))
 print(Pets(__root__=['dog', 'cat']).model_dump_json())
 print(Pets.model_validate(['dog', 'cat']))
 print(Pets.model_json_schema())
-pets_schema = schema([Pets])
+pets_schema = models_json_schema([Pets])
 print(json.dumps(pets_schema, indent=2))
 ```
 
@@ -1167,24 +1193,24 @@ from pydantic import BaseModel, ValidationError
 
 class Model(BaseModel):
     a: int
-    b = 2
+    b: int = 2
     c: int = 1
-    d = 0
+    d: int = 0
     e: float
 
 
 print(Model.model_fields.keys())
-#> dict_keys(['a', 'c', 'e'])
+#> dict_keys(['a', 'b', 'c', 'd', 'e'])
 m = Model(e=2, a=1)
 print(m.model_dump())
-#> {'a': 1, 'c': 1, 'e': 2.0}
+#> {'a': 1, 'b': 2, 'c': 1, 'd': 0, 'e': 2.0}
 try:
     Model(a='x', b='x', c='x', d='x', e='x')
 except ValidationError as err:
     error_locations = [e['loc'] for e in err.errors()]
 
 print(error_locations)
-#> [('a',), ('c',), ('e',)]
+#> [('a',), ('b',), ('c',), ('d',), ('e',)]
 ```
 
 !!! warning
@@ -1212,7 +1238,7 @@ class Model(BaseModel):
 Where `Field` refers to the [field function](schema.md#field-customization).
 
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
-with [mypy](mypy.md), and as of **v1.0** should be avoided in most cases.
+with [mypy](/mypy_plugin/), and as of **v1.0** should be avoided in most cases.
 
 ### Required Optional fields
 
@@ -1387,7 +1413,7 @@ which are analogous to `BaseModel.parse_file` and `BaseModel.parse_raw`.
 and in some cases this may result in a loss of information.
 For example:
 
-```py test="xfail this logic has failed"
+```py
 from pydantic import BaseModel
 
 
@@ -1397,7 +1423,8 @@ class Model(BaseModel):
     c: str
 
 
-print(Model(a=3.1415, b=' 2.72 ', c=123).model_dump())
+print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
+#> {'a': 3, 'b': 2.72, 'c': 'binary data'}
 ```
 
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See

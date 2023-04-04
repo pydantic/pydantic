@@ -42,6 +42,7 @@ class FieldInfo(_repr.Representation):
         'json_schema_extra',
         'init_var',
         'kw_only',
+        'validate_default',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -93,6 +94,7 @@ class FieldInfo(_repr.Representation):
         # currently only used on dataclasses
         self.init_var = kwargs.get('init_var', None)
         self.kw_only = kwargs.get('kw_only', None)
+        self.validate_default = kwargs.get('validate_default', None)
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
@@ -241,10 +243,18 @@ class FieldInfo(_repr.Representation):
             metadata.append(_fields.PydanticGeneralMetadata(**general_metadata))
         return metadata
 
-    def get_default(self) -> Any:
-        # we don't want to call default_factory as it may have side effects, so we default to None as the
-        # least-worse alternative
-        return _utils.smart_deepcopy(self.default) if self.default_factory is None else None
+    def get_default(self, *, call_default_factory: bool = False) -> Any:
+        """
+        We expose an option for whether to call the default_factory (if present), as calling it may
+        result in side effects that we want to avoid. However, there are times when it really should
+        be called (namely, when instantiating a model via `model_construct`).
+        """
+        if self.default_factory is None:
+            return _utils.smart_deepcopy(self.default)
+        elif call_default_factory:
+            return self.default_factory()
+        else:
+            return None
 
     def is_required(self) -> bool:
         return self.default is Undefined and self.default_factory is None
@@ -309,6 +319,7 @@ def Field(
     repr: bool = True,
     strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
+    validate_default: bool | None = None,
 ) -> Any:
     """
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
@@ -359,6 +370,7 @@ def Field(
     :param repr: show this field in the representation
     :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
     :param strict: enable or disable strict parsing mode
+    :param validate_default: whether the default value should be validated for this field
     """
     return FieldInfo.from_field(
         default,
@@ -388,6 +400,7 @@ def Field(
         repr=repr,
         json_schema_extra=json_schema_extra,
         strict=strict,
+        validate_default=validate_default,
     )
 
 

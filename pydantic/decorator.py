@@ -210,11 +210,11 @@ class ValidatedFunction:
     def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
 
-        config_dict = get_config(config)
+        config_dict = get_config(config, getattr(self.raw_function, '__name__', 'validate_arguments'))
 
-        if 'fields' in config_dict or 'alias_generator' in config_dict:
+        if 'alias_generator' in config_dict:
             raise PydanticUserError(
-                'Setting the "fields" and "alias_generator" property on custom Config for '
+                'Setting the "alias_generator" property on custom Config for '
                 '@validate_arguments is not yet supported, please remove.'
             )
         if 'extra' not in config_dict:

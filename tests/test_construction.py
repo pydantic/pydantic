@@ -80,7 +80,7 @@ def deprecated_copy(m: BaseModel, *, include=None, exclude=None, update=None, de
         DeprecationWarning,
         match=(
             'The `copy` method is deprecated; use `model_copy` instead. '
-            'See the docstring of `BaseModel.copy` for details about how to handle include / exclude / update.'
+            'See the docstring of `BaseModel.copy` for details about how to handle `include` and `exclude`.'
         ),
     ):
         return m.copy(include=include, exclude=exclude, update=update, deep=deep)
@@ -258,7 +258,7 @@ def test_copy_update_unset(copy_method):
 
     assert (
         copy_method(Foo(foo='hello'), update={'bar': 'world'}).model_dump_json(exclude_unset=True)
-        == b'{"foo":"hello","bar":"world"}'
+        == '{"foo":"hello","bar":"world"}'
     )
 
 
@@ -386,8 +386,11 @@ def test_copy_update_exclude():
             'd': {'a': 'ax', 'b': 'bx'},
         }
 
-    assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False) == {'c', 'd'}
-    assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}
+    with pytest.warns(
+        DeprecationWarning, match='The private method `_calculate_keys` will be removed and should no longer be used.'
+    ):
+        assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False) == {'c', 'd'}
+        assert m._calculate_keys(exclude={'x': ...}, include=None, exclude_unset=False, update={'c': 42}) == {'d'}
 
 
 def test_shallow_copy_modify(copy_method):
@@ -408,15 +411,11 @@ def test_shallow_copy_modify(copy_method):
     assert y.deep['deep_thing'] == [1, 2, 3]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_construct_default_factory():
     class Model(BaseModel):
         foo: List[int] = Field(default_factory=list)
         bar: str = 'Baz'
 
-    # TODO: As part of v1 -> v2, the logic for pydantic.fields.FieldInfo.get_default changed to not
-    #  call `default_factory`. Is this really preferable? Naively, it seems to me that it is a user
-    #  mistake if calling default_factory has side effects.. But maybe there's a good reason?
     m = Model.model_construct()
     assert m.foo == []
     assert m.bar == 'Baz'

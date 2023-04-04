@@ -1,6 +1,7 @@
 *Pydantic* allows auto creation of JSON Schemas from models:
 
 ```py output="json"
+import json
 from enum import Enum
 
 from pydantic import BaseModel, Field
@@ -36,10 +37,11 @@ class MainModel(BaseModel):
     )
 
 
-# this is equivalent to json.dumps(MainModel.model_json_schema(), indent=2):
-print(MainModel.schema_json(indent=2))
+print(json.dumps(MainModel.model_json_schema(), indent=2))
 """
 {
+  "title": "Main",
+  "description": "This is the description of the main model",
   "type": "object",
   "properties": {
     "foo_bar": {
@@ -65,10 +67,9 @@ print(MainModel.schema_json(indent=2))
   "required": [
     "foo_bar"
   ],
-  "title": "Main",
-  "description": "This is the description of the main model",
   "$defs": {
     "FooBar": {
+      "title": "FooBar",
       "type": "object",
       "properties": {
         "count": {
@@ -83,8 +84,7 @@ print(MainModel.schema_json(indent=2))
       },
       "required": [
         "count"
-      ],
-      "title": "FooBar"
+      ]
     },
     "Gender": {
       "enum": [
@@ -94,7 +94,6 @@ print(MainModel.schema_json(indent=2))
         "not_given"
       ],
       "title": "Gender",
-      "description": "An enumeration.",
       "type": "string"
     }
   }
@@ -136,7 +135,7 @@ apply the schema generation logic used for _pydantic_ models in a more ad-hoc wa
 These functions behave similarly to `BaseModel.model_json_schema` and `BaseModel.schema_json`,
 but work with arbitrary pydantic-compatible types.
 
-```py requires="3.8"
+```py requires="3.8" output="json"
 from typing import Literal, Union
 
 from typing_extensions import Annotated
@@ -176,6 +175,7 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
   },
   "$defs": {
     "Cat": {
+      "title": "Cat",
       "type": "object",
       "properties": {
         "pet_type": {
@@ -190,10 +190,10 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
       "required": [
         "pet_type",
         "cat_name"
-      ],
-      "title": "Cat"
+      ]
     },
     "Dog": {
+      "title": "Dog",
       "type": "object",
       "properties": {
         "pet_type": {
@@ -208,8 +208,7 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
       "required": [
         "pet_type",
         "dog_name"
-      ],
-      "title": "Dog"
+      ]
     }
   },
   "title": "The Pet Schema"
@@ -318,6 +317,7 @@ class ModelB(BaseModel):
 print(ModelB.model_json_schema())
 """
 {
+    'title': 'ModelB',
     'type': 'object',
     'properties': {
         'foo': {
@@ -328,7 +328,6 @@ print(ModelB.model_json_schema())
         }
     },
     'required': ['foo'],
-    'title': 'ModelB',
 }
 """
 ```
@@ -387,10 +386,11 @@ class RestrictedAlphabetStr(str):
     @classmethod
     def __pydantic_modify_json_schema__(
         cls, field_schema: Dict[str, Any], field: Optional[ModelField]
-    ):
+    ) -> Dict[str, Any]:
         if field:
             alphabet = field.field_info.extra['alphabet']
             field_schema['examples'] = [c * 3 for c in alphabet]
+        return field_schema
 
 
 class MyModel(BaseModel):
@@ -424,7 +424,7 @@ sub-models in its `definitions`:
 import json
 
 from pydantic import BaseModel
-from pydantic.json_schema import schema
+from pydantic.json_schema import models_json_schema
 
 
 class Foo(BaseModel):
@@ -439,12 +439,13 @@ class Bar(BaseModel):
     c: int
 
 
-top_level_schema = schema([Model, Bar], title='My Schema')
+top_level_schema = models_json_schema([Model, Bar], title='My Schema')
 print(json.dumps(top_level_schema, indent=2))
 """
 {
   "$defs": {
     "Foo": {
+      "title": "Foo",
       "type": "object",
       "properties": {
         "a": {
@@ -452,10 +453,10 @@ print(json.dumps(top_level_schema, indent=2))
           "default": null,
           "title": "A"
         }
-      },
-      "title": "Foo"
+      }
     },
     "Model": {
+      "title": "Model",
       "type": "object",
       "properties": {
         "b": {
@@ -464,10 +465,10 @@ print(json.dumps(top_level_schema, indent=2))
       },
       "required": [
         "b"
-      ],
-      "title": "Model"
+      ]
     },
     "Bar": {
+      "title": "Bar",
       "type": "object",
       "properties": {
         "c": {
@@ -477,8 +478,7 @@ print(json.dumps(top_level_schema, indent=2))
       },
       "required": [
         "c"
-      ],
-      "title": "Bar"
+      ]
     }
   },
   "title": "My Schema"
@@ -498,7 +498,7 @@ This is useful if you need to extend or modify the JSON Schema default definitio
 import json
 
 from pydantic import BaseModel
-from pydantic.json_schema import schema
+from pydantic.json_schema import models_json_schema
 
 
 class Foo(BaseModel):
@@ -510,7 +510,7 @@ class Model(BaseModel):
 
 
 # Default location for OpenAPI
-top_level_schema = schema([Model], ref_prefix='#/components/schemas/')
+top_level_schema = models_json_schema([Model], ref_prefix='#/components/schemas/')
 print(json.dumps(top_level_schema, indent=2))
 ```
 

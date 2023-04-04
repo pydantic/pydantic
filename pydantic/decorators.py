@@ -8,6 +8,7 @@ Public methods related to:
 from __future__ import annotations as _annotations
 
 from functools import partial
+from types import FunctionType
 from typing import Any, Callable, TypeVar, Union, overload
 from warnings import warn
 
@@ -120,17 +121,35 @@ def validator(
     __field: str,
     *fields: str,
     pre: bool = False,
+    each_item: bool = False,
+    always: bool = False,
     check_fields: bool | None = None,
     allow_reuse: bool = False,
-    each_item: bool = False,
 ) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
-    :param fields: which field(s) the method should be called on
+    :param __field: the first field the validator should be called on;
+        this is separate from `fields` to ensure an error is raised if you don't pass at least one
+    :param fields: additional field(s) the validator should be called on
+    :param pre: whether or not this validator should be called before the standard validators (else after)
+    :param each_item: for complex objects (sets, lists etc.) whether to validate individual elements rather than the
+      whole object
+    :param always: whether this method and other validators should be called even if the value is missing
     :param check_fields: whether to check that the fields actually exist on the model
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
     fields = tuple((__field, *fields))
+    if isinstance(fields[0], FunctionType):
+        raise TypeError(
+            'field_validators should be used with fields and keyword arguments, not bare. '
+            "E.g. usage should be `@validator('<field_name>', ...)`"
+        )
+    elif not all(isinstance(field, str) for field in fields):
+        raise TypeError(
+            'validator fields should be passed as separate string args. '
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+        )
+
     warn(
         'Pydantic V1 style `@validator` validators are deprecated.'
         ' You should migrate to Pydantic V2 style `@field_validator` validators,'
@@ -151,8 +170,9 @@ def validator(
         validator_wrapper_info = _decorators.ValidatorDecoratorInfo(
             fields=fields,
             mode=mode,
-            check_fields=check_fields,
             each_item=each_item,
+            always=always,
+            check_fields=check_fields,
         )
         return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
 
@@ -184,6 +204,7 @@ def field_validator(
 
 
 def field_validator(
+    __field: str,
     *fields: str,
     mode: Literal['before', 'after', 'wrap', 'plain'] = 'after',
     check_fields: bool | None = None,
@@ -192,12 +213,25 @@ def field_validator(
 ) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
-    :param fields: which field(s) the method should be called on
+    :param __field: the first field the field_validator should be called on;
+        this is separate from `fields` to ensure an error is raised if you don't pass at least one
+    :param fields: additional field(s) the field_validator should be called on
     :param mode: TODO
-    :param sub_path: TODO
     :param check_fields: whether to check that the fields actually exist on the model
+    :param sub_path: TODO
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
+    fields = tuple((__field, *fields))
+    if isinstance(fields[0], FunctionType):
+        raise TypeError(
+            'field_validators should be used with fields and keyword arguments, not bare. '
+            "E.g. usage should be `@validator('<field_name>', ...)`"
+        )
+    elif not all(isinstance(field, str) for field in fields):
+        raise TypeError(
+            'field_validator fields should be passed as separate string args. '
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+        )
 
     def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
         if _decorators.is_instance_method_from_sig(f):
@@ -221,7 +255,7 @@ def root_validator(
     *,
     # if you don't specify `pre` the default is `pre=False`
     # which means you need to specify `skip_on_failure=True`
-    skip_on_failure: Literal[True] = ...,
+    skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
 ) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
     ...
@@ -230,11 +264,9 @@ def root_validator(
 @overload
 def root_validator(
     *,
-    # for pre=False you don't need to specify `skip_on_failure`
     # if you specify `pre=True` then you don't need to specify
     # `skip_on_failure`, in fact it is not allowed as an argument!
     pre: Literal[True],
-    skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
 ) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
     ...
@@ -246,7 +278,7 @@ def root_validator(
     # if you explicitly specify `pre=False` then you
     # MUST specify `skip_on_failure=True`
     pre: Literal[False],
-    skip_on_failure: Literal[True] = ...,
+    skip_on_failure: Literal[True],
     allow_reuse: bool = ...,
 ) -> Callable[[_V1RootValidatorFunctionType], _V1RootValidatorFunctionType,]:
     ...
@@ -291,14 +323,16 @@ def root_validator(
 _PlainSerializationFunction = Union[
     _core_schema.GeneralPlainSerializerFunction,
     _core_schema.FieldPlainSerializerFunction,
-    _decorators.PlainSerializerWithoutInfo,
+    _decorators.GenericPlainSerializerFunctionWithoutInfo,
+    _decorators.FieldPlainSerializerFunctionWithoutInfo,
 ]
 
 
 _WrapSerializationFunction = Union[
     _core_schema.GeneralWrapSerializerFunction,
     _core_schema.FieldWrapSerializerFunction,
-    _decorators.WrapSerializerWithoutInfo,
+    _decorators.GeneralWrapSerializerFunctionWithoutInfo,
+    _decorators.FieldWrapSerializerFunctionWithoutInfo,
 ]
 
 
@@ -307,7 +341,7 @@ _WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerial
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
@@ -320,7 +354,7 @@ def serializer(
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     mode: Literal['plain'],
@@ -334,7 +368,7 @@ def serializer(
 
 
 @overload
-def serializer(
+def field_serializer(
     __field: str,
     *fields: str,
     mode: Literal['wrap'],
@@ -347,7 +381,7 @@ def serializer(
     ...
 
 
-def serializer(
+def field_serializer(
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
@@ -355,7 +389,7 @@ def serializer(
     sub_path: tuple[str | int, ...] | None = None,
     check_fields: bool | None = None,
     allow_reuse: bool = False,
-) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to serialize fields.
     Four signatures are supported:
@@ -365,7 +399,8 @@ def serializer(
     - (value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)
 
     :param fields: which field(s) the method should be called on
-    :param mode: TODO
+    :param mode: `'plain'` means the function will be called instead of the default serialization logic,
+        `'wrap'` means the function will be called with an argument to optionally call the default serialization logic.
     :param json_return_type: The type that the function returns if the serialization mode is JSON.
     :param when_used: When the function should be called
     :param sub_path: TODO
@@ -373,11 +408,11 @@ def serializer(
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
 
-    def dec(f: Callable[..., Any]) -> Any:
+    def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
         res = _decorators.prepare_serializer_decorator(f, allow_reuse)
         type_: Literal['field', 'general'] = 'field' if _decorators.is_instance_method_from_sig(f) else 'general'
 
-        validator_wrapper_info = _decorators.SerializerDecoratorInfo(
+        dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
             type=type_,
@@ -387,7 +422,45 @@ def serializer(
             check_fields=check_fields,
         )
         return _decorators.PydanticDecoratorMarker(
-            res, validator_wrapper_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode)
+            res, dec_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode, type=type_)
         )
 
     return dec
+
+
+def model_serializer(
+    __f: Callable[..., Any] = None,
+    *,
+    mode: Literal['plain', 'wrap'] = 'plain',
+    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    allow_reuse: bool = False,
+) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
+    """
+    Function decorate to add a function which will be called to serialize the model.
+
+    (`when_used` is not permitted here since it make no sense)
+
+    :param mode: `'plain'` means the function will be called instead of the default serialization logic,
+        `'wrap'` means the function will be called with an argument to optionally call the default serialization logic.
+    :param json_return_type: The type that the function returns if the serialization mode is JSON.
+    :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
+    """
+
+    def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker[Any]:
+        if isinstance(f, (staticmethod, classmethod)) or not _decorators.is_instance_method_from_sig(f):
+            raise TypeError('`@model_serializer` must be applied to instance methods')
+
+        res = _decorators.prepare_serializer_decorator(f, allow_reuse)
+
+        dec_info = _decorators.ModelSerializerDecoratorInfo(
+            mode=mode,
+            json_return_type=json_return_type,
+        )
+        return _decorators.PydanticDecoratorMarker(
+            res, dec_info, shim=partial(_decorators.make_generic_model_serializer, mode=mode)
+        )
+
+    if __f is None:
+        return dec
+    else:
+        return dec(__f)

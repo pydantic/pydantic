@@ -37,16 +37,6 @@ def test_alias_generator_wrong_type_error():
     assert str(e.value) == IsStr(regex="alias_generator <function .*> must return str, not <class 'bytes'>")
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_cannot_infer_type_with_alias():
-    # TODO: I don't think we've finalized the exact error that should be raised when fields are missing annotations,
-    #   but this test should be made consistent with that once it is finalized
-    with pytest.raises(TypeError):
-
-        class Model(BaseModel):
-            a = Field('foobar', alias='_a')
-
-
 def test_basic_alias():
     class Model(BaseModel):
         a: str = Field('foobar', alias='_a')
@@ -60,6 +50,25 @@ def test_basic_alias():
 
 def test_alias_error():
     class Model(BaseModel):
+        a: int = Field(123, alias='_a')
+
+    assert Model(_a='123').a == 123
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(_a='foo')
+    assert exc_info.value.errors() == [
+        {
+            'input': 'foo',
+            'loc': ('_a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
+def test_alias_error_loc_by_alias():
+    class Model(BaseModel):
+        model_config = dict(loc_by_alias=False)
         a: int = Field(123, alias='_a')
 
     assert Model(_a='123').a == 123
@@ -112,7 +121,7 @@ def test_alias_override_behavior():
         x: int = Field(alias='x1', gt=0)
 
     class Child(Parent):
-        x = Field(..., alias='x2')
+        x: int = Field(..., alias='x2')
         y: int = Field(..., alias='y2')
 
     assert Parent.model_fields['x'].alias == 'x1'
@@ -123,7 +132,7 @@ def test_alias_override_behavior():
     with pytest.raises(ValidationError) as exc_info:
         Parent(x1=-1)
     assert exc_info.value.errors() == [
-        {'ctx': {'gt': 0}, 'input': -1, 'loc': ('x',), 'msg': 'Input should be greater than 0', 'type': 'greater_than'}
+        {'ctx': {'gt': 0}, 'input': -1, 'loc': ('x1',), 'msg': 'Input should be greater than 0', 'type': 'greater_than'}
     ]
 
     Child(x2=1, y2=2)
@@ -135,7 +144,7 @@ def test_alias_override_behavior():
     with pytest.raises(ValidationError) as exc_info:
         Child(x1=1, y2=2)
     assert exc_info.value.errors() == [
-        {'input': {'x1': 1, 'y2': 2}, 'loc': ('x',), 'msg': 'Field required', 'type': 'missing'}
+        {'input': {'x1': 1, 'y2': 2}, 'loc': ('x2',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
     # Check the type hint from Parent _is_ preserved
@@ -144,7 +153,7 @@ def test_alias_override_behavior():
     assert exc_info.value.errors() == [
         {
             'input': 'a',
-            'loc': ('x',),
+            'loc': ('x2',),
             'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
         }

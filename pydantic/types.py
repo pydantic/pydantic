@@ -74,7 +74,6 @@ __all__ = [
 
 from ._internal._core_metadata import build_metadata_dict
 from ._internal._utils import update_not_none
-from .json_schema import JsonSchemaMetadata
 
 
 @_dataclasses.dataclass
@@ -295,9 +294,10 @@ def condecimal(
 class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
-    def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> dict[str, Any]:
         field_schema.pop('anyOf', None)  # remove the bytes/str union
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
+        return field_schema
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
@@ -327,9 +327,10 @@ UUID5 = Annotated[UUID, UuidVersion(5)]
 class PathType:
     path_type: Literal['file', 'dir', 'new']
 
-    def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> dict[str, Any]:
         format_conversion = {'file': 'file-path', 'dir': 'directory-path'}
         field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
+        return field_schema
 
     def __get_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
@@ -393,8 +394,9 @@ else:
             return core_schema.json_schema(schema)
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
+        def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> dict[str, Any]:
             field_schema.update(type='string', format='json-string')
+            return field_schema
 
         def __repr__(self) -> str:
             return 'Json'
@@ -425,26 +427,24 @@ class SecretField(abc.ABC, Generic[SecretType]):
         validator = SecretFieldValidator(cls)
         if issubclass(cls, SecretStr):
             # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
-            override = lambda: core_schema.str_schema(  # noqa E731
+            js_cs_override = lambda: core_schema.str_schema(  # noqa E731
                 min_length=validator.min_length,
                 max_length=validator.max_length,
             )
         elif issubclass(cls, SecretBytes):
-            override = lambda: core_schema.bytes_schema(  # noqa E731
+            js_cs_override = lambda: core_schema.bytes_schema(  # noqa E731
                 min_length=validator.min_length,
                 max_length=validator.max_length,
             )
         else:
-            override = None
+            js_cs_override = None
         metadata = build_metadata_dict(
-            update_cs_function=validator.__pydantic_update_schema__,
-            js_metadata=JsonSchemaMetadata(core_schema_override=override),
+            cs_update_function=validator.__pydantic_update_schema__, js_cs_override=js_cs_override
         )
         return core_schema.general_after_validator_function(
             validator,
             core_schema.union_schema(
-                core_schema.is_instance_schema(cls),
-                cls._pre_core_schema(),
+                [core_schema.is_instance_schema(cls), cls._pre_core_schema()],
                 strict=True,
                 custom_error_type=cls._error_kind,
             ),
@@ -471,13 +471,14 @@ class SecretField(abc.ABC, Generic[SecretType]):
         ...
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> dict[str, Any]:
         update_not_none(
             field_schema,
             type='string',
             writeOnly=True,
             format='password',
         )
+        return field_schema
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()

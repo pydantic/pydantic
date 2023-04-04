@@ -79,8 +79,6 @@ def test_private_attribute_annotation():
 
         _foo: str
 
-        model_config = ConfigDict(underscore_attrs_are_private=True)
-
     assert Model.__slots__ == {'_foo'}
     if platform.python_implementation() == 'PyPy':
         repr(Model._foo).startswith('<member_descriptor object at')
@@ -115,8 +113,6 @@ def test_underscore_attrs_are_private():
     class Model(BaseModel):
         _foo: str = 'abc'
         _bar: ClassVar[str] = 'cba'
-
-        model_config = ConfigDict(underscore_attrs_are_private=True)
 
     assert Model.__slots__ == {'_foo'}
     if platform.python_implementation() == 'PyPy':
@@ -210,8 +206,6 @@ def test_config_override_init():
             super().__init__(**data)
             self._private_attr = 123
 
-        model_config = ConfigDict(underscore_attrs_are_private=True)
-
     m = MyModel(x='hello')
     assert m.model_dump() == {'x': 'hello'}
     assert m._private_attr == 123
@@ -223,8 +217,6 @@ def test_generic_private_attribute():
     class Model(BaseModel, Generic[T]):
         value: T
         _private_value: T
-
-        model_config = ConfigDict(underscore_attrs_are_private=True)
 
     m = Model[int](value=1, _private_attr=3)
     m._private_value = 3
@@ -299,3 +291,24 @@ def test_private_attributes_not_dunder() -> None:
 
         class MyModel(BaseModel):
             __foo__ = PrivateAttr({'private'})
+
+
+def test_ignored_types_are_ignored() -> None:
+    class IgnoredType:
+        pass
+
+    class MyModel(BaseModel):
+        model_config = ConfigDict(ignored_types=(IgnoredType,))
+
+        _a = IgnoredType()
+        _b: int = IgnoredType()
+        _c: IgnoredType
+        _d: IgnoredType = IgnoredType()
+
+        # The following are included to document existing behavior, and can be updated
+        # if the current behavior does not match the desired behavior
+        _e: int
+        _f: int = 1
+        _g = 1  # Note: this is completely ignored, in keeping with v1
+
+    assert sorted(MyModel.__private_attributes__.keys()) == ['_e', '_f']

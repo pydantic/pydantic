@@ -109,25 +109,25 @@ Pydantic uses some cool new language features, but why should I actually go and 
 **Plays nicely with your IDE/linter/brain**
 : There's no new schema definition micro-language to learn. If you know how to use Python type hints,
   you know how to use Pydantic. Data structures are just instances of classes you define with type annotations,
-  so auto-completion, linting, [mypy](usage/mypy.md), IDEs (especially [PyCharm](pycharm_plugin.md)),
+  so auto-completion, linting, [mypy](/integrations/mypy/), IDEs (especially [PyCharm](/integrations/pycharm/)),
   and your intuition should all work properly with your validated data.
 
 **Fast**
 : Pydantic has always taken performance seriously. The core validation logic of Pydantic 2 uses a separate `pydantic-core` package, written in Rust using the excellent `pyo3` library. This provides a significant speed up over the already excellent performance of Prefect 1.
 
 **Validate complex structures**
-: Use of [recursive Pydantic models](usage/models.md#recursive-models), `typing`'s
-  [standard types](usage/types.md#standard-library-types) (e.g. `List`, `Tuple`, `Dict` etc.) and
-  [validators](usage/validators.md) allow
+: Use of [recursive Pydantic models](/usage/models/#recursive-models), `typing`'s
+  [standard types](/usage/types/#standard-library-types) (e.g. `List`, `Tuple`, `Dict` etc.) and
+  [validators](/usage/validators/) allow
   complex data schemas to be clearly and easily defined, validated, and parsed.
 
 **Extensible**
-: Pydantic allows [custom data types](usage/types.md#custom-data-types) to be defined or you can extend validation
-  with methods on a model decorated with the [`validator`](usage/validators.md) decorator.
+: Pydantic allows [custom data types](/usage/types/#custom-data-types) to be defined or you can extend validation
+  with methods on a model decorated with the [`validator`](/usage/validators/) decorator.
 
 **Dataclasses integration**
 : As well as `BaseModel`, Pydantic provides
-  a [`dataclass`](usage/dataclasses.md) decorator which creates (almost) vanilla Python dataclasses with input
+  a [`dataclass`](/usage/dataclasses/) decorator which creates (almost) vanilla Python dataclasses with input
   data parsing and validation.
 
 ## Using Pydantic

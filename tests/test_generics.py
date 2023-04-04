@@ -5,6 +5,7 @@ import platform
 import sys
 from collections import deque
 from enum import Enum, IntEnum
+from pprint import pprint
 from typing import (
     Any,
     Callable,
@@ -37,6 +38,7 @@ from pydantic import (
     Field,
     Json,
     PositiveInt,
+    PydanticUserError,
     ValidationError,
     ValidationInfo,
     root_validator,
@@ -217,15 +219,22 @@ def test_classvar():
     assert 'other' not in Result.model_fields
 
 
-# TODO: Replace this test with a test that ensures the same warning message about non-annotated fields is raised
-#   for generic and non-generic models. Requires https://github.com/pydantic/pydantic/issues/5014
-@pytest.mark.xfail(reason='working on V2 - non-annotated fields - issue #5014')
 def test_non_annotated_field():
+    T = TypeVar('T')
+
+    with pytest.raises(PydanticUserError, match='A non-annotated attribute was detected: `other = True`'):
+
+        class Result(BaseModel, Generic[T]):
+            data: T
+            other = True
+
+
+def test_non_generic_field():
     T = TypeVar('T')
 
     class Result(BaseModel, Generic[T]):
         data: T
-        other = True
+        other: bool = True
 
     assert 'other' in Result.model_fields
     assert 'other' in Result[int].model_fields
@@ -1906,6 +1915,27 @@ def test_multi_inheritance_generic_binding():
     assert not issubclass(B[float], C)
 
 
+def test_parent_field_parametrization():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+    class B(A, Generic[T]):
+        b: T
+
+    with pytest.raises(ValidationError) as exc_info:
+        B[int](a='a', b=1)
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
 def test_multi_inheritance_generic_defaults():
     T = TypeVar('T')
 
@@ -2021,6 +2051,7 @@ def test_double_typevar_substitution() -> None:
     class GenericPydanticModel(BaseModel, Generic[T]):
         x: T = []
 
+    pprint(GenericPydanticModel[List[T]].__pydantic_core_schema__)
     assert GenericPydanticModel[List[T]](x=[1, 2, 3]).model_dump() == {'x': [1, 2, 3]}
 
 

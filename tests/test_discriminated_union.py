@@ -8,7 +8,7 @@ from dirty_equals import HasRepr, IsStr
 from pydantic_core import SchemaValidator, core_schema
 from typing_extensions import Annotated, Literal
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, Validator
+from pydantic import AnalyzedType, BaseModel, ConfigDict, Field, ValidationError
 from pydantic._internal._discriminated_union import apply_discriminator
 from pydantic.errors import PydanticUserError
 
@@ -83,7 +83,7 @@ def test_discriminated_union_root_same_discriminator():
     class Dog(BaseModel):
         pet_type: Literal['dog']
 
-    CatDog = Validator(Annotated[Union[Cat, Dog], Field(..., discriminator='pet_type')])
+    CatDog = AnalyzedType(Annotated[Union[Cat, Dog], Field(..., discriminator='pet_type')]).validate_python
     CatDog({'pet_type': 'blackcat'})
     CatDog({'pet_type': 'whitecat'})
     CatDog({'pet_type': 'dog'})
@@ -310,7 +310,7 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
     #   have the same behavior as elsewhere when aliases are involved.
     #   (I.e., possibly using the alias value as the 'loc')
     assert exc_info.value.errors() == [
-        {'input': {'literal': 'a'}, 'loc': ('literal',), 'msg': 'Field required', 'type': 'missing'}
+        {'input': {'literal': 'a'}, 'loc': ('lit',), 'msg': 'Field required', 'type': 'missing'}
     ]
     assert Top(sub=A(lit='a')).sub.literal == 'a'
     assert Top(sub=B(lit='b')).sub.literal == 'b'
@@ -726,11 +726,11 @@ def test_union_discriminator_literals() -> None:
 
 
 def test_none_schema() -> None:
-    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('cat'))}
-    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('dog'))}
+    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']))}
+    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['dog']))}
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
-    schema = core_schema.union_schema(cat, dog, core_schema.none_schema())
+    schema = core_schema.union_schema([cat, dog, core_schema.none_schema()])
     schema = apply_discriminator(schema, 'kind')
     validator = SchemaValidator(schema)
     assert validator.validate_python({'kind': 'cat'})['kind'] == 'cat'
@@ -750,11 +750,11 @@ def test_none_schema() -> None:
 
 
 def test_nested_unwrapping() -> None:
-    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('cat'))}
-    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('dog'))}
+    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']))}
+    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['dog']))}
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
-    schema = core_schema.union_schema(cat, dog)
+    schema = core_schema.union_schema([cat, dog])
     for _ in range(3):
         schema = core_schema.nullable_schema(schema)
         schema = core_schema.nullable_schema(schema)
@@ -809,8 +809,8 @@ def test_invalid_discriminated_union_type() -> None:
 
 
 def test_single_item_union_error() -> None:
-    fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('only_choice'))}
-    schema = core_schema.union_schema(core_schema.typed_dict_schema(fields=fields))
+    fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['only_choice']))}
+    schema = core_schema.union_schema([core_schema.typed_dict_schema(fields=fields)])
     with pytest.raises(
         TypeError, match='`discriminator` can only be used with `Union` type with more than one variant'
     ):
@@ -819,12 +819,12 @@ def test_single_item_union_error() -> None:
 
 def test_invalid_alias() -> None:
     cat_fields = {
-        'kind': core_schema.typed_dict_field(core_schema.literal_schema('cat'), validation_alias=['cat', 'CAT'])
+        'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']), validation_alias=['cat', 'CAT'])
     }
-    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('dog'))}
+    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['dog']))}
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
-    schema = core_schema.union_schema(cat, dog)
+    schema = core_schema.union_schema([cat, dog])
 
     with pytest.raises(TypeError, match=re.escape("Alias ['cat', 'CAT'] is not supported in a discriminated union")):
         apply_discriminator(schema, 'kind')
@@ -837,7 +837,7 @@ def test_invalid_discriminator_type() -> None:
     dog = core_schema.typed_dict_schema(dog_fields)
 
     with pytest.raises(TypeError, match=re.escape("TypedDict needs field 'kind' to be of type `Literal`")):
-        apply_discriminator(core_schema.union_schema(cat, dog), 'kind')
+        apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
 
 
 def test_missing_discriminator_field() -> None:
@@ -847,28 +847,28 @@ def test_missing_discriminator_field() -> None:
     dog = core_schema.typed_dict_schema(dog_fields)
 
     with pytest.raises(TypeError, match=re.escape("TypedDict needs a discriminator field for key 'kind'")):
-        apply_discriminator(core_schema.union_schema(dog, cat), 'kind')
+        apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
 
 
 def test_invalid_discriminator_value() -> None:
-    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(None))}
-    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(1.5))}
+    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema([None]))}
+    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema([1.5]))}
     cat = core_schema.typed_dict_schema(cat_fields)
     dog = core_schema.typed_dict_schema(dog_fields)
 
     with pytest.raises(TypeError, match=re.escape('Unsupported value for discriminator field: None')):
-        apply_discriminator(core_schema.union_schema(cat, dog), 'kind')
+        apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
 
     with pytest.raises(TypeError, match=re.escape('Unsupported value for discriminator field: 1.5')):
-        apply_discriminator(core_schema.union_schema(dog, cat), 'kind')
+        apply_discriminator(core_schema.union_schema([dog, cat]), 'kind')
 
 
 def test_wrap_function_schema() -> None:
-    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('cat'))}
-    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema('dog'))}
+    cat_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']))}
+    dog_fields = {'kind': core_schema.typed_dict_field(core_schema.literal_schema(['dog']))}
     cat = core_schema.general_wrap_validator_function(lambda x, y, z: None, core_schema.typed_dict_schema(cat_fields))
     dog = core_schema.typed_dict_schema(dog_fields)
-    schema = core_schema.union_schema(cat, dog)
+    schema = core_schema.union_schema([cat, dog])
 
     assert apply_discriminator(schema, 'kind') == {
         'choices': {
@@ -904,23 +904,24 @@ def test_plain_function_schema_is_invalid() -> None:
     ):
         apply_discriminator(
             core_schema.union_schema(
-                core_schema.general_plain_validator_function(lambda x, y: None),
-                core_schema.int_schema(),
+                [core_schema.general_plain_validator_function(lambda x, y: None), core_schema.int_schema()]
             ),
             'kind',
         )
 
 
 def test_invalid_str_choice_discriminator_values() -> None:
-    cat = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema('cat'))})
+    cat = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']))})
     dog = core_schema.str_schema()
 
     schema = core_schema.union_schema(
-        cat,
-        # NOTE: Wrapping the union with a validator results in failure to more thoroughly decompose the tagged union.
-        # I think this would be difficult to avoid in the general case, and I would suggest that we not attempt to do
-        # more than this until presented with scenarios where it is helpful/necessary.
-        core_schema.general_wrap_validator_function(lambda x, y, z: x, dog),
+        [
+            cat,
+            # NOTE: Wrapping the union with a validator results in failure to more thoroughly decompose the tagged
+            # union. I think this would be difficult to avoid in the general case, and I would suggest that we not
+            # attempt to do more than this until presented with scenarios where it is helpful/necessary.
+            core_schema.general_wrap_validator_function(lambda x, y, z: x, dog),
+        ]
     )
 
     with pytest.raises(
@@ -930,22 +931,22 @@ def test_invalid_str_choice_discriminator_values() -> None:
 
 
 def test_lax_or_strict_definitions() -> None:
-    cat = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema('cat'))})
-    lax_dog = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema('DOG'))})
+    cat = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']))})
+    lax_dog = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema(['DOG']))})
     strict_dog = core_schema.definitions_schema(
-        core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema('dog'))}),
+        core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema(['dog']))}),
         [core_schema.int_schema(ref='my-int-definition')],
     )
     dog = core_schema.definitions_schema(
         core_schema.lax_or_strict_schema(lax_schema=lax_dog, strict_schema=strict_dog),
         [core_schema.str_schema(ref='my-str-definition')],
     )
-    discriminated_schema = apply_discriminator(core_schema.union_schema(cat, dog), 'kind')
+    discriminated_schema = apply_discriminator(core_schema.union_schema([cat, dog]), 'kind')
     assert discriminated_schema == {
-        'choices': {
-            'DOG': {
-                'definitions': [{'ref': 'my-str-definition', 'type': 'str'}],
-                'schema': {
+        'definitions': [{'ref': 'my-str-definition', 'type': 'str'}],
+        'schema': {
+            'choices': {
+                'DOG': {
                     'lax_schema': {
                         'fields': {
                             'kind': {'schema': {'expected': ['DOG'], 'type': 'literal'}, 'type': 'typed-dict-field'}
@@ -964,34 +965,38 @@ def test_lax_or_strict_definitions() -> None:
                     },
                     'type': 'lax-or-strict',
                 },
-                'type': 'definitions',
+                'cat': {
+                    'fields': {
+                        'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}, 'type': 'typed-dict-field'}
+                    },
+                    'type': 'typed-dict',
+                },
+                'dog': 'DOG',
             },
-            'cat': {
-                'fields': {'kind': {'schema': {'expected': ['cat'], 'type': 'literal'}, 'type': 'typed-dict-field'}},
-                'type': 'typed-dict',
-            },
-            'dog': 'DOG',
+            'discriminator': 'kind',
+            'from_attributes': True,
+            'strict': False,
+            'type': 'tagged-union',
         },
-        'discriminator': 'kind',
-        'from_attributes': True,
-        'strict': False,
-        'type': 'tagged-union',
+        'type': 'definitions',
     }
 
 
 def test_wrapped_nullable_union() -> None:
-    cat = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema('cat'))})
-    dog = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema('dog'))})
-    ant = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema('ant'))})
+    cat = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema(['cat']))})
+    dog = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema(['dog']))})
+    ant = core_schema.typed_dict_schema({'kind': core_schema.typed_dict_field(core_schema.literal_schema(['ant']))})
 
     schema = core_schema.union_schema(
-        ant,
-        # NOTE: Wrapping the union with a validator results in failure to more thoroughly decompose the tagged union.
-        # I think this would be difficult to avoid in the general case, and I would suggest that we not attempt to do
-        # more than this until presented with scenarios where it is helpful/necessary.
-        core_schema.general_wrap_validator_function(
-            lambda x, y, z: x, core_schema.nullable_schema(core_schema.union_schema(cat, dog))
-        ),
+        [
+            ant,
+            # NOTE: Wrapping the union with a validator results in failure to more thoroughly decompose the tagged
+            # union. I think this would be difficult to avoid in the general case, and I would suggest that we not
+            # attempt to do more than this until presented with scenarios where it is helpful/necessary.
+            core_schema.general_wrap_validator_function(
+                lambda x, y, z: x, core_schema.nullable_schema(core_schema.union_schema([cat, dog]))
+            ),
+        ]
     )
     discriminated_schema = apply_discriminator(schema, 'kind')
     validator = SchemaValidator(discriminated_schema)

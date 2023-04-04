@@ -1,4 +1,4 @@
-Pydantic works well with [mypy](http://mypy-lang.org/) right [out of the box](usage/mypy.md).
+Pydantic works well with [mypy](http://mypy-lang.org/) right out of the box.
 
 However, Pydantic also ships with a mypy plugin that adds a number of important pydantic-specific
 features to mypy that improve its ability to type-check your code.
@@ -25,8 +25,8 @@ print(m.middle_name)  # not a model field!
 Model()  # will raise a validation error for age and list_of_ints
 ```
 
+Without any special configuration, mypy catches one of the errors:
 
-Without any special configuration, mypy catches one of the errors (see [here](usage/mypy.md) for usage instructions):
 ```
 13: error: "Model" has no attribute "middle_name"
 ```
@@ -43,9 +43,40 @@ if your field names or types change.
 
 There are other benefits too! See below for more details.
 
-### Plugin Capabilities
+## Using mypy without the plugin
 
-#### Generate a signature for `Model.__init__`
+You can run your code through mypy with:
+
+```bash
+mypy \
+  --ignore-missing-imports \
+  --follow-imports=skip \
+  --strict-optional \
+  pydantic_mypy_test.py
+```
+
+### Strict Optional
+
+For your code to pass with `--strict-optional`, you need to to use `Optional[]` or an alias of `Optional[]`
+for all fields with `None` as the default. (This is standard with mypy.)
+
+Pydantic provides a few useful optional or union types:
+
+* `NoneStr` aka. `Optional[str]`
+* `NoneBytes` aka. `Optional[bytes]`
+* `StrBytes` aka. `Union[str, bytes]`
+* `NoneStrBytes` aka. `Optional[StrBytes]`
+
+If these aren't sufficient you can of course define your own.
+
+### Other Pydantic interfaces
+
+Pydantic [dataclasses](/usage/dataclasses/) and the [`validate_arguments` decorator](/usage/validation_decorator/)
+should also work well with mypy.
+
+## Mypy Plugin Capabilities
+
+### Generate a signature for `Model.__init__`
 * Any required fields that don't have dynamically-determined aliases will be included as required
   keyword arguments.
 * If `Config.populate_by_name=True`, the generated signature will use the field names,
@@ -57,33 +88,33 @@ There are other benefits too! See below for more details.
 * **Optional:** If the [`init_typed` **plugin setting**](#plugin-settings) is set to `True`, the generated signature
   will use the types of the model fields (otherwise they will be annotated as `Any` to allow parsing).
 
-#### Generate a typed signature for `Model.model_construct`
-* The [`model_construct`](usage/models.md#creating-models-without-validation) method is a faster alternative to `__init__`
+### Generate a typed signature for `Model.model_construct`
+* The [`model_construct`](/usage/models/#creating-models-without-validation) method is a faster alternative to `__init__`
   when input data is known to be valid and does not need to be parsed. But because this method performs no runtime
   validation, static checking is important to detect errors.
 
-#### Respect `Config.allow_mutation`
+### Respect `Config.allow_mutation`
 * If `Config.allow_mutation` is `False`, you'll get a mypy error if you try to change
-  the value of a model field; cf. [faux immutability](usage/models.md#faux-immutability).
+  the value of a model field; cf. [faux immutability](/usage/models/#faux-immutability).
 
-#### Respect `Config.from_attributes`
+### Respect `Config.from_attributes`
 * If `Config.from_attributes` is `False`, you'll get a mypy error if you try to call `.from_orm()`;
-  cf. [ORM mode](usage/models.md#orm-mode-aka-arbitrary-class-instances)
+  cf. [ORM mode](/usage/models/#orm-mode-aka-arbitrary-class-instances)
 
-#### Generate a signature for `dataclasses`
-* classes decorated with [`@pydantic.dataclasses.dataclass`](usage/dataclasses.md) are type checked the same as standard Python dataclasses
-* The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](usage/model_config.md).
+### Generate a signature for `dataclasses`
+* classes decorated with [`@pydantic.dataclasses.dataclass`](/usage/dataclasses/) are type checked the same as standard Python dataclasses
+* The `@pydantic.dataclasses.dataclass` decorator accepts a `config` keyword argument which has the same meaning as [the `Config` sub-class](/usage/model_config/).
 
-#### Respect the type of the `Field`'s `default` and `default_factory`
+### Respect the type of the `Field`'s `default` and `default_factory`
 * Field with both a `default` and a `default_factory` will result in an error during static checking.
 * The type of the `default` and `default_factory` value must be compatible with the one of the field.
 
-#### Warn about the use of untyped fields
+### Warn about the use of untyped fields
 * You'll get a mypy error any time you assign a public attribute on a model without annotating its type
 * If your goal is to set a ClassVar, you should explicitly annotate the field using typing.ClassVar
 
-### Optional Capabilities:
-#### Prevent the use of required dynamic aliases
+## Optional Capabilities:
+### Prevent the use of required dynamic aliases
 
 * If the [`warn_required_dynamic_aliases` **plugin setting**](#plugin-settings) is set to `True`, you'll get a mypy
   error any time you use a dynamically-determined alias or alias generator on a model with
@@ -91,7 +122,7 @@ There are other benefits too! See below for more details.
 * This is important because if such aliases are present, mypy cannot properly type check calls to `__init__`.
   In this case, it will default to treating all arguments as optional.
 
-### Enabling the Plugin
+## Enabling the Plugin
 
 To enable the plugin, just add `pydantic.mypy` to the list of plugins in your
 [mypy config file](https://mypy.readthedocs.io/en/latest/config_file.html)
@@ -105,13 +136,14 @@ plugins = pydantic.mypy
 
 The plugin is compatible with mypy versions `>=0.930`.
 
-See the [mypy usage](usage/mypy.md) and [plugin configuration](#configuring-the-plugin) docs for more details.
+See the [plugin configuration](#configuring-the-plugin) docs for more details.
 
-#### Configuring the Plugin
+### Configuring the Plugin
 To change the values of the plugin settings, create a section in your mypy config file called `[pydantic-mypy]`,
 and add any key-value pairs for settings you want to override.
 
 A `mypy.ini` file with all plugin strictness flags enabled (and some other mypy strictness flags, too) might look like:
+
 ```ini
 [mypy]
 plugins = pydantic.mypy
@@ -134,6 +166,7 @@ warn_required_dynamic_aliases = True
 
 As of `mypy>=0.900`, mypy config may also be included in the `pyproject.toml` file rather than `mypy.ini`.
 The same configuration as above would be:
+
 ```toml
 [tool.mypy]
 plugins = [

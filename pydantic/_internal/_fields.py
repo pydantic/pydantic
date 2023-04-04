@@ -4,19 +4,18 @@ Private logic related to fields (the `Field()` function and `FieldInfo` class), 
 from __future__ import annotations as _annotations
 
 import dataclasses
-import re
 import sys
+import typing
 from abc import ABC, abstractmethod
 from copy import copy
-from typing import TYPE_CHECKING, Any, ForwardRef
+from typing import TYPE_CHECKING, Any
 
 from pydantic_core import core_schema
 
-from ..errors import PydanticUndefinedAnnotation
 from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
 from ._repr import Representation
-from ._typing_extra import get_type_hints, is_classvar
+from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar
 
 if TYPE_CHECKING:
     from ..fields import FieldInfo
@@ -117,7 +116,6 @@ def collect_fields(  # noqa: C901
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None,
     *,
-    typevars_map: dict[str, Any] | None = None,
     is_dataclass: bool = False,
     dc_kw_only: bool | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
@@ -133,26 +131,12 @@ def collect_fields(  # noqa: C901
     :param cls: BaseModel or dataclass
     :param bases: parents of the class, generally `cls.__bases__`
     :param types_namespace: optional extra namespace to look for types in
-    :param typevars_map: TODO ???
     :param is_dataclass: whether the class is a dataclass, used to decide about kw_only setting
     :param dc_kw_only: whether the whole dataclass is kw_only
     """
     from ..fields import FieldInfo
 
-    # get type hints and raise a PydanticUndefinedAnnotation if any types are undefined
-    try:
-        type_hints = get_type_hints_infer_globalns(cls, types_namespace, include_extras=True)
-    except NameError as e:
-        try:
-            name = e.name
-        except AttributeError:
-            m = re.search(r".*'(.+?)'", str(e))
-            if m:
-                name = m.group(1)
-            else:
-                # should never happen
-                raise
-        raise PydanticUndefinedAnnotation(name) from e
+    type_hints = get_cls_type_hints_lenient(cls, types_namespace)
 
     # https://docs.python.org/3/howto/annotations.html#accessing-the-annotations-dict-of-an-object-in-python-3-9-and-older
     # annotations is only used for finding fields in parent classes
@@ -160,7 +144,7 @@ def collect_fields(  # noqa: C901
     fields: dict[str, FieldInfo] = {}
 
     # currently just used for `init=False` dataclass fields, this logic can probably be removed if
-    # we simplify this file to not be "all things to all men"
+    # we simplify this function to not be "all things to all men"
     omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
 
     class_vars: set[str] = set()
@@ -170,10 +154,6 @@ def collect_fields(  # noqa: C901
             continue
         if ann_name.startswith('_') or (omitted_fields and ann_name in omitted_fields):
             continue
-
-        # raise a PydanticUndefinedAnnotation if type is undefined
-        if isinstance(ann_type, ForwardRef):
-            raise PydanticUndefinedAnnotation(ann_type.__forward_arg__)
 
         if DC_KW_ONLY and ann_type is DC_KW_ONLY:
             # all field fields will be kw_only
@@ -218,9 +198,8 @@ def collect_fields(  # noqa: C901
             if ann_name in annotations or isinstance(ann_type, PydanticForwardRef):
                 field_info = FieldInfo.from_annotation(ann_type)
             else:
-                # # if field has no default value and is not in __annotations__ this means that it is
-                # # defined in a base class and we can take it from there
-                # fields[ann_name] = cls_fields[ann_name]
+                # if field has no default value and is not in __annotations__ this means that it is
+                # defined in a base class and we can take it from there
                 model_fields_lookup: dict[str, FieldInfo] = {}
                 for x in cls.__bases__[::-1]:
                     model_fields_lookup.update(getattr(x, 'model_fields', {}))
@@ -273,9 +252,15 @@ def collect_fields(  # noqa: C901
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
 
-    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None) or typevars_map
+    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None)
     if typevars_map:
         for field in fields.values():
+            try:
+                field.annotation = typing._eval_type(  # type: ignore[attr-defined]
+                    field.annotation, types_namespace, None
+                )
+            except NameError:
+                pass
             field.annotation = replace_types(field.annotation, typevars_map)
 
     return fields, class_vars

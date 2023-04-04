@@ -1,3 +1,54 @@
+## v2.0a1 (2023-04-03)
+
+First pre-release of Pydantic V2!
+
+See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
+
+## v1.10.7 (2023-03-22)
+
+* Fix creating schema from model using `ConstrainedStr` with `regex` as dict key, #5223 by @matejetz
+* Address bug in mypy plugin caused by explicit_package_bases=True, #5191 by @dmontagu
+* Add implicit defaults in the mypy plugin for Field with no default argument, #5190 by @dmontagu
+* Fix schema generated for Enum values used as Literals in discriminated unions, #5188 by @javibookline
+* Fix mypy failures caused by the pydantic mypy plugin when users define `from_orm` in their own classes, #5187 by @dmontagu
+* Fix `InitVar` usage with pydantic dataclasses, mypy version `1.1.1` and the custom mypy plugin, #5162 by @cdce8p
+
+## v1.10.6 (2023-03-08)
+
+* Implement logic to support creating validators from non standard callables by using defaults to identify them and unwrapping `functools.partial` and `functools.partialmethod` when checking the signature, #5126 by @JensHeinrich
+* Fix mypy plugin for v1.1.1, and fix `dataclass_transform` decorator for pydantic dataclasses, #5111 by @cdce8p
+* Raise `ValidationError`, not `ConfigError`, when a discriminator value is unhashable, #4773 by @kurtmckee
+
+## v1.10.5 (2023-02-15)
+
+* Fix broken parametrized bases handling with `GenericModel`s with complex sets of models, #5052 by @MarkusSintonen
+* Invalidate mypy cache if plugin config changes, #5007 by @cdce8p
+* Fix `RecursionError` when deep-copying dataclass types wrapped by pydantic, #4949 by @mbillingr
+* Fix `X | Y` union syntax breaking `GenericModel`, #4146 by @thenx
+* Switch coverage badge to show coverage for this branch/release, #5060 by @samuelcolvin
+
+## v1.10.4 (2022-12-30)
+
+* Change dependency to `typing-extensions>=4.2.0`, #4885 by @samuelcolvin
+
+## v1.10.3 (2022-12-29)
+
+**NOTE: v1.10.3 was ["yanked"](https://pypi.org/help/#yanked) from PyPI due to #4885 which is fixed in v1.10.4**
+
+* fix parsing of custom root models, #4883 by @gou177
+* fix: use dataclass proxy for frozen or empty dataclasses, #4878 by @PrettyWood
+* Fix `schema` and `schema_json` on models where a model instance is a one of default values, #4781 by @Bobronium
+* Add Jina AI to sponsors on docs index page, #4767 by @samuelcolvin
+* fix: support assignment on `DataclassProxy`, #4695 by @PrettyWood
+* Add `postgresql+psycopg` as allowed scheme for `PostgreDsn` to make it usable with SQLAlchemy 2, #4689 by @morian
+* Allow dict schemas to have both `patternProperties` and `additionalProperties`, #4641 by @jparise
+* Fixes error passing None for optional lists with `unique_items`, #4568 by @mfulgo
+* Fix `GenericModel` with `Callable` param raising a `TypeError`, #4551 by @mfulgo
+* Fix field regex with `StrictStr` type annotation, #4538 by @sisp
+* Correct `dataclass_transform` keyword argument name from `field_descriptors` to `field_specifiers`, #4500 by @samuelcolvin
+* fix: avoid multiple calls of `__post_init__` when dataclasses are inherited, #4487 by @PrettyWood
+* Reduce the size of binary wheels, #2276 by @samuelcolvin
+
 ## v1.10.2 (2022-09-05)
 
 * **Revert Change:** Revert percent encoding of URL parts which was originally added in #4224, #4470 by @samuelcolvin

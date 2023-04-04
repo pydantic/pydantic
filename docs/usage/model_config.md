@@ -60,6 +60,11 @@ try:
     user.name = 'x' * 20
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for User
+    name
+      String should have at most 10 characters [type=string_too_long, input_value='xxxxxxxxxxxxxxxxxxxx', input_type=str]
+    """
 ```
 
 ## Options
@@ -151,39 +156,10 @@ for validation, for use with `from_attributes`; see [Data binding](models.md#dat
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
 
-**`keep_untouched`**
-: a tuple of types (e.g. descriptors) for a model's default values that should not be changed during model creation and will
-not be included in the model schemas. **Note**: this means that attributes on the model with *defaults of this type*, not *annotations of this type*, will be left alone.
-
-**`schema_extra`**
-: a `dict` used to extend/update the generated JSON Schema, or a callable to post-process it; see [schema customization](schema.md#schema-customization)
-
-**`json_loads`**
-: a custom function for decoding JSON; see [custom JSON (de)serialisation](exporting_models.md#custom-json-deserialisation)
-
-**`json_dumps`**
-: a custom function for encoding JSON; see [custom JSON (de)serialisation](exporting_models.md#custom-json-deserialisation)
-
-**`json_encoders`**
-: a `dict` used to customise the way types are encoded to JSON; see [JSON Serialisation](exporting_models.md#modeljson)
-
-**`underscore_attrs_are_private`**
-: whether to treat any underscore non-class var attrs as private, or leave them as is; see [Private model attributes](models.md#private-model-attributes)
-
-**`copy_on_model_validation`**
-: string literal to control how models instances are processed during validation,
-with the following means (see [#4093](https://github.com/pydantic/pydantic/pull/4093) for a full discussion of the changes to this field):
-
-* `'none'` - models are not copied on validation, they're simply kept "untouched"
-* `'shallow'` - models are shallow copied, this is the default
-* `'deep'` - models are deep copied
-
-**`smart_union`**
-: whether _pydantic_ should try to check all types inside `Union` to prevent undesired coercion; see [the dedicated section](#smart-union)
-
-**`post_init_call`**
-: whether stdlib dataclasses `__post_init__` should be run before (default behaviour with value `'before_validation'`)
-  or after (value `'after_validation'`) parsing and validation when they are [converted](dataclasses.md#stdlib-dataclasses-and-_pydantic_-dataclasses).
+**`ignored_types`**
+: a tuple of types that may occur as values of class attributes without annotations; this is typically used for
+custom descriptors (classes that behave like `property`). If an attribute is set on a class without an annotation
+and has a type that is not in this tuple (or otherwise recognized by pydantic), an error will be raised.
 
 **`allow_inf_nan`**
 : whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields, defaults to `True`,
@@ -285,6 +261,7 @@ class Character(Voice):
 print(Character.model_json_schema(by_alias=True))
 """
 {
+    'title': 'Character',
     'type': 'object',
     'properties': {
         'ActorName': {'type': 'string', 'default': None, 'title': 'Actorname'},
@@ -292,7 +269,6 @@ print(Character.model_json_schema(by_alias=True))
         'Mood': {'type': 'string', 'default': None, 'title': 'Mood'},
         'Act': {'type': 'integer', 'default': 1, 'title': 'Act'},
     },
-    'title': 'Character',
 }
 """
 ```

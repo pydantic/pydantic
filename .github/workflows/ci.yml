@@ -122,21 +122,16 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu, macos, windows]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11', 'pypy3.7', 'pypy3.8', 'pypy3.9']
-        exclude:
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        include:
           # no pydantic-core binaries for pypy on windows, so tests take absolute ages
-          - os: windows
-            python-version: 'pypy3.7'
-          - os: windows
-            python-version: 'pypy3.8'
-          - os: windows
-            python-version: 'pypy3.9'
           # macos tests with pypy take ages (>10mins) since pypy is very slow
-          - os: macos
+          # so we only test pypy on ubuntu
+          - os: ubuntu
             python-version: 'pypy3.7'
-          - os: macos
+          - os: ubuntu
             python-version: 'pypy3.8'
-          - os: macos
+          - os: ubuntu
             python-version: 'pypy3.9'
 
     env:
@@ -165,6 +160,8 @@ jobs:
     - run: mkdir coverage
 
     - name: test without deps
+      # speed up by skipping this step on pypy
+      if: "!startsWith(matrix.python-version, 'pypy')"
       run: make test
       env:
         COVERAGE_FILE: coverage/.coverage.${{ runner.os }}-py${{ matrix.python-version }}-without-deps
@@ -186,7 +183,7 @@ jobs:
         path: coverage
 
   test-mypy:
-    name: mypy v${{ matrix.mypy-version }} / ${{ matrix.python-version }}
+    name: mypy ${{ matrix.mypy-version }} / ${{ matrix.python-version }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -305,10 +302,13 @@ jobs:
     - name: test
       run: make test-fastapi
 
-  # https://github.com/marketplace/actions/alls-green#why
+  # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
 
     if: always()
+
+    outputs:
+      result: ${{ steps.all-green.outputs.result }}
 
     needs:
       - lint
@@ -323,15 +323,16 @@ jobs:
     steps:
       - name: Decide whether the needed jobs succeeded or failed
         uses: re-actors/alls-green@release/v1
+        id: all-green
         with:
           allowed-skips: test-fastapi  # TODO: drop once re-enabled
           jobs: ${{ toJSON(needs) }}
 
   deploy:
     name: Deploy
-    needs:
-      - check
-    if: "success() && startsWith(github.ref, 'refs/tags/')"
+    needs: [check]
+    # `always()` is required to trigger this task even though test-fastapi is skipped
+    if: "always() && needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')"
     runs-on: ubuntu-latest
 
     steps:
@@ -351,9 +352,10 @@ jobs:
       - name: install
         run: pip install -U twine build packaging
 
-      - name: check tag
-        id: check-tag
-        run: ./tests/check_tag.py
+      - name: check GITHUB_REF matches package version
+        uses: samuelcolvin/check-python-version@v3
+        with:
+          version_file_path: pydantic/version.py
 
       - name: build
         run: python -m build

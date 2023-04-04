@@ -1,3 +1,5 @@
+# Code Generation with datamodel-code-generator
+
 The [datamodel-code-generator](https://github.com/koxudaxi/datamodel-code-generator/) project is a library and command-line utility to generate pydantic models from just about any data source, including:
 
 * OpenAPI 3 (YAML/JSON)

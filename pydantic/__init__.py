@@ -9,9 +9,10 @@ from pydantic_core.core_schema import (
 )
 
 from . import dataclasses
+from .analyzed_type import AnalyzedType
 from .config import BaseConfig, ConfigDict, Extra
 from .decorator import validate_arguments
-from .decorators import field_validator, root_validator, serializer, validator
+from .decorators import field_serializer, field_validator, model_serializer, root_validator, validator
 from .errors import *
 from .fields import Field, PrivateAttr
 from .main import *
@@ -25,13 +26,15 @@ __version__ = VERSION
 # WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
+    'AnalyzedType',
     # dataclasses
     'dataclasses',
     # decorators
     'root_validator',
     'validator',
     'field_validator',
-    'serializer',
+    'field_serializer',
+    'model_serializer',
     'ValidationInfo',
     'FieldValidationInfo',
     'SerializationInfo',
@@ -54,7 +57,6 @@ __all__ = [
     # main
     'BaseModel',
     'create_model',
-    'Validator',
     # network
     'AnyUrl',
     'AnyHttpUrl',
@@ -75,7 +77,6 @@ __all__ = [
     'MySQLDsn',
     'MariaDBDsn',
     'validate_email',
-    # parse
     # tools
     'parse_obj_as',
     'schema_of',

@@ -463,8 +463,8 @@ class PydanticModelTransformer:
                 and stmt.rvalue.callee.callee.fullname in DECORATOR_FULLNAMES
             ):
                 # This is a (possibly-reused) validator or serializer, not a field
-                # TODO: We may want to inspect whatever replaces keep_untouched in the config
                 # In particular, it looks something like: my_validator = validator('my_field', allow_reuse=True)(f)
+                # Eventually, we may want to attempt to respect model_config['ignored_types']
                 return None
 
             # The assignment does not have an annotation, and it's not anything else we recognize

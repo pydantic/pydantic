@@ -1,0 +1,7 @@
+# collect all of the .in files into a single .in file
+# that can be used to build a lockfile / constraints fil
+# with all of the envs
+-r docs.in
+-r linting.in
+-r testing-extra.in
+-r testing.in

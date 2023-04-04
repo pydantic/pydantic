@@ -1,4 +1,6 @@
+import json
 import platform
+import re
 import sys
 from collections import defaultdict
 from copy import deepcopy
@@ -24,7 +26,19 @@ from uuid import UUID, uuid4
 import pytest
 from typing_extensions import Final, Literal
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, PrivateAttr, SecretStr, ValidationError, constr
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Extra,
+    Field,
+    PrivateAttr,
+    PydanticUserError,
+    SecretStr,
+    ValidationError,
+    ValidationInfo,
+    constr,
+)
+from pydantic.decorators import field_validator
 
 
 def test_success():
@@ -38,12 +52,16 @@ def test_success():
     assert m.b == 10
 
 
-class UltraSimpleModel(BaseModel):
-    a: float
-    b: int = 10
+@pytest.fixture(name='UltraSimpleModel', scope='session')
+def ultra_simple_model_fixture():
+    class UltraSimpleModel(BaseModel):
+        a: float
+        b: int = 10
+
+    return UltraSimpleModel
 
 
-def test_ultra_simple_missing():
+def test_ultra_simple_missing(UltraSimpleModel):
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
     assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'Field required', 'type': 'missing', 'input': {}}]
@@ -54,7 +72,7 @@ def test_ultra_simple_missing():
     )
 
 
-def test_ultra_simple_failed():
+def test_ultra_simple_failed(UltraSimpleModel):
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel(a='x', b='x')
     assert exc_info.value.errors() == [
@@ -73,7 +91,7 @@ def test_ultra_simple_failed():
     ]
 
 
-def test_ultra_simple_repr():
+def test_ultra_simple_repr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert str(m) == 'a=10.2 b=10'
     assert repr(m) == 'UltraSimpleModel(a=10.2, b=10)'
@@ -81,7 +99,7 @@ def test_ultra_simple_repr():
     assert repr(m.model_fields['b']) == 'FieldInfo(annotation=int, required=False, default=10)'
     assert dict(m) == {'a': 10.2, 'b': 10}
     assert m.model_dump() == {'a': 10.2, 'b': 10}
-    assert m.model_dump_json() == b'{"a":10.2,"b":10}'
+    assert m.model_dump_json() == '{"a":10.2,"b":10}'
     assert str(m) == 'a=10.2 b=10'
 
 
@@ -96,10 +114,10 @@ def test_default_factory_field():
     assert str(m) == 'a=1'
     assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
-    assert m.model_dump_json() == b'{"a":1}'
+    assert m.model_dump_json() == '{"a":1}'
 
 
-def test_comparing():
+def test_comparing(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2, b='100')
     assert m.model_dump() == {'a': 10.2, 'b': 100}
     assert m != {'a': 10.2, 'b': 100}
@@ -155,6 +173,10 @@ def test_nullable_strings_fails(NoneCheckModel):
 
 @pytest.fixture(name='ParentModel', scope='session')
 def parent_sub_model_fixture():
+    class UltraSimpleModel(BaseModel):
+        a: float
+        b: int = 10
+
     class ParentModel(BaseModel):
         grape: bool
         banana: UltraSimpleModel
@@ -287,7 +309,7 @@ def test_extra_ignored():
         model.c = 1
 
 
-def test_set_attr():
+def test_set_attr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert m.model_dump() == {'a': 10.2, 'b': 10}
 
@@ -698,12 +720,12 @@ def test_annotation_field_name_shadows_attribute():
 
 
 def test_value_field_name_shadows_attribute():
-    class BadModel(BaseModel):
-        model_json_schema = (
-            'abc'  # This conflicts with the BaseModel's model_json_schema() class method, but has no annotation
-        )
+    with pytest.raises(PydanticUserError, match="A non-annotated attribute was detected: `model_json_schema = 'abc'`"):
 
-    assert len(BadModel.model_fields) == 0
+        class BadModel(BaseModel):
+            model_json_schema = (
+                'abc'  # This conflicts with the BaseModel's model_json_schema() class method, but has no annotation
+            )
 
 
 def test_class_var():
@@ -840,7 +862,7 @@ def test_dict_with_extra_keys():
     assert m.model_dump(by_alias=True) == {'alias_a': None, 'extra_key': 'extra'}
 
 
-def test_untouched_types():
+def test_ignored_types():
     from pydantic import BaseModel
 
     class _ClassPropertyDescriptor:
@@ -853,7 +875,7 @@ def test_untouched_types():
     classproperty = _ClassPropertyDescriptor
 
     class Model(BaseModel):
-        model_config = ConfigDict(keep_untouched=(classproperty,))
+        model_config = ConfigDict(ignored_types=(classproperty,))
 
         @classproperty
         def class_name(cls) -> str:
@@ -1013,25 +1035,81 @@ def test_field_exclude():
     assert my_user.model_dump() == {'id': 42, 'username': 'JohnDoe', 'hobbies': ['scuba diving']}
 
 
-@pytest.mark.skip(reason='not implemented')
-def test_model_exclude_copy_on_model_validation_shallow():
-    """When `Config.copy_on_model_validation` is set and `Config.copy_on_model_validation_shallow` is set,
-    do the same as the previous test but perform a shallow copy"""
-
+def test_revalidate_instances_never():
     class User(BaseModel):
-        model_config = ConfigDict(copy_on_model_validation='shallow')
-
         hobbies: List[str]
 
     my_user = User(hobbies=['scuba diving'])
 
     class Transaction(BaseModel):
-        user: User = Field(...)
+        user: User
+
+    t = Transaction(user=my_user)
+
+    assert t.user is my_user
+    assert t.user.hobbies is my_user.hobbies
+
+    class SubUser(User):
+        sins: List[str]
+
+    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+
+    t = Transaction(user=my_sub_user)
+
+    assert t.user is my_sub_user
+    assert t.user.hobbies is my_sub_user.hobbies
+
+
+def test_revalidate_instances_sub_instances():
+    class User(BaseModel, revalidate_instances='subclass-instances'):
+        hobbies: List[str]
+
+    my_user = User(hobbies=['scuba diving'])
+
+    class Transaction(BaseModel):
+        user: User
+
+    t = Transaction(user=my_user)
+
+    assert t.user is my_user
+    assert t.user.hobbies is my_user.hobbies
+
+    class SubUser(User):
+        sins: List[str]
+
+    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+
+    t = Transaction(user=my_sub_user)
+
+    assert t.user is not my_sub_user
+    assert t.user.hobbies is not my_sub_user.hobbies
+    assert not hasattr(t.user, 'sins')
+
+
+def test_revalidate_instances_always():
+    class User(BaseModel, revalidate_instances='always'):
+        hobbies: List[str]
+
+    my_user = User(hobbies=['scuba diving'])
+
+    class Transaction(BaseModel):
+        user: User
 
     t = Transaction(user=my_user)
 
     assert t.user is not my_user
-    assert t.user.hobbies is my_user.hobbies  # unlike above, this should be a shallow copy
+    assert t.user.hobbies is not my_user.hobbies
+
+    class SubUser(User):
+        sins: List[str]
+
+    my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+
+    t = Transaction(user=my_sub_user)
+
+    assert t.user is not my_sub_user
+    assert t.user.hobbies is not my_sub_user.hobbies
+    assert not hasattr(t.user, 'sins')
 
 
 @pytest.mark.skip(reason='not implemented')
@@ -1232,6 +1310,31 @@ def test_model_export_inclusion_inheritance():
     assert actual == expected, 'Unexpected model export result'
 
 
+def test_untyped_fields_warning():
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
+            "if 'x' is not meant to be a field, you may be able to resolve this error by annotating it "
+            "as a ClassVar or updating model_config[\"ignored_types\"]."
+        ),
+    ):
+
+        class WarningModel(BaseModel):
+            x = 1
+
+    # Prove that annotating with ClassVar prevents the warning
+    class NonWarningModel(BaseModel):
+        x: ClassVar = 1
+
+
+def test_untyped_fields_error():
+    with pytest.raises(TypeError, match="Field 'a' requires a type annotation"):
+
+        class Model(BaseModel):
+            a = Field('foobar')
+
+
 def test_custom_init_subclass_params():
     class DerivedModel(BaseModel):
         def __init_subclass__(cls, something):
@@ -1243,7 +1346,7 @@ def test_custom_init_subclass_params():
     # to allow the special method __init_subclass__ to be defined with custom
     # parameters on extended BaseModel classes.
     class NewModel(DerivedModel, something=2):
-        something = 1
+        something: ClassVar = 1
 
     assert NewModel.something == 2
 
@@ -1446,29 +1549,6 @@ def test_inherited_model_field_copy():
     assert id(image_2) in {id(image) for image in item.images}
 
 
-def test_inherited_model_field_untouched():
-    """It should not copy models used as fields if explicitly asked"""
-
-    class Image(BaseModel):
-        model_config = ConfigDict(copy_on_model_validation='none')
-        path: str
-
-        def __hash__(self):
-            return id(self)
-
-    class Item(BaseModel):
-        images: List[Image]
-
-    image_1 = Image(path='my_image1.png')
-    image_2 = Image(path='my_image2.png')
-
-    item = Item(images=(image_1, image_2))
-    assert image_1 in item.images
-
-    assert id(image_1) == id(item.images[0])
-    assert id(image_2) == id(item.images[1])
-
-
 def test_mapping_retains_type_subclass():
     class CustomMap(dict):
         pass
@@ -1598,13 +1678,6 @@ def test_class_kwargs_config():
     assert Model.model_config['extra'] is Extra.allow  # overwritten as intended
     assert Model.model_config['alias_generator'] is str.upper  # inherited as intended
     # assert Model.model_fields['b'].alias == 'B'  # alias_generator still works
-
-
-def test_class_kwargs_config_json_encoders():
-    class Model(BaseModel, json_encoders={int: str}):
-        pass
-
-    assert Model.model_config['json_encoders'] == {int: str}
 
 
 def test_class_kwargs_config_and_attr_conflict():
@@ -1743,17 +1816,14 @@ def test_extra_args_to_field_type_error():
 
 
 def test_deeper_recursive_model():
-    class A(BaseModel):
+    class A(BaseModel, undefined_types_warning=False):
         b: 'B'
-        model_config = {'undefined_types_warning': False}
 
-    class B(BaseModel):
+    class B(BaseModel, undefined_types_warning=False):
         c: 'C'
-        model_config = {'undefined_types_warning': False}
 
-    class C(BaseModel):
+    class C(BaseModel, undefined_types_warning=False):
         a: Optional['A']
-        model_config = {'undefined_types_warning': False}
 
     A.model_rebuild()
     B.model_rebuild()
@@ -1880,3 +1950,113 @@ def test_model_equality_generics():
     nested_any = GenericModel[GenericModel[Any]](x=GenericModel[Any](x=1))
     nested_int = GenericModel[GenericModel[int]](x=GenericModel[int](x=1))
     assert nested_any == nested_int
+
+
+def test_model_validate_strict() -> None:
+    class LaxModel(BaseModel):
+        x: int
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        x: int
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel.model_validate({'x': '1'}, strict=None) == LaxModel(x=1)
+    assert LaxModel.model_validate({'x': '1'}, strict=False) == LaxModel(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        LaxModel.model_validate({'x': '1'}, strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'model_class_type',
+            'loc': (),
+            'msg': 'Input should be an instance of LaxModel',
+            'input': {'x': '1'},
+            'ctx': {'class_name': 'LaxModel'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel.model_validate({'x': '1'})
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+    assert StrictModel.model_validate({'x': '1'}, strict=False) == StrictModel(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        LaxModel.model_validate({'x': '1'}, strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'model_class_type',
+            'loc': (),
+            'msg': 'Input should be an instance of LaxModel',
+            'input': {'x': '1'},
+            'ctx': {'class_name': 'LaxModel'},
+        }
+    ]
+
+
+def test_model_validate_json_strict() -> None:
+    class LaxModel(BaseModel):
+        x: int
+
+        model_config = ConfigDict(strict=False)
+
+    class StrictModel(BaseModel):
+        x: int
+
+        model_config = ConfigDict(strict=True)
+
+    assert LaxModel.model_validate_json(json.dumps({'x': '1'}), strict=None) == LaxModel(x=1)
+    assert LaxModel.model_validate_json(json.dumps({'x': '1'}), strict=False) == LaxModel(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        LaxModel.model_validate_json(json.dumps({'x': '1'}), strict=True)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel.model_validate_json(json.dumps({'x': '1'}), strict=None)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+    assert StrictModel.model_validate_json(json.dumps({'x': '1'}), strict=False) == StrictModel(x=1)
+    with pytest.raises(ValidationError) as exc_info:
+        StrictModel.model_validate_json(json.dumps({'x': '1'}), strict=True)
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+
+def test_validate_python_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def val_x(cls, v: int, info: ValidationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    Model.model_validate({'x': 1})
+    Model.model_validate({'x': 1}, context=None)
+    Model.model_validate({'x': 1}, context={'foo': 'bar'})
+    assert contexts == []
+
+
+def test_validate_json_context() -> None:
+    contexts: List[Any] = [None, None, {'foo': 'bar'}]
+
+    class Model(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def val_x(cls, v: int, info: ValidationInfo) -> int:
+            assert info.context == contexts.pop(0)
+            return v
+
+    Model.model_validate_json(json.dumps({'x': 1}))
+    Model.model_validate_json(json.dumps({'x': 1}), context=None)
+    Model.model_validate_json(json.dumps({'x': 1}), context={'foo': 'bar'})
+    assert contexts == []

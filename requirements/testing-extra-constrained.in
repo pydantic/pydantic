@@ -1,0 +1,2 @@
+-r testing-extra.in
+-c all.txt

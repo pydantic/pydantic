@@ -12,12 +12,12 @@ from pydantic_core import core_schema
 from typing_extensions import get_args
 
 from pydantic import (
+    AnalyzedType,
     BaseModel,
     ConfigDict,
     Extra,
     PydanticSchemaGenerationError,
     ValidationError,
-    Validator,
     constr,
     errors,
 )
@@ -137,7 +137,7 @@ def test_typed_list():
         Model(v=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': 1}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': 1}
     ]
 
 
@@ -926,11 +926,29 @@ def test_inheritance():
     class Foo(BaseModel):
         a: float = ...
 
-    class Bar(Foo):
-        x: float = 12.3
-        a = 123.0
+    with pytest.raises(
+        TypeError,
+        match=(
+            "Field 'a' defined on a base class was overridden by a non-annotated attribute. "
+            'All field definitions, including overrides, require a type annotation.'
+        ),
+    ):
 
-    assert Bar().model_dump() == {'x': 12.3, 'a': 123.0}
+        class Bar(Foo):
+            x: float = 12.3
+            a = 123.0
+
+    class Bar2(Foo):
+        x: float = 12.3
+        a: float = 123.0
+
+    assert Bar2().model_dump() == {'x': 12.3, 'a': 123.0}
+
+    class Bar3(Foo):
+        x: float = 12.3
+        a: float = Field(default=123.0)
+
+    assert Bar3().model_dump() == {'x': 12.3, 'a': 123.0}
 
 
 def test_inheritance_subclass_default():
@@ -949,7 +967,7 @@ def test_inheritance_subclass_default():
         y: str
 
     class Sub(Base):
-        x = MyStr('test')
+        x: str = MyStr('test')
         y: MyStr = MyStr('test')  # force subtype
 
         model_config = dict(arbitrary_types_allowed=True)
@@ -1058,18 +1076,13 @@ def test_partial_inheritance_config():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_annotation_inheritance():
     class A(BaseModel):
         integer: int = 1
 
     class B(A):
-        integer = 2
+        integer: int = 2
 
-    if sys.version_info < (3, 10):
-        assert B.__annotations__['integer'] == int
-    else:
-        assert B.__annotations__ == {}
     assert B.model_fields['integer'].annotation == int
 
     class C(A):
@@ -1078,19 +1091,16 @@ def test_annotation_inheritance():
     assert C.__annotations__['integer'] == str
     assert C.model_fields['integer'].annotation == str
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(
+        TypeError,
+        match=(
+            "Field 'integer' defined on a base class was overridden by a non-annotated attribute. "
+            "All field definitions, including overrides, require a type annotation."
+        ),
+    ):
 
         class D(A):
             integer = 'G'
-
-    # TODO: Do we want any changes to this behavior in v2? (Currently, no error is raised)
-    #   "I think it should be an error to redefine any field without an annotation - that way we
-    #   don't need to start trying to infer the type of the default value."
-    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130681812
-    assert str(exc_info.value) == (
-        'The type of D.integer differs from the new default value; '
-        'if you wish to change the type of this field, please use a type annotation'
-    )
 
 
 def test_string_none():
@@ -1167,18 +1177,18 @@ def test_invalid_validator():
             x: InvalidValidator = ...
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_unable_to_infer():
-    with pytest.raises(errors.PydanticUserError) as exc_info:
+    with pytest.raises(
+        errors.PydanticUserError,
+        match=re.escape(
+            "A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; "
+            "if 'x' is not meant to be a field, you may be able to resolve this error by annotating it as a "
+            "ClassVar or updating model_config[\"ignored_types\"]"
+        ),
+    ):
 
         class InvalidDefinitionModel(BaseModel):
             x = None
-
-    # TODO: Do we want any changes to this behavior in v2? (Currently, no error is raised)
-    #   "x definitely shouldn't be a field, I guess an error would be best,
-    #   but might be hard to identify 'non-field attributes reliable'?"
-    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130682562
-    assert exc_info.value.args[0] == 'unable to infer type for attribute "x"'
 
 
 def test_multiple_errors():
@@ -1216,10 +1226,9 @@ def test_multiple_errors():
     assert Model(a=None).a is None
 
 
-def test_validate_all():
-    # TODO remove or rename, validate_all doesn't exist anymore
+def test_validate_default():
     class Model(BaseModel):
-        model_config = ConfigDict(validate_all=True)
+        model_config = ConfigDict(validate_default=True)
         a: int
         b: int
 
@@ -1240,7 +1249,7 @@ def test_force_extra():
 
 
 def test_illegal_extra_value():
-    with pytest.raises(ValueError, match='is not a valid value for "extra"'):
+    with pytest.raises(ValueError, match=re.escape("is not a valid value for config['extra']")):
 
         class Model(BaseModel):
             model_config = ConfigDict(extra='foo')
@@ -1248,48 +1257,34 @@ def test_illegal_extra_value():
 
 
 def test_multiple_inheritance_config():
-    def int_encoder(x):
-        return x + 1
-
-    def int2_encoder(x):
-        return x + 2
-
-    def str_encoder(x):
-        return x.upper()
-
     class Parent(BaseModel):
-        model_config = ConfigDict(frozen=True, extra=Extra.forbid, json_encoders={int: int_encoder})
+        model_config = ConfigDict(frozen=True, extra=Extra.forbid)
 
     class Mixin(BaseModel):
-        model_config = ConfigDict(use_enum_values=True, json_encoders={int: int2_encoder})
+        model_config = ConfigDict(use_enum_values=True)
 
-    class Child(Mixin, Parent, json_encoders={str: str_encoder}):
+    class Child(Mixin, Parent):
         model_config = ConfigDict(populate_by_name=True)
 
     assert BaseModel.model_config['frozen'] is False
     assert BaseModel.model_config['populate_by_name'] is False
-    assert BaseModel.model_config['extra'] is Extra.ignore
+    assert BaseModel.model_config['extra'] is None
     assert BaseModel.model_config['use_enum_values'] is False
-    assert BaseModel.model_config['json_encoders'] == {}
 
     assert Parent.model_config['frozen'] is True
     assert Parent.model_config['populate_by_name'] is False
     assert Parent.model_config['extra'] is Extra.forbid
     assert Parent.model_config['use_enum_values'] is False
-    assert Parent.model_config['json_encoders'][int] is int_encoder
 
     assert Mixin.model_config['frozen'] is False
     assert Mixin.model_config['populate_by_name'] is False
-    assert Mixin.model_config['extra'] is Extra.ignore
+    assert Mixin.model_config['extra'] is None
     assert Mixin.model_config['use_enum_values'] is True
-    assert Mixin.model_config['json_encoders'][int] is int2_encoder
 
     assert Child.model_config['frozen'] is True
     assert Child.model_config['populate_by_name'] is True
     assert Child.model_config['extra'] is Extra.forbid
     assert Child.model_config['use_enum_values'] is True
-    assert Child.model_config['json_encoders'][str] is str_encoder
-    assert Child.model_config['json_encoders'][int] is int_encoder
 
 
 def test_submodel_different_type():
@@ -1694,7 +1689,7 @@ def test_exclude_none():
 
     m = MyModel(b=3)
     assert m.model_dump(exclude_none=True) == {'b': 3}
-    assert m.model_dump_json(exclude_none=True) == b'{"b":3}'
+    assert m.model_dump_json(exclude_none=True) == '{"b":3}'
 
 
 def test_exclude_none_recursive():
@@ -1915,8 +1910,8 @@ def test_custom_generic_validators():
             if not args:
                 return schema
 
-            t1_f = Validator(args[0])
-            t2_f = Validator(args[1])
+            t1_f = AnalyzedType(args[0]).validate_python
+            t2_f = AnalyzedType(args[1]).validate_python
 
             def validate(v, info):
                 if not args:
@@ -2069,7 +2064,6 @@ def test_hashable_optional(default):
     Model()
 
 
-@pytest.mark.xfail(reason='validate_all')
 def test_default_factory_called_once():
     """It should never call `default_factory` more than once even when `validate_all` is set"""
 
@@ -2081,21 +2075,21 @@ def test_default_factory_called_once():
         return v
 
     class MyModel(BaseModel):
-        model_config = ConfigDict(validate_all=True)
+        model_config = ConfigDict(validate_default=True)
         id: int = Field(default_factory=factory)
 
     m1 = MyModel()
     assert m1.id == 1
 
     class MyBadModel(BaseModel):
-        model_config = ConfigDict(validate_all=True)
+        model_config = ConfigDict(validate_default=True)
         id: List[str] = Field(default_factory=factory)
 
     with pytest.raises(ValidationError) as exc_info:
         MyBadModel()
     assert v == 2  # `factory` has been called to run validation
     assert exc_info.value.errors() == [
-        {'loc': ('id',), 'msg': 'value is not a valid list', 'type': 'type_error.list'},
+        {'input': 2, 'loc': ('id',), 'msg': 'Input should be a valid list', 'type': 'list_type'}
     ]
 
 
@@ -2140,10 +2134,10 @@ def test_iter_coverage():
         x: int = 1
         y: str = 'a'
 
-    # with pytest.warns(
-    #     DeprecationWarning, match='This private method is only used for `BaseModel.copy`, which is deprecated'
-    # ):
-    assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
+    with pytest.warns(
+        DeprecationWarning, match='The private method `_iter` will be removed and should no longer be used.'
+    ):
+        assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
 
 @pytest.mark.xfail(reason='field frozen')

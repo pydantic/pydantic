@@ -62,7 +62,7 @@ user = User(id='42')
 keyword argument `config` which has the same meaning as [Config](model_config.md).
 
 !!! warning
-    After v1.2, [The Mypy plugin](../mypy_plugin.md) must be installed to type check _pydantic_ dataclasses.
+    After v1.2, [The Mypy plugin](/mypy/) must be installed to type check _pydantic_ dataclasses.
 
 For more information about combining validators with dataclasses, see
 [dataclass validators](validators.md#dataclass-validators).
@@ -348,13 +348,13 @@ When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.da
 
 _Pydantic_ dataclasses do not feature a `.json()` function. To dump them as JSON, you will need to make use of the `pydantic_encoder` as follows:
 
-```py
+```py output="json"
 import dataclasses
-import json
 from typing import List
 
+import pydantic_core
+
 from pydantic.dataclasses import dataclass
-from pydantic.json import pydantic_encoder
 
 
 @dataclass
@@ -365,7 +365,8 @@ class User:
 
 
 user = User(id='42')
-print(json.dumps(user, indent=4, default=pydantic_encoder))
+# TODO replace this with methods or equivalent
+print(pydantic_core.to_json(user, indent=4).decode())
 """
 {
     "id": 42,
