@@ -457,11 +457,8 @@ def multiple_tuple_schema() -> SchemaValidator:
             {'f1': [1, (3, None)], 'f2': [2, (4, (4, (5, None)))]},
             {'f1': (1, (3, None)), 'f2': (2, (4, (4, (5, None))))},
         ),
-        ({'f1': [1, 2]}, Err(r'f1 -> 1\s+Input should be a valid tuple')),
-        (
-            {'f1': [1, (3, None)], 'f2': [2, (4, (4, (5, 6)))]},
-            Err(r'f2 -> 1 -> 1 -> 1 -> 1\s+Input should be a valid tuple'),
-        ),
+        ({'f1': [1, 2]}, Err(r'f1.1\s+Input should be a valid tuple')),
+        ({'f1': [1, (3, None)], 'f2': [2, (4, (4, (5, 6)))]}, Err(r'f2.1.1.1.1\s+Input should be a valid tuple')),
     ],
 )
 def test_multiple_tuple_param(multiple_tuple_schema: SchemaValidator, input_value, expected):
@@ -754,7 +751,7 @@ def test_many_uses_of_ref():
         'other_names': ['Bob', 'Charlie'],
     }
 
-    with pytest.raises(ValidationError, match=r'other_names -> 2\s+String should have at most 8 characters'):
+    with pytest.raises(ValidationError, match=r'other_names.2\s+String should have at most 8 characters'):
         v.validate_python({'name': 'Anne', 'other_names': ['Bob', 'Charlie', 'Daveeeeee']})
 
     long_input = {'name': 'Anne', 'other_names': [f'p-{i}' for i in range(300)]}
