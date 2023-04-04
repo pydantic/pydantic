@@ -55,7 +55,7 @@ from pydantic._internal._generics import (
 from pydantic.decorators import field_validator
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def clean_cache():
     # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
     _GENERIC_TYPES_CACHE.clear()
@@ -347,7 +347,7 @@ def test_cache_keys_are_hashable():
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-def test_caches_get_cleaned_up():
+def test_caches_get_cleaned_up(clean_cache):
     initial_types_cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
 
@@ -374,7 +374,7 @@ def test_caches_get_cleaned_up():
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
+def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
     types_cache_size = len(_GENERIC_TYPES_CACHE)
 
     def run() -> None:  # Run inside nested function to get classes in local vars cleaned also
