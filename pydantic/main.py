@@ -553,13 +553,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 # Update cache
                 _generics.set_cached_generic_type(cls, typevar_values, submodel, origin, args)
 
-                # Doing the rebuild _after_ populating the cache prevents infinite recursion
-                submodel.model_rebuild(
-                    force=True,
-                    raise_errors=False,
-                    _parent_namespace_depth=0,
-                )
-
         return submodel
 
     @classmethod
