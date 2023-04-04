@@ -214,7 +214,7 @@ jobs:
         id: setup-python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.10'
+          python-version: '3.11'
 
       - name: install rust nightly
         uses: dtolnay/rust-toolchain@nightly
@@ -230,7 +230,7 @@ jobs:
           # NOTE!: as per https://github.com/pydantic/pydantic-core/pull/149 this version needs to match the version
           # in node_modules/pyodide/repodata.json, to get the version, run:
           # `cat node_modules/pyodide/repodata.json | python -m json.tool | rg platform`
-          version: '3.1.27'
+          version: '3.1.32'
           actions-cache-folder: emsdk-cache
 
       - run: pip install 'maturin>=0.13,<0.15' 'black>=22.3.0,<23' typing_extensions
