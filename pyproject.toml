@@ -1,5 +1,5 @@
 [build-system]
-requires = ['maturin>=0.14,<0.15', 'typing_extensions']
+requires = ['maturin>=0.14.16,<0.15', 'typing_extensions']
 build-backend = 'maturin'
 
 [project]
@@ -44,6 +44,7 @@ Funding = 'https://github.com/sponsors/samuelcolvin'
 Source = 'https://github.com/pydantic/pydantic-core'
 
 [tool.maturin]
+module-name = "pydantic_core._pydantic_core"
 bindings = 'pyo3'
 
 [tool.ruff]
