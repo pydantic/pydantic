@@ -246,6 +246,10 @@ jobs:
 
       - run: npm run test
 
+      - run: |
+         ls -lh dist/
+         ls -l dist/
+
       - uses: actions/upload-artifact@v3
         with:
           name: wasm_wheels
@@ -381,6 +385,7 @@ jobs:
       - name: list dist files
         run: |
          ls -lh dist/
+         ls -l dist/
          echo "`ls dist | wc -l` files"
 
       - name: extract and list sdist file
