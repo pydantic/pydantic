@@ -4,6 +4,7 @@ from decimal import Decimal
 from typing import Any, Literal, Mapping
 
 from pydantic_core import CoreSchema, core_schema
+from typing_extensions import TypedDict
 
 
 @dataclass
@@ -550,7 +551,7 @@ table: list[Row] = [
     ),
     Row(
         dict,
-        dict,
+        'Object',
         'strict',
         'JSON',
         valid_examples=['{"v": {"1": 1, "2": 2}}'],
@@ -564,5 +565,35 @@ table: list[Row] = [
         condition='must implement the mapping interface and have an `items()` method',
         valid_examples=[],
         core_schema=core_schema.DictSchema,
+    ),
+    Row(
+        TypedDict,
+        dict,
+        'strict',
+        'python',
+        core_schema=core_schema.TypedDictSchema,
+    ),
+    Row(
+        TypedDict,
+        'Object',
+        'strict',
+        'JSON',
+        core_schema=core_schema.TypedDictSchema,
+    ),
+    Row(
+        TypedDict,
+        Any,
+        'strict',
+        'python',
+        core_schema=core_schema.TypedDictSchema,
+    ),
+    Row(
+        TypedDict,
+        Mapping,
+        'lax',
+        'python',
+        condition='must implement the mapping interface and have an `items()` method',
+        valid_examples=[],
+        core_schema=core_schema.TypedDictSchema,
     ),
 ]

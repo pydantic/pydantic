@@ -222,8 +222,8 @@ def build_conversion_table(markdown: str, page: Page) -> str | None:
 
     for row in table:
         cols = [
-            '`None`' if row.field_type is None else f'`{row.field_type.__name__}`',
-            '`None`' if row.input_type is None else f'`{row.input_type.__name__}`',
+            f'`{row.field_type.__name__}`' if hasattr(row.field_type, '__name__') else f'`{row.field_type}`',
+            f'`{row.input_type.__name__}`' if hasattr(row.input_type, '__name__') else f'`{row.input_type}`',
             row.mode,
             row.input_format,
             row.condition if row.condition else '-',
