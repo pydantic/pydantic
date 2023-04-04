@@ -233,7 +233,7 @@ jobs:
           version: '3.1.32'
           actions-cache-folder: emsdk-cache
 
-      - run: pip install 'maturin>=0.13,<0.15' 'black>=22.3.0,<23' typing_extensions
+      - run: pip install 'maturin>=0.14.16,<0.15' 'black>=22.3.0,<23' typing_extensions
 
       - name: build wheels
         run: make build-wasm
