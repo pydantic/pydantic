@@ -6,6 +6,28 @@ from typing import Any, Literal, Mapping
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypedDict
 
+# TODO: List of missing types
+# deque
+# typing.Any
+# typing.NamedTuple
+# collections.namedtuple
+# typing.Sequence
+# typing.Iterable
+# typing.Type
+# typing.Pattern
+# ipaddress.IPv4Address
+# ipaddress.IPv4Interface
+# ipaddress.IPv4Network
+# ipaddress.IPv6Address
+# ipaddress.IPv6Interface
+# ipaddress.IPv6Network
+# enum.Enum
+# enum.IntEnum
+# decimal.Decimal
+# pathlib.Path
+# uuid.UUID
+# ByteSize
+
 
 @dataclass
 class Row:
