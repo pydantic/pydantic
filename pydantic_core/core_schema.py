@@ -1045,7 +1045,7 @@ class LiteralSchema(TypedDict, total=False):
 
 
 def literal_schema(
-    expected: list[Any], ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
+    expected: list[Any], *, ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
 ) -> LiteralSchema:
     """
     Returns a schema that matches a literal value, e.g.:
@@ -1285,6 +1285,7 @@ class TuplePositionalSchema(TypedDict, total=False):
 
 def tuple_positional_schema(
     items_schema: list[CoreSchema],
+    *,
     extra_schema: CoreSchema | None = None,
     strict: bool | None = None,
     ref: str | None = None,
@@ -2195,6 +2196,7 @@ class UnionSchema(TypedDict, total=False):
 
 def union_schema(
     choices: list[CoreSchema],
+    *,
     auto_collapse: bool | None = None,
     custom_error_type: str | None = None,
     custom_error_message: str | None = None,
@@ -2349,7 +2351,7 @@ class ChainSchema(TypedDict, total=False):
 
 
 def chain_schema(
-    steps: list[CoreSchema], ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
+    steps: list[CoreSchema], *, ref: str | None = None, metadata: Any = None, serialization: SerSchema | None = None
 ) -> ChainSchema:
     """
     Returns a schema that chains the provided validation schemas, e.g.:
@@ -2723,6 +2725,7 @@ class DataclassArgsSchema(TypedDict, total=False):
 def dataclass_args_schema(
     dataclass_name: str,
     fields: list[DataclassField],
+    *,
     populate_by_name: bool | None = None,
     collect_init_only: bool | None = None,
     ref: str | None = None,
@@ -2873,6 +2876,7 @@ class ArgumentsSchema(TypedDict, total=False):
 
 def arguments_schema(
     arguments: list[ArgumentsParameter],
+    *,
     populate_by_name: bool | None = None,
     var_args_schema: CoreSchema | None = None,
     var_kwargs_schema: CoreSchema | None = None,
