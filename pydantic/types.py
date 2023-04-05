@@ -16,7 +16,6 @@ from typing import (
     Hashable,
     List,
     Set,
-    Tuple,
     TypeVar,
     cast,
 )
@@ -223,15 +222,6 @@ def conlist(
 ) -> type[list[AnyItemType]]:
     return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
-        annotated_types.Len(min_length or 0, max_length),
-    ]
-
-
-def contuple(
-    item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
-) -> type[tuple[AnyItemType]]:
-    return Annotated[  # type: ignore[return-value]
-        Tuple[item_type],
         annotated_types.Len(min_length or 0, max_length),
     ]
 

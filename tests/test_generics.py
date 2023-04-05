@@ -6,7 +6,6 @@ import re
 import sys
 from collections import deque
 from enum import Enum, IntEnum
-from pprint import pprint
 from typing import (
     Any,
     Callable,
@@ -57,7 +56,7 @@ from pydantic._internal._generics import (
 from pydantic.decorators import field_validator
 
 
-@pytest.fixture(autouse=True)
+@pytest.fixture()
 def clean_cache():
     # cleans up _GENERIC_TYPES_CACHE for checking item counts in the cache
     _GENERIC_TYPES_CACHE.clear()
@@ -301,7 +300,7 @@ def test_parameter_count():
     )
 
 
-def test_cover_cache():
+def test_cover_cache(clean_cache):
     cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
 
@@ -317,7 +316,7 @@ def test_cover_cache():
     del models
 
 
-def test_cache_keys_are_hashable():
+def test_cache_keys_are_hashable(clean_cache):
     cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
     C = Callable[[str, Dict[str, Any]], Iterable[str]]
@@ -349,7 +348,7 @@ def test_cache_keys_are_hashable():
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-def test_caches_get_cleaned_up():
+def test_caches_get_cleaned_up(clean_cache):
     initial_types_cache_size = len(_GENERIC_TYPES_CACHE)
     T = TypeVar('T')
 
@@ -376,7 +375,7 @@ def test_caches_get_cleaned_up():
 
 
 @pytest.mark.skipif(platform.python_implementation() == 'PyPy', reason='PyPy does not play nice with PyO3 gc')
-def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
+def test_caches_get_cleaned_up_with_aliased_parametrized_bases(clean_cache):
     types_cache_size = len(_GENERIC_TYPES_CACHE)
 
     def run() -> None:  # Run inside nested function to get classes in local vars cleaned also
@@ -402,7 +401,7 @@ def test_caches_get_cleaned_up_with_aliased_parametrized_bases():
     assert len(_GENERIC_TYPES_CACHE) < types_cache_size + _LIMITED_DICT_SIZE
 
 
-def test_generics_work_with_many_parametrized_base_models():
+def test_generics_work_with_many_parametrized_base_models(clean_cache):
     cache_size = len(_GENERIC_TYPES_CACHE)
     count_create_models = 1000
     T = TypeVar('T')
@@ -1949,7 +1948,7 @@ def test_parent_field_parametrization():
         {
             'input': 'a',
             'loc': ('a',),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'type': 'int_parsing',
         }
     ]
@@ -2070,7 +2069,6 @@ def test_double_typevar_substitution() -> None:
     class GenericPydanticModel(BaseModel, Generic[T]):
         x: T = []
 
-    pprint(GenericPydanticModel[List[T]].__pydantic_core_schema__)
     assert GenericPydanticModel[List[T]](x=[1, 2, 3]).model_dump() == {'x': [1, 2, 3]}
 
 

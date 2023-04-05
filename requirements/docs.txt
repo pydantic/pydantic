@@ -83,6 +83,10 @@ packaging==23.0
     # via
     #   -c requirements/all.txt
     #   mkdocs
+pydantic-core==0.22.0
+    # via
+    #   -c requirements/all.txt
+    #   -r requirements/docs.in
 pyflakes==3.0.1
     # via
     #   -c requirements/all.txt
@@ -134,6 +138,10 @@ tomli==2.0.1
     #   -c requirements/all.txt
     #   -r requirements/docs.in
     #   autoflake
+typing-extensions==4.5.0
+    # via
+    #   -c requirements/all.txt
+    #   pydantic-core
 urllib3==1.26.15
     # via
     #   -c requirements/all.txt

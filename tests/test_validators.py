@@ -76,6 +76,9 @@ def test_int_validation():
         }
     ]
 
+    # Doesn't raise ValidationError for number > (2 ^ 63) - 1 and limits them to (2 ^ 63) - 1
+    assert Model(a=(2**63) + 100).a == (2**63) - 1
+
 
 @pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
 def test_int_overflow_validation(value):

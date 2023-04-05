@@ -1,3 +1,5 @@
+# pydantic-core is required for conversion table
+pydantic-core
 autoflake
 mkdocs
 mkdocs-exclude
