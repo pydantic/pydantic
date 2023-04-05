@@ -252,11 +252,13 @@ class Decorator(Generic[DecoratorInfoType], Representation):
 
     def __init__(
         self,
+        cls_name: str,
         cls_var_name: str,
         func: Callable[..., Any],
         unwrapped_func: Callable[..., Any],
         info: DecoratorInfoType,
     ) -> None:
+        self.cls_name = cls_name
         self.cls_var_name = cls_var_name
         self.func = func
         self.unwrapped_func = unwrapped_func
@@ -322,16 +324,27 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
             shimmed_func = var_value.shim(func) if var_value.shim is not None else func
             info = var_value.decorator_info
             if isinstance(info, ValidatorDecoratorInfo):
-                res.validator[var_name] = Decorator(var_name, shimmed_func, func, info)
+                res.validator[var_name] = Decorator(cls.__name__, var_name, shimmed_func, func, info)
             elif isinstance(info, FieldValidatorDecoratorInfo):
-                res.field_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
+                res.field_validator[var_name] = Decorator(cls.__name__, var_name, shimmed_func, func, info)
             elif isinstance(info, RootValidatorDecoratorInfo):
-                res.root_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
+                res.root_validator[var_name] = Decorator(cls.__name__, var_name, shimmed_func, func, info)
             elif isinstance(info, FieldSerializerDecoratorInfo):
-                res.field_serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
+                # check whether a serializer function is already registered for fileds
+                for field_ser_dec in res.field_serializer.values():
+                    # check serializers only in same model
+                    if field_ser_dec.cls_name != cls.__name__:
+                        continue
+                    for f in info.fields:
+                        if f in field_ser_dec.info.fields:
+                            raise TypeError(
+                                'Duplicate field serializer function '
+                                f'"{func.__module__}::{func.__qualname__}" for field "{f}"'
+                            )
+                res.field_serializer[var_name] = Decorator(cls.__name__, var_name, shimmed_func, func, info)
             else:
                 assert isinstance(info, ModelSerializerDecoratorInfo)
-                res.model_serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
+                res.model_serializer[var_name] = Decorator(cls.__name__, var_name, shimmed_func, func, info)
             # replace our marker with the bound, concrete function
             setattr(cls, var_name, func)
 
