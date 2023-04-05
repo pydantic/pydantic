@@ -1914,6 +1914,27 @@ def test_multi_inheritance_generic_binding():
     assert not issubclass(B[float], C)
 
 
+def test_parent_field_parametrization():
+    T = TypeVar('T')
+
+    class A(BaseModel, Generic[T]):
+        a: T
+
+    class B(A, Generic[T]):
+        b: T
+
+    with pytest.raises(ValidationError) as exc_info:
+        B[int](a='a', b=1)
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('a',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
 def test_multi_inheritance_generic_defaults():
     T = TypeVar('T')
 
