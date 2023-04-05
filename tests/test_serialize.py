@@ -397,10 +397,7 @@ def test_model_serializer_classmethod():
 
 
 def test_field_multiple_serializer():
-    m = (
-        'Duplicate field serializer function '
-        '"tests.test_serialize::test_field_multiple_serializer.<locals>.MyModel.serializer2" for field "x"'
-    )
+    m = "Multiple field serializer functions were defined for field 'x', this is not allowed."
     with pytest.raises(TypeError, match=m):
 
         class MyModel(BaseModel):
