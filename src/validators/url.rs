@@ -89,6 +89,10 @@ impl Validator for UrlValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
+    }
 }
 
 impl UrlValidator {
@@ -204,6 +208,10 @@ impl Validator for MultiHostUrlValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
     }
 }
 
