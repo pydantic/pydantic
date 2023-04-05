@@ -91,6 +91,10 @@ impl Validator for LiteralSingleStringValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -132,6 +136,10 @@ impl Validator for LiteralSingleIntValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
     }
 }
 
@@ -188,6 +196,10 @@ impl Validator for LiteralMultipleStringsValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -242,6 +254,10 @@ impl Validator for LiteralMultipleIntsValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
     }
 }
 
@@ -324,6 +340,10 @@ impl Validator for LiteralGeneralValidator {
 
     fn get_name(&self) -> &str {
         &self.name
+    }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
     }
 }
 

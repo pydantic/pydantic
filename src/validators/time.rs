@@ -93,6 +93,10 @@ impl Validator for TimeValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
+    }
 }
 
 fn convert_pytime(schema: &PyDict, field: &PyString) -> PyResult<Option<Time>> {

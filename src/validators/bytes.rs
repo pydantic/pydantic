@@ -52,6 +52,10 @@ impl Validator for BytesValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -89,6 +93,10 @@ impl Validator for BytesConstrainedValidator {
 
     fn get_name(&self) -> &str {
         "constrained-bytes"
+    }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
     }
 }
 
