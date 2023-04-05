@@ -1805,8 +1805,8 @@ def test_post_init():
             calls.append('model_post_init')
 
     m = Model(c=1, d='2', sub={'a': 3, 'b': '4'})
-    assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
     assert calls == ['inner_model_post_init', 'model_post_init']
+    assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
 
     class SubModel(Model):
         def model_post_init(self, __context) -> None:
@@ -1816,8 +1816,8 @@ def test_post_init():
 
     calls.clear()
     m = SubModel(c=1, d='2', sub={'a': 3, 'b': '4'})
-    assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
     assert calls == ['inner_model_post_init', 'model_post_init', 'submodel_post_init']
+    assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
 
 
 @pytest.mark.parametrize('include_private_attribute', [True, False])
@@ -1834,6 +1834,7 @@ def test_post_init_call_signatures(include_private_attribute):
             calls.append((args, kwargs))
 
     Model(a=1, b=2)
+    assert calls == [((None,), {})]
     Model.model_construct(a=3, b=4)
     assert calls == [((None,), {}), ((None,), {})]
 
@@ -1860,6 +1861,7 @@ def test_post_init_not_called_without_override():
                 calls.append('WithOverrideModel.model_post_init')
 
         WithOverrideModel()
+        assert calls == ['WithOverrideModel.model_post_init']
         WithOverrideModel.model_construct()
         assert calls == ['WithOverrideModel.model_post_init', 'WithOverrideModel.model_post_init']
 
