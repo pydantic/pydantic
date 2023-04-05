@@ -421,12 +421,12 @@ def test_field_multiple_serializer_subclass():
         x: int
 
         @field_serializer('x', json_return_type='str')
-        def customise_x_serialisation(v, _info):
+        def serializer1(v, _info):
             return f'{v:,}'
 
     class MySubModel(MyModel):
         @field_serializer('x', json_return_type='str')
-        def customise_x_serialisation(v, _info):
+        def serializer2(v, _info):
             return f'{v}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}

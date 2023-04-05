@@ -332,7 +332,8 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
             elif isinstance(info, FieldSerializerDecoratorInfo):
                 # check whether a serializer function is already registered for fileds
                 for field_ser_dec in res.field_serializer.values():
-                    # check serializers only in same model
+                    # check serializers function only in same model. serializer functions
+                    # for same field in subclass won't be cosiderd as duplicate
                     if field_ser_dec.cls_name != cls.__name__:
                         continue
                     for f in info.fields:
