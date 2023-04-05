@@ -1786,18 +1786,19 @@ def test_field_by_default_is_not_final():
 def test_post_init():
     calls = []
 
-    class SubModel(BaseModel):
+    class InnerModel(BaseModel):
         a: int
         b: int
 
         def model_post_init(self, _context) -> None:
+            super().model_post_init(_context)  # this is included just to show it doesn't error
             assert self.model_dump() == {'a': 3, 'b': 4}
-            calls.append('submodel_post_init')
+            calls.append('inner_model_post_init')
 
     class Model(BaseModel):
         c: int
         d: int
-        sub: SubModel
+        sub: InnerModel
 
         def model_post_init(self, _context) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
@@ -1805,45 +1806,59 @@ def test_post_init():
 
     m = Model(c=1, d='2', sub={'a': 3, 'b': '4'})
     assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
-    assert calls == ['submodel_post_init', 'model_post_init']
+    assert calls == ['inner_model_post_init', 'model_post_init']
+
+    class SubModel(Model):
+        def model_post_init(self, _context) -> None:
+            assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+            super().model_post_init(_context)
+            calls.append('submodel_post_init')
+
+    calls.clear()
+    m = SubModel(c=1, d='2', sub={'a': 3, 'b': '4'})
+    assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+    assert calls == ['inner_model_post_init', 'model_post_init', 'submodel_post_init']
 
 
 @pytest.mark.parametrize(
-    'options,expected_calls',
+    'include_private_attribute,expected_calls',
     [
-        ({'model': True, 'pydantic': True, 'private': True}, [('m', (None,), {}), ('m', (None,), {})]),
-        ({'model': True, 'pydantic': True, 'private': False}, [('m', (None,), {}), ('m', (None,), {})]),
-        ({'model': True, 'pydantic': False, 'private': True}, [('m', (None,), {}), ('m', (None,), {})]),
-        ({'model': True, 'pydantic': False, 'private': False}, [('m', (None,), {}), ('m', (None,), {})]),
-        ({'model': False, 'pydantic': True, 'private': True}, []),
-        ({'model': False, 'pydantic': True, 'private': False}, [('p', (None,), {}), ('p', (None,), {})]),
-        ({'model': False, 'pydantic': False, 'private': True}, []),
-        ({'model': False, 'pydantic': False, 'private': False}, []),
+        (True, [((None,), {}), ((None,), {})]),
+        (False, [((None,), {}), ((None,), {})]),
     ],
 )
-def test_post_init_call_signatures(options, expected_calls):
+def test_post_init_call_signatures(include_private_attribute, expected_calls):
     calls = []
 
     class Model(BaseModel):
         a: int
         b: int
-        if options['private']:
+        if include_private_attribute:
             _x: int = PrivateAttr(1)
 
-        if options['model']:
-
-            def model_post_init(self, *args, **kwargs) -> None:
-                calls.append(('m', args, kwargs))
-
-        if options['pydantic']:
-
-            def __pydantic_post_init__(self, *args, **kwargs) -> None:
-                """Just including this method here to show that it doesn't get called"""
-                calls.append(('p', args, kwargs))
+        def model_post_init(self, *args, **kwargs) -> None:
+            calls.append((args, kwargs))
 
     Model(a=1, b=2)
     Model.model_construct(a=3, b=4)
     assert calls == expected_calls
+
+
+def test_post_init_not_called_without_override():
+    class WithoutOverrideModel(BaseModel):
+        pass
+
+    WithoutOverrideModel.model_post_init = None
+    WithoutOverrideModel()
+
+    class WithOverrideModel(BaseModel):
+        def model_post_init(self, __context: Any) -> None:
+            pass
+
+    WithOverrideModel.model_post_init = None
+
+    with pytest.raises(TypeError, match="'NoneType' object is not callable"):
+        WithOverrideModel()
 
 
 def test_extra_args_to_field_type_error():

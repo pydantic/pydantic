@@ -83,16 +83,18 @@ class ModelMetaclass(ABCMeta):
 
                 if 'model_post_init' in namespace:
                     # if there are private_attributes and a model_post_init function, we handle both
+                    original_model_post_init = namespace['model_post_init']
 
-                    def __pydantic_post_init__(self: BaseModel, context: Any) -> None:
+                    def wrapped_model_post_init(self: BaseModel, context: Any) -> None:
+                        """
+                        We need to both initialize private attributes and call the user-defined model_post_init method
+                        """
                         _model_construction.init_private_attributes(self, context)
-                        self.model_post_init(context)
+                        original_model_post_init(self, context)
 
-                    namespace['__pydantic_post_init__'] = __pydantic_post_init__
+                    namespace['model_post_init'] = wrapped_model_post_init
                 else:
-                    namespace['__pydantic_post_init__'] = _model_construction.init_private_attributes
-            elif 'model_post_init' in namespace:
-                namespace['__pydantic_post_init__'] = namespace['model_post_init']
+                    namespace['model_post_init'] = _model_construction.init_private_attributes
 
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
@@ -229,10 +231,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __tracebackhide__ = True
         return cls.__pydantic_validator__.validate_json(json_data, strict=strict, context=context)
 
-    if typing.TYPE_CHECKING:
-        # model_after_init is called after at the end of `__init__` if it's defined
-        def model_post_init(self, _context: Any) -> None:
-            pass
+    def model_post_init(self, __context: Any) -> None:
+        """
+        # If you override `model_post_init`, it will be called at the end of `__init__`
+        """
+        pass
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__class_vars__:
@@ -346,8 +349,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if _fields_set is None:
             _fields_set = set(values.keys())
         _object_setattr(m, '__fields_set__', _fields_set)
-        if hasattr(m, '__pydantic_post_init__'):
-            m.__pydantic_post_init__(None)
+        if hasattr(m, 'model_post_init'):
+            m.model_post_init(None)
         return m
 
     @classmethod

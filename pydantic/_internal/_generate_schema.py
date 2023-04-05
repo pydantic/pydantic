@@ -214,6 +214,8 @@ class GenerateSchema:
         """
         Generate schema for a pydantic model.
         """
+        from pydantic.main import BaseModel
+
         model_ref = get_type_ref(cls)
         cached_def = self.recursion_cache.get(model_ref)
         if cached_def is not None:
@@ -247,7 +249,7 @@ class GenerateSchema:
         inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
         core_config = generate_config(cls.model_config, cls)
-        model_post_init = '__pydantic_post_init__' if hasattr(cls, '__pydantic_post_init__') else None
+        model_post_init = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
 
         model_schema = core_schema.model_schema(
             cls,
