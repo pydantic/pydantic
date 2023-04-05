@@ -233,7 +233,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def model_post_init(self, __context: Any) -> None:
         """
-        # If you override `model_post_init`, it will be called at the end of `__init__`
+        # If you override `model_post_init`, it will be called at the end of `__init__` and `model_construct`
         """
         pass
 
