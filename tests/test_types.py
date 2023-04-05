@@ -40,6 +40,7 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
+    AwareDatetime,
     BaseModel,
     ByteSize,
     ConfigDict,
@@ -48,14 +49,18 @@ from pydantic import (
     Field,
     FilePath,
     FiniteFloat,
+    FutureDate,
     Json,
+    NaiveDatetime,
     NameEmail,
     NegativeFloat,
     NegativeInt,
+    NewPath,
     NonNegativeFloat,
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    PastDate,
     PositiveFloat,
     PositiveInt,
     SecretBytes,
@@ -67,6 +72,7 @@ from pydantic import (
     StrictStr,
     ValidationError,
     conbytes,
+    condate,
     condecimal,
     confloat,
     confrozenset,
@@ -3312,8 +3318,59 @@ def test_secretstr_idempotent():
     assert m.password.get_secret_value() == '1234'
 
 
-def test_secretstr_is_hashable():
-    assert type(hash(SecretStr('secret'))) is int
+@pytest.mark.parametrize(
+    'pydantic_type',
+    [
+        Strict,
+        StrictBool,
+        conint,
+        PositiveInt,
+        NegativeInt,
+        NonPositiveInt,
+        NonNegativeInt,
+        StrictInt,
+        confloat,
+        PositiveFloat,
+        NegativeFloat,
+        NonPositiveFloat,
+        NonNegativeFloat,
+        StrictFloat,
+        FiniteFloat,
+        conbytes,
+        SecretBytes,
+        constr,
+        StrictStr,
+        SecretStr,
+        ImportString,
+        conset,
+        confrozenset,
+        conlist,
+        condecimal,
+        UUID1,
+        UUID3,
+        UUID4,
+        UUID5,
+        FilePath,
+        DirectoryPath,
+        NewPath,
+        Json,
+        ByteSize,
+        condate,
+        PastDate,
+        FutureDate,
+        AwareDatetime,
+        NaiveDatetime,
+    ],
+)
+def test_is_hashable(pydantic_type):
+    assert type(hash(pydantic_type)) is int
+
+
+def test_model_contain_hashable_type():
+    class MyModel(BaseModel):
+        v: Union[str, StrictStr]
+
+    assert MyModel(v='test').v == 'test'
 
 
 def test_secretstr_error():
@@ -3415,10 +3472,6 @@ def test_secretbytes_idempotent():
 
     # Should not raise an exception.
     _ = Foobar(password=SecretBytes(b'1234'))
-
-
-def test_secretbytes_is_hashable():
-    assert type(hash(SecretBytes(b'secret'))) is int
 
 
 def test_secretbytes_error():

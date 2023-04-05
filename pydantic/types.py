@@ -54,6 +54,7 @@ __all__ = [
     'UUID5',
     'FilePath',
     'DirectoryPath',
+    'NewPath',
     'Json',
     'SecretField',
     'SecretStr',
@@ -78,6 +79,9 @@ from ._internal._utils import update_not_none
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):
     strict: bool = True
+
+    def __hash__(self) -> int:
+        return hash(self.strict)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -116,6 +120,9 @@ StrictInt = Annotated[int, Strict()]
 @_dataclasses.dataclass
 class AllowInfNan(_fields.PydanticMetadata):
     allow_inf_nan: bool = True
+
+    def __hash__(self) -> int:
+        return hash(self.allow_inf_nan)
 
 
 def confloat(
@@ -358,6 +365,9 @@ class PathType:
             raise PydanticCustomError('parent_does_not_exist', 'Parent directory does not exist')
         else:
             return path
+
+    def __hash__(self) -> int:
+        return hash(type(self.path_type))
 
 
 FilePath = Annotated[Path, PathType('file')]
