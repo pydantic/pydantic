@@ -82,13 +82,11 @@ class ModelMetaclass(ABCMeta):
                 namespace['__slots__'] = slots | private_attributes.keys()
 
                 if 'model_post_init' in namespace:
-                    # if there are private_attributes and a model_post_init function, we wrap them both
-                    # in a single function
-                    namespace['_init_private_attributes'] = _model_construction.init_private_attributes
+                    # if there are private_attributes and a model_post_init function, we handle both
 
-                    def __pydantic_post_init__(self_: Any, context: Any) -> None:
-                        self_._init_private_attributes(context)
-                        self_.model_post_init(context)
+                    def __pydantic_post_init__(self: BaseModel, context: Any) -> None:
+                        _model_construction.init_private_attributes(self, context)
+                        self.model_post_init(context)
 
                     namespace['__pydantic_post_init__'] = __pydantic_post_init__
                 else:
@@ -101,8 +99,8 @@ class ModelMetaclass(ABCMeta):
 
             if '__hash__' not in namespace and config_new['frozen']:
 
-                def hash_func(self_: Any) -> int:
-                    return hash(self_.__class__) + hash(tuple(self_.__dict__.values()))
+                def hash_func(self: Any) -> int:
+                    return hash(self.__class__) + hash(tuple(self.__dict__.values()))
 
                 namespace['__hash__'] = hash_func
 
@@ -349,7 +347,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             _fields_set = set(values.keys())
         _object_setattr(m, '__fields_set__', _fields_set)
         if hasattr(m, '__pydantic_post_init__'):
-            m.__pydantic_post_init__(context=None)
+            m.__pydantic_post_init__(None)
         return m
 
     @classmethod

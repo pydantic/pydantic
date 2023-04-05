@@ -1808,6 +1808,44 @@ def test_post_init():
     assert calls == ['submodel_post_init', 'model_post_init']
 
 
+@pytest.mark.parametrize(
+    'options,expected_calls',
+    [
+        ({'model': True, 'pydantic': True, 'private': True}, [('m', (None,), {}), ('m', (None,), {})]),
+        ({'model': True, 'pydantic': True, 'private': False}, [('m', (None,), {}), ('m', (None,), {})]),
+        ({'model': True, 'pydantic': False, 'private': True}, [('m', (None,), {}), ('m', (None,), {})]),
+        ({'model': True, 'pydantic': False, 'private': False}, [('m', (None,), {}), ('m', (None,), {})]),
+        ({'model': False, 'pydantic': True, 'private': True}, []),
+        ({'model': False, 'pydantic': True, 'private': False}, [('p', (None,), {}), ('p', (None,), {})]),
+        ({'model': False, 'pydantic': False, 'private': True}, []),
+        ({'model': False, 'pydantic': False, 'private': False}, []),
+    ],
+)
+def test_post_init_call_signatures(options, expected_calls):
+    calls = []
+
+    class Model(BaseModel):
+        a: int
+        b: int
+        if options['private']:
+            _x: int = PrivateAttr(1)
+
+        if options['model']:
+
+            def model_post_init(self, *args, **kwargs) -> None:
+                calls.append(('m', args, kwargs))
+
+        if options['pydantic']:
+
+            def __pydantic_post_init__(self, *args, **kwargs) -> None:
+                """Just including this method here to show that it doesn't get called"""
+                calls.append(('p', args, kwargs))
+
+    Model(a=1, b=2)
+    Model.model_construct(a=3, b=4)
+    assert calls == expected_calls
+
+
 def test_extra_args_to_field_type_error():
     with pytest.raises(TypeError, match='unexpected keyword argument'):
 
