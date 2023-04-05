@@ -35,6 +35,7 @@ from pydantic_core.core_schema import (
 )
 from typing_extensions import Protocol, TypeAlias
 
+from pydantic._internal._core_utils import get_type_ref
 from pydantic._internal._repr import Representation
 
 if TYPE_CHECKING:
@@ -252,11 +253,13 @@ class Decorator(Generic[DecoratorInfoType], Representation):
 
     def __init__(
         self,
+        cls_ref: str,
         cls_var_name: str,
         func: Callable[..., Any],
         unwrapped_func: Callable[..., Any],
         info: DecoratorInfoType,
     ) -> None:
+        self.cls_ref = cls_ref
         self.cls_var_name = cls_var_name
         self.func = func
         self.unwrapped_func = unwrapped_func
@@ -319,19 +322,33 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
     for var_name, var_value in vars(cls).items():
         if isinstance(var_value, PydanticDecoratorMarker):
             func = var_value.wrapped.__get__(None, cls)
+            cls_ref = get_type_ref(cls)
             shimmed_func = var_value.shim(func) if var_value.shim is not None else func
             info = var_value.decorator_info
             if isinstance(info, ValidatorDecoratorInfo):
-                res.validator[var_name] = Decorator(var_name, shimmed_func, func, info)
+                res.validator[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
             elif isinstance(info, FieldValidatorDecoratorInfo):
-                res.field_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
+                res.field_validator[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
             elif isinstance(info, RootValidatorDecoratorInfo):
-                res.root_validator[var_name] = Decorator(var_name, shimmed_func, func, info)
+                res.root_validator[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
             elif isinstance(info, FieldSerializerDecoratorInfo):
-                res.field_serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
+                # check whether a serializer function is already registered for fields
+                for field_serializer_decorator in res.field_serializer.values():
+                    # check that each field has at most one serializer function.
+                    # serializer functions for the same field in subclasses are allowed,
+                    # and are treated as overrides
+                    if field_serializer_decorator.cls_ref != cls_ref:
+                        continue
+                    for f in info.fields:
+                        if f in field_serializer_decorator.info.fields:
+                            raise TypeError(
+                                'Multiple field serializer functions were defined '
+                                f'for field {f!r}, this is not allowed.'
+                            )
+                res.field_serializer[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
             else:
                 assert isinstance(info, ModelSerializerDecoratorInfo)
-                res.model_serializer[var_name] = Decorator(var_name, shimmed_func, func, info)
+                res.model_serializer[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
             # replace our marker with the bound, concrete function
             setattr(cls, var_name, func)
 

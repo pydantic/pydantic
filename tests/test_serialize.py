@@ -394,3 +394,37 @@ def test_model_serializer_classmethod():
             @classmethod
             def _serialize(self, x, y, z):
                 return self
+
+
+def test_field_multiple_serializer():
+    m = "Multiple field serializer functions were defined for field 'x', this is not allowed."
+    with pytest.raises(TypeError, match=m):
+
+        class MyModel(BaseModel):
+            x: int
+            y: int
+
+            @field_serializer('x', 'y', json_return_type='str')
+            def serializer1(v, _info):
+                return f'{v:,}'
+
+            @field_serializer('x', json_return_type='str')
+            def serializer2(v, _info):
+                return v
+
+
+def test_field_multiple_serializer_subclass():
+    class MyModel(BaseModel):
+        x: int
+
+        @field_serializer('x', json_return_type='str')
+        def serializer1(v, _info):
+            return f'{v:,}'
+
+    class MySubModel(MyModel):
+        @field_serializer('x', json_return_type='str')
+        def serializer2(v, _info):
+            return f'{v}'
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}
+    assert MySubModel(x=1234).model_dump() == {'x': '1234'}
