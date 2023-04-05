@@ -29,7 +29,7 @@ IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, sta
 object_setattr = object.__setattr__
 
 
-def init_private_attributes(self: BaseModel, _context: Any) -> None:
+def init_private_attributes(self: BaseModel, __context: Any) -> None:
     """
     This function is meant to behave like a BaseModel method to initialise private attributes.
 
