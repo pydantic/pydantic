@@ -192,7 +192,7 @@ that way Pylance and mypy will interpret the variable `age_str` as if they didn'
 
 The same idea from the previous example can be put on the same line with the help of `cast()`.
 
-This way, the type declaration of the value is overriden inline, without requiring another variable.
+This way, the type declaration of the value is overridden inline, without requiring another variable.
 
 ```Python hl_lines="1 11"
 from typing import Any, cast
