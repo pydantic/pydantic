@@ -51,6 +51,10 @@ impl Validator for StrValidator {
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
+    }
 }
 
 /// Any new properties set here must be reflected in `has_constraints_set`
@@ -117,6 +121,10 @@ impl Validator for StrConstrainedValidator {
 
     fn get_name(&self) -> &str {
         "constrained-str"
+    }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
     }
 }
 

@@ -203,6 +203,10 @@ impl Validator for FunctionPlainValidator {
     fn get_name(&self) -> &str {
         &self.name
     }
+
+    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        Ok(())
+    }
 }
 
 #[derive(Debug, Clone)]
