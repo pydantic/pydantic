@@ -225,9 +225,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         This is necessary because `__init_subclass__` will always be called by `type.__new__`,
         and it would require a prohibitively large refactor to the `ModelMetaclass` to ensure that
         `type.__new__` was called in such a manner that the class would already be sufficiently initialized.
-
-        You can override this method in subclasses of `BaseModel` to perform any initialization logic,
-        in which case you should make it a `classmethod` and pass `cls` as the first argument.
         """
         pass
 
