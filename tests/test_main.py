@@ -1790,8 +1790,8 @@ def test_post_init():
         a: int
         b: int
 
-        def model_post_init(self, _context) -> None:
-            super().model_post_init(_context)  # this is included just to show it doesn't error
+        def model_post_init(self, __context) -> None:
+            super().model_post_init(__context)  # this is included just to show it doesn't error
             assert self.model_dump() == {'a': 3, 'b': 4}
             calls.append('inner_model_post_init')
 
@@ -1800,7 +1800,7 @@ def test_post_init():
         d: int
         sub: InnerModel
 
-        def model_post_init(self, _context) -> None:
+        def model_post_init(self, __context) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
             calls.append('model_post_init')
 
@@ -1809,9 +1809,9 @@ def test_post_init():
     assert calls == ['inner_model_post_init', 'model_post_init']
 
     class SubModel(Model):
-        def model_post_init(self, _context) -> None:
+        def model_post_init(self, __context) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
-            super().model_post_init(_context)
+            super().model_post_init(__context)
             calls.append('submodel_post_init')
 
     calls.clear()

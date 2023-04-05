@@ -85,12 +85,12 @@ class ModelMetaclass(ABCMeta):
                     # if there are private_attributes and a model_post_init function, we handle both
                     original_model_post_init = namespace['model_post_init']
 
-                    def wrapped_model_post_init(self: BaseModel, context: Any) -> None:
+                    def wrapped_model_post_init(self: BaseModel, __context: Any) -> None:
                         """
                         We need to both initialize private attributes and call the user-defined model_post_init method
                         """
-                        _model_construction.init_private_attributes(self, context)
-                        original_model_post_init(self, context)
+                        _model_construction.init_private_attributes(self, __context)
+                        original_model_post_init(self, __context)
 
                     namespace['model_post_init'] = wrapped_model_post_init
                 else:
