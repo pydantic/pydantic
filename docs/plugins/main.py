@@ -226,7 +226,7 @@ def build_conversion_table(markdown: str, page: Page) -> str | None:
             f'`{row.input_type.__name__}`' if hasattr(row.input_type, '__name__') else f'`{row.input_type}`',
             row.mode,
             row.input_format,
-            row.condition if row.condition else '-',
+            row.condition if row.condition else '',
         ]
         table_text += _generate_table_row(cols)
 
