@@ -24,7 +24,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from typing_extensions import Final, Literal
+from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
     BaseModel,
@@ -1763,9 +1763,7 @@ def test_final_field_reassignment():
 
     obj = Model(a=10)
 
-    with pytest.raises(
-        ValidationError,
-    ) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         obj.a = 20
     assert exc_info.value.errors() == [{'input': 20, 'loc': ('a',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
 
@@ -1775,6 +1773,20 @@ def test_field_by_default_is_not_final():
         a: int
 
     assert not Model.model_fields['a'].final
+
+
+def test_annotated_final():
+    class Model(BaseModel):
+        a: Annotated[Final[int], Field(title='abc')]
+
+    assert Model.model_fields['a'].final
+    assert Model.model_fields['a'].title == 'abc'
+
+    class Model2(BaseModel):
+        a: Final[Annotated[int, Field(title='def')]]
+
+    assert Model2.model_fields['a'].final
+    assert Model2.model_fields['a'].title == 'def'
 
 
 def test_post_init():

@@ -135,7 +135,7 @@ class FieldInfo(_repr.Representation):
 
         if _typing_extra.is_annotated(annotation):
             first_arg, *extra_args = typing_extensions.get_args(annotation)
-            if _typing_extra.is_finalvar(annotation):
+            if _typing_extra.is_finalvar(first_arg):
                 final = True
             field_info = cls._find_field_info_arg(extra_args)
             if field_info:
