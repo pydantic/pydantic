@@ -115,13 +115,18 @@ class ModelMetaclass(ABCMeta):
                 parameters = getattr(cls, '__parameters__', ())
                 parent_parameters = getattr(cls, '__pydantic_generic_metadata__', {}).get('parameters', ())
                 if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
-                    # assert Generic in bases  # tests pass with this assert, but I think we shouldn't include it
                     combined_parameters = parent_parameters + tuple(x for x in parameters if x not in parent_parameters)
                     parameters_str = ', '.join([str(x) for x in combined_parameters])
-                    raise TypeError(
+                    error_message = (
                         f'All parameters must be present on typing.Generic;'
                         f' you should inherit from typing.Generic[{parameters_str}]'
                     )
+                    if Generic not in bases:  # pragma: no cover
+                        # This branch will only be hit if I have misunderstood how `__parameters__` works.
+                        # If that is the case, and a user hits this, I could imagine it being very helpful
+                        # to have this extra detail in the reported traceback.
+                        error_message += f' (bases={bases})'
+                    raise TypeError(error_message)
 
                 cls.__pydantic_generic_metadata__ = {
                     'origin': None,
