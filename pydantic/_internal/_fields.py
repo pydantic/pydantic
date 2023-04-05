@@ -274,8 +274,9 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
 
     if not is_finalvar(type_):
         return False
-    if val is Undefined:
+    elif val is Undefined:
         return False
-    if isinstance(val, FieldInfo) and (val.default is Undefined and val.default_factory is None):
+    elif isinstance(val, FieldInfo) and (val.default is Undefined and val.default_factory is None):
         return False
-    return True
+    else:
+        return True
