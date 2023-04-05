@@ -349,7 +349,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if _fields_set is None:
             _fields_set = set(values.keys())
         _object_setattr(m, '__fields_set__', _fields_set)
-        if hasattr(m, 'model_post_init'):
+        if type(m).model_post_init is not BaseModel.model_post_init:
             m.model_post_init(None)
         return m
 

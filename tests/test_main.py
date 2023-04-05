@@ -1839,20 +1839,32 @@ def test_post_init_call_signatures(include_private_attribute):
 
 
 def test_post_init_not_called_without_override():
-    class WithoutOverrideModel(BaseModel):
-        pass
+    calls = []
 
-    WithoutOverrideModel.model_post_init = None
-    WithoutOverrideModel()
+    def monkey_patched_model_post_init(cls, __context):
+        calls.append('BaseModel.model_post_init')
 
-    class WithOverrideModel(BaseModel):
-        def model_post_init(self, __context: Any) -> None:
+    original_base_model_post_init = BaseModel.model_post_init
+    try:
+        BaseModel.model_post_init = monkey_patched_model_post_init
+
+        class WithoutOverrideModel(BaseModel):
             pass
 
-    WithOverrideModel.model_post_init = None
+        WithoutOverrideModel()
+        WithoutOverrideModel.model_construct()
+        assert calls == []
 
-    with pytest.raises(TypeError, match="'NoneType' object is not callable"):
+        class WithOverrideModel(BaseModel):
+            def model_post_init(self, __context: Any) -> None:
+                calls.append('WithOverrideModel.model_post_init')
+
         WithOverrideModel()
+        WithOverrideModel.model_construct()
+        assert calls == ['WithOverrideModel.model_post_init', 'WithOverrideModel.model_post_init']
+
+    finally:
+        BaseModel.model_post_init = original_base_model_post_init
 
 
 def test_extra_args_to_field_type_error():
