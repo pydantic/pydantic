@@ -1820,14 +1820,8 @@ def test_post_init():
     assert calls == ['inner_model_post_init', 'model_post_init', 'submodel_post_init']
 
 
-@pytest.mark.parametrize(
-    'include_private_attribute,expected_calls',
-    [
-        (True, [((None,), {}), ((None,), {})]),
-        (False, [((None,), {}), ((None,), {})]),
-    ],
-)
-def test_post_init_call_signatures(include_private_attribute, expected_calls):
+@pytest.mark.parametrize('include_private_attribute', [True, False])
+def test_post_init_call_signatures(include_private_attribute):
     calls = []
 
     class Model(BaseModel):
@@ -1841,7 +1835,7 @@ def test_post_init_call_signatures(include_private_attribute, expected_calls):
 
     Model(a=1, b=2)
     Model.model_construct(a=3, b=4)
-    assert calls == expected_calls
+    assert calls == [((None,), {}), ((None,), {})]
 
 
 def test_post_init_not_called_without_override():
