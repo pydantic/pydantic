@@ -389,6 +389,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         force: bool = False,
         raise_errors: bool = True,
         _parent_namespace_depth: int = 2,
+        _types_namespace: dict[str, Any] | None = None,
     ) -> bool | None:
         """
         Try to (Re)construct the model schema.
@@ -396,14 +397,17 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if not force and cls.__pydantic_model_complete__:
             return None
         else:
-            if _parent_namespace_depth > 0:
-                frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
-                cls_parent_ns = cls.__pydantic_parent_namespace__ or {}
-                cls.__pydantic_parent_namespace__ = {**cls_parent_ns, **frame_parent_ns}
+            if _types_namespace is not None:
+                types_namespace: dict[str, Any] | None = _types_namespace.copy()
+            else:
+                if _parent_namespace_depth > 0:
+                    frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+                    cls_parent_ns = cls.__pydantic_parent_namespace__ or {}
+                    cls.__pydantic_parent_namespace__ = {**cls_parent_ns, **frame_parent_ns}
 
-            types_namespace = cls.__pydantic_parent_namespace__
+                types_namespace = cls.__pydantic_parent_namespace__
 
-            types_namespace = _model_construction.get_model_types_namespace(cls, types_namespace)
+                types_namespace = _model_construction.get_model_types_namespace(cls, types_namespace)
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
