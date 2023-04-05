@@ -349,7 +349,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             _fields_set = set(values.keys())
         _object_setattr(m, '__fields_set__', _fields_set)
         if hasattr(m, '__pydantic_post_init__'):
-            m.__pydantic_post_init__(context=None)
+            m.__pydantic_post_init__(_context=None)
         return m
 
     @classmethod
