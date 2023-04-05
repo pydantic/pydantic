@@ -56,7 +56,6 @@ default = ["mimalloc", "extension-module", "mimalloc/local_dynamic_tls", "pyo3/g
 [profile.release]
 lto = "fat"
 codegen-units = 1
-panic = "abort"
 strip = true
 
 [build-dependencies]
