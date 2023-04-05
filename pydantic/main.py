@@ -115,7 +115,7 @@ class ModelMetaclass(ABCMeta):
                 parameters = getattr(cls, '__parameters__', ())
                 parent_parameters = getattr(cls, '__pydantic_generic_metadata__', {}).get('parameters', ())
                 if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
-                    assert Generic in bases  # tests pass with this, but I think we probably shouldn't include it
+                    # assert Generic in bases  # tests pass with this assert, but I think we shouldn't include it
                     combined_parameters = parent_parameters + tuple(x for x in parameters if x not in parent_parameters)
                     parameters_str = ', '.join([str(x) for x in combined_parameters])
                     raise TypeError(
