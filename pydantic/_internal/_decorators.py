@@ -237,9 +237,11 @@ class PydanticDecoratorMarker(Generic[ReturnType], Representation):
     def __get__(
         self, obj: object | None, objtype: type[object] | None = None
     ) -> Callable[..., ReturnType] | PydanticDecoratorMarker[ReturnType]:
-        if obj is None:
-            return self
-        return self.wrapped.__get__(obj, objtype)
+        try:
+            return self.wrapped.__get__(obj, objtype)
+        except AttributeError:
+            # not a descriptor, e.g. a partial object
+            return self.wrapped  # type: ignore[return-value]
 
 
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
@@ -258,23 +260,40 @@ class Decorator(Generic[DecoratorInfoType], Representation):
         cls_ref: str,
         cls_var_name: str,
         func: Callable[..., Any],
-        unwrapped_func: Callable[..., Any],
+        shim: Callable[[Any], Any] | None,
         info: DecoratorInfoType,
     ) -> None:
         self.cls_ref = cls_ref
         self.cls_var_name = cls_var_name
         self.func = func
-        self.unwrapped_func = unwrapped_func
         self.info = info
+        self.shim = shim
 
+    @staticmethod
+    def build(
+        cls_: Any,
+        cls_var_name: str,
+        shim: Callable[[Any], Any] | None,
+        info: DecoratorInfoType,
+    ) -> Decorator[DecoratorInfoType]:
+        func = getattr(cls_, cls_var_name)
+        if shim is not None:
+            func = shim(func)
+        return Decorator(
+            cls_ref=get_type_ref(cls_),
+            cls_var_name=cls_var_name,
+            func=func,
+            shim=shim,
+            info=info,
+        )
 
-AnyDecorator = Union[
-    Decorator[ValidatorDecoratorInfo],
-    Decorator[FieldValidatorDecoratorInfo],
-    Decorator[RootValidatorDecoratorInfo],
-    Decorator[FieldSerializerDecoratorInfo],
-    Decorator[ModelSerializerDecoratorInfo],
-]
+    def bind_to_cls(self, cls: Any) -> Decorator[DecoratorInfoType]:
+        return self.build(
+            cls,
+            cls_var_name=self.cls_var_name,
+            shim=self.shim,
+            info=self.info,
+        )
 
 
 class DecoratorInfos(Representation):
@@ -295,7 +314,7 @@ class DecoratorInfos(Representation):
         self.model_serializer = {}
 
 
-def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:  # noqa: C901
+def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
     """
     We want to collect all DecFunc instances that exist as
     attributes in the namespace of the class (a BaseModel or dataclass)
@@ -312,41 +331,35 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:  # noqa: C901
 
     # reminder: dicts are ordered and replacement does not alter the order
     res = DecoratorInfos()
-    for base in cls.__bases__:
+    for base in cls.__bases__[::-1]:
         existing = cast(Union[DecoratorInfos, None], getattr(base, '__pydantic_decorators__', None))
         if existing is not None:
-            res.validator.update(existing.validator)
-            res.field_validator.update(existing.field_validator)
-            res.root_validator.update(existing.root_validator)
-            res.field_serializer.update(existing.field_serializer)
-            res.model_serializer.update(existing.model_serializer)
+            res.validator.update({k: v.bind_to_cls(cls) for k, v in existing.validator.items()})
+            res.field_validator.update({k: v.bind_to_cls(cls) for k, v in existing.field_validator.items()})
+            res.root_validator.update({k: v.bind_to_cls(cls) for k, v in existing.root_validator.items()})
+            res.field_serializer.update({k: v.bind_to_cls(cls) for k, v in existing.field_serializer.items()})
+            res.model_serializer.update({k: v.bind_to_cls(cls) for k, v in existing.model_serializer.items()})
 
     for var_name, var_value in vars(cls).items():
         if isinstance(var_value, PydanticDecoratorMarker):
-            cls_ref = get_type_ref(cls)
-            try:
-                func = var_value.wrapped.__get__(None, cls)
-            except AttributeError:
-                if isinstance(var_value.wrapped, partial):
-                    # don't bind the class
-                    func = var_value.wrapped
-                else:
-                    raise
-            shimmed_func = var_value.shim(func) if var_value.shim is not None else func
             info = var_value.decorator_info
             if isinstance(info, ValidatorDecoratorInfo):
-                res.validator[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
+                res.validator[var_name] = Decorator.build(cls, cls_var_name=var_name, shim=var_value.shim, info=info)
             elif isinstance(info, FieldValidatorDecoratorInfo):
-                res.field_validator[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
+                res.field_validator[var_name] = Decorator.build(
+                    cls, cls_var_name=var_name, shim=var_value.shim, info=info
+                )
             elif isinstance(info, RootValidatorDecoratorInfo):
-                res.root_validator[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
+                res.root_validator[var_name] = Decorator.build(
+                    cls, cls_var_name=var_name, shim=var_value.shim, info=info
+                )
             elif isinstance(info, FieldSerializerDecoratorInfo):
                 # check whether a serializer function is already registered for fields
                 for field_serializer_decorator in res.field_serializer.values():
                     # check that each field has at most one serializer function.
                     # serializer functions for the same field in subclasses are allowed,
                     # and are treated as overrides
-                    if field_serializer_decorator.cls_ref != cls_ref:
+                    if field_serializer_decorator.cls_var_name == var_name:
                         continue
                     for f in info.fields:
                         if f in field_serializer_decorator.info.fields:
@@ -355,13 +368,15 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:  # noqa: C901
                                 f'for field {f!r}, this is not allowed.',
                                 code='multiple-field-serializers',
                             )
-                res.field_serializer[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
+                res.field_serializer[var_name] = Decorator.build(
+                    cls, cls_var_name=var_name, shim=var_value.shim, info=info
+                )
             else:
                 assert isinstance(info, ModelSerializerDecoratorInfo)
-                res.model_serializer[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
-            # replace our marker with the bound, concrete function
-            setattr(cls, var_name, func)
-
+                res.model_serializer[var_name] = Decorator.build(
+                    cls, cls_var_name=var_name, shim=var_value.shim, info=info
+                )
+            setattr(cls, var_name, var_value.wrapped)
     return res
 
 
