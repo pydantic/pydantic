@@ -23,7 +23,7 @@ class TestBenchmarkSimpleModel:
     @pytest.fixture(scope='class')
     def core_schema(self):
         class CoreModel:
-            __slots__ = '__dict__', '__fields_set__'
+            __slots__ = '__dict__', '__pydantic_fields_set__'
 
         return {
             'type': 'model',
@@ -276,7 +276,7 @@ def test_core_model_json(benchmark, basic_model_serializer):
 
 
 class FieldsSetModel:
-    __slots__ = '__dict__', '__fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__'
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -306,7 +306,7 @@ def fs_model_serializer_fixture():
 
 @pytest.mark.benchmark(group='model-exclude-unset')
 def test_model_exclude_unset_false(benchmark, fs_model_serializer):
-    m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
+    m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __pydantic_fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
     assert fs_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
     assert fs_model_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
 
@@ -317,7 +317,7 @@ def test_model_exclude_unset_false(benchmark, fs_model_serializer):
 
 @pytest.mark.benchmark(group='model-exclude-unset')
 def test_model_exclude_unset_true(benchmark, fs_model_serializer):
-    m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
+    m = FieldsSetModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __pydantic_fields_set__={'a', 'b', 'c', 'd', 'e', 'f'})
     assert fs_model_serializer.to_python(m) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6, 'g': 7, 'h': 8}
     assert fs_model_serializer.to_python(m, exclude_unset=True) == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 6}
 

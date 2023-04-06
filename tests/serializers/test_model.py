@@ -235,7 +235,7 @@ def test_exclude_none():
 
 
 class FieldsSetModel:
-    __slots__ = '__dict__', '__fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__'
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -256,7 +256,7 @@ def test_exclude_unset():
             ),
         )
     )
-    m = FieldsSetModel(foo=1, bar=2, spam=3, __fields_set__={'bar', 'spam'})
+    m = FieldsSetModel(foo=1, bar=2, spam=3, __pydantic_fields_set__={'bar', 'spam'})
     assert s.to_python(m) == {'foo': 1, 'bar': 2, 'spam': 3}
     assert s.to_python(m, exclude_unset=True) == {'bar': 2, 'spam': 3}
     assert s.to_python(m, exclude=None, exclude_unset=True) == {'bar': 2, 'spam': 3}
@@ -269,7 +269,7 @@ def test_exclude_unset():
     assert s.to_json(m, exclude={'bar': ...}, exclude_unset=True) == b'{"spam":3}'
     assert s.to_json(m, exclude={'bar': {}}, exclude_unset=True) == b'{"bar":2,"spam":3}'
 
-    m2 = FieldsSetModel(foo=1, bar=2, spam=3, __fields_set__={'bar', 'spam', 'missing'})
+    m2 = FieldsSetModel(foo=1, bar=2, spam=3, __pydantic_fields_set__={'bar', 'spam', 'missing'})
     assert s.to_python(m2) == {'foo': 1, 'bar': 2, 'spam': 3}
     assert s.to_python(m2, exclude_unset=True) == {'bar': 2, 'spam': 3}
 

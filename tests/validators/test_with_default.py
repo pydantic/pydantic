@@ -275,7 +275,7 @@ def test_build_default_and_default_factory():
 
 def test_model_class():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
@@ -303,12 +303,12 @@ def test_model_class():
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
     assert m.field_b == 12
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
     m = v.validate_python({'field_a': 'test', 'field_b': 'wrong'})
     assert isinstance(m, MyModel)
     assert m.field_a == '[default-a]'
     assert m.field_b == '[default-b]'
-    assert m.__fields_set__ == set()
+    assert m.__pydantic_fields_set__ == set()
 
 
 def test_validate_default():

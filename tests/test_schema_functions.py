@@ -16,7 +16,7 @@ def make_5():
 
 
 class MyModel:
-    __slots__ = '__dict__', '__fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__'
 
 
 def ids_function(val):

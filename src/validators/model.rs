@@ -119,13 +119,13 @@ impl Validator for ModelValidator {
 
         // if we're in strict mode, we require an exact instance of the class (from python, with JSON an object is ok)
         // if we're not in strict mode, instances subclasses are okay, as well as dicts, mappings, from attributes etc.
-        // if the input is an instance of the class, we "revalidate" it - e.g. we extract and reuse `__fields_set__`
+        // if the input is an instance of the class, we "revalidate" it - e.g. we extract and reuse `__pydantic_fields_set__`
         // but use from attributes to create a new instance of the model field type
         let class = self.class.as_ref(py);
         // mask 0 so JSON is input is never true here
         if input.input_is_instance(class, 0)? {
             if self.revalidate.should_revalidate(input, class) {
-                let fields_set = match input.input_get_attr(intern!(py, "__fields_set__")) {
+                let fields_set = match input.input_get_attr(intern!(py, "__pydantic_fields_set__")) {
                     Some(fields_set) => fields_set.ok(),
                     None => None,
                 };
@@ -194,7 +194,7 @@ impl Validator for ModelValidator {
                 .validate_assignment(py, new_dict, field_name, field_value, extra, slots, recursion_guard)?;
         let output = if self.expect_fields_set {
             let (output, updated_fields_set): (&PyDict, &PySet) = output.extract(py)?;
-            if let Ok(fields_set) = model.input_get_attr(intern!(py, "__fields_set__")).unwrap() {
+            if let Ok(fields_set) = model.input_get_attr(intern!(py, "__pydantic_fields_set__")).unwrap() {
                 let fields_set: &PySet = fields_set.downcast()?;
                 for field_name in updated_fields_set {
                     fields_set.add(field_name)?;
@@ -283,7 +283,7 @@ fn set_model_attrs(instance: &PyAny, model_dict: &PyAny, fields_set: Option<&PyA
     let py = instance.py();
     force_setattr(py, instance, intern!(py, "__dict__"), model_dict)?;
     if let Some(fields_set) = fields_set {
-        force_setattr(py, instance, intern!(py, "__fields_set__"), fields_set)?;
+        force_setattr(py, instance, intern!(py, "__pydantic_fields_set__"), fields_set)?;
     }
     Ok(())
 }
