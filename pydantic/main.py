@@ -10,7 +10,7 @@ from copy import copy, deepcopy
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
-from typing import Any, Generic
+from typing import Any, Generic, Mapping
 
 import pydantic_core
 import typing_extensions
@@ -23,6 +23,13 @@ from ._internal import (
     _repr,
     _typing_extra,
     _utils,
+)
+from ._internal._decorators import (
+    FieldValidatorDecoratorInfo,
+    PydanticDecoratorMarker,
+    RootValidatorDecoratorInfo,
+    ValidatorDecoratorInfo,
+    get_function_ref,
 )
 from ._internal._fields import Undefined
 from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
@@ -56,8 +63,39 @@ _object_setattr = _model_construction.object_setattr
 _base_class_defined = False
 
 
+class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
+    def __setitem__(self, k: str, v: object) -> None:
+        if isinstance(v, PydanticDecoratorMarker):
+            info = v.decorator_info
+            if (
+                isinstance(info, (FieldValidatorDecoratorInfo, RootValidatorDecoratorInfo, ValidatorDecoratorInfo))
+                and not info.allow_reuse
+            ):
+                existing = self.get(k)
+                if (
+                    existing
+                    and v is not existing
+                    and isinstance(existing, PydanticDecoratorMarker)
+                    and isinstance(
+                        existing.decorator_info,
+                        (FieldValidatorDecoratorInfo, RootValidatorDecoratorInfo, ValidatorDecoratorInfo),
+                    )
+                    and not existing.decorator_info.allow_reuse
+                ):
+                    warnings.warn(
+                        f'duplicate validator function "{get_function_ref(v.wrapped)}"; '
+                        'if this is intended, set `allow_reuse=True`'
+                    )
+
+        return super().__setitem__(k, v)
+
+
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
+    @classmethod
+    def __prepare__(metacls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
+        return _ModelNamespaceDict()
+
     def __new__(
         mcs,
         cls_name: str,

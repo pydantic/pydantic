@@ -163,7 +163,7 @@ def validator(
             raise PydanticUserError(
                 '`@validator` cannot be applied to instance methods', code='validator-instance-method'
             )
-        _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
+        # _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
         # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
         wrap = _decorators.make_generic_v1_field_validator
@@ -173,6 +173,7 @@ def validator(
             each_item=each_item,
             always=always,
             check_fields=check_fields,
+            allow_reuse=allow_reuse,
         )
         return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
 
@@ -240,14 +241,18 @@ def field_validator(
             raise PydanticUserError(
                 '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
             )
-        _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
+        # _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
         # auto apply the @classmethod decorator and warn users if we had to do so
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
         wrap = partial(_decorators.make_generic_v2_field_validator, mode=mode)
 
         validator_wrapper_info = _decorators.FieldValidatorDecoratorInfo(
-            fields=fields, mode=mode, sub_path=sub_path, check_fields=check_fields
+            fields=fields,
+            mode=mode,
+            sub_path=sub_path,
+            check_fields=check_fields,
+            allow_reuse=allow_reuse,
         )
         return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
 
@@ -310,10 +315,10 @@ def root_validator(
     def dec(f: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> Any:
         if _decorators.is_instance_method_from_sig(f):
             raise TypeError('`@root_validator` cannot be applied to instance methods')
-        _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
+        # _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
         # auto apply the @classmethod decorator and warn users if we had to do so
         res = _decorators.ensure_classmethod_based_on_signature(f)
-        validator_wrapper_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
+        validator_wrapper_info = _decorators.RootValidatorDecoratorInfo(mode=mode, allow_reuse=allow_reuse)
         return _decorators.PydanticDecoratorMarker(res, validator_wrapper_info, shim=wrap)
 
     return dec

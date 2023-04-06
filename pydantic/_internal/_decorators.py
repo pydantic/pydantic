@@ -56,13 +56,14 @@ class ValidatorDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
-    __slots__ = 'fields', 'mode', 'each_item', 'always', 'check_fields'
+    __slots__ = 'fields', 'mode', 'each_item', 'always', 'check_fields', 'allow_reuse'
 
     fields: tuple[str, ...]
     mode: Literal['before', 'after']
     each_item: bool
     always: bool
     check_fields: bool | None
+    allow_reuse: bool
 
     def __init__(
         self,
@@ -73,6 +74,7 @@ class ValidatorDecoratorInfo(Representation):
         each_item: bool,
         always: bool,
         check_fields: bool | None,
+        allow_reuse: bool = False,
     ) -> None:
         """
         :param mode: the pydantic-core validator mode.
@@ -85,6 +87,7 @@ class ValidatorDecoratorInfo(Representation):
         self.each_item = each_item
         self.always = always
         self.check_fields = check_fields
+        self.allow_reuse = allow_reuse
 
 
 class FieldValidatorDecoratorInfo(Representation):
@@ -93,12 +96,13 @@ class FieldValidatorDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
-    __slots__ = 'fields', 'mode', 'sub_path', 'check_fields'
+    __slots__ = 'fields', 'mode', 'sub_path', 'check_fields', 'allow_reuse'
 
     fields: tuple[str, ...]
     mode: Literal['before', 'after', 'wrap', 'plain']
     sub_path: tuple[str | int, ...] | None
     check_fields: bool | None
+    allow_reuse: bool
 
     def __init__(
         self,
@@ -107,6 +111,7 @@ class FieldValidatorDecoratorInfo(Representation):
         mode: Literal['before', 'after', 'wrap', 'plain'],
         sub_path: tuple[str | int, ...] | None,
         check_fields: bool | None,
+        allow_reuse: bool = False,
     ) -> None:
         """
         :param fields: the fields this validator applies to.
@@ -118,6 +123,7 @@ class FieldValidatorDecoratorInfo(Representation):
         self.mode = mode
         self.sub_path = sub_path
         self.check_fields = check_fields
+        self.allow_reuse = allow_reuse
 
 
 class RootValidatorDecoratorInfo(Representation):
@@ -130,11 +136,13 @@ class RootValidatorDecoratorInfo(Representation):
         self,
         *,
         mode: Literal['before', 'after'],
+        allow_reuse: bool = False,
     ) -> None:
         """
         :param mode: the pydantic-core validator mode
         """
         self.mode = mode
+        self.allow_reuse = allow_reuse
 
 
 class FieldSerializerDecoratorInfo(Representation):
