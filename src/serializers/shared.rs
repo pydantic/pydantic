@@ -353,7 +353,7 @@ pub(super) fn object_to_dict<'py>(value: &'py PyAny, is_model: bool, extra: &Ext
     let attr = value.getattr(intern!(py, "__dict__"))?;
     let attrs: &PyDict = attr.downcast()?;
     if is_model && extra.exclude_unset {
-        let fields_set: &PySet = value.getattr(intern!(py, "__fields_set__"))?.downcast()?;
+        let fields_set: &PySet = value.getattr(intern!(py, "__pydantic_fields_set__"))?.downcast()?;
 
         let new_attrs = attrs.copy()?;
         for key in new_attrs.keys() {

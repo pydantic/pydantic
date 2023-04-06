@@ -2,8 +2,8 @@ from pydantic_core import SchemaValidator
 
 
 class MyModel:
-    # this is not required, but it avoids `__fields_set__` being included in `__dict__`
-    __slots__ = '__dict__', '__fields_set__'
+    # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+    __slots__ = '__dict__', '__pydantic_fields_set__'
     field_a: str
     field_b: int
 
@@ -27,20 +27,20 @@ def test_model_init():
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
     assert m.field_b == 12
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
     m2 = MyModel()
     ans = v.validate_python({'field_a': 'test', 'field_b': 12}, self_instance=m2)
     assert ans == m2
     assert m.field_a == 'test'
     assert m.field_b == 12
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_model_init_nested():
     class MyModel:
-        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__fields_set__'
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
     v = SchemaValidator(
         {
@@ -84,7 +84,7 @@ def test_model_init_nested():
     assert m2.field_b.x_a == 'foo'
     assert m2.field_b.x_b == 12
 
-    assert m2.__fields_set__ == {'field_a', 'field_b'}
+    assert m2.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_function_before():
@@ -120,7 +120,7 @@ def test_function_before():
     m2 = MyModel()
     v.validate_python({'field_a': b'321', 'field_b': '12'}, self_instance=m2)
     assert m2.__dict__ == {'field_a': '321 XX', 'field_b': 12}
-    assert m2.__fields_set__ == {'field_a', 'field_b'}
+    assert m2.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_function_after():
@@ -157,7 +157,7 @@ def test_function_after():
     m2 = MyModel()
     v.validate_python({'field_a': b'321', 'field_b': '12'}, self_instance=m2)
     assert m2.__dict__ == {'field_a': '321 Changed', 'field_b': 12}
-    assert m2.__fields_set__ == {'field_a', 'field_b'}
+    assert m2.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_function_wrap():
@@ -196,7 +196,7 @@ def test_function_wrap():
     m2 = MyModel()
     v.validate_python({'field_a': b'321', 'field_b': '12'}, self_instance=m2)
     assert m2.__dict__ == {'field_a': '321 Changed', 'field_b': 12}
-    assert m2.__fields_set__ == {'field_a', 'field_b'}
+    assert m2.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_simple():

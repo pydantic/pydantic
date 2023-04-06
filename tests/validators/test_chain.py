@@ -123,7 +123,7 @@ def test_chain_one():
 
 def test_ask():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
     calls = []
 
@@ -152,6 +152,6 @@ def test_ask():
     m = v.validate_python({'field_a': 'abc'})
     assert isinstance(m, MyModel)
     assert m.field_a == 'abc'
-    assert m.__fields_set__ == {'field_a'}
+    assert m.__pydantic_fields_set__ == {'field_a'}
     # insert_assert(calls)
     assert calls == [({'field_a': 'abc'}, {'field_a'})]

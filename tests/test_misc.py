@@ -87,8 +87,8 @@ def test_custom_title():
 
 def test_validation_error_multiple():
     class MyModel:
-        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__fields_set__'
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
