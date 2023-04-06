@@ -524,12 +524,12 @@ def test_serialize_partialmethod(func: Any, reset_tracked_serializer: Any):
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
 
 
-def test_serializer_inheritance_override():
+def test_serializer_allow_reuse_inheritance_override():
     class Parent(BaseModel):
         x: int
 
         @field_serializer('x')
-        def ser_x(self, _v: int, _info) -> str:
+        def ser_x(self, _v: int, _info: SerializationInfo) -> str:
             return 'parent_encoder'
 
     # overriding a serializer with a function / class var
@@ -539,11 +539,11 @@ def test_serializer_inheritance_override():
     # (without modifying the parent class itself)
     class Child1(Parent):
         @field_serializer('x')
-        def ser_x(self, _v: int, _info) -> str:
-            return 'child1_encoder'
+        def ser_x(self, _v: int, _info: SerializationInfo) -> str:
+            return 'child1_encoder' + ' ' + super().ser_x(_v, _info)
 
     assert Parent(x=1).model_dump_json() == '{"x":"parent_encoder"}'
-    assert Child1(x=1).model_dump_json() == '{"x":"child1_encoder"}'
+    assert Child1(x=1).model_dump_json() == '{"x":"child1_encoder parent_encoder"}'
 
     # defining an _different_ serializer on the other hand is not allowed
     # because they would both "exist" thus causing confusion
@@ -555,3 +555,17 @@ def test_serializer_inheritance_override():
             @field_serializer('x')
             def ser_x_other(self, _v: int, _info) -> str:
                 return 'err'
+
+    # the same thing applies if defined on the same class
+    with pytest.raises(TypeError, match=msg):
+
+        class _(BaseModel):
+            x: int
+
+            @field_serializer('x')
+            def ser_x(self, _v: int, _info) -> str:
+                return 'parent_encoder'
+
+            @field_serializer('x')
+            def other_func_name(self, _v: int, _info) -> str:
+                return 'parent_encoder'
