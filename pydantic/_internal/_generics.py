@@ -113,6 +113,12 @@ else:
 _GENERIC_TYPES_CACHE = GenericTypesCache()
 
 
+class PydanticGenericMetadata(typing_extensions.TypedDict):
+    origin: type[BaseModel] | None  # analogous to typing._GenericAlias.__origin__
+    args: tuple[Any, ...]  # analogous to typing._GenericAlias.__args__
+    parameters: tuple[type[Any], ...]  # analogous to typing.Generic.__parameters__
+
+
 def create_generic_submodel(
     model_name: str, origin: type[BaseModel], args: tuple[Any, ...], params: tuple[Any, ...]
 ) -> type[BaseModel]:
@@ -134,9 +140,11 @@ def create_generic_submodel(
         model_name,
         bases,
         namespace,
-        __pydantic_generic_origin__=origin,
-        __pydantic_generic_args__=args,
-        __pydantic_generic_parameters__=params,
+        __pydantic_generic_metadata__={
+            'origin': origin,
+            'args': args,
+            'parameters': params,
+        },
         __pydantic_reset_parent_namespace__=False,
         **kwds,
     )
@@ -182,7 +190,7 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
     if isinstance(v, TypeVar):
         yield v
     elif is_basemodel(v):
-        yield from v.__pydantic_generic_parameters__ or ()
+        yield from v.__pydantic_generic_metadata__['parameters']
     elif isinstance(v, (DictValues, list)):
         for var in v:
             yield from iter_contained_typevars(var)
@@ -193,17 +201,25 @@ def iter_contained_typevars(v: Any) -> Iterator[TypeVarType]:
 
 
 def get_args(v: Any) -> Any:
-    pydantic_generic_args = getattr(v, '__pydantic_generic_args__', None)
-    if pydantic_generic_args:
-        return pydantic_generic_args
+    pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, '__pydantic_generic_metadata__', None)
+    if pydantic_generic_metadata:
+        return pydantic_generic_metadata.get('args')
     return typing_extensions.get_args(v)
 
 
 def get_origin(v: Any) -> Any:
-    pydantic_generic_origin = getattr(v, '__pydantic_generic_origin__', None)
-    if pydantic_generic_origin:
-        return pydantic_generic_origin
+    pydantic_generic_metadata: PydanticGenericMetadata | None = getattr(v, '__pydantic_generic_metadata__', None)
+    if pydantic_generic_metadata:
+        return pydantic_generic_metadata.get('origin')
     return typing_extensions.get_origin(v)
+
+
+def get_typevars_map(origin: type[Any] | None, args: tuple[type[Any], ...]) -> dict[TypeVarType, type[Any]]:
+    """
+    Builds the mapping of typevars to argument values in a manner consistent with how the `typing` library,
+    but correctly handles the case where the origin is a generic BaseModel subclass.
+    """
+    return dict(zip(iter_contained_typevars(origin), args))
 
 
 def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
@@ -260,7 +276,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
     # semantics as "typing" classes or generic aliases
 
     if not origin_type and is_basemodel(type_):
-        parameters = type_.__pydantic_generic_parameters__
+        parameters = type_.__pydantic_generic_metadata__['parameters']
         if not parameters:
             return type_
         resolved_type_args = tuple(replace_types(t, type_map) for t in parameters)
@@ -287,7 +303,7 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
 
 def check_parameters_count(cls: type[BaseModel], parameters: tuple[Any, ...]) -> None:
     actual = len(parameters)
-    expected = len(cls.__pydantic_generic_parameters__ or ())
+    expected = len(cls.__pydantic_generic_metadata__['parameters'])
     if actual != expected:
         description = 'many' if actual > expected else 'few'
         raise TypeError(f'Too {description} parameters for {cls}; actual {actual}, expected {expected}')

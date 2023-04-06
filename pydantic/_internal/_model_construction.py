@@ -14,6 +14,7 @@ from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._decorators import PydanticDecoratorMarker
 from ._fields import Undefined, collect_fields
 from ._generate_schema import GenerateSchema, generate_config
+from ._generics import get_typevars_map
 from ._typing_extra import add_module_globals, is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
@@ -163,9 +164,9 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-    gen_schema = GenerateSchema(
-        cls.model_config['arbitrary_types_allowed'], types_namespace, cls.__pydantic_generic_typevars_map__
-    )
+    generic_metadata = cls.__pydantic_generic_metadata__
+    typevars_map = get_typevars_map(generic_metadata['origin'], generic_metadata['args'])
+    gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace, typevars_map)
     try:
         schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
