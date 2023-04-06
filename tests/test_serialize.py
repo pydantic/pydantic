@@ -1,6 +1,7 @@
 """
 New tests for v2 of serialization logic.
 """
+from functools import partial, partialmethod
 from typing import Any, Optional
 
 import pytest
@@ -16,6 +17,16 @@ from pydantic import (
     field_serializer,
     model_serializer,
 )
+
+
+@pytest.fixture
+def reset_tracked_serializer():
+    from pydantic._internal._decorators import _FUNCS
+
+    original_tracked_serializers = set(_FUNCS)
+    yield
+    _FUNCS.clear()
+    _FUNCS.update(original_tracked_serializers)
 
 
 def test_serialize_decorator_always():
@@ -397,3 +408,117 @@ def test_model_serializer_classmethod():
             @classmethod
             def _serialize(self, x, y, z):
                 return self
+
+
+def test_field_multiple_serializer():
+    m = "Multiple field serializer functions were defined for field 'x', this is not allowed."
+    with pytest.raises(TypeError, match=m):
+
+        class MyModel(BaseModel):
+            x: int
+            y: int
+
+            @field_serializer('x', 'y', json_return_type='str')
+            def serializer1(v, _info):
+                return f'{v:,}'
+
+            @field_serializer('x', json_return_type='str')
+            def serializer2(v, _info):
+                return v
+
+
+def test_field_multiple_serializer_subclass():
+    class MyModel(BaseModel):
+        x: int
+
+        @field_serializer('x', json_return_type='str')
+        def serializer1(v, _info):
+            return f'{v:,}'
+
+    class MySubModel(MyModel):
+        @field_serializer('x', json_return_type='str')
+        def serializer2(v, _info):
+            return f'{v}'
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}
+    assert MySubModel(x=1234).model_dump() == {'x': '1234'}
+
+
+def int_ser_func_without_info1(v: int, expected: int) -> str:
+    return f'{v:,}'
+
+
+def int_ser_func_without_info2(v: int, *, expected: int) -> str:
+    return f'{v:,}'
+
+
+def int_ser_func_with_info1(v: int, info: FieldSerializationInfo, expected: int) -> str:
+    return f'{v:,}'
+
+
+def int_ser_func_with_info2(v: int, info: FieldSerializationInfo, *, expected: int) -> str:
+    return f'{v:,}'
+
+
+def int_ser_instance_method_without_info1(self: Any, v: int, *, expected: int) -> str:
+    assert self.x == v
+    return f'{v:,}'
+
+
+def int_ser_instance_method_without_info2(self: Any, v: int, expected: int) -> str:
+    assert self.x == v
+    return f'{v:,}'
+
+
+def int_ser_instance_method_with_info1(self: Any, v: int, info: FieldSerializationInfo, expected: int) -> str:
+    assert self.x == v
+    return f'{v:,}'
+
+
+def int_ser_instance_method_with_info2(self: Any, v: int, info: FieldSerializationInfo, *, expected: int) -> str:
+    assert self.x == v
+    return f'{v:,}'
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        int_ser_func_with_info1,
+        int_ser_func_with_info2,
+        int_ser_func_without_info1,
+        int_ser_func_without_info2,
+        int_ser_instance_method_with_info1,
+        int_ser_instance_method_with_info2,
+        int_ser_instance_method_without_info1,
+        int_ser_instance_method_without_info2,
+    ],
+)
+def test_serialize_partial(func: Any, reset_tracked_serializer: Any):
+    class MyModel(BaseModel):
+        x: int
+
+        ser = field_serializer('x', json_return_type='str')(partial(func, expected=1234))
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        int_ser_func_with_info1,
+        int_ser_func_with_info2,
+        int_ser_func_without_info1,
+        int_ser_func_without_info2,
+        int_ser_instance_method_with_info1,
+        int_ser_instance_method_with_info2,
+        int_ser_instance_method_without_info1,
+        int_ser_instance_method_without_info2,
+    ],
+)
+def test_serialize_partialmethod(func: Any, reset_tracked_serializer: Any):
+    class MyModel(BaseModel):
+        x: int
+
+        ser = field_serializer('x', json_return_type='str')(partialmethod(func, expected=1234))
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}

@@ -35,14 +35,12 @@ __all__ = (
     'smart_deepcopy',
     'ValueItems',
     'ClassAttribute',
-    'ROOT_KEY',
     'dict_not_none',
     'AbstractSetIntStr',
     'MappingIntStrAny',
     'all_identical',
 )
 
-ROOT_KEY = '__root__'
 # these are types that are returned unchanged by deepcopy
 IMMUTABLE_NON_COLLECTIONS_TYPES: set[type[Any]] = {
     int,

@@ -200,7 +200,7 @@ def _check_finalvar(v: type[Any] | None) -> bool:
     return v.__class__ == Final.__class__ and (sys.version_info < (3, 8) or getattr(v, '_name', None) == 'Final')
 
 
-def is_finalvar(ann_type: type[Any]) -> bool:
+def is_finalvar(ann_type: Any) -> bool:
     return _check_finalvar(ann_type) or _check_finalvar(get_origin(ann_type))
 
 

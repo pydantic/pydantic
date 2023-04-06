@@ -9,7 +9,7 @@ from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set,
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import core_schema
-from typing_extensions import get_args
+from typing_extensions import Annotated, get_args
 
 from pydantic import (
     AnalyzedType,
@@ -21,7 +21,6 @@ from pydantic import (
     constr,
     errors,
 )
-from pydantic._internal._fields import PydanticGeneralMetadata
 from pydantic.config import get_config
 from pydantic.decorators import field_validator
 from pydantic.fields import Field
@@ -2140,7 +2139,6 @@ def test_iter_coverage():
         assert list(MyModel()._iter(by_alias=True)) == [('x', 1), ('y', 'a')]
 
 
-@pytest.mark.xfail(reason='field frozen')
 def test_frozen_config_and_field():
     class Foo(BaseModel):
         model_config = ConfigDict(frozen=False, validate_assignment=True)
@@ -2155,13 +2153,20 @@ def test_frozen_config_and_field():
     class Bar(BaseModel):
         model_config = ConfigDict(validate_assignment=True)
         a: str = Field(..., frozen=True)
+        c: Annotated[str, Field(frozen=True)]
 
-    assert PydanticGeneralMetadata(frozen=True) in Bar.model_fields['a'].metadata
+    assert Bar.model_fields['a'].frozen
 
-    b = Bar(a='x')
-    with pytest.raises(TypeError):
+    b = Bar(a='x', c='z')
+    with pytest.raises(ValidationError) as exc_info:
         b.a = 'y'
-    assert b.model_dump() == {'a': 'x'}
+    assert exc_info.value.errors() == [{'input': 'y', 'loc': ('a',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
+
+    with pytest.raises(ValidationError) as exc_info:
+        b.c = 'y'
+    assert exc_info.value.errors() == [{'input': 'y', 'loc': ('c',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
+
+    assert b.model_dump() == {'a': 'x', 'c': 'z'}
 
 
 def test_arbitrary_types_allowed_custom_eq():

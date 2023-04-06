@@ -5,7 +5,7 @@ import re
 import sys
 import uuid
 from collections import OrderedDict, deque
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
@@ -877,6 +877,100 @@ def test_decimal_strict():
     assert Model(v=v).model_dump() == {'v': v}
 
 
+def test_strict_date():
+    class Model(BaseModel):
+        v: Annotated[date, Field(strict=True)]
+
+    assert Model(v=date(2017, 5, 5)).v == date(2017, 5, 5)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=datetime(2017, 5, 5))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'date_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid date',
+            'input': datetime(2017, 5, 5),
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='2017-05-05')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'date_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid date',
+            'input': '2017-05-05',
+        }
+    ]
+
+
+def test_strict_datetime():
+    class Model(BaseModel):
+        v: Annotated[datetime, Field(strict=True)]
+
+    assert Model(v=datetime(2017, 5, 5, 10, 10, 10)).v == datetime(2017, 5, 5, 10, 10, 10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=date(2017, 5, 5))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'datetime_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid datetime',
+            'input': date(2017, 5, 5),
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='2017-05-05T10:10:10')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'datetime_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid datetime',
+            'input': '2017-05-05T10:10:10',
+        }
+    ]
+
+
+def test_strict_time():
+    class Model(BaseModel):
+        v: Annotated[time, Field(strict=True)]
+
+    assert Model(v=time(10, 10, 10)).v == time(10, 10, 10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='10:10:10')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'time_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid time',
+            'input': '10:10:10',
+        }
+    ]
+
+
+def test_strict_timedelta():
+    class Model(BaseModel):
+        v: Annotated[timedelta, Field(strict=True)]
+
+    assert Model(v=timedelta(days=1)).v == timedelta(days=1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='1 days')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'time_delta_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid timedelta',
+            'input': '1 days',
+        }
+    ]
+
+
 @pytest.fixture(scope='session', name='CheckModel')
 def check_model_fixture():
     class CheckModel(BaseModel):
@@ -887,6 +981,14 @@ def check_model_fixture():
         float_check: float = 1.0
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
         decimal_check: condecimal(allow_inf_nan=False) = Decimal('42.24')
+        date_check: date = date(2017, 5, 5)
+        datetime_check: datetime = datetime(2017, 5, 5, 10, 10, 10)
+        time_check: time = time(10, 10, 10)
+        timedelta_check: timedelta = timedelta(days=1)
+        list_check: List[str] = ['1', '2']
+        tuple_check: Tuple[str, ...] = ('1', '2')
+        set_check: Set[str] = {'1', '2'}
+        frozenset_check: FrozenSet[str] = frozenset(['1', '2'])
 
     return CheckModel
 
@@ -902,6 +1004,8 @@ class BoolCastable:
     [
         ('bool_check', True, True),
         ('bool_check', 1, True),
+        ('bool_check', 1.0, True),
+        ('bool_check', Decimal(1), True),
         ('bool_check', 'y', True),
         ('bool_check', 'Y', True),
         ('bool_check', 'yes', True),
@@ -919,6 +1023,8 @@ class BoolCastable:
         ('bool_check', b'TRUE', True),
         ('bool_check', False, False),
         ('bool_check', 0, False),
+        ('bool_check', 0.0, False),
+        ('bool_check', Decimal(0), False),
         ('bool_check', 'n', False),
         ('bool_check', 'N', False),
         ('bool_check', 'no', False),
@@ -943,15 +1049,20 @@ class BoolCastable:
         ('bool_check', b'2', ValidationError),
         ('bool_check', '2', ValidationError),
         ('bool_check', 2, ValidationError),
+        ('bool_check', 2.0, ValidationError),
+        ('bool_check', Decimal(2), ValidationError),
         ('bool_check', b'\x81', ValidationError),
         ('bool_check', BoolCastable(), ValidationError),
         ('str_check', 's', 's'),
         ('str_check', '  s  ', 's'),
         ('str_check', b's', 's'),
         ('str_check', b'  s  ', 's'),
+        ('str_check', bytearray(b's' * 5), 'sssss'),
         ('str_check', 1, ValidationError),
         ('str_check', 'x' * 11, ValidationError),
         ('str_check', b'x' * 11, ValidationError),
+        ('str_check', b'\x81', ValidationError),
+        ('str_check', bytearray(b'\x81' * 5), ValidationError),
         ('bytes_check', 's', b's'),
         ('bytes_check', '  s  ', b'  s  '),
         ('bytes_check', b's', b's'),
@@ -965,6 +1076,8 @@ class BoolCastable:
         ('int_check', 1, 1),
         ('int_check', 1.0, 1),
         ('int_check', 1.9, ValidationError),
+        ('int_check', Decimal(1), 1),
+        ('int_check', Decimal(1.9), ValidationError),
         ('int_check', '1', 1),
         ('int_check', '1.9', ValidationError),
         ('int_check', b'1', 1),
@@ -973,10 +1086,15 @@ class BoolCastable:
         ('int_check', b'12', 12),
         ('float_check', 1, 1.0),
         ('float_check', 1.0, 1.0),
+        ('float_check', Decimal(1.0), 1.0),
         ('float_check', '1.0', 1.0),
         ('float_check', '1', 1.0),
         ('float_check', b'1.0', 1.0),
         ('float_check', b'1', 1.0),
+        ('float_check', True, 1.0),
+        ('float_check', False, 0.0),
+        ('float_check', 't', ValidationError),
+        ('float_check', b't', ValidationError),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
@@ -990,6 +1108,81 @@ class BoolCastable:
         ('decimal_check', Decimal('42.24'), Decimal('42.24')),
         ('decimal_check', 'not a valid decimal', ValidationError),
         ('decimal_check', 'NaN', ValidationError),
+        ('date_check', date(2017, 5, 5), date(2017, 5, 5)),
+        ('date_check', datetime(2017, 5, 5), date(2017, 5, 5)),
+        ('date_check', '2017-05-05', date(2017, 5, 5)),
+        ('date_check', b'2017-05-05', date(2017, 5, 5)),
+        ('date_check', 1493942400000, date(2017, 5, 5)),
+        ('date_check', 1493942400, date(2017, 5, 5)),
+        ('date_check', 1493942400000.0, date(2017, 5, 5)),
+        ('date_check', Decimal(1493942400000), date(2017, 5, 5)),
+        ('date_check', datetime(2017, 5, 5, 10), ValidationError),
+        ('date_check', '2017-5-5', ValidationError),
+        ('date_check', b'2017-5-5', ValidationError),
+        ('date_check', 1493942401000, ValidationError),
+        ('date_check', 1493942401000.0, ValidationError),
+        ('date_check', Decimal(1493942401000), ValidationError),
+        ('datetime_check', datetime(2017, 5, 5, 10, 10, 10), datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', date(2017, 5, 5), datetime(2017, 5, 5, 0, 0, 0)),
+        ('datetime_check', '2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
+        ('datetime_check', '2017-05-05 10:10:10', datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', '2017-05-05 10:10:10+00:00', datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
+        ('datetime_check', b'2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
+        ('datetime_check', 1493979010000, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', 1493979010, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', 1493979010000.0, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', '2017-5-5T10:10:10', ValidationError),
+        ('datetime_check', b'2017-5-5T10:10:10', ValidationError),
+        ('time_check', time(10, 10, 10), time(10, 10, 10)),
+        ('time_check', '10:10:10.0002', time(10, 10, 10, microsecond=200)),
+        ('time_check', b'10:10:10.0002', time(10, 10, 10, microsecond=200)),
+        ('time_check', 3720, time(1, 2)),
+        ('time_check', 3720.0002, time(1, 2, microsecond=200)),
+        ('time_check', Decimal(3720.0002), time(1, 2, microsecond=200)),
+        ('time_check', '1:1:1', ValidationError),
+        ('time_check', b'1:1:1', ValidationError),
+        ('time_check', -1, ValidationError),
+        ('time_check', 86400, ValidationError),
+        ('time_check', 86400.0, ValidationError),
+        ('time_check', Decimal(86400), ValidationError),
+        ('timedelta_check', timedelta(days=1), timedelta(days=1)),
+        ('timedelta_check', '1 days 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', '1 d 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', b'1 days 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', 123_000, timedelta(days=1, seconds=36600)),
+        ('timedelta_check', 123_000.0002, timedelta(days=1, seconds=36600, microseconds=200)),
+        ('timedelta_check', Decimal(123_000.0002), timedelta(days=1, seconds=36600, microseconds=200)),
+        ('timedelta_check', '1 10:10', ValidationError),
+        ('timedelta_check', b'1 10:10', ValidationError),
+        ('list_check', ['1', '2'], ['1', '2']),
+        ('list_check', ('1', '2'), ['1', '2']),
+        ('list_check', {'1': 1, '2': 2}.keys(), ['1', '2']),
+        ('list_check', {'1': '1', '2': '2'}.values(), ['1', '2']),
+        ('list_check', {'1', '2'}, ValidationError),
+        ('list_check', frozenset(['1', '2']), ValidationError),
+        ('list_check', {'1': 1, '2': 2}, ValidationError),
+        ('tuple_check', ('1', '2'), ('1', '2')),
+        ('tuple_check', ['1', '2'], ('1', '2')),
+        ('tuple_check', {'1': 1, '2': 2}.keys(), ('1', '2')),
+        ('tuple_check', {'1': '1', '2': '2'}.values(), ('1', '2')),
+        ('tuple_check', {'1', '2'}, ValidationError),
+        ('tuple_check', frozenset(['1', '2']), ValidationError),
+        ('tuple_check', {'1': 1, '2': 2}, ValidationError),
+        ('set_check', {'1', '2'}, {'1', '2'}),
+        ('set_check', ['1', '2', '1', '2'], {'1', '2'}),
+        ('set_check', ('1', '2', '1', '2'), {'1', '2'}),
+        ('set_check', frozenset(['1', '2']), {'1', '2'}),
+        ('set_check', {'1': 1, '2': 2}.keys(), {'1', '2'}),
+        ('set_check', {'1': '1', '2': '2'}.values(), {'1', '2'}),
+        ('set_check', {'1': 1, '2': 2}, ValidationError),
+        ('frozenset_check', frozenset(['1', '2']), frozenset(['1', '2'])),
+        ('frozenset_check', ['1', '2', '1', '2'], frozenset(['1', '2'])),
+        ('frozenset_check', ('1', '2', '1', '2'), frozenset(['1', '2'])),
+        ('frozenset_check', {'1', '2'}, frozenset(['1', '2'])),
+        ('frozenset_check', {'1': 1, '2': 2}.keys(), frozenset(['1', '2'])),
+        ('frozenset_check', {'1': '1', '2': '2'}.values(), frozenset(['1', '2'])),
+        ('frozenset_check', {'1': 1, '2': 2}, ValidationError),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
@@ -1161,7 +1354,6 @@ def test_int_enum_type():
     [
         ({'max_length': 5}, int),
         ({'min_length': 2}, float),
-        ({'frozen': True}, bool),
         ({'pattern': '^foo$'}, int),
         ({'gt': 2}, str),
         ({'lt': 5}, bytes),
@@ -2076,6 +2268,12 @@ def test_strict_int():
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=3.14159)
 
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
+        Model(v=2**64)
+
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
+        Model(v=True)
+
 
 def test_strict_float():
     class Model(BaseModel):
@@ -2087,6 +2285,9 @@ def test_strict_float():
     with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
         Model(v='3.14159')
 
+    with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
+        Model(v=True)
+
 
 def test_bool_unhashable_fails():
     class Model(BaseModel):
@@ -2094,7 +2295,6 @@ def test_bool_unhashable_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v={})
-    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {'type': 'bool_type', 'loc': ('v',), 'msg': 'Input should be a valid boolean', 'input': {}}
     ]

@@ -2,8 +2,9 @@ import re
 from collections import deque
 from datetime import datetime
 from enum import Enum
+from functools import partial, partialmethod
 from itertools import product
-from typing import Any, Deque, Dict, FrozenSet, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple, Type, Union
 from unittest.mock import MagicMock
 
 import pytest
@@ -75,6 +76,9 @@ def test_int_validation():
             'input': 4.5,
         }
     ]
+
+    # Doesn't raise ValidationError for number > (2 ^ 63) - 1 and limits them to (2 ^ 63) - 1
+    assert Model(a=(2**63) + 100).a == (2**63) - 1
 
 
 @pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])
@@ -365,7 +369,7 @@ def test_classmethod():
 
 
 def test_duplicates():
-    msg = r'duplicate validator function \"tests.test_validators::test_duplicates.<locals>.Model.duplicate_name\";'
+    msg = r'duplicate validator function \"tests.test_validators.test_duplicates.<locals>.Model.duplicate_name\";'
     with pytest.warns(UserWarning, match=msg):
 
         class Model(BaseModel):
@@ -1488,17 +1492,14 @@ def test_nested_literal_validator():
     ]
 
 
-# TODO: this test fails because our union schema
-# doesn't accept `frozen` as an argument
-# Do we need to add `frozen` to every schema?
-@pytest.mark.xfail(reason='frozen field')
 def test_union_literal_with_constraints():
     class Model(BaseModel, validate_assignment=True):
         x: Union[Literal[42], Literal['pika']] = Field(frozen=True)
 
     m = Model(x=42)
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError) as exc_info:
         m.x += 1
+    assert exc_info.value.errors() == [{'input': 43, 'loc': ('x',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
 
 
 def test_field_that_is_being_validated_is_excluded_from_validator_values():
@@ -1926,3 +1927,271 @@ def test_model_config_validate_default():
             'type': 'assertion_error',
         }
     ]
+
+
+def partial_val_func1(
+    value: int,
+    allowed: int,
+) -> int:
+    assert value == allowed
+    return value
+
+
+def partial_val_func2(
+    value: int,
+    *,
+    allowed: int,
+) -> int:
+    assert value == allowed
+    return value
+
+
+def partial_values_val_func1(
+    value: int,
+    values: Dict[str, Any],
+    *,
+    allowed: int,
+) -> int:
+    assert isinstance(values, dict)
+    assert value == allowed
+    return value
+
+
+def partial_values_val_func2(
+    value: int,
+    *,
+    values: Dict[str, Any],
+    allowed: int,
+) -> int:
+    assert isinstance(values, dict)
+    assert value == allowed
+    return value
+
+
+def partial_info_val_func(
+    value: int,
+    info: FieldValidationInfo,
+    *,
+    allowed: int,
+) -> int:
+    assert isinstance(info.data, dict)
+    assert value == allowed
+    return value
+
+
+def partial_cls_val_func1(
+    cls: Any,
+    value: int,
+    allowed: int,
+    expected_cls: Any,
+) -> int:
+    assert cls.__name__ == expected_cls
+    assert value == allowed
+    return value
+
+
+def partial_cls_val_func2(
+    cls: Any,
+    value: int,
+    *,
+    allowed: int,
+    expected_cls: Any,
+) -> int:
+    assert cls.__name__ == expected_cls
+    assert value == allowed
+    return value
+
+
+def partial_cls_values_val_func1(
+    cls: Any,
+    value: int,
+    values: Dict[str, Any],
+    *,
+    allowed: int,
+    expected_cls: Any,
+) -> int:
+    assert cls.__name__ == expected_cls
+    assert isinstance(values, dict)
+    assert value == allowed
+    return value
+
+
+def partial_cls_values_val_func2(
+    cls: Any,
+    value: int,
+    *,
+    values: Dict[str, Any],
+    allowed: int,
+    expected_cls: Any,
+) -> int:
+    assert cls.__name__ == expected_cls
+    assert isinstance(values, dict)
+    assert value == allowed
+    return value
+
+
+def partial_cls_info_val_func(
+    cls: Any,
+    value: int,
+    info: FieldValidationInfo,
+    *,
+    allowed: int,
+    expected_cls: Any,
+) -> int:
+    assert cls.__name__ == expected_cls
+    assert isinstance(info.data, dict)
+    assert value == allowed
+    return value
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        partial_val_func1,
+        partial_val_func2,
+        partial_info_val_func,
+    ],
+)
+def test_functools_partial_validator_v2(
+    reset_tracked_validators: Any,
+    func: Callable[..., Any],
+) -> None:
+    class Model(BaseModel):
+        x: int
+
+        val = field_validator('x')(partial(func, allowed=42))
+
+    Model(x=42)
+
+    with pytest.raises(ValidationError):
+        Model(x=123)
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        partial_val_func1,
+        partial_val_func2,
+        partial_info_val_func,
+    ],
+)
+def test_functools_partialmethod_validator_v2(
+    reset_tracked_validators: Any,
+    func: Callable[..., Any],
+) -> None:
+    class Model(BaseModel):
+        x: int
+
+        val = field_validator('x')(partialmethod(func, allowed=42))
+
+    Model(x=42)
+
+    with pytest.raises(ValidationError):
+        Model(x=123)
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        partial_cls_val_func1,
+        partial_cls_val_func2,
+        partial_cls_info_val_func,
+    ],
+)
+def test_functools_partialmethod_validator_v2_cls_method(
+    reset_tracked_validators: Any,
+    func: Callable[..., Any],
+) -> None:
+    class Model(BaseModel):
+        x: int
+
+        # note that you _have_ to wrap your function with classmethod
+        # it's partialmethod not us that requires it
+        # otherwise it creates a bound instance method
+        val = field_validator('x')(partialmethod(classmethod(func), allowed=42, expected_cls='Model'))
+
+    Model(x=42)
+
+    with pytest.raises(ValidationError):
+        Model(x=123)
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        partial_val_func1,
+        partial_val_func2,
+        partial_values_val_func1,
+        partial_values_val_func2,
+    ],
+)
+def test_functools_partial_validator_v1(
+    reset_tracked_validators: Any,
+    func: Callable[..., Any],
+) -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            x: int
+
+            val = validator('x')(partial(func, allowed=42))
+
+    Model(x=42)
+
+    with pytest.raises(ValidationError):
+        Model(x=123)
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        partial_val_func1,
+        partial_val_func2,
+        partial_values_val_func1,
+        partial_values_val_func2,
+    ],
+)
+def test_functools_partialmethod_validator_v1(
+    reset_tracked_validators: Any,
+    func: Callable[..., Any],
+) -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            x: int
+
+            val = validator('x')(partialmethod(func, allowed=42))
+
+        Model(x=42)
+
+        with pytest.raises(ValidationError):
+            Model(x=123)
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        partial_cls_val_func1,
+        partial_cls_val_func2,
+        partial_cls_values_val_func1,
+        partial_cls_values_val_func2,
+    ],
+)
+def test_functools_partialmethod_validator_v1_cls_method(
+    reset_tracked_validators: Any,
+    func: Callable[..., Any],
+) -> None:
+    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+
+        class Model(BaseModel):
+            x: int
+
+            # note that you _have_ to wrap your function with classmethod
+            # it's partialmethod not us that requires it
+            # otherwise it creates a bound instance method
+            val = validator('x')(partialmethod(classmethod(func), allowed=42, expected_cls='Model'))
+
+    Model(x=42)
+
+    with pytest.raises(ValidationError):
+        Model(x=123)
