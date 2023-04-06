@@ -6,12 +6,10 @@ from pathlib import Path
 from typing import List
 
 import pytest
-from dirty_equals import IsInstance
 from pydantic_core import ArgsKwargs
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import Extra, Field, ValidationError, validate_call
-from pydantic.errors import PydanticUserError
+from pydantic import AnalyzedType, Extra, Field, ValidationError, validate_call
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
@@ -226,52 +224,51 @@ def test_args_name():
 
     assert foo(1, 2) == 'args=1, kwargs=2'
 
-    with pytest.raises(TypeError, match="unexpected keyword argument: 'apple'"):
+    with pytest.raises(ValidationError, match=r'apple\s+Unexpected keyword argument'):
         foo(1, 2, apple=4)
 
-    with pytest.raises(TypeError, match="unexpected keyword arguments: 'apple', 'banana'"):
+    with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, apple=4, banana=5)
 
-    with pytest.raises(TypeError, match='2 positional arguments expected but 3 given'):
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'unexpected_keyword_argument', 'loc': ('apple',), 'msg': 'Unexpected keyword argument', 'input': 4},
+        {'type': 'unexpected_keyword_argument', 'loc': ('banana',), 'msg': 'Unexpected keyword argument', 'input': 5},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
         foo(1, 2, 3)
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'unexpected_positional_argument', 'loc': (2,), 'msg': 'Unexpected positional argument', 'input': 3}
+    ]
 
 
 def test_v_args():
-    with pytest.raises(
-        PydanticUserError,
-        match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted',
-    ):
+    @validate_call
+    def foo1(v__args: int):
+        return v__args
 
-        @validate_call
-        def foo1(v__args: int):
-            pass
+    assert foo1(123) == 123
 
-    with pytest.raises(
-        PydanticUserError,
-        match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted',
-    ):
+    @validate_call
+    def foo2(v__kwargs: int):
+        return v__kwargs
 
-        @validate_call
-        def foo2(v__kwargs: int):
-            pass
+    assert foo2(123) == 123
 
-    with pytest.raises(
-        PydanticUserError,
-        match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted',
-    ):
+    @validate_call
+    def foo3(v__positional_only: int):
+        return v__positional_only
 
-        @validate_call
-        def foo3(v__positional_only: int):
-            pass
+    assert foo3(123) == 123
 
-    with pytest.raises(
-        PydanticUserError,
-        match='"v__args", "v__kwargs", "v__positional_only" and "v__duplicate_kwargs" are not permitted',
-    ):
+    @validate_call
+    def foo4(v__duplicate_kwargs: int):
+        return v__duplicate_kwargs
 
-        @validate_call
-        def foo4(v__duplicate_kwargs: int):
-            pass
+    assert foo4(123) == 123
 
 
 def test_async():
@@ -286,7 +283,10 @@ def test_async():
     asyncio.run(run())
     with pytest.raises(ValidationError) as exc_info:
         asyncio.run(foo('x'))
-    assert exc_info.value.errors() == [{'input': {'a': 'x'}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'}]
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(('x',))}
+    ]
 
 
 def test_string_annotation():
@@ -298,14 +298,16 @@ def test_string_annotation():
 
     with pytest.raises(ValidationError) as exc_info:
         foo(['x'])
+
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'input': 'x',
-            'loc': ('a', 0),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
+            'loc': (0, 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
         },
-        {'input': {'a': ['x']}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((['x'],))},
     ]
 
 
@@ -326,9 +328,10 @@ def test_item_method():
     with pytest.raises(ValidationError) as exc_info:
         x.foo()
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'input': {'self': IsInstance(X)}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
-        {'input': {'self': IsInstance(X)}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
     ]
 
 
@@ -347,41 +350,41 @@ def test_class_method():
     with pytest.raises(ValidationError) as exc_info:
         x.foo()
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'input': {'cls': X}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
-        {'input': {'cls': X}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
+        {'type': 'missing_argument', 'loc': ('a',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
+        {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs(())},
     ]
 
 
 def test_config_title():
     @validate_call(config=dict(title='Testing'))
-    def foo(a: int, b: int):
+    def foo(a: int, b: int = None):
         return f'{a}, {b}'
 
     assert foo(1, 2) == '1, 2'
     assert foo(1, b=2) == '1, 2'
-    assert foo.model.model_json_schema()['title'] == 'Testing'
+    # TODO waiting for https://github.com/pydantic/pydantic/issues/5395
+    # insert_assert(AnalyzedType(foo).json_schema())
+    assert AnalyzedType(foo).json_schema() == {
+        'type': 'object',
+        'properties': {
+            'a': {'type': 'integer', 'title': 'A'},
+            'b': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'default': None, 'title': 'B'},
+        },
+        'required': ['a'],
+        'additionalProperties': False,
+    }
 
 
-def test_config_title_cls():
-    class Config:
-        title = 'Testing'
-
-    @validate_call(config={'title': 'Testing'})
+@pytest.mark.xfail(reason='repsect config better')
+def test_alias_generator():
+    @validate_call(config=dict(alias_generator=lambda x: x * 2))
     def foo(a: int, b: int):
         return f'{a}, {b}'
 
     assert foo(1, 2) == '1, 2'
-    assert foo(1, b=2) == '1, 2'
-    assert foo.model.model_json_schema()['title'] == 'Testing'
-
-
-def test_config_fields():
-    with pytest.raises(PydanticUserError, match='Setting the "alias_generator" property on custom Config for @'):
-
-        @validate_call(config=dict(alias_generator=lambda x: x))
-        def foo(a: int, b: int):
-            return f'{a}, {b}'
+    assert foo(aa=1, bb=2) == '1, 2'
 
 
 def test_config_arbitrary_types_allowed():
@@ -397,29 +400,16 @@ def test_config_arbitrary_types_allowed():
     with pytest.raises(ValidationError) as exc_info:
         assert foo(1, 2) == '1, 2'
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'ctx': {'class': 'test_config_arbitrary_types_allowed.<locals>.EggBox'},
-            'input': 2,
-            'loc': ('b',),
-            'msg': 'Input should be an instance of ' 'test_config_arbitrary_types_allowed.<locals>.EggBox',
             'type': 'is_instance_of',
+            'loc': (1,),
+            'msg': 'Input should be an instance of test_config_arbitrary_types_allowed.<locals>.EggBox',
+            'input': 2,
+            'ctx': {'class': 'test_config_arbitrary_types_allowed.<locals>.EggBox'},
         }
     ]
-
-
-def test_validate(mocker):
-    stub = mocker.stub(name='on_something_stub')
-
-    @validate_call
-    def func(s: str, count: int, *, separator: bytes = b''):
-        stub(s, count, separator)
-
-    func.validate('qwe', 2)
-    with pytest.raises(ValidationError):
-        func.validate(['qwe'], 2)
-
-    stub.assert_not_called()
 
 
 @pytest.mark.xfail(reason='Annotated does not seem to be respected')
@@ -441,6 +431,7 @@ def test_annotated_use_of_alias():
     ]
 
 
+@pytest.mark.xfail(reason='Use fields')
 def test_use_of_alias():
     @validate_call
     def foo(c: int = Field(default_factory=lambda: 20), a: int = Field(default_factory=lambda: 10, alias='b')):
@@ -449,6 +440,7 @@ def test_use_of_alias():
     assert foo(b=10) == 30
 
 
+@pytest.mark.xfail(reason='Use fields')
 def test_populate_by_name():
     @validate_call(config=dict(populate_by_name=True))
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):

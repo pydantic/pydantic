@@ -16,7 +16,7 @@ from pydantic import (
     PydanticSchemaGenerationError,
     ValidationError,
     create_model,
-    validate_arguments,
+    validate_call,
 )
 from pydantic.config import ConfigDict, _default_config, get_config
 from pydantic.dataclasses import dataclass as pydantic_dataclass
@@ -458,7 +458,7 @@ Valid config keys have changed in V2:
 
     with pytest.warns(UserWarning, match=re.escape(warning_message)):
 
-        @validate_arguments(config=config_dict)
+        @validate_call(config=config_dict)
         def my_function():
             pass
 
@@ -483,19 +483,19 @@ def test_invalid_extra():
 
     with pytest.raises(ValueError, match=re.escape(error_message.format(label='my_function'))):
 
-        @validate_arguments(config=config_dict)
+        @validate_call(config=config_dict)
         def my_function():
             pass
 
-    with pytest.raises(ValueError, match=re.escape(error_message.format(label='validate_arguments'))):
-        # This case happens when the function passed to `validate_arguments` has no `__name__`.
+    with pytest.raises(ValueError, match=re.escape(error_message.format(label='validate_call'))):
+        # This case happens when the function passed to `validate_call` has no `__name__`.
         # This is a pretty exotic case, but it has caused issues in the past, so I wanted to add a test.
         def my_wrapped_function():
             pass
 
         my_partial_function = partial(my_wrapped_function)
         my_partial_function.__annotations__ = my_wrapped_function.__annotations__
-        validate_arguments(config=config_dict)(my_partial_function)
+        validate_call(config=config_dict)(my_partial_function)
 
     with pytest.raises(ValueError, match=re.escape(error_message.format(label='ConfigDict'))):
         get_config(config_dict)
@@ -506,10 +506,10 @@ def test_invalid_config_keys():
         PydanticUserError,
         match=re.escape(
             'Setting the "alias_generator" property on custom Config for'
-            ' @validate_arguments is not yet supported, please remove.'
+            ' @validate_call is not yet supported, please remove.'
         ),
     ):
 
-        @validate_arguments(config={'alias_generator': None})
+        @validate_call(config={'alias_generator': None})
         def my_function():
             pass
