@@ -318,7 +318,7 @@ class DecoratorInfos(Representation):
         self.model_serializer = {}
 
 
-def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:  # noqa: C901
+def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
     """
     We want to collect all DecFunc instances that exist as
     attributes in the namespace of the class (a BaseModel or dataclass)
@@ -363,7 +363,7 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:  # noqa: C901
                     # check that each field has at most one serializer function.
                     # serializer functions for the same field in subclasses are allowed,
                     # and are treated as overrides
-                    if field_serializer_decorator.cls_ref != get_type_ref(cls):
+                    if field_serializer_decorator.cls_var_name == var_name:
                         continue
                     for f in info.fields:
                         if f in field_serializer_decorator.info.fields:
