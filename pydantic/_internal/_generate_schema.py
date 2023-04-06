@@ -85,7 +85,7 @@ def check_decorator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields
         for field in dec.info.fields:
             if field not in fields:
                 raise PydanticUserError(
-                    f'Validators defined with incorrect fields: {dec.cls_var_name}'
+                    f'Validators defined with incorrect fields: {dec.cls_ref}.{dec.cls_var_name}'
                     " (use check_fields=False if you're inheriting from the model and intended this)",
                     code='decorator-missing-field',
                 )

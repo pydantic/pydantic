@@ -624,7 +624,12 @@ def test_wildcard_validator_error():
 
 
 def test_invalid_field():
-    with pytest.raises(errors.PydanticUserError) as exc_info:
+    msg = (
+        r'Validators defined with incorrect fields:'
+        r' tests.test_validators.test_invalid_field.<locals>.Model:\d+.check_b'
+        r" \(use check_fields=False if you're inheriting from the model and intended this\)"
+    )
+    with pytest.raises(errors.PydanticUserError, match=msg):
 
         class Model(BaseModel):
             a: str
@@ -632,11 +637,6 @@ def test_invalid_field():
             @field_validator('b')
             def check_b(cls, v: Any):
                 return v
-
-    assert exc_info.value.message == (
-        "Validators defined with incorrect fields: check_b "
-        "(use check_fields=False if you're inheriting from the model and intended this)"
-    )
 
 
 def test_validate_child():
