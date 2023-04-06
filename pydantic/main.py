@@ -10,7 +10,7 @@ from copy import copy, deepcopy
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
-from typing import Any, Generic
+from typing import Any, Generic, Mapping
 
 import pydantic_core
 import typing_extensions
@@ -54,6 +54,15 @@ _object_setattr = _model_construction.object_setattr
 # safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
 # the `BaseModel` class, since that's defined immediately after the metaclass.
 _base_class_defined = False
+
+
+class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
+    def __setitem__(self, k: str, v: object) -> None:
+        existing: Any = self.get(k, None)
+        if existing and v is not existing and isinstance(existing, _decorators.PydanticDecoratorMarker):
+            warnings.warn(f'`{k}` overrides an existing Pydantic `{existing.decorator_info.decorator_repr}` decorator')
+
+        return super().__setitem__(k, v)
 
 
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
@@ -156,6 +165,10 @@ class ModelMetaclass(ABCMeta):
         else:
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+
+    @classmethod
+    def __prepare__(cls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
+        return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
         """

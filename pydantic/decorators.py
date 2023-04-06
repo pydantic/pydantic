@@ -134,6 +134,8 @@ def validator(
     :param check_fields: whether to check that the fields actually exist on the model
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
+    if allow_reuse is True:  # pragma: no cover
+        warn('`allow_reuse` is deprecated and will be ignored', DeprecationWarning)
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
         raise PydanticUserError(
@@ -163,7 +165,6 @@ def validator(
             raise PydanticUserError(
                 '`@validator` cannot be applied to instance methods', code='validator-instance-method'
             )
-        _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
         # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
         wrap = _decorators.make_generic_v1_field_validator
@@ -186,7 +187,6 @@ def field_validator(
     mode: Literal['before', 'after', 'plain'] = ...,
     check_fields: bool | None = ...,
     sub_path: tuple[str | int, ...] | None = ...,
-    allow_reuse: bool = False,
 ) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]:
     ...
 
@@ -198,7 +198,6 @@ def field_validator(
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
     sub_path: tuple[str | int, ...] | None = ...,
-    allow_reuse: bool = False,
 ) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]:
     ...
 
@@ -209,7 +208,6 @@ def field_validator(
     mode: Literal['before', 'after', 'wrap', 'plain'] = 'after',
     check_fields: bool | None = None,
     sub_path: tuple[str | int, ...] | None = None,
-    allow_reuse: bool = False,
 ) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
@@ -240,7 +238,6 @@ def field_validator(
             raise PydanticUserError(
                 '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
             )
-        _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
         # auto apply the @classmethod decorator and warn users if we had to do so
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
@@ -298,6 +295,8 @@ def root_validator(
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
     before or after standard model parsing/validation is performed.
     """
+    if allow_reuse is True:  # pragma: no cover
+        warn('`allow_reuse` is deprecated and will be ignored', DeprecationWarning)
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise PydanticUserError(
@@ -310,7 +309,6 @@ def root_validator(
     def dec(f: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> Any:
         if _decorators.is_instance_method_from_sig(f):
             raise TypeError('`@root_validator` cannot be applied to instance methods')
-        _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
         # auto apply the @classmethod decorator and warn users if we had to do so
         res = _decorators.ensure_classmethod_based_on_signature(f)
         validator_wrapper_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
@@ -349,7 +347,6 @@ def field_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
-    allow_reuse: bool = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
     ...
 
@@ -363,7 +360,6 @@ def field_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
-    allow_reuse: bool = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
     ...
 
@@ -377,7 +373,6 @@ def field_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
-    allow_reuse: bool = ...,
 ) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]:
     ...
 
@@ -389,7 +384,6 @@ def field_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     sub_path: tuple[str | int, ...] | None = None,
     check_fields: bool | None = None,
-    allow_reuse: bool = False,
 ) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to serialize fields.
@@ -410,7 +404,6 @@ def field_serializer(
     """
 
     def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
-        _decorators.check_for_duplicate_decorator_function(f, allow_reuse, type='serialzier')
         type_: Literal['field', 'general'] = 'field' if _decorators.is_instance_method_from_sig(f) else 'general'
 
         dec_info = _decorators.FieldSerializerDecoratorInfo(
@@ -434,7 +427,6 @@ def model_serializer(
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
-    allow_reuse: bool = False,
 ) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
     """
     Function decorate to add a function which will be called to serialize the model.
@@ -452,8 +444,6 @@ def model_serializer(
             raise PydanticUserError(
                 '`@model_serializer` must be applied to instance methods', code='model-serializer-instance-method'
             )
-
-        _decorators.check_for_duplicate_decorator_function(f, allow_reuse, type='serialzier')
 
         dec_info = _decorators.ModelSerializerDecoratorInfo(
             mode=mode,
