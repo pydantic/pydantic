@@ -237,9 +237,11 @@ class PydanticDecoratorMarker(Generic[ReturnType], Representation):
     def __get__(
         self, obj: object | None, objtype: type[object] | None = None
     ) -> Callable[..., ReturnType] | PydanticDecoratorMarker[ReturnType]:
-        if obj is None:
-            return self
-        return self.wrapped.__get__(obj, objtype)
+        try:
+            return self.wrapped.__get__(obj, objtype)
+        except AttributeError:
+            # not a descriptor, e.g. a partial object
+            return self.wrapped  # type: ignore[return-value]
 
 
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
@@ -259,13 +261,11 @@ class Decorator(Generic[DecoratorInfoType], Representation):
         cls_var_name: str,
         func: Callable[..., Any],
         shim: Callable[[Any], Any] | None,
-        unwrapped_func: Callable[..., Any],
         info: DecoratorInfoType,
     ) -> None:
         self.cls_ref = cls_ref
         self.cls_var_name = cls_var_name
         self.func = func
-        self.unwrapped_func = unwrapped_func
         self.info = info
         self.shim = shim
 
@@ -276,17 +276,7 @@ class Decorator(Generic[DecoratorInfoType], Representation):
         shim: Callable[[Any], Any] | None,
         info: DecoratorInfoType,
     ) -> Decorator[DecoratorInfoType]:
-        val = getattr(cls_, cls_var_name)
-        if isinstance(val, PydanticDecoratorMarker):
-            val = val.wrapped
-        try:
-            func = val.__get__(None, cls_)
-        except AttributeError:
-            if isinstance(val, partial):
-                # don't bind the class
-                func = val
-            else:
-                raise
+        func = getattr(cls_, cls_var_name)
         if shim is not None:
             func = shim(func)
         return Decorator(
@@ -294,7 +284,6 @@ class Decorator(Generic[DecoratorInfoType], Representation):
             cls_var_name=cls_var_name,
             func=func,
             shim=shim,
-            unwrapped_func=val,
             info=info,
         )
 
