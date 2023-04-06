@@ -2,12 +2,52 @@ from __future__ import annotations as _annotations
 
 import re
 
+from typing_extensions import Literal
+
+from .version import VERSION
+
 __all__ = (
     'PydanticUserError',
-    'PydanticSchemaGenerationError',
     'PydanticUndefinedAnnotation',
+    'PydanticSchemaGenerationError',
     'PydanticInvalidForJsonSchema',
 )
+
+# TODO set up a cloudflare worker to redirect to the correct page
+# We use this URL to allow for future flexibility about how we host the docs, while allowing for Pydantic
+# code in the while with "old" URLs to still work.
+# 'u' refers to "user errors" - e.g. errors caused by developers using pydantic, as opposed to validation errors.
+DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{VERSION}/u/'
+PydanticErrorCodes = Literal[
+    'decorator-missing-field',
+    'dataclass-not-fully-defined',
+    'discriminator-no-field',
+    'discriminator-alias-type',
+    'discriminator-needs-literal',
+    'discriminator-alias',
+    'typed-dict-version',
+    'model-field-overridden',
+    'model-field-missing-annotation',
+    'model-not-fully-defined',
+    'config-both',
+    'invalid-for-json-schema',
+    'json-schema-already-used',
+    'base-model-instantiated',
+    'undefined-annotation',
+    'schema-for-unknown-type',
+    'create-model-field-definitions',
+    'create-model-config-base',
+    'validator-no-fields',
+    'validator-invalid-fields',
+    'validator-instance-method',
+    'root-validator-pre-skip',
+    'model-serializer-instance-method',
+    'validator-field-config-info',
+    'validator-v1-signature',
+    'field-serializer-signature',
+    'model-serializer-signature',
+    'multiple-field-serializers',
+]
 
 
 class PydanticErrorMixin:
@@ -15,9 +55,15 @@ class PydanticErrorMixin:
     Pydantic Error Mixin for common functions
     """
 
-    def __init__(self, code: str, *, message: str | None = None) -> None:
-        self.code = code
+    def __init__(self, message: str, *, code: PydanticErrorCodes | None) -> None:
         self.message = message
+        self.code = code
+
+    def __str__(self) -> str:
+        if self.code is None:
+            return self.message
+        else:
+            return f'{self.message}\n\nFor further information visit {DEV_ERROR_DOCS_URL}{self.code}'
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
@@ -33,9 +79,9 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     Error occurs when annotations are not yet defined
     """
 
-    def __init__(self, name: str, message: str | None = None) -> None:
+    def __init__(self, name: str, message: str) -> None:
         self.name = name
-        super().__init__(code=name, message=message)
+        super().__init__(message=message, code='undefined-annotation')
 
     @classmethod
     def from_name_error(cls, name_error: NameError) -> PydanticUndefinedAnnotation:
@@ -45,16 +91,14 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
             name = re.search(r".*'(.+?)'", str(name_error)).group(1)  # type: ignore[union-attr]
         return cls(name=name, message=str(name_error))
 
-    def __str__(self) -> str:
-        return f'Undefined annotation: {self.message}'
-
 
 class PydanticSchemaGenerationError(PydanticUserError):
     """
     Error occurs when schema has not been generated correctly.
     """
 
-    pass
+    def __init__(self, message: str) -> None:
+        super().__init__(message, code='schema-for-unknown-type')
 
 
 class PydanticInvalidForJsonSchema(PydanticUserError):
@@ -62,4 +106,5 @@ class PydanticInvalidForJsonSchema(PydanticUserError):
     Error raised when a type from a CoreSchema is not compatible with JSON schema generation
     """
 
-    pass
+    def __init__(self, message: str) -> None:
+        super().__init__(message, code='invalid-for-json-schema')

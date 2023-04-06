@@ -68,7 +68,8 @@ class ValidatedFunction:
         if parameters.keys() & {ALT_V_ARGS, ALT_V_KWARGS, V_POSITIONAL_ONLY_NAME, V_DUPLICATE_KWARGS}:
             raise PydanticUserError(
                 f'"{ALT_V_ARGS}", "{ALT_V_KWARGS}", "{V_POSITIONAL_ONLY_NAME}" and "{V_DUPLICATE_KWARGS}" '
-                f'are not permitted as argument names when using the "{validate_arguments.__name__}" decorator'
+                f'are not permitted as argument names when using the "{validate_arguments.__name__}" decorator',
+                code=None,
             )
 
         self.raw_function = function
@@ -215,7 +216,8 @@ class ValidatedFunction:
         if 'alias_generator' in config_dict:
             raise PydanticUserError(
                 'Setting the "alias_generator" property on custom Config for '
-                '@validate_arguments is not yet supported, please remove.'
+                '@validate_arguments is not yet supported, please remove.',
+                code=None,
             )
         if 'extra' not in config_dict:
             config_dict['extra'] = Extra.forbid

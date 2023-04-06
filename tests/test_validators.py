@@ -633,7 +633,7 @@ def test_invalid_field():
             def check_b(cls, v: Any):
                 return v
 
-    assert str(exc_info.value) == (
+    assert exc_info.value.message == (
         "Validators defined with incorrect fields: check_b "
         "(use check_fields=False if you're inheriting from the model and intended this)"
     )

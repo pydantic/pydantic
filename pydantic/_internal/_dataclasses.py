@@ -78,7 +78,7 @@ def prepare_dataclass(
         )
         if config['undefined_types_warning']:
             raise UserWarning(warning_string)
-        cls.__pydantic_validator__ = MockValidator(warning_string)
+        cls.__pydantic_validator__ = MockValidator(warning_string, code='dataclass-not-fully-defined')
         return False
 
     decorators = cls.__pydantic_decorators__

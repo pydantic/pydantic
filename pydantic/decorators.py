@@ -16,6 +16,7 @@ from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, Protocol, TypeAlias
 
 from ._internal import _decorators
+from .errors import PydanticUserError
 
 
 class _OnlyValueValidatorClsMethod(Protocol):
@@ -135,14 +136,16 @@ def validator(
     """
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
-        raise TypeError(
-            'field_validators should be used with fields and keyword arguments, not bare. '
-            "E.g. usage should be `@validator('<field_name>', ...)`"
+        raise PydanticUserError(
+            "validators should be used with fields and keyword arguments, not bare. "
+            "E.g. usage should be `@validator('<field_name>', ...)`",
+            code='validator-no-fields',
         )
     elif not all(isinstance(field, str) for field in fields):
-        raise TypeError(
-            'validator fields should be passed as separate string args. '
-            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+        raise PydanticUserError(
+            "validator fields should be passed as separate string args. "
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
+            code='validator-invalid-fields',
         )
 
     warn(
@@ -157,7 +160,9 @@ def validator(
 
     def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
         if _decorators.is_instance_method_from_sig(f):
-            raise TypeError('`@validator` cannot be applied to instance methods')
+            raise PydanticUserError(
+                '`@validator` cannot be applied to instance methods', code='validator-instance-method'
+            )
         _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
         # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
@@ -218,19 +223,23 @@ def field_validator(
     """
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
-        raise TypeError(
+        raise PydanticUserError(
             'field_validators should be used with fields and keyword arguments, not bare. '
-            "E.g. usage should be `@validator('<field_name>', ...)`"
+            "E.g. usage should be `@validator('<field_name>', ...)`",
+            code='validator-no-fields',
         )
     elif not all(isinstance(field, str) for field in fields):
-        raise TypeError(
+        raise PydanticUserError(
             'field_validator fields should be passed as separate string args. '
-            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`"
+            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
+            code='validator-invalid-fields',
         )
 
     def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
         if _decorators.is_instance_method_from_sig(f):
-            raise TypeError('`@field_validator` cannot be applied to instance methods')
+            raise PydanticUserError(
+                '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
+            )
         _decorators.check_for_duplicate_decorator_function(f, allow_reuse=allow_reuse, type='validator')
         # auto apply the @classmethod decorator and warn users if we had to do so
         f = _decorators.ensure_classmethod_based_on_signature(f)
@@ -291,16 +300,11 @@ def root_validator(
     """
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
-        raise TypeError(
-            'If you use `@root_validator` with pre=False (the default)'
-            ' you MUST specify `skip_on_failure=True`.'
-            ' The `skip_on_failure=False` option is no longer available.'
-            ' If you were not trying to set `skip_on_failure=False` you'
-            ' can safely set `skip_on_failure=True`.'
-            ' If you do, this root validator will no longer be called'
-            ' if validation fails for any of the fields.'
-            ' Please see the migration guide for more details.'
+        raise PydanticUserError(
+            'If you use `@root_validator` with pre=False (the default) you MUST specify `skip_on_failure=True`.',
+            code='root-validator-pre-skip',
         )
+
     wrap = partial(_decorators.make_v1_generic_root_validator, pre=pre)
 
     def dec(f: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> Any:
@@ -445,7 +449,9 @@ def model_serializer(
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker[Any]:
         if isinstance(f, (staticmethod, classmethod)) or not _decorators.is_instance_method_from_sig(f):
-            raise TypeError('`@model_serializer` must be applied to instance methods')
+            raise PydanticUserError(
+                '`@model_serializer` must be applied to instance methods', code='model-serializer-instance-method'
+            )
 
         _decorators.check_for_duplicate_decorator_function(f, allow_reuse, type='serialzier')
 

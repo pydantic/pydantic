@@ -187,7 +187,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
         __pydantic_validator__ = _model_construction.MockValidator(
-            'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly'
+            'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
+            code='base-model-instantiated',
         )
 
     model_config = ConfigDict()
@@ -707,12 +708,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     @classmethod
     def from_orm(cls: type[Model], obj: Any) -> Model:
         warnings.warn(
-            'The `from_orm` method is deprecated; set model_config["from_attributes"]=True '
+            'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
             'and use `model_validate` instead.',
             DeprecationWarning,
         )
         if not cls.model_config['from_attributes']:
-            raise PydanticUserError('You must set the config attribute `from_attributes=True` to use from_orm')
+            raise PydanticUserError(
+                'You must set the config attribute `from_attributes=True` to use from_orm', code=None
+            )
         return cls.model_validate(obj)
 
     @classmethod
@@ -888,7 +891,10 @@ def create_model(
 
     if __base__ is not None:
         if __config__ is not None:
-            raise PydanticUserError('to avoid confusion __config__ and __base__ cannot be used together')
+            raise PydanticUserError(
+                'to avoid confusion `__config__` and `__base__` cannot be used together',
+                code='create-model-config-base',
+            )
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
@@ -907,9 +913,8 @@ def create_model(
                 f_annotation, f_value = f_def
             except ValueError as e:
                 raise PydanticUserError(
-                    'field definitions should either be a tuple of (<type>, <default>) or just a '
-                    'default value, unfortunately this means tuples as '
-                    'default values are not allowed'
+                    'Field definitions should either be a `(<type>, <default>)`.',
+                    code='create-model-field-definitions',
                 ) from e
         else:
             f_annotation, f_value = None, f_def

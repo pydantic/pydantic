@@ -130,7 +130,8 @@ class GenerateJsonSchema:
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
-                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.'
+                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.',
+                code='json-schema-already-used',
             )
         for schema in schemas:
             self.generate_inner(schema)
@@ -144,7 +145,8 @@ class GenerateJsonSchema:
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
-                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.'
+                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.',
+                code='json-schema-already-used',
             )
 
         json_schema = self.generate_inner(schema)
@@ -438,7 +440,7 @@ class GenerateJsonSchema:
             try:
                 generated.append(self.generate_inner(s))
             except PydanticInvalidForJsonSchema as exc:
-                self.emit_warning('skipped-choice', str(exc))
+                self.emit_warning('skipped-choice', exc.message)
         if len(generated) == 1:
             return generated[0]
         return self.get_flattened_anyof(generated)
@@ -452,7 +454,7 @@ class GenerateJsonSchema:
                     # it's the closest that can be represented in valid JSON
                     generated[str(k)] = self.generate_inner(v).copy()
                 except PydanticInvalidForJsonSchema as exc:
-                    self.emit_warning('skipped-choice', str(exc))
+                    self.emit_warning('skipped-choice', exc.message)
 
         # Populate the schema with any "indirect" references
         for k, v in schema['choices'].items():

@@ -12,7 +12,7 @@ def deprecated_from_orm(model_type, obj):
     with pytest.warns(
         DeprecationWarning,
         match=re.escape(
-            'The `from_orm` method is deprecated; set model_config["from_attributes"]=True '
+            'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
             'and use `model_validate` instead.'
         ),
     ):

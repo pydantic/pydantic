@@ -36,8 +36,9 @@ from pydantic_core.core_schema import (
 )
 from typing_extensions import Protocol, TypeAlias
 
-from pydantic._internal._core_utils import get_type_ref
-from pydantic._internal._repr import Representation
+from ..errors import PydanticUserError
+from ._core_utils import get_type_ref
+from ._repr import Representation
 
 if TYPE_CHECKING:
     from typing_extensions import Literal
@@ -349,9 +350,10 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:  # noqa: C901
                         continue
                     for f in info.fields:
                         if f in field_serializer_decorator.info.fields:
-                            raise TypeError(
+                            raise PydanticUserError(
                                 'Multiple field serializer functions were defined '
-                                f'for field {f!r}, this is not allowed.'
+                                f'for field {f!r}, this is not allowed.',
+                                code='multiple-field-serializers',
                             )
                 res.field_serializer[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
             else:
@@ -509,34 +511,6 @@ def can_be_keyword(param: Parameter) -> bool:
     return param.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
 
 
-V1_VALIDATOR_VALID_SIGNATURES = """\
-def f1(value: Any) -> Any: ...
-def f2(value: Any, values: Dict[str, Any]) -> Any: ...
-
-class Model(BaseModel):
-    x: int
-
-    @validator('x')
-    @classmethod  # optional
-    def val_x1(cls, value: Any) -> Any: ...
-
-    @validator('x')
-    @classmethod  # optional
-    def val_x2(cls, value: Any, values: Dict[str, Any]) -> Any: ...
-
-    @validator('x')
-    @staticmethod  # required
-    def val_x3(value: Any) -> Any: ...
-
-    @validator('x')
-    @staticmethod  # required
-    def val_x4(value: Any, values: Dict[str, Any]) -> Any: ...
-
-    val_x5 = validator('x')(f1)
-    val_x6 = validator('x')(f2)
-"""
-
-
 def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFunction:
     sig = signature(validator)
 
@@ -544,12 +518,10 @@ def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFun
 
     for param_num, (param_name, parameter) in enumerate(sig.parameters.items()):
         if can_be_keyword(parameter) and param_name in ('field', 'config'):
-            raise TypeError(
-                'The `field` and `config` parameters are not available in Pydantic V2.'
-                ' Please use the `info` parameter instead.'
-                ' You can access the configuration via `info.config`,'
-                ' but it is a dictionary instead of an object like it was in Pydantic V1.'
-                ' The `field` argument is no longer available.'
+            raise PydanticUserError(
+                'The `field` and `config` parameters are not available in Pydantic V2, '
+                'please use the `info` parameter instead.',
+                code='validator-field-config-info',
             )
         if parameter.kind is Parameter.VAR_KEYWORD:
             needs_values_kw = True
@@ -559,9 +531,9 @@ def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFun
             # value
             continue
         elif parameter.default is Parameter.empty:  # ignore params with defaults e.g. bound by functools.partial
-            raise TypeError(
-                f'Unsupported signature for V1 style validator {validator}: {sig} is not supported.'
-                f' Valid signatures are:\n{V1_VALIDATOR_VALID_SIGNATURES}'
+            raise PydanticUserError(
+                f'Unsupported signature for V1 style validator {validator}: {sig} is not supported.',
+                code='validator-v1-signature',
             )
 
     if needs_values_kw:
@@ -686,43 +658,6 @@ AnySerializerFunction = Union[
 ]
 
 
-_VALID_SERIALIZER_SIGNATURES = """\
-Valid serializer signatures are:
-
-# an instance method with the default mode or `mode='plain'`
-@serializer('x')  # or @serialize('x', mode='plain')
-def ser_x(self, value: Any, info: pydantic.FieldSerializationInfo): ...
-
-# a static method or free-standing function with the default mode or `mode='plain'`
-@serializer('x')  # or @serialize('x', mode='plain')
-@staticmethod
-def ser_x(value: Any, info: pydantic.FieldSerializationInfo): ...
-# equivalent to
-def ser_x(value: Any, info: pydantic.FieldSerializationInfo): ...
-serializer('x')(ser_x)
-
-# an instance method with `mode='wrap'`
-@serializer('x', mode='wrap')
-def ser_x(self, value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
-
-# a static method or free-standing function with `mode='wrap'`
-@serializer('x', mode='wrap')
-@staticmethod
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
-# equivalent to
-def ser_x(value: Any, nxt: pydantic.SerializerFunctionWrapHandler, info: pydantic.FieldSerializationInfo): ...
-serializer('x')(ser_x)
-
-For all of these, you can also choose to omit the `info` argument, for example:
-
-@serializer('x')
-def ser_x(self, value: Any): ...
-
-@serializer('x', mode='wrap')
-def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ...
-"""
-
-
 def make_generic_field_serializer(
     serializer: AnySerializerFunction, mode: Literal['plain', 'wrap'], type: Literal['field', 'general']
 ) -> AnyCoreSerializer:
@@ -757,9 +692,9 @@ def make_generic_field_serializer(
 
                 return wrap_field_serializer_single_argument
         if n_positional != 2:
-            raise TypeError(
-                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
-                f' {_VALID_SERIALIZER_SIGNATURES}'
+            raise PydanticUserError(
+                f'Unrecognized field_serializer signature for {serializer} with `mode={mode}`:{sig}',
+                code='field-serializer-signature',
             )
         func = cast(AnyCoreSerializer, serializer)
         return func
@@ -787,9 +722,9 @@ def make_generic_field_serializer(
                 return wrap_field_serializer_in_wrap_mode
 
         if n_positional != 3:
-            raise TypeError(
-                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}\n'
-                f' {_VALID_SERIALIZER_SIGNATURES}'
+            raise PydanticUserError(
+                f'Unrecognized field_serializer signature for {serializer} with `mode={mode}`:{sig}',
+                code='field-serializer-signature',
             )
         func = cast(AnyCoreSerializer, serializer)
         return func
@@ -817,7 +752,10 @@ def make_generic_model_serializer(
 
             return wrap_model_serializer_single_argument
         if n_positional != 2:
-            raise TypeError(f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}')
+            raise PydanticUserError(
+                f'Unrecognized model_serializer signature for {serializer} with `mode={mode}`:{sig}',
+                code='model-serializer-signature',
+            )
         func = cast(AnyCoreSerializer, serializer)
         return func
     else:
@@ -833,6 +771,9 @@ def make_generic_model_serializer(
             return wrap_model_serializer_in_wrap_mode
 
         if n_positional != 3:
-            raise TypeError(f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}')
+            raise PydanticUserError(
+                f'Unrecognized serializer signature for {serializer} with `mode={mode}`:{sig}',
+                code='model-serializer-signature',
+            )
         func = cast(AnyCoreSerializer, serializer)
         return func
