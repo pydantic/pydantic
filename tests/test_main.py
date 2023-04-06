@@ -1792,26 +1792,87 @@ def test_annotated_final():
 def test_post_init():
     calls = []
 
-    class SubModel(BaseModel):
+    class InnerModel(BaseModel):
         a: int
         b: int
 
-        def model_post_init(self, _context) -> None:
+        def model_post_init(self, __context) -> None:
+            super().model_post_init(__context)  # this is included just to show it doesn't error
             assert self.model_dump() == {'a': 3, 'b': 4}
-            calls.append('submodel_post_init')
+            calls.append('inner_model_post_init')
 
     class Model(BaseModel):
         c: int
         d: int
-        sub: SubModel
+        sub: InnerModel
 
-        def model_post_init(self, _context) -> None:
+        def model_post_init(self, __context) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
             calls.append('model_post_init')
 
     m = Model(c=1, d='2', sub={'a': 3, 'b': '4'})
+    assert calls == ['inner_model_post_init', 'model_post_init']
     assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
-    assert calls == ['submodel_post_init', 'model_post_init']
+
+    class SubModel(Model):
+        def model_post_init(self, __context) -> None:
+            assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+            super().model_post_init(__context)
+            calls.append('submodel_post_init')
+
+    calls.clear()
+    m = SubModel(c=1, d='2', sub={'a': 3, 'b': '4'})
+    assert calls == ['inner_model_post_init', 'model_post_init', 'submodel_post_init']
+    assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+
+
+@pytest.mark.parametrize('include_private_attribute', [True, False])
+def test_post_init_call_signatures(include_private_attribute):
+    calls = []
+
+    class Model(BaseModel):
+        a: int
+        b: int
+        if include_private_attribute:
+            _x: int = PrivateAttr(1)
+
+        def model_post_init(self, *args, **kwargs) -> None:
+            calls.append((args, kwargs))
+
+    Model(a=1, b=2)
+    assert calls == [((None,), {})]
+    Model.model_construct(a=3, b=4)
+    assert calls == [((None,), {}), ((None,), {})]
+
+
+def test_post_init_not_called_without_override():
+    calls = []
+
+    def monkey_patched_model_post_init(cls, __context):
+        calls.append('BaseModel.model_post_init')
+
+    original_base_model_post_init = BaseModel.model_post_init
+    try:
+        BaseModel.model_post_init = monkey_patched_model_post_init
+
+        class WithoutOverrideModel(BaseModel):
+            pass
+
+        WithoutOverrideModel()
+        WithoutOverrideModel.model_construct()
+        assert calls == []
+
+        class WithOverrideModel(BaseModel):
+            def model_post_init(self, __context: Any) -> None:
+                calls.append('WithOverrideModel.model_post_init')
+
+        WithOverrideModel()
+        assert calls == ['WithOverrideModel.model_post_init']
+        WithOverrideModel.model_construct()
+        assert calls == ['WithOverrideModel.model_post_init', 'WithOverrideModel.model_post_init']
+
+    finally:
+        BaseModel.model_post_init = original_base_model_post_init
 
 
 def test_extra_args_to_field_type_error():

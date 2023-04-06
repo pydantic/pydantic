@@ -29,16 +29,16 @@ IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, sta
 object_setattr = object.__setattr__
 
 
-def init_private_attributes(self_: Any, _context: Any) -> None:
+def init_private_attributes(self: BaseModel, __context: Any) -> None:
     """
-    This method is bound to model classes to initialise private attributes.
+    This function is meant to behave like a BaseModel method to initialise private attributes.
 
     It takes context as an argument since that's what pydantic-core passes when calling it.
     """
-    for name, private_attr in self_.__private_attributes__.items():
+    for name, private_attr in self.__private_attributes__.items():
         default = private_attr.get_default()
         if default is not Undefined:
-            object_setattr(self_, name, default)
+            object_setattr(self, name, default)
 
 
 def inspect_namespace(  # noqa C901
