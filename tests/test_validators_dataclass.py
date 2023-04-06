@@ -180,7 +180,7 @@ def test_root_validator():
     assert exc_info.value.errors() == [
         {
             'ctx': {'error': 'foobar'},
-            'input': HasRepr(IsStr(regex=re.escape("ArgsKwargs(args=(1,), kwargs={'b': 'snap dragon'})"))),
+            'input': HasRepr(IsStr(regex=re.escape("ArgsKwargs((1,), {'b': 'snap dragon'})"))),
             'loc': (),
             'msg': 'Value error, foobar',
             'type': 'value_error',

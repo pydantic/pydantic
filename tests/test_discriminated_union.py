@@ -474,7 +474,7 @@ def test_generic():
     # title = 'Container[str]'
     title = 'Failure'
 
-    with pytest.raises(ValidationError, match=f'{title}\nresult -> Success -> data') as exc_info:
+    with pytest.raises(ValidationError, match=fr'{title}\nresult\.Success\.data') as exc_info:
         Container[str].model_validate({'result': {'type': 'Success'}})
     assert exc_info.value.errors() == [
         {'input': {'type': 'Success'}, 'loc': ('result', 'Success', 'data'), 'msg': 'Field required', 'type': 'missing'}
