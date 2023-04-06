@@ -98,4 +98,3 @@ print(Model(a=[1], b=4.2, c='x'))
 print(Model(a=None, b=1, c=1))
 #> a=None b=1.0 c=1
 ```
-
