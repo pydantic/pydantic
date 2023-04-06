@@ -1,7 +1,7 @@
 import asyncio
 import inspect
 import sys
-from datetime import datetime, timezone
+from datetime import datetime
 from pathlib import Path
 from typing import List
 
@@ -73,7 +73,7 @@ def test_wrap():
 
     assert foo_bar.__doc__ == 'This is the foo_bar method.'
     assert foo_bar.__name__ == 'foo_bar'
-    assert foo_bar.__module__ == 'tests.test_decorator'
+    assert foo_bar.__module__ == 'tests.test_validate_call'
     assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
     assert isinstance(foo_bar.__pydantic_core_schema__, dict)
     assert callable(foo_bar.raw_function)
@@ -147,7 +147,6 @@ def test_var_args_kwargs(validated):
     assert foo(1, 2, kwargs=4, e=5) == "a=1, b=2, args=(), d=3, kwargs={'kwargs': 4, 'e': 5}"
 
 
-@pytest.mark.xfail(reason='what do we do about Field?')
 def test_field_can_provide_factory() -> None:
     @validate_call
     def foo(a: int, b: int = Field(default_factory=lambda: 99), *args: int) -> int:
@@ -158,7 +157,6 @@ def test_field_can_provide_factory() -> None:
     assert foo(1, 2, 3) == 6
 
 
-@pytest.mark.xfail(reason='what do we do about Field?')
 def test_annotated_field_can_provide_factory() -> None:
     @validate_call
     def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
@@ -377,7 +375,6 @@ def test_config_title():
     }
 
 
-@pytest.mark.xfail(reason='repsect config better')
 def test_alias_generator():
     @validate_call(config=dict(alias_generator=lambda x: x * 2))
     def foo(a: int, b: int):
@@ -412,7 +409,6 @@ def test_config_arbitrary_types_allowed():
     ]
 
 
-@pytest.mark.xfail(reason='Annotated does not seem to be respected')
 def test_annotated_use_of_alias():
     @validate_call
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field()], d: Annotated[int, Field(alias='')]):
@@ -423,15 +419,25 @@ def test_annotated_use_of_alias():
     with pytest.raises(ValidationError) as exc_info:
         assert foo(a=10, c=12, d=1) == 10
 
+    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('a',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
-        {'loc': ('d',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
+        {
+            'type': 'missing_argument',
+            'loc': ('b',),
+            'msg': 'Missing required argument',
+            'input': ArgsKwargs((), {'a': 10, 'c': 12, 'd': 1}),
+        },
+        {
+            'type': 'missing_argument',
+            'loc': ('',),
+            'msg': 'Missing required argument',
+            'input': ArgsKwargs((), {'a': 10, 'c': 12, 'd': 1}),
+        },
+        {'type': 'unexpected_keyword_argument', 'loc': ('a',), 'msg': 'Unexpected keyword argument', 'input': 10},
+        {'type': 'unexpected_keyword_argument', 'loc': ('d',), 'msg': 'Unexpected keyword argument', 'input': 1},
     ]
 
 
-@pytest.mark.xfail(reason='Use fields')
 def test_use_of_alias():
     @validate_call
     def foo(c: int = Field(default_factory=lambda: 20), a: int = Field(default_factory=lambda: 10, alias='b')):
@@ -440,32 +446,28 @@ def test_use_of_alias():
     assert foo(b=10) == 30
 
 
-@pytest.mark.xfail(reason='Use fields')
 def test_populate_by_name():
     @validate_call(config=dict(populate_by_name=True))
     def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field(alias='d')]):
         return a + c
 
+    assert foo(b=10, d=1) == 11
     assert foo(a=10, d=1) == 11
     assert foo(b=10, c=1) == 11
     assert foo(a=10, c=1) == 11
 
 
-@pytest.mark.xfail(reason='validate_all')
 def test_validate_all():
-    # TODO remove or rename, validate_all doesn't exist anymore
-    @validate_call(config=dict(validate_all=True))
+    @validate_call(config=dict(validate_default=True))
     def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
         return dt
 
-    assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
-    assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+    assert foo() == datetime(2000, 1, 1)
+    assert foo(0) == datetime(1970, 1, 1)
 
 
-@pytest.mark.xfail(reason='validate_all')
 @skip_pre_38
 def test_validate_all_positional(create_module):
-    # TODO remove or rename, validate_all doesn't exist anymore
     module = create_module(
         # language=Python
         """
@@ -473,16 +475,16 @@ from datetime import datetime
 
 from pydantic import Field, validate_call
 
-@validate_call(config=dict(validate_all=True))
+@validate_call(config=dict(validate_default=True))
 def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     return dt
 """
     )
-    assert module.foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
-    assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
+    assert module.foo() == datetime(2000, 1, 1)
+    assert module.foo(0) == datetime(1970, 1, 1)
 
 
-@pytest.mark.xfail(reason='config["extra"] does not seem to be respected')
+@pytest.mark.skip(reason='config["extra"] is not longer supported in pydantic-core ArgumentsValidator')
 def test_validate_extra():
     class TypedTest(TypedDict):
         y: str

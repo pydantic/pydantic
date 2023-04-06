@@ -1,15 +1,20 @@
 from __future__ import annotations as _annotations
 
 import inspect
-from typing import TYPE_CHECKING, Any, Callable
+from dataclasses import dataclass
+from typing import Any, Callable
 
 import pydantic_core
 from typing_extensions import Self
 
+from ..config import ConfigDict
 from . import _generate_schema, _typing_extra
 
-if TYPE_CHECKING:
-    from ..config import ConfigDict
+
+@dataclass
+class CallMarker:
+    function: Callable[..., Any]
+    validate_return: bool
 
 
 class ValidateCallWrapper:
@@ -45,10 +50,11 @@ class ValidateCallWrapper:
         self.__module__ = function.__module__
 
         namespace = _typing_extra.add_module_globals(function, None)
-        arbitrary_types_allowed = (config or {}).get('arbitrary_types_allowed', False)
-        gen_schema = _generate_schema.GenerateSchema(arbitrary_types_allowed, namespace)
-        self.__pydantic_core_schema__ = schema = gen_schema.callable_schema(function, validate_return)
-        self.__pydantic_validator__ = pydantic_core.SchemaValidator(schema)
+        config = ConfigDict(**(config or {}))
+        gen_schema = _generate_schema.GenerateSchema(config, namespace)
+        self.__pydantic_core_schema__ = schema = gen_schema.generate_schema(function)
+        core_config = _generate_schema.generate_config(config, function)
+        self.__pydantic_validator__ = pydantic_core.SchemaValidator(schema, core_config)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
