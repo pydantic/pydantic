@@ -56,20 +56,25 @@ nav:
     - ByteSize: usage/bytesize.md
     - Callables: usage/callables.md
     - Color Types: usage/color_types.md
-    - Custom Data Types: usage/custom.md
     - Datetimes: usage/datetime.md
+    - Dicts and Mapping: usage/dicts_mapping.md
     - Enums and Choices: usage/enums.md
     - File Types: usage/filetypes.md
     - JSON: usage/json.md
+    - Lists and Tuples: usage/list_types.md
+    - Number Types: usage/number_types.md
     - Payment Card Numbers: usage/payment_cards.md
     - Secret Types: usage/secrets.md
+    - Sequence, Iterable, & Iterator: usage/sequence_iterable.md
+    - Sets and frozenset: usage/set_types.md
     - Special String Types: usage/string_types.md
+    - String Types: usage/string_types.md
     - Type and TypeVar: usage/typevars.md
     - Types with Fields: usage/types_fields.md
-    - Typing Iterables: usage/typing_iterables.md
     - Unions: usage/unions.md
     - URLs: usage/urls.md
     - UUIDs: usage/uuids.md
+    - Custom Data Types: usage/custom.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
   - usage/schema.md
