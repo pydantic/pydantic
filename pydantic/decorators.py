@@ -18,6 +18,8 @@ from typing_extensions import Literal, Protocol, TypeAlias
 from ._internal import _decorators
 from .errors import PydanticUserError
 
+_ALLOW_REUSE_WARNING_MESSAGE = '`allow_reuse` is deprecated and will be ignored; it should no longer be necessary'
+
 
 class _OnlyValueValidatorClsMethod(Protocol):
     def __call__(self, __cls: Any, __value: Any) -> Any:
@@ -135,7 +137,7 @@ def validator(
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
     if allow_reuse is True:  # pragma: no cover
-        warn('`allow_reuse` is deprecated and will be ignored', DeprecationWarning)
+        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
         raise PydanticUserError(
@@ -296,7 +298,7 @@ def root_validator(
     before or after standard model parsing/validation is performed.
     """
     if allow_reuse is True:  # pragma: no cover
-        warn('`allow_reuse` is deprecated and will be ignored; it should no longer be necessary', DeprecationWarning)
+        warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise PydanticUserError(
