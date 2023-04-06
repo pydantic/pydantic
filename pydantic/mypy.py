@@ -463,7 +463,7 @@ class PydanticModelTransformer:
                 and stmt.rvalue.callee.callee.fullname in DECORATOR_FULLNAMES
             ):
                 # This is a (possibly-reused) validator or serializer, not a field
-                # In particular, it looks something like: my_validator = validator('my_field', allow_reuse=True)(f)
+                # In particular, it looks something like: my_validator = validator('my_field')(f)
                 # Eventually, we may want to attempt to respect model_config['ignored_types']
                 return None
 
