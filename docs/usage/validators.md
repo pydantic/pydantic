@@ -238,14 +238,14 @@ class Producer(BaseModel):
     name: str
 
     # validators
-    normalize_name = field_validator('name', allow_reuse=True)(normalize)
+    normalize_name = field_validator('name')(normalize)
 
 
 class Consumer(BaseModel):
     name: str
 
     # validators
-    normalize_name = field_validator('name', allow_reuse=True)(normalize)
+    normalize_name = field_validator('name')(normalize)
 
 
 jane_doe = Producer(name='JaNe DOE')

@@ -548,7 +548,7 @@ from pydantic import BaseModel, ValidationError, field_validator
 class Model(BaseModel):
     foo: str
 
-    @field_validator('foo', allow_reuse=True)  # TODO remove after #4436
+    @field_validator('foo')
     def value_must_equal_bar(cls, v):
         if v != 'bar':
             raise PydanticCustomError(

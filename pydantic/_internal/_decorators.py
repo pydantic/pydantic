@@ -3,13 +3,13 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
-import warnings
 from functools import partial, partialmethod
 from inspect import Parameter, Signature, signature
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Dict,
     Generic,
     Set,
@@ -56,7 +56,7 @@ class ValidatorDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
-    __slots__ = 'fields', 'mode', 'each_item', 'always', 'check_fields'
+    decorator_repr: ClassVar[str] = '@validator'
 
     fields: tuple[str, ...]
     mode: Literal['before', 'after']
@@ -93,7 +93,7 @@ class FieldValidatorDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
-    __slots__ = 'fields', 'mode', 'sub_path', 'check_fields'
+    decorator_repr: ClassVar[str] = '@field_validator'
 
     fields: tuple[str, ...]
     mode: Literal['before', 'after', 'wrap', 'plain']
@@ -126,6 +126,8 @@ class RootValidatorDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
+    decorator_repr: ClassVar[str] = '@root_validator'
+
     def __init__(
         self,
         *,
@@ -143,7 +145,7 @@ class FieldSerializerDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
-    __slots__ = 'fields', 'sub_path', 'mode', 'json_return_type', 'when_used', 'check_fields', 'type'
+    decorator_repr: ClassVar[str] = '@field_serializer'
 
     fields: tuple[str, ...]
     mode: Literal['plain', 'wrap']
@@ -179,7 +181,7 @@ class ModelSerializerDecoratorInfo(Representation):
     while building the pydantic-core schema.
     """
 
-    __slots__ = 'mode', 'json_return_type', 'when_used'
+    decorator_repr: ClassVar[str] = '@model_serializer'
 
     mode: Literal['plain', 'wrap']
     json_return_type: JsonReturnTypes | None
@@ -456,32 +458,6 @@ def ensure_classmethod_based_on_signature(
     ) and is_classmethod_from_sig(function):
         return classmethod(function)  # type: ignore[arg-type]
     return function
-
-
-def check_for_duplicate_decorator_function(
-    function: AnyDecoratorCallable, allow_reuse: bool, type: Literal['validator', 'serialzier']
-) -> None:
-    """
-    Warn about validators with duplicated names since without this, they can be overwritten silently
-    which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
-    """
-    if not allow_reuse and not in_ipython():
-        ref = get_function_ref(function)
-        if ref in _FUNCS:
-            warnings.warn(f'duplicate {type} function "{ref}"; if this is intended, set `allow_reuse=True`')
-        _FUNCS.add(ref)
-
-
-def in_ipython() -> bool:
-    """
-    Check whether we're in an ipython environment, including jupyter notebooks.
-    """
-    try:
-        eval('__IPYTHON__')
-    except NameError:
-        return False
-    else:  # pragma: no cover
-        return True
 
 
 class OnlyValueValidator(Protocol):
