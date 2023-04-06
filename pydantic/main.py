@@ -913,9 +913,7 @@ def create_model(
                 f_annotation, f_value = f_def
             except ValueError as e:
                 raise PydanticUserError(
-                    'Field definitions should either be a tuple of (<type>, <default>) or just a '
-                    'default value, unfortunately this means tuples as '
-                    'default values are not allowed',
+                    'Field definitions should either be a `(<type>, <default>)`.',
                     code='create-model-field-definitions',
                 ) from e
         else:
