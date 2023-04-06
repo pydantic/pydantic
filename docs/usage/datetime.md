@@ -39,6 +39,22 @@ types:
     * `[-][DD ][HH:MM]SS[.ffffff]`
     * `[±]P[DD]DT[HH]H[MM]M[SS]S` ([ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format for timedelta)
 
+
+## Pydantic date types
+
+`PastDate`
+: like `date`, but the date should be in the past
+
+`FutureDate`
+: like `date`, but the date should be in the future
+
+`AwareDatetime`
+: like `datetime`, but requires the value to have timezone info
+
+`NaiveDatetime`
+: like `datetime`, but requires the value to lack timezone info
+
+
 ```py
 from datetime import date, datetime, time, timedelta
 

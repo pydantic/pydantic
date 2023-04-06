@@ -196,3 +196,14 @@ print(m3.url)
 
     Also, Chrome, Firefox, and Safari all currently accept `http://exam_ple.com` as a URL, so we're in good
     (or at least big) company.
+
+## IP Addresses
+
+`IPvAnyAddress`
+: allows either an `IPv4Address` or an `IPv6Address`
+
+`IPvAnyInterface`
+: allows either an `IPv4Interface` or an `IPv6Interface`
+
+`IPvAnyNetwork`
+: allows either an `IPv4Network` or an `IPv6Network`

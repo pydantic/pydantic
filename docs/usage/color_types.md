@@ -1,4 +1,5 @@
 
+`Color` parses HTML and CSS colors.
 
 You can use the `Color` data type for storing colors as per
 [CSS3 specification](http://www.w3.org/TR/css3-color/#svg-color). Colors can be defined via:

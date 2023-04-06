@@ -1,6 +1,13 @@
 ---
-description: Support for annotated types including NamedTuple and TypedDict.
+description: Support for types with fields including NamedTuple and TypedDict.
 ---
+
+Pydantic supports four types with fields:
+
+* [`BaseModel`](/usage/models/)
+* [dataclasses](/usage/dataclasses/)
+* [`NamedTuple`](#namedtuple)
+* [`TypedDict`](#typeddict)
 
 ### NamedTuple
 

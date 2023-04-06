@@ -2,6 +2,25 @@
 description: Useful types provided by Pydantic.
 ---
 
+## EmailStr
+
+`EmailStr` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
+  the input string must be a valid email address, and the output is a simple string
+
+## NameEmail
+
+`NameEmail` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
+  the input string must be either a valid email address or in the format `Fred Bloggs <fred.bloggs@example.com>`,
+  and the output is a `NameEmail` object which has two properties: `name` and `email`.
+  For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
+  for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
+
+
+## ImportString
+
+`ImportString` expects a string and loads the Python object importable at that dotted path; e.g. if `'math.cos'` was provided,
+the resulting field value would be the function `cos`; see [ImportString](#importstring)
+
 On model instantiation, pointers will be evaluated and imported. There is
 some nuance to this behavior, demonstrated in the examples below.
 

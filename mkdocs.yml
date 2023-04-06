@@ -52,26 +52,24 @@ nav:
   - Field Types:
     - Types Overview: usage/types.md
     - Standard Library Types: usage/standard_types.md
+    - Booleans: usage/booleans.md
+    - ByteSize: usage/bytesize.md
+    - Callables: usage/callables.md
+    - Color Types: usage/color_types.md
+    - Custom Data Types: usage/custom.md
+    - Datetimes: usage/datetime.md
+    - Enums and Choices: usage/enums.md
+    - File Types: usage/filetypes.md
+    - JSON: usage/json.md
+    - Payment Card Numbers: usage/payment_cards.md
+    - Secret Types: usage/secrets.md
+    - Special String Types: usage/string_types.md
+    - Type and TypeVar: usage/typevars.md
+    - Types with Fields: usage/types_fields.md
     - Typing Iterables: usage/typing_iterables.md
     - Unions: usage/unions.md
-    - Enums and Choices: usage/enums.md
-    - Datetimes: usage/datetime.md
-    - Booleans: usage/booleans.md
-    - Callables: usage/callables.md
-    - Type and TypeVar: usage/typevars.md
-    - Literal Types: usage/literals.md
-    - Annotated Types: usage/annotated_types.md
-    - Pydantic Types: usage/pydantic_types.md
-    - ImportString: usage/importstring.md
     - URLs: usage/urls.md
-    - Color Types: usage/colors.md
-    - Secret Types: usage/secrets.md
-    - JSON: usage/json.md
-    - ByteSize: usage/bytes.md
-    - Payment Card Numbers: usage/payment_cards.md
-    - Constrained Types: usage/constrained.md
-    - Strict Types: usage/strict.md
-    - Custom Data Types: usage/custom.md
+    - UUIDs: usage/uuids.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
   - usage/schema.md
