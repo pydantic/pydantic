@@ -296,7 +296,7 @@ def root_validator(
     before or after standard model parsing/validation is performed.
     """
     if allow_reuse is True:  # pragma: no cover
-        warn('`allow_reuse` is deprecated and will be ignored', DeprecationWarning)
+        warn('`allow_reuse` is deprecated and will be ignored; it should no longer be necessary', DeprecationWarning)
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise PydanticUserError(
