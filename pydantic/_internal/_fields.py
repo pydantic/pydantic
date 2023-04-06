@@ -15,7 +15,7 @@ from pydantic_core import core_schema
 from ._forward_ref import PydanticForwardRef
 from ._generics import replace_types
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar
+from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
 if TYPE_CHECKING:
     from ..fields import FieldInfo
@@ -152,6 +152,9 @@ def collect_fields(  # noqa: C901
         if is_classvar(ann_type):
             class_vars.add(ann_name)
             continue
+        if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, Undefined)):
+            class_vars.add(ann_name)
+            continue
         if ann_name.startswith('_') or (omitted_fields and ann_name in omitted_fields):
             continue
 
@@ -264,3 +267,16 @@ def collect_fields(  # noqa: C901
             field.annotation = replace_types(field.annotation, typevars_map)
 
     return fields, class_vars
+
+
+def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
+    from pydantic.fields import FieldInfo
+
+    if not is_finalvar(type_):
+        return False
+    elif val is Undefined:
+        return False
+    elif isinstance(val, FieldInfo) and (val.default is Undefined and val.default_factory is None):
+        return False
+    else:
+        return True
