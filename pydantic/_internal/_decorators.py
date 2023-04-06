@@ -4,6 +4,7 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 from __future__ import annotations as _annotations
 
 import warnings
+from functools import partial, partialmethod
 from inspect import Parameter, Signature, signature
 from typing import (
     TYPE_CHECKING,
@@ -293,7 +294,7 @@ class DecoratorInfos(Representation):
         self.model_serializer = {}
 
 
-def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
+def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:  # noqa: C901
     """
     We want to collect all DecFunc instances that exist as
     attributes in the namespace of the class (a BaseModel or dataclass)
@@ -321,8 +322,15 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
 
     for var_name, var_value in vars(cls).items():
         if isinstance(var_value, PydanticDecoratorMarker):
-            func = var_value.wrapped.__get__(None, cls)
             cls_ref = get_type_ref(cls)
+            try:
+                func = var_value.wrapped.__get__(None, cls)
+            except AttributeError:
+                if isinstance(var_value.wrapped, partial):
+                    # don't bind the class
+                    func = var_value.wrapped
+                else:
+                    raise
             shimmed_func = var_value.shim(func) if var_value.shim is not None else func
             info = var_value.decorator_info
             if isinstance(info, ValidatorDecoratorInfo):
@@ -358,42 +366,65 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
 _FUNCS: set[str] = set()
 
 
-def prepare_serializer_decorator(
-    function: Callable[..., Any] | classmethod[Any] | staticmethod[Any], allow_reuse: bool
-) -> Callable[..., Any] | classmethod[Any]:
-    """
-    Warn about validators/serializers with duplicated names since without this, they can be overwritten silently
-    which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
-    """
-    if isinstance(function, staticmethod):
-        function = function.__func__
-    if not allow_reuse and not in_ipython():
-        ref = f'{function.__module__}::{function.__qualname__}'
-        if ref in _FUNCS:
-            warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
-        _FUNCS.add(ref)
-    return function
+AnyDecoratorCallable: TypeAlias = 'Union[classmethod[Any], staticmethod[Any], partialmethod[Any], Callable[..., Any]]'
 
 
-def unwrap_unbound_methods(function: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> Callable[..., Any]:
+def unwrap_wrapped_function(
+    func: Any,
+    *,
+    unwrap_class_static_method: bool = True,
+) -> Any:
     """
-    Unwrap unbound classmethods and staticmethods
+    Recursively unwraps a wrapped function until the underlying function is reached.
+    This handles functools.partial, functools.partialmethod, staticmethod and classmethod.
+
+    Args:
+        func: The function to unwrap.
+        unwrap_class_static_method: If True (default), also unwrap classmethod and staticmethod
+            decorators. If False, only unwrap partial and partialmethod decorators.
+
+    Returns:
+        The underlying function of the wrapped function.
     """
-    if isinstance(function, (classmethod, staticmethod)):
-        return function.__func__
-    return function
+    all: tuple[Any, ...]
+    if unwrap_class_static_method:
+        all = (
+            staticmethod,
+            classmethod,
+            partial,
+            partialmethod,
+        )
+    else:
+        all = partial, partialmethod
+
+    while isinstance(func, all):
+        if unwrap_class_static_method and isinstance(func, (classmethod, staticmethod)):
+            func = func.__func__
+        elif isinstance(func, (partial, partialmethod)):
+            func = func.func
+
+    return func
 
 
-def is_classmethod_from_sig(function: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> bool:
-    sig = signature(unwrap_unbound_methods(function))
+def get_function_ref(func: Any) -> str:
+    func = unwrap_wrapped_function(func)
+    return (
+        getattr(func, '__module__', '<No __module__>')
+        + '.'
+        + getattr(func, '__qualname__', f'<No __qualname__: id:{id(func)}>')
+    )
+
+
+def is_classmethod_from_sig(function: AnyDecoratorCallable) -> bool:
+    sig = signature(unwrap_wrapped_function(function))
     first = next(iter(sig.parameters.values()), None)
     if first and first.name == 'cls':
         return True
     return False
 
 
-def is_instance_method_from_sig(function: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> bool:
-    sig = signature(unwrap_unbound_methods(function))
+def is_instance_method_from_sig(function: AnyDecoratorCallable) -> bool:
+    sig = signature(unwrap_wrapped_function(function))
     first = next(iter(sig.parameters.values()), None)
     if first and first.name == 'self':
         return True
@@ -401,25 +432,26 @@ def is_instance_method_from_sig(function: Callable[..., Any] | classmethod[Any] 
 
 
 def ensure_classmethod_based_on_signature(
-    function: Callable[..., Any] | classmethod[Any] | staticmethod[Any],
-) -> classmethod[Any] | staticmethod[Any] | Callable[..., Any]:
-    if not isinstance(function, classmethod) and is_classmethod_from_sig(function):
-        return classmethod(function)
+    function: AnyDecoratorCallable,
+) -> Any:
+    if not isinstance(
+        unwrap_wrapped_function(function, unwrap_class_static_method=False), classmethod
+    ) and is_classmethod_from_sig(function):
+        return classmethod(function)  # type: ignore[arg-type]
     return function
 
 
-def check_for_duplicate_validator(
-    function: Callable[..., Any] | classmethod[Any] | staticmethod[Any], allow_reuse: bool
+def check_for_duplicate_decorator_function(
+    function: AnyDecoratorCallable, allow_reuse: bool, type: Literal['validator', 'serialzier']
 ) -> None:
     """
     Warn about validators with duplicated names since without this, they can be overwritten silently
     which generally isn't the intended behaviour, don't run in ipython (see #312) or if `allow_reuse` is True.
     """
     if not allow_reuse and not in_ipython():
-        function = unwrap_unbound_methods(function)
-        ref = f'{function.__module__}::{function.__qualname__}'
+        ref = get_function_ref(function)
         if ref in _FUNCS:
-            warnings.warn(f'duplicate validator function "{ref}"; if this is intended, set `allow_reuse=True`')
+            warnings.warn(f'duplicate {type} function "{ref}"; if this is intended, set `allow_reuse=True`')
         _FUNCS.add(ref)
 
 
@@ -469,6 +501,14 @@ V1Validator = Union[
 ]
 
 
+def can_be_positional(param: Parameter) -> bool:
+    return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+
+
+def can_be_keyword(param: Parameter) -> bool:
+    return param.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
+
+
 V1_VALIDATOR_VALID_SIGNATURES = """\
 def f1(value: Any) -> Any: ...
 def f2(value: Any, values: Dict[str, Any]) -> Any: ...
@@ -498,12 +538,12 @@ class Model(BaseModel):
 
 
 def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFunction:
-    sig = signature(unwrap_unbound_methods(validator))
-    positional_params: list[str] = []
-    keyword_only_params: list[str] = []
-    accepts_kwargs = False
-    for param_name, parameter in sig.parameters.items():
-        if param_name in ('field', 'config'):
+    sig = signature(validator)
+
+    needs_values_kw = False
+
+    for param_num, (param_name, parameter) in enumerate(sig.parameters.items()):
+        if can_be_keyword(parameter) and param_name in ('field', 'config'):
             raise TypeError(
                 'The `field` and `config` parameters are not available in Pydantic V2.'
                 ' Please use the `info` parameter instead.'
@@ -511,46 +551,38 @@ def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFun
                 ' but it is a dictionary instead of an object like it was in Pydantic V1.'
                 ' The `field` argument is no longer available.'
             )
-        if parameter.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD):
-            positional_params.append(param_name)
-        elif parameter.kind is Parameter.KEYWORD_ONLY:
-            keyword_only_params.append(param_name)
-        else:
-            assert parameter.kind is Parameter.VAR_KEYWORD
-            accepts_kwargs = True
+        if parameter.kind is Parameter.VAR_KEYWORD:
+            needs_values_kw = True
+        elif can_be_keyword(parameter) and param_name == 'values':
+            needs_values_kw = True
+        elif can_be_positional(parameter) and param_num == 0:
+            # value
+            continue
+        elif parameter.default is Parameter.empty:  # ignore params with defaults e.g. bound by functools.partial
+            raise TypeError(
+                f'Unsupported signature for V1 style validator {validator}: {sig} is not supported.'
+                f' Valid signatures are:\n{V1_VALIDATOR_VALID_SIGNATURES}'
+            )
 
-    accepts_values_kw = (keyword_only_params == ['values'] and len(positional_params) == 1) or (
-        len(positional_params) == 2 and positional_params[1] == 'values'
-    )
-
-    if accepts_kwargs and len(positional_params) == 1:
-        # has (v, **kwargs) or (v, values, **kwargs)
-        val1 = cast(Union[V1ValidatorWithKwargs, V1ValidatorWithValuesAndKwargs], validator)
+    if needs_values_kw:
+        # (v, **kwargs), (v, values, **kwargs), (v, *, values, **kwargs) or (v, *, values)
+        val1 = cast(V1ValidatorWithValues, validator)
 
         def wrapper1(value: Any, info: FieldValidationInfo) -> Any:
             return val1(value, values=info.data)
 
         return wrapper1
-    if len(positional_params) == 1 and keyword_only_params == []:
-        # (v) -> Any
+    else:
         val2 = cast(OnlyValueValidator, validator)
 
-        def wrapper2(value: Any, _: ValidationInfo) -> Any:
+        def wrapper2(value: Any, _: FieldValidationInfo) -> Any:
             return val2(value)
 
         return wrapper2
-    elif len(positional_params) in (1, 2) and accepts_values_kw:
-        # (v, values) -> Any or (v, *, values) -> Any
-        val3 = cast(V1ValidatorWithValues, validator)
 
-        def wrapper3(value: Any, info: FieldValidationInfo) -> Any:
-            return val3(value, values=info.data)
 
-        return wrapper3
-    raise TypeError(
-        f'Unsupported signature for V1 style validator {validator}: {sig} is not supported.'
-        f' Valid signatures are:\n{V1_VALIDATOR_VALID_SIGNATURES}'
-    )
+def remove_params_with_defaults(sig: Signature) -> Signature:
+    return Signature([p for p in sig.parameters.values() if p.default is Parameter.empty])
 
 
 @overload
@@ -575,7 +607,8 @@ def make_generic_v2_field_validator(
     we introspect the function signature and wrap it in a parent function that has a signature
     compatible with pydantic_core
     """
-    if mode in ('before', 'after', 'plain') and len(signature(validator).parameters) == 1:
+    sig = remove_params_with_defaults(signature(validator))
+    if mode in ('before', 'after', 'plain') and len(sig.parameters) == 1:
         val1 = cast(OnlyValueValidator, validator)
 
         # allow the (v) -> Any signature as a convenience
@@ -696,7 +729,7 @@ def make_generic_field_serializer(
     """
     Wrap serializers to allow ignoring the `info` argument as a convenience.
     """
-    sig = signature(serializer)
+    sig = remove_params_with_defaults(signature(serializer))
     if is_instance_method_from_sig(serializer):
         # for the errors below to exclude self
         sig = Signature(parameters=list(sig.parameters.values())[1:])
