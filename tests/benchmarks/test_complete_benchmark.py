@@ -21,7 +21,7 @@ def test_complete_valid():
     lax_validator = SchemaValidator(lax_schema)
     output = lax_validator.validate_python(input_data_lax())
     assert isinstance(output, cls)
-    assert len(output.__fields_set__) == 39
+    assert len(output.__pydantic_fields_set__) == 39
     output_dict = output.__dict__
     assert output_dict == {
         'field_str': 'fo',

@@ -2597,7 +2597,7 @@ def model_schema(
     A model schema generally contains a typed-dict schema.
     It will run the typed dict validator, then create a new class
     and set the dict and fields set returned from the typed dict validator
-    to `__dict__` and `__fields_set__` respectively.
+    to `__dict__` and `__pydantic_fields_set__` respectively.
 
     Example:
 
@@ -2605,7 +2605,7 @@ def model_schema(
     from pydantic_core import CoreConfig, SchemaValidator, core_schema
 
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
     schema = core_schema.model_schema(
         cls=MyModel,
@@ -3069,7 +3069,7 @@ def json_schema(
     )
 
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: bool
 

@@ -143,8 +143,8 @@ def test_dict_key(py_and_json: PyAndJson):
 
 def test_ask():
     class MyModel:
-        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__fields_set__'
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
@@ -171,7 +171,7 @@ def test_ask():
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
     assert m.field_b == 12
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('{"field_c": "wrong"}')
     # insert_assert(exc_info.value.errors())

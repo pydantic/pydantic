@@ -11,8 +11,8 @@ from ..conftest import plain_repr
 
 def test_model_class():
     class MyModel:
-        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__fields_set__'
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
@@ -36,7 +36,7 @@ def test_model_class():
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
     assert m.field_b == 12
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
 
     with pytest.raises(ValidationError, match='Input should be an instance of MyModel') as exc_info:
@@ -84,7 +84,7 @@ def test_model_class_setattr():
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
-    assert m.__fields_set__ == {'field_a'}
+    assert m.__pydantic_fields_set__ == {'field_a'}
     assert setattr_calls == []
 
 
@@ -209,7 +209,7 @@ def test_model_class_root_validator_after():
 @pytest.mark.parametrize('return_fields_set', [True, False])
 def test_function_ask(mode, return_fields_set):
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
     def f(input_value, info):
         return input_value
@@ -251,12 +251,12 @@ def test_function_plain_ask():
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test'}
-    assert not hasattr(m, '__fields_set__')
+    assert not hasattr(m, '__pydantic_fields_set__')
 
 
 def test_union_sub_schema():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
     v = SchemaValidator(
         {
@@ -283,11 +283,11 @@ def test_union_sub_schema():
     m = v.validate_python({'foo': '123'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'foo': 123}
-    assert m.__fields_set__ == {'foo'}
+    assert m.__pydantic_fields_set__ == {'foo'}
     m = v.validate_python({'bar': '123'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'bar': 123}
-    assert m.__fields_set__ == {'bar'}
+    assert m.__pydantic_fields_set__ == {'bar'}
 
 
 def test_tagged_union_sub_schema():
@@ -328,7 +328,7 @@ def test_tagged_union_sub_schema():
     m = v.validate_python({'foo': 'apple', 'bar': '123'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'foo': 'apple', 'bar': 123}
-    assert not hasattr(m, '__fields_set__')
+    assert not hasattr(m, '__pydantic_fields_set__')
     # error because banana has return_fields_set=True
     # "__dict__ must be set to a dictionary, not a 'tuple'" on cpython, different on pypy
     with pytest.raises(TypeError):
@@ -347,7 +347,7 @@ def test_bad_sub_schema():
 
 def test_model_class_function_after():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
     def f(input_value, info):
         input_value[0]['x'] = 'y'
@@ -371,7 +371,7 @@ def test_model_class_function_after():
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test', 'x': 'y'}
-    assert m.__fields_set__ == {'field_a'}
+    assert m.__pydantic_fields_set__ == {'field_a'}
 
 
 def test_model_class_not_type():
@@ -391,7 +391,7 @@ def test_model_class_not_type():
 
 def test_not_return_fields_set():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
     v = SchemaValidator(
         {
@@ -408,12 +408,12 @@ def test_not_return_fields_set():
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test'}
-    assert not hasattr(m, '__fields_set__')
+    assert not hasattr(m, '__pydantic_fields_set__')
 
 
 def test_model_class_instance_direct():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
 
         def __init__(self):
@@ -433,7 +433,7 @@ def test_model_class_instance_direct():
     m1 = v.validate_python({'field_a': 'test'})
     assert isinstance(m1, MyModel)
     assert m1.field_a == 'test'
-    assert m1.__fields_set__ == {'field_a'}
+    assert m1.__pydantic_fields_set__ == {'field_a'}
 
     m2 = MyModel()
     m3 = v.validate_python(m2)
@@ -445,7 +445,7 @@ def test_model_class_instance_subclass():
     post_init_calls = []
 
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
 
         def __init__(self):
@@ -485,7 +485,7 @@ def test_model_class_instance_subclass():
     m4 = v.validate_python({'field_a': b'hello'}, context='call2')
     assert isinstance(m4, MyModel)
     assert m4.field_a == 'hello'
-    assert m4.__fields_set__ == {'field_a'}
+    assert m4.__pydantic_fields_set__ == {'field_a'}
     assert post_init_calls == ['call2']
 
 
@@ -493,7 +493,7 @@ def test_model_class_instance_subclass_revalidate():
     post_init_calls = []
 
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
 
         def __init__(self):
@@ -532,10 +532,10 @@ def test_model_class_instance_subclass_revalidate():
     assert post_init_calls == ['call1']
 
     m4 = MySubModel()
-    m4.__fields_set__ = {'fruit_loop'}
+    m4.__pydantic_fields_set__ = {'fruit_loop'}
     m5 = v.validate_python(m4, context='call2')
     assert m4 is not m5
-    assert m5.__fields_set__ == {'fruit_loop'}
+    assert m5.__pydantic_fields_set__ == {'fruit_loop'}
     assert m5.field_a == 'init_a'
     assert not hasattr(m5, 'field_b')
     assert post_init_calls == ['call1', 'call2']
@@ -598,7 +598,7 @@ def test_model_class_strict():
 
 def test_model_class_strict_json():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
         field_c: int
@@ -627,7 +627,7 @@ def test_model_class_strict_json():
     assert m.field_a == 'foobar'
     assert m.field_b == 123
     assert m.field_c == 42
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_internal_error():
@@ -648,13 +648,13 @@ def test_internal_error():
 
 def test_revalidate_always():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
         def __init__(self, a, b, fields_set):
             self.field_a = a
             self.field_b = b
             if fields_set is not None:
-                self.__fields_set__ = fields_set
+                self.__pydantic_fields_set__ = fields_set
 
     v = SchemaValidator(
         {
@@ -677,14 +677,14 @@ def test_revalidate_always():
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
     m2 = MyModel('x', 42, {'field_a'})
     m3 = v.validate_python(m2)
     assert isinstance(m3, MyModel)
     assert m3 is not m2
     assert m3.__dict__ == {'field_a': 'x', 'field_b': 42}
-    assert m3.__fields_set__ == {'field_a'}
+    assert m3.__pydantic_fields_set__ == {'field_a'}
 
     m4 = MyModel('x', 'not int', {'field_a'})
     with pytest.raises(ValidationError) as exc_info:
@@ -703,12 +703,12 @@ def test_revalidate_always():
     assert isinstance(m6, MyModel)
     assert m6 is not m5
     assert m6.__dict__ == {'field_a': 'x', 'field_b': 5}
-    assert m6.__fields_set__ == {'field_a', 'field_b'}
+    assert m6.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_revalidate_subclass_instances():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
         def __init__(self):
             self.field_a = 'init_a'
@@ -755,7 +755,7 @@ def test_revalidate_subclass_instances():
 
 def test_revalidate_extra():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
@@ -781,21 +781,21 @@ def test_revalidate_extra():
     m = v.validate_python({'field_a': 'test', 'field_b': 12, 'more': (1, 2, 3)})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12, 'more': (1, 2, 3)}
-    assert m.__fields_set__ == {'field_a', 'field_b', 'more'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'more'}
 
     m2 = MyModel(field_a='x', field_b=42, another=42.5)
     m3 = v.validate_python(m2)
     assert isinstance(m3, MyModel)
     assert m3 is not m2
     assert m3.__dict__ == {'field_a': 'x', 'field_b': 42, 'another': 42.5}
-    assert m3.__fields_set__ == {'field_a', 'field_b', 'another'}
+    assert m3.__pydantic_fields_set__ == {'field_a', 'field_b', 'another'}
 
 
 def test_post_init():
     call_count = 0
 
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
@@ -807,7 +807,7 @@ def test_post_init():
             assert context is None
             assert self.field_a == 'test'
             assert self.field_b == 12
-            assert self.__fields_set__ == {'field_a', 'field_b'}
+            assert self.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
     v = SchemaValidator(
         {
@@ -833,7 +833,7 @@ def test_revalidate_post_init():
     call_count = 0
 
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
         def call_me_maybe(self, context):
             nonlocal call_count
@@ -862,25 +862,25 @@ def test_revalidate_post_init():
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
     assert call_count == 1
 
     m2 = MyModel()
     m2.field_a = 'x'
     m2.field_b = 42
-    m2.__fields_set__ = {'field_a'}
+    m2.__pydantic_fields_set__ = {'field_a'}
 
     m3 = v.validate_python(m2)
     assert isinstance(m3, MyModel)
     assert m3 is not m2
     assert m3.__dict__ == {'field_a': 'x', 'field_b': 42}
-    assert m3.__fields_set__ == {'field_a'}
+    assert m3.__pydantic_fields_set__ == {'field_a'}
     assert call_count == 2
 
 
 def test_post_init_validation_error():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
 
         def call_me_maybe(self, context, **kwargs):
@@ -918,7 +918,7 @@ def test_post_init_validation_error():
 
 def test_post_init_internal_error():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
 
         def wrong_signature(self):
@@ -942,13 +942,13 @@ def test_post_init_internal_error():
 
 def test_post_init_mutate():
     class MyModel:
-        __slots__ = '__dict__', '__fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
         def call_me_maybe(self, context, **kwargs):
             self.field_a *= 2
-            self.__fields_set__ = {'field_a'}
+            self.__pydantic_fields_set__ = {'field_a'}
 
     v = SchemaValidator(
         {
@@ -969,14 +969,14 @@ def test_post_init_mutate():
     assert isinstance(m, MyModel)
     assert m.field_a == 'testtest'
     assert m.field_b == 12
-    assert m.__fields_set__ == {'field_a'}
+    assert m.__pydantic_fields_set__ == {'field_a'}
     assert m.__dict__ == {'field_a': 'testtest', 'field_b': 12}
 
 
 def test_validate_assignment():
     class MyModel:
-        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__fields_set__'
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
@@ -998,19 +998,19 @@ def test_validate_assignment():
     m = MyModel()
     m.field_a = 'hello'
     m.field_b = 123
-    m.__fields_set__ = {'field_a'}
+    m.__pydantic_fields_set__ = {'field_a'}
 
     v.validate_assignment(m, 'field_b', '321')
 
     m.field_a = 'hello'
     assert m.field_b == 321
-    assert m.__fields_set__ == {'field_a', 'field_b'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_validate_assignment_function():
     class MyModel:
-        # this is not required, but it avoids `__fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__fields_set__'
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
         field_c: int
@@ -1041,7 +1041,7 @@ def test_validate_assignment_function():
     assert m.field_a == 'x'
     assert m.field_b == 246
     assert m.field_c == 456
-    assert m.__fields_set__ == {'field_a', 'field_b', 'field_c'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'field_c'}
     assert calls == ["ValidationInfo(config=None, context=None, data={'field_a': 'x'}, field_name='field_b')"]
 
     v.validate_assignment(m, 'field_b', '111')
@@ -1075,13 +1075,13 @@ def test_validate_assignment_no_fields_set():
     m = MyModel()
     m.field_a = 'hello'
     m.field_b = 123
-    assert not hasattr(m, '__fields_set__')
+    assert not hasattr(m, '__pydantic_fields_set__')
 
     v.validate_assignment(m, 'field_a', b'different')
 
     m.field_a = 'different'
     assert m.field_b == 123
-    assert not hasattr(m, '__fields_set__')
+    assert not hasattr(m, '__pydantic_fields_set__')
 
     # wrong arguments
     with pytest.raises(AttributeError, match="'str' object has no attribute '__dict__'"):
@@ -1146,7 +1146,7 @@ def test_validate_assignment_model_validator_function(function_schema: Any, call
     """
 
     class Model:
-        __slots__ = ('__dict__', '__fields_set__')
+        __slots__ = ('__dict__', '__pydantic_fields_set__')
 
     calls: List[Any] = []
 
@@ -1182,11 +1182,11 @@ def test_validate_assignment_model_validator_function(function_schema: Any, call
     m = v.validate_python({'b': 2})
     assert m.a == 1
     assert m.b == 2
-    assert m.__fields_set__ == {'b'}
+    assert m.__pydantic_fields_set__ == {'b'}
     assert calls == [call1]
 
     v.validate_assignment(m, 'a', 10)
     assert m.a == 10
     assert m.b == 2
-    assert m.__fields_set__ == {'a', 'b'}
+    assert m.__pydantic_fields_set__ == {'a', 'b'}
     assert calls == [call1, call2]

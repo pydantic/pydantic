@@ -243,7 +243,7 @@ def test_include_dict(any_serializer):
 
 class FieldsSetModel:
     __pydantic_validator__ = 42
-    __slots__ = '__dict__', '__fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__'
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -252,7 +252,7 @@ class FieldsSetModel:
 
 def test_exclude_unset(any_serializer):
     # copied from test of the same name in test_model.py
-    m = FieldsSetModel(foo=1, bar=2, spam=3, __fields_set__={'bar', 'spam'})
+    m = FieldsSetModel(foo=1, bar=2, spam=3, __pydantic_fields_set__={'bar', 'spam'})
     assert any_serializer.to_python(m) == {'foo': 1, 'bar': 2, 'spam': 3}
     assert any_serializer.to_python(m, exclude_unset=True) == {'bar': 2, 'spam': 3}
     assert any_serializer.to_python(m, exclude=None, exclude_unset=True) == {'bar': 2, 'spam': 3}
@@ -265,7 +265,7 @@ def test_exclude_unset(any_serializer):
     assert any_serializer.to_json(m, exclude={'bar': ...}, exclude_unset=True) == b'{"spam":3}'
     assert any_serializer.to_json(m, exclude={'bar': {}}, exclude_unset=True) == b'{"bar":2,"spam":3}'
 
-    m2 = FieldsSetModel(foo=1, bar=2, spam=3, __fields_set__={'bar', 'spam', 'missing'})
+    m2 = FieldsSetModel(foo=1, bar=2, spam=3, __pydantic_fields_set__={'bar', 'spam', 'missing'})
     assert any_serializer.to_python(m2) == {'foo': 1, 'bar': 2, 'spam': 3}
     assert any_serializer.to_python(m2, exclude_unset=True) == {'bar': 2, 'spam': 3}
 
