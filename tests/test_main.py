@@ -32,6 +32,7 @@ from pydantic import (
     Extra,
     Field,
     PrivateAttr,
+    PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
     ValidationError,
@@ -1851,6 +1852,12 @@ def test_model_rebuild_localns():
     m = B(a={'x': 1})
     assert m.model_dump() == {'a': {'x': 1}}
     assert isinstance(m.a, A)
+
+    class C(BaseModel, undefined_types_warning=False):
+        a: 'Model'  # noqa F821
+
+    with pytest.raises(PydanticUndefinedAnnotation, match="name 'Model' is not defined"):
+        C.model_rebuild(_types_namespace={'A': A})
 
 
 @pytest.fixture(scope='session', name='InnerEqualityModel')
