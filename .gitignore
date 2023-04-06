@@ -1,35 +1,52 @@
-.idea/
+# Virtual environments
 env/
+env3*/
 venv/
 .venv/
-env3*/
+
+# IDEs and editors
+.idea/
+.vscode/
+
+# Package distribution and build files
+*.egg-info/
+dist/
+/build/
+_build/
+
+# Pip and Pipenv files
 Pipfile
 *.lock
+
+# Python bytecode and cache files
 *.py[cod]
-*.egg-info/
-.python-version
-/build/
-dist/
 .cache/
-.mypy_cache/
-test.py
-.coverage
+/.ghtopdep_cache/
 .hypothesis
-/htmlcov/
+.mypy_cache/
+.pytest_cache/
+/.ruff_cache/
+
+# Benchmark and test files
 /benchmarks/*.json
+/htmlcov/
+/codecov.sh
+.coverage
+test.py
+
+# Documentation files
 /docs/changelog.md
 /site/
 /site.zip
-.pytest_cache/
-.vscode/
-_build/
+
+# Project-specific files
 pydantic/*.c
 pydantic/*.so
+/fastapi/
+
+# Other files and folders
+.python-version
+.DS_Store
 .auto-format
 /sandbox/
-/.ghtopdep_cache/
-/fastapi/
-/codecov.sh
 /worktrees/
-/.ruff_cache/
-.DS_Store
