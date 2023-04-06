@@ -23,7 +23,6 @@ The following sections describe the types supported by Pydantic.
 * [Secret Types](usage/secrets/) &mdash; types for storing sensitive information that you do not want to be visible in logging or tracebacks.
 * [Sequence, Iterable, & Iterator](usage/sequence_iterable/) &mdash; iterable types including `Sequence`, `Iterable`, and `Iterator`.
 * [Sets and frozenset](usage/set_types/) &mdash;
-* [Special String Types](usage/string_types/) &mdash; types that handle specialized uses of strings such as email addresses and module references.
 * [String Types](usage/string_types/) &mdash;
 * [Type and TypeVar](usage/typevars/) &mdash; `Type` and `TypeVar` types.
 * [Types with Fields](usage/types_fields/) &mdash;

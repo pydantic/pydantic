@@ -67,7 +67,6 @@ nav:
     - Secret Types: usage/secrets.md
     - Sequence, Iterable, & Iterator: usage/sequence_iterable.md
     - Sets and frozenset: usage/set_types.md
-    - Special String Types: usage/string_types.md
     - String Types: usage/string_types.md
     - Type and TypeVar: usage/typevars.md
     - Types with Fields: usage/types_fields.md
