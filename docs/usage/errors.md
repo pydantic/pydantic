@@ -154,3 +154,9 @@ def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ..
 ```
 
 ## Unrecognized model_serializer signature {#model-serializer-signature}
+
+TODO
+
+## Multiple field serializers {#multiple-field-serializers}
+
+TODO

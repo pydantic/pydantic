@@ -14,7 +14,10 @@ __all__ = (
 )
 
 # TODO set up a cloudflare worker to redirect to the correct page
-DEV_ERROR_DOCS_URL = f'https://e.pydantic.dev/{VERSION}/d/'
+# We use this URL to allow for future flexibility about how we host the docs, while allowing for Pydantic
+# code in the while with "old" URLs to still work.
+# 'u' refers to "user errors" - e.g. errors caused by developers using pydantic, as opposed to validation errors.
+DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{VERSION}/u/'
 PydanticErrorCodes = Literal[
     'decorator-missing-field',
     'dataclass-not-fully-defined',
@@ -43,6 +46,7 @@ PydanticErrorCodes = Literal[
     'validator-v1-signature',
     'field-serializer-signature',
     'model-serializer-signature',
+    'multiple-field-serializers',
 ]
 
 
@@ -59,7 +63,7 @@ class PydanticErrorMixin:
         if self.code is None:
             return self.message
         else:
-            return f'{self.message}\n\nFor more information see {DEV_ERROR_DOCS_URL}{self.code}'
+            return f'{self.message}\n\nFor further information visit {DEV_ERROR_DOCS_URL}{self.code}'
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):

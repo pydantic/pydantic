@@ -350,9 +350,10 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:  # noqa: C901
                         continue
                     for f in info.fields:
                         if f in field_serializer_decorator.info.fields:
-                            raise TypeError(
+                            raise PydanticUserError(
                                 'Multiple field serializer functions were defined '
-                                f'for field {f!r}, this is not allowed.'
+                                f'for field {f!r}, this is not allowed.',
+                                code='multiple-field-serializers',
                             )
                 res.field_serializer[var_name] = Decorator(cls_ref, var_name, shimmed_func, func, info)
             else:
@@ -510,34 +511,6 @@ def can_be_keyword(param: Parameter) -> bool:
     return param.kind in (Parameter.POSITIONAL_OR_KEYWORD, Parameter.KEYWORD_ONLY)
 
 
-V1_VALIDATOR_VALID_SIGNATURES = """\
-def f1(value: Any) -> Any: ...
-def f2(value: Any, values: Dict[str, Any]) -> Any: ...
-
-class Model(BaseModel):
-    x: int
-
-    @validator('x')
-    @classmethod  # optional
-    def val_x1(cls, value: Any) -> Any: ...
-
-    @validator('x')
-    @classmethod  # optional
-    def val_x2(cls, value: Any, values: Dict[str, Any]) -> Any: ...
-
-    @validator('x')
-    @staticmethod  # required
-    def val_x3(value: Any) -> Any: ...
-
-    @validator('x')
-    @staticmethod  # required
-    def val_x4(value: Any, values: Dict[str, Any]) -> Any: ...
-
-    val_x5 = validator('x')(f1)
-    val_x6 = validator('x')(f2)
-"""
-
-
 def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFunction:
     sig = signature(validator)
 
@@ -558,9 +531,9 @@ def make_generic_v1_field_validator(validator: V1Validator) -> FieldValidatorFun
             # value
             continue
         elif parameter.default is Parameter.empty:  # ignore params with defaults e.g. bound by functools.partial
-            raise TypeError(
-                f'Unsupported signature for V1 style validator {validator}: {sig} is not supported.'
-                f' Valid signatures are:\n{V1_VALIDATOR_VALID_SIGNATURES}'
+            raise PydanticUserError(
+                f'Unsupported signature for V1 style validator {validator}: {sig} is not supported.',
+                code='validator-v1-signature',
             )
 
     if needs_values_kw:
