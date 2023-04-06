@@ -279,7 +279,14 @@ class Decorator(Generic[DecoratorInfoType], Representation):
         val = getattr(cls_, cls_var_name)
         if isinstance(val, PydanticDecoratorMarker):
             val = val.wrapped
-        func = val.__get__(None, cls_)
+        try:
+            func = val.__get__(None, cls_)
+        except AttributeError:
+            if isinstance(val, partial):
+                # don't bind the class
+                func = val
+            else:
+                raise
         if shim is not None:
             func = shim(func)
         return Decorator(
