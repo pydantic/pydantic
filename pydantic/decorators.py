@@ -465,33 +465,34 @@ def model_serializer(
         return dec(__f)
 
 
-ModelWrapValidatorHandler = Callable[[Any], _decorators.ModelType]
+ModelType = TypeVar('ModelType')
+ModelWrapValidatorHandler = Callable[[Any], ModelType]
 
 
 class ModelWrapValidatorWithoutInfo(Protocol):
     def __call__(
         self,
-        cls: type[_decorators.ModelType],
+        cls: type[ModelType],
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
         __value: Any,
-        __handler: Callable[[Any], _decorators.ModelType],
-    ) -> _decorators.ModelType:
+        __handler: Callable[[Any], ModelType],
+    ) -> ModelType:
         ...
 
 
 class ModelWrapValidator(Protocol):
     def __call__(
         self,
-        cls: type[_decorators.ModelType],
+        cls: type[ModelType],
         # this can be a dict, a model instance
         # or anything else that gets passed to validate_python
         # thus validators _must_ handle all cases
         __value: Any,
-        __handler: Callable[[Any], _decorators.ModelType],
+        __handler: Callable[[Any], ModelType],
         __info: _core_schema.ValidationInfo,
-    ) -> _decorators.ModelType:
+    ) -> ModelType:
         ...
 
 
@@ -523,17 +524,17 @@ class ModelBeforeValidator(Protocol):
 class ModelAfterValidatorWithoutInfo(Protocol):
     @staticmethod
     def __call__(
-        self: _decorators.ModelType,  # type: ignore
-    ) -> _decorators.ModelType:
+        self: ModelType,  # type: ignore
+    ) -> ModelType:
         ...
 
 
 class ModelAfterValidator(Protocol):
     @staticmethod
     def __call__(
-        self: _decorators.ModelType,  # type: ignore
+        self: ModelType,  # type: ignore
         __info: _core_schema.ValidationInfo,
-    ) -> _decorators.ModelType:
+    ) -> ModelType:
         ...
 
 

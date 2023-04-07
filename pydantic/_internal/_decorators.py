@@ -38,17 +38,7 @@ from typing_extensions import Literal, Protocol, TypeAlias
 
 from ..errors import PydanticUserError
 from ._core_utils import get_type_ref
-<<<<<<< HEAD
 from ._dataclass import dataclass
-=======
-from ._repr import Representation
-
-if TYPE_CHECKING:
-    from typing_extensions import Literal
-
-    from pydantic.main import BaseModel
-
->>>>>>> 3d0b86c (Add @model_validator)
 
 FIELD_VALIDATOR_TAG = '_field_validator'
 ROOT_VALIDATOR_TAG = '_root_validator'
@@ -127,23 +117,15 @@ class ModelSerializerDecoratorInfo:
     json_return_type: JsonReturnTypes | None
 
 
-class ModelValidatorDecoratorInfo(Representation):
+@dataclass
+class ModelValidatorDecoratorInfo:
     """
     A container for data from `@model_validator` so that we can access it
     while building the pydantic-core schema.
     """
 
     decorator_repr: ClassVar[str] = '@model_validator'
-
     mode: Literal['wrap', 'before', 'after']
-    json_return_type: JsonReturnTypes | None
-
-    def __init__(
-        self,
-        *,
-        mode: Literal['wrap', 'before', 'after'],
-    ) -> None:
-        self.mode = mode
 
 
 DecoratorInfo = Union[
@@ -710,19 +692,3 @@ def make_generic_model_serializer(
             )
         func = cast(AnyCoreSerializer, serializer)
         return func
-
-
-ModelType = TypeVar('ModelType', bound='BaseModel')
-
-ModelValuesDict = Dict[str, Any]
-
-
-class ModelWrapValidator(Protocol[ModelType]):
-    def __call__(
-        self,
-        __cls: type[ModelType],
-        __values: ModelValuesDict,
-        __handler: Callable[[ModelValuesDict], ModelType],
-        __info: ValidationInfo,
-    ) -> ModelType:
-        ...
