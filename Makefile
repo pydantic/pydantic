@@ -29,7 +29,7 @@ lint:
 
 .PHONY: typecheck
 typecheck:
-	pre-commit run typecheck
+	pre-commit run typecheck --all-files
 
 .PHONY: test-mypy
 test-mypy:
