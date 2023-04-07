@@ -318,7 +318,7 @@ else:
         Taken verbatim from python 3.10.8 unchanged, except:
         * type annotations of the function definition above.
         * prefixing `typing.` where appropriate
-        * Use `ForwardRefWrapper` instead of `typing.ForwardRef`
+        * Use `_make_forward_ref` instead of `typing.ForwardRef` to handle the `is_class` argument
 
         https://github.com/python/cpython/blob/aaaf5174241496afca7ce4d4584570190ff972fe/Lib/typing.py#L1773-L1875
 
