@@ -10,7 +10,7 @@ from copy import copy, deepcopy
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
-from typing import Any, Generic, Mapping, cast
+from typing import Any, Generic, Mapping, Tuple, cast
 
 import pydantic_core
 import typing_extensions
@@ -42,7 +42,7 @@ if typing.TYPE_CHECKING:
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
     AnyClassMethod = classmethod[Any, Any, Any]
-    TupleGenerator = typing.Generator[tuple[str, Any], None, None]
+    TupleGenerator = typing.Generator[Tuple[str, Any], None, None]
     Model = typing.TypeVar('Model', bound='BaseModel')
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
     IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'

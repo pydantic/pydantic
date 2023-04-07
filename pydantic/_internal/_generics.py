@@ -75,7 +75,7 @@ else:
 
 if TYPE_CHECKING:
 
-    class DeepChainMap(ChainMap[KT, VT]):
+    class DeepChainMap(ChainMap[KT, VT]):  # type: ignore
         ...
 
 else:
