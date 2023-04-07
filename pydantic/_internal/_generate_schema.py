@@ -16,6 +16,8 @@ from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, get_origin, is_typeddict
 
+from pydantic.annotated_arguments import AfterValidator, BeforeValidator, PlainSerializer, WrapSerializer, WrapValidator
+
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaValue, update_json_schema
@@ -36,6 +38,8 @@ from ._decorators import (
     ModelSerializerDecoratorInfo,
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
+    make_generic_serializer,
+    make_generic_validator,
 )
 from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
@@ -1101,6 +1105,35 @@ def apply_single_annotation(  # noqa C901
             schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator, definitions)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
+    elif isinstance(metadata, AfterValidator):
+        return core_schema.general_after_validator_function(
+            make_generic_validator(metadata.func, mode='after'),
+            schema=schema,
+        )
+    elif isinstance(metadata, BeforeValidator):
+        return core_schema.general_before_validator_function(
+            make_generic_validator(metadata.func, mode='before'),
+            schema=schema,
+        )
+    elif isinstance(metadata, WrapValidator):
+        return core_schema.general_wrap_validator_function(
+            make_generic_validator(metadata.func, mode='wrap'),
+            schema=schema,
+        )
+    elif isinstance(metadata, PlainSerializer):
+        schema['serialization'] = core_schema.general_plain_serializer_function_ser_schema(
+            function=make_generic_serializer(metadata.func, mode='plain', type='general'),
+            json_return_type=metadata.json_return_type,
+            when_used=metadata.when_used,
+        )
+        return schema
+    elif isinstance(metadata, WrapSerializer):
+        schema['serialization'] = core_schema.general_wrap_serializer_function_ser_schema(
+            function=make_generic_serializer(metadata.func, mode='wrap', type='general'),
+            json_return_type=metadata.json_return_type,
+            when_used=metadata.when_used,
+        )
+        return schema
 
     if isinstance(metadata, PydanticGeneralMetadata):
         metadata_dict = metadata.__dict__

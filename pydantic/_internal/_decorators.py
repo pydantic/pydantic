@@ -97,7 +97,6 @@ class FieldValidatorDecoratorInfo(Representation):
 
     fields: tuple[str, ...]
     mode: Literal['before', 'after', 'wrap', 'plain']
-    sub_path: tuple[str | int, ...] | None
     check_fields: bool | None
 
     def __init__(
@@ -105,18 +104,15 @@ class FieldValidatorDecoratorInfo(Representation):
         *,
         fields: tuple[str, ...],
         mode: Literal['before', 'after', 'wrap', 'plain'],
-        sub_path: tuple[str | int, ...] | None,
         check_fields: bool | None,
     ) -> None:
         """
         :param fields: the fields this validator applies to.
         :param mode: the pydantic-core validator mode.
-        :param sub_path: Not yet supported.
         :param check_fields: whether to check that the fields actually exist on the model.
         """
         self.fields = fields
         self.mode = mode
-        self.sub_path = sub_path
         self.check_fields = check_fields
 
 
@@ -152,7 +148,6 @@ class FieldSerializerDecoratorInfo(Representation):
     type: Literal['general', 'field']
     json_return_type: JsonReturnTypes | None
     when_used: WhenUsed
-    sub_path: tuple[str | int, ...] | None
     check_fields: bool | None
 
     def __init__(
@@ -163,11 +158,9 @@ class FieldSerializerDecoratorInfo(Representation):
         type: Literal['general', 'field'],
         json_return_type: JsonReturnTypes | None = None,
         when_used: WhenUsed = 'always',
-        sub_path: tuple[str | int, ...] | None = None,
         check_fields: bool | None = None,
     ) -> None:
         self.fields = fields
-        self.sub_path = sub_path
         self.mode = mode
         self.json_return_type = json_return_type
         self.when_used = when_used
@@ -552,23 +545,7 @@ def remove_params_with_defaults(sig: Signature) -> Signature:
     return Signature([p for p in sig.parameters.values() if p.default is Parameter.empty])
 
 
-@overload
-def make_generic_v2_field_validator(
-    validator: FieldWrapValidatorFunction, mode: Literal['wrap']
-) -> FieldWrapValidatorFunction:
-    ...
-
-
-@overload
-def make_generic_v2_field_validator(
-    validator: OnlyValueValidator | FieldValidatorFunction, mode: Literal['before', 'after', 'plain']
-) -> FieldValidatorFunction:
-    ...
-
-
-def make_generic_v2_field_validator(
-    validator: OnlyValueValidator | FieldValidatorFunction | FieldWrapValidatorFunction, mode: str
-) -> FieldValidatorFunction | FieldWrapValidatorFunction:
+def make_generic_validator(validator: Any, mode: str) -> Any:
     """
     In order to support different signatures, including deprecated validator signatures from v1,
     we introspect the function signature and wrap it in a parent function that has a signature
@@ -653,9 +630,9 @@ AnySerializerFunction = Union[
 ]
 
 
-def make_generic_field_serializer(
+def make_generic_serializer(
     serializer: AnySerializerFunction, mode: Literal['plain', 'wrap'], type: Literal['field', 'general']
-) -> AnyCoreSerializer:
+) -> Any:
     """
     Wrap serializers to allow ignoring the `info` argument as a convenience.
     """
