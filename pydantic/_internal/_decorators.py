@@ -3,10 +3,10 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
+from dataclasses import field
 from functools import partial, partialmethod
 from inspect import Parameter, Signature, signature
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -34,15 +34,11 @@ from pydantic_core.core_schema import (
     ValidationInfo,
     WhenUsed,
 )
-from typing_extensions import Protocol, TypeAlias
+from typing_extensions import Literal, Protocol, TypeAlias
 
 from ..errors import PydanticUserError
 from ._core_utils import get_type_ref
-from ._repr import Representation
-
-if TYPE_CHECKING:
-    from typing_extensions import Literal
-
+from ._dataclass import dataclass
 
 FIELD_VALIDATOR_TAG = '_field_validator'
 ROOT_VALIDATOR_TAG = '_root_validator'
@@ -50,7 +46,8 @@ ROOT_VALIDATOR_TAG = '_root_validator'
 FIELD_SERIALIZER_TAG = '_field_serializer'
 
 
-class ValidatorDecoratorInfo(Representation):
+@dataclass
+class ValidatorDecoratorInfo:
     """
     A container for data from `@validator` so that we can access it
     while building the pydantic-core schema.
@@ -64,30 +61,9 @@ class ValidatorDecoratorInfo(Representation):
     always: bool
     check_fields: bool | None
 
-    def __init__(
-        self,
-        *,
-        fields: tuple[str, ...],
-        # pre=True/False in v1 should be converted to mode='before'/'after' in v2
-        mode: Literal['before', 'after'],
-        each_item: bool,
-        always: bool,
-        check_fields: bool | None,
-    ) -> None:
-        """
-        :param mode: the pydantic-core validator mode.
-        :param check_fields: whether to check that the fields actually exist on the model.
-        :param each_item: if True this validator gets applied to the internal items of
-            lists/sets/dicts instead of the collection itself.
-        """
-        self.fields = fields
-        self.mode = mode
-        self.each_item = each_item
-        self.always = always
-        self.check_fields = check_fields
 
-
-class FieldValidatorDecoratorInfo(Representation):
+@dataclass
+class FieldValidatorDecoratorInfo:
     """
     A container for data from `@field_validator` so that we can access it
     while building the pydantic-core schema.
@@ -100,53 +76,26 @@ class FieldValidatorDecoratorInfo(Representation):
     sub_path: tuple[str | int, ...] | None
     check_fields: bool | None
 
-    def __init__(
-        self,
-        *,
-        fields: tuple[str, ...],
-        mode: Literal['before', 'after', 'wrap', 'plain'],
-        sub_path: tuple[str | int, ...] | None,
-        check_fields: bool | None,
-    ) -> None:
-        """
-        :param fields: the fields this validator applies to.
-        :param mode: the pydantic-core validator mode.
-        :param sub_path: Not yet supported.
-        :param check_fields: whether to check that the fields actually exist on the model.
-        """
-        self.fields = fields
-        self.mode = mode
-        self.sub_path = sub_path
-        self.check_fields = check_fields
 
-
-class RootValidatorDecoratorInfo(Representation):
+@dataclass
+class RootValidatorDecoratorInfo:
     """
     A container for data from `@root_validator` so that we can access it
     while building the pydantic-core schema.
     """
 
     decorator_repr: ClassVar[str] = '@root_validator'
-
-    def __init__(
-        self,
-        *,
-        mode: Literal['before', 'after'],
-    ) -> None:
-        """
-        :param mode: the pydantic-core validator mode
-        """
-        self.mode = mode
+    mode: Literal['before', 'after']
 
 
-class FieldSerializerDecoratorInfo(Representation):
+@dataclass
+class FieldSerializerDecoratorInfo:
     """
     A container for data from `@field_serializer` so that we can access it
     while building the pydantic-core schema.
     """
 
     decorator_repr: ClassVar[str] = '@field_serializer'
-
     fields: tuple[str, ...]
     mode: Literal['plain', 'wrap']
     type: Literal['general', 'field']
@@ -155,45 +104,17 @@ class FieldSerializerDecoratorInfo(Representation):
     sub_path: tuple[str | int, ...] | None
     check_fields: bool | None
 
-    def __init__(
-        self,
-        *,
-        fields: tuple[str, ...],
-        mode: Literal['plain', 'wrap'],
-        type: Literal['general', 'field'],
-        json_return_type: JsonReturnTypes | None = None,
-        when_used: WhenUsed = 'always',
-        sub_path: tuple[str | int, ...] | None = None,
-        check_fields: bool | None = None,
-    ) -> None:
-        self.fields = fields
-        self.sub_path = sub_path
-        self.mode = mode
-        self.json_return_type = json_return_type
-        self.when_used = when_used
-        self.check_fields = check_fields
-        self.type = type
 
-
-class ModelSerializerDecoratorInfo(Representation):
+@dataclass
+class ModelSerializerDecoratorInfo:
     """
     A container for data from `@model_serializer` so that we can access it
     while building the pydantic-core schema.
     """
 
     decorator_repr: ClassVar[str] = '@model_serializer'
-
     mode: Literal['plain', 'wrap']
     json_return_type: JsonReturnTypes | None
-
-    def __init__(
-        self,
-        *,
-        mode: Literal['plain', 'wrap'],
-        json_return_type: JsonReturnTypes | None = None,
-    ) -> None:
-        self.mode = mode
-        self.json_return_type = json_return_type
 
 
 DecoratorInfo = Union[
@@ -210,7 +131,8 @@ DecoratedType: TypeAlias = (
 )
 
 
-class PydanticDecoratorMarker(Generic[ReturnType], Representation):
+@dataclass
+class PydanticDecoratorMarker(Generic[ReturnType]):
     """
     Wrap a classmethod, staticmethod or unbound function
     and act as a descriptor that allows us to detect decorated items
@@ -220,15 +142,9 @@ class PydanticDecoratorMarker(Generic[ReturnType], Representation):
     which makes it transparent for classmethods and staticmethods.
     """
 
-    def __init__(
-        self,
-        wrapped: DecoratedType[ReturnType],
-        decorator_info: DecoratorInfo,
-        shim: Callable[[Callable[..., Any]], Callable[..., Any]] | None,
-    ) -> None:
-        self.wrapped = wrapped
-        self.decorator_info = decorator_info
-        self.shim = shim
+    wrapped: DecoratedType[ReturnType]
+    decorator_info: DecoratorInfo
+    shim: Callable[[Callable[..., Any]], Callable[..., Any]] | None
 
     @overload
     def __get__(self, obj: None, objtype: None) -> PydanticDecoratorMarker[ReturnType]:
@@ -251,7 +167,8 @@ class PydanticDecoratorMarker(Generic[ReturnType], Representation):
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
 
 
-class Decorator(Generic[DecoratorInfoType], Representation):
+@dataclass
+class Decorator(Generic[DecoratorInfoType]):
     """
     A generic container class to join together the decorator metadata
     (metadata from decorator itself, which we have when the
@@ -259,19 +176,11 @@ class Decorator(Generic[DecoratorInfoType], Representation):
     and the bound function (which we have after the class itself is created).
     """
 
-    def __init__(
-        self,
-        cls_ref: str,
-        cls_var_name: str,
-        func: Callable[..., Any],
-        shim: Callable[[Any], Any] | None,
-        info: DecoratorInfoType,
-    ) -> None:
-        self.cls_ref = cls_ref
-        self.cls_var_name = cls_var_name
-        self.func = func
-        self.info = info
-        self.shim = shim
+    cls_ref: str
+    cls_var_name: str
+    func: Callable[..., Any]
+    shim: Callable[[Any], Any] | None
+    info: DecoratorInfoType
 
     @staticmethod
     def build(
@@ -300,22 +209,16 @@ class Decorator(Generic[DecoratorInfoType], Representation):
         )
 
 
-class DecoratorInfos(Representation):
+@dataclass
+class DecoratorInfos:
     # mapping of name in the class namespace to decorator info
     # note that the name in the class namespace is the function or attribute name
     # not the field name!
-    validator: dict[str, Decorator[ValidatorDecoratorInfo]]
-    field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]]
-    root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]]
-    field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]]
-    model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]]
-
-    def __init__(self) -> None:
-        self.validator = {}
-        self.field_validator = {}
-        self.root_validator = {}
-        self.field_serializer = {}
-        self.model_serializer = {}
+    validator: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
+    field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
+    root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
+    field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
+    model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
 
 
 def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
