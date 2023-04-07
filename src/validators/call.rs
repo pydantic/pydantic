@@ -61,8 +61,7 @@ impl Validator for CallValidator {
     ) -> ValResult<'data, PyObject> {
         let args = self
             .arguments_validator
-            .validate(py, input, extra, slots, recursion_guard)
-            .map_err(|e| e.with_outer_location("arguments".into()))?;
+            .validate(py, input, extra, slots, recursion_guard)?;
 
         let return_value = if let Ok((args, kwargs)) = args.extract::<(&PyTuple, &PyDict)>(py) {
             self.function.call(py, args, Some(kwargs))?
@@ -76,7 +75,7 @@ impl Validator for CallValidator {
         if let Some(return_validator) = &self.return_validator {
             return_validator
                 .validate(py, return_value.into_ref(py), extra, slots, recursion_guard)
-                .map_err(|e| e.with_outer_location("return-value".into()))
+                .map_err(|e| e.with_outer_location("return".into()))
         } else {
             Ok(return_value.to_object(py))
         }

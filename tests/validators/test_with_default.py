@@ -2,7 +2,7 @@ from collections import deque
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import PyAndJson, plain_repr
 
@@ -57,7 +57,8 @@ def test_arguments():
         }
     )
     assert v.validate_python({'a': 2}) == ((), {'a': 2})
-    assert v.validate_python({'__args__': (2,), '__kwargs__': {}}) == ((2,), {})
+    assert v.validate_python(ArgsKwargs((2,))) == ((2,), {})
+    assert v.validate_python(ArgsKwargs((2,), {})) == ((2,), {})
     assert v.validate_python(()) == ((), {'a': 1})
 
 

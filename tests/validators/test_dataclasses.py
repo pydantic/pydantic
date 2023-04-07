@@ -10,17 +10,6 @@ from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError, core_sch
 from ..conftest import Err, PyAndJson
 
 
-def test_args_kwargs():
-    ak = ArgsKwargs(('hello', True))
-    assert repr(ak) == "ArgsKwargs(args=('hello', True), kwargs={})"
-    assert ak.args == ('hello', True)
-    assert ak.kwargs is None
-    ak2 = ArgsKwargs((), {'a': 123})
-    assert repr(ak2) == "ArgsKwargs(args=(), kwargs={'a': 123})"
-    assert ak2.args == ()
-    assert ak2.kwargs == {'a': 123}
-
-
 @pytest.mark.parametrize(
     'input_value,expected',
     [
@@ -46,15 +35,8 @@ def test_args_kwargs():
         (
             {'a': 'hello'},
             Err(
-                'Missing required keyword argument',
-                errors=[
-                    {
-                        'type': 'missing_keyword_argument',
-                        'loc': ('b',),
-                        'msg': 'Missing required keyword argument',
-                        'input': {'a': 'hello'},
-                    }
-                ],
+                'Field required',
+                errors=[{'type': 'missing', 'loc': ('b',), 'msg': 'Field required', 'input': {'a': 'hello'}}],
             ),
         ),
     ],
@@ -103,15 +85,8 @@ def test_dataclass_args(py_and_json: PyAndJson, input_value, expected):
         (
             {'a': 'hello'},
             Err(
-                'Missing required keyword argument',
-                errors=[
-                    {
-                        'type': 'missing_keyword_argument',
-                        'loc': ('b',),
-                        'msg': 'Missing required keyword argument',
-                        'input': {'a': 'hello'},
-                    }
-                ],
+                'Field required',
+                errors=[{'type': 'missing', 'loc': ('b',), 'msg': 'Field required', 'input': {'a': 'hello'}}],
             ),
         ),
         (

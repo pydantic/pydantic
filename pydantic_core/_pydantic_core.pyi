@@ -224,6 +224,10 @@ class ErrorTypeInfo(TypedDict):
 
 class ArgsKwargs:
     def __init__(self, args: 'tuple[Any, ...]', kwargs: 'dict[str, Any] | None' = None) -> None: ...
+    @property
+    def args(self) -> 'tuple[Any, ...]': ...
+    @property
+    def kwargs(self) -> 'dict[str, Any] | None': ...
 
 def list_all_errors() -> 'list[ErrorTypeInfo]':
     """
