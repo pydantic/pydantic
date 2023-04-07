@@ -205,7 +205,7 @@ HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 
 
 def conset(
-    item_type: type[HashableItemType], *, min_length: int = None, max_length: int = None
+    item_type: type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> type[set[HashableItemType]]:
     return Annotated[  # type: ignore[return-value]
         Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
@@ -789,7 +789,14 @@ else:
             return 'FutureDate'
 
 
-def condate(*, strict: bool = None, gt: date = None, ge: date = None, lt: date = None, le: date = None) -> type[date]:
+def condate(
+    *,
+    strict: bool | None = None,
+    gt: date | None = None,
+    ge: date | None = None,
+    lt: date | None = None,
+    le: date | None = None,
+) -> type[date]:
     return Annotated[  # type: ignore[return-value]
         date,
         Strict(strict) if strict is not None else None,

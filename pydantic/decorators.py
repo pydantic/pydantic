@@ -97,7 +97,7 @@ V1RootValidator = Union[
     _decorators.V1RootValidatorFunction,
 ]
 
-_PartialClsOrStaticMethod: TypeAlias = 'Union[classmethod[Any], staticmethod[Any], partialmethod[Any]]'
+_PartialClsOrStaticMethod: TypeAlias = 'Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]'
 
 
 # Allow both a V1 (assumed pre=False) or V2 (assumed mode='after') validator
@@ -235,7 +235,9 @@ def field_validator(
             code='validator-invalid-fields',
         )
 
-    def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
+    def dec(
+        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
+    ) -> _decorators.PydanticDecoratorMarker[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
                 '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
@@ -292,7 +294,7 @@ def root_validator(
     pre: bool = False,
     skip_on_failure: bool = False,
     allow_reuse: bool = False,
-) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]]:
+) -> Any:
     """
     Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
     before or after standard model parsing/validation is performed.
@@ -308,7 +310,7 @@ def root_validator(
 
     wrap = partial(_decorators.make_v1_generic_root_validator, pre=pre)
 
-    def dec(f: Callable[..., Any] | classmethod[Any] | staticmethod[Any]) -> Any:
+    def dec(f: Callable[..., Any] | classmethod[Any, Any, Any] | staticmethod[Any, Any]) -> Any:
         if _decorators.is_instance_method_from_sig(f):
             raise TypeError('`@root_validator` cannot be applied to instance methods')
         # auto apply the @classmethod decorator and warn users if we had to do so
@@ -405,7 +407,9 @@ def field_serializer(
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
 
-    def dec(f: Callable[..., Any] | staticmethod[Any] | classmethod[Any]) -> _decorators.PydanticDecoratorMarker[Any]:
+    def dec(
+        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
+    ) -> _decorators.PydanticDecoratorMarker[Any]:
         type_: Literal['field', 'general'] = 'field' if _decorators.is_instance_method_from_sig(f) else 'general'
 
         dec_info = _decorators.FieldSerializerDecoratorInfo(
@@ -425,7 +429,7 @@ def field_serializer(
 
 
 def model_serializer(
-    __f: Callable[..., Any] = None,
+    __f: Callable[..., Any] | None = None,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,

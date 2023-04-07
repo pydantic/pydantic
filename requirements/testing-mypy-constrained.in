@@ -1,0 +1,2 @@
+-r testing-mypy.in
+-c all.txt

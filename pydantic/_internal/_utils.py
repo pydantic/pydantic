@@ -14,13 +14,13 @@ from itertools import zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import Any, TypeVar
 
-from typing_extensions import TypeGuard
+from typing_extensions import TypeAlias, TypeGuard
 
 from . import _repr, _typing_extra
 
 if typing.TYPE_CHECKING:
-    MappingIntStrAny = typing.Mapping[int | str, Any]
-    AbstractSetIntStr = typing.AbstractSet[int | str]
+    MappingIntStrAny: TypeAlias = 'typing.Mapping[int, Any] | typing.Mapping[str, Any]'
+    AbstractSetIntStr: TypeAlias = 'typing.AbstractSet[int] | typing.AbstractSet[str]'
     from ..main import BaseModel
 
 __all__ = (
@@ -134,7 +134,7 @@ def deep_update(mapping: dict[KeyType, Any], *updating_mappings: dict[KeyType, A
     return updated_mapping
 
 
-def dict_not_none(__pos: dict[str, Any] = None, **kwargs: Any) -> dict[str, Any]:
+def dict_not_none(__pos: dict[str, Any] | None = None, **kwargs: Any) -> dict[str, Any]:
     return {k: v for k, v in (__pos or kwargs).items() if v is not None}
 
 
@@ -197,9 +197,9 @@ class ValueItems(_repr.Representation):
         items = self._coerce_items(items)
 
         if isinstance(value, (list, tuple)):
-            items = self._normalize_indexes(items, len(value))
+            items = self._normalize_indexes(items, len(value))  # type: ignore
 
-        self._items: MappingIntStrAny = items
+        self._items: MappingIntStrAny = items  # type: ignore
 
     def is_excluded(self, item: Any) -> bool:
         """
@@ -223,7 +223,7 @@ class ValueItems(_repr.Representation):
         :return: raw values for element if self._items is dict and contain needed element
         """
 
-        item = self._items.get(e)
+        item = self._items.get(e)  # type: ignore
         return item if not self.is_true(item) else None
 
     def _normalize_indexes(self, items: MappingIntStrAny, v_length: int) -> dict[int | str, Any]:
@@ -308,12 +308,12 @@ class ValueItems(_repr.Representation):
     def _coerce_items(items: AbstractSetIntStr | MappingIntStrAny) -> MappingIntStrAny:
         if isinstance(items, typing.Mapping):
             pass
-        elif isinstance(items, typing.AbstractSet):
-            items = dict.fromkeys(items, ...)
+        elif isinstance(items, typing.AbstractSet):  # type: ignore
+            items = dict.fromkeys(items, ...)  # type: ignore
         else:
             class_name = getattr(items, '__class__', '???')
             raise TypeError(f'Unexpected type of exclude value {class_name}')
-        return items
+        return items  # type: ignore
 
     @classmethod
     def _coerce_value(cls, value: Any) -> Any:

@@ -144,3 +144,4 @@ skip-string-normalization = true
 
 [tool.pyright]
 include = ['pydantic']
+exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']

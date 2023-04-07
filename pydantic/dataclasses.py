@@ -37,13 +37,13 @@ if sys.version_info >= (3, 10):
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
-    ) -> Callable[[type[_T]], type[PydanticDataclass]]:
+    ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
-        _cls: type[_T],
+        _cls: type[_T],  # type: ignore
         *,
         init: Literal[False] = False,
         repr: bool = True,
@@ -71,13 +71,13 @@ else:
         frozen: bool = False,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
-    ) -> Callable[[type[_T]], type[PydanticDataclass]]:
+    ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
-        _cls: type[_T],
+        _cls: type[_T],  # type: ignore
         *,
         init: Literal[False] = False,
         repr: bool = True,

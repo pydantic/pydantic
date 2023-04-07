@@ -6,14 +6,14 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from typing import TYPE_CHECKING, Any
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeAlias
 
 from ._internal import _fields, _repr
 
 if TYPE_CHECKING:
     import email_validator
 
-    NetworkType = str | bytes | int | tuple[str | bytes | int, str | int]
+    NetworkType: TypeAlias = 'str | bytes | int | tuple[str | bytes | int, str | int]'
 
 else:
     email_validator = None

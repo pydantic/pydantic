@@ -103,7 +103,7 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     tree with a re-used ref, with the intent that that schema gets replaced with a recursive reference once the
     specific generic parametrization to use can be determined.
     """
-    refs = set()
+    refs: set[str] = set()
 
     def _replace_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
         ref: str | None = s.get('ref')  # type: ignore[assignment]
@@ -145,11 +145,17 @@ def remove_unnecessary_invalid_definitions(schema: core_schema.CoreSchema) -> co
 
         new_schema = s.copy()
 
-        new_definitions = []
+        new_definitions: list[CoreSchema] = []
         for definition in s['definitions']:
             metadata = definition.get('metadata')
-            if isinstance(metadata, dict) and 'invalid' in metadata and definition['ref'] in valid_refs:
+            # fmt: off
+            if (
+                isinstance(metadata, dict)
+                and 'invalid' in metadata
+                and definition['ref'] in valid_refs  # type: ignore
+            ):
                 continue
+            # fmt: on
             new_definitions.append(definition)
 
         new_schema['definitions'] = new_definitions

@@ -6,7 +6,7 @@ from __future__ import annotations as _annotations
 import typing
 import warnings
 from functools import wraps
-from typing import Any, Callable, ClassVar
+from typing import Any, Callable, ClassVar, cast
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
 
@@ -62,6 +62,8 @@ def prepare_dataclass(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
+    cls = cast('type[PydanticDataclass]', cls)
+
     name = cls.__name__
     bases = cls.__bases__
 
@@ -76,9 +78,9 @@ def prepare_dataclass(
         warning_string = (
             f'`{name}` is not fully defined, you should define `{e}`, then call TODO! `methods.rebuild({name})`'
         )
-        if config['undefined_types_warning']:
+        if config['undefined_types_warning']:  # type: ignore
             raise UserWarning(warning_string)
-        cls.__pydantic_validator__ = MockValidator(warning_string, code='dataclass-not-fully-defined')
+        cls.__pydantic_validator__ = MockValidator(warning_string, code='dataclass-not-fully-defined')  # type: ignore
         return False
 
     decorators = cls.__pydantic_decorators__
@@ -88,7 +90,7 @@ def prepare_dataclass(
         dataclass_ref,
         fields,
         decorators,
-        config['arbitrary_types_allowed'],
+        config['arbitrary_types_allowed'],  # type: ignore
         types_namespace,
     )
 
@@ -105,7 +107,7 @@ def prepare_dataclass(
         def validated_setattr(instance: Any, __field: str, __value: str) -> None:
             validator.validate_assignment(instance, __field, __value)
 
-        cls.__setattr__ = validated_setattr.__get__(None, cls)
+        cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
     # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't copied.
 
@@ -115,7 +117,7 @@ def prepare_dataclass(
         s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
-    cls.__init__ = __init__
+    cls.__init__ = __init__  # type: ignore
 
     return True
 

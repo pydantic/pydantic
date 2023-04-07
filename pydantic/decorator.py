@@ -60,7 +60,7 @@ V_DUPLICATE_KWARGS = 'v__duplicate_kwargs'
 
 
 class ValidatedFunction:
-    def __init__(self, function: 'AnyCallableT', config: 'ConfigType'):
+    def __init__(self, function: 'AnyCallable', config: 'ConfigType'):
         from inspect import Parameter, signature
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -74,7 +74,7 @@ class ValidatedFunction:
 
         self.raw_function = function
         self.arg_mapping: Dict[int, str] = {}
-        self.positional_only_args = set()
+        self.positional_only_args: set[str] = set()
         self.v_args_name = 'args'
         self.v_kwargs_name = 'kwargs'
 
