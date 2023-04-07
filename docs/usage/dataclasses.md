@@ -210,7 +210,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for Foo
-    file -> filename
+    file.filename
       Input should be a valid string [type=string_type, input_value=['not', 'a', 'string'], input_type=list]
     """
 

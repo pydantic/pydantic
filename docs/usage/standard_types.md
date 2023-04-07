@@ -123,9 +123,9 @@ except ValidationError as e:
     print(str(e))
     """
     2 validation errors for IceCream
-    dessert -> Cake -> kind
+    dessert.Cake.kind
       Input should be 'cake' [type=literal_error, input_value='pie', input_type=str]
-    dessert -> IceCream -> kind
+    dessert.IceCream.kind
       Input should be 'icecream' [type=literal_error, input_value='pie', input_type=str]
     """
 ```

@@ -48,9 +48,9 @@ except ValidationError as e:
     print(e)
     """
     2 validation errors for ConstrainedJsonModel
-    json_obj -> 0
+    json_obj.0
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
-    json_obj -> 1
+    json_obj.1
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='b', input_type=str]
     """
 ```

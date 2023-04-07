@@ -35,7 +35,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for Model
-    p -> arguments -> 0
+    p.0
       Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value='1.3', input_type=str]
     """
 ```
@@ -87,7 +87,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for Model
-    u -> identity -> name
+    u.identity.name
       Input should be a valid string [type=string_type, input_value=['Smith'], input_type=list]
     """
 
@@ -103,7 +103,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for Model
-    u -> email
+    u.email
       Extra inputs are not permitted [type=extra_forbidden, input_value='john.smith@me.com', input_type=str]
     """
 ```
