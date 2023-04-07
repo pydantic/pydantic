@@ -136,7 +136,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for Lizard
-    pet -> dog -> barks
+    pet.dog.barks
       Field required [type=missing, input_value={'pet_type': 'dog'}, input_type=dict]
     """
 ```
@@ -206,7 +206,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for Dog
-    pet -> cat
+    pet.cat
       Input tag 'red' found using 'color' does not match any of the expected tags: 'black', 'white' [type=union_tag_invalid, input_value={'pet_type': 'cat', 'color': 'red'}, input_type=dict]
     """
 try:
@@ -215,7 +215,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for Dog
-    pet -> cat -> black -> black_name
+    pet.cat.black.black_name
       Field required [type=missing, input_value={'pet_type': 'cat', 'color': 'black'}, input_type=dict]
     """
 ```

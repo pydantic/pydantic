@@ -16,7 +16,7 @@ def test_simple_construct():
     m = Model.model_construct(a=3.14)
     assert m.a == 3.14
     assert m.b == 10
-    assert m.__fields_set__ == {'a'}
+    assert m.model_fields_set == {'a'}
     assert m.model_dump() == {'a': 3.14, 'b': 10}
 
 
@@ -33,7 +33,7 @@ def test_construct_fields_set():
     m = Model.model_construct(a=3.0, b=-1, _fields_set={'a'})
     assert m.a == 3
     assert m.b == -1
-    assert m.__fields_set__ == {'a'}
+    assert m.model_fields_set == {'a'}
     assert m.model_dump() == {'a': 3, 'b': -1}
 
 
@@ -430,8 +430,8 @@ def test_copy_with_excluded_fields():
     user = User(name='test_user', age=23, dob='01/01/2000')
     user_copy = deprecated_copy(user, exclude={'dob': ...})
 
-    assert 'dob' in user.__fields_set__
-    assert 'dob' not in user_copy.__fields_set__
+    assert 'dob' in user.model_fields_set
+    assert 'dob' not in user_copy.model_fields_set
 
 
 def test_dunder_copy(ModelTwo):
