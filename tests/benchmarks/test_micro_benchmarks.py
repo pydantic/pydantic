@@ -10,7 +10,7 @@ from typing import Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 
-from pydantic_core import PydanticCustomError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import ArgsKwargs, PydanticCustomError, SchemaValidator, ValidationError, core_schema
 from pydantic_core import ValidationError as CoreValidationError
 
 if os.getenv('BENCHMARK_VS_PYDANTIC'):
@@ -1024,12 +1024,9 @@ def test_arguments(benchmark):
             ],
         }
     )
-    assert v.validate_python({'__args__': (1, 'a', 'true'), '__kwargs__': {'b': 'bb', 'c': 3}}) == (
-        (1, 'a', True),
-        {'b': 'bb', 'c': 3},
-    )
+    assert v.validate_python(ArgsKwargs((1, 'a', 'true'), {'b': 'bb', 'c': 3})) == ((1, 'a', True), {'b': 'bb', 'c': 3})
 
-    benchmark(v.validate_python, {'__args__': (1, 'a', 'true'), '__kwargs__': {'b': 'bb', 'c': 3}})
+    benchmark(v.validate_python, ArgsKwargs((1, 'a', 'true'), {'b': 'bb', 'c': 3}))
 
 
 @pytest.mark.benchmark(group='defaults')

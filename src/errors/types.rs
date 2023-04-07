@@ -267,12 +267,11 @@ pub enum ErrorType {
     // ---------------------
     // argument errors
     ArgumentsType,
-    PositionalArgumentsType,
-    KeywordArgumentsType,
+    MissingArgument,
     UnexpectedKeywordArgument,
-    MissingKeywordArgument,
+    MissingKeywordOnlyArgument,
     UnexpectedPositionalArgument,
-    MissingPositionalArgument,
+    MissingPositionalOnlyArgument,
     MultipleArgumentValues,
     // ---------------------
     // dataclass errors (we don't talk about ArgsKwargs here for simplicity)
@@ -522,12 +521,11 @@ impl ErrorType {
             Self::UnionTagInvalid {..} => "Input tag '{tag}' found using {discriminator} does not match any of the expected tags: {expected_tags}",
             Self::UnionTagNotFound {..} => "Unable to extract tag using discriminator {discriminator}",
             Self::ArgumentsType => "Arguments must be a tuple, list or a dictionary",
-            Self::PositionalArgumentsType => "Positional arguments must be a list or tuple",
-            Self::KeywordArgumentsType => "Keyword arguments must be a dictionary",
+            Self::MissingArgument => "Missing required argument",
             Self::UnexpectedKeywordArgument => "Unexpected keyword argument",
-            Self::MissingKeywordArgument => "Missing required keyword argument",
+            Self::MissingKeywordOnlyArgument => "Missing required keyword only argument",
             Self::UnexpectedPositionalArgument => "Unexpected positional argument",
-            Self::MissingPositionalArgument => "Missing required positional argument",
+            Self::MissingPositionalOnlyArgument => "Missing required positional only argument",
             Self::MultipleArgumentValues => "Got multiple values for argument",
             Self::DataclassType {..} => "Input should be a dictionary or an instance of {dataclass_name}",
             Self::UrlType => "URL input should be a string or URL",

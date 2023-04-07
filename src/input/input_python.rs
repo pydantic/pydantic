@@ -12,7 +12,7 @@ use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{ffi, intern, AsPyPointer, PyTypeInfo};
 
 use crate::build_tools::safe_repr;
-use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValLineError, ValResult};
+use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValResult};
 use crate::{ArgsKwargs, PyMultiHostUrl, PyUrl};
 
 use super::datetime::{
@@ -139,48 +139,11 @@ impl<'a> Input<'a> for PyAny {
 
     fn validate_args(&'a self) -> ValResult<'a, GenericArguments<'a>> {
         if let Ok(dict) = self.downcast::<PyDict>() {
-            if let Some(args) = dict.get_item(intern!(self.py(), "__args__")) {
-                if let Some(kwargs) = dict.get_item(intern!(self.py(), "__kwargs__")) {
-                    // we only try this logic if there are only these two items in the dict
-                    if dict.len() == 2 {
-                        let args = if let Ok(tuple) = args.downcast::<PyTuple>() {
-                            Ok(Some(tuple))
-                        } else if args.is_none() {
-                            Ok(None)
-                        } else if let Ok(list) = args.downcast::<PyList>() {
-                            Ok(Some(list_as_tuple(list)))
-                        } else {
-                            Err(ValLineError::new_with_loc(
-                                ErrorType::PositionalArgumentsType,
-                                args,
-                                "__args__",
-                            ))
-                        };
-
-                        let kwargs = if let Ok(dict) = kwargs.downcast::<PyDict>() {
-                            Ok(Some(dict))
-                        } else if kwargs.is_none() {
-                            Ok(None)
-                        } else {
-                            Err(ValLineError::new_with_loc(
-                                ErrorType::KeywordArgumentsType,
-                                kwargs,
-                                "__kwargs__",
-                            ))
-                        };
-
-                        return match (args, kwargs) {
-                            (Ok(args), Ok(kwargs)) => Ok(PyArgs::new(args, kwargs).into()),
-                            (Err(args_error), Err(kwargs_error)) => {
-                                Err(ValError::LineErrors(vec![args_error, kwargs_error]))
-                            }
-                            (Err(error), _) => Err(ValError::LineErrors(vec![error])),
-                            (_, Err(error)) => Err(ValError::LineErrors(vec![error])),
-                        };
-                    }
-                }
-            }
             Ok(PyArgs::new(None, Some(dict)).into())
+        } else if let Ok(args_kwargs) = self.extract::<ArgsKwargs>() {
+            let args = args_kwargs.args.into_ref(self.py());
+            let kwargs = args_kwargs.kwargs.map(|d| d.into_ref(self.py()));
+            Ok(PyArgs::new(Some(args), kwargs).into())
         } else if let Ok(tuple) = self.downcast::<PyTuple>() {
             Ok(PyArgs::new(Some(tuple), None).into())
         } else if let Ok(list) = self.downcast::<PyList>() {

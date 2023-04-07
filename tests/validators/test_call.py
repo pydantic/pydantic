@@ -4,7 +4,7 @@ from collections import namedtuple
 
 import pytest
 
-from pydantic_core import SchemaValidator, ValidationError
+from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -14,10 +14,10 @@ from ..conftest import Err, PyAndJson, plain_repr
     [
         [(1, 2, 3), 6],
         [{'a': 1, 'b': 1, 'c': 1}, 3],
-        [{'__args__': (1,), '__kwargs__': {'b': 1, 'c': 1}}, 3],
-        [(1, 2, 'x'), Err('arguments.2\n  Input should be a valid integer,')],
+        [ArgsKwargs((1,), {'b': 1, 'c': 1}), 3],
+        [(1, 2, 'x'), Err('2\n  Input should be a valid integer,')],
         [(3, 3, 4), 10],
-        [(3, 3, 5), Err('return-value\n  Input should be less than or equal to 10')],
+        [(3, 3, 5), Err('return\n  Input should be less than or equal to 10')],
     ],
 )
 def test_function_call_arguments(py_and_json: PyAndJson, input_value, expected):
@@ -115,7 +115,7 @@ def test_in_union():
     assert exc_info.value.errors() == [
         {
             'type': 'unexpected_positional_argument',
-            'loc': ('call[my_function]', 'arguments', 1),
+            'loc': ('call[my_function]', 1),
             'msg': 'Unexpected positional argument',
             'input': 2,
         },

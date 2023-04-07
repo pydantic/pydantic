@@ -6,9 +6,32 @@ from typing import Any, get_type_hints
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson, plain_repr
+
+
+def test_args_kwargs():
+    ak = ArgsKwargs(('hello', True))
+    assert str(ak) == "ArgsKwargs(('hello', True))"
+    assert repr(ak) == "ArgsKwargs(('hello', True))"
+    assert ak.args == ('hello', True)
+    assert ak.kwargs is None
+    ak2 = ArgsKwargs((), {'a': 123})
+    assert repr(ak2) == "ArgsKwargs((), {'a': 123})"
+    assert ak2.args == ()
+    assert ak2.kwargs == {'a': 123}
+    ak3 = ArgsKwargs(('hello', True), {'a': 123, 'b': b'bytes'})
+    assert repr(ak3) == "ArgsKwargs(('hello', True), {'a': 123, 'b': b'bytes'})"
+
+    assert ak != ak2
+
+    assert ak == ArgsKwargs(('hello', True))
+    assert ak3 == ArgsKwargs(('hello', True), {'a': 123, 'b': b'bytes'})
+    assert ak3 != ArgsKwargs(('hello', True), {'a': 123, 'b': b'different'})
+    assert ArgsKwargs((1,), {}) == ArgsKwargs((1,), None) == ArgsKwargs((1,))
+
+    assert repr(ArgsKwargs((1,))) == 'ArgsKwargs((1,))'
 
 
 @pytest.mark.parametrize(
@@ -16,19 +39,11 @@ from ..conftest import Err, PyAndJson, plain_repr
     [
         [(1, 'a', True), ((1, 'a', True), {})],
         [[1, 'a', True], ((1, 'a', True), {})],
-        [{'__args__': (1, 'a', True), '__kwargs__': {}}, ((1, 'a', True), {})],
+        [ArgsKwargs((1, 'a', True)), ((1, 'a', True), {})],
         [(1, 'a', 'true'), ((1, 'a', True), {})],
         ['x', Err('type=arguments_type,')],
         [
-            {'__args__': (1, 'a', True), '__kwargs__': ()},
-            Err('Keyword arguments must be a dictionary [type=keyword_arguments_type,'),
-        ],
-        [
-            {'__args__': {}, '__kwargs__': {}},
-            Err('Positional arguments must be a list or tuple [type=positional_arguments_type,'),
-        ],
-        [
-            {'__args__': [1, 'a', True], '__kwargs__': {'x': 1}},
+            ArgsKwargs((1, 'a', True), {'x': 1}),
             Err(
                 '',
                 [
@@ -47,15 +62,15 @@ from ..conftest import Err, PyAndJson, plain_repr
                 '',
                 [
                     {
-                        'type': 'missing_positional_argument',
+                        'type': 'missing_positional_only_argument',
                         'loc': (1,),
-                        'msg': 'Missing required positional argument',
+                        'msg': 'Missing required positional only argument',
                         'input': [1],
                     },
                     {
-                        'type': 'missing_positional_argument',
+                        'type': 'missing_positional_only_argument',
                         'loc': (2,),
-                        'msg': 'Missing required positional argument',
+                        'msg': 'Missing required positional only argument',
                         'input': [1],
                     },
                 ],
@@ -116,27 +131,27 @@ from ..conftest import Err, PyAndJson, plain_repr
             ),
         ],
         [
-            {'__args__': None, '__kwargs__': None},
+            ArgsKwargs(()),
             Err(
                 '3 validation errors for arguments',
                 [
                     {
-                        'type': 'missing_positional_argument',
+                        'type': 'missing_positional_only_argument',
                         'loc': (0,),
-                        'msg': 'Missing required positional argument',
-                        'input': {'__args__': None, '__kwargs__': None},
+                        'msg': 'Missing required positional only argument',
+                        'input': ArgsKwargs(()),
                     },
                     {
-                        'type': 'missing_positional_argument',
+                        'type': 'missing_positional_only_argument',
                         'loc': (1,),
-                        'msg': 'Missing required positional argument',
-                        'input': {'__args__': None, '__kwargs__': None},
+                        'msg': 'Missing required positional only argument',
+                        'input': ArgsKwargs(()),
                     },
                     {
-                        'type': 'missing_positional_argument',
+                        'type': 'missing_positional_only_argument',
                         'loc': (2,),
-                        'msg': 'Missing required positional argument',
-                        'input': {'__args__': None, '__kwargs__': None},
+                        'msg': 'Missing required positional only argument',
+                        'input': ArgsKwargs(()),
                     },
                 ],
             ),
@@ -168,13 +183,13 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [{'__args__': None, '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, ((), {'a': 1, 'b': 'a', 'c': True})],
+        [ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True}), ((), {'a': 1, 'b': 'a', 'c': True})],
         [{'a': 1, 'b': 'a', 'c': True}, ((), {'a': 1, 'b': 'a', 'c': True})],
-        [{'__args__': None, '__kwargs__': {'a': '1', 'b': 'a', 'c': 'True'}}, ((), {'a': 1, 'b': 'a', 'c': True})],
-        [{'__args__': (), '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, ((), {'a': 1, 'b': 'a', 'c': True})],
-        [{'__args__': (1,), '__kwargs__': {'a': 1, 'b': 'a', 'c': True}}, Err('type=unexpected_positional_argument,')],
+        [ArgsKwargs((), {'a': '1', 'b': 'a', 'c': 'True'}), ((), {'a': 1, 'b': 'a', 'c': True})],
+        [ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True}), ((), {'a': 1, 'b': 'a', 'c': True})],
+        [ArgsKwargs((1,), {'a': 1, 'b': 'a', 'c': True}), Err('type=unexpected_positional_argument,')],
         [
-            {'__args__': (), '__kwargs__': {'a': 1, 'b': 'a', 'c': True, 'd': 'wrong'}},
+            ArgsKwargs((), {'a': 1, 'b': 'a', 'c': True, 'd': 'wrong'}),
             Err(
                 'type=unexpected_keyword_argument,',
                 [
@@ -188,21 +203,21 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            {'__args__': [], '__kwargs__': {'a': 1, 'b': 'a'}},
+            ArgsKwargs((), {'a': 1, 'b': 'a'}),
             Err(
-                'type=missing_keyword_argument,',
+                'type=missing_keyword_only_argument,',
                 [
                     {
-                        'type': 'missing_keyword_argument',
+                        'type': 'missing_keyword_only_argument',
                         'loc': ('c',),
-                        'msg': 'Missing required keyword argument',
-                        'input': {'__args__': [], '__kwargs__': {'a': 1, 'b': 'a'}},
+                        'msg': 'Missing required keyword only argument',
+                        'input': ArgsKwargs((), {'a': 1, 'b': 'a'}),
                     }
                 ],
             ),
         ],
         [
-            {'__args__': (), '__kwargs__': {'a': 'x', 'b': 'a', 'c': 'wrong'}},
+            ArgsKwargs((), {'a': 'x', 'b': 'a', 'c': 'wrong'}),
             Err(
                 '',
                 [
@@ -222,27 +237,27 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            {'__args__': None, '__kwargs__': None},
+            ArgsKwargs(()),
             Err(
                 '',
                 [
                     {
-                        'type': 'missing_keyword_argument',
+                        'type': 'missing_keyword_only_argument',
                         'loc': ('a',),
-                        'msg': 'Missing required keyword argument',
-                        'input': {'__args__': None, '__kwargs__': None},
+                        'msg': 'Missing required keyword only argument',
+                        'input': ArgsKwargs(()),
                     },
                     {
-                        'type': 'missing_keyword_argument',
+                        'type': 'missing_keyword_only_argument',
                         'loc': ('b',),
-                        'msg': 'Missing required keyword argument',
-                        'input': {'__args__': None, '__kwargs__': None},
+                        'msg': 'Missing required keyword only argument',
+                        'input': ArgsKwargs(()),
                     },
                     {
-                        'type': 'missing_keyword_argument',
+                        'type': 'missing_keyword_only_argument',
                         'loc': ('c',),
-                        'msg': 'Missing required keyword argument',
-                        'input': {'__args__': None, '__kwargs__': None},
+                        'msg': 'Missing required keyword only argument',
+                        'input': ArgsKwargs(()),
                     },
                 ],
             ),
@@ -275,11 +290,11 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         [{'a': 1, 'b': 'bb', 'c': True}, ((), {'a': 1, 'b': 'bb', 'c': True})],
-        [{'__args__': None, '__kwargs__': {'a': 1, 'b': 'bb', 'c': True}}, ((), {'a': 1, 'b': 'bb', 'c': True})],
-        [{'__args__': (1, 'bb'), '__kwargs__': {'c': True}}, ((1, 'bb'), {'c': True})],
-        [{'__args__': (1,), '__kwargs__': {'b': 'bb', 'c': True}}, ((1,), {'b': 'bb', 'c': True})],
+        [ArgsKwargs((), {'a': 1, 'b': 'bb', 'c': True}), ((), {'a': 1, 'b': 'bb', 'c': True})],
+        [ArgsKwargs((1, 'bb'), {'c': True}), ((1, 'bb'), {'c': True})],
+        [ArgsKwargs((1,), {'b': 'bb', 'c': True}), ((1,), {'b': 'bb', 'c': True})],
         [
-            {'__args__': (1,), '__kwargs__': {'a': 11, 'b': 'bb', 'c': True}},
+            ArgsKwargs((1,), {'a': 11, 'b': 'bb', 'c': True}),
             Err(
                 'type=multiple_argument_values,',
                 [
@@ -293,7 +308,7 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            {'__args__': [1, 'bb', 'cc'], '__kwargs__': {'b': 'bb', 'c': True}},
+            ArgsKwargs((1, 'bb', 'cc'), {'b': 'bb', 'c': True}),
             Err(
                 'type=unexpected_positional_argument,',
                 [
@@ -313,7 +328,7 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
             ),
         ],
         [
-            {'__args__': (1, 'b1'), '__kwargs__': {'a': 11, 'b': 'b2', 'c': True}},
+            ArgsKwargs((1, 'b1'), {'a': 11, 'b': 'b2', 'c': True}),
             Err(
                 'type=multiple_argument_values,',
                 [
@@ -384,10 +399,9 @@ def test_positional_optional(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         [{'a': 1}, ((), {'a': 1})],
-        [{'__args__': None, '__kwargs__': {'a': 1}}, ((), {'a': 1})],
-        [{'__args__': None, '__kwargs__': None}, ((), {'a': 1})],
-        [{'__args__': (), '__kwargs__': {'a': 1}}, ((), {'a': 1})],
-        [{'__args__': (), '__kwargs__': None}, ((), {'a': 1})],
+        [ArgsKwargs((), {'a': 1}), ((), {'a': 1})],
+        [ArgsKwargs((), {'a': 1}), ((), {'a': 1})],
+        [ArgsKwargs(()), ((), {'a': 1})],
     ],
     ids=repr,
 )
@@ -418,14 +432,10 @@ def test_p_or_k_optional(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         [[1, 2, 3], ((1, 2, 3), {})],
-        [{'__args__': [1, 2, 3], '__kwargs__': None}, ((1, 2, 3), {})],
+        [ArgsKwargs((1, 2, 3)), ((1, 2, 3), {})],
         [[1], ((1,), {})],
         [[], ((), {})],
-        [{'__args__': [], '__kwargs__': {}}, ((), {})],
-        [
-            {'__args__': [1, 2, 3], '__kwargs__': {'a': 1}},
-            Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,'),
-        ],
+        [ArgsKwargs((1, 2, 3), {'a': 1}), Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,')],
     ],
     ids=repr,
 )
@@ -447,7 +457,7 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
         [[1, 2, 3], ((1, 2, 3), {})],
         [['1', '2', '3'], ((1, 2, 3), {})],
         [[1], ((1,), {})],
-        [[], Err('0\n  Missing required positional argument')],
+        [[], Err('0\n  Missing required positional only argument')],
         [
             ['x'],
             Err(
@@ -482,10 +492,7 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
                 ],
             ),
         ],
-        [
-            {'__args__': [1, 2, 3], '__kwargs__': {'a': 1}},
-            Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,'),
-        ],
+        [ArgsKwargs((1, 2, 3), {'a': 1}), Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,')],
     ],
     ids=repr,
 )
@@ -510,13 +517,10 @@ def test_args_var_args_only(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [{'__args__': [1, 'a', 'true'], '__kwargs__': {'b': 'bb', 'c': 3}}, ((1, 'a', True), {'b': 'bb', 'c': 3})],
+        [ArgsKwargs((1, 'a', 'true'), {'b': 'bb', 'c': 3}), ((1, 'a', True), {'b': 'bb', 'c': 3})],
+        [ArgsKwargs((1, 'a'), {'a': 'true', 'b': 'bb', 'c': 3}), ((1, 'a'), {'a': True, 'b': 'bb', 'c': 3})],
         [
-            {'__args__': [1, 'a'], '__kwargs__': {'a': 'true', 'b': 'bb', 'c': 3}},
-            ((1, 'a'), {'a': True, 'b': 'bb', 'c': 3}),
-        ],
-        [
-            {'__args__': [1, 'a', 'true', 4, 5], '__kwargs__': {'b': 'bb', 'c': 3}},
+            ArgsKwargs((1, 'a', 'true', 4, 5), {'b': 'bb', 'c': 3}),
             Err(
                 'type=unexpected_positional_argument,',
                 [
@@ -563,14 +567,12 @@ def test_both(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [{'__args__': [], '__kwargs__': {}}, ((), {})],
-        [{'__args__': None, '__kwargs__': None}, ((), {})],
-        [{'__args__': None, '__kwargs__': {}}, ((), {})],
+        [ArgsKwargs(()), ((), {})],
         [[], ((), {})],
         [[1], Err('0\n  Unexpected positional argument [type=unexpected_positional_argument,')],
         [{'a': 1}, Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,')],
         [
-            {'__args__': [1], '__kwargs__': {'a': 2}},
+            ArgsKwargs((1,), {'a': 2}),
             Err(
                 '[type=unexpected_keyword_argument,',
                 [
@@ -632,10 +634,10 @@ def test_internal_error(py_and_json: PyAndJson):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [{'__args__': (1, 2), '__kwargs__': None}, ((1, 2), {})],
-        [{'__args__': (1,), '__kwargs__': None}, ((1,), {'b': 42})],
-        [{'__args__': (1,), '__kwargs__': {'b': 3}}, ((1,), {'b': 3})],
-        [{'__args__': None, '__kwargs__': {'a': 1}}, ((), {'a': 1, 'b': 42})],
+        [ArgsKwargs((1, 2)), ((1, 2), {})],
+        [ArgsKwargs((1,)), ((1,), {'b': 42})],
+        [ArgsKwargs((1,), {'b': 3}), ((1,), {'b': 3})],
+        [ArgsKwargs((), {'a': 1}), ((), {'a': 1, 'b': 42})],
     ],
     ids=repr,
 )
@@ -693,9 +695,9 @@ def test_build_non_default_follows():
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [{'__args__': (1, 2), '__kwargs__': None}, ((1, 2), {})],
-        [{'__args__': (1,), '__kwargs__': {'b': '4', 'c': 'a'}}, ((1,), {'b': 4, 'c': 'a'})],
-        [{'__args__': (1, 2), '__kwargs__': {'x': 'abc'}}, ((1, 2), {'x': 'abc'})],
+        [ArgsKwargs((1, 2)), ((1, 2), {})],
+        [ArgsKwargs((1,), {'b': '4', 'c': 'a'}), ((1,), {'b': 4, 'c': 'a'})],
+        [ArgsKwargs((1, 2), {'x': 'abc'}), ((1, 2), {'x': 'abc'})],
     ],
     ids=repr,
 )
@@ -720,33 +722,9 @@ def test_kwargs(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [{'__args__': [1, 2]}, ((), {'__args__': [1, 2]})],
-        [{'__kwargs__': {'x': 'abc'}}, ((), {'__kwargs__': {'x': 'abc'}})],
-        [
-            {'__args__': [1, 2], '__kwargs__': {'x': 'abc'}, 'more': 'hello'},
-            ((), {'__args__': [1, 2], '__kwargs__': {'x': 'abc'}, 'more': 'hello'}),
-        ],
-    ],
-    ids=repr,
-)
-def test_var_kwargs(py_and_json: PyAndJson, input_value, expected):
-    v = py_and_json({'type': 'arguments', 'arguments_schema': [], 'var_kwargs_schema': {'type': 'any'}})
-    if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            v.validate_test(input_value)
-    else:
-        assert v.validate_test(input_value) == expected
-
-
-@pytest.mark.parametrize(
-    'input_value,expected',
-    [
-        [{'__args__': (1,), '__kwargs__': None}, ((1,), {})],
-        [{'__args__': None, '__kwargs__': {'Foo': 1}}, ((), {'a': 1})],
-        [
-            {'__args__': None, '__kwargs__': {'a': 1}},
-            Err('Foo\n  Missing required keyword argument [type=missing_keyword_argument,'),
-        ],
+        [ArgsKwargs((1,)), ((1,), {})],
+        [ArgsKwargs((), {'Foo': 1}), ((), {'a': 1})],
+        [ArgsKwargs((), {'a': 1}), Err('Foo\n  Missing required argument [type=missing_argument,')],
     ],
     ids=repr,
 )
@@ -769,15 +747,12 @@ def test_alias(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        [{'__args__': (1,), '__kwargs__': None}, ((1,), {})],
-        [{'__args__': None, '__kwargs__': {'Foo': 1}}, ((), {'a': 1})],
-        [{'__args__': None, '__kwargs__': {'a': 1}}, ((), {'a': 1})],
+        [ArgsKwargs((1,)), ((1,), {})],
+        [ArgsKwargs((), {'Foo': 1}), ((), {'a': 1})],
+        [ArgsKwargs((), {'a': 1}), ((), {'a': 1})],
+        [ArgsKwargs((), {'a': 1, 'b': 2}), Err('b\n  Unexpected keyword argument [type=unexpected_keyword_argument,')],
         [
-            {'__args__': None, '__kwargs__': {'a': 1, 'b': 2}},
-            Err('b\n  Unexpected keyword argument [type=unexpected_keyword_argument,'),
-        ],
-        [
-            {'__args__': None, '__kwargs__': {'a': 1, 'Foo': 2}},
+            ArgsKwargs((), {'a': 1, 'Foo': 2}),
             Err('a\n  Unexpected keyword argument [type=unexpected_keyword_argument,'),
         ],
     ],
@@ -843,7 +818,7 @@ def validate(function):
 
     @wraps(function)
     def wrapper(*args, **kwargs):
-        validated_args, validated_kwargs = validator.validate_python({'__args__': args, '__kwargs__': kwargs})
+        validated_args, validated_kwargs = validator.validate_python(ArgsKwargs(args, kwargs))
         return function(*validated_args, **validated_kwargs)
 
     return wrapper
@@ -888,10 +863,10 @@ def test_function_types():
             'input': 'b',
         },
         {
-            'type': 'missing_keyword_argument',
+            'type': 'missing_keyword_only_argument',
             'loc': ('c',),
-            'msg': 'Missing required keyword argument',
-            'input': {'__args__': (1, 'b'), '__kwargs__': {}},
+            'msg': 'Missing required keyword only argument',
+            'input': ArgsKwargs((1, 'b')),
         },
     ]
 
@@ -933,10 +908,10 @@ def create_function(validate):
         foobar('1', b=2, c=3)
     assert exc_info.value.errors() == [
         {
-            'type': 'missing_positional_argument',
+            'type': 'missing_positional_only_argument',
             'loc': (1,),
-            'msg': 'Missing required positional argument',
-            'input': {'__args__': ('1',), '__kwargs__': {'b': 2, 'c': 3}},
+            'msg': 'Missing required positional only argument',
+            'input': ArgsKwargs(('1',), {'b': 2, 'c': 3}),
         },
         {'type': 'unexpected_keyword_argument', 'loc': ('b',), 'msg': 'Unexpected keyword argument', 'input': 2},
     ]
@@ -1007,3 +982,40 @@ def test_invalid_schema():
                 ],
             }
         )
+
+
+def test_error_display():
+    v = SchemaValidator(
+        core_schema.arguments_schema(
+            [
+                core_schema.arguments_parameter('a', core_schema.int_schema()),
+                core_schema.arguments_parameter('b', core_schema.int_schema()),
+            ]
+        )
+    )
+    assert v.validate_python(ArgsKwargs((1,), {'b': '2'})) == ((1,), {'b': 2})
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(ArgsKwargs((), {'a': 1}))
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing_argument',
+            'loc': ('b',),
+            'msg': 'Missing required argument',
+            'input': ArgsKwargs((), {'a': 1}),
+        }
+    ]
+    # insert_assert(str(exc_info.value))
+    assert str(exc_info.value) == (
+        "1 validation error for arguments\n"
+        "b\n"
+        "  Missing required argument [type=missing_argument, "
+        "input_value=ArgsKwargs((), {'a': 1}), input_type=ArgsKwargs]"
+    )
+    # insert_assert(exc_info.value.json())
+    assert exc_info.value.json() == (
+        '[{"type":"missing_argument","loc":["b"],"msg":"Missing required argument",'
+        '"input":"ArgsKwargs((), {\'a\': 1})"}]'
+    )
