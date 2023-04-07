@@ -227,7 +227,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         `type.__new__` was called in such a manner that the class would already be sufficiently initialized.
 
         This will receive the same `kwargs` that would be passed to the standard `__init_subclass__`, namely,
-        any kwargs passed to the class definition that aren't existing config attributes.
+        any kwargs passed to the class definition that aren't used internally by pydantic.
         """
         pass
 
