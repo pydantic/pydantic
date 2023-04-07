@@ -463,3 +463,22 @@ def model_serializer(
         return dec
     else:
         return dec(__f)
+
+
+ModelWrapValidatorHandler = Callable[[Union[_decorators.ModelValuesDict, _decorators.ModelType]], _decorators.ModelType]
+
+
+def model_validator(
+    *,
+    mode: Literal['wrap'],
+) -> Callable[
+    [_decorators.ModelWrapValidator[_decorators.ModelType]],
+    _decorators.PydanticDecoratorMarker[_decorators.ModelWrapValidator[_decorators.ModelType]],
+]:
+    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+        dec_info = _decorators.ModelValidatorDecoratorInfo(
+            mode=mode,
+        )
+        return _decorators.PydanticDecoratorMarker(f, dec_info, shim=None)
+
+    return dec
