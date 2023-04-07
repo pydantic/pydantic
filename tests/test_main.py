@@ -2148,3 +2148,25 @@ def test_validate_json_context() -> None:
     Model.model_validate_json(json.dumps({'x': 1}), context=None)
     Model.model_validate_json(json.dumps({'x': 1}), context={'foo': 'bar'})
     assert contexts == []
+
+
+def test_pydantic_init_subclass() -> None:
+    calls = []
+
+    class MyModel(BaseModel):
+        def __init_subclass__(cls, **kwargs):
+            super().__init_subclass__()  # can't pass kwargs to object.__init_subclass__, weirdly
+            calls.append((cls.__name__, '__init_subclass__', kwargs))
+
+        @classmethod
+        def __pydantic_init_subclass__(cls, **kwargs):
+            super().__pydantic_init_subclass__(**kwargs)
+            calls.append((cls.__name__, '__pydantic_init_subclass__', kwargs))
+
+    class MySubModel(MyModel, a=1):
+        pass
+
+    assert calls == [
+        ('MySubModel', '__init_subclass__', {'a': 1}),
+        ('MySubModel', '__pydantic_init_subclass__', {'a': 1}),
+    ]
