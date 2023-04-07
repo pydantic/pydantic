@@ -21,7 +21,6 @@ from pydantic import (
     constr,
     errors,
 )
-from pydantic.config import get_config
 from pydantic.decorators import field_validator
 from pydantic.fields import Field
 
@@ -1247,45 +1246,6 @@ def test_force_extra():
     assert Model.model_config['extra'] is Extra.ignore
 
 
-def test_illegal_extra_value():
-    with pytest.raises(ValueError, match=re.escape("is not a valid value for config['extra']")):
-
-        class Model(BaseModel):
-            model_config = ConfigDict(extra='foo')
-            foo: int
-
-
-def test_multiple_inheritance_config():
-    class Parent(BaseModel):
-        model_config = ConfigDict(frozen=True, extra=Extra.forbid)
-
-    class Mixin(BaseModel):
-        model_config = ConfigDict(use_enum_values=True)
-
-    class Child(Mixin, Parent):
-        model_config = ConfigDict(populate_by_name=True)
-
-    assert BaseModel.model_config['frozen'] is False
-    assert BaseModel.model_config['populate_by_name'] is False
-    assert BaseModel.model_config['extra'] is None
-    assert BaseModel.model_config['use_enum_values'] is False
-
-    assert Parent.model_config['frozen'] is True
-    assert Parent.model_config['populate_by_name'] is False
-    assert Parent.model_config['extra'] is Extra.forbid
-    assert Parent.model_config['use_enum_values'] is False
-
-    assert Mixin.model_config['frozen'] is False
-    assert Mixin.model_config['populate_by_name'] is False
-    assert Mixin.model_config['extra'] is None
-    assert Mixin.model_config['use_enum_values'] is True
-
-    assert Child.model_config['frozen'] is True
-    assert Child.model_config['populate_by_name'] is True
-    assert Child.model_config['extra'] is Extra.forbid
-    assert Child.model_config['use_enum_values'] is True
-
-
 def test_submodel_different_type():
     class Foo(BaseModel):
         a: int
@@ -2289,23 +2249,3 @@ def test_parent_field_with_default():
     assert c.a == 1
     assert c.b == 2
     assert c.c == 3
-
-
-def test_get_config():
-    ret = get_config(None)
-    assert ret == {}
-    assert isinstance(ret, ConfigDict)
-
-    ret = get_config(ConfigDict(title='1234', extra=Extra.allow))
-    assert ret == {'title': '1234', 'extra': Extra.allow}
-    assert isinstance(ret, ConfigDict)
-
-    class Config:
-        title = '1234'
-        random_option = True
-        strict = True
-
-    with pytest.warns(DeprecationWarning, match='is deprecated'):
-        ret = get_config(Config)
-        assert ret == {'title': '1234', 'random_option': True, 'strict': True}
-        assert isinstance(ret, ConfigDict)

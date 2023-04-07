@@ -4,8 +4,8 @@ TODO this should be removed when we implement `validate` #4669
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
-from ._internal import _typing_extra, _utils
-from .config import Extra, get_config
+from ._internal import _config, _typing_extra, _utils
+from .config import Extra
 from .decorators import field_validator
 from .errors import PydanticUserError
 from .main import BaseModel, create_model
@@ -211,16 +211,16 @@ class ValidatedFunction:
     def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
 
-        config_dict = get_config(config, getattr(self.raw_function, '__name__', 'validate_arguments'))
+        config_wrapper = _config.ConfigWrapper(config)
 
-        if 'alias_generator' in config_dict:
+        if config_wrapper.alias_generator:
             raise PydanticUserError(
                 'Setting the "alias_generator" property on custom Config for '
                 '@validate_arguments is not yet supported, please remove.',
                 code=None,
             )
-        if 'extra' not in config_dict:
-            config_dict['extra'] = Extra.forbid
+        if config_wrapper.extra is None:
+            config_wrapper.config['extra'] = Extra.forbid
 
         class DecoratorBaseModel(BaseModel):
             @field_validator(self.v_args_name, check_fields=False)
@@ -261,6 +261,6 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v))
                 raise TypeError(f'multiple values for argument{plural}: {keys}')
 
-            model_config = config_dict
+            model_config = config_wrapper.config
 
         self.model = create_model(_utils.to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)
