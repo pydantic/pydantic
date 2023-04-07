@@ -137,6 +137,8 @@ jobs:
 
       - run: pytest
 
+      - run: cargo test
+
   lint:
     runs-on: ubuntu-latest
 
@@ -203,7 +205,8 @@ jobs:
           python-version: '3.10'
 
       - run: pip install typing_extensions
-      - run: make rust-benchmark
+
+      - run: cargo bench
 
   build-wasm-emscripten:
     runs-on: ubuntu-latest

@@ -299,6 +299,10 @@ impl BuildSerializer for FunctionWrapSerializer {
             let schema_copy = schema.copy()?;
             // remove the serialization key from the schema so we don't recurse
             schema_copy.del_item(intern!(py, "serialization"))?;
+            // remove ref if it exists - the point is that `schema` here has already run through
+            // `CombinedSerializer::build` so "ref" here will have already been added to `BuildContext::used_ref`
+            // we don't want to error by "finding" it now
+            schema_copy.del_item(intern!(py, "ref")).ok();
             schema_copy
         };
 

@@ -62,7 +62,7 @@ lint-rust:
 	cargo fmt --version
 	cargo fmt --all -- --check
 	cargo clippy --version
-	cargo clippy -- -D warnings -A incomplete_features -W clippy::dbg_macro -W clippy::print_stdout
+	cargo clippy --tests -- -D warnings -A incomplete_features -W clippy::dbg_macro -W clippy::print_stdout
 
 .PHONY: lint
 lint: lint-python lint-rust
@@ -81,9 +81,6 @@ py-benchmark: build-prod
 	@echo "running the \"complete\" python benchmarks, saving to: $(BRANCH)"
 	pytest tests/benchmarks/test_complete_benchmark.py --benchmark-enable --benchmark-save=$(BRANCH)
 
-.PHONY: rust-benchmark
-rust-benchmark:
-	cargo rust-bench
 
 .PHONY: testcov
 testcov: build-coverage
