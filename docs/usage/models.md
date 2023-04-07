@@ -438,7 +438,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    5 validation errors for Location
+    5 validation errors for Model
     is_required
       Field required [type=missing, input_value={'list_of_ints': ['1', 2,...ew York'}, 'gt_int': 21}, input_type=dict]
     gt_int
@@ -853,7 +853,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    2 validation errors for InnerT[int]
+    2 validation errors for OuterT[int]
     outer
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
     nested

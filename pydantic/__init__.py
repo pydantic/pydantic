@@ -10,9 +10,10 @@ from pydantic_core.core_schema import (
 
 from . import dataclasses
 from .analyzed_type import AnalyzedType
-from .config import BaseConfig, ConfigDict, Extra
+from .config import ConfigDict, Extra
 from .decorator import validate_arguments
 from .decorators import field_serializer, field_validator, model_serializer, root_validator, validator
+from .deprecated.config import BaseConfig
 from .errors import *
 from .fields import Field, PrivateAttr
 from .main import *

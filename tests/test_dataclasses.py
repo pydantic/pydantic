@@ -968,9 +968,7 @@ import dataclasses
 import pydantic
 
 
-@pydantic.dataclasses.dataclass(
-    config=pydantic.config.ConfigDict(validate_assignment=True)
-)
+@pydantic.dataclasses.dataclass(config=pydantic.config.ConfigDict(validate_assignment=True))
 class BuiltInDataclassForPickle:
     value: int
         """
@@ -1531,7 +1529,7 @@ def test_config_as_type_deprecated():
         validate_assignment = True
 
     with pytest.warns(
-        DeprecationWarning, match='Support for "config" as "type" is deprecated and will be removed in a future version'
+        DeprecationWarning, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
     ):
 
         @pydantic.dataclasses.dataclass(config=Config)

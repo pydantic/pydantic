@@ -20,6 +20,7 @@ from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation,
 from ..fields import FieldInfo
 from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _discriminated_union, _typing_extra
+from ._config import ConfigWrapper
 from ._core_metadata import CoreMetadataHandler, build_metadata_dict
 from ._core_utils import (
     consolidate_refs,
@@ -43,11 +44,10 @@ from ._generics import recursively_defined_type_refs, replace_types
 from ._typing_extra import is_finalvar
 
 if TYPE_CHECKING:
-    from ..config import ConfigDict
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
 
-__all__ = 'dataclass_schema', 'GenerateSchema', 'generate_config'
+__all__ = 'dataclass_schema', 'GenerateSchema'
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
@@ -131,14 +131,14 @@ def dataclass_schema(
     ref: str,
     fields: dict[str, FieldInfo],
     decorators: DecoratorInfos,
-    arbitrary_types: bool,
+    config_wrapper: ConfigWrapper,
     types_namespace: dict[str, Any] | None,
 ) -> core_schema.CoreSchema:
     """
     Generate schema for a dataclass.
     """
     # TODO add typevars_map argument when we support generic dataclasses
-    schema_generator = GenerateSchema(arbitrary_types, types_namespace)
+    schema_generator = GenerateSchema(config_wrapper, types_namespace)
     args = [schema_generator.generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
     has_post_init = hasattr(cls, '__post_init__')
     args_schema = core_schema.dataclass_args_schema(cls.__name__, args, collect_init_only=has_post_init)
@@ -147,41 +147,17 @@ def dataclass_schema(
     return apply_model_serializers(dc_schema, decorators.model_serializer.values())
 
 
-def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfig:
-    """
-    Create a pydantic-core config from a pydantic config.
-    """
-    extra = None if config['extra'] is None else config['extra'].value  # type: ignore
-    core_config = core_schema.CoreConfig(  # type: ignore[misc]
-        **core_schema.dict_not_none(
-            title=config['title'] or cls.__name__,  # type: ignore
-            extra_fields_behavior=extra,
-            allow_inf_nan=config['allow_inf_nan'],  # type: ignore
-            populate_by_name=config['populate_by_name'],  # type: ignore
-            str_strip_whitespace=config['str_strip_whitespace'],  # type: ignore
-            str_to_lower=config['str_to_lower'],  # type: ignore
-            str_to_upper=config['str_to_upper'],  # type: ignore
-            strict=config['strict'],  # type: ignore
-            ser_json_timedelta=config['ser_json_timedelta'],  # type: ignore
-            ser_json_bytes=config['ser_json_bytes'],  # type: ignore
-            from_attributes=config['from_attributes'],  # type: ignore
-            loc_by_alias=config['loc_by_alias'],  # type: ignore
-            revalidate_instances=config['revalidate_instances'],  # type: ignore
-            validate_default=config['validate_default'],  # type: ignore
-            str_max_length=config.get('str_max_length'),
-            str_min_length=config.get('str_min_length'),
-        )
-    )
-    return core_config
-
-
 class GenerateSchema:
-    __slots__ = '_arbitrary_types_stack', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions'
+    __slots__ = '_config_wrapper_stack', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions'
 
     def __init__(
-        self, arbitrary_types: bool, types_namespace: dict[str, Any] | None, typevars_map: dict[Any, Any] | None = None
+        self,
+        config_wrapper: ConfigWrapper,
+        types_namespace: dict[str, Any] | None,
+        typevars_map: dict[Any, Any] | None = None,
     ):
-        self._arbitrary_types_stack: list[bool] = [arbitrary_types]  # we need a stack for recursing into child models
+        # we need a stack for recursing into child models
+        self._config_wrapper_stack: list[ConfigWrapper] = [config_wrapper]
         self.types_namespace = types_namespace
         self.typevars_map = typevars_map
 
@@ -189,8 +165,12 @@ class GenerateSchema:
         self.definitions: dict[str, core_schema.CoreSchema] = {}
 
     @property
+    def config_wrapper(self) -> ConfigWrapper:
+        return self._config_wrapper_stack[-1]
+
+    @property
     def arbitrary_types(self) -> bool:
-        return self._arbitrary_types_stack[-1]
+        return self.config_wrapper.arbitrary_types_allowed
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
         schema = self._generate_schema(obj)
@@ -237,20 +217,21 @@ class GenerateSchema:
         # TODO: we need to do something similar to this for pydantic dataclasses
         #   This should be straight forward once we expose the pydantic config on the dataclass;
         #   I have done this in my PR for dataclasses JSON schema
-        self._arbitrary_types_stack.append(cls.model_config['arbitrary_types_allowed'])  # type: ignore
+        config_wrapper = ConfigWrapper(cls.model_config, check=False)
+        self._config_wrapper_stack.append(config_wrapper)
         try:
             fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
                 {k: self.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
                 return_fields_set=True,
             )
         finally:
-            self._arbitrary_types_stack.pop()
+            self._config_wrapper_stack.pop()
         inner_schema = apply_validators(fields_schema, decorators.root_validator.values())
 
         inner_schema = consolidate_refs(inner_schema)
         inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
-        core_config = generate_config(cls.model_config, cls)
+        core_config = config_wrapper.core_config()
         model_post_init = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
 
         model_schema = core_schema.model_schema(
@@ -942,7 +923,7 @@ class GenerateSchema:
             fields,
             # FIXME we need to get validators and serializers from the dataclasses
             DecoratorInfos(),
-            self.arbitrary_types,
+            self.config_wrapper,
             self.types_namespace,
         )
 
