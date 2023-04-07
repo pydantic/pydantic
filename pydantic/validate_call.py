@@ -38,7 +38,7 @@ def validate_call(
     """
 
     def validate(function: Callable[Params, ReturnType]) -> Callable[Params, ReturnType]:
-        return _validate_call.ValidateCallWrapper(function, config, validate_return)
+        return _validate_call.ValidateCallWrapper(function, config, validate_return)  # type: ignore
 
     if __func:
         return validate(__func)

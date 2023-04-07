@@ -9,6 +9,7 @@ from typing_extensions import Self
 
 from ..config import ConfigDict
 from . import _generate_schema, _typing_extra
+from ._config import ConfigWrapper
 
 
 @dataclass
@@ -50,10 +51,10 @@ class ValidateCallWrapper:
         self.__module__ = function.__module__
 
         namespace = _typing_extra.add_module_globals(function, None)
-        config = ConfigDict(**(config or {}))
-        gen_schema = _generate_schema.GenerateSchema(config, namespace)
+        config_wrapper = ConfigWrapper(config)
+        gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         self.__pydantic_core_schema__ = schema = gen_schema.generate_schema(function)
-        core_config = _generate_schema.generate_config(config, function)
+        core_config = config_wrapper.core_config(function)
         self.__pydantic_validator__ = pydantic_core.SchemaValidator(schema, core_config)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:

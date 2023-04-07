@@ -53,6 +53,7 @@ class ConfigWrapper:
     ser_json_bytes: Literal['utf8', 'base64']
     # whether to validate default values during validation, default False
     validate_default: bool
+    validate_return: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -167,6 +168,7 @@ config_defaults = ConfigDict(
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
     validate_default=False,
+    validate_return=False,
 )
 
 

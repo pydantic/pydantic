@@ -1026,11 +1026,11 @@ def gen_2162_dataclasses():
     yield foo, PydanticBaz(c=foo)
 
 
-# @pytest.mark.parametrize('foo,bar', gen_2162_dataclasses())
-# def test_issue_2162(foo, bar):
-#     assert dataclasses.asdict(foo) == dataclasses.asdict(bar.c)
-#     assert dataclasses.astuple(foo) == dataclasses.astuple(bar.c)
-#     assert foo == bar.c
+@pytest.mark.parametrize('foo,bar', gen_2162_dataclasses())
+def test_issue_2162(foo, bar):
+    assert dataclasses.asdict(foo) == dataclasses.asdict(bar.c)
+    assert dataclasses.astuple(foo) == dataclasses.astuple(bar.c)
+    assert foo == bar.c
 
 
 def test_issue_2383():

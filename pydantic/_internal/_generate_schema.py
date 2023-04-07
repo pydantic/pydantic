@@ -359,8 +359,6 @@ class GenerateSchema:
             if obj is Final:
                 return core_schema.AnySchema(type='any')
             return self.generate_schema(get_args(obj)[0])
-        elif dataclasses.is_dataclass(obj):
-            return self._dataclass_schema(obj)
         elif isinstance(obj, (FunctionType, LambdaType, MethodType)):
             return self._callable_schema(obj)
 
@@ -689,7 +687,7 @@ class GenerateSchema:
         if field.alias is not None:
             parameter_schema['alias'] = field.alias
         else:
-            alias_generator = self.config.get('alias_generator')
+            alias_generator = self.config_wrapper.alias_generator
             if alias_generator:
                 parameter_schema['alias'] = alias_generator(name)
         return parameter_schema
@@ -918,6 +916,9 @@ class GenerateSchema:
             except KeyError:
                 continue
             return encoder(self, obj)
+
+        if dataclasses.is_dataclass(obj):
+            return self._dataclass_schema(obj)  # type: ignore
         return None
 
     def _dataclass_schema(self, dataclass: type[StandardDataclass]) -> core_schema.CoreSchema:
@@ -948,7 +949,7 @@ class GenerateSchema:
         sig = signature(function)
 
         type_hints = _typing_extra.get_type_hints(function, include_extras=True)
-        mode_lookup: dict[_ParameterKind, str] = {
+        mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
             Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',
             Parameter.KEYWORD_ONLY: 'keyword_only',
@@ -975,8 +976,8 @@ class GenerateSchema:
                 var_kwargs_schema = self.generate_schema(annotation)
 
         return_schema: core_schema.CoreSchema | None = None
-        config = self.config
-        if config.get('validate_return', False):
+        config_wrapper = self.config_wrapper
+        if config_wrapper.validate_return:
             return_hint = type_hints.get('return')
             if return_hint is not None:
                 return_schema = self.generate_schema(return_hint)
@@ -986,7 +987,7 @@ class GenerateSchema:
                 arguments_list,
                 var_args_schema=var_args_schema,
                 var_kwargs_schema=var_kwargs_schema,
-                populate_by_name=config.get('populate_by_name'),
+                populate_by_name=config_wrapper.populate_by_name,
             ),
             function,
             return_schema=return_schema,
