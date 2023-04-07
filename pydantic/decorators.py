@@ -576,8 +576,7 @@ def model_validator(
         dec_info = _decorators.ModelValidatorDecoratorInfo(
             mode=mode,
         )
-        # TODO: rename to make_generic_validator after https://github.com/pydantic/pydantic/pull/5364
-        shim = partial(_decorators.make_generic_v2_field_validator, mode=mode)
+        shim = partial(_decorators.make_generic_validator, mode=mode)
         return _decorators.PydanticDecoratorMarker(f, dec_info, shim=shim)
 
     return dec
