@@ -239,16 +239,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         return self.__pydantic_fields_set__
 
-    @property
-    def __fields_set__(self) -> set[str]:
-        """
-        Deprecated alias for `model_fields_set`
-        """
-        warnings.warn(
-            'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.', DeprecationWarning
-        )
-        return self.__pydantic_fields_set__
-
     @classmethod
     def model_validate_json(
         cls: type[Model],
@@ -614,6 +604,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return f'{cls.__name__}[{params_component}]'
 
     # ##### Deprecated methods from v1 #####
+    @property
+    def __fields_set__(self) -> set[str]:
+        warnings.warn(
+            'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.', DeprecationWarning
+        )
+        return self.__pydantic_fields_set__
+
     def dict(
         self,
         *,
