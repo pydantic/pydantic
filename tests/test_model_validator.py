@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Any, Dict, cast
 
 from pydantic import BaseModel, ValidationInfo
 from pydantic.decorators import ModelWrapValidatorHandler, model_validator
@@ -13,13 +13,12 @@ def test_model_validator_wrap() -> None:
 
         @model_validator(mode='wrap')
         @classmethod
-        def val_model(
-            cls, values: dict[str, Any] | Model, handler: ModelWrapValidatorHandler[Model], info: ValidationInfo
-        ) -> Model:
+        def val_model(cls, values: Any, handler: ModelWrapValidatorHandler[Model], info: ValidationInfo) -> Model:
             assert not info.context
             if isinstance(values, dict):
                 assert values['x'] != values['y']
             else:
+                assert isinstance(values, Model)
                 assert values.x != values.y
             self = handler(values)
             self.x += 1
@@ -37,12 +36,14 @@ def test_model_validator_before() -> None:
 
         @model_validator(mode='before')
         @classmethod
-        def val_model(cls, values: dict[str, Any] | Model, info: ValidationInfo) -> dict[str, Any] | Model:
+        def val_model(cls, values: Any, info: ValidationInfo) -> dict[str, Any] | Model:
             assert not info.context
             if isinstance(values, dict):
+                values = cast(Dict[str, Any], values)
                 values['x'] += 1
                 values['y'] += 1
             else:
+                assert isinstance(values, Model)
                 values.x += 1
                 values.y += 1
             return values
