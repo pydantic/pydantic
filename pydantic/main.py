@@ -57,6 +57,10 @@ _base_class_defined = False
 
 
 class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
+    """
+    Intercept attributes being set on model classes and warn about overriding of decorators (`@field_validator`, etc.)
+    """
+
     def __setitem__(self, k: str, v: object) -> None:
         existing: Any = self.get(k, None)
         if existing and v is not existing and isinstance(existing, _decorators.PydanticDecoratorMarker):
