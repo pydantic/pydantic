@@ -18,7 +18,7 @@ from pydantic import (
     create_model,
     validate_arguments,
 )
-from pydantic._internal._config import ConfigWrapper, default_config
+from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
@@ -70,7 +70,7 @@ def test_config_dict_missing_keys():
 @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
 class TestsBaseConfig:
     def test_base_config_equality_defaults_of_config_dict_class(self):
-        for key, value in default_config.items():
+        for key, value in config_defaults.items():
             assert getattr(BaseConfig, key) == value
 
     def test_config_and_module_config_cannot_be_used_together(self):
@@ -545,11 +545,18 @@ def test_multiple_inheritance_config():
     assert Child.model_config.get('use_enum_values') is True
 
 
-def test_wrapper_config_matches():
-    config_dict_hints = [(k, str(v)) for k, v in get_type_hints(ConfigDict).items()]
+def test_config_wrapper_match():
+    config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict).items()]
     # remove config
-    config_wrapper_hints = [(k, str(v)) for k, v in get_type_hints(ConfigWrapper).items() if k != 'config_dict']
+    config_wrapper_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigWrapper).items() if k != 'config_dict']
 
     assert (
-        config_dict_hints == config_wrapper_hints
+        config_dict_annotations == config_wrapper_annotations
     ), 'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
+
+
+def test_config_defaults_match():
+    config_dict_keys = list(get_type_hints(ConfigDict).keys())
+    config_defaults_keys = list(config_defaults.keys())
+
+    assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'

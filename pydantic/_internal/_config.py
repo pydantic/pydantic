@@ -68,7 +68,7 @@ class ConfigWrapper:
                 return self.config_dict[name]
             except KeyError:
                 try:
-                    return default_config[name]
+                    return config_defaults[name]
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
@@ -106,7 +106,7 @@ class ConfigWrapper:
         return f'ConfigWrapper({c})'
 
 
-default_config = ConfigDict(
+config_defaults = ConfigDict(
     title=None,
     str_to_lower=False,
     str_to_upper=False,
@@ -116,7 +116,6 @@ default_config = ConfigDict(
     # let the model / dataclass decide how to handle it
     extra=None,
     frozen=False,
-    revalidate_instances='never',
     populate_by_name=False,
     use_enum_values=False,
     validate_assignment=False,
@@ -128,6 +127,7 @@ default_config = ConfigDict(
     ignored_types=(),
     allow_inf_nan=True,
     strict=False,
+    revalidate_instances='never',
     ser_json_timedelta='iso8601',
     ser_json_bytes='utf8',
     validate_default=False,
