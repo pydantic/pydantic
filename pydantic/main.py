@@ -232,6 +232,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __tracebackhide__ = True
         return cls.__pydantic_validator__.validate_python(obj, strict=strict, context=context)
 
+    @property
+    def model_fields_set(self) -> set[str]:
+        """
+        The set of fields that have been set on this model instance, i.e. that were not filled from defaults.
+        """
+        return self.__pydantic_fields_set__
+
     @classmethod
     def model_validate_json(
         cls: type[Model],

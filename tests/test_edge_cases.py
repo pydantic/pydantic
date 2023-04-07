@@ -529,7 +529,7 @@ def test_include_exclude_unset():
 
     m = Model(a=1, b=2, e=5, f=7)
     assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
-    assert m.__pydantic_fields_set__ == {'a', 'b', 'e', 'f'}
+    assert m.model_fields_set == {'a', 'b', 'e', 'f'}
     assert m.model_dump(exclude_unset=True) == {'a': 1, 'b': 2, 'e': 5, 'f': 7}
 
     assert m.model_dump(include={'a'}, exclude_unset=True) == {'a': 1}
@@ -553,7 +553,7 @@ def test_include_exclude_defaults():
 
     m = Model(a=1, b=2, e=5, f=7)
     assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4, 'e': 5, 'f': 7}
-    assert m.__pydantic_fields_set__ == {'a', 'b', 'e', 'f'}
+    assert m.model_fields_set == {'a', 'b', 'e', 'f'}
     assert m.model_dump(exclude_defaults=True) == {'a': 1, 'b': 2, 'f': 7}
 
     assert m.model_dump(include={'a'}, exclude_defaults=True) == {'a': 1}
@@ -873,12 +873,12 @@ def test_field_set_ignore_extra():
 
     m = Model(a=1, b=2)
     assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3}
-    assert m.__pydantic_fields_set__ == {'a', 'b'}
+    assert m.model_fields_set == {'a', 'b'}
     assert m.model_dump(exclude_unset=True) == {'a': 1, 'b': 2}
 
     m2 = Model(a=1, b=2, d=4)
     assert m2.model_dump() == {'a': 1, 'b': 2, 'c': 3}
-    assert m2.__pydantic_fields_set__ == {'a', 'b'}
+    assert m2.model_fields_set == {'a', 'b'}
     assert m2.model_dump(exclude_unset=True) == {'a': 1, 'b': 2}
 
 
@@ -891,12 +891,12 @@ def test_field_set_allow_extra():
 
     m = Model(a=1, b=2)
     assert m.model_dump() == {'a': 1, 'b': 2, 'c': 3}
-    assert m.__pydantic_fields_set__ == {'a', 'b'}
+    assert m.model_fields_set == {'a', 'b'}
     assert m.model_dump(exclude_unset=True) == {'a': 1, 'b': 2}
 
     m2 = Model(a=1, b=2, d=4)
     assert m2.model_dump() == {'a': 1, 'b': 2, 'c': 3, 'd': 4}
-    assert m2.__pydantic_fields_set__ == {'a', 'b', 'd'}
+    assert m2.model_fields_set == {'a', 'b', 'd'}
     assert m2.model_dump(exclude_unset=True) == {'a': 1, 'b': 2, 'd': 4}
 
 

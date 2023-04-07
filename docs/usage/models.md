@@ -58,7 +58,7 @@ assert user.name == 'Jane Doe'
 `name` wasn't set when user was initialised, so it has the default value
 
 ```py group="basic-model"
-assert user.__pydantic_fields_set__ == {'id'}
+assert user.model_fields_set == {'id'}
 ```
 
 The fields which were supplied when user was initialised.
@@ -115,7 +115,7 @@ Models possess the following methods and attributes:
 : a class method for creating models without running validation;
   cf. [Creating models without validation](#creating-models-without-validation)
 
-`__pydantic_fields_set__`
+`model_fields_set`
 : Set of names of fields which were set when the model instance was initialised
 
 `model_fields`
@@ -650,7 +650,7 @@ original_user = User(id=123, age=32)
 user_data = original_user.model_dump()
 print(user_data)
 #> {'id': 123, 'age': 32, 'name': 'John Doe'}
-fields_set = original_user.__pydantic_fields_set__
+fields_set = original_user.model_fields_set
 print(fields_set)
 #> {'age', 'id'}
 
@@ -663,7 +663,7 @@ print(fields_set)
 new_user = User.model_construct(_fields_set=fields_set, **user_data)
 print(repr(new_user))
 #> User(id=123, age=32, name='John Doe')
-print(new_user.__pydantic_fields_set__)
+print(new_user.model_fields_set)
 #> {'age', 'id'}
 
 # construct can be dangerous, only use it with validated data!:
@@ -673,11 +673,11 @@ print(repr(bad_user))
 ```
 
 The `_fields_set` keyword argument to `model_construct()` is optional, but allows you to be more precise about
-which fields were originally set and which weren't. If it's omitted `__pydantic_fields_set__` will just be the keys
+which fields were originally set and which weren't. If it's omitted `model_fields_set` will just be the keys
 of the data provided.
 
 For example, in the example above, if `_fields_set` was not provided,
-`new_user.__pydantic_fields_set__` would be `{'id', 'age', 'name'}`.
+`new_user.model_fields_set` would be `{'id', 'age', 'name'}`.
 
 ## Generic Models
 
