@@ -38,7 +38,7 @@ from typing_extensions import Literal, Protocol, TypeAlias
 
 from ..errors import PydanticUserError
 from ._core_utils import get_type_ref
-from ._dataclass import dataclass
+from ._internal_dataclass import slots_dataclass
 
 FIELD_VALIDATOR_TAG = '_field_validator'
 ROOT_VALIDATOR_TAG = '_root_validator'
@@ -46,7 +46,7 @@ ROOT_VALIDATOR_TAG = '_root_validator'
 FIELD_SERIALIZER_TAG = '_field_serializer'
 
 
-@dataclass
+@slots_dataclass
 class ValidatorDecoratorInfo:
     """
     A container for data from `@validator` so that we can access it
@@ -62,7 +62,7 @@ class ValidatorDecoratorInfo:
     check_fields: bool | None
 
 
-@dataclass
+@slots_dataclass
 class FieldValidatorDecoratorInfo:
     """
     A container for data from `@field_validator` so that we can access it
@@ -77,7 +77,7 @@ class FieldValidatorDecoratorInfo:
     check_fields: bool | None
 
 
-@dataclass
+@slots_dataclass
 class RootValidatorDecoratorInfo:
     """
     A container for data from `@root_validator` so that we can access it
@@ -88,7 +88,7 @@ class RootValidatorDecoratorInfo:
     mode: Literal['before', 'after']
 
 
-@dataclass
+@slots_dataclass
 class FieldSerializerDecoratorInfo:
     """
     A container for data from `@field_serializer` so that we can access it
@@ -105,7 +105,7 @@ class FieldSerializerDecoratorInfo:
     check_fields: bool | None
 
 
-@dataclass
+@slots_dataclass
 class ModelSerializerDecoratorInfo:
     """
     A container for data from `@model_serializer` so that we can access it
@@ -143,7 +143,7 @@ DecoratedType: TypeAlias = (
 )
 
 
-@dataclass
+@slots_dataclass
 class PydanticDecoratorMarker(Generic[ReturnType]):
     """
     Wrap a classmethod, staticmethod or unbound function
@@ -179,7 +179,7 @@ class PydanticDecoratorMarker(Generic[ReturnType]):
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
 
 
-@dataclass
+@slots_dataclass
 class Decorator(Generic[DecoratorInfoType]):
     """
     A generic container class to join together the decorator metadata
@@ -221,7 +221,7 @@ class Decorator(Generic[DecoratorInfoType]):
         )
 
 
-@dataclass
+@slots_dataclass
 class DecoratorInfos:
     # mapping of name in the class namespace to decorator info
     # note that the name in the class namespace is the function or attribute name
