@@ -9,9 +9,9 @@ else:
     dataclass_kwargs = {}
 
 if TYPE_CHECKING:
-    dataclass = stdlib_dataclass
+    slots_dataclass = stdlib_dataclass
 else:
 
-    def dataclass(*args: Any, **kwargs: Any) -> Any:
+    def slots_dataclass(*args: Any, **kwargs: Any) -> Any:
         kwargs = {**dataclass_kwargs, **kwargs}
         return stdlib_dataclass(*args, **kwargs)
