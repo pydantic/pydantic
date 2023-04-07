@@ -184,7 +184,7 @@ def is_classvar(ann_type: type[Any]) -> bool:
 
     # this is an ugly workaround for class vars that contain forward references and are therefore themselves
     # forward references, see #3679
-    if ann_type.__class__ == typing.ForwardRef and ann_type.__forward_arg__.startswith('ClassVar['):
+    if ann_type.__class__ == typing.ForwardRef and ann_type.__forward_arg__.startswith('ClassVar['):  # type: ignore
         return True
 
     return False
@@ -382,9 +382,11 @@ else:
                     if isinstance(value, str):
                         value = ForwardRef(value, is_argument=False, is_class=True)
 
-                    value = typing._eval_type(value, base_globals, base_locals)
+                    value = typing._eval_type(value, base_globals, base_locals)  # type: ignore
                     hints[name] = value
-            return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}
+            return (
+                hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore
+            )
 
         if globalns is None:
             if isinstance(obj, types.ModuleType):
@@ -402,11 +404,11 @@ else:
         hints = getattr(obj, '__annotations__', None)
         if hints is None:
             # Return empty annotations for something that _could_ have them.
-            if isinstance(obj, typing._allowed_types):
+            if isinstance(obj, typing._allowed_types):  # type: ignore
                 return {}
             else:
                 raise TypeError('{!r} is not a module, class, method, ' 'or function.'.format(obj))
-        defaults = typing._get_defaults(obj)
+        defaults = typing._get_defaults(obj)  # type: ignore
         hints = dict(hints)
         for name, value in hints.items():
             if value is None:
@@ -420,11 +422,11 @@ else:
                     is_argument=not isinstance(obj, types.ModuleType),
                     is_class=False,
                 )
-            value = typing._eval_type(value, globalns, localns)
+            value = typing._eval_type(value, globalns, localns)  # type: ignore
             if name in defaults and defaults[name] is None:
                 value = typing.Optional[value]
             hints[name] = value
-        return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}
+        return hints if include_extras else {k: typing._strip_annotations(t) for k, t in hints.items()}  # type: ignore
 
 
 if sys.version_info < (3, 9):

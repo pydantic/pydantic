@@ -231,14 +231,22 @@ class DecimalValidator(_fields.CustomValidator):
                     {'multiple_of': self.multiple_of},
                 )
 
-        if self.gt is not None and not value > self.gt:
+        # these type checks are here to handle the following error:
+        # Operator ">" not supported for types "(
+        #   <subclass of int and Decimal>
+        #   | <subclass of float and Decimal>
+        #   | <subclass of str and Decimal>
+        #   | Decimal" and "int
+        #   | Decimal"
+        # )
+        if self.gt is not None and not value > self.gt:  # type: ignore
             raise PydanticKnownError('greater_than', {'gt': self.gt})
-        elif self.ge is not None and not value >= self.ge:
+        elif self.ge is not None and not value >= self.ge:  # type: ignore
             raise PydanticKnownError('greater_than_equal', {'ge': self.ge})
 
-        if self.lt is not None and not value < self.lt:
+        if self.lt is not None and not value < self.lt:  # type: ignore
             raise PydanticKnownError('less_than', {'lt': self.lt})
-        if self.le is not None and not value <= self.le:
+        if self.le is not None and not value <= self.le:  # type: ignore
             raise PydanticKnownError('less_than_equal', {'le': self.le})
 
         return value
@@ -273,18 +281,18 @@ def path_validator(__input_value: str, _: core_schema.ValidationInfo) -> Path:
 
 def pattern_either_validator(__input_value: Any, _: core_schema.ValidationInfo) -> typing.Pattern[Any]:
     if isinstance(__input_value, typing.Pattern):
-        return __input_value
+        return __input_value  # type: ignore
     elif isinstance(__input_value, (str, bytes)):
         # todo strict mode
-        return compile_pattern(__input_value)
+        return compile_pattern(__input_value)  # type: ignore
     else:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
 def pattern_str_validator(__input_value: Any, _: core_schema.ValidationInfo) -> typing.Pattern[str]:
     if isinstance(__input_value, typing.Pattern):
-        if isinstance(__input_value.pattern, str):
-            return __input_value
+        if isinstance(__input_value.pattern, str):  # type: ignore
+            return __input_value  # type: ignore
         else:
             raise PydanticCustomError('pattern_str_type', 'Input should be a string pattern')
     elif isinstance(__input_value, str):

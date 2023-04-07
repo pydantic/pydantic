@@ -166,13 +166,17 @@ def complete_model_class(
     """
     generic_metadata = cls.__pydantic_generic_metadata__
     typevars_map = get_typevars_map(generic_metadata['origin'], generic_metadata['args'])
-    gen_schema = GenerateSchema(cls.model_config['arbitrary_types_allowed'], types_namespace, typevars_map)
+    gen_schema = GenerateSchema(
+        cls.model_config['arbitrary_types_allowed'],  # type: ignore
+        types_namespace,
+        typevars_map,
+    )
     try:
         schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        if cls.model_config['undefined_types_warning']:
+        if cls.model_config['undefined_types_warning']:  # type: ignore
             config_warning_string = (
                 f'`{cls_name}` has an undefined annotation: `{e.name}`. '
                 f'It may be possible to resolve this by setting '
@@ -229,7 +233,7 @@ def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldI
         merged_params[param.name] = param
 
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
-        allow_names = config['populate_by_name']
+        allow_names = config['populate_by_name']  # type: ignore
         for field_name, field in fields.items():
             param_name = field.alias or field_name
             if field_name in merged_params or param_name in merged_params:
@@ -247,7 +251,7 @@ def generate_model_signature(init: Callable[..., None], fields: dict[str, FieldI
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
             )
 
-    if config['extra'] is Extra.allow:
+    if config['extra'] is Extra.allow:  # type: ignore
         use_var_kw = True
 
     if var_kw and use_var_kw:
@@ -281,7 +285,7 @@ class MockValidator:
 
     def __init__(self, error_message: str, *, code: PydanticErrorCodes) -> None:
         self._error_message = error_message
-        self._code = code
+        self._code: PydanticErrorCodes = code
 
     def __getattr__(self, item: str) -> None:
         __tracebackhide__ = True
@@ -291,7 +295,7 @@ class MockValidator:
 
 
 def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> None:
-    alias_generator = config['alias_generator']
+    alias_generator = config['alias_generator']  # type: ignore
     if alias_generator is None:
         return
 

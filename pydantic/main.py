@@ -10,7 +10,7 @@ from copy import copy, deepcopy
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
-from typing import Any, Generic, Mapping
+from typing import Any, Generic, Mapping, cast
 
 import pydantic_core
 import typing_extensions
@@ -40,11 +40,11 @@ if typing.TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
-    AnyClassMethod = classmethod[Any]
+    AnyClassMethod = classmethod[Any, Any, Any]
     TupleGenerator = typing.Generator[tuple[str, Any], None, None]
     Model = typing.TypeVar('Model', bound='BaseModel')
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx = set[int] | set[str] | dict[int, Any] | dict[str, Any] | None
+    IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
 
 __all__ = 'BaseModel', 'create_model'
 
@@ -106,7 +106,7 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if '__hash__' not in namespace and config_new['frozen']:
+            if '__hash__' not in namespace and config_new.get('frozen', None):
 
                 def hash_func(self: Any) -> int:
                     return hash(self.__class__) + hash(tuple(self.__dict__.values()))
@@ -208,7 +208,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
 
-    def __init__(__pydantic_self__, **data: Any) -> None:
+    def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
         """
         Create a new model by parsing and validating input data from keyword arguments.
 
@@ -258,11 +258,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             )
         if name.startswith('_'):
             _object_setattr(self, name, value)
-        elif self.model_config['frozen']:
+        elif self.model_config.get('frozen', None):
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
-        elif self.model_config['validate_assignment']:
+        elif self.model_config.get('validate_assignment', None):
             self.__pydantic_validator__.validate_assignment(self, name, value)
-        elif self.model_config['extra'] is not Extra.allow and name not in self.model_fields:
+        elif self.model_config['extra'] is not Extra.allow and name not in self.model_fields:  # type: ignore
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         else:
@@ -391,7 +391,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         If you want to make more sweeping changes to how the JSON schema is generated, you will probably want to create
         a subclass of `GenerateJsonSchema` and pass it as `schema_generator` in `BaseModel.model_json_schema`.
         """
-        metadata = {'title': cls.model_config['title'] or cls.__name__, 'description': getdoc(cls) or None}
+        metadata = {'title': cls.model_config.get('title', None) or cls.__name__, 'description': getdoc(cls) or None}
         metadata = {k: v for k, v in metadata.items() if v is not None}
         return {**metadata, **json_schema}
 
@@ -658,9 +658,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls: type[Model],
         b: str | bytes,
         *,
-        content_type: str = None,
+        content_type: str | None = None,
         encoding: str = 'utf8',
-        proto: _deprecated_parse.Protocol = None,
+        proto: _deprecated_parse.Protocol | None = None,
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
@@ -703,9 +703,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls: type[Model],
         path: str | Path,
         *,
-        content_type: str = None,
+        content_type: str | None = None,
         encoding: str = 'utf8',
-        proto: _deprecated_parse.Protocol = None,
+        proto: _deprecated_parse.Protocol | None = None,
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
@@ -729,7 +729,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             'and use `model_validate` instead.',
             DeprecationWarning,
         )
-        if not cls.model_config['from_attributes']:
+        if not cls.model_config.get('from_attributes', None):
             raise PydanticUserError(
                 'You must set the config attribute `from_attributes=True` to use from_orm', code=None
             )
@@ -762,7 +762,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
         values = dict(
-            _deprecated_copy_internals._iter(
+            _deprecated_copy_internals._iter(  # type: ignore
                 self, to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False
             ),
             **(update or {}),
@@ -778,7 +778,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, deep=deep)
+        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, deep=deep)  # type: ignore
 
     @classmethod
     def schema(
@@ -821,27 +821,27 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
-        return _deprecated_copy_internals._iter(self, *args, **kwargs)
+        return _deprecated_copy_internals._iter(self, *args, **kwargs)  # type: ignore
 
     def _copy_and_set_values(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
             DeprecationWarning,
         )
-        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)
+        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)  # type: ignore
 
     @classmethod
     def _get_value(cls, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method  `_get_value` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)
+        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)  # type: ignore
 
     def _calculate_keys(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)
+        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)  # type: ignore
 
 
 _base_class_defined = True
@@ -854,10 +854,10 @@ def create_model(
     __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
+    __validators__: dict[str, AnyClassMethod] | None = None,
+    __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[Model]:
+) -> type[BaseModel]:
     ...
 
 
@@ -868,8 +868,8 @@ def create_model(
     __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
+    __validators__: dict[str, AnyClassMethod] | None = None,
+    __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
     ...
@@ -881,8 +881,8 @@ def create_model(
     __config__: ConfigDict | type[BaseConfig] | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
+    __validators__: dict[str, AnyClassMethod] | None = None,
+    __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
@@ -926,6 +926,7 @@ def create_model(
         if f_name.startswith('_'):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
+            f_def = cast('tuple[str, Any]', f_def)
             try:
                 f_annotation, f_value = f_def
             except ValueError as e:

@@ -23,30 +23,13 @@ jobs:
         with:
           python-version: 3.9
 
-      - uses: actions/cache@v3
-        id: cache
-        with:
-          path: |
-            ${{ env.pythonLocation }}
-            .mypy_cache
-          key: >
-            lint
-            ${{ runner.os }}
-            ${{ env.pythonLocation }}
-            ${{ hashFiles('requirements/linting.txt') }}
-
       - name: install
         if: steps.cache.outputs.cache-hit != 'true'
-        run: pip install -r requirements/linting.txt
+        run: pip install -r requirements/linting.txt -r requirements/pyproject-all.txt
 
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files --verbose
-
-      - name: run mypy
-        # pre-commit runs make typecheck-fast
-        # this is the more exhaustive version
-        run: make typecheck
 
       - name: make history
         run: python3 ./changes/make_history.py
@@ -224,14 +207,12 @@ jobs:
 
     - name: install
       if: steps.cache.outputs.cache-hit != 'true'
-      run: pip install -r requirements/pyproject-min.txt -r requirements/testing.txt
+      run: pip install -r requirements/pyproject-min.txt -r requirements/testing-mypy.txt
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
-        if [ ${{ matrix.mypy-version }} == 'lockfile' ]; then
-          pip install -r requirements/linting.txt
-        else
+        if [ ${{ matrix.mypy-version }} != 'lockfile' ]; then
           pip install mypy==${{ matrix.mypy-version }}
         fi
 

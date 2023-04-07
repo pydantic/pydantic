@@ -5,6 +5,7 @@ sources = pydantic tests docs/plugins
 install:
 	python -m pip install -U pip
 	pip install -r requirements/all.txt
+	pip install -r requirements/pyproject-all.txt
 	pip install -e .
 
 .PHONY: refresh-lockfiles
@@ -28,11 +29,7 @@ lint:
 
 .PHONY: typecheck
 typecheck:
-	mypy pydantic --disable-recursive-aliases --config-file .mypy-configs/full.toml
-
-.PHONY: typecheck-fast
-typecheck-fast:
-	mypy pydantic --disable-recursive-aliases --config-file .mypy-configs/fast.toml
+	pyright pydantic
 
 .PHONY: test-mypy
 test-mypy:
@@ -77,7 +74,6 @@ clean:
 	rm -f `find . -type f -name '.*~'`
 	rm -rf .cache
 	rm -rf .pytest_cache
-	rm -rf .mypy_cache
 	rm -rf .ruff_cache
 	rm -rf htmlcov
 	rm -rf *.egg-info

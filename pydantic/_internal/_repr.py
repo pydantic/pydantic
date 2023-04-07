@@ -12,8 +12,10 @@ import typing_extensions
 from . import _typing_extra
 
 if typing.TYPE_CHECKING:
-    ReprArgs = typing.Iterable[tuple[str | None, Any]]
-    RichReprResult = typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]
+    ReprArgs: typing_extensions.TypeAlias = 'typing.Iterable[tuple[str | None, Any]]'
+    RichReprResult: typing_extensions.TypeAlias = (
+        'typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]'
+    )
 
 
 class PlainRepr(str):

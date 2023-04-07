@@ -1,3 +1,4 @@
+# type: ignore
 """
 THIS IS A MESS AND NEEDS TO BE REWRITTEN, SORRY ZAC.
 

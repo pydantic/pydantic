@@ -151,23 +151,23 @@ def generate_config(config: ConfigDict, cls: type[Any]) -> core_schema.CoreConfi
     """
     Create a pydantic-core config from a pydantic config.
     """
-    extra = None if config['extra'] is None else config['extra'].value
+    extra = None if config['extra'] is None else config['extra'].value  # type: ignore
     core_config = core_schema.CoreConfig(  # type: ignore[misc]
         **core_schema.dict_not_none(
-            title=config['title'] or cls.__name__,
+            title=config['title'] or cls.__name__,  # type: ignore
             extra_fields_behavior=extra,
-            allow_inf_nan=config['allow_inf_nan'],
-            populate_by_name=config['populate_by_name'],
-            str_strip_whitespace=config['str_strip_whitespace'],
-            str_to_lower=config['str_to_lower'],
-            str_to_upper=config['str_to_upper'],
-            strict=config['strict'],
-            ser_json_timedelta=config['ser_json_timedelta'],
-            ser_json_bytes=config['ser_json_bytes'],
-            from_attributes=config['from_attributes'],
-            loc_by_alias=config['loc_by_alias'],
-            revalidate_instances=config['revalidate_instances'],
-            validate_default=config['validate_default'],
+            allow_inf_nan=config['allow_inf_nan'],  # type: ignore
+            populate_by_name=config['populate_by_name'],  # type: ignore
+            str_strip_whitespace=config['str_strip_whitespace'],  # type: ignore
+            str_to_lower=config['str_to_lower'],  # type: ignore
+            str_to_upper=config['str_to_upper'],  # type: ignore
+            strict=config['strict'],  # type: ignore
+            ser_json_timedelta=config['ser_json_timedelta'],  # type: ignore
+            ser_json_bytes=config['ser_json_bytes'],  # type: ignore
+            from_attributes=config['from_attributes'],  # type: ignore
+            loc_by_alias=config['loc_by_alias'],  # type: ignore
+            revalidate_instances=config['revalidate_instances'],  # type: ignore
+            validate_default=config['validate_default'],  # type: ignore
             str_max_length=config.get('str_max_length'),
             str_min_length=config.get('str_min_length'),
         )
@@ -237,7 +237,7 @@ class GenerateSchema:
         # TODO: we need to do something similar to this for pydantic dataclasses
         #   This should be straight forward once we expose the pydantic config on the dataclass;
         #   I have done this in my PR for dataclasses JSON schema
-        self._arbitrary_types_stack.append(cls.model_config['arbitrary_types_allowed'])
+        self._arbitrary_types_stack.append(cls.model_config['arbitrary_types_allowed'])  # type: ignore
         try:
             fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
                 {k: self.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
@@ -924,7 +924,7 @@ class GenerateSchema:
                 continue
             return encoder(self, obj)
         if dataclasses.is_dataclass(obj):
-            return self._dataclass_schema(obj)
+            return self._dataclass_schema(obj)  # type: ignore
         return None
 
     def _dataclass_schema(self, dataclass: type[StandardDataclass]) -> core_schema.CoreSchema:
@@ -952,7 +952,7 @@ class GenerateSchema:
         if typevar.__bound__:
             return self.generate_schema(typevar.__bound__)
         elif typevar.__constraints__:
-            return self._union_schema(typing.Union[typevar.__constraints__])
+            return self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
         else:
             return core_schema.AnySchema(type='any')
 

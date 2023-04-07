@@ -205,7 +205,9 @@ DecoratorInfo = Union[
 ]
 
 ReturnType = TypeVar('ReturnType')
-DecoratedType: TypeAlias = 'Union[classmethod[ReturnType], staticmethod[ReturnType], Callable[..., ReturnType]]'
+DecoratedType: TypeAlias = (
+    'Union[classmethod[Any, Any, ReturnType], staticmethod[Any, ReturnType], Callable[..., ReturnType]]'
+)
 
 
 class PydanticDecoratorMarker(Generic[ReturnType], Representation):
@@ -385,7 +387,9 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
 _FUNCS: set[str] = set()
 
 
-AnyDecoratorCallable: TypeAlias = 'Union[classmethod[Any], staticmethod[Any], partialmethod[Any], Callable[..., Any]]'
+AnyDecoratorCallable: TypeAlias = (
+    'Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any], Callable[..., Any]]'
+)
 
 
 def unwrap_wrapped_function(
