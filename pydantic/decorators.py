@@ -463,3 +463,131 @@ def model_serializer(
         return dec
     else:
         return dec(__f)
+
+
+ModelType = TypeVar('ModelType')
+ModelWrapValidatorHandler = Callable[[Any], ModelType]
+
+
+class ModelWrapValidatorWithoutInfo(Protocol):
+    def __call__(
+        self,
+        cls: type[ModelType],
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+        __handler: Callable[[Any], ModelType],
+    ) -> ModelType:
+        ...
+
+
+class ModelWrapValidator(Protocol):
+    def __call__(
+        self,
+        cls: type[ModelType],
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+        __handler: Callable[[Any], ModelType],
+        __info: _core_schema.ValidationInfo,
+    ) -> ModelType:
+        ...
+
+
+class ModelBeforeValidatorWithoutInfo(Protocol):
+    def __call__(
+        self,
+        cls: Any,
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+    ) -> Any:
+        ...
+
+
+class ModelBeforeValidator(Protocol):
+    def __call__(
+        self,
+        cls: Any,
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+        __info: _core_schema.ValidationInfo,
+    ) -> Any:
+        ...
+
+
+class ModelAfterValidatorWithoutInfo(Protocol):
+    @staticmethod
+    def __call__(
+        self: ModelType,  # type: ignore
+    ) -> ModelType:
+        ...
+
+
+class ModelAfterValidator(Protocol):
+    @staticmethod
+    def __call__(
+        self: ModelType,  # type: ignore
+        __info: _core_schema.ValidationInfo,
+    ) -> ModelType:
+        ...
+
+
+AnyModelWrapValidator = Union[
+    ModelWrapValidator,
+    ModelWrapValidatorWithoutInfo,
+]
+
+AnyModeBeforeValidator = Union[
+    ModelBeforeValidator,
+    ModelBeforeValidatorWithoutInfo,
+]
+
+AnyModeAfterValidator = Union[
+    ModelAfterValidator,
+    ModelAfterValidatorWithoutInfo,
+]
+
+
+@overload
+def model_validator(
+    *,
+    mode: Literal['wrap'],
+) -> Callable[[AnyModelWrapValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+    ...
+
+
+@overload
+def model_validator(
+    *,
+    mode: Literal['before'],
+) -> Callable[[AnyModeBeforeValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+    ...
+
+
+@overload
+def model_validator(
+    *,
+    mode: Literal['after'],
+) -> Callable[[AnyModeAfterValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+    ...
+
+
+def model_validator(
+    *,
+    mode: Literal['wrap', 'before', 'after'],
+) -> Any:
+    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+        dec_info = _decorators.ModelValidatorDecoratorInfo(
+            mode=mode,
+        )
+        # TODO: rename to make_generic_validator after https://github.com/pydantic/pydantic/pull/5364
+        shim = partial(_decorators.make_generic_v2_field_validator, mode=mode)
+        return _decorators.PydanticDecoratorMarker(f, dec_info, shim=shim)
+
+    return dec

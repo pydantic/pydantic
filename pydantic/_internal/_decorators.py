@@ -117,12 +117,24 @@ class ModelSerializerDecoratorInfo:
     json_return_type: JsonReturnTypes | None
 
 
+@dataclass
+class ModelValidatorDecoratorInfo:
+    """
+    A container for data from `@model_validator` so that we can access it
+    while building the pydantic-core schema.
+    """
+
+    decorator_repr: ClassVar[str] = '@model_validator'
+    mode: Literal['wrap', 'before', 'after']
+
+
 DecoratorInfo = Union[
     ValidatorDecoratorInfo,
     FieldValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
     FieldSerializerDecoratorInfo,
     ModelSerializerDecoratorInfo,
+    ModelValidatorDecoratorInfo,
 ]
 
 ReturnType = TypeVar('ReturnType')
@@ -219,6 +231,7 @@ class DecoratorInfos:
     root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
     field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
     model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
+    model_validator: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
 
 
 def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
@@ -276,6 +289,10 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
                                 code='multiple-field-serializers',
                             )
                 res.field_serializer[var_name] = Decorator.build(
+                    cls, cls_var_name=var_name, shim=var_value.shim, info=info
+                )
+            elif isinstance(info, ModelValidatorDecoratorInfo):
+                res.model_validator[var_name] = Decorator.build(
                     cls, cls_var_name=var_name, shim=var_value.shim, info=info
                 )
             else:

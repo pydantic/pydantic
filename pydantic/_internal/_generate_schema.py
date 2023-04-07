@@ -35,6 +35,7 @@ from ._decorators import (
     FieldSerializerDecoratorInfo,
     FieldValidatorDecoratorInfo,
     ModelSerializerDecoratorInfo,
+    ModelValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
 )
@@ -144,7 +145,8 @@ def dataclass_schema(
     args_schema = core_schema.dataclass_args_schema(cls.__name__, args, collect_init_only=has_post_init)
     inner_schema = apply_validators(args_schema, decorators.root_validator.values())
     dc_schema = core_schema.dataclass_schema(cls, inner_schema, post_init=has_post_init, ref=ref)
-    return apply_model_serializers(dc_schema, decorators.model_serializer.values())
+    schema = apply_model_serializers(dc_schema, decorators.model_serializer.values())
+    return apply_model_validators(schema, decorators.model_validator.values())
 
 
 class GenerateSchema:
@@ -242,7 +244,8 @@ class GenerateSchema:
             post_init=model_post_init,
             metadata=build_metadata_dict(js_modify_function=cls.model_modify_json_schema),
         )
-        return apply_model_serializers(model_schema, decorators.model_serializer.values())
+        schema = apply_model_serializers(model_schema, decorators.model_serializer.values())
+        return apply_model_validators(schema, decorators.model_validator.values())
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """
@@ -1040,6 +1043,32 @@ def apply_model_serializers(
                 json_return_type=serializer.info.json_return_type,
             )
         schema['serialization'] = ser_schema
+    return schema
+
+
+def apply_model_validators(
+    schema: core_schema.CoreSchema, validators: Iterable[Decorator[ModelValidatorDecoratorInfo]]
+) -> core_schema.CoreSchema:
+    """
+    Apply model validators to a schema.
+    """
+    for validator in validators:
+        if validator.info.mode == 'wrap':
+            schema = core_schema.general_wrap_validator_function(
+                function=validator.func,
+                schema=schema,
+            )
+        elif validator.info.mode == 'before':
+            schema = core_schema.general_before_validator_function(
+                function=validator.func,
+                schema=schema,
+            )
+        else:
+            assert validator.info.mode == 'after'
+            schema = core_schema.general_after_validator_function(
+                function=validator.func,
+                schema=schema,
+            )
     return schema
 
 
