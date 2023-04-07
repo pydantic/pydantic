@@ -115,7 +115,7 @@ class ModelSerializerDecoratorInfo:
     json_return_type: JsonReturnTypes | None
 
 
-@dataclass
+@slots_dataclass
 class ModelValidatorDecoratorInfo:
     """
     A container for data from `@model_validator` so that we can access it
