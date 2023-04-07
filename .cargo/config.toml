@@ -17,6 +17,3 @@ rustflags = [
   "-C", "link-arg=dynamic_lookup",
   "-A", "incomplete_features",
 ]
-
-[alias]
-rust-bench = "bench --no-default-features --features mimalloc --features auto-initialize"
