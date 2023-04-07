@@ -385,6 +385,8 @@ class GenerateSchema:
             if obj is Final:
                 return core_schema.AnySchema(type='any')
             return self.generate_schema(get_args(obj)[0])
+        elif dataclasses.is_dataclass(obj):
+            return self._dataclass_schema(obj)
         elif isinstance(obj, (FunctionType, LambdaType, MethodType)):
             return self._callable_schema(obj)
 
@@ -942,8 +944,6 @@ class GenerateSchema:
             except KeyError:
                 continue
             return encoder(self, obj)
-        if dataclasses.is_dataclass(obj):
-            return self._dataclass_schema(obj)
         return None
 
     def _dataclass_schema(self, dataclass: type[StandardDataclass]) -> core_schema.CoreSchema:
