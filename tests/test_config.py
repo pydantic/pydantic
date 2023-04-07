@@ -545,6 +545,7 @@ def test_multiple_inheritance_config():
     assert Child.model_config.get('use_enum_values') is True
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_wrapper_match():
     config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict).items()]
     # remove config
@@ -555,6 +556,7 @@ def test_config_wrapper_match():
     ), 'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
 
 
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
 def test_config_defaults_match():
     config_dict_keys = list(get_type_hints(ConfigDict).keys())
     config_defaults_keys = list(config_defaults.keys())
