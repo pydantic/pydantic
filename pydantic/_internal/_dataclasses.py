@@ -100,7 +100,7 @@ def prepare_dataclass(
     cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
-    cls.__pydantic_config__ = config_wrapper.config
+    cls.__pydantic_config__ = config_wrapper.config_dict
 
     if config_wrapper.validate_assignment:
 

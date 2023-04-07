@@ -3,7 +3,7 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from functools import partial
 from inspect import signature
-from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union
+from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr
 
@@ -543,3 +543,13 @@ def test_multiple_inheritance_config():
     assert Child.model_config.get('populate_by_name') is True
     assert Child.model_config.get('extra') is Extra.forbid
     assert Child.model_config.get('use_enum_values') is True
+
+
+def test_wrapper_config_matches():
+    config_dict_hints = [(k, str(v)) for k, v in get_type_hints(ConfigDict).items()]
+    # remove config
+    config_wrapper_hints = [(k, str(v)) for k, v in get_type_hints(ConfigWrapper).items() if k != 'config_dict']
+
+    assert (
+        config_dict_hints == config_wrapper_hints
+    ), 'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'

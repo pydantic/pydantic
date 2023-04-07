@@ -13,7 +13,7 @@ class _ConfigMetaclass(type):
         warnings.warn(_config.DEPRECATION_MESSAGE, DeprecationWarning)
 
         try:
-            return _config.default_config[item]  # type: ignore[literal-required]
+            return _config.default_config[item]
         except KeyError as exc:
             raise AttributeError(f"type object '{self.__name__}' has no attribute {exc}") from exc
 

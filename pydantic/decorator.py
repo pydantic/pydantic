@@ -220,7 +220,7 @@ class ValidatedFunction:
                 code=None,
             )
         if config_wrapper.extra is None:
-            config_wrapper.config['extra'] = Extra.forbid
+            config_wrapper.config_dict['extra'] = Extra.forbid
 
         class DecoratorBaseModel(BaseModel):
             @field_validator(self.v_args_name, check_fields=False)
@@ -261,6 +261,6 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v))
                 raise TypeError(f'multiple values for argument{plural}: {keys}')
 
-            model_config = config_wrapper.config
+            model_config = config_wrapper.config_dict
 
         self.model = create_model(_utils.to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)

@@ -1,7 +1,7 @@
 from __future__ import annotations as _annotations
 
 import warnings
-from typing import Any, Callable, cast
+from typing import TYPE_CHECKING, Any, Callable, cast
 
 from pydantic_core import core_schema
 from typing_extensions import Literal
@@ -18,11 +18,12 @@ class ConfigWrapper:
     Internal wrapper for Config which exposes ConfigDict items as attributes.
     """
 
-    __slots__ = ('config',)
+    __slots__ = ('config_dict',)
 
-    # this is copied directly from ConfigDict, and should be kept up to date
-    config: ConfigDict
+    config_dict: ConfigDict
 
+    # all annotations are copied directly from ConfigDict, and should be kept up to date, a test will fail if they
+    # stop matching
     title: str | None
     str_to_lower: bool
     str_to_upper: bool
@@ -55,18 +56,21 @@ class ConfigWrapper:
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
-            self.config = prepare_config(config)
+            self.config_dict = prepare_config(config)
         else:
-            self.config = config  # type: ignore
+            self.config_dict = cast(ConfigDict, config)
 
-    def __getattr__(self, name: str) -> Any:
-        try:
-            return self.config[name]
-        except KeyError:
+    # we don't show `__getattr__` to type checkers so missing attributes cause errors
+    if not TYPE_CHECKING:
+
+        def __getattr__(self, name: str) -> Any:
             try:
-                return default_config[name]
+                return self.config_dict[name]
             except KeyError:
-                raise AttributeError(f'Config has no attribute {name!r}') from None
+                try:
+                    return default_config[name]
+                except KeyError:
+                    raise AttributeError(f'Config has no attribute {name!r}') from None
 
     def core_config(self, obj: Any) -> core_schema.CoreConfig:
         """
@@ -75,30 +79,30 @@ class ConfigWrapper:
         We don't use getattr here since we don't want to populate defaults
         """
         extra = self.extra
-        core_config = core_schema.CoreConfig(  # type: ignore[misc]
+        core_config = core_schema.CoreConfig(
             **core_schema.dict_not_none(
-                title=self.config.get('title') or obj.__name__,
+                title=self.config_dict.get('title') or obj.__name__,
                 extra_fields_behavior=extra and extra.value,
-                allow_inf_nan=self.config.get('allow_inf_nan'),
-                populate_by_name=self.config.get('populate_by_name'),
-                str_strip_whitespace=self.config.get('str_strip_whitespace'),
-                str_to_lower=self.config.get('str_to_lower'),
-                str_to_upper=self.config.get('str_to_upper'),
-                strict=self.config.get('strict'),
-                ser_json_timedelta=self.config.get('ser_json_timedelta'),
-                ser_json_bytes=self.config.get('ser_json_bytes'),
-                from_attributes=self.config.get('from_attributes'),
-                loc_by_alias=self.config.get('loc_by_alias'),
-                revalidate_instances=self.config.get('revalidate_instances'),
-                validate_default=self.config.get('validate_default'),
-                str_max_length=self.config.get('str_max_length'),
-                str_min_length=self.config.get('str_min_length'),
+                allow_inf_nan=self.config_dict.get('allow_inf_nan'),
+                populate_by_name=self.config_dict.get('populate_by_name'),
+                str_strip_whitespace=self.config_dict.get('str_strip_whitespace'),
+                str_to_lower=self.config_dict.get('str_to_lower'),
+                str_to_upper=self.config_dict.get('str_to_upper'),
+                strict=self.config_dict.get('strict'),
+                ser_json_timedelta=self.config_dict.get('ser_json_timedelta'),
+                ser_json_bytes=self.config_dict.get('ser_json_bytes'),
+                from_attributes=self.config_dict.get('from_attributes'),
+                loc_by_alias=self.config_dict.get('loc_by_alias'),
+                revalidate_instances=self.config_dict.get('revalidate_instances'),
+                validate_default=self.config_dict.get('validate_default'),
+                str_max_length=self.config_dict.get('str_max_length'),
+                str_min_length=self.config_dict.get('str_min_length'),
             )
         )
         return core_config
 
     def __repr__(self):
-        c = ', '.join(f'{k}={v!r}' for k, v in self.config.items())
+        c = ', '.join(f'{k}={v!r}' for k, v in self.config_dict.items())
         return f'ConfigWrapper({c})'
 
 
@@ -137,16 +141,14 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
     if config is None:
         return ConfigDict()
 
-    config_dict: ConfigDict
-    if isinstance(config, dict):
-        config_dict = cast(ConfigDict, config)
-    else:
+    if not isinstance(config, dict):
         warnings.warn(DEPRECATION_MESSAGE, DeprecationWarning)
-        config_dict = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}  # type: ignore
+        config = {k: getattr(config, k) for k in dir(config) if not k.startswith('__')}
 
+    config_dict = cast(ConfigDict, config)
     check_deprecated(config_dict)
     prepare_config_extra(config_dict)
-    return config_dict  # type: ignore
+    return config_dict
 
 
 config_keys = set(ConfigDict.__annotations__.keys())
