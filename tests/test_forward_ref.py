@@ -737,8 +737,8 @@ class Foobar(BaseModel):
     )
     f = module.Foobar(x=1, y={'x': 2})
     assert f.model_dump() == {'x': 1, 'y': {'x': 2, 'y': None}}
-    assert f.__fields_set__ == {'x', 'y'}
-    assert f.y.__fields_set__ == {'x'}
+    assert f.__pydantic_fields_set__ == {'x', 'y'}
+    assert f.y.__pydantic_fields_set__ == {'x'}
 
 
 def test_force_rebuild():

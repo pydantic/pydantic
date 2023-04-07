@@ -948,6 +948,6 @@ The table below provisionally defines what input value types are allowed to whic
 | `callable`    | -           | both   | JSON         | never valid                                                                 |
 
 The `ModelClass` validator (use to create instances of a class) uses the `TypedDict` validator, then creates an instance
-with `__dict__` and `__fields_set__` set, so same rules apply as `TypedDict`.
+with `__dict__` and `__pydantic_fields_set__` set, so same rules apply as `TypedDict`.
 
 [speedate]: https://docs.rs/speedate/latest/speedate/

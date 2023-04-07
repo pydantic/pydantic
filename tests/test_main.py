@@ -750,13 +750,13 @@ def test_fields_set():
         b: int = 2
 
     m = MyModel(a=5)
-    assert m.__fields_set__ == {'a'}
+    assert m.__pydantic_fields_set__ == {'a'}
 
     m.b = 2
-    assert m.__fields_set__ == {'a', 'b'}
+    assert m.__pydantic_fields_set__ == {'a', 'b'}
 
     m = MyModel(a=5, b=2)
-    assert m.__fields_set__ == {'a', 'b'}
+    assert m.__pydantic_fields_set__ == {'a', 'b'}
 
 
 def test_exclude_unset_dict():
@@ -1977,7 +1977,7 @@ def test_model_equality_dump(EqualityModel, InnerEqualityModel):
 def test_model_equality_fields_set(InnerEqualityModel):
     m1 = InnerEqualityModel(iw=0)
     m2 = InnerEqualityModel(iw=0, ix=0)
-    assert m1.__fields_set__ != m2.__fields_set__
+    assert m1.__pydantic_fields_set__ != m2.__pydantic_fields_set__
     assert m1 == m2
 
 

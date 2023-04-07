@@ -97,7 +97,7 @@ def _copy_and_set_values(
     cls = self.__class__
     m = cls.__new__(cls)
     _object_setattr(m, '__dict__', values)
-    _object_setattr(m, '__fields_set__', fields_set)
+    _object_setattr(m, '__pydantic_fields_set__', fields_set)
     for name in self.__private_attributes__:
         value = getattr(self, name, Undefined)
         if value is not Undefined:
@@ -195,7 +195,7 @@ def _calculate_keys(
 
     keys: typing.AbstractSet[str]
     if exclude_unset:
-        keys = self.__fields_set__.copy()
+        keys = self.__pydantic_fields_set__.copy()
     else:
         keys = self.__dict__.keys()
 

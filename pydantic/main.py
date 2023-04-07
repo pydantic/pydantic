@@ -194,7 +194,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
-        __fields_set__: set[str] = set()
+        __pydantic_fields_set__: set[str] = set()
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
@@ -204,7 +204,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     model_config = ConfigDict()
-    __slots__ = '__dict__', '__fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
 
@@ -267,19 +267,19 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         else:
             self.__dict__[name] = value
-            self.__fields_set__.add(name)
+            self.__pydantic_fields_set__.add(name)
 
     def __getstate__(self) -> dict[Any, Any]:
         private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)
         return {
             '__dict__': self.__dict__,
-            '__fields_set__': self.__fields_set__,
+            '__pydantic_fields_set__': self.__pydantic_fields_set__,
             '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
         }
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
         _object_setattr(self, '__dict__', state['__dict__'])
-        _object_setattr(self, '__fields_set__', state['__fields_set__'])
+        _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
         for name, value in state.get('__private_attribute_values__', {}).items():
             _object_setattr(self, name, value)
 
@@ -344,7 +344,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     @classmethod
     def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
         """
-        Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
+        Creates a new model setting __dict__ and __pydantic_fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
         Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
         """
@@ -361,7 +361,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         _object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
             _fields_set = set(values.keys())
-        _object_setattr(m, '__fields_set__', _fields_set)
+        _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if type(m).model_post_init is not BaseModel.model_post_init:
             m.model_post_init(None)
         return m
@@ -469,7 +469,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         copied = self.__deepcopy__() if deep else self.__copy__()
         if update:
             copied.__dict__.update(update)
-            copied.__fields_set__.update(update.keys())
+            copied.__pydantic_fields_set__.update(update.keys())
         return copied
 
     def __copy__(self: Model) -> Model:
@@ -479,7 +479,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', copy(self.__dict__))
-        _object_setattr(m, '__fields_set__', copy(self.__fields_set__))
+        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
             if value is not Undefined:
@@ -493,9 +493,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
-        # This next line doesn't need a deepcopy because __fields_set__ is a set[str],
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
         # and attempting a deepcopy would be marginally slower.
-        _object_setattr(m, '__fields_set__', copy(self.__fields_set__))
+        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
             if value is not Undefined:
@@ -768,13 +768,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             **(update or {}),
         )
 
-        # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
+        # new `__pydantic_fields_set__` can have unset optional fields with a set value in `update` kwarg
         if update:
-            fields_set = self.__fields_set__ | update.keys()
+            fields_set = self.__pydantic_fields_set__ | update.keys()
         else:
-            fields_set = set(self.__fields_set__)
+            fields_set = set(self.__pydantic_fields_set__)
 
-        # removing excluded fields from `__fields_set__`
+        # removing excluded fields from `__pydantic_fields_set__`
         if exclude:
             fields_set -= set(exclude)
 
