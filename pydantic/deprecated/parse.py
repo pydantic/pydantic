@@ -15,9 +15,9 @@ class Protocol(str, Enum):
 def load_str_bytes(
     b: str | bytes,
     *,
-    content_type: str = None,
+    content_type: str | None = None,
     encoding: str = 'utf8',
-    proto: Protocol = None,
+    proto: Protocol | None = None,
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
@@ -47,9 +47,9 @@ def load_str_bytes(
 def load_file(
     path: str | Path,
     *,
-    content_type: str = None,
+    content_type: str | None = None,
     encoding: str = 'utf8',
-    proto: Protocol = None,
+    proto: Protocol | None = None,
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:

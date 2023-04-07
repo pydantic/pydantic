@@ -18,7 +18,8 @@ repos:
     pass_filenames: false
   - id: typecheck
     name: Typecheck
-    entry: make typecheck-fast
+    entry: pyright pydantic
     types: [python]
-    language: system
+    language: node
     pass_filenames: false
+    additional_dependencies: ["pyright@1.1.302"]

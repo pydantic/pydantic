@@ -5,6 +5,8 @@ from copy import deepcopy
 from enum import Enum
 from typing import Any
 
+import typing_extensions
+
 from .._internal import (
     _model_construction,
     _typing_extra,
@@ -16,11 +18,11 @@ if typing.TYPE_CHECKING:
     from pydantic import BaseModel
     from pydantic._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
-    AnyClassMethod = classmethod[Any]
+    AnyClassMethod = classmethod[Any, Any, Any]
     TupleGenerator = typing.Generator[tuple[str, Any], None, None]
     Model = typing.TypeVar('Model', bound='BaseModel')
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx = set[int] | set[str] | dict[int, Any] | dict[str, Any] | None
+    IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
 
 _object_setattr = _model_construction.object_setattr
 
@@ -97,7 +99,7 @@ def _copy_and_set_values(
     cls = self.__class__
     m = cls.__new__(cls)
     _object_setattr(m, '__dict__', values)
-    _object_setattr(m, '__fields_set__', fields_set)
+    _object_setattr(m, '__pydantic_fields_set__', fields_set)
     for name in self.__private_attributes__:
         value = getattr(self, name, Undefined)
         if value is not Undefined:
@@ -128,8 +130,8 @@ def _get_value(
                 by_alias=by_alias,
                 exclude_unset=exclude_unset,
                 exclude_defaults=exclude_defaults,
-                include=include,
-                exclude=exclude,
+                include=include,  # type: ignore
+                exclude=exclude,  # type: ignore
                 exclude_none=exclude_none,
             )
         else:
@@ -195,7 +197,7 @@ def _calculate_keys(
 
     keys: typing.AbstractSet[str]
     if exclude_unset:
-        keys = self.__fields_set__.copy()
+        keys = self.__pydantic_fields_set__.copy()
     else:
         keys = self.__dict__.keys()
 

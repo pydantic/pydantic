@@ -10,12 +10,13 @@ from copy import copy, deepcopy
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
-from typing import Any, Generic, Mapping
+from typing import Any, Generic, Mapping, cast
 
 import pydantic_core
 import typing_extensions
 
 from ._internal import (
+    _config,
     _decorators,
     _forward_ref,
     _generics,
@@ -25,7 +26,7 @@ from ._internal import (
     _utils,
 )
 from ._internal._fields import Undefined
-from .config import BaseConfig, ConfigDict, Extra, build_config, get_config
+from .config import ConfigDict, Extra
 from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -40,11 +41,11 @@ if typing.TYPE_CHECKING:
     from ._internal._generate_schema import GenerateSchema
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
-    AnyClassMethod = classmethod[Any]
+    AnyClassMethod = classmethod[Any, Any, Any]
     TupleGenerator = typing.Generator[tuple[str, Any], None, None]
     Model = typing.TypeVar('Model', bound='BaseModel')
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
-    IncEx = set[int] | set[str] | dict[int, Any] | dict[str, Any] | None
+    IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
 
 __all__ = 'BaseModel', 'create_model'
 
@@ -57,6 +58,10 @@ _base_class_defined = False
 
 
 class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
+    """
+    Intercept attributes being set on model classes and warn about overriding of decorators (`@field_validator`, etc.)
+    """
+
     def __setitem__(self, k: str, v: object) -> None:
         existing: Any = self.get(k, None)
         if existing and v is not existing and isinstance(existing, _decorators.PydanticDecoratorMarker):
@@ -79,10 +84,10 @@ class ModelMetaclass(ABCMeta):
         if _base_class_defined:
             base_field_names, class_vars, base_private_attributes = _collect_bases_data(bases)
 
-            config_new = build_config(cls_name, bases, namespace, kwargs)
-            namespace['model_config'] = config_new
+            config_wrapper = _config.ConfigWrapper.for_model(bases, namespace, kwargs)
+            namespace['model_config'] = config_wrapper.config_dict
             private_attributes = _model_construction.inspect_namespace(
-                namespace, config_new.get('ignored_types', ()), class_vars, base_field_names
+                namespace, config_wrapper.ignored_types, class_vars, base_field_names
             )
             if private_attributes:
                 slots: set[str] = set(namespace.get('__slots__', ()))
@@ -106,7 +111,7 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if '__hash__' not in namespace and config_new['frozen']:
+            if '__hash__' not in namespace and config_wrapper.frozen:
 
                 def hash_func(self: Any) -> int:
                     return hash(self.__class__) + hash(tuple(self.__dict__.values()))
@@ -161,6 +166,7 @@ class ModelMetaclass(ABCMeta):
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
+                config_wrapper,
                 types_namespace,
                 raise_errors=False,
             )
@@ -194,7 +200,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
-        __fields_set__: set[str] = set()
+        __pydantic_fields_set__: set[str] = set()
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
@@ -204,11 +210,11 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     model_config = ConfigDict()
-    __slots__ = '__dict__', '__fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
 
-    def __init__(__pydantic_self__, **data: Any) -> None:
+    def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
         """
         Create a new model by parsing and validating input data from keyword arguments.
 
@@ -231,6 +237,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         return cls.__pydantic_validator__.validate_python(obj, strict=strict, context=context)
+
+    @property
+    def model_fields_set(self) -> set[str]:
+        """
+        The set of fields that have been set on this model instance, i.e. that were not filled from defaults.
+        """
+        return self.__pydantic_fields_set__
 
     @classmethod
     def model_validate_json(
@@ -258,28 +271,28 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             )
         if name.startswith('_'):
             _object_setattr(self, name, value)
-        elif self.model_config['frozen']:
+        elif self.model_config.get('frozen', None):
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
-        elif self.model_config['validate_assignment']:
+        elif self.model_config.get('validate_assignment', None):
             self.__pydantic_validator__.validate_assignment(self, name, value)
-        elif self.model_config['extra'] is not Extra.allow and name not in self.model_fields:
+        elif self.model_config.get('extra') is not Extra.allow and name not in self.model_fields:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         else:
             self.__dict__[name] = value
-            self.__fields_set__.add(name)
+            self.__pydantic_fields_set__.add(name)
 
     def __getstate__(self) -> dict[Any, Any]:
         private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)
         return {
             '__dict__': self.__dict__,
-            '__fields_set__': self.__fields_set__,
+            '__pydantic_fields_set__': self.__pydantic_fields_set__,
             '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
         }
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
         _object_setattr(self, '__dict__', state['__dict__'])
-        _object_setattr(self, '__fields_set__', state['__fields_set__'])
+        _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
         for name, value in state.get('__private_attribute_values__', {}).items():
             _object_setattr(self, name, value)
 
@@ -344,7 +357,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     @classmethod
     def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
         """
-        Creates a new model setting __dict__ and __fields_set__ from trusted or pre-validated data.
+        Creates a new model setting __dict__ and __pydantic_fields_set__ from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
         Behaves as if `Config.extra = 'allow'` was set since it adds all passed values
         """
@@ -361,7 +374,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         _object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
             _fields_set = set(values.keys())
-        _object_setattr(m, '__fields_set__', _fields_set)
+        _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         if type(m).model_post_init is not BaseModel.model_post_init:
             m.model_post_init(None)
         return m
@@ -391,7 +404,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         If you want to make more sweeping changes to how the JSON schema is generated, you will probably want to create
         a subclass of `GenerateJsonSchema` and pass it as `schema_generator` in `BaseModel.model_json_schema`.
         """
-        metadata = {'title': cls.model_config['title'] or cls.__name__, 'description': getdoc(cls) or None}
+        metadata = {'title': cls.model_config.get('title', None) or cls.__name__, 'description': getdoc(cls) or None}
         metadata = {k: v for k, v in metadata.items() if v is not None}
         return {**metadata, **json_schema}
 
@@ -424,6 +437,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
+                _config.ConfigWrapper(cls.model_config, check=False),
                 types_namespace,
                 raise_errors=raise_errors,
             )
@@ -469,7 +483,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         copied = self.__deepcopy__() if deep else self.__copy__()
         if update:
             copied.__dict__.update(update)
-            copied.__fields_set__.update(update.keys())
+            copied.__pydantic_fields_set__.update(update.keys())
         return copied
 
     def __copy__(self: Model) -> Model:
@@ -479,7 +493,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', copy(self.__dict__))
-        _object_setattr(m, '__fields_set__', copy(self.__fields_set__))
+        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
             if value is not Undefined:
@@ -493,9 +507,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
-        # This next line doesn't need a deepcopy because __fields_set__ is a set[str],
+        # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
         # and attempting a deepcopy would be marginally slower.
-        _object_setattr(m, '__fields_set__', copy(self.__fields_set__))
+        _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
             if value is not Undefined:
@@ -597,6 +611,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return f'{cls.__name__}[{params_component}]'
 
     # ##### Deprecated methods from v1 #####
+    @property
+    def __fields_set__(self) -> set[str]:
+        warnings.warn(
+            'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.', DeprecationWarning
+        )
+        return self.__pydantic_fields_set__
+
     def dict(
         self,
         *,
@@ -658,9 +679,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls: type[Model],
         b: str | bytes,
         *,
-        content_type: str = None,
+        content_type: str | None = None,
         encoding: str = 'utf8',
-        proto: _deprecated_parse.Protocol = None,
+        proto: _deprecated_parse.Protocol | None = None,
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
@@ -703,9 +724,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls: type[Model],
         path: str | Path,
         *,
-        content_type: str = None,
+        content_type: str | None = None,
         encoding: str = 'utf8',
-        proto: _deprecated_parse.Protocol = None,
+        proto: _deprecated_parse.Protocol | None = None,
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
@@ -729,7 +750,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             'and use `model_validate` instead.',
             DeprecationWarning,
         )
-        if not cls.model_config['from_attributes']:
+        if not cls.model_config.get('from_attributes', None):
             raise PydanticUserError(
                 'You must set the config attribute `from_attributes=True` to use from_orm', code=None
             )
@@ -762,23 +783,23 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
         values = dict(
-            _deprecated_copy_internals._iter(
+            _deprecated_copy_internals._iter(  # type: ignore
                 self, to_dict=False, by_alias=False, include=include, exclude=exclude, exclude_unset=False
             ),
             **(update or {}),
         )
 
-        # new `__fields_set__` can have unset optional fields with a set value in `update` kwarg
+        # new `__pydantic_fields_set__` can have unset optional fields with a set value in `update` kwarg
         if update:
-            fields_set = self.__fields_set__ | update.keys()
+            fields_set = self.__pydantic_fields_set__ | update.keys()
         else:
-            fields_set = set(self.__fields_set__)
+            fields_set = set(self.__pydantic_fields_set__)
 
-        # removing excluded fields from `__fields_set__`
+        # removing excluded fields from `__pydantic_fields_set__`
         if exclude:
             fields_set -= set(exclude)
 
-        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, deep=deep)
+        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, deep=deep)  # type: ignore
 
     @classmethod
     def schema(
@@ -821,27 +842,27 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
-        return _deprecated_copy_internals._iter(self, *args, **kwargs)
+        return _deprecated_copy_internals._iter(self, *args, **kwargs)  # type: ignore
 
     def _copy_and_set_values(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
             DeprecationWarning,
         )
-        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)
+        return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)  # type: ignore
 
     @classmethod
     def _get_value(cls, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method  `_get_value` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)
+        return _deprecated_copy_internals._get_value(cls, *args, **kwargs)  # type: ignore
 
     def _calculate_keys(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
         )
-        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)
+        return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)  # type: ignore
 
 
 _base_class_defined = True
@@ -851,13 +872,13 @@ _base_class_defined = True
 def create_model(
     __model_name: str,
     *,
-    __config__: ConfigDict | type[BaseConfig] | None = None,
+    __config__: ConfigDict | None = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
+    __validators__: dict[str, AnyClassMethod] | None = None,
+    __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
-) -> type[Model]:
+) -> type[BaseModel]:
     ...
 
 
@@ -865,11 +886,11 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: ConfigDict | type[BaseConfig] | None = None,
+    __config__: ConfigDict | None = None,
     __base__: type[Model] | tuple[type[Model], ...],
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
+    __validators__: dict[str, AnyClassMethod] | None = None,
+    __cls_kwargs__: dict[str, Any] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
     ...
@@ -878,11 +899,11 @@ def create_model(
 def create_model(
     __model_name: str,
     *,
-    __config__: ConfigDict | type[BaseConfig] | None = None,
+    __config__: ConfigDict | None = None,
     __base__: type[Model] | tuple[type[Model], ...] | None = None,
     __module__: str = __name__,
-    __validators__: dict[str, AnyClassMethod] = None,
-    __cls_kwargs__: dict[str, Any] = None,
+    __validators__: dict[str, AnyClassMethod] | None = None,
+    __cls_kwargs__: dict[str, Any] | None = None,
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
@@ -926,6 +947,7 @@ def create_model(
         if f_name.startswith('_'):
             warnings.warn(f'fields may not start with an underscore, ignoring "{f_name}"', RuntimeWarning)
         if isinstance(f_def, tuple):
+            f_def = cast('tuple[str, Any]', f_def)
             try:
                 f_annotation, f_value = f_def
             except ValueError as e:
@@ -945,7 +967,7 @@ def create_model(
         namespace.update(__validators__)
     namespace.update(fields)
     if __config__:
-        namespace['model_config'] = get_config(__config__, __model_name)
+        namespace['model_config'] = _config.ConfigWrapper(__config__).config_dict
     resolved_bases = resolve_bases(__base__)
     meta, ns, kwds = prepare_class(__model_name, resolved_bases, kwds=__cls_kwargs__)
     if resolved_bases is not __base__:

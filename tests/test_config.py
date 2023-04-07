@@ -3,7 +3,7 @@ import sys
 from contextlib import nullcontext as does_not_raise
 from functools import partial
 from inspect import signature
-from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union
+from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr
 
@@ -18,7 +18,8 @@ from pydantic import (
     create_model,
     validate_call,
 )
-from pydantic.config import ConfigDict, _default_config, get_config
+from pydantic._internal._config import ConfigWrapper, config_defaults
+from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.errors import PydanticUserError
 
@@ -69,7 +70,7 @@ def test_config_dict_missing_keys():
 @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
 class TestsBaseConfig:
     def test_base_config_equality_defaults_of_config_dict_class(self):
-        for key, value in _default_config.items():
+        for key, value in config_defaults.items():
             assert getattr(BaseConfig, key) == value
 
     def test_config_and_module_config_cannot_be_used_together(self):
@@ -93,11 +94,9 @@ class TestsBaseConfig:
         class MyModel(MyBaseModel):
             ...
 
-        expected = _default_config.copy()
-        expected['title'] = 'MyTitle'
-        expected['frozen'] = True
-        for k, v in expected.items():
-            assert MyModel.model_config[k] == v
+        MyModel.model_config['title'] = 'MyTitle'
+        MyModel.model_config['frozen'] = True
+        assert 'str_to_lower' not in MyModel.model_config
 
     def test_base_config_custom_init_signature(self):
         class MyModel(BaseModel):
@@ -351,7 +350,7 @@ class TestsBaseConfig:
 
     def test_config_class_is_deprecated(self):
         with pytest.warns(
-            DeprecationWarning, match='`BaseConfig` is deprecated and will be removed in a future version'
+            DeprecationWarning, match='Support for class-based `config` is deprecated, use ConfigDict instead.'
         ):
 
             class Config(BaseConfig):
@@ -360,13 +359,13 @@ class TestsBaseConfig:
     def test_config_class_attributes_are_deprecated(self):
         with pytest.warns(
             DeprecationWarning,
-            match='Support for "config" as "BaseConfig" is deprecated and will be removed in a future version"',
+            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
             assert BaseConfig.validate_assignment is False
 
         with pytest.warns(
             DeprecationWarning,
-            match='Support for "config" as "BaseConfig" is deprecated and will be removed in a future version"',
+            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
             assert BaseConfig().validate_assignment is False
 
@@ -375,13 +374,13 @@ class TestsBaseConfig:
 
         with pytest.warns(
             DeprecationWarning,
-            match='Support for "config" as "Config" is deprecated and will be removed in a future version"',
+            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
             assert Config.validate_assignment is False
 
         with pytest.warns(
             DeprecationWarning,
-            match='Support for "config" as "Config" is deprecated and will be removed in a future version"',
+            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
         ):
             assert Config().validate_assignment is False
 
@@ -464,31 +463,31 @@ Valid config keys have changed in V2:
 
 
 def test_invalid_extra():
-    error_message = "'{label}': 'invalid-value' is not a valid value for config['extra']"
+    extra_error = re.escape("'invalid-value' is not a valid value for `config['extra']`")
     config_dict = {'extra': 'invalid-value'}
 
-    with pytest.raises(ValueError, match=re.escape(error_message.format(label='MyModel'))):
+    with pytest.raises(ValueError, match=extra_error):
 
         class MyModel(BaseModel):
             model_config = config_dict
 
-    with pytest.raises(ValueError, match=re.escape(error_message.format(label='MyCreatedModel'))):
+    with pytest.raises(ValueError, match=extra_error):
         create_model('MyCreatedModel', __config__=config_dict)
 
-    with pytest.raises(ValueError, match=re.escape(error_message.format(label='MyDataclass'))):
+    with pytest.raises(ValueError, match=extra_error):
 
         @pydantic_dataclass(config=config_dict)
         class MyDataclass:
             pass
 
-    with pytest.raises(ValueError, match=re.escape(error_message.format(label='my_function'))):
+    with pytest.raises(ValueError, match=extra_error):
 
         @validate_call(config=config_dict)
         def my_function():
             pass
 
-    with pytest.raises(ValueError, match=re.escape(error_message.format(label='validate_call'))):
-        # This case happens when the function passed to `validate_call` has no `__name__`.
+    with pytest.raises(ValueError, match=extra_error):
+        # This case happens when the function passed to `validate_arguments` has no `__name__`.
         # This is a pretty exotic case, but it has caused issues in the past, so I wanted to add a test.
         def my_wrapped_function():
             pass
@@ -497,8 +496,8 @@ def test_invalid_extra():
         my_partial_function.__annotations__ = my_wrapped_function.__annotations__
         validate_call(config=config_dict)(my_partial_function)
 
-    with pytest.raises(ValueError, match=re.escape(error_message.format(label='ConfigDict'))):
-        get_config(config_dict)
+    with pytest.raises(ValueError, match=extra_error):
+        ConfigWrapper(config_dict).extra
 
 
 def test_invalid_config_keys():
@@ -510,6 +509,56 @@ def test_invalid_config_keys():
         ),
     ):
 
-        @validate_call(config={'alias_generator': None})
+        @validate_call(config={'alias_generator': lambda x: x})
         def my_function():
             pass
+
+
+def test_multiple_inheritance_config():
+    class Parent(BaseModel):
+        model_config = ConfigDict(frozen=True, extra=Extra.forbid)
+
+    class Mixin(BaseModel):
+        model_config = ConfigDict(use_enum_values=True)
+
+    class Child(Mixin, Parent):
+        model_config = ConfigDict(populate_by_name=True)
+
+    assert BaseModel.model_config.get('frozen') is None
+    assert BaseModel.model_config.get('populate_by_name') is None
+    assert BaseModel.model_config.get('extra') is None
+    assert BaseModel.model_config.get('use_enum_values') is None
+
+    assert Parent.model_config.get('frozen') is True
+    assert Parent.model_config.get('populate_by_name') is None
+    assert Parent.model_config.get('extra') is Extra.forbid
+    assert Parent.model_config.get('use_enum_values') is None
+
+    assert Mixin.model_config.get('frozen') is None
+    assert Mixin.model_config.get('populate_by_name') is None
+    assert Mixin.model_config.get('extra') is None
+    assert Mixin.model_config.get('use_enum_values') is True
+
+    assert Child.model_config.get('frozen') is True
+    assert Child.model_config.get('populate_by_name') is True
+    assert Child.model_config.get('extra') is Extra.forbid
+    assert Child.model_config.get('use_enum_values') is True
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
+def test_config_wrapper_match():
+    config_dict_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigDict).items()]
+    # remove config
+    config_wrapper_annotations = [(k, str(v)) for k, v in get_type_hints(ConfigWrapper).items() if k != 'config_dict']
+
+    assert (
+        config_dict_annotations == config_wrapper_annotations
+    ), 'ConfigDict and ConfigWrapper must have the same annotations (except ConfigWrapper.config_dict)'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='different on older versions')
+def test_config_defaults_match():
+    config_dict_keys = list(get_type_hints(ConfigDict).keys())
+    config_defaults_keys = list(config_defaults.keys())
+
+    assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'

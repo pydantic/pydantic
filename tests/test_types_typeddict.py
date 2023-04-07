@@ -86,10 +86,10 @@ def test_typeddict_annotated_simple(TypedDict, req_no_req):
 
     assert M(d=dict(foo='baz', bar='8')).d == {'foo': 'baz', 'bar': 8}
     assert M(d=dict(foo='baz', bar='8', spam='44.4')).d == {'foo': 'baz', 'bar': 8, 'spam': 44.4}
-    with pytest.raises(ValidationError, match=r'd -> bar\s+Field required \[type=missing,'):
+    with pytest.raises(ValidationError, match=r'd\.bar\s+Field required \[type=missing,'):
         M(d=dict(foo='baz'))
 
-    with pytest.raises(ValidationError, match=r'd -> bar\s+Input should be less than 10 \[type=less_than,'):
+    with pytest.raises(ValidationError, match=r'd\.bar\s+Input should be less than 10 \[type=less_than,'):
         M(d=dict(foo='baz', bar='11'))
 
 
@@ -105,7 +105,7 @@ def test_typeddict_total_false(TypedDict, req_no_req):
 
     assert M(d=dict(foo='baz', bar='8')).d == {'foo': 'baz', 'bar': 8}
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
-    with pytest.raises(ValidationError, match=r'd -> foo\s+Field required \[type=missing,'):
+    with pytest.raises(ValidationError, match=r'd\.foo\s+Field required \[type=missing,'):
         M(d={})
 
 

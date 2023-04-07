@@ -10,6 +10,7 @@ from ._typing_extra import TypeVarType
 
 if TYPE_CHECKING:
     from pydantic import BaseModel
+    from pydantic._internal._dataclasses import PydanticDataclass
 
 
 class DeferredClassGetitem(TypedDict):
@@ -48,7 +49,7 @@ class PydanticForwardRef:
     """
 
     schema: core_schema.CoreSchema
-    model: type[BaseModel]
+    model: type[BaseModel] | type[PydanticDataclass]
     deferred_actions: tuple[DeferredAction, ...] = ()
 
     __name__ = 'PydanticForwardRef'
@@ -68,10 +69,10 @@ class PydanticForwardRef:
         updated_actions = self.deferred_actions + ({'kind': 'replace_types', 'typevars_map': typevars_map},)
         return replace(self, deferred_actions=updated_actions)
 
-    def resolve_model(self) -> type[BaseModel] | PydanticForwardRef:
+    def resolve_model(self) -> type[BaseModel] | type[PydanticDataclass] | PydanticForwardRef:
         from ._generics import replace_types
 
-        model: type[BaseModel] | PydanticForwardRef = self.model
+        model: type[BaseModel] | type[PydanticDataclass] | PydanticForwardRef = self.model
         for action in self.deferred_actions:
             if action['kind'] == 'replace_types':
                 model = replace_types(model, action['typevars_map'])

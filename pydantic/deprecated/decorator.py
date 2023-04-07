@@ -2,8 +2,8 @@ import warnings
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
-from .._internal import _typing_extra, _utils
-from ..config import Extra, get_config
+from .._internal import _config, _typing_extra, _utils
+from ..config import Extra
 from ..decorators import field_validator
 from ..errors import PydanticUserError
 from ..main import BaseModel, create_model
@@ -59,7 +59,7 @@ V_DUPLICATE_KWARGS = 'v__duplicate_kwargs'
 
 
 class ValidatedFunction:
-    def __init__(self, function: 'AnyCallableT', config: 'ConfigType'):
+    def __init__(self, function: 'AnyCallable', config: 'ConfigType'):
         from inspect import Parameter, signature
 
         parameters: Mapping[str, Parameter] = signature(function).parameters
@@ -73,7 +73,7 @@ class ValidatedFunction:
 
         self.raw_function = function
         self.arg_mapping: Dict[int, str] = {}
-        self.positional_only_args = set()
+        self.positional_only_args: set[str] = set()
         self.v_args_name = 'args'
         self.v_kwargs_name = 'kwargs'
 
@@ -179,7 +179,7 @@ class ValidatedFunction:
         return values
 
     def execute(self, m: BaseModel) -> Any:
-        d = {k: v for k, v in m.__dict__.items() if k in m.__fields_set__ or m.model_fields[k].default_factory}
+        d = {k: v for k, v in m.__dict__.items() if k in m.__pydantic_fields_set__ or m.model_fields[k].default_factory}
         var_kwargs = d.pop(self.v_kwargs_name, {})
 
         if self.v_args_name in d:
@@ -210,16 +210,16 @@ class ValidatedFunction:
     def create_model(self, fields: Dict[str, Any], takes_args: bool, takes_kwargs: bool, config: 'ConfigType') -> None:
         pos_args = len(self.arg_mapping)
 
-        config_dict = get_config(config, getattr(self.raw_function, '__name__', 'validate_arguments'))
+        config_wrapper = _config.ConfigWrapper(config)
 
-        if 'alias_generator' in config_dict:
+        if config_wrapper.alias_generator:
             raise PydanticUserError(
                 'Setting the "alias_generator" property on custom Config for '
                 '@validate_arguments is not yet supported, please remove.',
                 code=None,
             )
-        if 'extra' not in config_dict:
-            config_dict['extra'] = Extra.forbid
+        if config_wrapper.extra is None:
+            config_wrapper.config_dict['extra'] = Extra.forbid
 
         class DecoratorBaseModel(BaseModel):
             @field_validator(self.v_args_name, check_fields=False)
@@ -260,6 +260,6 @@ class ValidatedFunction:
                 keys = ', '.join(map(repr, v))
                 raise TypeError(f'multiple values for argument{plural}: {keys}')
 
-            model_config = config_dict
+            model_config = config_wrapper.config_dict
 
         self.model = create_model(_utils.to_camel(self.raw_function.__name__), __base__=DecoratorBaseModel, **fields)

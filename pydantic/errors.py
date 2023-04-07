@@ -86,7 +86,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     @classmethod
     def from_name_error(cls, name_error: NameError) -> PydanticUndefinedAnnotation:
         try:
-            name = name_error.name
+            name = name_error.name  # type: ignore  # python > 3.10
         except AttributeError:
             name = re.search(r".*'(.+?)'", str(name_error)).group(1)  # type: ignore[union-attr]
         return cls(name=name, message=str(name_error))

@@ -218,7 +218,7 @@ def collect_fields(  # noqa: C901
                 if not default.init:
                     # dataclasses.Field with init=False are not fields
                     continue
-                if DC_KW_ONLY and default.kw_only is True:
+                if DC_KW_ONLY and default.kw_only is True:  # type: ignore
                     kw_only = True
 
             field_info = FieldInfo.from_annotated_attribute(ann_type, default)
