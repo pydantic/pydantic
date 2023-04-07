@@ -89,7 +89,7 @@ class AnalyzedType(Generic[T]):
         except AttributeError:
             core_schema = _get_schema(__type, config_wrapper, parent_depth=_parent_depth + 1)
 
-        core_config = config_wrapper.core_config(__type)
+        core_config = config_wrapper.core_config()
         validator: SchemaValidator
         if hasattr(__type, '__pydantic_validator__') and config is None:
             validator = __type.__pydantic_validator__

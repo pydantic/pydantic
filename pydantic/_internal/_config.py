@@ -4,7 +4,7 @@ import warnings
 from typing import TYPE_CHECKING, Any, Callable, cast
 
 from pydantic_core import core_schema
-from typing_extensions import Literal
+from typing_extensions import Literal, Self
 
 from pydantic.errors import PydanticUserError
 
@@ -60,6 +60,42 @@ class ConfigWrapper:
         else:
             self.config_dict = cast(ConfigDict, config)
 
+    @classmethod
+    def for_model(cls, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]) -> Self:
+        """
+        Build a new `ConfigDict` instance for a `BaseModel` based on (from lowest to highest)
+        - options defined in base
+        - options defined in namespace
+        - options defined via kwargs
+
+        :param bases: tuple of base classes
+        :param namespace: namespace of the class being created
+        :param kwargs: kwargs passed to the class being created
+        """
+
+        config_new = ConfigDict()
+        for base in bases:
+            config = getattr(base, 'model_config', None)
+            if config:
+                config_new.update(config.copy())
+
+        config_class_from_namespace = namespace.get('Config')
+        config_dict_from_namespace = namespace.get('model_config')
+
+        if config_class_from_namespace and config_dict_from_namespace:
+            raise PydanticUserError('"Config" and "model_config" cannot be used together', code='config-both')
+
+        config_from_namespace = config_dict_from_namespace or prepare_config(config_class_from_namespace)
+
+        if config_from_namespace is not None:
+            config_new.update(config_from_namespace)
+
+        for k in list(kwargs.keys()):
+            if k in config_keys:
+                config_new[k] = kwargs.pop(k)
+
+        return cls(config_new)
+
     # we don't show `__getattr__` to type checkers so missing attributes cause errors
     if not TYPE_CHECKING:
 
@@ -72,16 +108,16 @@ class ConfigWrapper:
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
-    def core_config(self, obj: Any) -> core_schema.CoreConfig:
+    def core_config(self, obj: Any = None) -> core_schema.CoreConfig:
         """
         Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
 
-        We don't use getattr here since we don't want to populate defaults
+        We don't use getattr here since we don't want to populate with defaults.
         """
-        extra = self.extra
+        extra = self.config_dict.get('extra')
         core_config = core_schema.CoreConfig(
             **core_schema.dict_not_none(
-                title=self.config_dict.get('title') or obj.__name__,
+                title=self.config_dict.get('title') or (obj and obj.__name__),
                 extra_fields_behavior=extra and extra.value,
                 allow_inf_nan=self.config_dict.get('allow_inf_nan'),
                 populate_by_name=self.config_dict.get('populate_by_name'),
@@ -154,44 +190,6 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
 config_keys = set(ConfigDict.__annotations__.keys())
 
 
-def build_model_config(bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]) -> ConfigDict:
-    """
-    Build a new `ConfigDict` instance for a `BaseModel` based on (from lowest to highest)
-    - options defined in base
-    - options defined in namespace
-    - options defined via kwargs
-
-    :param bases: tuple of base classes
-    :param namespace: namespace of the class being created
-    :param kwargs: kwargs passed to the class being created
-    """
-
-    config_new = ConfigDict()
-    for base in bases:
-        config = getattr(base, 'model_config', None)
-        if config:
-            config_new.update(config.copy())
-
-    config_class_from_namespace = namespace.get('Config')
-    config_dict_from_namespace = namespace.get('model_config')
-
-    if config_class_from_namespace and config_dict_from_namespace:
-        raise PydanticUserError('"Config" and "model_config" cannot be used together', code='config-both')
-
-    config_from_namespace = config_dict_from_namespace or prepare_config(config_class_from_namespace)
-
-    if config_from_namespace is not None:
-        config_new.update(config_from_namespace)
-
-    for k in list(kwargs.keys()):
-        if k in config_keys:
-            config_new[k] = kwargs.pop(k)
-
-    check_deprecated(config_new)
-    prepare_config_extra(config_new)
-    return config_new
-
-
 def prepare_config_extra(config: ConfigDict | dict[str, Any]) -> None:
     """
     Prepare the "extra" key in a config by converting it to an `Extra`.
@@ -202,7 +200,7 @@ def prepare_config_extra(config: ConfigDict | dict[str, Any]) -> None:
         try:
             config['extra'] = Extra(extra)
         except ValueError as e:
-            raise ValueError(f'{extra!r} is not a valid value for config[{"extra"!r}]') from e
+            raise ValueError(f"{extra!r} is not a valid value for `config['extra']`") from e
 
 
 V2_REMOVED_KEYS = {

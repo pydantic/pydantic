@@ -84,8 +84,8 @@ class ModelMetaclass(ABCMeta):
         if _base_class_defined:
             base_field_names, class_vars, base_private_attributes = _collect_bases_data(bases)
 
-            namespace['model_config'] = config_new = _config.build_model_config(bases, namespace, kwargs)
-            config_wrapper = _config.ConfigWrapper(config_new, check=False)
+            config_wrapper = _config.ConfigWrapper.for_model(bases, namespace, kwargs)
+            namespace['model_config'] = config_wrapper.config_dict
             private_attributes = _model_construction.inspect_namespace(
                 namespace, config_wrapper.ignored_types, class_vars, base_field_names
             )

@@ -469,12 +469,7 @@ def test_generic():
     ):
         Container[str].model_validate({'result': {'type': 'Other'}})
 
-    # See https://github.com/pydantic/pydantic-core/issues/425 for why this is set weirdly; this is an unrelated issue
-    # If/when the issue is fixed, the following line should replace the current title = 'Failure' line
-    # title = 'Container[str]'
-    title = 'Failure'
-
-    with pytest.raises(ValidationError, match=fr'{title}\nresult\.Success\.data') as exc_info:
+    with pytest.raises(ValidationError, match=r'Container\[str\]\nresult\.Success\.data') as exc_info:
         Container[str].model_validate({'result': {'type': 'Success'}})
     assert exc_info.value.errors() == [
         {'input': {'type': 'Success'}, 'loc': ('result', 'Success', 'data'), 'msg': 'Field required', 'type': 'missing'}

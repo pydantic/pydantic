@@ -463,7 +463,7 @@ Valid config keys have changed in V2:
 
 
 def test_invalid_extra():
-    extra_error = re.escape("'invalid-value' is not a valid value for config['extra']")
+    extra_error = re.escape("'invalid-value' is not a valid value for `config['extra']`")
     config_dict = {'extra': 'invalid-value'}
 
     with pytest.raises(ValueError, match=extra_error):

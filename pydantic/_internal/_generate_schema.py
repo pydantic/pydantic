@@ -231,7 +231,7 @@ class GenerateSchema:
         inner_schema = consolidate_refs(inner_schema)
         inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
-        core_config = config_wrapper.core_config(cls)
+        core_config = config_wrapper.core_config()
         model_post_init = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
 
         model_schema = core_schema.model_schema(
