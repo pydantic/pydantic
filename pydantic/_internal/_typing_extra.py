@@ -260,7 +260,7 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
                 if value is None:
                     value = NoneType
                 elif isinstance(value, str):
-                    value = make_forward_ref(value, is_argument=False, is_class=True)  # type: ignore
+                    value = _make_forward_ref(value, is_argument=False, is_class=True)  # type: ignore
 
                 try:
                     hints[name] = typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
@@ -272,7 +272,7 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
 
 if sys.version_info < (3, 9):
 
-    def make_forward_ref(
+    def _make_forward_ref(
         arg: Any,
         is_argument: bool = True,
         *,
@@ -286,16 +286,16 @@ if sys.version_info < (3, 9):
 
         Implemented as EAFP with memory.
         """
-        global make_forward_ref
+        global _make_forward_ref
         try:
             res = typing.ForwardRef(arg, is_argument, is_class=is_class)  # type: ignore
-            make_forward_ref = typing.ForwardRef  # type: ignore
+            _make_forward_ref = typing.ForwardRef  # type: ignore
             return res
         except TypeError:
             return typing.ForwardRef(arg, is_argument)
 
 else:
-    make_forward_ref = typing.ForwardRef
+    _make_forward_ref = typing.ForwardRef
 
 
 if sys.version_info >= (3, 10):
@@ -383,7 +383,7 @@ else:
                     if value is None:
                         value = type(None)
                     if isinstance(value, str):
-                        value = make_forward_ref(value, is_argument=False, is_class=True)
+                        value = _make_forward_ref(value, is_argument=False, is_class=True)
 
                     value = typing._eval_type(value, base_globals, base_locals)  # type: ignore
                     hints[name] = value
@@ -420,7 +420,7 @@ else:
                 # class-level forward refs were handled above, this must be either
                 # a module-level annotation or a function argument annotation
 
-                value = make_forward_ref(
+                value = _make_forward_ref(
                     value,
                     is_argument=not isinstance(obj, types.ModuleType),
                     is_class=False,
