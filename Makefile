@@ -29,7 +29,7 @@ lint:
 
 .PHONY: typecheck
 typecheck:
-	pyright pydantic
+	pre-commit run typecheck
 
 .PHONY: test-mypy
 test-mypy:
