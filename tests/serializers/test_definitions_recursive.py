@@ -76,3 +76,48 @@ def test_custom_ser():
         'name': 'root',
         'sub_branch': "{'name': 'branch', 'sub_branch': None}",
     }
+
+
+def test_recursive_function():
+    s = SchemaSerializer(
+        {
+            'type': 'typed-dict',
+            'fields': {
+                'root': {'type': 'typed-dict-field', 'schema': {'type': 'definition-ref', 'schema_ref': 'my_ref'}}
+            },
+            'ref': 'my_ref',
+            'serialization': {
+                'type': 'function-wrap',
+                'function': {'type': 'general', 'function': lambda x, _1, _2: x},
+            },
+        }
+    )
+    assert s.to_python({'root': {'root': {}}}) == {'root': {'root': {}}}
+
+
+def test_recursive_function_deeper_ref():
+    s = SchemaSerializer(
+        {
+            'type': 'typed-dict',
+            'fields': {
+                'a': {
+                    'type': 'typed-dict-field',
+                    'schema': {
+                        'type': 'typed-dict',
+                        'ref': 'my_ref',
+                        'fields': {
+                            'b': {
+                                'type': 'typed-dict-field',
+                                'schema': {'type': 'definition-ref', 'schema_ref': 'my_ref'},
+                            }
+                        },
+                    },
+                }
+            },
+            'serialization': {
+                'type': 'function-wrap',
+                'function': {'type': 'general', 'function': lambda x, _1, _2: x},
+            },
+        }
+    )
+    assert s.to_python({'a': {'b': {'b': {}}}}) == {'a': {'b': {'b': {}}}}

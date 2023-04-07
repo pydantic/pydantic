@@ -46,6 +46,7 @@ Source = 'https://github.com/pydantic/pydantic-core'
 [tool.maturin]
 module-name = "pydantic_core._pydantic_core"
 bindings = 'pyo3'
+features = ["pyo3/extension-module"]
 
 [tool.ruff]
 line-length = 120
