@@ -73,7 +73,6 @@ class FieldValidatorDecoratorInfo:
 
     fields: tuple[str, ...]
     mode: Literal['before', 'after', 'wrap', 'plain']
-    sub_path: tuple[str | int, ...] | None
     check_fields: bool | None
 
 
@@ -101,7 +100,6 @@ class FieldSerializerDecoratorInfo:
     type: Literal['general', 'field']
     json_return_type: JsonReturnTypes | None
     when_used: WhenUsed
-    sub_path: tuple[str | int, ...] | None
     check_fields: bool | None
 
 
@@ -472,23 +470,9 @@ def remove_params_with_defaults(sig: Signature) -> Signature:
     return Signature([p for p in sig.parameters.values() if p.default is Parameter.empty])
 
 
-@overload
-def make_generic_v2_field_validator(
-    validator: FieldWrapValidatorFunction, mode: Literal['wrap']
-) -> FieldWrapValidatorFunction:
-    ...
-
-
-@overload
-def make_generic_v2_field_validator(
-    validator: OnlyValueValidator | FieldValidatorFunction, mode: Literal['before', 'after', 'plain']
-) -> FieldValidatorFunction:
-    ...
-
-
-def make_generic_v2_field_validator(
+def make_generic_validator(
     validator: OnlyValueValidator | FieldValidatorFunction | FieldWrapValidatorFunction, mode: str
-) -> FieldValidatorFunction | FieldWrapValidatorFunction:
+) -> Any:
     """
     In order to support different signatures, including deprecated validator signatures from v1,
     we introspect the function signature and wrap it in a parent function that has a signature
@@ -573,9 +557,9 @@ AnySerializerFunction = Union[
 ]
 
 
-def make_generic_field_serializer(
+def make_generic_serializer(
     serializer: AnySerializerFunction, mode: Literal['plain', 'wrap'], type: Literal['field', 'general']
-) -> AnyCoreSerializer:
+) -> Any:
     """
     Wrap serializers to allow ignoring the `info` argument as a convenience.
     """

@@ -188,7 +188,6 @@ def field_validator(
     *fields: str,
     mode: Literal['before', 'after', 'plain'] = ...,
     check_fields: bool | None = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
 ) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]:
     ...
 
@@ -199,7 +198,6 @@ def field_validator(
     *fields: str,
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
 ) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]:
     ...
 
@@ -209,7 +207,6 @@ def field_validator(
     *fields: str,
     mode: Literal['before', 'after', 'wrap', 'plain'] = 'after',
     check_fields: bool | None = None,
-    sub_path: tuple[str | int, ...] | None = None,
 ) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to validate fields
@@ -218,7 +215,6 @@ def field_validator(
     :param fields: additional field(s) the field_validator should be called on
     :param mode: TODO
     :param check_fields: whether to check that the fields actually exist on the model
-    :param sub_path: TODO
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
     fields = tuple((__field, *fields))
@@ -245,10 +241,10 @@ def field_validator(
         # auto apply the @classmethod decorator and warn users if we had to do so
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
-        wrap = partial(_decorators.make_generic_v2_field_validator, mode=mode)
+        wrap = partial(_decorators.make_generic_validator, mode=mode)
 
         validator_wrapper_info = _decorators.FieldValidatorDecoratorInfo(
-            fields=fields, mode=mode, sub_path=sub_path, check_fields=check_fields
+            fields=fields, mode=mode, check_fields=check_fields
         )
         return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
 
@@ -349,7 +345,6 @@ def field_serializer(
     *fields: str,
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
     ...
@@ -362,7 +357,6 @@ def field_serializer(
     mode: Literal['plain'],
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
     ...
@@ -375,7 +369,6 @@ def field_serializer(
     mode: Literal['wrap'],
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]:
     ...
@@ -386,7 +379,6 @@ def field_serializer(
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
-    sub_path: tuple[str | int, ...] | None = None,
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
     """
@@ -402,7 +394,6 @@ def field_serializer(
         `'wrap'` means the function will be called with an argument to optionally call the default serialization logic.
     :param json_return_type: The type that the function returns if the serialization mode is JSON.
     :param when_used: When the function should be called
-    :param sub_path: TODO
     :param check_fields: whether to check that the fields actually exist on the model
     :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
     """
@@ -418,11 +409,10 @@ def field_serializer(
             type=type_,
             json_return_type=json_return_type,
             when_used=when_used,
-            sub_path=sub_path,
             check_fields=check_fields,
         )
         return _decorators.PydanticDecoratorMarker(
-            f, dec_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode, type=type_)
+            f, dec_info, shim=partial(_decorators.make_generic_serializer, mode=mode, type=type_)
         )
 
     return dec
