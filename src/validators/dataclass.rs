@@ -234,7 +234,7 @@ impl Validator for DataclassArgsValidator {
                                 set_item!(field, value);
                             } else {
                                 errors.push(field.lookup_key.error(
-                                    ErrorType::MissingKeywordArgument,
+                                    ErrorType::Missing,
                                     input,
                                     self.loc_by_alias,
                                     &field.name,

@@ -227,14 +227,19 @@ impl Validator for ArgumentsValidator {
                                     output_args.push(value);
                                 }
                             } else if let Some(ref lookup_key) = parameter.kw_lookup_key {
+                                let error_type = if parameter.positional {
+                                    ErrorType::MissingArgument
+                                } else {
+                                    ErrorType::MissingKeywordOnlyArgument
+                                };
                                 errors.push(lookup_key.error(
-                                    ErrorType::MissingKeywordArgument,
+                                    error_type,
                                     input,
                                     self.loc_by_alias,
                                     &parameter.name,
                                 ));
                             } else {
-                                errors.push(ValLineError::new_with_loc(ErrorType::MissingPositionalArgument, input, index));
+                                errors.push(ValLineError::new_with_loc(ErrorType::MissingPositionalOnlyArgument, input, index));
                             };
                         }
                     }
