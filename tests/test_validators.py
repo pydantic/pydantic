@@ -2385,3 +2385,18 @@ def test_root_validator_allow_reuse_inheritance():
 
     assert Parent(x=1).model_dump() == {'x': 2}
     assert Child(x=1).model_dump() == {'x': 4}
+
+
+def test_validator_with_underscore_name() -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/5252
+    """
+
+    def f(name: str) -> str:
+        return name.lower()
+
+    class Model(BaseModel):
+        name: str
+        _normalize_name = field_validator('name')(f)
+
+    assert Model(name='Adrian').name == 'adrian'
