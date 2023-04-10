@@ -1243,7 +1243,7 @@ def test_force_extra():
         model_config = ConfigDict(extra='ignore')
         foo: int
 
-    assert Model.model_config['extra'] is Extra.ignore
+    assert Model.model_config['extra'] == 'ignore'
 
 
 def test_submodel_different_type():

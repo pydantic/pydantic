@@ -532,7 +532,7 @@ def test_multiple_inheritance_config():
 
     assert Parent.model_config.get('frozen') is True
     assert Parent.model_config.get('populate_by_name') is None
-    assert Parent.model_config.get('extra') is Extra.forbid
+    assert Parent.model_config.get('extra') == 'forbid'
     assert Parent.model_config.get('use_enum_values') is None
 
     assert Mixin.model_config.get('frozen') is None
@@ -542,7 +542,7 @@ def test_multiple_inheritance_config():
 
     assert Child.model_config.get('frozen') is True
     assert Child.model_config.get('populate_by_name') is True
-    assert Child.model_config.get('extra') is Extra.forbid
+    assert Child.model_config.get('extra') == 'forbid'
     assert Child.model_config.get('use_enum_values') is True
 
 
