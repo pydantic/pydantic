@@ -418,6 +418,26 @@ def test_field_min_items_deprecation():
     ]
 
 
+def test_field_min_items_with_min_length():
+    m = '`min_items` is deprecated and will be removed. use `min_length` instead'
+    with pytest.warns(DeprecationWarning, match=m):
+
+        class Model(BaseModel):
+            x: List[int] = Field(None, min_items=1, min_length=2)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=[1])
+    assert exc_info.value.errors() == [
+        {
+            'type': 'too_short',
+            'loc': ('x',),
+            'msg': 'List should have at least 2 items after validation, not 1',
+            'input': [1],
+            'ctx': {'field_type': 'List', 'min_length': 2, 'actual_length': 1},
+        }
+    ]
+
+
 def test_field_max_items():
     m = '`max_items` is deprecated and will be removed. use `max_length` instead'
     with pytest.warns(DeprecationWarning, match=m):
@@ -438,15 +458,35 @@ def test_field_max_items():
     ]
 
 
+def test_field_max_items_with_max_length():
+    m = '`max_items` is deprecated and will be removed. use `max_length` instead'
+    with pytest.warns(DeprecationWarning, match=m):
+
+        class Model(BaseModel):
+            x: List[int] = Field(None, max_items=1, max_length=2)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=[1, 2, 3])
+    assert exc_info.value.errors() == [
+        {
+            'type': 'too_long',
+            'loc': ('x',),
+            'msg': 'List should have at most 2 items after validation, not 3',
+            'input': [1, 2, 3],
+            'ctx': {'field_type': 'List', 'max_length': 2, 'actual_length': 3},
+        }
+    ]
+
+
 def test_field_const():
-    with pytest.raises(ValueError, match='`const` is removed. use `Literal` instead'):
+    with pytest.raises(PydanticUserError, match='`const` is removed. use `Literal` instead'):
 
         class Model(BaseModel):
             x: str = Field('test', const=True)
 
 
 def test_unique_items_items():
-    with pytest.raises(ValueError, match='`unique_items` is removed. use `Set` instead'):
+    with pytest.raises(PydanticUserError, match='`unique_items` is removed. use `Set` instead'):
 
         class Model(BaseModel):
             x: List[int] = Field(None, unique_items=True)
@@ -468,14 +508,14 @@ def test_allow_mutation():
 
 
 def test_field_regex():
-    with pytest.raises(ValueError, match='`regex` is removed. use `Pattern` instead'):
+    with pytest.raises(PydanticUserError, match='`regex` is removed. use `Pattern` instead'):
 
         class Model(BaseModel):
             x: str = Field('test', regex=r'^test$')
 
 
 def test_field_extra_arguments():
-    with pytest.raises(ValueError, match='Extra keyword arguments are not allowd on `Field`'):
+    with pytest.raises(PydanticUserError, match='Extra keyword arguments are not allowd on `Field`'):
 
         class Model(BaseModel):
             x: str = Field('test', test='test')

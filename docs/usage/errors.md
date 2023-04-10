@@ -45,6 +45,10 @@ TODO
 
 TODO
 
+## Field removed parameters {#field-removed-param}
+
+The parameters are not available in Pydantic V2.
+
 ## JSON Schema invalid type {#invalid-for-json-schema}
 
 TODO

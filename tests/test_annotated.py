@@ -22,22 +22,22 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Field(gt=0)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)], frozen=False)',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: int,
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)], frozen=False)',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: int,
             Field(default_factory=lambda: 5, gt=0),
-            'FieldInfo(annotation=int, required=False, default_factory=<lambda>, metadata=[Gt(gt=0)], frozen=False)',
+            'FieldInfo(annotation=int, required=False, default_factory=<lambda>, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Lt(2)],
             Field(5, gt=0),
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)], frozen=False)',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
         ),
         (
             lambda: Annotated[int, Gt(0)],
@@ -47,12 +47,12 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Gt(0)],
             Field(),
-            'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)], frozen=False)',
+            'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: int,
             Field(gt=0),
-            'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)], frozen=False)',
+            'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
         ),
         (
             lambda: Annotated[int, Gt(0)],
@@ -62,7 +62,7 @@ NO_VALUE = object()
         (
             lambda: Annotated[int, Field(gt=0), Lt(2)],
             5,
-            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)], frozen=False)',
+            'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
         ),
     ],
 )
@@ -182,13 +182,13 @@ def test_annotated_alias() -> None:
 
     fields_repr = {k: repr(v) for k, v in MyModel.model_fields.items()}
     assert fields_repr == {
-        'a': "FieldInfo(annotation=str, required=False, default='abc', metadata=[MaxLen(max_length=3)], frozen=False)",
-        'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)], frozen=False)',
-        'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>, frozen=False)',
-        'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>, frozen=False)',
+        'a': "FieldInfo(annotation=str, required=False, default='abc', metadata=[MaxLen(max_length=3)])",
+        'b': 'FieldInfo(annotation=str, required=True, metadata=[MaxLen(max_length=3)])',
+        'c': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
+        'd': 'FieldInfo(annotation=int, required=False, default_factory=<lambda>)',
         'e': (
             'FieldInfo(annotation=List[Annotated[str, FieldInfo(annotation=NoneType, required=True, metadata=[MaxLe'
-            "n(max_length=3)], frozen=False)]], required=True, description='foo', frozen=False)"
+            "n(max_length=3)])]], required=True, description='foo')"
         ),
     }
     assert MyModel(b='def', e=['xyz']).model_dump() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])

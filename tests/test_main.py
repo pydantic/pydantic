@@ -112,9 +112,7 @@ def test_default_factory_field():
 
     m = Model()
     assert str(m) == 'a=1'
-    assert (
-        repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc, frozen=False)'
-    )
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
     assert dict(m) == {'a': 1}
     assert m.model_dump_json() == '{"a":1}'
 
@@ -1540,9 +1538,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2.5, c=True)
     assert repr(m) == 'Model(a=1, b=2.5)'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True, frozen=False)'
-    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True, frozen=False)'
-    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False, frozen=False)'
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
+    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
 
 
 def test_inherited_model_field_copy():
