@@ -13,7 +13,6 @@ from typing_extensions import Annotated, Literal
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     FieldValidationInfo,
     ValidationError,
@@ -340,7 +339,7 @@ def validate_assignment_model_fixture():
         def double_c(cls, v: Any):
             return v * 2
 
-        model_config = ConfigDict(validate_assignment=True, extra=Extra.allow)
+        model_config = ConfigDict(validate_assignment=True, extra='allow')
 
     return ValidateAssignmentModel
 
@@ -1365,7 +1364,7 @@ def test_root_validator_types():
             root_val_values = cls, values
             return values
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert Model(b='bar', c='wobble').model_dump() == {'a': 1, 'b': 'bar', 'c': 'wobble'}
 

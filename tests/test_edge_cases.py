@@ -15,7 +15,6 @@ from pydantic import (
     AnalyzedType,
     BaseModel,
     ConfigDict,
-    Extra,
     PydanticSchemaGenerationError,
     ValidationError,
     constr,
@@ -865,7 +864,7 @@ def test_advanced_include_nested_lists(include, expected):
 
 def test_field_set_ignore_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.ignore)
+        model_config = ConfigDict(extra='ignore')
         a: int
         b: int
         c: int = 3
@@ -883,7 +882,7 @@ def test_field_set_ignore_extra():
 
 def test_field_set_allow_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: int
         b: int
         c: int = 3
@@ -1103,7 +1102,7 @@ def test_annotation_inheritance():
 
 def test_string_none():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.ignore)
+        model_config = ConfigDict(extra='ignore')
         a: constr(min_length=20, max_length=1000) = ...
 
     with pytest.raises(ValidationError) as exc_info:

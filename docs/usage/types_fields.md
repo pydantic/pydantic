@@ -52,7 +52,7 @@ except ValidationError as e:
 ```py
 from typing_extensions import TypedDict
 
-from pydantic import BaseModel, Extra, ValidationError
+from pydantic import BaseModel, ValidationError
 
 
 # `total=False` means keys are non-required
@@ -67,7 +67,7 @@ class User(TypedDict):
 
 
 class Model(BaseModel):
-    model_config = dict(extra=Extra.forbid)
+    model_config = dict(extra='forbid')
     u: User
 
 

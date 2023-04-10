@@ -6,6 +6,7 @@ from typing import Dict, List
 import pytest
 
 from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, model_serializer, root_validator
+from pydantic.config import Extra
 
 
 def deprecated_from_orm(model_type, obj):
@@ -391,3 +392,15 @@ def test_fields_set():
     match = '^The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.$'
     with pytest.warns(DeprecationWarning, match=match):
         assert m.__fields_set__ == {'x'}
+
+
+@pytest.mark.parametrize('attribute,value', [('allow', 'allow'), ('ignore', 'ignore'), ('forbid', 'forbid')])
+def test_extra_used_as_enum(
+    attribute: str,
+    value: str,
+) -> None:
+    with pytest.raises(
+        DeprecationWarning,
+        match=re.escape("`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)"),
+    ):
+        assert getattr(Extra, attribute) == value

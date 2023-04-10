@@ -29,7 +29,6 @@ from typing_extensions import Annotated, Final, Literal
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     PrivateAttr,
     PydanticUndefinedAnnotation,
@@ -218,7 +217,7 @@ def test_not_required():
 
 def test_allow_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float = ...
 
     assert Model(a='10.2', b=12).model_dump() == {'a': 10.2, 'b': 12}
@@ -226,7 +225,7 @@ def test_allow_extra():
 
 def test_allow_extra_repr():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float = ...
 
     assert str(Model(a='10.2', b=12)) == 'a=10.2 b=12'
@@ -234,7 +233,7 @@ def test_allow_extra_repr():
 
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid)
+        model_config = ConfigDict(extra='forbid')
         foo: str = 'whatever'
 
     m = ForbiddenExtra()
@@ -243,7 +242,7 @@ def test_forbidden_extra_success():
 
 def test_forbidden_extra_fails():
     class ForbiddenExtra(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid)
+        model_config = ConfigDict(extra='forbid')
         foo: str = 'whatever'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -286,7 +285,7 @@ def test_assign_extra_validate():
 
 def test_extra_allowed():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float
 
     model = Model(a=0.2, b=0.1)
@@ -300,7 +299,7 @@ def test_extra_allowed():
 
 def test_extra_ignored():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.ignore)
+        model_config = ConfigDict(extra='ignore')
         a: float
 
     model = Model(a=0.2, b=0.1)
@@ -383,7 +382,7 @@ def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
-        model_config = ConfigDict(extra=Extra.forbid, frozen=False)
+        model_config = ConfigDict(extra='forbid', frozen=False)
 
     m = TestModel()
 
@@ -394,7 +393,7 @@ def test_mutability():
 
 def test_frozen_model():
     class FrozenModel(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid, frozen=True)
+        model_config = ConfigDict(extra='forbid', frozen=True)
 
         a: int = 10
 
@@ -855,7 +854,7 @@ def test_dir_fields():
 
 def test_dict_with_extra_keys():
     class MyModel(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: str = Field(None, alias='alias_a')
 
     m = MyModel(extra_key='extra')

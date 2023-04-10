@@ -5,7 +5,6 @@ from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
 from ._internal import _config, _typing_extra, _utils
-from .config import Extra
 from .decorators import field_validator
 from .errors import PydanticUserError
 from .main import BaseModel, create_model
@@ -220,7 +219,7 @@ class ValidatedFunction:
                 code=None,
             )
         if config_wrapper.extra is None:
-            config_wrapper.config_dict['extra'] = Extra.forbid
+            config_wrapper.config_dict['extra'] = 'forbid'
 
         class DecoratorBaseModel(BaseModel):
             @field_validator(self.v_args_name, check_fields=False)

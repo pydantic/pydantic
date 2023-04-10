@@ -11,7 +11,6 @@ from pydantic_core import SchemaError
 from pydantic import (
     BaseConfig,
     BaseModel,
-    Extra,
     Field,
     PrivateAttr,
     PydanticSchemaGenerationError,
@@ -106,7 +105,7 @@ class TestsBaseConfig:
             f__: str = Field(..., alias='foo')
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
             def __init__(self, id: int = 1, bar=2, *, baz: Any, **data):
                 super().__init__(id=id, **data)
@@ -130,7 +129,7 @@ class TestsBaseConfig:
                 super().__init__(a=a, b=b, c=1)
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
 
@@ -157,7 +156,7 @@ class TestsBaseConfig:
             spam: str
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
 
@@ -167,7 +166,7 @@ class TestsBaseConfig:
             extra_data_: str
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
 
@@ -179,7 +178,7 @@ class TestsBaseConfig:
                 super().__init__(extra_data=extra_data, **foobar)
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
 
@@ -188,7 +187,7 @@ class TestsBaseConfig:
             _foo = PrivateAttr('private_attribute')
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert Model.__slots__ == {'_foo'}
         m = Model(_foo='field')
@@ -517,7 +516,7 @@ def test_invalid_config_keys():
 
 def test_multiple_inheritance_config():
     class Parent(BaseModel):
-        model_config = ConfigDict(frozen=True, extra=Extra.forbid)
+        model_config = ConfigDict(frozen=True, extra='forbid')
 
     class Mixin(BaseModel):
         model_config = ConfigDict(use_enum_values=True)

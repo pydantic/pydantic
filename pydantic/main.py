@@ -26,7 +26,7 @@ from ._internal import (
     _utils,
 )
 from ._internal._fields import Undefined
-from .config import ConfigDict, Extra
+from .config import ConfigDict
 from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -295,7 +295,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
         elif self.model_config.get('validate_assignment', None):
             self.__pydantic_validator__.validate_assignment(self, name, value)
-        elif self.model_config.get('extra') is not Extra.allow and name not in self.model_fields:
+        elif self.model_config.get('extra') != 'allow' and name not in self.model_fields:
             # TODO - matching error
             raise ValueError(f'"{self.__class__.__name__}" object has no field "{name}"')
         else:
