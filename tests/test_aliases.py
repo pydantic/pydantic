@@ -44,7 +44,7 @@ def test_basic_alias():
     assert Model().a == 'foobar'
     assert Model(_a='different').a == 'different'
     assert repr(Model.model_fields['a']) == (
-        "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', alias_priority=2)"
+        "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', alias_priority=2, frozen=False)"
     )
 
 

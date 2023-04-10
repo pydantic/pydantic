@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 import typing
 from copy import copy
 from typing import Any
+from warnings import warn
 
 import annotated_types
 import typing_extensions
@@ -60,8 +61,6 @@ class FieldInfo(_repr.Representation):
         'max_length': annotated_types.MaxLen,
         'pattern': None,
         'allow_inf_nan': None,
-        'min_items': None,
-        'max_items': None,
         'max_digits': None,
         'decimal_places': None,
     }
@@ -335,13 +334,18 @@ def Field(
     max_items: int | None = None,
     min_length: int | None = None,
     max_length: int | None = None,
-    frozen: bool | None = None,
+    frozen: bool = False,
     pattern: str | None = None,
     discriminator: str | None = None,
     repr: bool = True,
     strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
     validate_default: bool | None = None,
+    const: bool | None = None,
+    unique_items: bool | None = None,
+    allow_mutation: bool = True,
+    regex: str | None = None,
+    **extra: Any,
 ) -> Any:
     """
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
@@ -375,16 +379,18 @@ def Field(
       of digits within the decimal. It does not include a zero before the decimal point or trailing decimal zeroes.
     :param decimal_places: only applies to Decimals, requires the field to have at most a number of decimal places
       allowed. It does not include trailing decimal zeroes.
-    :param min_items: only applies to lists, requires the field to have a minimum number of
+    :param min_items: deprecated, use ``min_length`` instead.
+      only applies to lists, requires the field to have a minimum number of
       elements. The schema will have a ``minItems`` validation keyword
-    :param max_items: only applies to lists, requires the field to have a maximum number of
+    :param max_items: deprecated, use ``max_length`` instead.
+      only applies to lists, requires the field to have a maximum number of
       elements. The schema will have a ``maxItems`` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
       schema will have a ``minLength`` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
       schema will have a ``maxLength`` validation keyword
-    :param frozen: a boolean which defaults to True. When False, the field raises a TypeError if the field is
-      assigned on an instance.  The BaseModel Config must set validate_assignment to True
+    :param frozen: a boolean which defaults to False. When True, the field raises a TypeError if the field is
+      assigned on an instance. The BaseModel Config must set validate_assignment to True
     :param pattern: only applies to strings, requires the field match against a regular expression
       pattern string. The schema will have a ``pattern`` validation keyword
     :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
@@ -393,7 +399,32 @@ def Field(
     :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
     :param strict: enable or disable strict parsing mode
     :param validate_default: whether the default value should be validated for this field
+    :param const: removed, use ``Literal`` instead'
+    :param unique_items: removed, use ``Set`` instead
+    :param allow_mutation: deprecated, use ``frozen`` instead
+    :param regex: removed, use `Pattern` instead
+    :param **extra: removed
     """
+    # Check deprecated & removed params of V1.
+    # This has to be removed deprecation period over.
+    if const:
+        raise ValueError('`const` is removed. use `Literal` instead')
+    if min_items:
+        warn('`min_items` is deprecated and will be removed. use `min_length` instead', DeprecationWarning)
+        min_length = min_items
+    if max_items:
+        warn('`max_items` is deprecated and will be removed. use `max_length` instead', DeprecationWarning)
+        max_length = max_items
+    if unique_items:
+        raise ValueError('`unique_items` is removed. use `Set` instead')
+    if allow_mutation is False:
+        warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
+        frozen = True
+    if regex:
+        raise ValueError('`regex` is removed. use `Pattern` instead')
+    if extra:
+        raise ValueError('Extra keyword arguments are not allowd on `Field`')
+
     return FieldInfo.from_field(
         default,
         default_factory=default_factory,

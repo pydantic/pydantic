@@ -112,7 +112,9 @@ def test_default_factory_field():
 
     m = Model()
     assert str(m) == 'a=1'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc)'
+    assert (
+        repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=False, default_factory=myfunc, frozen=False)'
+    )
     assert dict(m) == {'a': 1}
     assert m.model_dump_json() == '{"a":1}'
 
@@ -1538,9 +1540,9 @@ def test_repr_field():
 
     m = Model(a=1, b=2.5, c=True)
     assert repr(m) == 'Model(a=1, b=2.5)'
-    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True)'
-    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True)'
-    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False)'
+    assert repr(m.model_fields['a']) == 'FieldInfo(annotation=int, required=True, frozen=False)'
+    assert repr(m.model_fields['b']) == 'FieldInfo(annotation=float, required=True, frozen=False)'
+    assert repr(m.model_fields['c']) == 'FieldInfo(annotation=bool, required=True, repr=False, frozen=False)'
 
 
 def test_inherited_model_field_copy():
@@ -1889,13 +1891,6 @@ def test_post_init_not_called_without_override():
 
     finally:
         BaseModel.model_post_init = original_base_model_post_init
-
-
-def test_extra_args_to_field_type_error():
-    with pytest.raises(TypeError, match='unexpected keyword argument'):
-
-        class Model(BaseModel):
-            a: int = Field(thing=1)
 
 
 def test_deeper_recursive_model():

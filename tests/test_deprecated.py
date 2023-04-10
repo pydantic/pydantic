@@ -6,8 +6,12 @@ from typing import Any, Dict, List, Type
 import pytest
 from typing_extensions import Literal
 
+<<<<<<< HEAD
 from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, model_serializer, root_validator
 from pydantic.config import Extra
+=======
+from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, model_serializer, root_validator
+>>>>>>> cc76abd9 (Clean up Field parameters)
 
 
 def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
@@ -392,3 +396,86 @@ def test_extra_used_as_enum(
         match=re.escape("`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)"),
     ):
         assert getattr(Extra, attribute) == value
+
+
+def test_field_min_items_deprecation():
+    m = '`min_items` is deprecated and will be removed. use `min_length` instead'
+    with pytest.warns(DeprecationWarning, match=m):
+
+        class Model(BaseModel):
+            x: List[int] = Field(None, min_items=1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=[])
+    assert exc_info.value.errors() == [
+        {
+            'type': 'too_short',
+            'loc': ('x',),
+            'msg': 'List should have at least 1 item after validation, not 0',
+            'input': [],
+            'ctx': {'field_type': 'List', 'min_length': 1, 'actual_length': 0},
+        }
+    ]
+
+
+def test_field_max_items():
+    m = '`max_items` is deprecated and will be removed. use `max_length` instead'
+    with pytest.warns(DeprecationWarning, match=m):
+
+        class Model(BaseModel):
+            x: List[int] = Field(None, max_items=1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=[1, 2])
+    assert exc_info.value.errors() == [
+        {
+            'type': 'too_long',
+            'loc': ('x',),
+            'msg': 'List should have at most 1 item after validation, not 2',
+            'input': [1, 2],
+            'ctx': {'field_type': 'List', 'max_length': 1, 'actual_length': 2},
+        }
+    ]
+
+
+def test_field_const():
+    with pytest.raises(ValueError, match='`const` is removed. use `Literal` instead'):
+
+        class Model(BaseModel):
+            x: str = Field('test', const=True)
+
+
+def test_unique_items_items():
+    with pytest.raises(ValueError, match='`unique_items` is removed. use `Set` instead'):
+
+        class Model(BaseModel):
+            x: List[int] = Field(None, unique_items=True)
+
+
+def test_allow_mutation():
+    m = '`allow_mutation` is deprecated and will be removed. use `frozen` instead'
+    with pytest.warns(DeprecationWarning, match=m):
+
+        class Model(BaseModel):
+            model_config = ConfigDict(validate_assignment=True)
+            x: int = Field(allow_mutation=False)
+
+    m = Model(x=1)
+    assert m.x == 1
+    with pytest.raises(ValidationError) as exc_info:
+        m.x = 2
+    assert exc_info.value.errors() == [{'input': 2, 'loc': ('x',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
+
+
+def test_field_regex():
+    with pytest.raises(ValueError, match='`regex` is removed. use `Pattern` instead'):
+
+        class Model(BaseModel):
+            x: str = Field('test', regex=r'^test$')
+
+
+def test_field_extra_arguments():
+    with pytest.raises(ValueError, match='Extra keyword arguments are not allowd on `Field`'):
+
+        class Model(BaseModel):
+            x: str = Field('test', test='test')
