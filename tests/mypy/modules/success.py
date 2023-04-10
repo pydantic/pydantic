@@ -17,7 +17,6 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     DirectoryPath,
-    Extra,
     FilePath,
     FutureDate,
     ImportString,
@@ -274,7 +273,7 @@ obj: SomeDict = {
 }
 
 
-config = ConfigDict(title='Record', extra=Extra.ignore, str_max_length=1234)
+config = ConfigDict(title='Record', extra='ignore', str_max_length=1234)
 
 
 class CustomPath(PurePath):
