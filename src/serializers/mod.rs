@@ -50,7 +50,7 @@ impl SchemaSerializer {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (value, *, mode = None, include = None, exclude = None, by_alias = None,
+    #[pyo3(signature = (value, *, mode = None, include = None, exclude = None, by_alias = true,
         exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = true,
         fallback = None))]
     pub fn to_python(
@@ -60,12 +60,12 @@ impl SchemaSerializer {
         mode: Option<&str>,
         include: Option<&PyAny>,
         exclude: Option<&PyAny>,
-        by_alias: Option<bool>,
-        exclude_unset: Option<bool>,
-        exclude_defaults: Option<bool>,
-        exclude_none: Option<bool>,
-        round_trip: Option<bool>,
-        warnings: Option<bool>,
+        by_alias: bool,
+        exclude_unset: bool,
+        exclude_defaults: bool,
+        exclude_none: bool,
+        round_trip: bool,
+        warnings: bool,
         fallback: Option<&PyAny>,
     ) -> PyResult<PyObject> {
         let mode: SerMode = mode.into();
@@ -83,7 +83,7 @@ impl SchemaSerializer {
             round_trip,
             &self.config,
             &rec_guard,
-            None,
+            false,
             fallback,
         );
         let v = self.serializer.to_python(value, include, exclude, &extra)?;
@@ -92,7 +92,7 @@ impl SchemaSerializer {
     }
 
     #[allow(clippy::too_many_arguments)]
-    #[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = None,
+    #[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = true,
         exclude_unset = false, exclude_defaults = false, exclude_none = false, round_trip = false, warnings = true,
         fallback = None))]
     pub fn to_json(
@@ -102,12 +102,12 @@ impl SchemaSerializer {
         indent: Option<usize>,
         include: Option<&PyAny>,
         exclude: Option<&PyAny>,
-        by_alias: Option<bool>,
-        exclude_unset: Option<bool>,
-        exclude_defaults: Option<bool>,
-        exclude_none: Option<bool>,
-        round_trip: Option<bool>,
-        warnings: Option<bool>,
+        by_alias: bool,
+        exclude_unset: bool,
+        exclude_defaults: bool,
+        exclude_none: bool,
+        round_trip: bool,
+        warnings: bool,
         fallback: Option<&PyAny>,
     ) -> PyResult<PyObject> {
         let warnings = CollectWarnings::new(warnings);
@@ -124,7 +124,7 @@ impl SchemaSerializer {
             round_trip,
             &self.config,
             &rec_guard,
-            None,
+            false,
             fallback,
         );
         let bytes = to_json_bytes(
@@ -177,18 +177,18 @@ pub fn to_json(
     indent: Option<usize>,
     include: Option<&PyAny>,
     exclude: Option<&PyAny>,
-    exclude_none: Option<bool>,
-    round_trip: Option<bool>,
+    exclude_none: bool,
+    round_trip: bool,
     timedelta_mode: Option<&str>,
     bytes_mode: Option<&str>,
-    serialize_unknown: Option<bool>,
+    serialize_unknown: bool,
     fallback: Option<&PyAny>,
 ) -> PyResult<PyObject> {
     let state = SerializationState::new(timedelta_mode, bytes_mode);
     let extra = state.extra(
         py,
         &SerMode::Json,
-        None,
+        true,
         exclude_none,
         round_trip,
         serialize_unknown,
@@ -203,19 +203,19 @@ pub fn to_json(
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (value, *, include = None, exclude = None, by_alias = None, exclude_none = false, round_trip = false,
+#[pyo3(signature = (value, *, include = None, exclude = None, by_alias = true, exclude_none = false, round_trip = false,
     timedelta_mode = None, bytes_mode = None, serialize_unknown = false, fallback = None))]
 pub fn to_jsonable_python(
     py: Python,
     value: &PyAny,
     include: Option<&PyAny>,
     exclude: Option<&PyAny>,
-    by_alias: Option<bool>,
-    exclude_none: Option<bool>,
-    round_trip: Option<bool>,
+    by_alias: bool,
+    exclude_none: bool,
+    round_trip: bool,
     timedelta_mode: Option<&str>,
     bytes_mode: Option<&str>,
-    serialize_unknown: Option<bool>,
+    serialize_unknown: bool,
     fallback: Option<&PyAny>,
 ) -> PyResult<PyObject> {
     let state = SerializationState::new(timedelta_mode, bytes_mode);
