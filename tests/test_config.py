@@ -6,6 +6,7 @@ from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr
+from pydantic_core import SchemaError
 
 from pydantic import (
     BaseConfig,
@@ -463,30 +464,33 @@ Valid config keys have changed in V2:
 
 
 def test_invalid_extra():
-    extra_error = re.escape("'invalid-value' is not a valid value for `config['extra']`")
+    extra_error = re.escape(
+        "Input should be 'allow', 'forbid' or 'ignore'"
+        " [type=literal_error, input_value='invalid-value', input_type=str]"
+    )
     config_dict = {'extra': 'invalid-value'}
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match=extra_error):
 
         class MyModel(BaseModel):
             model_config = config_dict
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match=extra_error):
         create_model('MyCreatedModel', __config__=config_dict)
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match='Invalid extra_behavior: `invalid-value`'):
 
         @pydantic_dataclass(config=config_dict)
         class MyDataclass:
             pass
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match=extra_error):
 
         @validate_arguments(config=config_dict)
         def my_function():
             pass
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match=extra_error):
         # This case happens when the function passed to `validate_arguments` has no `__name__`.
         # This is a pretty exotic case, but it has caused issues in the past, so I wanted to add a test.
         def my_wrapped_function():
@@ -495,9 +499,6 @@ def test_invalid_extra():
         my_partial_function = partial(my_wrapped_function)
         my_partial_function.__annotations__ = my_wrapped_function.__annotations__
         validate_arguments(config=config_dict)(my_partial_function)
-
-    with pytest.raises(ValueError, match=extra_error):
-        ConfigWrapper(config_dict).extra
 
 
 def test_invalid_config_keys():

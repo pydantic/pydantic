@@ -1,6 +1,5 @@
 from __future__ import annotations as _annotations
 
-from enum import Enum
 from typing import Callable
 
 from typing_extensions import Literal, TypedDict
@@ -8,10 +7,13 @@ from typing_extensions import Literal, TypedDict
 __all__ = 'ConfigDict', 'Extra'
 
 
-class Extra(str, Enum):
-    allow = 'allow'
-    ignore = 'ignore'
-    forbid = 'forbid'
+class Extra:
+    allow: Literal['allow'] = 'allow'
+    ignore: Literal['ignore'] = 'ignore'
+    forbid: Literal['forbid'] = 'forbid'
+
+
+ExtraValues = Literal['allow', 'ignore', 'forbid']
 
 
 class ConfigDict(TypedDict, total=False):
@@ -21,7 +23,7 @@ class ConfigDict(TypedDict, total=False):
     str_strip_whitespace: bool
     str_min_length: int
     str_max_length: int | None
-    extra: Extra | None
+    extra: ExtraValues | None
     frozen: bool
     populate_by_name: bool
     use_enum_values: bool
