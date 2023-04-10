@@ -188,6 +188,7 @@ pub fn to_json(
     let extra = state.extra(
         py,
         &SerMode::Json,
+        None,
         exclude_none,
         round_trip,
         serialize_unknown,
@@ -202,13 +203,14 @@ pub fn to_json(
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (value, *, include = None, exclude = None, exclude_none = false, round_trip = false,
+#[pyo3(signature = (value, *, include = None, exclude = None, by_alias = None, exclude_none = false, round_trip = false,
     timedelta_mode = None, bytes_mode = None, serialize_unknown = false, fallback = None))]
 pub fn to_jsonable_python(
     py: Python,
     value: &PyAny,
     include: Option<&PyAny>,
     exclude: Option<&PyAny>,
+    by_alias: Option<bool>,
     exclude_none: Option<bool>,
     round_trip: Option<bool>,
     timedelta_mode: Option<&str>,
@@ -220,6 +222,7 @@ pub fn to_jsonable_python(
     let extra = state.extra(
         py,
         &SerMode::Json,
+        by_alias,
         exclude_none,
         round_trip,
         serialize_unknown,

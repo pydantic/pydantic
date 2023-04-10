@@ -141,7 +141,7 @@ impl ValidationError {
         include_context: Option<bool>,
     ) -> PyResult<&'py PyString> {
         let state = SerializationState::new(None, None);
-        let extra = state.extra(py, &SerMode::Json, None, None, Some(true), None);
+        let extra = state.extra(py, &SerMode::Json, None, None, None, Some(true), None);
         let serializer = ValidationErrorSerializer {
             py,
             line_errors: &self.line_errors,
