@@ -6,5 +6,6 @@ mkdocs-exclude
 mkdocs-material
 mkdocs-redirects
 mkdocs-simple-hooks
+mkdocstrings-python
 pyupgrade
 tomli
