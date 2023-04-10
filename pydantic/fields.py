@@ -47,6 +47,8 @@ class FieldInfo(_repr.Representation):
         'validate_default',
         'frozen',
         'final',
+        'validation_alias',
+        'serialization_alias',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -98,6 +100,8 @@ class FieldInfo(_repr.Representation):
         self.validate_default = kwargs.get('validate_default', None)
         self.frozen = kwargs.get('frozen', None)
         self.final = kwargs.get('final', None)
+        self.validation_alias = kwargs.get('validation_alias', None)
+        self.serialization_alias = kwargs.get('serialization_alias', None)
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
@@ -344,6 +348,8 @@ def Field(
     strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
     validate_default: bool | None = None,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    serialization_alias: str | None = None,
     const: bool | None = None,
     unique_items: bool | None = None,
     allow_mutation: bool = True,
@@ -402,6 +408,8 @@ def Field(
     :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
     :param strict: enable or disable strict parsing mode
     :param validate_default: whether the default value should be validated for this field
+    :param validation_alias: the alias(es) to use to find the field in the validation data
+    :param serialization_alias: The alias to use as a key when serializing
     :param const: removed, use `Literal` instead'
     :param unique_items: removed, use `Set` instead
     :param allow_mutation: deprecated, use `frozen` instead
@@ -470,6 +478,8 @@ def Field(
         json_schema_extra=json_schema_extra,
         strict=strict,
         validate_default=validate_default,
+        validation_alias=validation_alias or alias,
+        serialization_alias=serialization_alias or alias,
     )
 
 

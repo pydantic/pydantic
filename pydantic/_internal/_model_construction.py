@@ -307,4 +307,6 @@ def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> N
             if not isinstance(alias, str):
                 raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
             field_info.alias = alias
+            field_info.validation_alias = alias
+            field_info.serialization_alias = alias
             field_info.alias_priority = 1

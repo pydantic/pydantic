@@ -44,7 +44,8 @@ def test_basic_alias():
     assert Model().a == 'foobar'
     assert Model(_a='different').a == 'different'
     assert repr(Model.model_fields['a']) == (
-        "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', alias_priority=2)"
+        "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', "
+        "alias_priority=2, validation_alias='_a', serialization_alias='_a')"
     )
 
 
@@ -266,3 +267,95 @@ def test_populate_by_name_config(
             f = Foo(**{arg_name: expected_value})
 
         assert f.bar_ == expected_value
+
+
+def test_validation_alias():
+    class Model(BaseModel):
+        x: str = Field(validation_alias='foo')
+
+    data = {'foo': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='bar')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing',
+            'loc': ('foo',),
+            'msg': 'Field required',
+            'input': {'x': 'bar'},
+        }
+    ]
+
+
+def test_validation_alias_with_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='x_alias', validation_alias='foo')
+
+    data = {'foo': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='bar')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing',
+            'loc': ('foo',),
+            'msg': 'Field required',
+            'input': {'x': 'bar'},
+        }
+    ]
+
+
+def test_validation_alias_from_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='foo')
+
+    data = {'foo': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='bar')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing',
+            'loc': ('foo',),
+            'msg': 'Field required',
+            'input': {'x': 'bar'},
+        }
+    ]
+
+
+def test_serialization_alias():
+    class Model(BaseModel):
+        x: str = Field(serialization_alias='foo')
+
+    m = Model(x='bar')
+    assert m.x == 'bar'
+    assert m.model_dump() == {'x': 'bar'}
+    assert m.model_dump(by_alias=True) == {'foo': 'bar'}
+
+
+def test_serialization_alias_with_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='x_alias', serialization_alias='foo')
+
+    data = {'x_alias': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+    assert m.model_dump() == {'x': 'bar'}
+    assert m.model_dump(by_alias=True) == {'foo': 'bar'}
+
+
+def test_serialization_alias_from_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='foo')
+
+    data = {'foo': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+    assert m.model_dump() == {'x': 'bar'}
+    assert m.model_dump(by_alias=True) == {'foo': 'bar'}
