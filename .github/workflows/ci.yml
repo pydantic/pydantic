@@ -145,6 +145,8 @@ jobs:
 
     - run: pip freeze
 
+    - run: 'python -c "import pydantic.version; print(pydantic.version.version_info())"'
+
     - run: mkdir coverage
 
     - name: test without deps
