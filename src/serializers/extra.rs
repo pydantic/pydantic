@@ -33,10 +33,12 @@ impl SerializationState {
         }
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn extra<'py>(
         &'py self,
         py: Python<'py>,
         mode: &'py SerMode,
+        by_alias: Option<bool>,
         exclude_none: Option<bool>,
         round_trip: Option<bool>,
         serialize_unknown: Option<bool>,
@@ -46,7 +48,7 @@ impl SerializationState {
             py,
             mode,
             &[],
-            None,
+            by_alias,
             &self.warnings,
             None,
             None,
