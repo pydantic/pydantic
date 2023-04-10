@@ -1,17 +1,29 @@
 from __future__ import annotations as _annotations
 
-from enum import Enum
-from typing import Callable
+from typing import Any, Callable
+from warnings import warn
 
 from typing_extensions import Literal, TypedDict
 
 __all__ = 'ConfigDict', 'Extra'
 
 
-class Extra(str, Enum):
-    allow = 'allow'
-    ignore = 'ignore'
-    forbid = 'forbid'
+class _Extra:
+    allow: Literal['allow'] = 'allow'
+    ignore: Literal['ignore'] = 'ignore'
+    forbid: Literal['forbid'] = 'forbid'
+
+    def __getattribute__(self, __name: str) -> Any:
+        warn(
+            '`pydantic.config.Extra` is deprecated, use literal values instead' " (e.g. `extra='allow'`)",
+            DeprecationWarning,
+        )
+        return super().__getattribute__(__name)
+
+
+Extra = _Extra()
+
+ExtraValues = Literal['allow', 'ignore', 'forbid']
 
 
 class ConfigDict(TypedDict, total=False):
@@ -21,7 +33,7 @@ class ConfigDict(TypedDict, total=False):
     str_strip_whitespace: bool
     str_min_length: int
     str_max_length: int | None
-    extra: Extra | None
+    extra: ExtraValues | None
     frozen: bool
     populate_by_name: bool
     use_enum_values: bool

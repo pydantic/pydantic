@@ -9,7 +9,7 @@ import pytest
 from dirty_equals import IsInstance
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, Extra, Field, ValidationError, validate_arguments
+from pydantic import BaseModel, Field, ValidationError, validate_arguments
 from pydantic.decorator import ValidatedFunction
 from pydantic.errors import PydanticUserError
 
@@ -447,13 +447,13 @@ def test_validate_extra():
     class TypedTest(TypedDict):
         y: str
 
-    @validate_arguments(config={'extra': Extra.allow})
+    @validate_arguments(config={'extra': 'allow'})
     def test(other: TypedTest):
         return other
 
     assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b', 'z': 'a'}
 
-    @validate_arguments(config={'extra': Extra.ignore})
+    @validate_arguments(config={'extra': 'ignore'})
     def test(other: TypedTest):
         return other
 

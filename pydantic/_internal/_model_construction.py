@@ -219,8 +219,6 @@ def generate_model_signature(
     from inspect import Parameter, Signature, signature
     from itertools import islice
 
-    from ..config import Extra
-
     present_params = signature(init).parameters.values()
     merged_params: dict[str, Parameter] = {}
     var_kw = None
@@ -255,7 +253,7 @@ def generate_model_signature(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
             )
 
-    if config_wrapper.extra is Extra.allow:
+    if config_wrapper.extra == 'allow':
         use_var_kw = True
 
     if var_kw and use_var_kw:

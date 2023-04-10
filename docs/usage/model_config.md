@@ -22,10 +22,10 @@ except ValidationError as e:
 
 Also, you can specify config options as model class kwargs:
 ```py
-from pydantic import BaseModel, Extra, ValidationError
+from pydantic import BaseModel, ValidationError
 
 
-class Model(BaseModel, extra=Extra.forbid):
+class Model(BaseModel, extra='forbid'):
     a: str
 
 

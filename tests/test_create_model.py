@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, PydanticUserError, ValidationError, create_model, errors
+from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, create_model, errors
 from pydantic.decorators import field_validator, validator
 from pydantic.fields import ModelPrivateAttr
 
@@ -113,7 +113,7 @@ def test_custom_config_inherits():
 
 
 def test_custom_config_extras():
-    config = ConfigDict(extra=Extra.forbid)
+    config = ConfigDict(extra='forbid')
 
     model = create_model('FooModel', foo=(int, ...), __config__=config)
     assert model(foo=654)

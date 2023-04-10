@@ -4,7 +4,7 @@ from typing import Any, ContextManager, List, Optional
 import pytest
 from dirty_equals import IsStr
 
-from pydantic import BaseModel, ConfigDict, Extra, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 from pydantic.fields import Field
 
 
@@ -98,7 +98,7 @@ def test_annotation_config():
 
 def test_pop_by_field_name():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid, populate_by_name=True)
+        model_config = ConfigDict(extra='forbid', populate_by_name=True)
         last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}

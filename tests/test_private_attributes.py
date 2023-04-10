@@ -3,7 +3,7 @@ from typing import ClassVar, Generic, TypeVar
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Extra, PrivateAttr
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 from pydantic.fields import Undefined
 
 
@@ -141,7 +141,7 @@ def test_private_attribute_intersection_with_extra_field():
     class Model(BaseModel):
         _foo = PrivateAttr('private_attribute')
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert Model.__slots__ == {'_foo'}
     m = Model(_foo='field')

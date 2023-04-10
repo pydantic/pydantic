@@ -11,7 +11,7 @@ import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, ConfigDict, Extra, FieldValidationInfo, ValidationError
+from pydantic import BaseModel, ConfigDict, FieldValidationInfo, ValidationError
 from pydantic.decorators import field_validator
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
@@ -139,13 +139,13 @@ def test_validate_assignment_value_change():
     [
         ConfigDict(validate_assignment=False),
         ConfigDict(extra=None),
-        ConfigDict(extra=Extra.forbid),
-        ConfigDict(extra=Extra.ignore),
+        ConfigDict(extra='forbid'),
+        ConfigDict(extra='ignore'),
         ConfigDict(validate_assignment=False, extra=None),
-        ConfigDict(validate_assignment=False, extra=Extra.forbid),
-        ConfigDict(validate_assignment=False, extra=Extra.ignore),
-        ConfigDict(validate_assignment=False, extra=Extra.allow),
-        ConfigDict(validate_assignment=True, extra=Extra.allow),
+        ConfigDict(validate_assignment=False, extra='forbid'),
+        ConfigDict(validate_assignment=False, extra='ignore'),
+        ConfigDict(validate_assignment=False, extra='allow'),
+        ConfigDict(validate_assignment=True, extra='allow'),
     ],
 )
 def test_validate_assignment_extra_unknown_field_assigned_allowed(config: ConfigDict):
@@ -165,8 +165,8 @@ def test_validate_assignment_extra_unknown_field_assigned_allowed(config: Config
     [
         ConfigDict(validate_assignment=True),
         ConfigDict(validate_assignment=True, extra=None),
-        ConfigDict(validate_assignment=True, extra=Extra.forbid),
-        ConfigDict(validate_assignment=True, extra=Extra.ignore),
+        ConfigDict(validate_assignment=True, extra='forbid'),
+        ConfigDict(validate_assignment=True, extra='ignore'),
     ],
 )
 def test_validate_assignment_extra_unknown_field_assigned_errors(config: ConfigDict):
@@ -1336,7 +1336,7 @@ def test_keeps_custom_properties():
 
 @pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_ignore_extra():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.ignore))
+    @pydantic.dataclasses.dataclass(config=dict(extra='ignore'))
     class Foo:
         x: int
 
@@ -1345,11 +1345,11 @@ def test_ignore_extra():
 
 
 def test_ignore_extra_subclass():
-    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.ignore))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='ignore'))
     class Foo:
         x: int
 
-    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.ignore))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='ignore'))
     class Bar(Foo):
         y: int
 
@@ -1358,7 +1358,7 @@ def test_ignore_extra_subclass():
 
 
 def test_allow_extra():
-    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.allow))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='allow'))
     class Foo:
         x: int
 
@@ -1367,11 +1367,11 @@ def test_allow_extra():
 
 
 def test_allow_extra_subclass():
-    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.allow))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='allow'))
     class Foo:
         x: int
 
-    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.allow))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='allow'))
     class Bar(Foo):
         y: int
 
@@ -1380,7 +1380,7 @@ def test_allow_extra_subclass():
 
 
 def test_forbid_extra():
-    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.forbid))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
     class Foo:
         x: int
 
@@ -1417,7 +1417,7 @@ def test_kw_only():
 
 
 def test_extra_forbid_list_no_error():
-    @pydantic.dataclasses.dataclass(config=dict(extra=Extra.forbid))
+    @pydantic.dataclasses.dataclass(config=dict(extra='forbid'))
     class Bar:
         ...
 
@@ -1429,7 +1429,7 @@ def test_extra_forbid_list_no_error():
 
 
 def test_extra_forbid_list_error():
-    @pydantic.dataclasses.dataclass(config=ConfigDict(extra=Extra.forbid))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
     class Bar:
         ...
 
