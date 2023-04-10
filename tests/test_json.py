@@ -3,7 +3,15 @@ import re
 import pytest
 from dirty_equals import IsList
 
-from pydantic_core import PydanticSerializationError, SchemaValidator, ValidationError, to_json, to_jsonable_python
+from pydantic_core import (
+    PydanticSerializationError,
+    SchemaSerializer,
+    SchemaValidator,
+    ValidationError,
+    core_schema,
+    to_json,
+    to_jsonable_python,
+)
 
 from .conftest import Err
 
@@ -219,6 +227,39 @@ def test_to_jsonable_python_fallback():
     assert to_jsonable_python(Foobar(), serialize_unknown=True) == 'Foobar.__str__'
     assert to_jsonable_python(Foobar(), serialize_unknown=True, fallback=fallback_func) == 'fallback:Foobar'
     assert to_jsonable_python(Foobar(), fallback=fallback_func) == 'fallback:Foobar'
+
+
+def test_to_jsonable_python_schema_serializer():
+    class Foobar:
+        def __init__(self, my_foo: int, my_bar: str):
+            self.my_foo = my_foo
+            self.my_bar = my_bar
+
+    c = core_schema.model_schema(
+        Foobar,
+        core_schema.typed_dict_schema(
+            {
+                'my_foo': core_schema.typed_dict_field(core_schema.int_schema(), serialization_alias='myFoo'),
+                'my_bar': core_schema.typed_dict_field(core_schema.str_schema(), serialization_alias='myBar'),
+            }
+        ),
+    )
+    v = SchemaValidator(c)
+    s = SchemaSerializer(c)
+
+    Foobar.__pydantic_validator__ = v
+    Foobar.__pydantic_serializer__ = s
+
+    instance = Foobar(my_foo=1, my_bar='a')
+    assert to_jsonable_python(instance) == {'myFoo': 1, 'myBar': 'a'}
+    assert to_jsonable_python(instance, by_alias=False) == {'my_foo': 1, 'my_bar': 'a'}
+
+    # Just including this to document the behavior. Note that trying to get `to_json` to respect aliases
+    # by putting the by_alias field into the `extra` in `to_json` won't work because it always uses an
+    # AnySchema for serialization. If you want any python-introspection to happen during the json serialization
+    # process for the purpose of respecting objects' own serialization schemas, you need to call
+    # to_jsonable_python and serialize the result yourself.
+    assert to_json(instance) == b'{"my_foo":1,"my_bar":"a"}'
 
 
 def test_cycle_same():

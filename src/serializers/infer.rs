@@ -13,6 +13,7 @@ use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 use crate::build_tools::{py_err, safe_repr};
 use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
+use crate::serializers::{shared::TypeSerializer, SchemaSerializer};
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::errors::{py_err_se_err, PydanticSerializationError};
@@ -91,6 +92,19 @@ pub(crate) fn infer_to_python_known(
         Ok::<PyObject, PyErr>(new_dict.into_py(py))
     };
 
+    let serialize_with_serializer = |value: &PyAny, is_model: bool| {
+        if let Ok(py_serializer) = value.getattr(intern!(py, "__pydantic_serializer__")) {
+            if let Ok(serializer) = py_serializer.extract::<SchemaSerializer>() {
+                extra.rec_guard.pop(value_id);
+                return serializer.serializer.to_python(value, include, exclude, extra);
+            }
+        }
+        // Fallback to dict serialization if `__pydantic_serializer__` is not set.else
+        // This is currently only relevant to non-pydantic dataclasses.
+        let dict = object_to_dict(value, is_model, extra)?;
+        serialize_dict(dict)
+    };
+
     let value = match extra.mode {
         SerMode::Json => match ob_type {
             // `bool` and `None` can't be subclasses, `ObType::Int`, `ObType::Float`, `ObType::Str` refer to exact types
@@ -160,8 +174,8 @@ pub(crate) fn infer_to_python_known(
                 let py_url: PyMultiHostUrl = value.extract()?;
                 py_url.__str__().into_py(py)
             }
-            ObType::Dataclass => serialize_dict(object_to_dict(value, false, extra)?)?,
-            ObType::Model => serialize_dict(object_to_dict(value, true, extra)?)?,
+            ObType::Dataclass => serialize_with_serializer(value, false)?,
+            ObType::Model => serialize_with_serializer(value, true)?,
             ObType::Enum => {
                 let v = value.getattr(intern!(py, "value"))?;
                 infer_to_python(v, include, exclude, extra)?.into_py(py)
