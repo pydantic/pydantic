@@ -113,12 +113,13 @@ In Pydantic V2 this is _a lot_ easier: the `AnalyzedType` class lets you build a
 
 ```python
 from typing import List
+
 from pydantic import AnalyzedType
 
 validator = AnalyzedType(List[int])
 assert validator.validate_python(['1', '2', '3']) == [1, 2, 3]
 print(validator.json_schema())
-# {'type': 'array', 'items': {'type': 'integer'}}
+#> {'type': 'array', 'items': {'type': 'integer'}}
 ```
 
 Note that this API is provisional and may change before the final release of Pydantic V2.
