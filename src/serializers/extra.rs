@@ -23,7 +23,7 @@ pub(crate) struct SerializationState {
 
 impl SerializationState {
     pub fn new(timedelta_mode: Option<&str>, bytes_mode: Option<&str>) -> Self {
-        let warnings = CollectWarnings::new(None);
+        let warnings = CollectWarnings::new(false);
         let rec_guard = SerRecursionGuard::default();
         let config = SerializationConfig::from_args(timedelta_mode, bytes_mode).unwrap();
         Self {
@@ -38,10 +38,10 @@ impl SerializationState {
         &'py self,
         py: Python<'py>,
         mode: &'py SerMode,
-        by_alias: Option<bool>,
-        exclude_none: Option<bool>,
-        round_trip: Option<bool>,
-        serialize_unknown: Option<bool>,
+        by_alias: bool,
+        exclude_none: bool,
+        round_trip: bool,
+        serialize_unknown: bool,
         fallback: Option<&'py PyAny>,
     ) -> Extra<'py> {
         Extra::new(
@@ -50,8 +50,8 @@ impl SerializationState {
             &[],
             by_alias,
             &self.warnings,
-            None,
-            None,
+            false,
+            false,
             exclude_none,
             round_trip,
             &self.config,
@@ -98,15 +98,15 @@ impl<'a> Extra<'a> {
         py: Python<'a>,
         mode: &'a SerMode,
         slots: &'a [CombinedSerializer],
-        by_alias: Option<bool>,
+        by_alias: bool,
         warnings: &'a CollectWarnings,
-        exclude_unset: Option<bool>,
-        exclude_defaults: Option<bool>,
-        exclude_none: Option<bool>,
-        round_trip: Option<bool>,
+        exclude_unset: bool,
+        exclude_defaults: bool,
+        exclude_none: bool,
+        round_trip: bool,
         config: &'a SerializationConfig,
         rec_guard: &'a SerRecursionGuard,
-        serialize_unknown: Option<bool>,
+        serialize_unknown: bool,
         fallback: Option<&'a PyAny>,
     ) -> Self {
         Self {
@@ -114,17 +114,17 @@ impl<'a> Extra<'a> {
             slots,
             ob_type_lookup: ObTypeLookup::cached(py),
             warnings,
-            by_alias: by_alias.unwrap_or(true),
-            exclude_unset: exclude_unset.unwrap_or(false),
-            exclude_defaults: exclude_defaults.unwrap_or(false),
-            exclude_none: exclude_none.unwrap_or(false),
-            round_trip: round_trip.unwrap_or(false),
+            by_alias,
+            exclude_unset,
+            exclude_defaults,
+            exclude_none,
+            round_trip,
             config,
             rec_guard,
             check: SerCheck::None,
             model: None,
             field_name: None,
-            serialize_unknown: serialize_unknown.unwrap_or(false),
+            serialize_unknown,
             fallback,
         }
     }
@@ -267,9 +267,9 @@ pub(crate) struct CollectWarnings {
 }
 
 impl CollectWarnings {
-    pub(crate) fn new(active: Option<bool>) -> Self {
+    pub(crate) fn new(active: bool) -> Self {
         Self {
-            active: active.unwrap_or(true),
+            active,
             warnings: RefCell::new(None),
         }
     }
