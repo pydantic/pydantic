@@ -46,6 +46,7 @@ nav:
 - Get Started:
   - Welcome to pydantic: index.md
   - Installation: install.md
+  - Migration Guide: migration.md
   - changelog.md
 - Usage:
   - usage/models.md
