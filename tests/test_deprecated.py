@@ -1,7 +1,7 @@
 import platform
 import re
 from types import SimpleNamespace
-from typing import Dict, List
+from typing import Any, Dict, List, Type
 
 import pytest
 
@@ -9,7 +9,7 @@ from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, 
 from pydantic.config import Extra
 
 
-def deprecated_from_orm(model_type, obj):
+def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
     with pytest.warns(
         DeprecationWarning,
         match=re.escape(
@@ -223,8 +223,7 @@ def test_properties():
     assert model.y == 5
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_extra_allow():
+def test_extra_allow_from_orm():
     class TestCls:
         x = 1
         y = 2
@@ -234,11 +233,12 @@ def test_extra_allow():
         x: int
 
     model = deprecated_from_orm(Model, TestCls())
-    assert model.model_dump() == {'x': 1}
+    assert model.x == 1
+    assert model.y == 2
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_extra_forbid():
+@pytest.mark.xfail(reason='from_orm should not error for extra attributes, bug in pydantic-core')
+def test_extra_forbid_from_orm():
     class TestCls:
         x = 1
         y = 2
@@ -248,7 +248,8 @@ def test_extra_forbid():
         x: int
 
     model = deprecated_from_orm(Model, TestCls())
-    assert model.model_dump() == {'x': 1}
+    assert model.x == 1
+    assert not hasattr(model, 'y')
 
 
 @pytest.mark.xfail(reason='working on V2')

@@ -1,6 +1,7 @@
 """
 New tests for v2 of serialization logic.
 """
+import json
 from functools import partial, partialmethod
 from typing import Any, Optional
 
@@ -18,6 +19,7 @@ from pydantic import (
     model_serializer,
 )
 from pydantic.annotated_arguments import PlainSerializer, WrapSerializer
+from pydantic.config import ConfigDict
 
 
 @pytest.fixture
@@ -28,6 +30,50 @@ def reset_tracked_serializer():
     yield
     _FUNCS.clear()
     _FUNCS.update(original_tracked_serializers)
+
+
+def test_serialize_extra_allow() -> None:
+    class Model(BaseModel):
+        x: int
+        model_config = ConfigDict(extra='allow')
+
+    m = Model(x=1, y=2)
+    assert m.y == 2
+    assert m.model_dump() == {'x': 1, 'y': 2}
+    assert json.loads(m.model_dump_json()) == {'x': 1, 'y': 2}
+
+
+def test_serialize_extra_allow_subclass_1() -> None:
+    class Parent(BaseModel):
+        x: int
+
+    class Child(Parent):
+        model_config = ConfigDict(extra='allow')
+
+    class Model(BaseModel):
+        inner: Parent
+
+    m = Model(inner=Child(x=1, y=2))
+    assert m.inner.y == 2
+    assert m.model_dump() == {'inner': {'x': 1}}
+    assert json.loads(m.model_dump_json()) == {'inner': {'x': 1}}
+
+
+def test_serialize_extra_allow_subclass_2() -> None:
+    class Parent(BaseModel):
+        x: int
+        model_config = ConfigDict(extra='allow')
+
+    class Child(Parent):
+        y: int
+
+    class Model(BaseModel):
+        inner: Parent
+
+    m = Model(inner=Child(x=1, y=2))
+    assert m.inner.y == 2
+    assert m.model_dump() == {'inner': {'x': 1, 'y': 2}}
+    assert json.loads(m.model_dump_json()) == {'inner': {'x': 1, 'y': 2}}
 
 
 def test_serializer_annotated_plain_always():

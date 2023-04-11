@@ -220,7 +220,22 @@ def test_allow_extra():
         model_config = ConfigDict(extra='allow')
         a: float = ...
 
-    assert Model(a='10.2', b=12).model_dump() == {'a': 10.2, 'b': 12}
+    assert Model(a='10.2', b=12).b == 12
+
+
+def test_allow_extra_from_attributes():
+    class Model(BaseModel):
+        a: float
+
+        model_config = ConfigDict(extra='allow', from_attributes=True)
+
+    class TestClass:
+        a = 1.0
+        b = 12
+
+    m = Model.model_validate(TestClass())
+    assert m.a == 1.0
+    assert m.b == 12
 
 
 def test_allow_extra_repr():
@@ -261,6 +276,26 @@ def test_forbidden_extra_fails():
             'input': 'xx',
         },
     ]
+
+
+@pytest.mark.xfail(reason='Bug in pydantic-core')
+def test_forbid_extra_from_attributes():
+    """
+    Validating from_attributes does not fail for extra attributes
+    """
+
+    class Model(BaseModel):
+        a: float
+
+        model_config = ConfigDict(extra='forbid', from_attributes=True)
+
+    class TestClass:
+        a = 1.0
+        b = 12
+
+    m = Model.model_validate(TestClass())
+    assert m.a == 1.0
+    assert not hasattr(m, 'b')
 
 
 def test_assign_extra_no_validate():
