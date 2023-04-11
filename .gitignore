@@ -43,6 +43,7 @@ test.py
 pydantic/*.c
 pydantic/*.so
 /fastapi/
+.mypy-configs/
 
 # Other files and folders
 .python-version

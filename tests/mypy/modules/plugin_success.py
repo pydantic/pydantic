@@ -1,4 +1,4 @@
-from typing import ClassVar, Generic, List, Optional, TypeVar, Union, Any
+from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
 from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator, validator
 from pydantic.dataclasses import dataclass
@@ -289,6 +289,6 @@ def get_my_custom_validator(field_name: str) -> classmethod:  # type: ignore
 def foo() -> None:
     class MyModel(BaseModel):
         number: int
-        custom_validator = get_my_custom_validator("number")  # type: ignore[pydantic-field]
+        custom_validator = get_my_custom_validator('number')  # type: ignore[pydantic-field]
 
     MyModel(number=2)
