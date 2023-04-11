@@ -117,7 +117,7 @@ This applies to all validators.
 
 For `@validator` the argument is still present and functions.
 For `@field_validator` it is not present at all.
-As you migrate from `@validator` to `@field_validator` you will have to replace `each_item=True` with [validators in Annotated metadata](validators.md#generic-validated-collections).
+As you migrate from `@validator` to `@field_validator` you will have to replace `each_item=True` with [validators in Annotated metadata](usage/validators.md#generic-validated-collections).
 
 ### `@root_validator(skip_on_failure=False)` is no longer allowed
 
