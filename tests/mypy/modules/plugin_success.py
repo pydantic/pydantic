@@ -262,3 +262,19 @@ class Sample(BaseModel):
 
 
 Sample(foo='hello world')
+
+
+def get_my_custom_validator(field_name: str) -> classmethod:  # type: ignore
+    @validator(field_name, allow_reuse=True)
+    def my_custom_validator(cls: Any, v: int) -> int:
+        return v
+
+    return my_custom_validator
+
+
+def foo() -> None:
+    class MyModel(BaseModel):
+        number: int
+        custom_validator = get_my_custom_validator('number')
+
+    MyModel(number=2)

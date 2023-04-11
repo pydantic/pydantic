@@ -390,13 +390,6 @@ class PydanticModelTransformer:
             if not isinstance(lhs, NameExpr) or not is_valid_field(lhs.name):
                 continue
 
-            # rhs = stmt.rvalue
-            # if hasattr(rhs, 'analyzed') and not rhs.analyzed:
-            #     print(ctx.api.anal_type(rhs))
-            # print("here")
-            #     ctx.api.defer()
-            #     continue
-
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
                 error_untyped_fields(ctx.api, stmt)
 
