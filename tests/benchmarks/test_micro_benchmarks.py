@@ -6,7 +6,8 @@ import os
 import platform
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal
-from typing import Dict, FrozenSet, List, Optional, Set, Union
+from enum import Enum
+from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
 
@@ -1298,3 +1299,44 @@ def test_model_instance_abc(benchmark):
     assert validator.isinstance_python(m1)
 
     benchmark(validator.validate_python, m1)
+
+
+class SomeStrEnum(str, Enum):
+    foo = 'foo_val'
+    bar = 'bar_val'
+    baz = 'baz_val'
+
+
+LARGE_STR_PREFIX = 'a' * 50
+
+
+@pytest.mark.parametrize(
+    'allowed_values,input,expected_val_res',
+    [
+        (list(range(5)), 4, 4),
+        ([f'abc{i}' for i in range(5)], 'abc4', 'abc4'),
+        ([LARGE_STR_PREFIX + f'{i}' for i in range(5)], f'{LARGE_STR_PREFIX}4', f'{LARGE_STR_PREFIX}4'),
+        ([SomeStrEnum.foo, SomeStrEnum.bar], SomeStrEnum.bar, SomeStrEnum.bar),
+        (list(range(100)), 5, 5),
+        ([f'abc{i}' for i in range(100)], 'abc99', 'abc99'),
+        ([LARGE_STR_PREFIX + f'{i}' for i in range(100)], f'{LARGE_STR_PREFIX}99', f'{LARGE_STR_PREFIX}99'),
+        (['null', None, -1, SomeStrEnum.baz], None, None),
+    ],
+    ids=[
+        'few_ints',
+        'few_small_strings',
+        'few_large_strings',
+        'few_str_enum',
+        'many_ints',
+        'many_small_strings',
+        'many_large_strings',
+        'few_mixed',
+    ],
+)
+def test_validate_literal(benchmark: Any, allowed_values: List[Any], input: Any, expected_val_res: Any) -> None:
+    validator = SchemaValidator(core_schema.literal_schema(expected=allowed_values))
+
+    res = validator.validate_python(input)
+    assert res == expected_val_res
+
+    benchmark(validator.validate_python, input)
