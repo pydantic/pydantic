@@ -47,6 +47,8 @@ name = "_pydantic_core"
 crate-type = ["cdylib", "rlib"]
 
 [features]
+# must be enabled when building with `cargo build`, maturin enables this automatically
+extension-module = ["pyo3/extension-module"]
 # required for cargo bench
 auto-initialize = ["pyo3/auto-initialize"]
 default = ["mimalloc", "mimalloc/local_dynamic_tls", "pyo3/generate-import-lib"]
