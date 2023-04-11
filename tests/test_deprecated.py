@@ -4,6 +4,7 @@ from types import SimpleNamespace
 from typing import Any, Dict, List, Type
 
 import pytest
+from typing_extensions import Literal
 
 from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, model_serializer, root_validator
 from pydantic.config import Extra
@@ -223,28 +224,14 @@ def test_properties():
     assert model.y == 5
 
 
-def test_extra_allow_from_orm():
+@pytest.mark.parametrize('extra', ['ignore', 'forbid', 'allow'])
+def test_extra_allow_from_orm(extra: Literal['ignore', 'forbid', 'allow']):
     class TestCls:
         x = 1
         y = 2
 
     class Model(BaseModel):
-        model_config = ConfigDict(from_attributes=True, extra='allow')
-        x: int
-
-    model = deprecated_from_orm(Model, TestCls())
-    assert model.x == 1
-    assert model.y == 2
-
-
-@pytest.mark.xfail(reason='from_orm should not error for extra attributes, bug in pydantic-core')
-def test_extra_forbid_from_orm():
-    class TestCls:
-        x = 1
-        y = 2
-
-    class Model(BaseModel):
-        model_config = ConfigDict(from_attributes=True, extra='forbid')
+        model_config = ConfigDict(from_attributes=True, extra=extra)
         x: int
 
     model = deprecated_from_orm(Model, TestCls())
