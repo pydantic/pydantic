@@ -3,13 +3,12 @@ from __future__ import annotations as _annotations
 import sys
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
 
-from pydantic_core import CoreConfig, CoreSchema, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 from typing_extensions import Literal
 
-from pydantic.config import ConfigDict
-from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
-
-from ._internal import _generate_schema, _typing_extra
+from ._internal import _config, _generate_schema, _typing_extra
+from .config import ConfigDict
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
 
 T = TypeVar('T')
 
@@ -18,8 +17,9 @@ if TYPE_CHECKING:
     IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
 
 
-def _get_schema(type_: Any, config: CoreConfig | None, parent_depth: int) -> CoreSchema:
-    """`BaseModel` uses its own `__module__` to find out where it was defined
+def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
+    """
+    `BaseModel` uses its own `__module__` to find out where it was defined
     and then look for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
     including type aliases where `__module__` (always `typing.py`) is not useful.
@@ -60,42 +60,11 @@ def _get_schema(type_: Any, config: CoreConfig | None, parent_depth: int) -> Cor
 
     But at the very least this behavior is _subtly_ different from `BaseModel`'s.
     """
-    arbitrary_types = bool((config or {}).get('arbitrary_types_allowed', False))
     local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
     global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
     global_ns.update(local_ns or {})
-    gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=global_ns, typevars_map={})
+    gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
     return gen.generate_schema(type_)
-
-
-# TODO: merge / replace this with _internal/_generate_schema.py::generate_config
-# once we change the config logic to make ConfigDict not be a partial
-def _translate_config(config: ConfigDict) -> core_schema.CoreConfig:
-    """Create a pydantic-core config from a pydantic config."""
-    unset: Any = object()
-    core_config: dict[str, Any] = dict(
-        title=config['title'] if 'title' in config and config['title'] is not None else unset,
-        typed_dict_extra_behavior=config['extra'].value if 'extra' in config and config['extra'] is not None else unset,
-        allow_inf_nan=config['allow_inf_nan'] if 'allow_inf_nan' in config else unset,
-        populate_by_name=config['populate_by_name'] if 'populate_by_name' in config else unset,
-        str_strip_whitespace=config['str_strip_whitespace'] if 'str_strip_whitespace' in config else unset,
-        str_to_lower=config['str_to_lower'] if 'str_to_lower' in config else unset,
-        str_to_upper=config['str_to_upper'] if 'str_to_upper' in config else unset,
-        strict=config['strict'] if 'strict' in config else unset,
-        ser_json_timedelta=config['ser_json_timedelta'] if 'ser_json_timedelta' in config else unset,
-        ser_json_bytes=config['ser_json_bytes'] if 'ser_json_bytes' in config else unset,
-        from_attributes=config['from_attributes'] if 'from_attributes' in config else unset,
-        loc_by_alias=config['loc_by_alias'] if 'loc_by_alias' in config else unset,
-        revalidate_instances=config['revalidate_instances'] if 'revalidate_instances' in config else unset,
-        validate_default=config['validate_default'] if 'validate_default' in config else unset,
-        str_max_length=(
-            config['str_max_length'] if 'str_max_length' in config and config['str_max_length'] is not None else unset
-        ),
-        str_min_length=config['str_min_length'] if 'str_min_length' in config else unset,
-    )
-    for k in [k for k in core_config if core_config[k] is unset]:
-        core_config.pop(k)
-    return CoreConfig(**core_config)  # type: ignore[misc]
 
 
 class AnalyzedType(Generic[T]):
@@ -124,29 +93,16 @@ class AnalyzedType(Generic[T]):
             raise NotImplementedError
 
     def __init__(self, __type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
-        """Initializes the AnalyzedType object.
-
-        Args:
-            __type (Any): The data type to analyze.
-            config (ConfigDict, optional): A configuration dictionary for the analyzed data. Defaults to None.
-            _parent_depth (int, optional): The depth of the parent data type. Defaults to 2.
-        """
-        core_config: CoreConfig
-        if config is not None:
-            core_config = _translate_config(config)
-        else:
-            core_config = CoreConfig()
-        try:
-            core_config.update(__type.__pydantic_core_config__)
-        except AttributeError:
-            pass
+        """Initializes the AnalyzedType object."""
+        config_wrapper = _config.ConfigWrapper(config)
 
         core_schema: CoreSchema
         try:
             core_schema = __type.__pydantic_core_schema__
         except AttributeError:
-            core_schema = _get_schema(__type, core_config, parent_depth=_parent_depth + 1)
+            core_schema = _get_schema(__type, config_wrapper, parent_depth=_parent_depth + 1)
 
+        core_config = config_wrapper.core_config()
         validator: SchemaValidator
         if hasattr(__type, '__pydantic_validator__') and config is None:
             validator = __type.__pydantic_validator__

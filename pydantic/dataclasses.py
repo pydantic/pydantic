@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from typing_extensions import Literal, dataclass_transform
 
+from ._internal import _config, _decorators
 from ._internal import _dataclasses as _pydantic_dataclasses
-from ._internal import _decorators
-from .config import ConfigDict, get_config
+from .config import ConfigDict
 from .fields import Field, FieldInfo
 
 if TYPE_CHECKING:
@@ -146,8 +146,9 @@ def dataclass(
         else:
             setattr(cls, '__pydantic_decorators__', decorators)
 
-        config_dict = get_config(config, cls.__name__)
-        _pydantic_dataclasses.prepare_dataclass(cls, config_dict, kw_only)
+        config_wrapper = _config.ConfigWrapper(config)
+        # TODO set title
+        _pydantic_dataclasses.prepare_dataclass(cls, config_wrapper, kw_only)
 
         if sys.version_info >= (3, 10):
             kwargs = dict(kw_only=kw_only)

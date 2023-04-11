@@ -17,6 +17,7 @@ from pydantic import (
     field_serializer,
     model_serializer,
 )
+from pydantic.annotated_arguments import PlainSerializer, WrapSerializer
 
 
 @pytest.fixture
@@ -27,6 +28,56 @@ def reset_tracked_serializer():
     yield
     _FUNCS.clear()
     _FUNCS.update(original_tracked_serializers)
+
+
+def test_serializer_annotated_plain_always():
+    FancyInt = Annotated[int, PlainSerializer(lambda x: f'{x:,}', json_return_type='str')]
+
+    class MyModel(BaseModel):
+        x: FancyInt
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,234'}
+    assert MyModel(x=1234).model_dump(mode='json') == {'x': '1,234'}
+    assert MyModel(x=1234).model_dump_json() == '{"x":"1,234"}'
+
+
+def test_serializer_annotated_plain_json():
+    FancyInt = Annotated[int, PlainSerializer(lambda x: f'{x:,}', json_return_type='str', when_used='json')]
+
+    class MyModel(BaseModel):
+        x: FancyInt
+
+    assert MyModel(x=1234).model_dump() == {'x': 1234}
+    assert MyModel(x=1234).model_dump(mode='json') == {'x': '1,234'}
+    assert MyModel(x=1234).model_dump_json() == '{"x":"1,234"}'
+
+
+def test_serializer_annotated_wrap_always():
+    def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> Any:
+        return f'{nxt(v + 1):,}'
+
+    FancyInt = Annotated[int, WrapSerializer(ser_wrap, json_return_type='str')]
+
+    class MyModel(BaseModel):
+        x: FancyInt
+
+    assert MyModel(x=1234).model_dump() == {'x': '1,235'}
+    assert MyModel(x=1234).model_dump(mode='json') == {'x': '1,235'}
+    assert MyModel(x=1234).model_dump_json() == '{"x":"1,235"}'
+
+
+def test_serializer_annotated_wrap_json():
+    def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> Any:
+        return f'{nxt(v + 1):,}'
+
+    FancyInt = Annotated[int, WrapSerializer(ser_wrap, json_return_type='str', when_used='json')]
+
+    class MyModel(BaseModel):
+        x: FancyInt
+
+    assert MyModel(x=1234).model_dump() == {'x': 1234}
+    assert MyModel(x=1234).model_dump(mode='json') == {'x': '1,235'}
+    assert MyModel(x=1234).model_dump_json() == '{"x":"1,235"}'
 
 
 def test_serialize_decorator_always():

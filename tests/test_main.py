@@ -29,7 +29,6 @@ from typing_extensions import Annotated, Final, Literal
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     PrivateAttr,
     PydanticUndefinedAnnotation,
@@ -218,7 +217,7 @@ def test_not_required():
 
 def test_allow_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float = ...
 
     assert Model(a='10.2', b=12).model_dump() == {'a': 10.2, 'b': 12}
@@ -226,7 +225,7 @@ def test_allow_extra():
 
 def test_allow_extra_repr():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float = ...
 
     assert str(Model(a='10.2', b=12)) == 'a=10.2 b=12'
@@ -234,7 +233,7 @@ def test_allow_extra_repr():
 
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid)
+        model_config = ConfigDict(extra='forbid')
         foo: str = 'whatever'
 
     m = ForbiddenExtra()
@@ -243,7 +242,7 @@ def test_forbidden_extra_success():
 
 def test_forbidden_extra_fails():
     class ForbiddenExtra(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid)
+        model_config = ConfigDict(extra='forbid')
         foo: str = 'whatever'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -286,7 +285,7 @@ def test_assign_extra_validate():
 
 def test_extra_allowed():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float
 
     model = Model(a=0.2, b=0.1)
@@ -300,7 +299,7 @@ def test_extra_allowed():
 
 def test_extra_ignored():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.ignore)
+        model_config = ConfigDict(extra='ignore')
         a: float
 
     model = Model(a=0.2, b=0.1)
@@ -383,7 +382,7 @@ def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
-        model_config = ConfigDict(extra=Extra.forbid, frozen=False)
+        model_config = ConfigDict(extra='forbid', frozen=False)
 
     m = TestModel()
 
@@ -394,7 +393,7 @@ def test_mutability():
 
 def test_frozen_model():
     class FrozenModel(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid, frozen=True)
+        model_config = ConfigDict(extra='forbid', frozen=True)
 
         a: int = 10
 
@@ -855,7 +854,7 @@ def test_dir_fields():
 
 def test_dict_with_extra_keys():
     class MyModel(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: str = Field(None, alias='alias_a')
 
     m = MyModel(extra_key='extra')
@@ -1315,9 +1314,9 @@ def test_untyped_fields_warning():
     with pytest.raises(
         PydanticUserError,
         match=re.escape(
-            'A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; '
-            'if `x` is not meant to be a field, you may be able to resolve this error by annotating it '
-            'as a `ClassVar` or updating `model_config["ignored_types"]`.'
+            "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
+            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it "
+            "as a `ClassVar` or updating `model_config['ignored_types']`."
         ),
     ):
 
@@ -1669,14 +1668,14 @@ def test_class_kwargs_config():
     class Base(BaseModel, extra='forbid', alias_generator=str.upper):
         a: int
 
-    assert Base.model_config['extra'] is Extra.forbid
+    assert Base.model_config['extra'] == 'forbid'
     assert Base.model_config['alias_generator'] is str.upper
     # assert Base.model_fields['a'].alias == 'A'
 
     class Model(Base, extra='allow'):
         b: int
 
-    assert Model.model_config['extra'] is Extra.allow  # overwritten as intended
+    assert Model.model_config['extra'] == 'allow'  # overwritten as intended
     assert Model.model_config['alias_generator'] is str.upper  # inherited as intended
     # assert Model.model_fields['b'].alias == 'B'  # alias_generator still works
 
@@ -1686,7 +1685,7 @@ def test_class_kwargs_config_and_attr_conflict():
         model_config = ConfigDict(extra='forbid', title='Foobar')
         b: int
 
-    assert Model.model_config['extra'] is Extra.allow
+    assert Model.model_config['extra'] == 'allow'
     assert Model.model_config['alias_generator'] is str.upper
     assert Model.model_config['title'] == 'Foobar'
 
@@ -2148,3 +2147,25 @@ def test_validate_json_context() -> None:
     Model.model_validate_json(json.dumps({'x': 1}), context=None)
     Model.model_validate_json(json.dumps({'x': 1}), context={'foo': 'bar'})
     assert contexts == []
+
+
+def test_pydantic_init_subclass() -> None:
+    calls = []
+
+    class MyModel(BaseModel):
+        def __init_subclass__(cls, **kwargs):
+            super().__init_subclass__()  # can't pass kwargs to object.__init_subclass__, weirdly
+            calls.append((cls.__name__, '__init_subclass__', kwargs))
+
+        @classmethod
+        def __pydantic_init_subclass__(cls, **kwargs):
+            super().__pydantic_init_subclass__(**kwargs)
+            calls.append((cls.__name__, '__pydantic_init_subclass__', kwargs))
+
+    class MySubModel(MyModel, a=1):
+        pass
+
+    assert calls == [
+        ('MySubModel', '__init_subclass__', {'a': 1}),
+        ('MySubModel', '__pydantic_init_subclass__', {'a': 1}),
+    ]

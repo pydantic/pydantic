@@ -15,13 +15,11 @@ from pydantic import (
     AnalyzedType,
     BaseModel,
     ConfigDict,
-    Extra,
     PydanticSchemaGenerationError,
     ValidationError,
     constr,
     errors,
 )
-from pydantic.config import get_config
 from pydantic.decorators import field_validator
 from pydantic.fields import Field
 
@@ -866,7 +864,7 @@ def test_advanced_include_nested_lists(include, expected):
 
 def test_field_set_ignore_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.ignore)
+        model_config = ConfigDict(extra='ignore')
         a: int
         b: int
         c: int = 3
@@ -884,7 +882,7 @@ def test_field_set_ignore_extra():
 
 def test_field_set_allow_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: int
         b: int
         c: int = 3
@@ -1104,7 +1102,7 @@ def test_annotation_inheritance():
 
 def test_string_none():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.ignore)
+        model_config = ConfigDict(extra='ignore')
         a: constr(min_length=20, max_length=1000) = ...
 
     with pytest.raises(ValidationError) as exc_info:
@@ -1180,9 +1178,9 @@ def test_unable_to_infer():
     with pytest.raises(
         errors.PydanticUserError,
         match=re.escape(
-            'A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; '
-            'if `x` is not meant to be a field, you may be able to resolve this error by annotating it as a '
-            '`ClassVar` or updating `model_config[\"ignored_types\"]`'
+            "A non-annotated attribute was detected: `x = None`. All model fields require a type annotation; "
+            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it as a "
+            "`ClassVar` or updating `model_config['ignored_types']`"
         ),
     ):
 
@@ -1244,46 +1242,7 @@ def test_force_extra():
         model_config = ConfigDict(extra='ignore')
         foo: int
 
-    assert Model.model_config['extra'] is Extra.ignore
-
-
-def test_illegal_extra_value():
-    with pytest.raises(ValueError, match=re.escape("is not a valid value for config['extra']")):
-
-        class Model(BaseModel):
-            model_config = ConfigDict(extra='foo')
-            foo: int
-
-
-def test_multiple_inheritance_config():
-    class Parent(BaseModel):
-        model_config = ConfigDict(frozen=True, extra=Extra.forbid)
-
-    class Mixin(BaseModel):
-        model_config = ConfigDict(use_enum_values=True)
-
-    class Child(Mixin, Parent):
-        model_config = ConfigDict(populate_by_name=True)
-
-    assert BaseModel.model_config['frozen'] is False
-    assert BaseModel.model_config['populate_by_name'] is False
-    assert BaseModel.model_config['extra'] is None
-    assert BaseModel.model_config['use_enum_values'] is False
-
-    assert Parent.model_config['frozen'] is True
-    assert Parent.model_config['populate_by_name'] is False
-    assert Parent.model_config['extra'] is Extra.forbid
-    assert Parent.model_config['use_enum_values'] is False
-
-    assert Mixin.model_config['frozen'] is False
-    assert Mixin.model_config['populate_by_name'] is False
-    assert Mixin.model_config['extra'] is None
-    assert Mixin.model_config['use_enum_values'] is True
-
-    assert Child.model_config['frozen'] is True
-    assert Child.model_config['populate_by_name'] is True
-    assert Child.model_config['extra'] is Extra.forbid
-    assert Child.model_config['use_enum_values'] is True
+    assert Model.model_config['extra'] == 'ignore'
 
 
 def test_submodel_different_type():
@@ -2289,23 +2248,3 @@ def test_parent_field_with_default():
     assert c.a == 1
     assert c.b == 2
     assert c.c == 3
-
-
-def test_get_config():
-    ret = get_config(None)
-    assert ret == {}
-    assert isinstance(ret, ConfigDict)
-
-    ret = get_config(ConfigDict(title='1234', extra=Extra.allow))
-    assert ret == {'title': '1234', 'extra': Extra.allow}
-    assert isinstance(ret, ConfigDict)
-
-    class Config:
-        title = '1234'
-        random_option = True
-        strict = True
-
-    with pytest.warns(DeprecationWarning, match='is deprecated'):
-        ret = get_config(Config)
-        assert ret == {'title': '1234', 'random_option': True, 'strict': True}
-        assert isinstance(ret, ConfigDict)

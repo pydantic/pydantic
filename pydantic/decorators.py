@@ -199,7 +199,6 @@ def field_validator(
     *fields: str,
     mode: Literal['before', 'after', 'plain'] = ...,
     check_fields: bool | None = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
 ) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]:
     ...
 
@@ -210,7 +209,6 @@ def field_validator(
     *fields: str,
     mode: Literal['wrap'],
     check_fields: bool | None = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
 ) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]:
     ...
 
@@ -220,7 +218,6 @@ def field_validator(
     *fields: str,
     mode: Literal['before', 'after', 'wrap', 'plain'] = 'after',
     check_fields: bool | None = None,
-    sub_path: tuple[str | int, ...] | None = None,
 ) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to validate fields.
@@ -261,10 +258,10 @@ def field_validator(
         # auto apply the @classmethod decorator and warn users if we had to do so
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
-        wrap = partial(_decorators.make_generic_v2_field_validator, mode=mode)
+        wrap = partial(_decorators.make_generic_validator, mode=mode)
 
         validator_wrapper_info = _decorators.FieldValidatorDecoratorInfo(
-            fields=fields, mode=mode, sub_path=sub_path, check_fields=check_fields
+            fields=fields, mode=mode, check_fields=check_fields
         )
         return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
 
@@ -376,7 +373,6 @@ def field_serializer(
     *fields: str,
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
     ...
@@ -389,7 +385,6 @@ def field_serializer(
     mode: Literal['plain'],
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
     ...
@@ -402,7 +397,6 @@ def field_serializer(
     mode: Literal['wrap'],
     json_return_type: _core_schema.JsonReturnTypes | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    sub_path: tuple[str | int, ...] | None = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]:
     ...
@@ -413,7 +407,6 @@ def field_serializer(
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
-    sub_path: tuple[str | int, ...] | None = None,
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
     """
@@ -449,11 +442,10 @@ def field_serializer(
             type=type_,
             json_return_type=json_return_type,
             when_used=when_used,
-            sub_path=sub_path,
             check_fields=check_fields,
         )
         return _decorators.PydanticDecoratorMarker(
-            f, dec_info, shim=partial(_decorators.make_generic_field_serializer, mode=mode, type=type_)
+            f, dec_info, shim=partial(_decorators.make_generic_serializer, mode=mode, type=type_)
         )
 
     return dec
@@ -501,3 +493,130 @@ def model_serializer(
         return dec
     else:
         return dec(__f)
+
+
+ModelType = TypeVar('ModelType')
+ModelWrapValidatorHandler = Callable[[Any], ModelType]
+
+
+class ModelWrapValidatorWithoutInfo(Protocol):
+    def __call__(
+        self,
+        cls: type[ModelType],
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+        __handler: Callable[[Any], ModelType],
+    ) -> ModelType:
+        ...
+
+
+class ModelWrapValidator(Protocol):
+    def __call__(
+        self,
+        cls: type[ModelType],
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+        __handler: Callable[[Any], ModelType],
+        __info: _core_schema.ValidationInfo,
+    ) -> ModelType:
+        ...
+
+
+class ModelBeforeValidatorWithoutInfo(Protocol):
+    def __call__(
+        self,
+        cls: Any,
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+    ) -> Any:
+        ...
+
+
+class ModelBeforeValidator(Protocol):
+    def __call__(
+        self,
+        cls: Any,
+        # this can be a dict, a model instance
+        # or anything else that gets passed to validate_python
+        # thus validators _must_ handle all cases
+        __value: Any,
+        __info: _core_schema.ValidationInfo,
+    ) -> Any:
+        ...
+
+
+class ModelAfterValidatorWithoutInfo(Protocol):
+    @staticmethod
+    def __call__(
+        self: ModelType,  # type: ignore
+    ) -> ModelType:
+        ...
+
+
+class ModelAfterValidator(Protocol):
+    @staticmethod
+    def __call__(
+        self: ModelType,  # type: ignore
+        __info: _core_schema.ValidationInfo,
+    ) -> ModelType:
+        ...
+
+
+AnyModelWrapValidator = Union[
+    ModelWrapValidator,
+    ModelWrapValidatorWithoutInfo,
+]
+
+AnyModeBeforeValidator = Union[
+    ModelBeforeValidator,
+    ModelBeforeValidatorWithoutInfo,
+]
+
+AnyModeAfterValidator = Union[
+    ModelAfterValidator,
+    ModelAfterValidatorWithoutInfo,
+]
+
+
+@overload
+def model_validator(
+    *,
+    mode: Literal['wrap'],
+) -> Callable[[AnyModelWrapValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+    ...
+
+
+@overload
+def model_validator(
+    *,
+    mode: Literal['before'],
+) -> Callable[[AnyModeBeforeValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+    ...
+
+
+@overload
+def model_validator(
+    *,
+    mode: Literal['after'],
+) -> Callable[[AnyModeAfterValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+    ...
+
+
+def model_validator(
+    *,
+    mode: Literal['wrap', 'before', 'after'],
+) -> Any:
+    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+        dec_info = _decorators.ModelValidatorDecoratorInfo(
+            mode=mode,
+        )
+        shim = partial(_decorators.make_generic_validator, mode=mode)
+        return _decorators.PydanticDecoratorMarker(f, dec_info, shim=shim)
+
+    return dec
