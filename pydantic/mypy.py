@@ -311,9 +311,6 @@ class PydanticModelTransformer:
         self.adjust_validator_signatures()
         config = self.collect_config()
         fields = self.collect_fields(config)
-        for field in fields:
-            if info[field.name].type is None:
-                continue
         self.add_initializer(fields, config)
         self.add_model_construct_method(fields)
         self.set_frozen(fields, frozen=config.frozen is True)
