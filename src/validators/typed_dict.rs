@@ -156,8 +156,9 @@ impl Validator for TypedDictValidator {
 
         // we only care about which keys have been used if we're iterating over the object for extra after
         // the first pass
-        let mut used_keys: Option<AHashSet<&str>> = match self.extra_behavior {
-            ExtraBehavior::Allow | ExtraBehavior::Forbid => Some(AHashSet::with_capacity(self.fields.len())),
+        let mut used_keys: Option<AHashSet<&str>> = match (&self.extra_behavior, &dict) {
+            (_, GenericMapping::PyGetAttr(_, _)) => None,
+            (ExtraBehavior::Allow | ExtraBehavior::Forbid, _) => Some(AHashSet::with_capacity(self.fields.len())),
             _ => None,
         };
 
