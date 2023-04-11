@@ -268,18 +268,18 @@ class ValueItems(_repr.Representation):
     @classmethod
     def merge(cls, base: Any, override: Any, intersect: bool = False) -> Any:
         """
-        Merge a ``base`` item with an ``override`` item.
+        Merge a `base` item with an `override` item.
 
-        Both ``base`` and ``override`` are converted to dictionaries if possible.
+        Both `base` and `override` are converted to dictionaries if possible.
         Sets are converted to dictionaries with the sets entries as keys and
         Ellipsis as values.
 
-        Each key-value pair existing in ``base`` is merged with ``override``,
+        Each key-value pair existing in `base` is merged with `override`,
         while the rest of the key-value pairs are updated recursively with this function.
 
-        Merging takes place based on the "union" of keys if ``intersect`` is
-        set to ``False`` (default) and on the intersection of keys if
-        ``intersect`` is set to ``True``.
+        Merging takes place based on the "union" of keys if `intersect` is
+        set to `False` (default) and on the intersection of keys if
+        `intersect` is set to `True`.
         """
         override = cls._coerce_value(override)
         base = cls._coerce_value(base)

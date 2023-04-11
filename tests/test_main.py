@@ -1891,13 +1891,6 @@ def test_post_init_not_called_without_override():
         BaseModel.model_post_init = original_base_model_post_init
 
 
-def test_extra_args_to_field_type_error():
-    with pytest.raises(TypeError, match='unexpected keyword argument'):
-
-        class Model(BaseModel):
-            a: int = Field(thing=1)
-
-
 def test_deeper_recursive_model():
     class A(BaseModel, undefined_types_warning=False):
         b: 'B'

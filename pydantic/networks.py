@@ -248,7 +248,7 @@ class IPvAnyNetwork:
     __slots__ = ()
 
     def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:  # type: ignore[misc]
-        # Assume IP Network is defined with a default value for ``strict`` argument.
+        # Assume IP Network is defined with a default value for `strict` argument.
         # Define your own class if you want to specify network address check strictness.
         try:
             return IPv4Network(value)

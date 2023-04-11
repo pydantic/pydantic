@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 import typing
 from copy import copy
 from typing import Any
+from warnings import warn
 
 import annotated_types
 import typing_extensions
@@ -10,6 +11,7 @@ import typing_extensions
 from . import types
 from ._internal import _fields, _forward_ref, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
+from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
     from dataclasses import Field as DataclassField
@@ -60,8 +62,6 @@ class FieldInfo(_repr.Representation):
         'max_length': annotated_types.MaxLen,
         'pattern': None,
         'allow_inf_nan': None,
-        'min_items': None,
-        'max_items': None,
         'max_digits': None,
         'decimal_places': None,
     }
@@ -301,6 +301,8 @@ class FieldInfo(_repr.Representation):
                 continue
             elif s == 'final':
                 continue
+            if s == 'frozen' and self.frozen is False:
+                continue
             if s == 'default_factory' and self.default_factory is not None:
                 yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
             else:
@@ -335,20 +337,25 @@ def Field(
     max_items: int | None = None,
     min_length: int | None = None,
     max_length: int | None = None,
-    frozen: bool | None = None,
+    frozen: bool = False,
     pattern: str | None = None,
     discriminator: str | None = None,
     repr: bool = True,
     strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
     validate_default: bool | None = None,
+    const: bool | None = None,
+    unique_items: bool | None = None,
+    allow_mutation: bool = True,
+    regex: str | None = None,
+    **extra: Any,
 ) -> Any:
     """
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
-    apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``.
+    apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
 
     :param default: since this is replacing the field's default, its first argument is used
-      to set the default, use ellipsis (``...``) to indicate the field is required
+      to set the default, use ellipsis (`...`) to indicate the field is required
     :param default_factory: callable that will be called when a default value is needed for this field
       If both `default` and `default_factory` are set, an error is raised.
     :param alias: the public name of the field
@@ -356,44 +363,84 @@ def Field(
     :param description: can be any string, used in the schema
     :param examples: can be any list of json-encodable data, used in the schema
     :param exclude: exclude this field while dumping.
-      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
+      Takes same values as the `include` and `exclude` arguments on the `.dict` method.
     :param include: include this field while dumping.
-      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
+      Takes same values as the `include` and `exclude` arguments on the `.dict` method.
     :param gt: only applies to numbers, requires the field to be "greater than". The schema
-      will have an ``exclusiveMinimum`` validation keyword
+      will have an `exclusiveMinimum` validation keyword
     :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
-      schema will have a ``minimum`` validation keyword
+      schema will have a `minimum` validation keyword
     :param lt: only applies to numbers, requires the field to be "less than". The schema
-      will have an ``exclusiveMaximum`` validation keyword
+      will have an `exclusiveMaximum` validation keyword
     :param le: only applies to numbers, requires the field to be "less than or equal to". The
-      schema will have a ``maximum`` validation keyword
+      schema will have a `maximum` validation keyword
     :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
-      schema will have a ``multipleOf`` validation keyword
+      schema will have a `multipleOf` validation keyword
     :param allow_inf_nan: only applies to numbers, allows the field to be NaN or infinity (+inf or -inf),
         which is a valid Python float. Default True, set to False for compatibility with JSON.
     :param max_digits: only applies to Decimals, requires the field to have a maximum number
       of digits within the decimal. It does not include a zero before the decimal point or trailing decimal zeroes.
     :param decimal_places: only applies to Decimals, requires the field to have at most a number of decimal places
       allowed. It does not include trailing decimal zeroes.
-    :param min_items: only applies to lists, requires the field to have a minimum number of
-      elements. The schema will have a ``minItems`` validation keyword
-    :param max_items: only applies to lists, requires the field to have a maximum number of
-      elements. The schema will have a ``maxItems`` validation keyword
+    :param min_items: deprecated, use `min_length` instead.
+      only applies to lists, requires the field to have a minimum number of
+      elements. The schema will have a `minItems` validation keyword
+    :param max_items: deprecated, use `max_length` instead.
+      only applies to lists, requires the field to have a maximum number of
+      elements. The schema will have a `maxItems` validation keyword
     :param min_length: only applies to strings, requires the field to have a minimum length. The
-      schema will have a ``minLength`` validation keyword
+      schema will have a `minLength` validation keyword
     :param max_length: only applies to strings, requires the field to have a maximum length. The
-      schema will have a ``maxLength`` validation keyword
-    :param frozen: a boolean which defaults to True. When False, the field raises a TypeError if the field is
-      assigned on an instance.  The BaseModel Config must set validate_assignment to True
+      schema will have a `maxLength` validation keyword
+    :param frozen: a boolean which defaults to False. When True, the field raises a TypeError if the field is
+      assigned on an instance. The BaseModel Config must set validate_assignment to True
     :param pattern: only applies to strings, requires the field match against a regular expression
-      pattern string. The schema will have a ``pattern`` validation keyword
+      pattern string. The schema will have a `pattern` validation keyword
     :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
       The `discriminator` is the name of this common field to shorten validation and improve generated schema
     :param repr: show this field in the representation
     :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
     :param strict: enable or disable strict parsing mode
     :param validate_default: whether the default value should be validated for this field
+    :param const: removed, use `Literal` instead'
+    :param unique_items: removed, use `Set` instead
+    :param allow_mutation: deprecated, use `frozen` instead
+    :param regex: removed, use `Pattern` instead
+    :param **extra: deprecated, use `json_schema_extra` instead
     """
+    # Check deprecated & removed params of V1.
+    # This has to be removed deprecation period over.
+    if const:
+        raise PydanticUserError('`const` is removed. use `Literal` instead', code='deprecated_kwargs')
+    if min_items:
+        warn('`min_items` is deprecated and will be removed. use `min_length` instead', DeprecationWarning)
+        if min_length is None:
+            min_length = min_items
+    if max_items:
+        warn('`max_items` is deprecated and will be removed. use `max_length` instead', DeprecationWarning)
+        if max_length is None:
+            max_length = max_items
+    if unique_items:
+        raise PydanticUserError(
+            (
+                '`unique_items` is removed, use `Set` instead'
+                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
+            ),
+            code='deprecated_kwargs',
+        )
+    if allow_mutation is False:
+        warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
+        frozen = True
+    if regex:
+        raise PydanticUserError('`regex` is removed. use `Pattern` instead', code='deprecated_kwargs')
+    if extra:
+        warn(
+            'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
+            DeprecationWarning,
+        )
+        if not json_schema_extra:
+            json_schema_extra = extra
+
     return FieldInfo.from_field(
         default,
         default_factory=default_factory,
