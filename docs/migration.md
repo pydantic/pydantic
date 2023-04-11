@@ -80,15 +80,91 @@ The following config settings have been renamed:
 
 ### Changes to Validators
 
-* Raising a `TypeError` inside a validator no longer produces a `ValidationError`, but just raises the `TypeError` directly.
-  This was necessary to prevent certain common bugs (such as calling functions with invalid signatures) from
-  being unintentionally converted into `ValidationError` and displayed to users.
-  If you really want `TypeError` to be converted to a `ValidationError` you should use a `try: except:` block that will catch it and do the conversion.
-* `each_item` validators are deprecated and should be replaced with a type annotation using `Annotated` to apply a validator
-  or with a validator that operates on all items at the top level.
-* Changes to `@validator`-decorated function signatures.
+Pydantic V2 introduces many new features and improvements to validators.
+Most of these features are only available by using a new set of decorators:
+
+* `@field_validator`, which replaces `@validator`
+* `@model_validator`, which replaces `@root_validator`
+
+The following sections list some general changes and some changes specific to individual decorators.
+
+#### `TypeError` no longer gets converted into a `ValidationError`
+
+Previously raising `TypeError` within a validator function wrapped that error into a `ValidationError` and, in the case of use facing errors like in FastAPI, would display those errors to users.
+This lead to a variety of bugs, for example calling a function with the wrong signature:
+
+```python
+import pytest
+
+from pydantic import BaseModel, field_validator  # or validator
+
+
+class Model(BaseModel):
+    x: int
+
+    @field_validator('x')
+    def val_x(cls, v: int) -> int:
+        return str.lower(v)  # raises a TypeError
+
+
+with pytest.raises(TypeError):
+    Model(x=1)
+```
+
+This applies to all validators.
+
+### `each_item` is deprecated
+
+For `@validator` the argument is still present and functions.
+For `@field_validator` it is not present at all.
+As you migrate from `@validator` to `@field_validator` you will have to replace `each_item=True` with [validators in Annotated metadata](validators.md#generic-validated-collections).
+
+### `@root_validator(skip_on_failure=False)` is no longer allowed
+
+Since this was the default value in V1 you will need to explicitly pass `skip_on_failure=False` for `pre=False` (the default) validators.
+
+### `allow_reuse` is deprecated
+
+Previously Pydantic tracked re-used functions in decorators to help you avoid some common mistakes.
+We did this by comparing the function's fully qualified name (module name + function name).
+That system has been replaced with a system that tracks things at a per-class level, reducing false positives and bringing the behavior more in line with the errors that type checkers and linters give for overriding a method with another in a class definition.
+
+It is highly likely that if you were using `allow_reuse=True` you can simply delete the parameter and things will work as expected.
+
+For `@validator` this argument is still present but does nothing and emits a deprecation warning.
+It is not present on `@field_validator`.
+
+### Changes to `@validator`'s allowed signatures
+
+In V1 functions wrapped by `@validator` could receive keyword arguments with metadata about what was being validated.
+Some of these arguments have been removed:
+
+* `config`: Pydantic V2's config is now a dictionary instead of a class, which means this argument is no longer backwards compatible. If you need to access the configuration you should migrate to `@field_validator` and use `info.config`.
+* `field`: this argument used to be a `ModelField` object, which was a quasi-internal class that no longer exists in Pydantic V2. Most of this information can still be accessed by using the field name from `info.field_name` to index into `cls.model_fields`
+
+```python
+from pydantic import BaseModel, FieldValidationInfo, field_validator
+
+
+class Model(BaseModel):
+    x: int
+
+    @field_validator('x')
+    def val_x(cls, v: int, info: FieldValidationInfo) -> int:
+        assert info.config is not None
+        print(info.config.get('title'))
+        #> Model
+        print(cls.model_fields[info.field_name].is_required())
+        #> True
+        return v
+
+
+Model(x=1)
+```
+
+### Removed validator types
+
 * The `stricturl` type has been removed.
-* Root validators can no longer be run with `skip_on_failure=False`.
 
 ### Changes to Validation of specific types
 
