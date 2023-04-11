@@ -278,12 +278,12 @@ class MyDataClass:
 MyDataClass(foo='foo', bar='bar')
 
 
-def get_my_custom_validator(field_name: str) -> classmethod:  # type: ignore
+def get_my_custom_validator(field_name: str) -> Any:
     @validator(field_name, allow_reuse=True)
     def my_custom_validator(cls: Any, v: int) -> int:
         return v
 
-    return my_custom_validator  # type: ignore
+    return my_custom_validator
 
 
 def foo() -> None:
