@@ -18,7 +18,7 @@ install-rust-coverage:
 .PHONY: build-dev
 build-dev:
 	@rm -f pydantic_core/*.so
-	cargo build
+	cargo build --features extension-module
 	@rm -f target/debug/lib_pydantic_core.d
 	@rm -f target/debug/lib_pydantic_core.rlib
 	@mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
@@ -26,7 +26,7 @@ build-dev:
 .PHONY: build-prod
 build-prod:
 	@rm -f pydantic_core/*.so
-	cargo build --release
+	cargo build --release --features extension-module
 	@rm -f target/release/lib_pydantic_core.d
 	@rm -f target/release/lib_pydantic_core.rlib
 	@mv target/release/lib_pydantic_core.* pydantic_core/_pydantic_core.so
@@ -35,7 +35,7 @@ build-prod:
 build-coverage:
 	pip uninstall -y pydantic_core
 	rm -f pydantic_core/*.so
-	RUSTFLAGS='-C instrument-coverage -A incomplete_features' cargo build
+	RUSTFLAGS='-C instrument-coverage -A incomplete_features' cargo build --features extension-module
 	@rm -f target/debug/lib_pydantic_core.d
 	@rm -f target/debug/lib_pydantic_core.rlib
 	mv target/debug/lib_pydantic_core.* pydantic_core/_pydantic_core.so
