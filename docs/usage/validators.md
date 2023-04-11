@@ -168,6 +168,9 @@ A few more things to note:
 
 ### Generic validated collections
 
+To validate individual items of a collection (list, dict, etc.) field you can use `Annotated` to apply validators to the inner items.
+In this example we also use type aliases to create a generic validated collection to demonstrate how this approach leads to composability and coda re-use.
+
 ```py
 from typing import List, TypeVar
 
