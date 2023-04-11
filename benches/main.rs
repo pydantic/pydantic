@@ -9,9 +9,13 @@ use pyo3::types::{PyDict, PyString};
 
 use _pydantic_core::SchemaValidator;
 
-fn build_schema_validator(py: Python, code: &str) -> SchemaValidator {
-    let schema: &PyDict = py.eval(code, None, None).unwrap().extract().unwrap();
+fn build_schema_validator_with_globals(py: Python, code: &str, globals: Option<&PyDict>) -> SchemaValidator {
+    let schema: &PyDict = py.eval(code, globals, None).unwrap().extract().unwrap();
     SchemaValidator::py_new(py, schema, None).unwrap()
+}
+
+fn build_schema_validator(py: Python, code: &str) -> SchemaValidator {
+    build_schema_validator_with_globals(py, code, None)
 }
 
 fn json<'a>(py: Python<'a>, code: &'a str) -> &'a PyAny {
@@ -504,6 +508,40 @@ fn literal_strings_few_large_python(bench: &mut Bencher) {
 }
 
 #[bench]
+fn literal_enums_few_python(bench: &mut Bencher) {
+    Python::with_gil(|py| {
+        let globals = PyDict::new(py);
+        py.run(
+            r#"
+from enum import Enum
+
+class Foo(Enum):
+    v1 = object()
+    v2 = object()
+    v3 = object()
+    v4 = object()
+"#,
+            Some(globals),
+            None,
+        )
+        .unwrap();
+
+        let validator = build_schema_validator_with_globals(
+            py,
+            "{'type': 'literal', 'expected': [Foo.v1, Foo.v2, Foo.v3, Foo.v4]}",
+            Some(globals),
+        );
+
+        let input = py.eval("Foo.v4", Some(globals), None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        assert!(input.eq(result).unwrap());
+
+        let input = black_box(input);
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+    })
+}
+
+#[bench]
 fn literal_ints_many_python(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let validator = build_schema_validator(py, "{'type': 'literal', 'expected': list(range(100))}");
@@ -557,7 +595,26 @@ fn literal_strings_many_large_python(bench: &mut Bencher) {
 #[bench]
 fn literal_mixed_few_python(bench: &mut Bencher) {
     Python::with_gil(|py| {
-        let validator = build_schema_validator(py, "{'type': 'literal', 'expected': [None, 'null', -1]}");
+        let globals = PyDict::new(py);
+        py.run(
+            r#"
+from enum import Enum
+
+class Foo(Enum):
+    v1 = object()
+    v2 = object()
+    v3 = object()
+    v4 = object()
+"#,
+            Some(globals),
+            None,
+        )
+        .unwrap();
+        let validator = build_schema_validator_with_globals(
+            py,
+            "{'type': 'literal', 'expected': [None, 'null', -1, Foo.v4]}",
+            Some(globals),
+        );
 
         // String
         {
@@ -586,6 +643,16 @@ fn literal_mixed_few_python(bench: &mut Bencher) {
         // None
         {
             let input = py.eval("None", None, None).unwrap();
+            let result = validator.validate_python(py, input, None, None, None).unwrap();
+            assert!(input.eq(result).unwrap());
+
+            let input = black_box(input);
+            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        }
+
+        // Enum
+        {
+            let input = py.eval("Foo.v4", Some(globals), None).unwrap();
             let result = validator.validate_python(py, input, None, None, None).unwrap();
             assert!(input.eq(result).unwrap());
 
