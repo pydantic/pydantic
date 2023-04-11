@@ -95,7 +95,6 @@ pub(crate) fn infer_to_python_known(
     let serialize_with_serializer = |value: &PyAny, is_model: bool| {
         if let Ok(py_serializer) = value.getattr(intern!(py, "__pydantic_serializer__")) {
             if let Ok(serializer) = py_serializer.extract::<SchemaSerializer>() {
-                extra.rec_guard.pop(value_id);
                 return serializer.serializer.to_python(value, include, exclude, extra);
             }
         }
