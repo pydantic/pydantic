@@ -21,10 +21,7 @@ mod tests {
                 'ref': 'C-ref',
                 'serialization': {
                     'type': 'function-wrap',
-                    'function': {
-                        'type': 'general',
-                        'function': lambda: None,
-                    },
+                    'function': lambda: None,
                 },
             }"#;
             let schema: &PyDict = py.eval(code, None, None).unwrap().extract().unwrap();
