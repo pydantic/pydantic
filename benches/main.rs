@@ -597,13 +597,12 @@ fn literal_ints_many_json(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let validator = build_schema_validator(py, "{'type': 'literal', 'expected': list(range(100))}");
 
-        let input = 99_i64.into_py(py);
         let input_json = py.eval("'99'", None, None).unwrap();
         let result = validator.validate_json(py, input_json, None, None, None).unwrap();
         let result_int: i64 = result.extract(py).unwrap();
         assert_eq!(result_int, 99);
 
-        let input = black_box(input);
+        let input_json = black_box(input_json);
         bench.iter(|| black_box(validator.validate_json(py, input_json, None, None, None).unwrap()))
     })
 }
@@ -623,7 +622,7 @@ fn literal_strings_many_large_json(bench: &mut Bencher) {
         let result_str: String = result.extract(py).unwrap();
         assert_eq!(result_str, input_str);
 
-        let input = black_box(input);
+        let input_json = black_box(input_json);
         bench.iter(|| black_box(validator.validate_json(py, input_json, None, None, None).unwrap()))
     })
 }
