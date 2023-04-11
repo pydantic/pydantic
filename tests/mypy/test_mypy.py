@@ -64,7 +64,15 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = f'.mypy_cache/test-{os.path.splitext(config_filename)[0]}'
-    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
+    command = [
+        full_filename,
+        '--config-file',
+        full_config_filename,
+        '--cache-dir',
+        cache_dir,
+        '--show-error-codes',
+        '--show-traceback',
+    ]
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     actual_result = mypy_api.run(command)
     actual_out, actual_err, actual_returncode = actual_result

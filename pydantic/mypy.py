@@ -307,15 +307,14 @@ class PydanticModelTransformer:
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         ctx = self._ctx
-        info = self._ctx.cls.info
+        info = ctx.cls.info
 
         self.adjust_validator_signatures()
         config = self.collect_config()
         fields = self.collect_fields(config)
         for field in fields:
             if info[field.name].type is None:
-                if not ctx.api.final_iteration:
-                    ctx.api.defer()
+                continue
         is_settings = any(get_fullname(base) == BASESETTINGS_FULLNAME for base in info.mro[:-1])
         self.add_initializer(fields, config, is_settings)
         self.add_construct_method(fields)
@@ -390,6 +389,13 @@ class PydanticModelTransformer:
             lhs = stmt.lvalues[0]
             if not isinstance(lhs, NameExpr) or not is_valid_field(lhs.name):
                 continue
+
+            # rhs = stmt.rvalue
+            # if hasattr(rhs, 'analyzed') and not rhs.analyzed:
+            #     print(ctx.api.anal_type(rhs))
+            # print("here")
+            #     ctx.api.defer()
+            #     continue
 
             if not stmt.new_syntax and self.plugin_config.warn_untyped_fields:
                 error_untyped_fields(ctx.api, stmt)
