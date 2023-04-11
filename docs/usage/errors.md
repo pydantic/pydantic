@@ -45,9 +45,9 @@ TODO
 
 TODO
 
-## Field removed parameters {#field-removed-param}
+## Keyword arguments deprecated {#deprecated_kwargs}
 
-The parameters are not available in Pydantic V2.
+The keyword arguments are not available in Pydantic V2.
 
 ## JSON Schema invalid type {#invalid-for-json-schema}
 

@@ -6,12 +6,8 @@ from typing import Any, Dict, List, Type
 import pytest
 from typing_extensions import Literal
 
-<<<<<<< HEAD
-from pydantic import BaseModel, ConfigDict, PydanticUserError, ValidationError, model_serializer, root_validator
-from pydantic.config import Extra
-=======
 from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, model_serializer, root_validator
->>>>>>> cc76abd9 (Clean up Field parameters)
+from pydantic.config import Extra
 
 
 def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
@@ -515,7 +511,12 @@ def test_field_regex():
 
 
 def test_field_extra_arguments():
-    with pytest.raises(PydanticUserError, match='Extra keyword arguments are not allowd on `Field`'):
+    m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
+    with pytest.warns(DeprecationWarning, match=m):
 
         class Model(BaseModel):
             x: str = Field('test', test='test')
+
+    assert Model.model_json_schema(by_alias=True)['properties'] == {
+        'x': {'default': 'test', 'test': 'test', 'title': 'X', 'type': 'string'}
+    }

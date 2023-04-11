@@ -406,12 +406,12 @@ def Field(
     :param unique_items: removed, use `Set` instead
     :param allow_mutation: deprecated, use `frozen` instead
     :param regex: removed, use `Pattern` instead
-    :param **extra: removed
+    :param **extra: deprecated, use `json_schema_extra` instead
     """
     # Check deprecated & removed params of V1.
     # This has to be removed deprecation period over.
     if const:
-        raise PydanticUserError('`const` is removed. use `Literal` instead', code='field-removed-param')
+        raise PydanticUserError('`const` is removed. use `Literal` instead', code='deprecated_kwargs')
     if min_items:
         warn('`min_items` is deprecated and will be removed. use `min_length` instead', DeprecationWarning)
         if min_length is None:
@@ -426,15 +426,20 @@ def Field(
                 '`unique_items` is removed, use `Set` instead'
                 '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
             ),
-            code='field-removed-param',
+            code='deprecated_kwargs',
         )
     if allow_mutation is False:
         warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
         frozen = True
     if regex:
-        raise PydanticUserError('`regex` is removed. use `Pattern` instead', code='field-removed-param')
+        raise PydanticUserError('`regex` is removed. use `Pattern` instead', code='deprecated_kwargs')
     if extra:
-        raise PydanticUserError('Extra keyword arguments are not allowd on `Field`', code='field-removed-param')
+        warn(
+            'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
+            DeprecationWarning,
+        )
+        if not json_schema_extra:
+            json_schema_extra = extra
 
     return FieldInfo.from_field(
         default,
