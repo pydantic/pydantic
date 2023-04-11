@@ -411,6 +411,8 @@ This will mean `BaseModel` will have roughly the following signature.
 
 ```{.py .annotate title="New BaseModel methods" test="skip" lint="skip" upgrade="skip"}
 class BaseModel:
+    model_config: ConfigDict
+    """previously `Config` class, configuration class for models"""
     model_fields: List[FieldInfo]
     """previously `__fields__`, although the format will change a lot"""
     @classmethod
@@ -491,10 +493,6 @@ class BaseModel:
         e.g. if you wanted to alter how the model validates certain types,
         or add validation for a specific type without custom types or
         decorated validators
-        """
-    class ModelConfig:
-        """
-        previously `Config`, configuration class for models
         """
 ```
 
