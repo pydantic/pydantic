@@ -940,6 +940,18 @@ def test_dont_raise_error(benchmark):
 
 
 @pytest.mark.benchmark(group='raise-error')
+def test_dont_raise_error_no_info(benchmark):
+    def f(input_value):
+        return input_value
+
+    v = SchemaValidator({'type': 'function-plain', 'function': {'type': 'no-info', 'function': f}})
+
+    @benchmark
+    def t():
+        v.validate_python(42)
+
+
+@pytest.mark.benchmark(group='raise-error')
 def test_raise_error_value_error(benchmark):
     def f(input_value, info):
         raise ValueError('this is a custom error')

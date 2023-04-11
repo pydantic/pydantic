@@ -3,7 +3,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
-use crate::build_tools::{destructure_function_schema, function_name, py_err, SchemaDict};
+use crate::build_tools::{function_name, py_err, SchemaDict};
 use crate::errors::{
     ErrorType, LocItem, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
@@ -13,6 +13,19 @@ use crate::recursion_guard::RecursionGuard;
 
 use super::generator::InternalValidator;
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+
+fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, bool, &PyAny)> {
+    let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
+    let function: &PyAny = func_dict.get_as_req(intern!(schema.py(), "function"))?;
+    let func_type: &str = func_dict.get_as_req(intern!(schema.py(), "type"))?;
+    let (is_field_serializer, info_arg) = match func_type {
+        "field" => (true, true),
+        "general" => (false, true),
+        "no-info" => (false, false),
+        _ => unreachable!(),
+    };
+    Ok((is_field_serializer, info_arg, function))
+}
 
 macro_rules! impl_build {
     ($impl_name:ident, $name:literal) => {
@@ -25,7 +38,7 @@ macro_rules! impl_build {
             ) -> PyResult<CombinedValidator> {
                 let py = schema.py();
                 let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, build_context)?;
-                let (is_field_validator, function) = destructure_function_schema(schema)?;
+                let (is_field_validator, info_arg, function) = destructure_function_schema(schema)?;
                 let name = format!(
                     "{}[{}(), {}]",
                     $name,
@@ -41,6 +54,7 @@ macro_rules! impl_build {
                     },
                     name,
                     is_field_validator,
+                    info_arg,
                 }
                 .into())
             }
@@ -102,6 +116,7 @@ pub struct FunctionBeforeValidator {
     config: PyObject,
     name: String,
     is_field_validator: bool,
+    info_arg: bool,
 }
 
 impl_build!(FunctionBeforeValidator, "function-before");
@@ -114,11 +129,13 @@ impl FunctionBeforeValidator {
         input: &'data PyAny,
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
-        let value = self
-            .func
-            .call1(py, (input.to_object(py), info))
-            .map_err(|e| convert_err(py, e, input))?;
+        let r = if self.info_arg {
+            let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
+            self.func.call1(py, (input.to_object(py), info))
+        } else {
+            self.func.call1(py, (input.to_object(py),))
+        };
+        let value = r.map_err(|e| convert_err(py, e, input))?;
         call(value.into_ref(py), extra)
     }
 }
@@ -132,6 +149,7 @@ pub struct FunctionAfterValidator {
     config: PyObject,
     name: String,
     is_field_validator: bool,
+    info_arg: bool,
 }
 
 impl_build!(FunctionAfterValidator, "function-after");
@@ -144,11 +162,14 @@ impl FunctionAfterValidator {
         input: &'data PyAny,
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
         let v = call(input, extra)?;
-        self.func
-            .call1(py, (v.to_object(py), info))
-            .map_err(|e| convert_err(py, e, input))
+        let r = if self.info_arg {
+            let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
+            self.func.call1(py, (v.to_object(py), info))
+        } else {
+            self.func.call1(py, (v.to_object(py),))
+        };
+        r.map_err(|e| convert_err(py, e, input))
     }
 }
 
@@ -160,6 +181,7 @@ pub struct FunctionPlainValidator {
     config: PyObject,
     name: String,
     is_field_validator: bool,
+    info_arg: bool,
 }
 
 impl BuildValidator for FunctionPlainValidator {
@@ -171,7 +193,7 @@ impl BuildValidator for FunctionPlainValidator {
         _build_context: &mut BuildContext<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let (is_field_validator, function) = destructure_function_schema(schema)?;
+        let (is_field_validator, info_arg, function) = destructure_function_schema(schema)?;
         Ok(Self {
             func: function.into_py(py),
             config: match config {
@@ -180,6 +202,7 @@ impl BuildValidator for FunctionPlainValidator {
             },
             name: format!("function-plain[{}()]", function_name(function)?),
             is_field_validator,
+            info_arg,
         }
         .into())
     }
@@ -194,10 +217,13 @@ impl Validator for FunctionPlainValidator {
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
-        self.func
-            .call1(py, (input.to_object(py), info))
-            .map_err(|e| convert_err(py, e, input))
+        let r = if self.info_arg {
+            let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
+            self.func.call1(py, (input.to_object(py), info))
+        } else {
+            self.func.call1(py, (input.to_object(py),))
+        };
+        r.map_err(|e| convert_err(py, e, input))
     }
 
     fn get_name(&self) -> &str {
@@ -216,6 +242,7 @@ pub struct FunctionWrapValidator {
     config: PyObject,
     name: String,
     is_field_validator: bool,
+    info_arg: bool,
 }
 
 impl_build!(FunctionWrapValidator, "function-wrap");
@@ -228,10 +255,13 @@ impl FunctionWrapValidator {
         input: &'data PyAny,
         extra: &Extra,
     ) -> ValResult<'data, PyObject> {
-        let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
-        self.func
-            .call1(py, (input.to_object(py), handler, info))
-            .map_err(|e| convert_err(py, e, input))
+        let r = if self.info_arg {
+            let info = ValidationInfo::new(py, extra, &self.config, self.is_field_validator)?;
+            self.func.call1(py, (input.to_object(py), handler, info))
+        } else {
+            self.func.call1(py, (input.to_object(py), handler))
+        };
+        r.map_err(|e| convert_err(py, e, input))
     }
 }
 
