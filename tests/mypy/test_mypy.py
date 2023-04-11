@@ -141,7 +141,15 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = f'.mypy_cache/test-{os.path.splitext(config_filename)[0]}'
-    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
+    command = [
+        full_filename,
+        '--config-file',
+        full_config_filename,
+        '--cache-dir',
+        cache_dir,
+        '--show-error-codes',
+        '--show-traceback',
+    ]
     if MYPY_VERSION_TUPLE >= (0, 990):
         command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
