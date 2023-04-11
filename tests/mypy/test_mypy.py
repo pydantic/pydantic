@@ -19,7 +19,7 @@ except ImportError:
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 
-pytestmark = pytest.mark.skipif('--test-mypy' not in sys.argv, reason='Test only with "--test-mypy" flag')
+pytestmark = pytest.mark.skipif(False and '--test-mypy' not in sys.argv, reason='Test only with "--test-mypy" flag')
 
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
