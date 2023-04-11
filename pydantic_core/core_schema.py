@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import sys
+from collections.abc import Mapping
 from datetime import date, datetime, time, timedelta
 from typing import Any, Callable, Dict, List, Optional, Set, Type, Union
 
@@ -3472,7 +3473,7 @@ if not MYPY:
         DefinitionReferenceSchema,
     ]
 elif False:
-    CoreSchema: TypeAlias = Dict[str, Any]
+    CoreSchema: TypeAlias = Mapping[str, Any]
 
 
 # to update this, call `pytest -k test_core_schema_type_literal` and copy the output
