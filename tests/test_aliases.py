@@ -312,7 +312,7 @@ def test_validation_alias_with_alias():
     ]
 
 
-def test_validation_alias_from_alias():
+def test_validation_alias_from_str_alias():
     class Model(BaseModel):
         x: str = Field(alias='foo')
 
@@ -332,6 +332,26 @@ def test_validation_alias_from_alias():
             'input': {'x': 'bar'},
         }
     ]
+
+
+def test_validation_alias_from_list_alias():
+    class Model(BaseModel):
+        x: str = Field(alias=['foo', 'bar'])
+
+    data = {'foo': {'bar': 'test'}}
+    m = Model(**data)
+    assert m.x == 'test'
+    sig = signature(Model)
+    assert 'x' in sig.parameters
+
+    class Model(BaseModel):
+        x: str = Field(alias=['foo', 1])
+
+    data = {'foo': ['bar0', 'bar1']}
+    m = Model(**data)
+    assert m.x == 'bar1'
+    sig = signature(Model)
+    assert 'x' in sig.parameters
 
 
 def test_serialization_alias():

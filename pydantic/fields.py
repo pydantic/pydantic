@@ -319,11 +319,13 @@ def Field(
     default: Any = Undefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
-    alias: str | None = None,
+    alias: str | list[str | int] | list[list[str | int]] | None = None,
     # TODO:
     #  Alternative 1: we could drop alias_priority and tell people to manually override aliases in child classes
     #  Alternative 2: we could add a new argument `override_with_alias_generator=True` equivalent to `alias_priority=1`
     alias_priority: int | None = None,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    serialization_alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
     examples: list[Any] | None = None,
@@ -348,8 +350,6 @@ def Field(
     strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
     validate_default: bool | None = None,
-    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
-    serialization_alias: str | None = None,
     const: bool | None = None,
     unique_items: bool | None = None,
     allow_mutation: bool = True,
@@ -449,11 +449,16 @@ def Field(
         if not json_schema_extra:
             json_schema_extra = extra
 
+    if serialization_alias is None and isinstance(alias, str):
+        serialization_alias = alias
+
     return FieldInfo.from_field(
         default,
         default_factory=default_factory,
         alias=alias,
         alias_priority=alias_priority,
+        validation_alias=validation_alias or alias,
+        serialization_alias=serialization_alias,
         title=title,
         description=description,
         examples=examples,
@@ -478,8 +483,6 @@ def Field(
         json_schema_extra=json_schema_extra,
         strict=strict,
         validate_default=validate_default,
-        validation_alias=validation_alias or alias,
-        serialization_alias=serialization_alias or alias,
     )
 
 

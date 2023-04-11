@@ -533,9 +533,7 @@ class GenerateSchema:
             schema,
             serialization_exclude=True if field_info.exclude else None,
             validation_alias=field_info.validation_alias,
-            serialization_alias=(
-                field_info.serialization_alias if isinstance(field_info.serialization_alias, str) else None
-            ),
+            serialization_alias=field_info.serialization_alias,
             frozen=field_info.frozen or field_info.final,
             metadata=metadata,
         )
