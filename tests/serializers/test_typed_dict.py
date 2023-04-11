@@ -182,7 +182,11 @@ def test_function_plain_field_serializer_to_python():
         core_schema.typed_dict_schema(
             {
                 'x': core_schema.typed_dict_field(
-                    core_schema.int_schema(serialization=core_schema.field_plain_serializer_function_ser_schema(ser_x))
+                    core_schema.int_schema(
+                        serialization=core_schema.plain_serializer_function_ser_schema(
+                            ser_x, is_field_serializer=True, info_arg=True
+                        )
+                    )
                 )
             }
         )
@@ -204,8 +208,8 @@ def test_function_wrap_field_serializer_to_python():
             {
                 'x': core_schema.typed_dict_field(
                     core_schema.int_schema(
-                        serialization=core_schema.field_wrap_serializer_function_ser_schema(
-                            ser_x, schema=core_schema.any_schema()
+                        serialization=core_schema.wrap_serializer_function_ser_schema(
+                            ser_x, is_field_serializer=True, info_arg=True, schema=core_schema.any_schema()
                         )
                     )
                 )
@@ -219,7 +223,31 @@ def test_function_plain_field_serializer_to_json():
     class Model(TypedDict):
         x: int
 
-    def ser_x(data: Model, v: Any, _) -> str:
+    def ser_x(data: Model, v: Any, info: core_schema.FieldSerializationInfo) -> str:
+        assert data['x'] == 1_000
+        return f'{v:_}-{info.field_name}'
+
+    s = SchemaSerializer(
+        core_schema.typed_dict_schema(
+            {
+                'x': core_schema.typed_dict_field(
+                    core_schema.int_schema(
+                        serialization=core_schema.plain_serializer_function_ser_schema(
+                            ser_x, is_field_serializer=True, info_arg=True
+                        )
+                    )
+                )
+            }
+        )
+    )
+    assert json.loads(s.to_json(Model(x=1000))) == {'x': '1_000-x'}
+
+
+def test_function_plain_field_serializer_to_json_no_info():
+    class Model(TypedDict):
+        x: int
+
+    def ser_x(data: Model, v: Any) -> str:
         assert data['x'] == 1_000
         return f'{v:_}'
 
@@ -227,7 +255,9 @@ def test_function_plain_field_serializer_to_json():
         core_schema.typed_dict_schema(
             {
                 'x': core_schema.typed_dict_field(
-                    core_schema.int_schema(serialization=core_schema.field_plain_serializer_function_ser_schema(ser_x))
+                    core_schema.int_schema(
+                        serialization=core_schema.plain_serializer_function_ser_schema(ser_x, is_field_serializer=True)
+                    )
                 )
             }
         )
@@ -239,7 +269,37 @@ def test_function_wrap_field_serializer_to_json():
     class Model(TypedDict):
         x: int
 
-    def ser_x(data: Model, v: Any, serializer: core_schema.SerializerFunctionWrapHandler, _) -> str:
+    def ser_x(
+        data: Model,
+        v: Any,
+        serializer: core_schema.SerializerFunctionWrapHandler,
+        info: core_schema.FieldSerializationInfo,
+    ) -> str:
+        assert data['x'] == 1_000
+        x = serializer(v)
+        return f'{x:_}-{info.field_name}'
+
+    s = SchemaSerializer(
+        core_schema.typed_dict_schema(
+            {
+                'x': core_schema.typed_dict_field(
+                    core_schema.int_schema(
+                        serialization=core_schema.wrap_serializer_function_ser_schema(
+                            ser_x, is_field_serializer=True, info_arg=True, schema=core_schema.any_schema()
+                        )
+                    )
+                )
+            }
+        )
+    )
+    assert json.loads(s.to_json(Model(x=1000))) == {'x': '1_000-x'}
+
+
+def test_function_wrap_field_serializer_to_json_no_info():
+    class Model(TypedDict):
+        x: int
+
+    def ser_x(data: Model, v: Any, serializer: core_schema.SerializerFunctionWrapHandler) -> str:
         assert data['x'] == 1_000
         x = serializer(v)
         return f'{x:_}'
@@ -249,8 +309,8 @@ def test_function_wrap_field_serializer_to_json():
             {
                 'x': core_schema.typed_dict_field(
                     core_schema.int_schema(
-                        serialization=core_schema.field_wrap_serializer_function_ser_schema(
-                            ser_x, schema=core_schema.any_schema()
+                        serialization=core_schema.wrap_serializer_function_ser_schema(
+                            ser_x, is_field_serializer=True, schema=core_schema.any_schema()
                         )
                     )
                 )

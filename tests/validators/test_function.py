@@ -30,6 +30,17 @@ def test_function_before():
     assert v.validate_python('input value') == 'input value Changed'
 
 
+def test_function_before_no_info():
+    def f(input_value):
+        return input_value + ' Changed'
+
+    v = SchemaValidator(
+        {'type': 'function-before', 'function': {'type': 'no-info', 'function': f}, 'schema': {'type': 'str'}}
+    )
+
+    assert v.validate_python('input value') == 'input value Changed'
+
+
 def test_function_before_raise():
     def f(input_value, info):
         raise ValueError('foobar')
@@ -143,6 +154,17 @@ def test_function_wrap():
     assert v.validate_python('input value') == 'input value Changed'
 
 
+def test_function_wrap_no_info():
+    def f(input_value, validator):
+        return validator(input_value=input_value) + ' Changed'
+
+    v = SchemaValidator(
+        {'type': 'function-wrap', 'function': {'type': 'no-info', 'function': f}, 'schema': {'type': 'str'}}
+    )
+
+    assert v.validate_python('input value') == 'input value Changed'
+
+
 def test_function_wrap_repr():
     def f(input_value, validator, info):
         assert repr(validator) == str(validator)
@@ -247,6 +269,17 @@ def test_function_after():
     assert v.validate_python('input value') == 'input value Changed'
 
 
+def test_function_no_info():
+    def f(input_value):
+        return input_value + ' Changed'
+
+    v = SchemaValidator(
+        {'type': 'function-after', 'function': {'type': 'no-info', 'function': f}, 'schema': {'type': 'str'}}
+    )
+
+    assert v.validate_python('input value') == 'input value Changed'
+
+
 def test_function_after_raise():
     def f(input_value, info):
         raise ValueError('foobar')
@@ -320,10 +353,20 @@ def test_config_no_model():
 
 
 def test_function_plain():
-    def f(input_value, info):
+    def f(input_value, _info):
         return input_value * 2
 
     v = SchemaValidator({'type': 'function-plain', 'function': {'type': 'general', 'function': f}})
+
+    assert v.validate_python(1) == 2
+    assert v.validate_python('x') == 'xx'
+
+
+def test_function_plain_no_info():
+    def f(input_value):
+        return input_value * 2
+
+    v = SchemaValidator({'type': 'function-plain', 'function': {'type': 'no-info', 'function': f}})
 
     assert v.validate_python(1) == 2
     assert v.validate_python('x') == 'xx'

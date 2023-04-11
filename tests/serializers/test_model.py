@@ -415,7 +415,9 @@ def test_function_plain_field_serializer_to_python():
                 {
                     'x': core_schema.typed_dict_field(
                         core_schema.int_schema(
-                            serialization=core_schema.field_plain_serializer_function_ser_schema(Model.ser_x)
+                            serialization=core_schema.plain_serializer_function_ser_schema(
+                                Model.ser_x, is_field_serializer=True, info_arg=True
+                            )
                         )
                     )
                 }
@@ -442,8 +444,8 @@ def test_function_wrap_field_serializer_to_python():
                 {
                     'x': core_schema.typed_dict_field(
                         core_schema.int_schema(
-                            serialization=core_schema.field_wrap_serializer_function_ser_schema(
-                                Model.ser_x, schema=core_schema.any_schema()
+                            serialization=core_schema.wrap_serializer_function_ser_schema(
+                                Model.ser_x, is_field_serializer=True, info_arg=True, schema=core_schema.any_schema()
                             )
                         )
                     )
@@ -470,7 +472,9 @@ def test_function_plain_field_serializer_to_json():
                 {
                     'x': core_schema.typed_dict_field(
                         core_schema.int_schema(
-                            serialization=core_schema.field_plain_serializer_function_ser_schema(Model.ser_x)
+                            serialization=core_schema.plain_serializer_function_ser_schema(
+                                Model.ser_x, is_field_serializer=True, info_arg=True
+                            )
                         )
                     )
                 }
@@ -497,8 +501,8 @@ def test_function_wrap_field_serializer_to_json():
                 {
                     'x': core_schema.typed_dict_field(
                         core_schema.int_schema(
-                            serialization=core_schema.field_wrap_serializer_function_ser_schema(
-                                Model.ser_x, schema=core_schema.any_schema()
+                            serialization=core_schema.wrap_serializer_function_ser_schema(
+                                Model.ser_x, is_field_serializer=True, info_arg=True, schema=core_schema.any_schema()
                             )
                         )
                     )
