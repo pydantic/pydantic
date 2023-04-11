@@ -3,7 +3,7 @@ import re
 import sys
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Any, Dict, Mapping, Union
+from typing import Any, Dict, List, Mapping, Union
 
 import pytest
 from dirty_equals import FunctionCheck, HasRepr, IsStr
@@ -1192,11 +1192,53 @@ def test_from_attributes_extra():
         }
     )
 
-    assert v.validate_python(Foobar()) == ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})
-    assert v.validate_python(MyDataclass()) == ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})
-    assert v.validate_python(Cls(a=1, b=2, c='ham')) == ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})
-    assert v.validate_python(Cls(a=1, b=datetime(2000, 1, 1))) == ({'a': 1, 'b': datetime(2000, 1, 1)}, {'a', 'b'})
+    assert v.validate_python(Foobar()) == ({'a': 1}, {'a'})
+    assert v.validate_python(MyDataclass()) == ({'a': 1}, {'a'})
+    assert v.validate_python(Cls(a=1, b=2, c='ham')) == ({'a': 1}, {'a'})
+    assert v.validate_python(Cls(a=1, b=datetime(2000, 1, 1))) == ({'a': 1}, {'a'})
     assert v.validate_python(Cls(a=1, b=datetime.now, c=lambda: 42)) == ({'a': 1}, {'a'})
+
+
+def test_from_attributes_extra_ignore_no_attributes_accessed() -> None:
+    v = SchemaValidator(
+        {
+            'type': 'typed-dict',
+            'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
+            'from_attributes': True,
+            'extra_behavior': 'ignore',
+        }
+    )
+
+    accessed: List[str] = []
+
+    class Source:
+        a = 1
+        b = 2
+
+        def __getattribute__(self, __name: str) -> Any:
+            accessed.append(__name)
+            return super().__getattribute__(__name)
+
+    assert v.validate_python(Source()) == {'a': 1}
+    assert 'a' in accessed and 'b' not in accessed
+
+
+def test_from_attributes_extra_forbid() -> None:
+    class Source:
+        a = 1
+        b = 2
+
+    v = SchemaValidator(
+        {
+            'type': 'typed-dict',
+            'return_fields_set': True,
+            'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
+            'from_attributes': True,
+            'extra_behavior': 'forbid',
+        }
+    )
+
+    assert v.validate_python(Source()) == ({'a': 1}, {'a'})
 
 
 def foobar():
