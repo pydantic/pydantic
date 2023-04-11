@@ -229,7 +229,6 @@ def field_validator(
         mode (Literal['before', 'after', 'wrap', 'plain'], optional): TODO. Defaults to 'after'.
         check_fields (bool | None, optional): Whether to check that the fields actually exist on
             the model. Defaults to None.
-        sub_path (tuple[str | int, ...] | None, optional): TODO. Defaults to None.
 
     Returns:
         Callable[[Any], Any]: A decorator that can be used to decorate a function to be used as a field_validator.
@@ -427,7 +426,6 @@ def field_serializer(
                 default serialization logic.
         json_return_type (str): The type that the function returns if the serialization mode is JSON.
         when_used (str): When the function should be called.
-        sub_path (tuple[str | int, ...]): TODO
         check_fields (bool): Whether to check that the fields actually exist on the model.
     """
 
