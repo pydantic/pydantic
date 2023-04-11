@@ -1,4 +1,5 @@
 from contextlib import nullcontext as does_not_raise
+from inspect import signature
 from typing import Any, ContextManager, List, Optional
 
 import pytest
@@ -296,6 +297,8 @@ def test_validation_alias_with_alias():
     data = {'foo': 'bar'}
     m = Model(**data)
     assert m.x == 'bar'
+    sig = signature(Model)
+    assert 'x_alias' in sig.parameters
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x='bar')
@@ -316,6 +319,8 @@ def test_validation_alias_from_alias():
     data = {'foo': 'bar'}
     m = Model(**data)
     assert m.x == 'bar'
+    sig = signature(Model)
+    assert 'foo' in sig.parameters
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x='bar')
@@ -348,6 +353,8 @@ def test_serialization_alias_with_alias():
     assert m.x == 'bar'
     assert m.model_dump() == {'x': 'bar'}
     assert m.model_dump(by_alias=True) == {'foo': 'bar'}
+    sig = signature(Model)
+    assert 'x_alias' in sig.parameters
 
 
 def test_serialization_alias_from_alias():
@@ -359,3 +366,17 @@ def test_serialization_alias_from_alias():
     assert m.x == 'bar'
     assert m.model_dump() == {'x': 'bar'}
     assert m.model_dump(by_alias=True) == {'foo': 'bar'}
+    sig = signature(Model)
+    assert 'foo' in sig.parameters
+
+
+def test_aliases_json_schema():
+    class Model(BaseModel):
+        x: str = Field(alias='x_alias', validation_alias='x_val_alias', serialization_alias='x_ser_alias')
+
+    assert Model.model_json_schema() == {
+        'properties': {'x_val_alias': {'title': 'X Val Alias', 'type': 'string'}},
+        'required': ['x_val_alias'],
+        'title': 'Model',
+        'type': 'object',
+    }
