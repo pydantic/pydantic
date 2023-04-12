@@ -212,8 +212,10 @@ def test_low_priority_alias():
     #  Alternative 1: we could drop alias_priority and tell people to manually override aliases in child classes
     #  Alternative 2: we could add a new argument `override_with_alias_generator=True` equivalent to `alias_priority=1`
     class Parent(BaseModel):
-        w: bool = Field(..., alias='w_')
-        x: bool = Field(..., alias='abc', alias_priority=1)
+        w: bool = Field(..., alias='w_', validation_alias='w_val_alias', serialization_alias='w_ser_alias')
+        x: bool = Field(
+            ..., alias='abc', alias_priority=1, validation_alias='x_val_alias', serialization_alias='x_ser_alias'
+        )
         y: str
 
     class Child(Parent):
@@ -223,7 +225,11 @@ def test_low_priority_alias():
         z: str
 
     assert [f.alias for f in Parent.model_fields.values()] == ['w_', 'abc', None]
+    assert [f.validation_alias for f in Parent.model_fields.values()] == ['w_val_alias', 'x_val_alias', None]
+    assert [f.serialization_alias for f in Parent.model_fields.values()] == ['w_ser_alias', 'x_ser_alias', None]
     assert [f.alias for f in Child.model_fields.values()] == ['w_', 'X', 'Y', 'Z']
+    assert [f.validation_alias for f in Child.model_fields.values()] == ['w_val_alias', 'X', 'Y', 'Z']
+    assert [f.serialization_alias for f in Child.model_fields.values()] == ['w_ser_alias', 'X', 'Y', 'Z']
 
 
 def test_empty_string_alias():
