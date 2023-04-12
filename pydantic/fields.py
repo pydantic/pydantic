@@ -323,10 +323,7 @@ def Field(
     default: Any = Undefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
-    alias: str | list[str | int] | list[list[str | int]] | None = None,
-    # TODO:
-    #  Alternative 1: we could drop alias_priority and tell people to manually override aliases in child classes
-    #  Alternative 2: we could add a new argument `override_with_alias_generator=True` equivalent to `alias_priority=1`
+    alias: str | None = None,
     alias_priority: int | None = None,
     validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
     serialization_alias: str | None = None,
@@ -369,7 +366,8 @@ def Field(
     :param default_factory: callable that will be called when a default value is needed for this field
       If both `default` and `default_factory` are set, an error is raised.
     :param alias: the public name of the field
-    :param validation_alias: the alias(es) to use to find the field in the validation data
+    # TODO: Add documentation reference for non-str alias variants
+    :param validation_alias: the alias(es) to use to find the field value during validation
     :param serialization_alias: The alias to use as a key when serializing
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
@@ -453,6 +451,8 @@ def Field(
         if not json_schema_extra:
             json_schema_extra = extra
 
+    if validation_alias is None:
+        validation_alias = alias
     if serialization_alias is None and isinstance(alias, str):
         serialization_alias = alias
 
@@ -461,7 +461,7 @@ def Field(
         default_factory=default_factory,
         alias=alias,
         alias_priority=alias_priority,
-        validation_alias=validation_alias or alias,
+        validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         title=title,
         description=description,

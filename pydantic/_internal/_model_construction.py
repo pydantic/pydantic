@@ -237,7 +237,7 @@ def generate_model_signature(
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
         allow_names = config_wrapper.populate_by_name
         for field_name, field in fields.items():
-            # alis have to be used for signature generation when it's a str
+            # when alias is a str it should be used for signature generation
             if isinstance(field.alias, str):
                 param_name = field.alias
             else:
