@@ -33,6 +33,8 @@ class FieldInfo(_repr.Representation):
         'default_factory',
         'alias',
         'alias_priority',
+        'validation_alias',
+        'serialization_alias',
         'title',
         'description',
         'examples',
@@ -47,8 +49,6 @@ class FieldInfo(_repr.Representation):
         'validate_default',
         'frozen',
         'final',
-        'validation_alias',
-        'serialization_alias',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -86,6 +86,8 @@ class FieldInfo(_repr.Representation):
         self.alias = kwargs.get('alias')
         self.alias_priority = kwargs.get('alias_priority') or 2 if self.alias is not None else None
         self.title = kwargs.get('title')
+        self.validation_alias = kwargs.get('validation_alias', None)
+        self.serialization_alias = kwargs.get('serialization_alias', None)
         self.description = kwargs.get('description')
         self.examples = kwargs.get('examples')
         self.exclude = kwargs.get('exclude')
@@ -100,8 +102,6 @@ class FieldInfo(_repr.Representation):
         self.validate_default = kwargs.get('validate_default', None)
         self.frozen = kwargs.get('frozen', None)
         self.final = kwargs.get('final', None)
-        self.validation_alias = kwargs.get('validation_alias', None)
-        self.serialization_alias = kwargs.get('serialization_alias', None)
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
@@ -307,6 +307,10 @@ class FieldInfo(_repr.Representation):
                 continue
             if s == 'frozen' and self.frozen is False:
                 continue
+            if s == 'validation_alias' and self.validation_alias == self.alias:
+                continue
+            if s == 'serialization_alias' and self.serialization_alias == self.alias:
+                continue
             if s == 'default_factory' and self.default_factory is not None:
                 yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
             else:
@@ -365,6 +369,8 @@ def Field(
     :param default_factory: callable that will be called when a default value is needed for this field
       If both `default` and `default_factory` are set, an error is raised.
     :param alias: the public name of the field
+    :param validation_alias: the alias(es) to use to find the field in the validation data
+    :param serialization_alias: The alias to use as a key when serializing
     :param title: can be any string, used in the schema
     :param description: can be any string, used in the schema
     :param examples: can be any list of json-encodable data, used in the schema
@@ -408,8 +414,6 @@ def Field(
     :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
     :param strict: enable or disable strict parsing mode
     :param validate_default: whether the default value should be validated for this field
-    :param validation_alias: the alias(es) to use to find the field in the validation data
-    :param serialization_alias: The alias to use as a key when serializing
     :param const: removed, use `Literal` instead'
     :param unique_items: removed, use `Set` instead
     :param allow_mutation: deprecated, use `frozen` instead

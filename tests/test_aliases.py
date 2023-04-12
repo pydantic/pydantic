@@ -45,8 +45,17 @@ def test_basic_alias():
     assert Model().a == 'foobar'
     assert Model(_a='different').a == 'different'
     assert repr(Model.model_fields['a']) == (
+        "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', alias_priority=2)"
+    )
+
+
+def test_field_info_repr_with_aliases():
+    class Model(BaseModel):
+        a: str = Field('foobar', alias='_a', validation_alias='a_val', serialization_alias='a_ser')
+
+    assert repr(Model.model_fields['a']) == (
         "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', "
-        "alias_priority=2, validation_alias='_a', serialization_alias='_a')"
+        "alias_priority=2, validation_alias='a_val', serialization_alias='a_ser')"
     )
 
 
