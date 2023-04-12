@@ -33,7 +33,6 @@ strum_macros = "0.24.3"
 serde_json = {version = "1.0.87", features = ["preserve_order"]}
 enum_dispatch = "0.3.8"
 serde = "1.0.147"
-indexmap = "1.9.1"
 mimalloc = { version = "0.1.30", default-features = false, optional = true }
 speedate = "0.7.0"
 ahash = "0.8.0"

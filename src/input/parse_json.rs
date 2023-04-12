@@ -1,9 +1,10 @@
 use std::fmt;
 
-use indexmap::IndexMap;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PySet};
 use serde::de::{Deserialize, DeserializeSeed, Error as SerdeError, MapAccess, SeqAccess, Visitor};
+
+use crate::lazy_index_map::LazyIndexMap;
 
 use crate::build_tools::py_err;
 
@@ -58,7 +59,7 @@ pub enum JsonInput {
     Object(JsonObject),
 }
 pub type JsonArray = Vec<JsonInput>;
-pub type JsonObject = IndexMap<String, JsonInput>;
+pub type JsonObject = LazyIndexMap<String, JsonInput>;
 
 impl ToPyObject for JsonInput {
     fn to_object(&self, py: Python<'_>) -> PyObject {
@@ -159,7 +160,7 @@ impl<'de> Deserialize<'de> for JsonInput {
             {
                 match visitor.next_key_seed(KeyDeserializer)? {
                     Some(first_key) => {
-                        let mut values = IndexMap::new();
+                        let mut values = LazyIndexMap::new();
 
                         values.insert(first_key, visitor.next_value()?);
                         while let Some((key, value)) = visitor.next_entry()? {
@@ -167,7 +168,7 @@ impl<'de> Deserialize<'de> for JsonInput {
                         }
                         Ok(JsonInput::Object(values))
                     }
-                    None => Ok(JsonInput::Object(IndexMap::new())),
+                    None => Ok(JsonInput::Object(LazyIndexMap::new())),
                 }
             }
         }
