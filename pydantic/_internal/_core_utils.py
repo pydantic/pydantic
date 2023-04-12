@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Any, Callable, Union, cast
 
 from pydantic_core import CoreSchema, CoreSchemaType, core_schema
@@ -188,6 +189,37 @@ def define_expected_missing_refs(
     return schema
 
 
+def substitute_duplicate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+    """
+    I *think* we should avoid using this function as a crutch, and should instead prefer
+    to make sure that GenerateSchema doesn't produce duplicate refs in the first place.
+
+    However, even if we never make use of this function in user-facing code paths, I think
+    it is worth keeping around because of how useful it is for checking whether there are
+    any issues *besides* duplicate refs.
+    """
+    refs = defaultdict(int)
+
+    def _record_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        ref: str | None = s.get('ref')  # type: ignore[assignment]
+        if ref:
+            refs[ref] += 1
+        return s
+
+    WalkAndApply(_record_refs).walk(schema)
+
+    def _replace_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        ref: str | None = s.get('ref')  # type: ignore[assignment]
+        if ref:
+            if refs[ref] > 1:
+                refs[ref] -= 1
+                return {'type': 'definition-ref', 'schema_ref': ref}
+        return s
+
+    final_schema = WalkAndApply(_replace_refs, apply_before_recurse=False).walk(schema)
+    return final_schema
+
+
 def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.CoreSchema]:
     invalid_schemas: list[core_schema.CoreSchema] = []
 
@@ -337,6 +369,15 @@ class WalkAndApply:
             replaced_field = v.copy()
             replaced_field['schema'] = self._walk(v['schema'])
             replaced_fields[k] = replaced_field
+        schema['fields'] = replaced_fields
+        return schema
+
+    def handle_dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> CoreSchema:
+        replaced_fields: list[core_schema.DataclassField] = []
+        for field in schema['fields']:
+            replaced_field = field.copy()
+            replaced_field['schema'] = self._walk(field['schema'])
+            replaced_fields.append(replaced_field)
         schema['fields'] = replaced_fields
         return schema
 

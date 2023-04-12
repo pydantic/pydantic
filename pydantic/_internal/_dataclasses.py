@@ -9,11 +9,13 @@ from functools import wraps
 from typing import Any, Callable, ClassVar, cast
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
+from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
-from . import _decorators
-from ._core_utils import get_type_ref
+from . import _decorators, _typing_extra
+from ._config import ConfigWrapper
+from ._core_utils import get_type_ref, substitute_duplicate_refs
 from ._fields import collect_fields
 from ._forward_ref import PydanticForwardRef
 from ._generate_schema import dataclass_schema
@@ -23,7 +25,6 @@ __all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
-    from ._config import ConfigWrapper
 
     class StandardDataclass(typing.Protocol):
         __dataclass_fields__: ClassVar[dict[str, Any]]
@@ -70,7 +71,7 @@ def prepare_dataclass(
 
     dataclass_ref = get_type_ref(cls)
     self_schema = core_schema.definition_reference_schema(dataclass_ref)
-    types_namespace = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
+    types_namespace = {name: PydanticForwardRef(self_schema, cls), **(types_namespace or {})}
     try:
         fields, _ = collect_fields(cls, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
     except PydanticUndefinedAnnotation as e:
@@ -97,6 +98,9 @@ def prepare_dataclass(
 
     core_config = config_wrapper.core_config(cls)
     cls.__pydantic_fields__ = fields
+    # TODO: This substitute_duplicate_refs should  not be necessary. I think the duplicate refs are a consequence
+    #  of having not yet done the same refactor for core schema generation to dataclasses that we did to BaseModel
+    schema = substitute_duplicate_refs(schema)
     cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
@@ -123,7 +127,7 @@ def prepare_dataclass(
     return True
 
 
-def is_builtin_dataclass(_cls: type[Any]) -> bool:
+def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     """
     Whether a class is a stdlib dataclass
     (useful to discriminated a pydantic dataclass that is actually a wrapper around a stdlib dataclass)
@@ -152,3 +156,22 @@ def is_builtin_dataclass(_cls: type[Any]) -> bool:
         and not hasattr(_cls, '__pydantic_validator__')
         and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
     )
+
+
+def rebuild_pydantic_dataclass(cls: type[PydanticDataclass], *, types_namespace: dict[str, Any] | None = None) -> None:
+    # TODO: We need to have some public API for this
+
+    # TODO: Should we have a way of determining what kw_only was set to?
+    import dataclasses
+
+    fields = dataclasses.fields(cls)
+    if fields:
+        kw_only = all(getattr(f, 'kw_only', False) for f in fields)
+    else:
+        kw_only = False
+
+    if types_namespace is None:
+        types_namespace = _typing_extra.parent_frame_namespace()
+
+    config_wrapper = ConfigWrapper(cls.__pydantic_config__)
+    prepare_dataclass(cls, config_wrapper, kw_only, raise_errors=True, types_namespace=types_namespace)

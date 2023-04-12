@@ -5,13 +5,13 @@ import sys
 from collections.abc import Hashable
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Callable, ClassVar, Dict, FrozenSet, List, Optional, Set, Union
+from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
 
 import pytest
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, ConfigDict, FieldValidationInfo, ValidationError
+from pydantic import AnalyzedType, BaseModel, ConfigDict, FieldValidationInfo, ValidationError
 from pydantic.decorators import field_validator
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
@@ -1395,17 +1395,35 @@ def test_forbid_extra():
         Foo(**{'x': '1', 'y': '2'})
 
 
-@pytest.mark.xfail(reason='recursive references need rebuilding?')
 def test_self_reference_dataclass():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
-        self_reference: 'MyDataclass'
+        self_reference: Optional['MyDataclass'] = None
 
-    annotation = MyDataclass.__pydantic_fields__['self_reference'].annotation
-    # Currently, this is true:
-    # assert isinstance(MyDataclass, PydanticForwardRef)
-    # TODO: Probably need a way to "model_rebuild" a dataclass
-    assert annotation is MyDataclass
+    # TODO: need to decide on a public API for this:
+    from pydantic._internal._dataclasses import rebuild_pydantic_dataclass
+
+    rebuild_pydantic_dataclass(MyDataclass)
+
+    assert MyDataclass.__pydantic_fields__['self_reference'].annotation == Optional[MyDataclass]
+
+    instance = MyDataclass(self_reference=MyDataclass(self_reference=MyDataclass()))
+    assert AnalyzedType(MyDataclass).dump_python(instance) == {
+        'self_reference': {'self_reference': {'self_reference': None}}
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        MyDataclass(self_reference=MyDataclass(self_reference=1))
+
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'dataclass_name': 'MyDataclass'},
+            'input': 1,
+            'loc': ('self_reference',),
+            'msg': 'Input should be a dictionary or an instance of MyDataclass',
+            'type': 'dataclass_type',
+        }
+    ]
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
@@ -1693,3 +1711,79 @@ def test_dataclass_config_validate_default():
             'type': 'assertion_error',
         }
     ]
+
+
+def dataclass_decorators():
+    def combined(cls):
+        """
+        Should be equivalent to:
+        @pydantic.dataclasses.dataclass
+        @dataclasses.dataclass
+        """
+        return pydantic.dataclasses.dataclass(dataclasses.dataclass(cls))
+
+    decorators = [pydantic.dataclasses.dataclass, dataclasses.dataclass, combined]
+    ids = ['pydantic', 'stdlib', 'combined']
+    # decorators = [pydantic.dataclasses.dataclass]
+    # ids = ['pydantic']
+    # decorators = [dataclasses.dataclass]
+    # ids = ['stdlib']
+    return {'argvalues': decorators, 'ids': ids}
+
+
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
+def test_unparametrized_generic_dataclass(dataclass_decorator):
+    T = TypeVar('T')
+
+    @dataclass_decorator
+    class GenericDataclass(Generic[T]):
+        x: T
+
+    validator = pydantic.AnalyzedType(GenericDataclass)
+
+    assert validator.validate_python({'x': None}).x is None
+    assert validator.validate_python({'x': 1}).x == 1
+
+    with pytest.raises(ValidationError) as exc_info:
+        validator.validate_python({'y': None})
+    assert exc_info.value.errors() == [
+        {'input': {'y': None}, 'loc': ('x',), 'msg': 'Field required', 'type': 'missing'}
+    ]
+
+
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
+@pytest.mark.parametrize(
+    'annotation,input_value,error,output_value',
+    [
+        (int, 1, False, 1),
+        (str, 'a', False, 'a'),
+        (
+            int,
+            'a',
+            True,
+            [
+                {
+                    'input': 'a',
+                    'loc': ('x',),
+                    'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+                    'type': 'int_parsing',
+                }
+            ],
+        ),
+    ],
+)
+def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_value, error, output_value):
+    T = TypeVar('T')
+
+    @dataclass_decorator
+    class GenericDataclass(Generic[T]):
+        x: T
+
+    validator = pydantic.AnalyzedType(GenericDataclass[annotation])
+
+    if not error:
+        assert validator.validate_python({'x': input_value}).x == output_value
+    else:
+        with pytest.raises(ValidationError) as exc_info:
+            validator.validate_python({'x': input_value})
+        assert exc_info.value.errors() == output_value

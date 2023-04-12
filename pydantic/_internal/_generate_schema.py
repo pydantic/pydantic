@@ -373,6 +373,9 @@ class GenerateSchema:
         if std_schema is not None:
             return std_schema
 
+        if _typing_extra.is_dataclass(obj):
+            return self._dataclass_schema(obj, None)
+
         origin = get_origin(obj)
         if origin is None:
             if self.arbitrary_types:
@@ -382,6 +385,13 @@ class GenerateSchema:
                     f'Unable to generate pydantic-core schema for {obj!r}. '
                     f'Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.'
                 )
+
+        # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
+        # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
+        # As a result, currently, there is no way to cache the schema for generic dataclasses. This may be possible
+        # to resolve by modifying the value returned by `Generic.__class_getitem__`, but that is a dangerous game.
+        if _typing_extra.is_dataclass(origin):
+            return self._dataclass_schema(obj, origin)
 
         from_property = self._generate_schema_from_property(origin, obj)
         if from_property is not None:
@@ -898,8 +908,6 @@ class GenerateSchema:
             return None
 
         # Import here to avoid the extra import time earlier since _std_validators imports lots of things globally
-        import dataclasses
-
         from ._std_types_schema import SCHEMA_LOOKUP
 
         # instead of iterating over a list and calling is_instance, this should be somewhat faster,
@@ -911,17 +919,30 @@ class GenerateSchema:
             except KeyError:
                 continue
             return encoder(self, obj)
-        if dataclasses.is_dataclass(obj):
-            return self._dataclass_schema(obj)  # type: ignore
         return None
 
-    def _dataclass_schema(self, dataclass: type[StandardDataclass]) -> core_schema.CoreSchema:
+    def _dataclass_schema(self, dataclass: type[StandardDataclass], origin: Any) -> core_schema.CoreSchema:
         """
         Generate schema for a dataclass.
         """
+
+        if origin is not None:
+            # In this case, we know that dataclass is a _GenericAlias, and origin is the generic type
+            # So it is safe to access dataclass.__args__
+            args: tuple[Any, ...] = dataclass.__args__  # type: ignore
+            typevars_map = dict(zip(origin.__parameters__, args))
+            dataclass = origin
+        else:
+            typevars_map = None
+
         # FIXME we need a way to make sure kw_only info is propagated through to fields
         fields, _ = collect_fields(
-            dataclass, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
+            dataclass,
+            dataclass.__bases__,
+            self.types_namespace,
+            dc_kw_only=True,
+            is_dataclass=True,
+            typevars_map=typevars_map,
         )
 
         return dataclass_schema(
