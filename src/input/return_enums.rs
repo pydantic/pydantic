@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::slice::Iter as SliceIter;
 
 use pyo3::intern;
 use pyo3::prelude::*;
@@ -9,8 +10,6 @@ use pyo3::types::{PyBytes, PyDict, PyFrozenSet, PyIterator, PyList, PyMapping, P
 use pyo3::types::PyFunction;
 #[cfg(not(PyPy))]
 use pyo3::PyTypeInfo;
-
-use indexmap::map::Iter;
 
 use crate::errors::{py_err_string, ErrorType, InputValue, ValError, ValLineError, ValResult};
 use crate::recursion_guard::RecursionGuard;
@@ -403,7 +402,7 @@ impl<'py> Iterator for AttributesGenericIterator<'py> {
 }
 
 pub struct JsonObjectGenericIterator<'py> {
-    object_iter: Iter<'py, String, JsonInput>,
+    object_iter: SliceIter<'py, (String, JsonInput)>,
 }
 
 impl<'py> JsonObjectGenericIterator<'py> {
@@ -418,7 +417,7 @@ impl<'py> Iterator for JsonObjectGenericIterator<'py> {
     type Item = ValResult<'py, (&'py String, &'py JsonInput)>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.object_iter.next().map(Ok)
+        self.object_iter.next().map(|(key, value)| Ok((key, value)))
     }
     // size_hint is omitted as it isn't needed
 }
