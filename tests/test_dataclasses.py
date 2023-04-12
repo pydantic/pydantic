@@ -967,6 +967,11 @@ class BuiltInDataclassForPickle:
 
 
 def lazy_cases_for_dataclass_equality_checks():
+    """
+    The reason for the convoluted structure of this function is to avoid
+    creating the classes while collecting tests, which may trigger breakpoints
+    etc. while working on one specific test.
+    """
     cases = []
 
     def get_cases():
