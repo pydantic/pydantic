@@ -63,6 +63,10 @@ rads = 2 * math.pi
 
 
 class Color(_repr.Representation):
+    """
+    Represents a color.
+    """
+
     __slots__ = '_original', '_rgba'
 
     def __init__(self, value: ColorType) -> None:
@@ -95,6 +99,20 @@ class Color(_repr.Representation):
         return self._original
 
     def as_named(self, *, fallback: bool = False) -> str:
+        """
+        Returns the name of the color if it can be found in `COLORS_BY_VALUE` dictionary,
+        otherwise returns the hexadecimal representation of the color or raises `ValueError`.
+
+        Args:
+            fallback (bool): If True, falls back to returning the hexadecimal representation of
+                the color instead of raising a ValueError when no named color is found.
+
+        Returns:
+            str: The name of the color, or the hexadecimal representation of the color.
+
+        Raises:
+            ValueError: When no named color is found and fallback is `False`.
+        """
         if self._rgba.alpha is None:
             rgb = cast(Tuple[int, int, int], self.as_rgb_tuple())
             try:
@@ -108,9 +126,13 @@ class Color(_repr.Representation):
             return self.as_hex()
 
     def as_hex(self) -> str:
-        """
+        """Returns the hexadecimal representation of the color.
+
         Hex string representing the color can be 3, 4, 6, or 8 characters depending on whether the string
         a "short" representation of the color is possible and whether there's an alpha channel.
+
+        Returns:
+            str: The hexadecimal representation of the color.
         """
         values = [float_to_255(c) for c in self._rgba[:3]]
         if self._rgba.alpha is not None:
