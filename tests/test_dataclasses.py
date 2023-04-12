@@ -966,48 +966,69 @@ class BuiltInDataclassForPickle:
         restored_obj.value = 'value of a wrong type'
 
 
-def gen_2162_dataclasses():
-    @dataclasses.dataclass(frozen=True)
-    class StdLibFoo:
-        a: str
-        b: int
+def lazy_cases_for_dataclass_equality_checks():
+    cases = []
 
-    @pydantic.dataclasses.dataclass(frozen=True)
-    class PydanticFoo:
-        a: str
-        b: int
+    def get_cases():
+        if cases:
+            return cases  # cases already "built"
 
-    @dataclasses.dataclass(frozen=True)
-    class StdLibBar:
-        c: StdLibFoo
+        @dataclasses.dataclass(frozen=True)
+        class StdLibFoo:
+            a: str
+            b: int
 
-    @pydantic.dataclasses.dataclass(frozen=True)
-    class PydanticBar:
-        c: PydanticFoo
+        @pydantic.dataclasses.dataclass(frozen=True)
+        class PydanticFoo:
+            a: str
+            b: int
 
-    @dataclasses.dataclass(frozen=True)
-    class StdLibBaz:
-        c: PydanticFoo
+        @dataclasses.dataclass(frozen=True)
+        class StdLibBar:
+            c: StdLibFoo
 
-    @pydantic.dataclasses.dataclass(frozen=True)
-    class PydanticBaz:
-        c: StdLibFoo
+        @pydantic.dataclasses.dataclass(frozen=True)
+        class PydanticBar:
+            c: PydanticFoo
 
-    foo = StdLibFoo(a='Foo', b=1)
-    yield foo, StdLibBar(c=foo)
+        @dataclasses.dataclass(frozen=True)
+        class StdLibBaz:
+            c: PydanticFoo
 
-    foo = PydanticFoo(a='Foo', b=1)
-    yield foo, PydanticBar(c=foo)
+        @pydantic.dataclasses.dataclass(frozen=True)
+        class PydanticBaz:
+            c: StdLibFoo
 
-    foo = PydanticFoo(a='Foo', b=1)
-    yield foo, StdLibBaz(c=foo)
+        foo = StdLibFoo(a='Foo', b=1)
+        cases.append((foo, StdLibBar(c=foo)))
 
-    foo = StdLibFoo(a='Foo', b=1)
-    yield foo, PydanticBaz(c=foo)
+        foo = PydanticFoo(a='Foo', b=1)
+        cases.append((foo, PydanticBar(c=foo)))
+
+        foo = PydanticFoo(a='Foo', b=1)
+        cases.append((foo, StdLibBaz(c=foo)))
+
+        foo = StdLibFoo(a='Foo', b=1)
+        cases.append((foo, PydanticBaz(c=foo)))
+
+        return cases
+
+    case_ids = ['stdlib_stdlib', 'pydantic_pydantic', 'pydantic_stdlib', 'stdlib_pydantic']
+
+    def case(i):
+        def get_foo_bar():
+            return get_cases()[i]
+
+        get_foo_bar.__name__ = case_ids[i]  # get nice names in pytest output
+        return get_foo_bar
+
+    return [case(i) for i in range(4)]
 
 
-@pytest.mark.parametrize('foo,bar', gen_2162_dataclasses())
-def test_issue_2162(foo, bar):
+@pytest.mark.parametrize('foo_bar_getter', lazy_cases_for_dataclass_equality_checks())
+def test_dataclass_equality_for_field_values(foo_bar_getter):
+    # Related to issue #2162
+    foo, bar = foo_bar_getter()
     assert dataclasses.asdict(foo) == dataclasses.asdict(bar.c)
     assert dataclasses.astuple(foo) == dataclasses.astuple(bar.c)
     assert foo == bar.c
