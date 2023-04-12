@@ -369,6 +369,9 @@ def Field(
         alias (str | None): The alias for the field. Defaults to `None`.
         alias_priority (int | None): The priority score for the field if it is an alias for another field. Defaults to
             `None`.
+        validation_alias (str | list[str | int] | list[list[str | int]] | None): The alias(es) to use to find the field
+            value during validation. Defaults to `None`. TODO: Add documentation reference for non-str alias variants
+        serialization_alias (str | None): The alias to use as a key when serializing. Defaults to `None`.
         title (str | None): The title for the field. Defaults to `None`.
         description (str | None): The description for the field. Defaults to `None`.
         examples (list[Any] | None): Examples of the field values. Defaults to `None`.
