@@ -37,6 +37,14 @@ impl Validator for NoneValidator {
         }
     }
 
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _ultra_strict: bool,
+    ) -> bool {
+        false
+    }
+
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }

@@ -107,6 +107,20 @@ impl Validator for DefinitionRefValidator {
         }
     }
 
+    fn different_strict_behavior(
+        &self,
+        build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        if let Some(build_context) = build_context {
+            // have to unwrap here, because we can't return an error from this function, should be okay
+            let validator = build_context.find_validator(self.validator_id).unwrap();
+            validator.different_strict_behavior(None, ultra_strict)
+        } else {
+            false
+        }
+    }
+
     fn get_name(&self) -> &str {
         &self.inner_name
     }
