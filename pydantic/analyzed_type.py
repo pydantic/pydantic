@@ -214,19 +214,20 @@ class AnalyzedType(Generic[T]):
         """Serialize the given instance to JSON.
 
         Args:
-            __instance: The instance to be serialized.
-            indent: Number of spaces for JSON indentation (default: None).
-            include: Fields to include (default: None).
-            exclude: Fields to exclude (default: None).
-            by_alias: Whether to use alias names (default: False).
-            exclude_unset: Whether to exclude unset fields (default: False).
-            exclude_defaults: Whether to exclude fields with default values (default: False).
-            exclude_none: Whether to exclude fields with a value of None (default: False).
-            round_trip: Whether to serialize and deserialize the instance to ensure round-tripping (default: False).
-            warnings: Whether to emit serialization warnings (default: True).
+            __instance (T): The instance to be serialized.
+            indent (Optional[int]): Number of spaces for JSON indentation (default: None).
+            include (Optional[IncEx]): Fields to include (default: None).
+            exclude (Optional[IncEx]): Fields to exclude (default: None).
+            by_alias (bool): Whether to use alias names (default: False).
+            exclude_unset (bool): Whether to exclude unset fields (default: False).
+            exclude_defaults (bool): Whether to exclude fields with default values (default: False).
+            exclude_none (bool): Whether to exclude fields with a value of None (default: False).
+            round_trip (bool): Whether to serialize and deserialize the instance to ensure
+                round-tripping (default: False).
+            warnings (bool): Whether to emit serialization warnings (default: True).
 
         Returns:
-            The JSON representation of the given instance as bytes.
+            bytes: The JSON representation of the given instance as bytes.
         """
         return self.serializer.to_json(
             __instance,
@@ -251,12 +252,13 @@ class AnalyzedType(Generic[T]):
         """Generate a JSON schema for the model.
 
         Args:
-            by_alias: Whether to use alias names (default: True).
-            ref_template: The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
-            schema_generator: The generator class used for creating the schema (default: GenerateJsonSchema).
+            by_alias (bool): Whether to use alias names (default: True).
+            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
+            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the schema
+                (default: GenerateJsonSchema).
 
         Returns:
-            The JSON schema for the model as a dictionary.
+            Dict[str, Any]: The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
         return schema_generator_instance.generate(self.core_schema)
@@ -274,16 +276,18 @@ class AnalyzedType(Generic[T]):
         """Generate JSON schemas for multiple models.
 
         Args:
-            __analyzed_types: The types to generate schemas for.
-            by_alias: Whether to use alias names (default: True).
-            ref_template: The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
-            title: The title for the schema (default: None).
-            description: The description for the schema (default: None).
-            schema_generator: The generator class used for creating the schema (default: GenerateJsonSchema).
+            __analyzed_types (Iterable[AnalyzedType[Any]]): The types to generate schemas for.
+            by_alias (bool): Whether to use alias names (default: True).
+            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
+            title (Optional[str]): The title for the schema (default: None).
+            description (Optional[str]): The description for the schema (default: None).
+            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the
+                schema (default: GenerateJsonSchema).
 
         Returns:
-            The JSON schema for the models as a dictionary.
+            Dict[str, Any]: The JSON schema for the models as a dictionary.
         """
+        # TODO: can we use model.__schema_cache__?
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
         core_schemas = [at.core_schema for at in __analyzed_types]

@@ -160,13 +160,13 @@ class Color(_repr.Representation):
         Returns the color as an RGB or RGBA tuple.
 
         Args:
-            alpha: Whether to include the alpha channel. There are three options for this input:
+            alpha (Optional[bool]): Whether to include the alpha channel. There are three options for this input:
                 `None` (default): Include alpha only if it's set. (e.g. not `None`)
                 `True`: Always include alpha.
                 `False`: Always omit alpha.
 
         Returns:
-            A tuple that contains the values of the red, green, and blue channels in the range 0 to 255.
+            ColorTuple: A tuple that contains the values of the red, green, and blue channels in the range 0 to 255.
             If alpha is included, it is in the range 0 to 1.
         """
         r, g, b = (float_to_255(c) for c in self._rgba[:3])
@@ -197,7 +197,7 @@ class Color(_repr.Representation):
         Returns the color as an HSL or HSLA tuple.
 
         Args:
-            alpha: Whether to include the alpha channel.
+            alpha (Optional[bool]): Whether to include the alpha channel.
                 `None` (default): Include the alpha channel only if it's set (e.g. not `None`).
                 `True`: Always include alpha.
                 `False`: Always omit alpha.
@@ -251,10 +251,10 @@ def parse_tuple(value: Tuple[Any, ...]) -> RGBA:
     """Parse a tuple or list to get RGBA values.
 
     Args:
-        value: A tuple or list.
+        value (Tuple[Any, ...]): A tuple or list.
 
     Returns:
-        Return RGBA values.
+        RGBA: An RGBA tuple parsed from the input tuple.
 
     Raises:
         PydanticCustomError: If tuple is not valid.
@@ -282,10 +282,10 @@ def parse_str(value: str) -> RGBA:
     * `rgba(<r>, <g>, <b>, <a>)`
 
     Args:
-        value: A string representing a color.
+        value (str): A string representing a color.
 
     Returns:
-        An RGBA tuple parsed from the input string.
+        RGBA: An RGBA tuple parsed from the input string.
 
     Raises:
         ValueError: If the input string cannot be parsed to an RGBA tuple.
@@ -409,14 +409,14 @@ def parse_hsl(h: str, h_units: str, sat: str, light: str, alpha: Optional[float]
     Parse raw hue, saturation, lightness, and alpha values and convert to RGBA.
 
     Args:
-        h: str, the hue value.
-        h_units: str, the unit for hue value.
-        sat: str, the saturation value.
-        light: str, the lightness value.
-        alpha: Optional[float], alpha value.
+        h (str): The hue value.
+        h_units (str): The unit for hue value.
+        sat (str): The saturation value.
+        light (str): The lightness value.
+        alpha (Optional[float]): Alpha value.
 
     Returns:
-        An instance of `RGBA`.
+        RGBA: An instance of `RGBA`.
     """
     s_value, l_value = parse_color_value(sat, 100), parse_color_value(light, 100)
 
