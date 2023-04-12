@@ -25,6 +25,8 @@ pub struct UnionValidator {
     custom_error: Option<CustomError>,
     strict: bool,
     name: String,
+    strict_required: bool,
+    ultra_strict_required: bool,
 }
 
 impl BuildValidator for UnionValidator {
@@ -54,6 +56,8 @@ impl BuildValidator for UnionValidator {
                     custom_error: CustomError::build(schema, config, build_context)?,
                     strict: is_strict(schema, config)?,
                     name: format!("{}[{descr}]", Self::EXPECTED_TYPE),
+                    strict_required: true,
+                    ultra_strict_required: false,
                 }
                 .into())
             }
@@ -84,12 +88,25 @@ impl Validator for UnionValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
+        if self.ultra_strict_required {
+            // do an ultra strict check first
+            let ultra_strict_extra = extra.as_strict(true);
+            if let Some(res) = self
+                .choices
+                .iter()
+                .map(|validator| validator.validate(py, input, &ultra_strict_extra, slots, recursion_guard))
+                .find(ValResult::is_ok)
+            {
+                return res;
+            }
+        }
+
         if extra.strict.unwrap_or(self.strict) {
             let mut errors: Option<Vec<ValLineError>> = match self.custom_error {
                 None => Some(Vec::with_capacity(self.choices.len())),
                 _ => None,
             };
-            let strict_extra = extra.as_strict();
+            let strict_extra = extra.as_strict(false);
 
             for validator in &self.choices {
                 let line_errors = match validator.validate(py, input, &strict_extra, slots, recursion_guard) {
@@ -108,16 +125,18 @@ impl Validator for UnionValidator {
 
             Err(self.or_custom_error(errors, input))
         } else {
-            // 1st pass: check if the value is an exact instance of one of the Union types,
-            // e.g. use validate in strict mode
-            let strict_extra = extra.as_strict();
-            if let Some(res) = self
-                .choices
-                .iter()
-                .map(|validator| validator.validate(py, input, &strict_extra, slots, recursion_guard))
-                .find(ValResult::is_ok)
-            {
-                return res;
+            if self.strict_required {
+                // 1st pass: check if the value is an exact instance of one of the Union types,
+                // e.g. use validate in strict mode
+                let strict_extra = extra.as_strict(false);
+                if let Some(res) = self
+                    .choices
+                    .iter()
+                    .map(|validator| validator.validate(py, input, &strict_extra, slots, recursion_guard))
+                    .find(ValResult::is_ok)
+                {
+                    return res;
+                }
             }
 
             let mut errors: Option<Vec<ValLineError>> = match self.custom_error {
@@ -145,6 +164,16 @@ impl Validator for UnionValidator {
         }
     }
 
+    fn different_strict_behavior(
+        &self,
+        build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        self.choices
+            .iter()
+            .any(|v| v.different_strict_behavior(build_context, ultra_strict))
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }
@@ -154,7 +183,10 @@ impl Validator for UnionValidator {
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        self.choices.iter_mut().try_for_each(|v| v.complete(build_context))
+        self.choices.iter_mut().try_for_each(|v| v.complete(build_context))?;
+        self.strict_required = self.different_strict_behavior(Some(build_context), false);
+        self.ultra_strict_required = self.different_strict_behavior(Some(build_context), true);
+        Ok(())
     }
 }
 
@@ -389,6 +421,16 @@ impl Validator for TaggedUnionValidator {
                 recursion_guard,
             ),
         }
+    }
+
+    fn different_strict_behavior(
+        &self,
+        build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        self.choices
+            .values()
+            .any(|v| v.different_strict_behavior(build_context, ultra_strict))
     }
 
     fn get_name(&self) -> &str {

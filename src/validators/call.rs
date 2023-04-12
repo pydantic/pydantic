@@ -81,6 +81,20 @@ impl Validator for CallValidator {
         }
     }
 
+    fn different_strict_behavior(
+        &self,
+        build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        if let Some(return_validator) = &self.return_validator {
+            if return_validator.different_strict_behavior(build_context, ultra_strict) {
+                return true;
+            }
+        }
+        self.arguments_validator
+            .different_strict_behavior(build_context, ultra_strict)
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }

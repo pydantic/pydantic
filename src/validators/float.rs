@@ -68,11 +68,19 @@ impl Validator for FloatValidator {
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let float = input.validate_float(extra.strict.unwrap_or(self.strict))?;
+        let float = input.validate_float(extra.strict.unwrap_or(self.strict), extra.ultra_strict)?;
         if !self.allow_inf_nan && !float.is_finite() {
             return Err(ValError::new(ErrorType::FiniteNumber, input));
         }
         Ok(float.into_py(py))
+    }
+
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _ultra_strict: bool,
+    ) -> bool {
+        true
     }
 
     fn get_name(&self) -> &str {
@@ -104,7 +112,7 @@ impl Validator for ConstrainedFloatValidator {
         _slots: &'data [CombinedValidator],
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let float = input.validate_float(extra.strict.unwrap_or(self.strict))?;
+        let float = input.validate_float(extra.strict.unwrap_or(self.strict), extra.ultra_strict)?;
         if !self.allow_inf_nan && !float.is_finite() {
             return Err(ValError::new(ErrorType::FiniteNumber, input));
         }
@@ -142,6 +150,15 @@ impl Validator for ConstrainedFloatValidator {
         }
         Ok(float.into_py(py))
     }
+
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _ultra_strict: bool,
+    ) -> bool {
+        true
+    }
+
     fn get_name(&self) -> &str {
         "constrained-float"
     }

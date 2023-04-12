@@ -88,6 +88,14 @@ impl Validator for LiteralSingleStringValidator {
         }
     }
 
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        !ultra_strict
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }
@@ -132,6 +140,14 @@ impl Validator for LiteralSingleIntValidator {
                 input,
             ))
         }
+    }
+
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _ultra_strict: bool,
+    ) -> bool {
+        true
     }
 
     fn get_name(&self) -> &str {
@@ -193,6 +209,14 @@ impl Validator for LiteralMultipleStringsValidator {
         }
     }
 
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        !ultra_strict
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }
@@ -250,6 +274,14 @@ impl Validator for LiteralMultipleIntsValidator {
                 input,
             ))
         }
+    }
+
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _ultra_strict: bool,
+    ) -> bool {
+        true
     }
 
     fn get_name(&self) -> &str {
@@ -336,6 +368,14 @@ impl Validator for LiteralGeneralValidator {
             },
             input,
         ))
+    }
+
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        !ultra_strict
     }
 
     fn get_name(&self) -> &str {
