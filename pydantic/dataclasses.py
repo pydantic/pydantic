@@ -170,6 +170,12 @@ def dataclass(
             **kwargs,
         )
         cls.__doc__ = original_doc
+
+        # TODO: Ideally we would do a rebuild or similar here to resolve any self-references in the type annotations
+        # without needing to manually call the equivalent of "update_forward_refs".
+        # However, currently, rebuilding a dataclasses results in the loss of field configuration
+        # coming from dataclasses.field, so I haven't set it up to do this yet.
+
         return cls
 
     if _cls is None:

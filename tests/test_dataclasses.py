@@ -1426,6 +1426,28 @@ def test_self_reference_dataclass():
     ]
 
 
+def test_cyclic_reference_dataclass():
+    @pydantic.dataclasses.dataclass
+    class D1:
+        d2: Optional['D2'] = None
+
+    @pydantic.dataclasses.dataclass
+    class D2:
+        d1: Optional[D1] = None
+
+    from pydantic._internal._dataclasses import rebuild_pydantic_dataclass
+
+    rebuild_pydantic_dataclass(D1)
+
+    instance = D1(d2=D2(d1=D1(d2=D2(d1=D1()))))
+
+    assert AnalyzedType(D1).dump_python(instance) == {...}
+
+    with pytest.raises(ValidationError) as exc_info:
+        D1(d2=D2(d1=D1(d2=D2(d1=D2()))))
+    assert exc_info.value.errors() == [...]
+
+
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
 def test_kw_only():
     @pydantic.dataclasses.dataclass(kw_only=True)
