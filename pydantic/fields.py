@@ -33,6 +33,8 @@ class FieldInfo(_repr.Representation):
         'default_factory',
         'alias',
         'alias_priority',
+        'validation_alias',
+        'serialization_alias',
         'title',
         'description',
         'examples',
@@ -84,6 +86,8 @@ class FieldInfo(_repr.Representation):
         self.alias = kwargs.get('alias')
         self.alias_priority = kwargs.get('alias_priority') or 2 if self.alias is not None else None
         self.title = kwargs.get('title')
+        self.validation_alias = kwargs.get('validation_alias', None)
+        self.serialization_alias = kwargs.get('serialization_alias', None)
         self.description = kwargs.get('description')
         self.examples = kwargs.get('examples')
         self.exclude = kwargs.get('exclude')
@@ -303,6 +307,10 @@ class FieldInfo(_repr.Representation):
                 continue
             if s == 'frozen' and self.frozen is False:
                 continue
+            if s == 'validation_alias' and self.validation_alias == self.alias:
+                continue
+            if s == 'serialization_alias' and self.serialization_alias == self.alias:
+                continue
             if s == 'default_factory' and self.default_factory is not None:
                 yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
             else:
@@ -316,10 +324,9 @@ def Field(
     *,
     default_factory: typing.Callable[[], Any] | None = None,
     alias: str | None = None,
-    # TODO:
-    #  Alternative 1: we could drop alias_priority and tell people to manually override aliases in child classes
-    #  Alternative 2: we could add a new argument `override_with_alias_generator=True` equivalent to `alias_priority=1`
     alias_priority: int | None = None,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    serialization_alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
     examples: list[Any] | None = None,
@@ -431,11 +438,18 @@ def Field(
         if not json_schema_extra:
             json_schema_extra = extra
 
+    if validation_alias is None:
+        validation_alias = alias
+    if serialization_alias is None and isinstance(alias, str):
+        serialization_alias = alias
+
     return FieldInfo.from_field(
         default,
         default_factory=default_factory,
         alias=alias,
         alias_priority=alias_priority,
+        validation_alias=validation_alias,
+        serialization_alias=serialization_alias,
         title=title,
         description=description,
         examples=examples,

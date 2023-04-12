@@ -237,7 +237,11 @@ def generate_model_signature(
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
         allow_names = config_wrapper.populate_by_name
         for field_name, field in fields.items():
-            param_name = field.alias or field_name
+            # when alias is a str it should be used for signature generation
+            if isinstance(field.alias, str):
+                param_name = field.alias
+            else:
+                param_name = field_name
             if field_name in merged_params or param_name in merged_params:
                 continue
             elif not is_valid_identifier(param_name):
@@ -307,4 +311,6 @@ def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> N
             if not isinstance(alias, str):
                 raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
             field_info.alias = alias
+            field_info.validation_alias = alias
+            field_info.serialization_alias = alias
             field_info.alias_priority = 1
