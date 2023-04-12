@@ -12,7 +12,7 @@ from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_sc
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
-from . import _decorators
+from . import _decorators, _model_construction
 from ._core_utils import get_type_ref
 from ._fields import collect_fields
 from ._forward_ref import PydanticForwardRef
@@ -70,7 +70,10 @@ def prepare_dataclass(
 
     dataclass_ref = get_type_ref(cls)
     self_schema = core_schema.definition_reference_schema(dataclass_ref)
-    types_namespace = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
+    types_namespace = {
+        name: PydanticForwardRef(self_schema, cls),
+        **(types_namespace or {}),
+    }
     try:
         fields, _ = collect_fields(cls, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
     except PydanticUndefinedAnnotation as e:
@@ -119,6 +122,11 @@ def prepare_dataclass(
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
     cls.__init__ = __init__  # type: ignore
+
+    # set fields again to resolve forward references
+    types_namespace = _model_construction.get_model_types_namespace(cls, None)
+    fields, _ = collect_fields(cls, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
+    cls.__pydantic_fields__ = fields
 
     return True
 

@@ -133,7 +133,7 @@ def single_underscore(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
 
 
-def get_model_types_namespace(cls: type[BaseModel], parent_frame_namespace: dict[str, Any] | None) -> dict[str, Any]:
+def get_model_types_namespace(cls: type[Any], parent_frame_namespace: dict[str, Any] | None) -> dict[str, Any]:
     ns = add_module_globals(cls, parent_frame_namespace)
     ns[cls.__name__] = cls
     return ns
