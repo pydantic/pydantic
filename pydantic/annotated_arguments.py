@@ -29,13 +29,13 @@ class WrapValidator:
 
 @slots_dataclass
 class PlainSerializer:
-    func: _core_schema.GeneralPlainSerializerFunction | _decorators.GenericPlainSerializerFunctionWithoutInfo
+    func: _core_schema.SerializerFunction
     json_return_type: _core_schema.JsonReturnTypes | None = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
 
 @slots_dataclass
 class WrapSerializer:
-    func: _core_schema.GeneralWrapSerializerFunction | _decorators.GeneralWrapSerializerFunctionWithoutInfo
+    func: _core_schema.WrapSerializerFunction
     json_return_type: _core_schema.JsonReturnTypes | None = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'

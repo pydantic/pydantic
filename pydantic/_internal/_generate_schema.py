@@ -40,7 +40,7 @@ from ._decorators import (
     ModelValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
-    make_generic_serializer,
+    inspect_annotated_serializer,
     make_generic_validator,
 )
 from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
@@ -869,8 +869,8 @@ class GenerateSchema:
         from . import _serializers, _validators
 
         metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'regex'})
-        ser = core_schema.general_plain_serializer_function_ser_schema(
-            _serializers.pattern_serializer, json_return_type='str'
+        ser = core_schema.plain_serializer_function_ser_schema(
+            _serializers.pattern_serializer, info_arg=True, json_return_type='str'
         )
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
@@ -1001,25 +1001,19 @@ def apply_field_serializers(
         # use the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
         if serializer.info.mode == 'wrap':
-            sf = (
-                core_schema.field_wrap_serializer_function_ser_schema
-                if serializer.info.type == 'field'
-                else core_schema.general_wrap_serializer_function_ser_schema
-            )
-            schema['serialization'] = sf(  # type: ignore[operator]
+            schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
+                is_field_serializer=serializer.info.is_field_serializer,
+                info_arg=serializer.info.info_arg,
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
             )
         else:
             assert serializer.info.mode == 'plain'
-            sf = (
-                core_schema.field_plain_serializer_function_ser_schema
-                if serializer.info.type == 'field'
-                else core_schema.general_plain_serializer_function_ser_schema
-            )
-            schema['serialization'] = sf(  # type: ignore[operator]
+            schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
                 serializer.func,
+                is_field_serializer=serializer.info.is_field_serializer,
+                info_arg=serializer.info.info_arg,
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
             )
@@ -1036,14 +1030,16 @@ def apply_model_serializers(
         serializer = list(serializers)[-1]
 
         if serializer.info.mode == 'wrap':
-            ser_schema: core_schema.SerSchema = core_schema.general_wrap_serializer_function_ser_schema(
+            ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
+                info_arg=serializer.info.info_arg,
                 json_return_type=serializer.info.json_return_type,
             )
         else:
             # plain
-            ser_schema = core_schema.general_plain_serializer_function_ser_schema(
+            ser_schema = core_schema.plain_serializer_function_ser_schema(
                 serializer.func,
+                info_arg=serializer.info.info_arg,
                 json_return_type=serializer.info.json_return_type,
             )
         schema['serialization'] = ser_schema
@@ -1131,15 +1127,17 @@ def apply_single_annotation(  # noqa C901
             schema=schema,
         )
     elif isinstance(metadata, PlainSerializer):
-        schema['serialization'] = core_schema.general_plain_serializer_function_ser_schema(
-            function=make_generic_serializer(metadata.func, mode='plain', type='general'),
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
+            function=metadata.func,
+            info_arg=inspect_annotated_serializer(metadata.func, 'plain'),
             json_return_type=metadata.json_return_type,
             when_used=metadata.when_used,
         )
         return schema
     elif isinstance(metadata, WrapSerializer):
-        schema['serialization'] = core_schema.general_wrap_serializer_function_ser_schema(
-            function=make_generic_serializer(metadata.func, mode='wrap', type='general'),
+        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+            function=metadata.func,
+            info_arg=inspect_annotated_serializer(metadata.func, 'wrap'),
             json_return_type=metadata.json_return_type,
             when_used=metadata.when_used,
         )

@@ -344,22 +344,10 @@ def root_validator(
     return dec
 
 
-_PlainSerializationFunction = Union[
-    _core_schema.GeneralPlainSerializerFunction,
-    _core_schema.FieldPlainSerializerFunction,
-    _decorators.GenericPlainSerializerFunctionWithoutInfo,
-    _decorators.FieldPlainSerializerFunctionWithoutInfo,
-    _PartialClsOrStaticMethod,
-]
+_PlainSerializationFunction = Union[_core_schema.SerializerFunction, _PartialClsOrStaticMethod]
 
 
-_WrapSerializationFunction = Union[
-    _core_schema.GeneralWrapSerializerFunction,
-    _core_schema.FieldWrapSerializerFunction,
-    _decorators.GeneralWrapSerializerFunctionWithoutInfo,
-    _decorators.FieldWrapSerializerFunctionWithoutInfo,
-    _PartialClsOrStaticMethod,
-]
+_WrapSerializationFunction = Union[_core_schema.WrapSerializerFunction, _PartialClsOrStaticMethod]
 
 
 _PlainSerializeMethodType = TypeVar('_PlainSerializeMethodType', bound=_PlainSerializationFunction)
@@ -432,19 +420,18 @@ def field_serializer(
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
     ) -> _decorators.PydanticDecoratorMarker[Any]:
-        type_: Literal['field', 'general'] = 'field' if _decorators.is_instance_method_from_sig(f) else 'general'
+        is_field_serializer, info_arg = _decorators.inspect_field_serializer(f, mode)
 
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
-            type=type_,
+            is_field_serializer=is_field_serializer,
+            info_arg=info_arg,
             json_return_type=json_return_type,
             when_used=when_used,
             check_fields=check_fields,
         )
-        return _decorators.PydanticDecoratorMarker(
-            f, dec_info, shim=partial(_decorators.make_generic_serializer, mode=mode, type=type_)
-        )
+        return _decorators.PydanticDecoratorMarker(f, dec_info)
 
     return dec
 
@@ -474,18 +461,13 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker[Any]:
-        if isinstance(f, (staticmethod, classmethod)) or not _decorators.is_instance_method_from_sig(f):
-            raise PydanticUserError(
-                '`@model_serializer` must be applied to instance methods', code='model-serializer-instance-method'
-            )
-
+        info_arg = _decorators.inspect_model_serializer(f, mode)
         dec_info = _decorators.ModelSerializerDecoratorInfo(
             mode=mode,
+            info_arg=info_arg,
             json_return_type=json_return_type,
         )
-        return _decorators.PydanticDecoratorMarker(
-            f, dec_info, shim=partial(_decorators.make_generic_model_serializer, mode=mode)
-        )
+        return _decorators.PydanticDecoratorMarker(f, dec_info)
 
     if __f is None:
         return dec

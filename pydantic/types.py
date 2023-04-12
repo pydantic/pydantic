@@ -449,8 +449,8 @@ class SecretField(abc.ABC, Generic[SecretType]):
                 custom_error_type=cls._error_kind,
             ),
             metadata=metadata,
-            serialization=core_schema.general_plain_serializer_function_ser_schema(
-                cls._serialize, json_return_type='str'
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                cls._serialize, info_arg=True, json_return_type='str'
             ),
         )
 
