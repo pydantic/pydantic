@@ -1,3 +1,4 @@
+"""A class representing the analyzed type."""
 from __future__ import annotations as _annotations
 
 import sys
