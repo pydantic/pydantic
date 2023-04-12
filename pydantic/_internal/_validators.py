@@ -339,7 +339,6 @@ def deque_any_validator(
 def deque_typed_validator(
     __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler, _: core_schema.ValidationInfo
 ) -> deque[Any]:
-    # return deque(__input_value)
     if isinstance(__input_value, deque):
         return deque(validator(__input_value), maxlen=__input_value.maxlen)
     else:
