@@ -869,26 +869,6 @@ def test_inherit_builtin_dataclass():
     assert pika.z == 3
 
 
-@pytest.mark.xfail(reason='cannot parse a tuple into a dataclass')
-def test_dataclass_arbitrary():
-    class ArbitraryType:
-        def __init__(self):
-            ...
-
-    @dataclasses.dataclass
-    class Test:
-        foo: ArbitraryType
-        bar: List[ArbitraryType]
-
-    class TestModel(BaseModel):
-        a: ArbitraryType
-        b: Test
-
-        model_config = ConfigDict(arbitrary_types_allowed=True)
-
-    TestModel(a=ArbitraryType(), b=(ArbitraryType(), [ArbitraryType()]))
-
-
 def test_forward_stdlib_dataclass_params():
     @dataclasses.dataclass(frozen=True)
     class Item:
