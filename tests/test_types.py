@@ -3854,6 +3854,22 @@ def test_deque_json():
     assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
 
 
+def test_deque_maxlen():
+    class DequeWrapper(BaseModel):
+        field: Deque[int] = deque()
+
+    assert DequeWrapper().field.maxlen is None
+    assert DequeWrapper(field=deque()).field.maxlen is None
+    assert DequeWrapper(field=deque(maxlen=8)).field.maxlen == 8
+
+    class OtherDequeWrapper(BaseModel):
+        field: Deque[int] = deque(maxlen=5)
+
+    assert OtherDequeWrapper().field.maxlen == 5
+    assert OtherDequeWrapper(field=deque()).field.maxlen is None
+    assert OtherDequeWrapper(field=deque(maxlen=8)).field.maxlen == 8
+
+
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__, Literal[None]))
 def test_none(value_type):
     class Model(BaseModel):
