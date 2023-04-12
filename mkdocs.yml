@@ -95,6 +95,22 @@ nav:
 - Contribute: contributing.md
 - Blog:
   - blog/pydantic-v2.md
+- API:
+  - 'pydantic.analyzed_type': api/analyzed_type.md
+  - 'pydantic.color': api/color.md
+  - 'pydantic.config': api/config.md
+  - 'pydantic.dataclasses': api/dataclasses.md
+  - 'pydantic.decorator': api/decorator.md
+  - 'pydantic.decorators': api/decorators.md
+  - 'pydantic.errors': api/errors.md
+  - 'pydantic.fields': api/fields.md
+  - 'pydantic.json_schema': api/json_schema.md
+  - 'pydantic.main': api/main.md
+  - 'pydantic.mypy': api/mypy.md
+  - 'pydantic.networks': api/networks.md
+  - 'pydantic.tools': api/tools.md
+  - 'pydantic.types': api/types.md
+  - 'pydantic.version': api/version.md
 
 
 markdown_extensions:
@@ -111,6 +127,9 @@ markdown_extensions:
 - pymdownx.tabbed:
     alternate_style: true
 
+watch:
+- pydantic
+
 plugins:
 - search
 - exclude:
@@ -118,6 +137,10 @@ plugins:
     - theme/announce.html
     - plugins/*
     - __pycache__/*
+- mkdocstrings:
+    handlers:
+      python:
+        path: .
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'

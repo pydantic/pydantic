@@ -361,62 +361,52 @@ def Field(
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
 
-    :param default: since this is replacing the field's default, its first argument is used
-      to set the default, use ellipsis (`...`) to indicate the field is required
-    :param default_factory: callable that will be called when a default value is needed for this field
-      If both `default` and `default_factory` are set, an error is raised.
-    :param alias: the public name of the field
-    # TODO: Add documentation reference for non-str alias variants
-    :param validation_alias: the alias(es) to use to find the field value during validation
-    :param serialization_alias: The alias to use as a key when serializing
-    :param title: can be any string, used in the schema
-    :param description: can be any string, used in the schema
-    :param examples: can be any list of json-encodable data, used in the schema
-    :param exclude: exclude this field while dumping.
-      Takes same values as the `include` and `exclude` arguments on the `.dict` method.
-    :param include: include this field while dumping.
-      Takes same values as the `include` and `exclude` arguments on the `.dict` method.
-    :param gt: only applies to numbers, requires the field to be "greater than". The schema
-      will have an `exclusiveMinimum` validation keyword
-    :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
-      schema will have a `minimum` validation keyword
-    :param lt: only applies to numbers, requires the field to be "less than". The schema
-      will have an `exclusiveMaximum` validation keyword
-    :param le: only applies to numbers, requires the field to be "less than or equal to". The
-      schema will have a `maximum` validation keyword
-    :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
-      schema will have a `multipleOf` validation keyword
-    :param allow_inf_nan: only applies to numbers, allows the field to be NaN or infinity (+inf or -inf),
-        which is a valid Python float. Default True, set to False for compatibility with JSON.
-    :param max_digits: only applies to Decimals, requires the field to have a maximum number
-      of digits within the decimal. It does not include a zero before the decimal point or trailing decimal zeroes.
-    :param decimal_places: only applies to Decimals, requires the field to have at most a number of decimal places
-      allowed. It does not include trailing decimal zeroes.
-    :param min_items: deprecated, use `min_length` instead.
-      only applies to lists, requires the field to have a minimum number of
-      elements. The schema will have a `minItems` validation keyword
-    :param max_items: deprecated, use `max_length` instead.
-      only applies to lists, requires the field to have a maximum number of
-      elements. The schema will have a `maxItems` validation keyword
-    :param min_length: only applies to strings, requires the field to have a minimum length. The
-      schema will have a `minLength` validation keyword
-    :param max_length: only applies to strings, requires the field to have a maximum length. The
-      schema will have a `maxLength` validation keyword
-    :param frozen: a boolean which defaults to False. When True, the field raises a TypeError if the field is
-      assigned on an instance. The BaseModel Config must set validate_assignment to True
-    :param pattern: only applies to strings, requires the field match against a regular expression
-      pattern string. The schema will have a `pattern` validation keyword
-    :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
-      The `discriminator` is the name of this common field to shorten validation and improve generated schema
-    :param repr: show this field in the representation
-    :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
-    :param strict: enable or disable strict parsing mode
-    :param validate_default: whether the default value should be validated for this field
-    :param const: removed, use `Literal` instead'
-    :param unique_items: removed, use `Set` instead
-    :param allow_mutation: deprecated, use `frozen` instead
-    :param regex: removed, use `Pattern` instead
-    :param **extra: deprecated, use `json_schema_extra` instead
+    Args:
+        default (Any): The default value is returned if the corresponding field value is not present in the input data
+            or if the data value is None. Defaults to `Undefined`.
+        default_factory (typing.Callable[[], Any] | None): A callable that returns the default value for the field.
+            Only used if default is not set. Defaults to `None`.
+        alias (str | None): The alias for the field. Defaults to `None`.
+        alias_priority (int | None): The priority score for the field if it is an alias for another field. Defaults to
+            `None`.
+        validation_alias (str | list[str | int] | list[list[str | int]] | None): The alias(es) to use to find the field
+            value during validation. Defaults to `None`. TODO: Add documentation reference for non-str alias variants
+        serialization_alias (str | None): The alias to use as a key when serializing. Defaults to `None`.
+        title (str | None): The title for the field. Defaults to `None`.
+        description (str | None): The description for the field. Defaults to `None`.
+        examples (list[Any] | None): Examples of the field values. Defaults to `None`.
+        exclude (typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any): A set or mapping of keys that
+            should be excluded from the input data. Defaults to `None`.
+        include (typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any): A set or mapping of keys that
+            should be included in the input data. Defaults to `None`.
+        gt (float | None): The minimum value of the field. Defaults to `None`.
+        ge (float | None): The minimum value of the field (inclusive). Defaults to `None`.
+        lt (float | None): The maximum value of the field. Defaults to `None`.
+        le (float | None): The maximum value of the field (inclusive). Defaults to `None`.
+        multiple_of (float | None): The field value must be a multiple of this value. Defaults to `None`.
+        allow_inf_nan (bool | None): Determines whether the field can be populated with infinity or NaN values.
+            Defaults to `None`.
+        max_digits (int | None): The maximum number of digits in a decimal number. Defaults to `None`.
+        decimal_places (int | None): The maximum number of decimal places allowed in a decimal number.
+            Defaults to `None`.
+        min_items (int | None): The minimum number of items allowed in a sequence. Defaults to `None`.
+        max_items (int | None): The maximum number of items allowed in a sequence. Defaults to `None`.
+        min_length (int | None): The minimum length of a string field. Defaults to `None`.
+        max_length (int | None): The maximum length of a string field. Defaults to `None`.
+        frozen (bool | None): Determines whether the value is immutable. Defaults to `None`.
+        pattern (str | None): A regular expression pattern used to validate string fields. Defaults to `None`.
+        discriminator (str | None): The discriminator value for a polymorphic model. Defaults to `None`.
+        repr (bool): Determines whether the field value should be included in the object's string representation.
+            Defaults to True.
+        strict (bool | None): Used to determine whether the object should be marked as invalid if an unknown field is
+            detected. Defaults to `None`.
+        json_schema_extra (dict[str, Any] | None): A dictionary containing any additional metadata about the field.
+            Defaults to `None`.
+        validate_default (bool | None): Determines whether the default value for the field should be validated.
+            Defaults to `None`.
+
+    Returns:
+        Any: The field for the attribute.
     """
     # Check deprecated & removed params of V1.
     # This has to be removed deprecation period over.

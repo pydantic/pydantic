@@ -1,5 +1,6 @@
 """
 Public methods related to:
+
 * `validator` - a decorator to add validation to a field on a model
 * `root_validator` - a decorator to add validation to a model as a whole
 * `serializer` - a decorator to add serialization to a field on a model
@@ -125,16 +126,26 @@ def validator(
     allow_reuse: bool = False,
 ) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
     """
-    Decorate methods on the class indicating that they should be used to validate fields
-    :param __field: the first field the validator should be called on;
-        this is separate from `fields` to ensure an error is raised if you don't pass at least one
-    :param fields: additional field(s) the validator should be called on
-    :param pre: whether or not this validator should be called before the standard validators (else after)
-    :param each_item: for complex objects (sets, lists etc.) whether to validate individual elements rather than the
-      whole object
-    :param always: whether this method and other validators should be called even if the value is missing
-    :param check_fields: whether to check that the fields actually exist on the model
-    :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
+    Decorate methods on the class indicating that they should be used to validate fields.
+
+    Args:
+        __field (str): The first field the validator should be called on; this is separate
+            from `fields` to ensure an error is raised if you don't pass at least one.
+        *fields (str): Additional field(s) the validator should be called on.
+        pre (bool, optional): Whether or not this validator should be called before the standard
+            validators (else after). Defaults to False.
+        each_item (bool, optional): For complex objects (sets, lists etc.) whether to validate
+            individual elements rather than the whole object. Defaults to False.
+        always (bool, optional): Whether this method and other validators should be called even if
+            the value is missing. Defaults to False.
+        check_fields (bool | None, optional): Whether to check that the fields actually exist on the model.
+            Defaults to None.
+        allow_reuse (bool, optional): Whether to track and raise an error if another validator refers to
+            the decorated function. Defaults to False.
+
+    Returns:
+        Callable[[_V1ValidatorType], _V1ValidatorType]: A decorator that can be used to decorate a
+            function to be used as a validator.
     """
     if allow_reuse is True:  # pragma: no cover
         warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
@@ -209,13 +220,18 @@ def field_validator(
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
     """
-    Decorate methods on the class indicating that they should be used to validate fields
-    :param __field: the first field the field_validator should be called on;
-        this is separate from `fields` to ensure an error is raised if you don't pass at least one
-    :param fields: additional field(s) the field_validator should be called on
-    :param mode: TODO
-    :param check_fields: whether to check that the fields actually exist on the model
-    :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
+    Decorate methods on the class indicating that they should be used to validate fields.
+
+    Args:
+        __field (str): The first field the field_validator should be called on; this is separate
+            from `fields` to ensure an error is raised if you don't pass at least one.
+        *fields (str): Additional field(s) the field_validator should be called on.
+        mode (Literal['before', 'after', 'wrap', 'plain'], optional): TODO. Defaults to 'after'.
+        check_fields (bool | None, optional): Whether to check that the fields actually exist on
+            the model. Defaults to None.
+
+    Returns:
+        Callable[[Any], Any]: A decorator that can be used to decorate a function to be used as a field_validator.
     """
     fields = tuple((__field, *fields))
     if isinstance(fields[0], FunctionType):
@@ -292,8 +308,19 @@ def root_validator(
     allow_reuse: bool = False,
 ) -> Any:
     """
-    Decorate methods on a model indicating that they should be used to validate (and perhaps modify) data either
-    before or after standard model parsing/validation is performed.
+    Decorate methods on a model indicating that they should be used to validate (and perhaps
+    modify) data either before or after standard model parsing/validation is performed.
+
+    Args:
+        pre (bool, optional): Whether or not this validator should be called before the standard
+            validators (else after). Defaults to False.
+        skip_on_failure (bool, optional): Whether to stop validation and return as soon as a
+            failure is encountered. Defaults to False.
+        allow_reuse (bool, optional): Whether to track and raise an error if another validator
+            refers to the decorated function. Defaults to False.
+
+    Returns:
+        Any: A decorator that can be used to decorate a function to be used as a root_validator.
     """
     if allow_reuse is True:  # pragma: no cover
         warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
@@ -383,19 +410,23 @@ def field_serializer(
 ) -> Callable[[Any], Any]:
     """
     Decorate methods on the class indicating that they should be used to serialize fields.
-    Four signatures are supported:
-    - (self, value: Any, info: FieldSerializationInfo)
-    - (self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)
-    - (value: Any, info: SerializationInfo)
-    - (value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)
 
-    :param fields: which field(s) the method should be called on
-    :param mode: `'plain'` means the function will be called instead of the default serialization logic,
-        `'wrap'` means the function will be called with an argument to optionally call the default serialization logic.
-    :param json_return_type: The type that the function returns if the serialization mode is JSON.
-    :param when_used: When the function should be called
-    :param check_fields: whether to check that the fields actually exist on the model
-    :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
+    Four signatures are supported:
+
+    - `(self, value: Any, info: FieldSerializationInfo)`
+    - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`
+    - `(value: Any, info: SerializationInfo)`
+    - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
+
+    Args:
+        fields (str): Which field(s) the method should be called on.
+        mode (str):
+            - `'plain'` means the function will be called instead of the default serialization logic,
+            - `'wrap'` means the function will be called with an argument to optionally call the
+                default serialization logic.
+        json_return_type (str): The type that the function returns if the serialization mode is JSON.
+        when_used (str): When the function should be called.
+        check_fields (bool): Whether to check that the fields actually exist on the model.
     """
 
     def dec(
@@ -425,14 +456,21 @@ def model_serializer(
     json_return_type: _core_schema.JsonReturnTypes | None = None,
 ) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
     """
-    Function decorate to add a function which will be called to serialize the model.
+    Decorator to add a function which will be called to serialize the model.
 
-    (`when_used` is not permitted here since it make no sense)
+    (`when_used` is not permitted here since it makes no sense.)
 
-    :param mode: `'plain'` means the function will be called instead of the default serialization logic,
-        `'wrap'` means the function will be called with an argument to optionally call the default serialization logic.
-    :param json_return_type: The type that the function returns if the serialization mode is JSON.
-    :param allow_reuse: whether to track and raise an error if another validator refers to the decorated function
+    Args:
+        __f (Callable[..., Any] | None): The function to be decorated.
+        mode (Literal['plain', 'wrap']): The serialization mode. `'plain'` means the function will be called
+            instead of the default serialization logic, `'wrap'` means the function will be called with an argument
+            to optionally call the default serialization logic.
+        json_return_type (_core_schema.JsonReturnTypes | None): The type that the function returns if the
+            serialization mode is JSON.
+
+    Returns:
+        Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
+            The decorated function.
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker[Any]:
