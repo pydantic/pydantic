@@ -375,7 +375,7 @@ def ip_v6_address_validator(__input_value: Any, _: core_schema.ValidationInfo) -
 
 def ip_v4_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv4Network:
     """
-    Assume IPv4Network initialised with a default ``strict`` argument
+    Assume IPv4Network initialised with a default `strict` argument
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv4Network
@@ -391,7 +391,7 @@ def ip_v4_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -
 
 def ip_v6_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv6Network:
     """
-    Assume IPv6Network initialised with a default ``strict`` argument
+    Assume IPv6Network initialised with a default `strict` argument
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv6Network

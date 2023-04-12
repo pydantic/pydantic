@@ -45,6 +45,10 @@ TODO
 
 TODO
 
+## Keyword arguments deprecated {#deprecated_kwargs}
+
+The keyword arguments are not available in Pydantic V2.
+
 ## JSON Schema invalid type {#invalid-for-json-schema}
 
 TODO

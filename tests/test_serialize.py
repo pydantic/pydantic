@@ -1,6 +1,7 @@
 """
 New tests for v2 of serialization logic.
 """
+import json
 from functools import partial, partialmethod
 from typing import Any, Optional
 
@@ -18,16 +19,51 @@ from pydantic import (
     model_serializer,
 )
 from pydantic.annotated_arguments import PlainSerializer, WrapSerializer
+from pydantic.config import ConfigDict
 
 
-@pytest.fixture
-def reset_tracked_serializer():
-    from pydantic._internal._decorators import _FUNCS
+def test_serialize_extra_allow() -> None:
+    class Model(BaseModel):
+        x: int
+        model_config = ConfigDict(extra='allow')
 
-    original_tracked_serializers = set(_FUNCS)
-    yield
-    _FUNCS.clear()
-    _FUNCS.update(original_tracked_serializers)
+    m = Model(x=1, y=2)
+    assert m.y == 2
+    assert m.model_dump() == {'x': 1, 'y': 2}
+    assert json.loads(m.model_dump_json()) == {'x': 1, 'y': 2}
+
+
+def test_serialize_extra_allow_subclass_1() -> None:
+    class Parent(BaseModel):
+        x: int
+
+    class Child(Parent):
+        model_config = ConfigDict(extra='allow')
+
+    class Model(BaseModel):
+        inner: Parent
+
+    m = Model(inner=Child(x=1, y=2))
+    assert m.inner.y == 2
+    assert m.model_dump() == {'inner': {'x': 1}}
+    assert json.loads(m.model_dump_json()) == {'inner': {'x': 1}}
+
+
+def test_serialize_extra_allow_subclass_2() -> None:
+    class Parent(BaseModel):
+        x: int
+        model_config = ConfigDict(extra='allow')
+
+    class Child(Parent):
+        y: int
+
+    class Model(BaseModel):
+        inner: Parent
+
+    m = Model(inner=Child(x=1, y=2))
+    assert m.inner.y == 2
+    assert m.model_dump() == {'inner': {'x': 1, 'y': 2}}
+    assert json.loads(m.model_dump_json()) == {'inner': {'x': 1, 'y': 2}}
 
 
 def test_serializer_annotated_plain_always():
@@ -108,7 +144,7 @@ def test_serialize_decorator_json():
         x: int
 
         @field_serializer('x', json_return_type='str', when_used='json')
-        def customise_x_serialisation(v, _info):
+        def customise_x_serialisation(v):
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 1234}
@@ -121,7 +157,7 @@ def test_serialize_decorator_unless_none():
         x: Optional[int]
 
         @field_serializer('x', when_used='unless-none')
-        def customise_x_serialisation(v, _info):
+        def customise_x_serialisation(v):
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -470,11 +506,11 @@ def test_field_multiple_serializer():
             y: int
 
             @field_serializer('x', 'y', json_return_type='str')
-            def serializer1(v, _info):
+            def serializer1(v):
                 return f'{v:,}'
 
             @field_serializer('x', json_return_type='str')
-            def serializer2(v, _info):
+            def serializer2(v):
                 return v
 
 
@@ -483,12 +519,12 @@ def test_field_multiple_serializer_subclass():
         x: int
 
         @field_serializer('x', json_return_type='str')
-        def serializer1(v, _info):
+        def serializer1(v):
             return f'{v:,}'
 
     class MySubModel(MyModel):
         @field_serializer('x', json_return_type='str')
-        def serializer1(v, _info):
+        def serializer1(v):
             return f'{v}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -544,7 +580,9 @@ def int_ser_instance_method_with_info2(self: Any, v: int, info: FieldSerializati
         int_ser_instance_method_without_info2,
     ],
 )
-def test_serialize_partial(func: Any, reset_tracked_serializer: Any):
+def test_serialize_partial(
+    func: Any,
+):
     class MyModel(BaseModel):
         x: int
 
@@ -566,7 +604,9 @@ def test_serialize_partial(func: Any, reset_tracked_serializer: Any):
         int_ser_instance_method_without_info2,
     ],
 )
-def test_serialize_partialmethod(func: Any, reset_tracked_serializer: Any):
+def test_serialize_partialmethod(
+    func: Any,
+):
     class MyModel(BaseModel):
         x: int
 
@@ -604,7 +644,7 @@ def test_serializer_allow_reuse_inheritance_override():
 
         class _(Parent):
             @field_serializer('x')
-            def ser_x_other(self, _v: int, _info) -> str:
+            def ser_x_other(self, _v: int) -> str:
                 return 'err'
 
     # the same thing applies if defined on the same class
@@ -614,11 +654,11 @@ def test_serializer_allow_reuse_inheritance_override():
             x: int
 
             @field_serializer('x')
-            def ser_x(self, _v: int, _info) -> str:
+            def ser_x(self, _v: int) -> str:
                 return 'parent_encoder'
 
             @field_serializer('x')
-            def other_func_name(self, _v: int, _info) -> str:
+            def other_func_name(self, _v: int) -> str:
                 return 'parent_encoder'
 
 
@@ -629,11 +669,11 @@ def test_serializer_allow_reuse_same_field():
             x: int
 
             @field_serializer('x')
-            def ser_x(self, _v: int, _info) -> str:
+            def ser_x(self, _v: int) -> str:
                 return 'ser_1'
 
             @field_serializer('x')
-            def ser_x(self, _v: int, _info) -> str:  # noqa: F811
+            def ser_x(self, _v: int) -> str:  # noqa: F811
                 return 'ser_2'
 
         assert Model(x=1).model_dump() == {'x': 'ser_2'}
@@ -647,11 +687,11 @@ def test_serializer_allow_reuse_different_field_1():
             y: int
 
             @field_serializer('x')
-            def ser(self, _v: int, _info) -> str:
+            def ser(self, _v: int) -> str:
                 return 'x'
 
             @field_serializer('y')
-            def ser(self, _v: int, _info) -> str:  # noqa: F811
+            def ser(self, _v: int) -> str:  # noqa: F811
                 return 'y'
 
     assert Model(x=1, y=2).model_dump() == {'x': 1, 'y': 'y'}
@@ -668,7 +708,7 @@ def test_serializer_allow_reuse_different_field_2():
             y: int
 
             @field_serializer('x')
-            def ser_x(self, _v: int, _info) -> str:
+            def ser_x(self, _v: int) -> str:
                 return 'ser_x'
 
             ser_x = field_serializer('y')(ser)  # noqa: F811

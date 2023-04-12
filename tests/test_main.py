@@ -220,7 +220,23 @@ def test_allow_extra():
         model_config = ConfigDict(extra='allow')
         a: float = ...
 
-    assert Model(a='10.2', b=12).model_dump() == {'a': 10.2, 'b': 12}
+    assert Model(a='10.2', b=12).b == 12
+
+
+@pytest.mark.parametrize('extra', ['ignore', 'forbid', 'allow'])
+def test_allow_extra_from_attributes(extra: Literal['ignore', 'forbid', 'allow']):
+    class Model(BaseModel):
+        a: float
+
+        model_config = ConfigDict(extra=extra, from_attributes=True)
+
+    class TestClass:
+        a = 1.0
+        b = 12
+
+    m = Model.model_validate(TestClass())
+    assert m.a == 1.0
+    assert not hasattr(m, 'b')
 
 
 def test_allow_extra_repr():
@@ -1873,13 +1889,6 @@ def test_post_init_not_called_without_override():
 
     finally:
         BaseModel.model_post_init = original_base_model_post_init
-
-
-def test_extra_args_to_field_type_error():
-    with pytest.raises(TypeError, match='unexpected keyword argument'):
-
-        class Model(BaseModel):
-            a: int = Field(thing=1)
 
 
 def test_deeper_recursive_model():

@@ -19,7 +19,11 @@ except ImportError:
 
 MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 
-pytestmark = pytest.mark.skipif('--test-mypy' not in sys.argv, reason='Test only with "--test-mypy" flag')
+pytestmark = pytest.mark.skipif(
+    '--test-mypy' not in sys.argv
+    and os.environ.get('PYCHARM_HOSTED') != '1',  # never skip when running via the PyCharm runner
+    reason='Test only with "--test-mypy" flag',
+)
 
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
@@ -137,7 +141,15 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = f'.mypy_cache/test-{os.path.splitext(config_filename)[0]}'
-    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
+    command = [
+        full_filename,
+        '--config-file',
+        full_config_filename,
+        '--cache-dir',
+        cache_dir,
+        '--show-error-codes',
+        '--show-traceback',
+    ]
     if MYPY_VERSION_TUPLE >= (0, 990):
         command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary

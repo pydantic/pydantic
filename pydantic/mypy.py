@@ -306,15 +306,11 @@ class PydanticModelTransformer:
         * stores the fields, config, and if the class is settings in the mypy metadata for access by subclasses
         """
         ctx = self._ctx
-        info = self._ctx.cls.info
+        info = ctx.cls.info
 
         self.adjust_validator_signatures()
         config = self.collect_config()
         fields = self.collect_fields(config)
-        for field in fields:
-            if info[field.name].type is None:
-                if not ctx.api.final_iteration:
-                    ctx.api.defer()
         self.add_initializer(fields, config)
         self.add_model_construct_method(fields)
         self.set_frozen(fields, frozen=config.frozen is True)
