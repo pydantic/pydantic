@@ -42,6 +42,14 @@ impl Validator for BoolValidator {
         Ok(input.validate_bool(extra.strict.unwrap_or(self.strict))?.into_py(py))
     }
 
+    fn different_strict_behavior(
+        &self,
+        _build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        !ultra_strict
+    }
+
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }

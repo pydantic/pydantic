@@ -179,6 +179,7 @@ impl SchemaValidator {
         let extra = Extra {
             data: None,
             strict,
+            ultra_strict: false,
             context,
             field_name: None,
             self_instance: None,
@@ -462,6 +463,8 @@ pub struct Extra<'a> {
     pub field_name: Option<&'a str>,
     /// whether we're in strict or lax mode
     pub strict: Option<bool>,
+    /// whether we're in ultra-strict mode, only used occasionally in unions
+    pub ultra_strict: bool,
     /// context used in validator functions
     pub context: Option<&'a PyAny>,
     /// This is an instance of the model or dataclass being validated, when validation is performed from `__init__`
@@ -480,10 +483,11 @@ impl<'a> Extra<'a> {
 }
 
 impl<'a> Extra<'a> {
-    pub fn as_strict(&self) -> Self {
+    pub fn as_strict(&self, ultra_strict: bool) -> Self {
         Self {
             data: self.data,
             strict: Some(true),
+            ultra_strict,
             context: self.context,
             field_name: self.field_name,
             self_instance: self.self_instance,
@@ -627,6 +631,14 @@ pub trait Validator: Send + Sync + Clone + Debug {
         let py_err = PyTypeError::new_err(format!("validate_assignment is not supported for {}", self.get_name()));
         Err(py_err.into())
     }
+
+    /// whether the validator behaves differently in strict mode, and in ultra strict mode
+    /// implementations should return true if any of their sub-validators return true
+    fn different_strict_behavior(
+        &self,
+        build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool;
 
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`

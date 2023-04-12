@@ -162,6 +162,18 @@ impl Validator for ModelValidator {
         }
     }
 
+    fn different_strict_behavior(
+        &self,
+        build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        if ultra_strict {
+            self.validator.different_strict_behavior(build_context, ultra_strict)
+        } else {
+            true
+        }
+    }
+
     fn get_name(&self) -> &str {
         &self.name
     }

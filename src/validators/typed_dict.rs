@@ -386,6 +386,16 @@ impl Validator for TypedDictValidator {
         }
     }
 
+    fn different_strict_behavior(
+        &self,
+        build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        self.fields
+            .iter()
+            .any(|f| f.validator.different_strict_behavior(build_context, ultra_strict))
+    }
+
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
