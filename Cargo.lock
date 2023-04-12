@@ -231,7 +231,6 @@ dependencies = [
  "base64",
  "enum_dispatch",
  "idna",
- "indexmap",
  "mimalloc",
  "pyo3",
  "pyo3-build-config",
