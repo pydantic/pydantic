@@ -1334,14 +1334,13 @@ def test_keeps_custom_properties():
         assert instance.a == test_string
 
 
-@pytest.mark.xfail(reason='model_config["extra"] is not respected')
 def test_ignore_extra():
-    @pydantic.dataclasses.dataclass(config=dict(extra='ignore'))
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='ignore'))
     class Foo:
         x: int
 
     foo = Foo(**{'x': '1', 'y': '2'})
-    assert foo.__dict__ == {'x': 1, '__pydantic_initialised__': True}
+    assert foo.__dict__ == {'x': 1}
 
 
 def test_ignore_extra_subclass():
