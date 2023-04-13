@@ -5,7 +5,8 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
-from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
+import types
+from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, overload
 
 from typing_extensions import Literal, dataclass_transform
 
@@ -122,7 +123,7 @@ def dataclass(
             # this matches v1 behavior, and there was an explicit test for it
             original_doc = None
 
-            # so we don't add validation to the existing std lib dataclass, so we subclass it, but we need to
+            # we don't want to add validation to the existing std lib dataclass, so we subclass it, but we need to
             # set `__pydantic_fields__` while subclassing so the logic below can treat the new class like its
             # parent is a pydantic dataclass
             dc_fields = dataclasses.fields(cls)
@@ -134,15 +135,18 @@ def dataclass(
                 else:
                     omitted_fields.add(f.name)
             fields = {f.name: FieldInfo.from_dataclass_field(f) for f in dataclasses.fields(cls) if f.init}
-            cls = type(
-                cls.__name__,
-                (cls,),
-                {
-                    '__pydantic_fields__': fields,
-                    '__pydantic_omitted_fields__': omitted_fields or None,
-                    '__pydantic_decorators__': decorators,
-                },
-            )
+            bases = (cls,)
+            if hasattr(cls, '__parameters__'):
+                generic_base = Generic[cls.__parameters__]  # type: ignore
+                bases = bases + (generic_base,)
+            cls = types.new_class(cls.__name__, bases)
+            cls_attributes = {
+                '__pydantic_fields__': fields,
+                '__pydantic_omitted_fields__': omitted_fields or None,
+                '__pydantic_decorators__': decorators,
+            }
+            for k, v in cls_attributes.items():
+                setattr(cls, k, v)
         else:
             setattr(cls, '__pydantic_decorators__', decorators)
 

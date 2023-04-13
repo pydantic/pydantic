@@ -340,6 +340,15 @@ class WalkAndApply:
         schema['fields'] = replaced_fields
         return schema
 
+    def handle_dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> CoreSchema:
+        replaced_fields: list[core_schema.DataclassField] = []
+        for field in schema['fields']:
+            replaced_field = field.copy()
+            replaced_field['schema'] = self._walk(field['schema'])
+            replaced_fields.append(replaced_field)
+        schema['fields'] = replaced_fields
+        return schema
+
     def handle_arguments_schema(self, schema: core_schema.ArgumentsSchema) -> CoreSchema:
         replaced_arguments_schema = []
         for param in schema['arguments_schema']:

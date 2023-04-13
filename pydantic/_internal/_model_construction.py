@@ -143,7 +143,12 @@ def set_model_fields(cls: type[BaseModel], bases: tuple[type[Any], ...], types_n
     """
     Collect and set `cls.model_fields` and `cls.__class_vars__`.
     """
-    fields, class_vars = collect_fields(cls, bases, types_namespace)
+    generic_metadata = getattr(cls, '__pydantic_generic_metadata__', None)
+    if generic_metadata:
+        typevars_map = get_typevars_map(generic_metadata['origin'], generic_metadata['args'])
+    else:
+        typevars_map = None
+    fields, class_vars = collect_fields(cls, bases, types_namespace, typevars_map=typevars_map)
 
     apply_alias_generator(cls.model_config, fields)
     cls.model_fields = fields

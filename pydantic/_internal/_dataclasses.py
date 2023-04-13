@@ -9,6 +9,7 @@ from functools import wraps
 from typing import Any, Callable, ClassVar, cast
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
+from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
@@ -70,7 +71,7 @@ def prepare_dataclass(
 
     dataclass_ref = get_type_ref(cls)
     self_schema = core_schema.definition_reference_schema(dataclass_ref)
-    types_namespace = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
+    types_namespace = {name: PydanticForwardRef(self_schema, cls), **(types_namespace or {})}
     try:
         fields, _ = collect_fields(cls, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
     except PydanticUndefinedAnnotation as e:
@@ -123,7 +124,7 @@ def prepare_dataclass(
     return True
 
 
-def is_builtin_dataclass(_cls: type[Any]) -> bool:
+def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     """
     Whether a class is a stdlib dataclass
     (useful to discriminated a pydantic dataclass that is actually a wrapper around a stdlib dataclass)

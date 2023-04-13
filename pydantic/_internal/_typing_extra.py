@@ -8,9 +8,12 @@ import types
 import typing
 from collections.abc import Callable
 from types import GetSetDescriptorType
-from typing import Any, ForwardRef
+from typing import TYPE_CHECKING, Any, ForwardRef
 
-from typing_extensions import Annotated, Final, Literal, get_args, get_origin
+from typing_extensions import Annotated, Final, Literal, TypeGuard, get_args, get_origin
+
+if TYPE_CHECKING:
+    from ._dataclasses import StandardDataclass
 
 __all__ = (
     'NoneType',
@@ -445,3 +448,11 @@ else:
         ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
     ) -> Any:
         return ref._evaluate(globalns=globalns, localns=localns, recursive_guard=frozenset())
+
+
+def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
+    # The dataclasses.is_dataclass function doesn't seem to provide TypeGuard functionality,
+    # so I created this convenience function
+    import dataclasses
+
+    return dataclasses.is_dataclass(_cls)
