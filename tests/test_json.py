@@ -26,6 +26,9 @@ except ImportError:
     email_validator = None
 
 
+pytestmark = pytest.mark.filterwarnings('ignore::DeprecationWarning')
+
+
 class MyEnum(Enum):
     foo = 'bar'
     snap = 'crackle'

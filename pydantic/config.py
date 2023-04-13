@@ -6,6 +6,7 @@ from warnings import warn
 
 from typing_extensions import Literal, TypedDict
 
+from ._migration import getattr_migration
 from .deprecated.config import BaseConfig
 
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
@@ -20,6 +21,7 @@ class _Extra:
         warn(
             '`pydantic.config.Extra` is deprecated, use literal values instead' " (e.g. `extra='allow'`)",
             DeprecationWarning,
+            stacklevel=2,
         )
         return super().__getattribute__(__name)
 
@@ -91,3 +93,6 @@ class ConfigDict(TypedDict, total=False):
     validate_default: bool
     # whether to validate the return value from call validator
     validate_return: bool
+
+
+__getattr__ = getattr_migration(__name__)

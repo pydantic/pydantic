@@ -9,6 +9,7 @@ from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, TypeAlias
 
 from ._internal import _fields, _repr
+from ._migration import getattr_migration
 
 if TYPE_CHECKING:
     import email_validator
@@ -308,3 +309,6 @@ def validate_email(value: str) -> tuple[str, str]:
         ) from e
 
     return name or parts['local'], parts['email']
+
+
+__getattr__ = getattr_migration(__name__)

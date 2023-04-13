@@ -26,6 +26,7 @@ from ._internal import (
     _utils,
 )
 from ._internal._fields import Undefined
+from ._migration import getattr_migration
 from .config import ConfigDict
 from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
@@ -1020,3 +1021,6 @@ def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str
             class_vars.update(base.__class_vars__)
             private_attributes.update(base.__private_attributes__)
     return field_names, class_vars, private_attributes
+
+
+__getattr__ = getattr_migration(__name__)

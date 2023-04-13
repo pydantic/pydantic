@@ -2,6 +2,8 @@ import warnings
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, TypeVar, Union, overload
 
+from typing_extensions import deprecated
+
 from .._internal import _config, _typing_extra, _utils
 from ..decorators import field_validator
 from ..errors import PydanticUserError
@@ -17,11 +19,13 @@ if TYPE_CHECKING:
 
 
 @overload
+@deprecated('The `validate_arguments` method is deprecated; use `validate_call` instead.')
 def validate_arguments(func: None = None, *, config: 'ConfigType' = None) -> Callable[['AnyCallableT'], 'AnyCallableT']:
     ...
 
 
 @overload
+@deprecated('The `validate_arguments` method is deprecated; use `validate_call` instead.')
 def validate_arguments(func: 'AnyCallableT') -> 'AnyCallableT':
     ...
 
@@ -30,7 +34,9 @@ def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'Config
     """
     Decorator to validate the arguments passed to a function.
     """
-    warnings.warn('The `validate_arguments` method is deprecated; use `validate_call` instead.', DeprecationWarning)
+    warnings.warn(
+        'The `validate_arguments` method is deprecated; use `validate_call` instead.', DeprecationWarning, stacklevel=2
+    )
 
     def validate(_func: 'AnyCallable') -> 'AnyCallable':
         vd = ValidatedFunction(_func, config)
