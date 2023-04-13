@@ -9,13 +9,14 @@ from functools import wraps
 from typing import Any, Callable, ClassVar
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
-from typing_extensions import TypeGuard, get_origin
+from typing_extensions import TypeGuard
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from . import _decorators, _typing_extra
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
+from ._generics import get_standard_typevars_map
 from ._model_construction import MockValidator
 
 if typing.TYPE_CHECKING:
@@ -169,15 +170,3 @@ def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]
     import dataclasses
 
     return dataclasses.is_dataclass(_cls) and hasattr(_cls, '__pydantic_validator__')
-
-
-def get_standard_typevars_map(cls: type[Any]) -> dict[_typing_extra.TypeVarType, Any] | None:
-    origin = get_origin(cls)
-    if origin is None:
-        return None
-
-    # In this case, we know that cls is a _GenericAlias, and origin is the generic type
-    # So it is safe to access cls.__args__ and origin.__parameters__
-    args: tuple[Any, ...] = cls.__args__  # type: ignore
-    parameters: tuple[_typing_extra.TypeVarType, ...] = origin.__parameters__  # type: ignore
-    return dict(zip(parameters, args))

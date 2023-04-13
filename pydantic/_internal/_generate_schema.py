@@ -53,14 +53,13 @@ from ._fields import (
     get_type_hints_infer_globalns,
 )
 from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
-from ._generics import recursively_defined_type_refs, replace_types
+from ._generics import get_standard_typevars_map, recursively_defined_type_refs, replace_types
 from ._typing_extra import is_finalvar
 
 if TYPE_CHECKING:
     from ..decorators import FieldValidatorModes
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
-
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
@@ -594,11 +593,9 @@ class GenerateSchema:
         if schema is not None:
             return schema
 
+        typevars_map = get_standard_typevars_map(typed_dict_cls)
         if origin is not None:
-            typeddict_typevars_map = dict(zip(origin.__parameters__, typed_dict_cls.__args__))
             typed_dict_cls = origin
-        else:
-            typeddict_typevars_map = {}
 
         if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
             raise PydanticUserError(
@@ -613,7 +610,7 @@ class GenerateSchema:
         for field_name, annotation in get_type_hints_infer_globalns(
             typed_dict_cls, localns=self.types_namespace, include_extras=True
         ).items():
-            annotation = replace_types(annotation, typeddict_typevars_map)
+            annotation = replace_types(annotation, typevars_map)
             required = field_name in required_keys
 
             if get_origin(annotation) == _typing_extra.Required:

@@ -11,12 +11,11 @@ from pydantic_core import SchemaSerializer, SchemaValidator
 
 from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
-from . import _typing_extra
 from ._config import ConfigWrapper
 from ._decorators import PydanticDecoratorMarker
 from ._fields import Undefined, collect_basemodel_fields
 from ._generate_schema import GenerateSchema
-from ._generics import get_typevars_map
+from ._generics import get_basemodel_typevars_map
 from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
@@ -308,10 +307,3 @@ def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> N
             field_info.validation_alias = alias
             field_info.serialization_alias = alias
             field_info.alias_priority = 1
-
-
-def get_basemodel_typevars_map(cls: type[BaseModel]) -> dict[_typing_extra.TypeVarType, Any] | None:
-    # TODO: This could be unified with `get_standard_typevars_map` if we stored the generic metadata
-    #   in the __origin__, __args__, and __parameters__ attributes of the model.
-    generic_metadata = cls.__pydantic_generic_metadata__
-    return get_typevars_map(generic_metadata['origin'], generic_metadata['args'])
