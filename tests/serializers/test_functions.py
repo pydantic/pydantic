@@ -5,7 +5,14 @@ from pathlib import Path
 
 import pytest
 
-from pydantic_core import PydanticOmit, PydanticSerializationError, SchemaError, SchemaSerializer, core_schema
+from pydantic_core import (
+    PydanticOmit,
+    PydanticSerializationError,
+    PydanticSerializationUnexpectedValue,
+    SchemaError,
+    SchemaSerializer,
+    core_schema,
+)
 
 
 def repr_function(value, _info):
@@ -566,3 +573,42 @@ def test_wrap_return_type():
     assert s.to_python('foobar') == Path('foobar.new')
     assert s.to_python('foobar', mode='json') == 'foobar.new'
     assert s.to_json('foobar') == b'"foobar.new"'
+
+
+def test_unexpected_value():
+    def return_xxx(_value):
+        return 'xxx'
+
+    s = SchemaSerializer(
+        core_schema.any_schema(
+            serialization=core_schema.plain_serializer_function_ser_schema(return_xxx, json_return_type='int')
+        )
+    )
+    assert s.to_python('foo') == 'xxx'
+
+    m = "Error serializing to JSON: TypeError: 'str' object cannot be interpreted as an integer"
+    with pytest.raises(PydanticSerializationError, match=m):
+        s.to_json('foo')
+
+
+def test_raise_unexpected():
+    def raise_unexpected(_value):
+        raise PydanticSerializationUnexpectedValue('unexpected')
+
+    s = SchemaSerializer(
+        core_schema.any_schema(serialization=core_schema.plain_serializer_function_ser_schema(raise_unexpected))
+    )
+    with pytest.warns(UserWarning, match=r'PydanticSerializationUnexpectedValue\(unexpected\)'):
+        assert s.to_python('foo') == 'foo'
+
+    with pytest.warns(UserWarning, match=r'PydanticSerializationUnexpectedValue\(unexpected\)'):
+        assert s.to_json('foo') == b'"foo"'
+
+
+def test_pydantic_serialization_unexpected_value():
+    v = PydanticSerializationUnexpectedValue('abc')
+    assert str(v) == 'abc'
+    assert repr(v) == 'PydanticSerializationUnexpectedValue(abc)'
+    v = PydanticSerializationUnexpectedValue()
+    assert str(v) == 'Unexpected Value'
+    assert repr(v) == 'PydanticSerializationUnexpectedValue(Unexpected Value)'
