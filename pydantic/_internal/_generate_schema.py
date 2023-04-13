@@ -913,9 +913,6 @@ class GenerateSchema:
         if schema is not None:
             return schema
 
-        from ._dataclasses import get_standard_typevars_map
-
-        # We need to build the typevars map first, then we can
         typevars_map = get_standard_typevars_map(dataclass)
         if origin is not None:
             dataclass = origin
@@ -928,7 +925,6 @@ class GenerateSchema:
                 for field in fields.values():
                     field.apply_typevars_map(typevars_map, self.types_namespace)
         else:
-            # FIXME we need a way to make sure kw_only info is propagated through to fields
             fields = collect_dataclass_fields(
                 dataclass,
                 self.types_namespace,
