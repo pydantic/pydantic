@@ -19,8 +19,6 @@ from ._forward_ref import PydanticForwardRef
 from ._generate_schema import dataclass_schema
 from ._model_construction import MockValidator
 
-__all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
-
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
     from ._config import ConfigWrapper

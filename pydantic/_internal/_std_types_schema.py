@@ -29,7 +29,6 @@ if typing.TYPE_CHECKING:
 
     StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
 
-__all__ = ('SCHEMA_LOOKUP',)
 
 SCHEMA_LOOKUP: dict[type[Any], StdSchemaFunction] = {}
 
