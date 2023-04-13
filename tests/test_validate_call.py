@@ -2,14 +2,15 @@ import asyncio
 import inspect
 import sys
 from datetime import datetime
+from functools import partial
 from pathlib import Path
 from typing import List
 
 import pytest
 from pydantic_core import ArgsKwargs
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Annotated
 
-from pydantic import AnalyzedType, Extra, Field, ValidationError, validate_call
+from pydantic import AnalyzedType, Field, ValidationError, validate_call
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
@@ -484,19 +485,23 @@ def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     assert module.foo(0) == datetime(1970, 1, 1)
 
 
-@pytest.mark.skip(reason='config["extra"] is not longer supported in pydantic-core ArgumentsValidator')
-def test_validate_extra():
-    class TypedTest(TypedDict):
-        y: str
+@pytest.mark.xfail(reason='waiting for pydantic/pydantic-core#546')
+def test_partial():
+    def my_wrapped_function(a: int, b: int, c: int):
+        return a + b + c
 
-    @validate_call(config={'extra': Extra.allow})
-    def test(other: TypedTest):
-        return other
+    my_partial_function = partial(my_wrapped_function, c=3)
+    f = validate_call(my_partial_function)
+    assert f(1, 2) == 6
 
-    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b', 'z': 'a'}
 
-    @validate_call(config={'extra': Extra.ignore})
-    def test(other: TypedTest):
-        return other
+def test_validator_init():
+    class Foo:
+        @validate_call
+        def __init__(self, a: int, b: int):
+            self.v = a + b
 
-    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b'}
+    assert Foo(1, 2).v == 3
+    assert Foo(1, '2').v == 3
+    with pytest.raises(ValidationError, match="type=int_parsing, input_value='x', input_type=str"):
+        Foo(1, 'x')

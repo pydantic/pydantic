@@ -2,6 +2,7 @@ from __future__ import annotations as _annotations
 
 import inspect
 from dataclasses import dataclass
+from functools import partial
 from typing import Any, Callable
 
 import pydantic_core
@@ -44,17 +45,23 @@ class ValidateCallWrapper:
         self._config = config
         self._validate_return = validate_return
         self.__signature__ = inspect.signature(function)
-        self.__name__ = function.__name__
-        self.__qualname__ = function.__qualname__
+        if isinstance(function, partial):
+            func = function.func
+            self.__name__ = f'partial({func.__name__})'
+            self.__qualname__ = f'partial({func.__qualname__})'
+            self.__annotations__ = func.__annotations__
+        else:
+            self.__name__ = function.__name__
+            self.__qualname__ = function.__qualname__
+            self.__annotations__ = function.__annotations__
         self.__doc__ = function.__doc__
-        self.__annotations__ = function.__annotations__
         self.__module__ = function.__module__
 
         namespace = _typing_extra.add_module_globals(function, None)
         config_wrapper = ConfigWrapper(config)
         gen_schema = _generate_schema.GenerateSchema(config_wrapper, namespace)
         self.__pydantic_core_schema__ = schema = gen_schema.generate_schema(function)
-        core_config = config_wrapper.core_config(function)
+        core_config = config_wrapper.core_config(self)
         self.__pydantic_validator__ = pydantic_core.SchemaValidator(schema, core_config)
 
     def __call__(self, *args: Any, **kwargs: Any) -> Any:

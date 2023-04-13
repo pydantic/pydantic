@@ -9,6 +9,7 @@ import re
 import sys
 import typing
 import warnings
+from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
 from types import FunctionType, LambdaType, MethodType
@@ -368,7 +369,7 @@ class GenerateSchema:
             if obj is Final:
                 return core_schema.AnySchema(type='any')
             return self.generate_schema(get_args(obj)[0])
-        elif isinstance(obj, (FunctionType, LambdaType, MethodType)):
+        elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
             return self._callable_schema(obj)
 
         # TODO: _std_types_schema iterates over the __mro__ looking for an expected schema.
@@ -957,7 +958,10 @@ class GenerateSchema:
         """
         sig = signature(function)
 
-        type_hints = _typing_extra.get_type_hints(function, include_extras=True)
+        if isinstance(function, partial):
+            type_hints = _typing_extra.get_type_hints(function.func, include_extras=True)
+        else:
+            type_hints = _typing_extra.get_type_hints(function, include_extras=True)
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
             Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',

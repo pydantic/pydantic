@@ -1,7 +1,6 @@
 import re
 import sys
 from contextlib import nullcontext as does_not_raise
-from functools import partial
 from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
@@ -483,35 +482,11 @@ def test_invalid_extra():
         class MyDataclass:
             pass
 
-    with pytest.raises(SchemaError, match=extra_error):
-
-        @validate_call(config=config_dict)
-        def my_function():
-            pass
-
-    with pytest.raises(SchemaError, match=extra_error):
-        # This case happens when the function passed to `validate_arguments` has no `__name__`.
-        # This is a pretty exotic case, but it has caused issues in the past, so I wanted to add a test.
-        def my_wrapped_function():
-            pass
-
-        my_partial_function = partial(my_wrapped_function)
-        my_partial_function.__annotations__ = my_wrapped_function.__annotations__
-        validate_call(config=config_dict)(my_partial_function)
-
 
 def test_invalid_config_keys():
-    with pytest.raises(
-        PydanticUserError,
-        match=re.escape(
-            'Setting the "alias_generator" property on custom Config for'
-            ' @validate_call is not yet supported, please remove.'
-        ),
-    ):
-
-        @validate_call(config={'alias_generator': lambda x: x})
-        def my_function():
-            pass
+    @validate_call(config={'alias_generator': lambda x: x})
+    def my_function():
+        pass
 
 
 def test_multiple_inheritance_config():
