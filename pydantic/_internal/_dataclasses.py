@@ -6,17 +6,16 @@ from __future__ import annotations as _annotations
 import typing
 import warnings
 from functools import wraps
-from typing import Any, Callable, ClassVar, cast
+from typing import Any, Callable, ClassVar
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
+from typing_extensions import TypeGuard, get_origin
 
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
-from . import _decorators
-from ._core_utils import get_type_ref
-from ._fields import collect_fields
-from ._forward_ref import PydanticForwardRef
-from ._generate_schema import dataclass_schema
+from . import _decorators, _typing_extra
+from ._fields import collect_dataclass_fields
+from ._generate_schema import GenerateSchema
 from ._model_construction import MockValidator
 
 if typing.TYPE_CHECKING:
@@ -32,8 +31,8 @@ if typing.TYPE_CHECKING:
             pass
 
     class PydanticDataclass(StandardDataclass, typing.Protocol):
-        __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_core_schema__: typing.ClassVar[core_schema.CoreSchema]
+        __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
         __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
         """metadata for `@validator`, `@root_validator` and `@serializer` decorators"""
@@ -41,10 +40,19 @@ if typing.TYPE_CHECKING:
         __pydantic_config__: typing.ClassVar[ConfigDict]
 
 
-def prepare_dataclass(
+def set_dataclass_fields(cls: type[StandardDataclass], types_namespace: dict[str, Any] | None = None) -> None:
+    """
+    Collect and set `cls.__pydantic_fields__`
+    """
+    typevars_map = get_standard_typevars_map(cls)
+    fields = collect_dataclass_fields(cls, types_namespace, typevars_map=typevars_map)
+
+    cls.__pydantic_fields__ = fields  # type: ignore
+
+
+def complete_dataclass(
     cls: type[Any],
     config_wrapper: ConfigWrapper,
-    kw_only: bool,
     *,
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None = None,
@@ -56,48 +64,53 @@ def prepare_dataclass(
 
     This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
     """
+    cls_name = cls.__name__
+
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
-    cls = cast('type[PydanticDataclass]', cls)
+    types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
+    typevars_map = get_standard_typevars_map(cls)
+    gen_schema = GenerateSchema(
+        config_wrapper,
+        types_namespace,
+        typevars_map,
+    )
 
-    name = cls.__name__
-    bases = cls.__bases__
-
-    dataclass_ref = get_type_ref(cls)
-    self_schema = core_schema.definition_reference_schema(dataclass_ref)
-    types_namespace = {**(types_namespace or {}), name: PydanticForwardRef(self_schema, cls)}
     try:
-        fields, _ = collect_fields(cls, bases, types_namespace, is_dataclass=True, dc_kw_only=kw_only)
+        schema = gen_schema.generate_schema(cls)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        warning_string = (
-            f'`{name}` is not fully defined, you should define `{e}`, then call TODO! `methods.rebuild({name})`'
-        )
         if config_wrapper.undefined_types_warning:
-            raise UserWarning(warning_string)
-        cls.__pydantic_validator__ = MockValidator(warning_string, code='dataclass-not-fully-defined')  # type: ignore
+            config_warning_string = (
+                f'`{cls_name}` has an undefined annotation: `{e.name}`. '
+                f'It may be possible to resolve this by setting '
+                f'undefined_types_warning=False in the config for `{cls_name}`.'
+            )
+            # FIXME UserWarning should not be raised here, but rather warned!
+            raise UserWarning(config_warning_string)
+        usage_warning_string = (
+            f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call'
+            f' TODO! `methods.rebuild({cls_name})` before the first `{cls_name}` instance is created.'  # <--- TODO
+        )
+        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
+            usage_warning_string, code='dataclass-not-fully-defined'
+        )
         return False
 
-    decorators = cls.__pydantic_decorators__
-
-    cls.__pydantic_core_schema__ = schema = dataclass_schema(
-        cls,
-        dataclass_ref,
-        fields,
-        decorators,
-        config_wrapper,
-        types_namespace,
-    )
-
     core_config = config_wrapper.core_config(cls)
-    cls.__pydantic_fields__ = fields
+
+    # We are about to set all the remaining required properties expected for this cast;
+    # __pydantic_decorators__ and __pydantic_fields__ should already be set
+    cls = typing.cast('type[PydanticDataclass]', cls)
+    # debug(schema)
+    cls.__pydantic_core_schema__ = schema
     cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
-    # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+    # dataclasses only:
     cls.__pydantic_config__ = config_wrapper.config_dict
 
     if config_wrapper.validate_assignment:
@@ -121,7 +134,7 @@ def prepare_dataclass(
     return True
 
 
-def is_builtin_dataclass(_cls: type[Any]) -> bool:
+def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     """
     Whether a class is a stdlib dataclass
     (useful to discriminated a pydantic dataclass that is actually a wrapper around a stdlib dataclass)
@@ -150,3 +163,21 @@ def is_builtin_dataclass(_cls: type[Any]) -> bool:
         and not hasattr(_cls, '__pydantic_validator__')
         and set(_cls.__dataclass_fields__).issuperset(set(getattr(_cls, '__annotations__', {})))
     )
+
+
+def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
+    import dataclasses
+
+    return dataclasses.is_dataclass(_cls) and hasattr(_cls, '__pydantic_validator__')
+
+
+def get_standard_typevars_map(cls: type[Any]) -> dict[_typing_extra.TypeVarType, Any] | None:
+    origin = get_origin(cls)
+    if origin is None:
+        return None
+
+    # In this case, we know that cls is a _GenericAlias, and origin is the generic type
+    # So it is safe to access cls.__args__ and origin.__parameters__
+    args: tuple[Any, ...] = cls.__args__  # type: ignore
+    parameters: tuple[_typing_extra.TypeVarType, ...] = origin.__parameters__  # type: ignore
+    return dict(zip(parameters, args))

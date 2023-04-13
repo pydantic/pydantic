@@ -154,7 +154,7 @@ class X(Y):
 
 foo = X(x=b'1', y='2', z='3')
 print(foo)
-#> X(z=3, y=2)
+#> X(z=3, y=2, x=1)
 
 try:
     X(z='pika')

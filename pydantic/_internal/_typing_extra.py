@@ -8,9 +8,12 @@ import types
 import typing
 from collections.abc import Callable
 from types import GetSetDescriptorType
-from typing import Any, ForwardRef
+from typing import TYPE_CHECKING, Any, ForwardRef
 
-from typing_extensions import Annotated, Final, Literal, get_args, get_origin
+from typing_extensions import Annotated, Final, Literal, TypeGuard, get_args, get_origin
+
+if TYPE_CHECKING:
+    from ._dataclasses import StandardDataclass
 
 try:
     from typing import _TypingBase  # type: ignore[attr-defined]
@@ -220,6 +223,12 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, A
     return globalns or {}
 
 
+def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
+    ns = add_module_globals(cls, parent_namespace)
+    ns[cls.__name__] = cls
+    return ns
+
+
 def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Collect annotations from a class, including those from parent classes.
@@ -422,3 +431,11 @@ else:
         ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
     ) -> Any:
         return ref._evaluate(globalns=globalns, localns=localns, recursive_guard=frozenset())
+
+
+def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
+    # The dataclasses.is_dataclass function doesn't seem to provide TypeGuard functionality,
+    # so I created this convenience function
+    import dataclasses
+
+    return dataclasses.is_dataclass(_cls)

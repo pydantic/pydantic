@@ -45,7 +45,13 @@ from ._decorators import (
     inspect_model_serializer,
     inspect_validator,
 )
-from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
+from ._fields import (
+    PydanticGeneralMetadata,
+    PydanticMetadata,
+    Undefined,
+    collect_dataclass_fields,
+    get_type_hints_infer_globalns,
+)
 from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
 from ._generics import recursively_defined_type_refs, replace_types
 from ._typing_extra import is_finalvar
@@ -133,28 +139,6 @@ def apply_each_item_validators(
     return schema
 
 
-def dataclass_schema(
-    cls: type[Any],
-    ref: str,
-    fields: dict[str, FieldInfo],
-    decorators: DecoratorInfos,
-    config_wrapper: ConfigWrapper,
-    types_namespace: dict[str, Any] | None,
-) -> core_schema.CoreSchema:
-    """
-    Generate schema for a dataclass.
-    """
-    # TODO add typevars_map argument when we support generic dataclasses
-    schema_generator = GenerateSchema(config_wrapper, types_namespace)
-    args = [schema_generator.generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
-    has_post_init = hasattr(cls, '__post_init__')
-    args_schema = core_schema.dataclass_args_schema(cls.__name__, args, collect_init_only=has_post_init)
-    inner_schema = apply_validators(args_schema, decorators.root_validator.values())
-    dc_schema = core_schema.dataclass_schema(cls, inner_schema, post_init=has_post_init, ref=ref)
-    schema = apply_model_serializers(dc_schema, decorators.model_serializer.values())
-    return apply_model_validators(schema, decorators.model_validator.values())
-
-
 class GenerateSchema:
     __slots__ = '_config_wrapper_stack', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions'
 
@@ -204,14 +188,12 @@ class GenerateSchema:
         """
         Generate schema for a pydantic model.
         """
+        model_ref, schema = self._get_or_cache_recursive_ref(cls)
+        if schema is not None:
+            return schema
+
         from pydantic.main import BaseModel
 
-        model_ref = get_type_ref(cls)
-        cached_def = self.recursion_cache.get(model_ref)
-        if cached_def is not None:
-            return cached_def
-
-        self.recursion_cache[model_ref] = core_schema.definition_reference_schema(model_ref)
         fields = cls.model_fields
         decorators = cls.__pydantic_decorators__
         check_decorator_fields_exist(
@@ -266,7 +248,11 @@ class GenerateSchema:
             # Can return None to tell pydantic not to override
             return get_schema(source=source, gen_schema=self)
 
-        schema_property = getattr(obj, '__pydantic_core_schema__', None)
+        if not _typing_extra.is_dataclass(obj):
+            schema_property = getattr(obj, '__pydantic_core_schema__', None)
+        else:
+            # Only use the __pydantic_core_schema__ if it is defined on this exact class, not a parent class
+            schema_property = obj.__dict__.get('__pydantic_core_schema__')
         if schema_property is not None:
             return schema_property
 
@@ -375,6 +361,9 @@ class GenerateSchema:
         if std_schema is not None:
             return std_schema
 
+        if _typing_extra.is_dataclass(obj):
+            return self._dataclass_schema(obj, None)
+
         origin = get_origin(obj)
         if origin is None:
             if self.arbitrary_types:
@@ -384,6 +373,13 @@ class GenerateSchema:
                     f'Unable to generate pydantic-core schema for {obj!r}. '
                     f'Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.'
                 )
+
+        # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
+        # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
+        # As a result, currently, there is no way to cache the schema for generic dataclasses. This may be possible
+        # to resolve by modifying the value returned by `Generic.__class_getitem__`, but that is a dangerous game.
+        if _typing_extra.is_dataclass(origin):
+            return self._dataclass_schema(obj, origin)
 
         from_property = self._generate_schema_from_property(origin, obj)
         if from_property is not None:
@@ -594,6 +590,10 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
         """
+        typed_dict_ref, schema = self._get_or_cache_recursive_ref(typed_dict_cls)
+        if schema is not None:
+            return schema
+
         if origin is not None:
             typeddict_typevars_map = dict(zip(origin.__parameters__, typed_dict_cls.__args__))
             typed_dict_cls = origin
@@ -609,12 +609,6 @@ class GenerateSchema:
         required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
         fields: dict[str, core_schema.TypedDictField] = {}
-
-        obj_ref = f'{typed_dict_cls.__module__}.{typed_dict_cls.__qualname__}:{id(typed_dict_cls)}'
-        if obj_ref in self.recursion_cache:
-            return self.recursion_cache[obj_ref]
-        else:
-            self.recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
 
         for field_name, annotation in get_type_hints_infer_globalns(
             typed_dict_cls, localns=self.types_namespace, include_extras=True
@@ -634,7 +628,6 @@ class GenerateSchema:
                 field_name, field_info, DecoratorInfos(), required=required
             )
 
-        typed_dict_ref = get_type_ref(typed_dict_cls)
         return core_schema.typed_dict_schema(
             fields,
             extra_behavior='forbid',
@@ -900,8 +893,6 @@ class GenerateSchema:
             return None
 
         # Import here to avoid the extra import time earlier since _std_validators imports lots of things globally
-        import dataclasses
-
         from ._std_types_schema import SCHEMA_LOOKUP
 
         # instead of iterating over a list and calling is_instance, this should be somewhat faster,
@@ -913,28 +904,47 @@ class GenerateSchema:
             except KeyError:
                 continue
             return encoder(self, obj)
-        if dataclasses.is_dataclass(obj):
-            return self._dataclass_schema(obj)  # type: ignore
         return None
 
-    def _dataclass_schema(self, dataclass: type[StandardDataclass]) -> core_schema.CoreSchema:
+    def _dataclass_schema(
+        self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
+    ) -> core_schema.CoreSchema:
         """
         Generate schema for a dataclass.
         """
-        # FIXME we need a way to make sure kw_only info is propagated through to fields
-        fields, _ = collect_fields(
-            dataclass, dataclass.__bases__, self.types_namespace, dc_kw_only=True, is_dataclass=True
-        )
+        dataclass_ref, schema = self._get_or_cache_recursive_ref(dataclass)
+        if schema is not None:
+            return schema
 
-        return dataclass_schema(
-            dataclass,
-            get_type_ref(dataclass),
-            fields,
-            # FIXME we need to get validators and serializers from the dataclasses
-            DecoratorInfos(),
-            self.config_wrapper,
-            self.types_namespace,
-        )
+        from ._dataclasses import get_standard_typevars_map
+
+        # We need to build the typevars map first, then we can
+        typevars_map = get_standard_typevars_map(dataclass)
+        if origin is not None:
+            dataclass = origin
+
+        from ._dataclasses import is_pydantic_dataclass
+
+        if is_pydantic_dataclass(dataclass):
+            fields = dataclass.__pydantic_fields__
+            if typevars_map:
+                for field in fields.values():
+                    field.apply_typevars_map(typevars_map, self.types_namespace)
+        else:
+            # FIXME we need a way to make sure kw_only info is propagated through to fields
+            fields = collect_dataclass_fields(
+                dataclass,
+                self.types_namespace,
+                typevars_map=typevars_map,
+            )
+        decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos()
+        args = [self.generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
+        has_post_init = hasattr(dataclass, '__post_init__')
+        args_schema = core_schema.dataclass_args_schema(dataclass.__name__, args, collect_init_only=has_post_init)
+        inner_schema = apply_validators(args_schema, decorators.root_validator.values())
+        dc_schema = core_schema.dataclass_schema(dataclass, inner_schema, post_init=has_post_init, ref=dataclass_ref)
+        schema = apply_model_serializers(dc_schema, decorators.model_serializer.values())
+        return apply_model_validators(schema, decorators.model_validator.values())
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         assert isinstance(typevar, typing.TypeVar)
@@ -945,6 +955,14 @@ class GenerateSchema:
             return self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
         else:
             return core_schema.AnySchema(type='any')
+
+    def _get_or_cache_recursive_ref(self, cls: type[Any]) -> tuple[str, core_schema.DefinitionReferenceSchema | None]:
+        obj_ref = get_type_ref(cls)
+        if obj_ref in self.recursion_cache:
+            return obj_ref, self.recursion_cache[obj_ref]
+        else:
+            self.recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
+            return obj_ref, None
 
 
 _VALIDATOR_F_MATCH: Mapping[

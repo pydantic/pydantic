@@ -201,6 +201,13 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.
 
 
 class WalkAndApply:
+    """
+    Transforms a CoreSchema by recursively calling the provided function on all (nested) fields of type CoreSchema
+
+    The provided function need not actually modify the schema in any way, but will still be called on all nested
+    fields with type CoreSchema. (This can be useful for collecting information about refs, etc.)
+    """
+
     def __init__(
         self, f: Callable[[core_schema.CoreSchema], core_schema.CoreSchema], apply_before_recurse: bool = True
     ):
@@ -337,6 +344,15 @@ class WalkAndApply:
             replaced_field = v.copy()
             replaced_field['schema'] = self._walk(v['schema'])
             replaced_fields[k] = replaced_field
+        schema['fields'] = replaced_fields
+        return schema
+
+    def handle_dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> CoreSchema:
+        replaced_fields: list[core_schema.DataclassField] = []
+        for field in schema['fields']:
+            replaced_field = field.copy()
+            replaced_field['schema'] = self._walk(field['schema'])
+            replaced_fields.append(replaced_field)
         schema['fields'] = replaced_fields
         return schema
 

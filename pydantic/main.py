@@ -161,14 +161,14 @@ class ModelMetaclass(ABCMeta):
                 cls.__pydantic_parent_namespace__ = _typing_extra.parent_frame_namespace()
             parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
 
-            types_namespace = _model_construction.get_model_types_namespace(cls, parent_namespace)
+            types_namespace = _typing_extra.get_cls_types_namespace(cls, parent_namespace)
             _model_construction.set_model_fields(cls, bases, types_namespace)
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
                 config_wrapper,
-                types_namespace,
                 raise_errors=False,
+                types_namespace=types_namespace,
             )
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -453,13 +453,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
                 types_namespace = cls.__pydantic_parent_namespace__
 
-                types_namespace = _model_construction.get_model_types_namespace(cls, types_namespace)
+                types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
                 _config.ConfigWrapper(cls.model_config, check=False),
-                types_namespace,
                 raise_errors=raise_errors,
+                types_namespace=types_namespace,
             )
 
     def __iter__(self) -> TupleGenerator:

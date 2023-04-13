@@ -1,5 +1,6 @@
 from __future__ import annotations as _annotations
 
+import sys
 import typing
 from copy import copy
 from typing import Any
@@ -11,6 +12,7 @@ import typing_extensions
 from . import types
 from ._internal import _fields, _forward_ref, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
+from ._internal._generics import replace_types
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
@@ -96,12 +98,12 @@ class FieldInfo(_repr.Representation):
         self.discriminator = kwargs.get('discriminator')
         self.repr = kwargs.get('repr', True)
         self.json_schema_extra = kwargs.get('json_schema_extra')
-        # currently only used on dataclasses
-        self.init_var = kwargs.get('init_var', None)
-        self.kw_only = kwargs.get('kw_only', None)
         self.validate_default = kwargs.get('validate_default', None)
         self.frozen = kwargs.get('frozen', None)
         self.final = kwargs.get('final', None)
+        # currently only used on dataclasses
+        self.init_var = kwargs.get('init_var', None)
+        self.kw_only = kwargs.get('kw_only', None)
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
@@ -175,10 +177,22 @@ class FieldInfo(_repr.Representation):
             default.final = final
             return default
         elif isinstance(default, dataclasses.Field):
-            pydantic_field = cls.from_dataclass_field(default)
+            init_var = False
+            if annotation is dataclasses.InitVar:
+                if sys.version_info < (3, 8):
+                    raise RuntimeError('InitVar is not supported in Python 3.7 as type information is lost')
+
+                init_var = True
+                annotation = Any
+            elif isinstance(annotation, dataclasses.InitVar):
+                init_var = True
+                annotation = annotation.type
+            pydantic_field = cls._from_dataclass_field(default)
             pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
             pydantic_field.final = final
+            pydantic_field.init_var = init_var
+            pydantic_field.kw_only = getattr(default, 'kw_only', None)
             return pydantic_field
         else:
             if _typing_extra.is_annotated(annotation):
@@ -196,7 +210,7 @@ class FieldInfo(_repr.Representation):
             return cls(annotation=annotation, default=default, final=final)
 
     @classmethod
-    def from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
+    def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
         """
         Construct a `FieldInfo` from a `dataclasses.Field` instance.
         """
@@ -291,6 +305,13 @@ class FieldInfo(_repr.Representation):
             return self.annotation
         else:
             return typing_extensions._AnnotatedAlias(self.annotation, self.metadata)
+
+    def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
+        try:
+            self.annotation = typing._eval_type(self.annotation, types_namespace, None)  # type: ignore[attr-defined]
+        except NameError:
+            pass
+        self.annotation = replace_types(self.annotation, typevars_map)
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))
