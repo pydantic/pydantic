@@ -8,7 +8,7 @@ from typing_extensions import Literal, Self
 
 from pydantic.errors import PydanticUserError
 
-from ..config import ConfigDict, Extra
+from ..config import ConfigDict, ExtraValues
 
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
 
@@ -30,7 +30,7 @@ class ConfigWrapper:
     str_strip_whitespace: bool
     str_min_length: int
     str_max_length: int | None
-    extra: Extra | None
+    extra: ExtraValues | None
     frozen: bool
     populate_by_name: bool
     use_enum_values: bool
@@ -119,7 +119,7 @@ class ConfigWrapper:
         core_config = core_schema.CoreConfig(
             **core_schema.dict_not_none(
                 title=self.config_dict.get('title') or (obj and obj.__name__),
-                extra_fields_behavior=extra and extra.value,
+                extra_fields_behavior=extra,
                 allow_inf_nan=self.config_dict.get('allow_inf_nan'),
                 populate_by_name=self.config_dict.get('populate_by_name'),
                 str_strip_whitespace=self.config_dict.get('str_strip_whitespace'),
@@ -185,24 +185,10 @@ def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> Co
 
     config_dict = cast(ConfigDict, config)
     check_deprecated(config_dict)
-    prepare_config_extra(config_dict)
     return config_dict
 
 
 config_keys = set(ConfigDict.__annotations__.keys())
-
-
-def prepare_config_extra(config: ConfigDict | dict[str, Any]) -> None:
-    """
-    Prepare the "extra" key in a config by converting it to an `Extra`.
-    """
-    # note `extra=None` is the same as omitting `extra` from the config.
-    extra = config.get('extra')
-    if extra is not None and not isinstance(extra, Extra):
-        try:
-            config['extra'] = Extra(extra)
-        except ValueError as e:
-            raise ValueError(f"{extra!r} is not a valid value for `config['extra']`") from e
 
 
 V2_REMOVED_KEYS = {

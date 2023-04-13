@@ -1,6 +1,6 @@
 import re
 from collections import deque
-from datetime import datetime
+from datetime import date, datetime
 from enum import Enum
 from functools import partial, partialmethod
 from itertools import product
@@ -8,19 +8,117 @@ from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple,
 from unittest.mock import MagicMock
 
 import pytest
-from typing_extensions import Literal
+from typing_extensions import Annotated, Literal
 
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     FieldValidationInfo,
     ValidationError,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
     errors,
     validator,
 )
+from pydantic.annotated_arguments import AfterValidator, BeforeValidator, WrapValidator
 from pydantic.decorators import field_validator, root_validator
+
+
+def test_annotated_validator_after() -> None:
+    MyInt = Annotated[int, AfterValidator(lambda x: x if x != -1 else 0)]
+
+    class Model(BaseModel):
+        x: MyInt
+
+    assert Model(x=0).x == 0
+    assert Model(x=-1).x == 0
+    assert Model(x=-2).x == -2
+    assert Model(x=1).x == 1
+    assert Model(x='-1').x == 0
+
+
+def test_annotated_validator_before() -> None:
+    FloatMaybeInf = Annotated[float, BeforeValidator(lambda x: x if x != 'zero' else 0.0)]
+
+    class Model(BaseModel):
+        x: FloatMaybeInf
+
+    assert Model(x='zero').x == 0.0
+    assert Model(x=1.0).x == 1.0
+    assert Model(x='1.0').x == 1.0
+
+
+def test_annotated_validator_wrap() -> None:
+    def sixties_validator(val: Any, handler: ValidatorFunctionWrapHandler, info: ValidationInfo) -> date:
+        if val == 'epoch':
+            return date.fromtimestamp(0)
+        newval = handler(val)
+        if not date.fromisoformat('1960-01-01') <= newval < date.fromisoformat('1970-01-01'):
+            raise ValueError(f'{val} is not in the sixties!')
+        return newval
+
+    SixtiesDateTime = Annotated[date, WrapValidator(sixties_validator)]
+
+    class Model(BaseModel):
+        x: SixtiesDateTime
+
+    assert Model(x='epoch').x == date.fromtimestamp(0)
+    assert Model(x='1962-01-13').x == date(year=1962, month=1, day=13)
+    assert Model(x=datetime(year=1962, month=1, day=13)).x == date(year=1962, month=1, day=13)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=date(year=1970, month=4, day=17))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': ('x',),
+            'msg': 'Value error, 1970-04-17 is not in the sixties!',
+            'input': date(1970, 4, 17),
+            'ctx': {'error': '1970-04-17 is not in the sixties!'},
+        }
+    ]
+
+
+def test_annotated_validator_nested() -> None:
+    MyInt = Annotated[int, AfterValidator(lambda x: x if x != -1 else 0)]
+
+    def non_decreasing_list(data: List[int]) -> List[int]:
+        for prev, cur in zip(data, data[1:]):
+            assert cur >= prev
+        return data
+
+    class Model(BaseModel):
+        x: Annotated[List[MyInt], AfterValidator(non_decreasing_list)]
+
+    assert Model(x=[0, -1, 2]).x == [0, 0, 2]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=[0, -1, -2])
+
+    assert exc_info.value.errors() == [
+        {
+            'type': 'assertion_error',
+            'loc': ('x',),
+            'msg': 'Assertion failed, assert -2 >= 0',
+            'input': [0, -1, -2],
+            'ctx': {'error': 'assert -2 >= 0'},
+        }
+    ]
+
+
+def test_annotated_validator_runs_before_field_validators() -> None:
+    MyInt = Annotated[int, AfterValidator(lambda x: x if x != -1 else 0)]
+
+    class Model(BaseModel):
+        x: MyInt
+
+        @field_validator('x')
+        def val_x(cls, v: int) -> int:
+            assert v != -1
+            return v
+
+    assert Model(x=-1).x == 0
 
 
 def test_simple():
@@ -241,7 +339,7 @@ def validate_assignment_model_fixture():
         def double_c(cls, v: Any):
             return v * 2
 
-        model_config = ConfigDict(validate_assignment=True, extra=Extra.allow)
+        model_config = ConfigDict(validate_assignment=True, extra='allow')
 
     return ValidateAssignmentModel
 
@@ -1266,7 +1364,7 @@ def test_root_validator_types():
             root_val_values = cls, values
             return values
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert Model(b='bar', c='wobble').model_dump() == {'a': 1, 'b': 'bar', 'c': 'wobble'}
 
@@ -2286,3 +2384,18 @@ def test_root_validator_allow_reuse_inheritance():
 
     assert Parent(x=1).model_dump() == {'x': 2}
     assert Child(x=1).model_dump() == {'x': 4}
+
+
+def test_validator_with_underscore_name() -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/5252
+    """
+
+    def f(name: str) -> str:
+        return name.lower()
+
+    class Model(BaseModel):
+        name: str
+        _normalize_name = field_validator('name')(f)
+
+    assert Model(name='Adrian').name == 'adrian'

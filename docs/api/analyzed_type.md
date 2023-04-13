@@ -1,0 +1,1 @@
+::: pydantic.analyzed_type

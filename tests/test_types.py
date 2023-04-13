@@ -3854,6 +3854,50 @@ def test_deque_json():
     assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
 
 
+def test_deque_any_maxlen():
+    class DequeModel1(BaseModel):
+        field: deque
+
+    assert DequeModel1(field=deque()).field.maxlen is None
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel2(BaseModel):
+        field: deque = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen is None
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel3(BaseModel):
+        field: deque = deque(maxlen=5)
+
+    assert DequeModel3().field.maxlen == 5
+    assert DequeModel3(field=deque()).field.maxlen is None
+    assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
+
+
+def test_deque_typed_maxlen():
+    class DequeModel1(BaseModel):
+        field: Deque[int]
+
+    assert DequeModel1(field=deque()).field.maxlen is None
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel2(BaseModel):
+        field: Deque[int] = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen is None
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel3(BaseModel):
+        field: Deque[int] = deque(maxlen=5)
+
+    assert DequeModel3().field.maxlen == 5
+    assert DequeModel3(field=deque()).field.maxlen is None
+    assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
+
+
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__, Literal[None]))
 def test_none(value_type):
     class Model(BaseModel):

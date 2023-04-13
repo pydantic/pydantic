@@ -6,11 +6,11 @@ from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
 from dirty_equals import HasRepr
+from pydantic_core import SchemaError
 
 from pydantic import (
     BaseConfig,
     BaseModel,
-    Extra,
     Field,
     PrivateAttr,
     PydanticSchemaGenerationError,
@@ -105,7 +105,7 @@ class TestsBaseConfig:
             f__: str = Field(..., alias='foo')
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
             def __init__(self, id: int = 1, bar=2, *, baz: Any, **data):
                 super().__init__(id=id, **data)
@@ -129,7 +129,7 @@ class TestsBaseConfig:
                 super().__init__(a=a, b=b, c=1)
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
 
@@ -156,7 +156,7 @@ class TestsBaseConfig:
             spam: str
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
 
@@ -166,7 +166,7 @@ class TestsBaseConfig:
             extra_data_: str
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
 
@@ -178,7 +178,7 @@ class TestsBaseConfig:
                 super().__init__(extra_data=extra_data, **foobar)
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
 
@@ -187,7 +187,7 @@ class TestsBaseConfig:
             _foo = PrivateAttr('private_attribute')
 
             class Config:
-                extra = Extra.allow
+                extra = 'allow'
 
         assert Model.__slots__ == {'_foo'}
         m = Model(_foo='field')
@@ -463,30 +463,33 @@ Valid config keys have changed in V2:
 
 
 def test_invalid_extra():
-    extra_error = re.escape("'invalid-value' is not a valid value for `config['extra']`")
+    extra_error = re.escape(
+        "Input should be 'allow', 'forbid' or 'ignore'"
+        " [type=literal_error, input_value='invalid-value', input_type=str]"
+    )
     config_dict = {'extra': 'invalid-value'}
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match=extra_error):
 
         class MyModel(BaseModel):
             model_config = config_dict
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match=extra_error):
         create_model('MyCreatedModel', __config__=config_dict)
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match='Invalid extra_behavior: `invalid-value`'):
 
         @pydantic_dataclass(config=config_dict)
         class MyDataclass:
             pass
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match=extra_error):
 
         @validate_call(config=config_dict)
         def my_function():
             pass
 
-    with pytest.raises(ValueError, match=extra_error):
+    with pytest.raises(SchemaError, match=extra_error):
         # This case happens when the function passed to `validate_arguments` has no `__name__`.
         # This is a pretty exotic case, but it has caused issues in the past, so I wanted to add a test.
         def my_wrapped_function():
@@ -495,9 +498,6 @@ def test_invalid_extra():
         my_partial_function = partial(my_wrapped_function)
         my_partial_function.__annotations__ = my_wrapped_function.__annotations__
         validate_call(config=config_dict)(my_partial_function)
-
-    with pytest.raises(ValueError, match=extra_error):
-        ConfigWrapper(config_dict).extra
 
 
 def test_invalid_config_keys():
@@ -516,7 +516,7 @@ def test_invalid_config_keys():
 
 def test_multiple_inheritance_config():
     class Parent(BaseModel):
-        model_config = ConfigDict(frozen=True, extra=Extra.forbid)
+        model_config = ConfigDict(frozen=True, extra='forbid')
 
     class Mixin(BaseModel):
         model_config = ConfigDict(use_enum_values=True)
@@ -531,7 +531,7 @@ def test_multiple_inheritance_config():
 
     assert Parent.model_config.get('frozen') is True
     assert Parent.model_config.get('populate_by_name') is None
-    assert Parent.model_config.get('extra') is Extra.forbid
+    assert Parent.model_config.get('extra') == 'forbid'
     assert Parent.model_config.get('use_enum_values') is None
 
     assert Mixin.model_config.get('frozen') is None
@@ -541,7 +541,7 @@ def test_multiple_inheritance_config():
 
     assert Child.model_config.get('frozen') is True
     assert Child.model_config.get('populate_by_name') is True
-    assert Child.model_config.get('extra') is Extra.forbid
+    assert Child.model_config.get('extra') == 'forbid'
     assert Child.model_config.get('use_enum_values') is True
 
 

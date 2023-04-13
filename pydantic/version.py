@@ -1,6 +1,6 @@
 __all__ = 'VERSION', 'version_info'
 
-VERSION = '2.0a1'
+VERSION = '2.0a2'
 
 
 def version_info() -> str:
@@ -8,6 +8,8 @@ def version_info() -> str:
     import sys
     from importlib import import_module
     from pathlib import Path
+
+    import pydantic_core._pydantic_core as pdc
 
     optional_deps = []
     for p in 'devtools', 'email-validator', 'typing-extensions':
@@ -19,6 +21,7 @@ def version_info() -> str:
 
     info = {
         'pydantic version': VERSION,
+        'pydantic-core version': f'{pdc.__version__} {pdc.build_profile} build profile',
         'install path': Path(__file__).resolve().parent,
         'python version': sys.version,
         'platform': platform.platform(),

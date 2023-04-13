@@ -89,15 +89,34 @@ A few things to note on validators:
 
 Validators can do a few more complex things:
 
-```py test="xfail - we need annotated validators for this examples"
+```py
 from typing import List
 
+from typing_extensions import Annotated
+
 from pydantic import BaseModel, ValidationError, field_validator
+from pydantic.annotated_arguments import AfterValidator
+
+
+def check_squares(v: int) -> int:
+    assert v**0.5 % 1 == 0, f'{v} is not a square number'
+    return v
+
+
+def check_cubes(v: int) -> int:
+    # 64 ** (1 / 3) == 3.9999999999999996 (!)
+    # this is not a good way of checking cubes
+    assert v ** (1 / 3) % 1 == 0, f'{v} is not a cubed number'
+    return v
+
+
+SquaredNumber = Annotated[int, AfterValidator(check_squares)]
+CubedNumberNumber = Annotated[int, AfterValidator(check_cubes)]
 
 
 class DemoModel(BaseModel):
-    square_numbers: List[int] = []
-    cube_numbers: List[int] = []
+    square_numbers: List[SquaredNumber] = []
+    cube_numbers: List[CubedNumberNumber] = []
 
     @field_validator('square_numbers', 'cube_numbers', mode='before')
     def split_str(cls, v):
@@ -111,84 +130,69 @@ class DemoModel(BaseModel):
             raise ValueError('sum of numbers greater than 42')
         return v
 
-    @field_validator('square_numbers')  # TODO replace with Annotated
-    def check_squares(cls, v):
-        assert v**0.5 % 1 == 0, f'{v} is not a square number'
-        return v
-
-    @field_validator('cube_numbers')  # TODO replace with Annotated
-    def check_cubes(cls, v):
-        # 64 ** (1 / 3) == 3.9999999999999996 (!)
-        # this is not a good way of checking cubes
-        assert v ** (1 / 3) % 1 == 0, f'{v} is not a cubed number'
-        return v
-
 
 print(DemoModel(square_numbers=[1, 4, 9]))
+#> square_numbers=[1, 4, 9] cube_numbers=[]
 print(DemoModel(square_numbers='1|4|16'))
+#> square_numbers=[1, 4, 16] cube_numbers=[]
 print(DemoModel(square_numbers=[16], cube_numbers=[8, 27]))
+#> square_numbers=[16] cube_numbers=[8, 27]
 try:
     DemoModel(square_numbers=[1, 4, 2])
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for DemoModel
+    square_numbers.2
+      Assertion failed, 2 is not a square number
+    assert ((2 ** 0.5) % 1) == 0 [type=assertion_error, input_value=2, input_type=int]
+    """
 
 try:
     DemoModel(cube_numbers=[27, 27])
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for DemoModel
+    cube_numbers
+      Value error, sum of numbers greater than 42 [type=value_error, input_value=[27, 27], input_type=list]
+    """
 ```
 
 A few more things to note:
 
 * a single validator can be applied to multiple fields by passing it multiple field names
 * a single validator can also be called on *all* fields by passing the special value `'*'`
-* the keyword argument `pre` will cause the validator to be called prior to other validation
-* passing `each_item=True` will result in the validator being applied to individual values
-  (e.g. of `List`, `Dict`, `Set`, etc.), rather than the whole object
+* the keyword argument `mode='before'` will cause the validator to be called prior to other validation
+* using validator annotations inside of Annotated allows applying validators to items of collections
 
-## Subclass Validators and `each_item`
+### Generic validated collections
 
-If using a validator with a subclass that references a `List` type field on a parent class, using `each_item=True` will
-cause the validator not to run; instead, the list must be iterated over programmatically.
+To validate individual items of a collection (list, dict, etc.) field you can use `Annotated` to apply validators to the inner items.
+In this example we also use type aliases to create a generic validated collection to demonstrate how this approach leads to composability and coda re-use.
 
-```py test="xfail - we need annotated validators for this examples"
-from typing import List
+```py
+from typing import List, TypeVar
 
-from pydantic import BaseModel, ValidationError, validator
+from typing_extensions import Annotated
 
+from pydantic import BaseModel
+from pydantic.annotated_arguments import AfterValidator
 
-class ParentModel(BaseModel):
-    names: List[str]
+T = TypeVar('T')
 
+SortedList = Annotated[List[T], AfterValidator(lambda x: sorted(x))]
 
-class ChildModel(ParentModel):
-    @validator('names', each_item=True)
-    def check_names_not_empty(cls, v):
-        assert v != '', 'Empty strings are not allowed.'
-        return v
+Name = Annotated[str, AfterValidator(lambda x: x.title())]
 
 
-# This will NOT raise a ValidationError because the validator was not called
-try:
-    child = ChildModel(names=['Alice', 'Bob', 'Eve', ''])
-except ValidationError as e:
-    print(e)
-else:
-    print('No ValidationError caught.')
+class DemoModel(BaseModel):
+    int_list: SortedList[int]
+    name_list: SortedList[Name]
 
 
-class ChildModel2(ParentModel):
-    @validator('names')
-    def check_names_not_empty(cls, v):
-        for name in v:
-            assert name != '', 'Empty strings are not allowed.'
-        return v
-
-
-try:
-    child = ChildModel2(names=['Alice', 'Bob', 'Eve', ''])
-except ValidationError as e:
-    print(e)
+print(DemoModel(int_list=[3, 2, 1], name_list=['adrian g', 'David']))
+#> int_list=[1, 2, 3] name_list=['Adrian G', 'David']
 ```
 
 ## Validate Always

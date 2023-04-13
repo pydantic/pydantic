@@ -57,7 +57,7 @@ classifiers = [
 requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.2.0',
-    'pydantic-core>=0.23.0',
+    'pydantic-core==0.24.0',
     'annotated-types>=0.4.0',
 ]
 optional-dependencies = { email = ['email-validator>=1.3.0'] }
@@ -98,7 +98,7 @@ filterwarnings = [
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani']
+reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'kludex']
 require_change_file = false
 
 [tool.ruff]

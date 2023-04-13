@@ -115,7 +115,7 @@ pluggy==1.0.0
     # via pytest
 pre-commit==2.21.0
     # via -r requirements/linting.in
-pydantic-core==0.23.0
+pydantic-core==0.24.0
     # via
     #   -r requirements/docs.in
     #   -r requirements/linting.in

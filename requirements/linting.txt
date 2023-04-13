@@ -69,7 +69,7 @@ pre-commit==2.21.0
     # via
     #   -c requirements/all.txt
     #   -r requirements/linting.in
-pydantic-core==0.23.0
+pydantic-core==0.24.0
     # via
     #   -c requirements/all.txt
     #   -r requirements/linting.in

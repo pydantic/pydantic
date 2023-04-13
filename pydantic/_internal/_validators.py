@@ -336,8 +336,13 @@ def deque_any_validator(
         return deque(validator(__input_value))
 
 
-def deque_typed_validator(__input_value: list[Any], _: core_schema.ValidationInfo) -> deque[Any]:
-    return deque(__input_value)
+def deque_typed_validator(
+    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler, _: core_schema.ValidationInfo
+) -> deque[Any]:
+    if isinstance(__input_value, deque):
+        return deque(validator(__input_value), maxlen=__input_value.maxlen)
+    else:
+        return deque(validator(__input_value))
 
 
 def ordered_dict_any_validator(
@@ -375,7 +380,7 @@ def ip_v6_address_validator(__input_value: Any, _: core_schema.ValidationInfo) -
 
 def ip_v4_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv4Network:
     """
-    Assume IPv4Network initialised with a default ``strict`` argument
+    Assume IPv4Network initialised with a default `strict` argument
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv4Network
@@ -391,7 +396,7 @@ def ip_v4_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -
 
 def ip_v6_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv6Network:
     """
-    Assume IPv6Network initialised with a default ``strict`` argument
+    Assume IPv6Network initialised with a default `strict` argument
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv6Network

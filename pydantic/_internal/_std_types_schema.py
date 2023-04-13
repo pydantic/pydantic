@@ -29,7 +29,6 @@ if typing.TYPE_CHECKING:
 
     StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
 
-__all__ = ('SCHEMA_LOOKUP',)
 
 SCHEMA_LOOKUP: dict[type[Any], StdSchemaFunction] = {}
 
@@ -215,22 +214,24 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
 def _deque_ser_schema(
     inner_schema: core_schema.CoreSchema | None = None,
 ) -> core_schema.WrapSerializerFunctionSerSchema:
-    return core_schema.general_wrap_serializer_function_ser_schema(
-        _serializers.serialize_deque, schema=inner_schema or core_schema.any_schema()
+    return core_schema.wrap_serializer_function_ser_schema(
+        _serializers.serialize_deque, info_arg=True, schema=inner_schema or core_schema.any_schema()
     )
 
 
 def _deque_any_schema() -> core_schema.LaxOrStrictSchema:
+    metadata = build_metadata_dict(js_cs_override=lambda: core_schema.list_schema(core_schema.any_schema()))
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_wrap_validator_function(
             _validators.deque_any_validator,
             core_schema.list_schema(),
         ),
         strict_schema=core_schema.general_after_validator_function(
-            lambda x, _: deque(x),
+            lambda x, _: x if isinstance(x, deque) else deque(x),
             core_schema.is_instance_schema(deque, json_types={'list'}),
         ),
         serialization=_deque_ser_schema(),
+        metadata=metadata,
     )
 
 
@@ -254,24 +255,18 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
         inner_schema = schema_generator.generate_schema(arg)
         # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
         metadata = build_metadata_dict(js_cs_override=lambda: core_schema.list_schema(inner_schema))
+        lax_schema = core_schema.general_wrap_validator_function(
+            _validators.deque_typed_validator,
+            core_schema.list_schema(inner_schema, strict=False),
+        )
+
         return core_schema.lax_or_strict_schema(
-            lax_schema=core_schema.general_after_validator_function(
-                _validators.deque_typed_validator,
-                core_schema.list_schema(inner_schema),
-                serialization=_deque_ser_schema(inner_schema),
-                metadata=metadata,
-            ),
+            lax_schema=lax_schema,
             strict_schema=core_schema.chain_schema(
-                [
-                    core_schema.is_instance_schema(deque, json_types={'list'}),
-                    core_schema.list_schema(inner_schema, allow_any_iter=True),
-                    core_schema.general_plain_validator_function(
-                        _validators.deque_typed_validator,
-                    ),
-                ],
-                metadata=metadata,
+                [core_schema.is_instance_schema(deque, json_types={'list'}), lax_schema],
             ),
             serialization=_deque_ser_schema(inner_schema),
+            metadata=metadata,
         )
 
 
