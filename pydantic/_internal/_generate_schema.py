@@ -52,7 +52,6 @@ if TYPE_CHECKING:
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
 
-__all__ = 'dataclass_schema', 'GenerateSchema'
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 

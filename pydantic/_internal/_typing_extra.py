@@ -12,29 +12,6 @@ from typing import Any, ForwardRef
 
 from typing_extensions import Annotated, Final, Literal, get_args, get_origin
 
-__all__ = (
-    'NoneType',
-    'is_none_type',
-    'is_callable_type',
-    'is_literal_type',
-    'all_literal_values',
-    'is_annotated',
-    'is_namedtuple',
-    'is_new_type',
-    'is_classvar',
-    'is_finalvar',
-    'WithArgsTypes',
-    'typing_base',
-    'origin_is_union',
-    'NotRequired',
-    'Required',
-    'parent_frame_namespace',
-    'get_type_hints',
-    'EllipsisType',
-    'add_module_globals',
-    'get_cls_type_hints_lenient',
-)
-
 try:
     from typing import _TypingBase  # type: ignore[attr-defined]
 except ImportError:
@@ -53,7 +30,7 @@ else:
 if sys.version_info < (3, 11):
     from typing_extensions import NotRequired, Required
 else:
-    from typing import NotRequired, Required
+    from typing import NotRequired, Required  # noqa: F401
 
 
 if sys.version_info < (3, 10):
@@ -75,7 +52,7 @@ if sys.version_info < (3, 10):
     NoneType = type(None)
     EllipsisType = type(Ellipsis)
 else:
-    from types import EllipsisType as EllipsisType
+    from types import EllipsisType as EllipsisType  # noqa: F401
     from types import NoneType as NoneType
 
 
