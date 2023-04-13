@@ -420,13 +420,9 @@ def field_serializer(
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
     ) -> _decorators.PydanticDecoratorMarker[Any]:
-        is_field_serializer, info_arg = _decorators.inspect_field_serializer(f, mode)
-
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
-            is_field_serializer=is_field_serializer,
-            info_arg=info_arg,
             json_return_type=json_return_type,
             when_used=when_used,
             check_fields=check_fields,
@@ -461,12 +457,7 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker[Any]:
-        info_arg = _decorators.inspect_model_serializer(f, mode)
-        dec_info = _decorators.ModelSerializerDecoratorInfo(
-            mode=mode,
-            info_arg=info_arg,
-            json_return_type=json_return_type,
-        )
+        dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, json_return_type=json_return_type)
         return _decorators.PydanticDecoratorMarker(f, dec_info)
 
     if __f is None:

@@ -41,6 +41,8 @@ from ._decorators import (
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
     inspect_annotated_serializer,
+    inspect_field_serializer,
+    inspect_model_serializer,
     make_generic_validator,
 )
 from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
@@ -1000,11 +1002,12 @@ def apply_field_serializers(
     if serializers:
         # use the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
+        is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
         if serializer.info.mode == 'wrap':
             schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
-                is_field_serializer=serializer.info.is_field_serializer,
-                info_arg=serializer.info.info_arg,
+                is_field_serializer=is_field_serializer,
+                info_arg=info_arg,
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
             )
@@ -1012,8 +1015,8 @@ def apply_field_serializers(
             assert serializer.info.mode == 'plain'
             schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
                 serializer.func,
-                is_field_serializer=serializer.info.is_field_serializer,
-                info_arg=serializer.info.info_arg,
+                is_field_serializer=is_field_serializer,
+                info_arg=info_arg,
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
             )
@@ -1028,18 +1031,18 @@ def apply_model_serializers(
     """
     if serializers:
         serializer = list(serializers)[-1]
-
+        info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
         if serializer.info.mode == 'wrap':
             ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
-                info_arg=serializer.info.info_arg,
+                info_arg=info_arg,
                 json_return_type=serializer.info.json_return_type,
             )
         else:
             # plain
             ser_schema = core_schema.plain_serializer_function_ser_schema(
                 serializer.func,
-                info_arg=serializer.info.info_arg,
+                info_arg=info_arg,
                 json_return_type=serializer.info.json_return_type,
             )
         schema['serialization'] = ser_schema

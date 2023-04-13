@@ -91,8 +91,6 @@ class FieldSerializerDecoratorInfo:
     decorator_repr: ClassVar[str] = '@field_serializer'
     fields: tuple[str, ...]
     mode: Literal['plain', 'wrap']
-    is_field_serializer: bool
-    info_arg: bool
     json_return_type: JsonReturnTypes | None
     when_used: WhenUsed
     check_fields: bool | None
@@ -107,7 +105,6 @@ class ModelSerializerDecoratorInfo:
 
     decorator_repr: ClassVar[str] = '@model_serializer'
     mode: Literal['plain', 'wrap']
-    info_arg: bool
     json_return_type: JsonReturnTypes | None
 
 
@@ -534,7 +531,7 @@ def make_v1_generic_root_validator(
     return _wrapper2
 
 
-def inspect_field_serializer(serializer: Callable[[...], Any], mode: Literal['plain', 'wrap']) -> tuple[bool, bool]:
+def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> tuple[bool, bool]:
     """
     Look at a field serializer function and determine if it is a field serializer,
     and whether it takes an info argument.
@@ -597,7 +594,7 @@ def inspect_field_serializer(serializer: Callable[[...], Any], mode: Literal['pl
     )
 
 
-def inspect_annotated_serializer(serializer: Callable[[...], Any], mode: Literal['plain', 'wrap']) -> bool:
+def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
     """
     Look at a serializer function used via `Annotated` and determine whether it takes an info argument.
 
@@ -639,7 +636,7 @@ def inspect_annotated_serializer(serializer: Callable[[...], Any], mode: Literal
     )
 
 
-def inspect_model_serializer(serializer: Callable[[...], Any], mode: Literal['plain', 'wrap']) -> bool:
+def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
     """
     Look at a model serializer function and determine whether it takes an info argument.
 
