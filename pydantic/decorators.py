@@ -10,7 +10,7 @@ from __future__ import annotations as _annotations
 
 from functools import partial, partialmethod
 from types import FunctionType
-from typing import Any, Callable, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
 from warnings import warn
 
 from pydantic_core import core_schema as _core_schema
@@ -22,98 +22,96 @@ from .errors import PydanticUserError
 _ALLOW_REUSE_WARNING_MESSAGE = '`allow_reuse` is deprecated and will be ignored; it should no longer be necessary'
 
 
-class _OnlyValueValidatorClsMethod(Protocol):
-    def __call__(self, __cls: Any, __value: Any) -> Any:
-        ...
+if TYPE_CHECKING:
 
+    class _OnlyValueValidatorClsMethod(Protocol):
+        def __call__(self, __cls: Any, __value: Any) -> Any:
+            ...
 
-class _V1ValidatorWithValuesClsMethod(Protocol):
-    def __call__(self, __cls: Any, __value: Any, values: dict[str, Any]) -> Any:
-        ...
+    class _V1ValidatorWithValuesClsMethod(Protocol):
+        def __call__(self, __cls: Any, __value: Any, values: dict[str, Any]) -> Any:
+            ...
 
+    class _V1ValidatorWithValuesKwOnlyClsMethod(Protocol):
+        def __call__(self, __cls: Any, __value: Any, *, values: dict[str, Any]) -> Any:
+            ...
 
-class _V1ValidatorWithValuesKwOnlyClsMethod(Protocol):
-    def __call__(self, __cls: Any, __value: Any, *, values: dict[str, Any]) -> Any:
-        ...
+    class _V1ValidatorWithKwargsClsMethod(Protocol):
+        def __call__(self, __cls: Any, **kwargs: Any) -> Any:
+            ...
 
+    class _V1ValidatorWithValuesAndKwargsClsMethod(Protocol):
+        def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any:
+            ...
 
-class _V1ValidatorWithKwargsClsMethod(Protocol):
-    def __call__(self, __cls: Any, **kwargs: Any) -> Any:
-        ...
+    class _V2ValidatorClsMethod(Protocol):
+        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.FieldValidationInfo) -> Any:
+            ...
 
+    class _V2WrapValidatorClsMethod(Protocol):
+        def __call__(
+            self,
+            __cls: Any,
+            __input_value: Any,
+            __validator: _core_schema.ValidatorFunctionWrapHandler,
+            __info: _core_schema.ValidationInfo,
+        ) -> Any:
+            ...
 
-class _V1ValidatorWithValuesAndKwargsClsMethod(Protocol):
-    def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any:
-        ...
+    class _V1RootValidatorClsMethod(Protocol):
+        def __call__(
+            self, __cls: Any, __values: _decorators_v1.RootValidatorValues
+        ) -> _decorators_v1.RootValidatorValues:
+            ...
 
+    V1Validator = Union[
+        _OnlyValueValidatorClsMethod,
+        _V1ValidatorWithValuesClsMethod,
+        _V1ValidatorWithValuesKwOnlyClsMethod,
+        _V1ValidatorWithKwargsClsMethod,
+        _V1ValidatorWithValuesAndKwargsClsMethod,
+        _decorators_v1.V1ValidatorWithValues,
+        _decorators_v1.V1ValidatorWithValuesKwOnly,
+        _decorators_v1.V1ValidatorWithKwargs,
+        _decorators_v1.V1ValidatorWithValuesAndKwargs,
+    ]
 
-class _V2ValidatorClsMethod(Protocol):
-    def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.FieldValidationInfo) -> Any:
-        ...
+    V2Validator = Union[
+        _V2ValidatorClsMethod,
+        _core_schema.FieldValidatorFunction,
+        _OnlyValueValidatorClsMethod,
+        _core_schema.NoInfoValidatorFunction,
+    ]
 
+    V2WrapValidator = Union[
+        _V2WrapValidatorClsMethod,
+        _core_schema.GeneralWrapValidatorFunction,
+        _core_schema.FieldWrapValidatorFunction,
+    ]
 
-class _V2WrapValidatorClsMethod(Protocol):
-    def __call__(
-        self,
-        __cls: Any,
-        __input_value: Any,
-        __validator: _core_schema.ValidatorFunctionWrapHandler,
-        __info: _core_schema.ValidationInfo,
-    ) -> Any:
-        ...
+    V1RootValidator = Union[
+        _V1RootValidatorClsMethod,
+        _decorators_v1.V1RootValidatorFunction,
+    ]
 
+    _PartialClsOrStaticMethod: TypeAlias = Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]
 
-class _V1RootValidatorClsMethod(Protocol):
-    def __call__(self, __cls: Any, __values: _decorators_v1.RootValidatorValues) -> _decorators_v1.RootValidatorValues:
-        ...
-
-
-V1Validator = Union[
-    _OnlyValueValidatorClsMethod,
-    _V1ValidatorWithValuesClsMethod,
-    _V1ValidatorWithValuesKwOnlyClsMethod,
-    _V1ValidatorWithKwargsClsMethod,
-    _V1ValidatorWithValuesAndKwargsClsMethod,
-    _decorators_v1.V1ValidatorWithValues,
-    _decorators_v1.V1ValidatorWithValuesKwOnly,
-    _decorators_v1.V1ValidatorWithKwargs,
-    _decorators_v1.V1ValidatorWithValuesAndKwargs,
-]
-
-V2Validator = Union[
-    _V2ValidatorClsMethod,
-    _core_schema.FieldValidatorFunction,
-    _OnlyValueValidatorClsMethod,
-    _core_schema.NoInfoValidatorFunction,
-]
-
-V2WrapValidator = Union[
-    _V2WrapValidatorClsMethod,
-    _core_schema.GeneralWrapValidatorFunction,
-    _core_schema.FieldWrapValidatorFunction,
-]
-
-V1RootValidator = Union[
-    _V1RootValidatorClsMethod,
-    _decorators_v1.V1RootValidatorFunction,
-]
-
-_PartialClsOrStaticMethod: TypeAlias = 'Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any]]'
-
-
-# Allow both a V1 (assumed pre=False) or V2 (assumed mode='after') validator
-# We lie to type checkers and say we return the same thing we get
-# but in reality we return a proxy object that _mostly_ behaves like the wrapped thing
-_V1ValidatorType = TypeVar('_V1ValidatorType', bound=Union[V1Validator, _PartialClsOrStaticMethod])
-_V2BeforeAfterOrPlainValidatorType = TypeVar(
-    '_V2BeforeAfterOrPlainValidatorType',
-    bound=Union[V2Validator, _PartialClsOrStaticMethod],
-)
-_V2WrapValidatorType = TypeVar('_V2WrapValidatorType', bound=Union[V2WrapValidator, _PartialClsOrStaticMethod])
-_V1RootValidatorFunctionType = TypeVar(
-    '_V1RootValidatorFunctionType',
-    bound=Union[_decorators_v1.V1RootValidatorFunction, _V1RootValidatorClsMethod, _PartialClsOrStaticMethod],
-)
+    # Allow both a V1 (assumed pre=False) or V2 (assumed mode='after') validator
+    # We lie to type checkers and say we return the same thing we get
+    # but in reality we return a proxy object that _mostly_ behaves like the wrapped thing
+    _V1ValidatorType = TypeVar('_V1ValidatorType', V1Validator, _PartialClsOrStaticMethod)
+    _V2BeforeAfterOrPlainValidatorType = TypeVar(
+        '_V2BeforeAfterOrPlainValidatorType',
+        V2Validator,
+        _PartialClsOrStaticMethod,
+    )
+    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', V2WrapValidator, _PartialClsOrStaticMethod)
+    _V1RootValidatorFunctionType = TypeVar(
+        '_V1RootValidatorFunctionType',
+        _decorators_v1.V1RootValidatorFunction,
+        _V1RootValidatorClsMethod,
+        _PartialClsOrStaticMethod,
+    )
 
 
 def validator(
@@ -343,14 +341,13 @@ def root_validator(
     return dec
 
 
-_PlainSerializationFunction = Union[_core_schema.SerializerFunction, _PartialClsOrStaticMethod]
+if TYPE_CHECKING:
+    _PlainSerializationFunction = Union[_core_schema.SerializerFunction, _PartialClsOrStaticMethod]
 
+    _WrapSerializationFunction = Union[_core_schema.WrapSerializerFunction, _PartialClsOrStaticMethod]
 
-_WrapSerializationFunction = Union[_core_schema.WrapSerializerFunction, _PartialClsOrStaticMethod]
-
-
-_PlainSerializeMethodType = TypeVar('_PlainSerializeMethodType', bound=_PlainSerializationFunction)
-_WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerializationFunction)
+    _PlainSerializeMethodType = TypeVar('_PlainSerializeMethodType', bound=_PlainSerializationFunction)
+    _WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerializationFunction)
 
 
 @overload
@@ -538,20 +535,9 @@ class ModelAfterValidator(Protocol):
         ...
 
 
-AnyModelWrapValidator = Union[
-    ModelWrapValidator,
-    ModelWrapValidatorWithoutInfo,
-]
-
-AnyModeBeforeValidator = Union[
-    ModelBeforeValidator,
-    ModelBeforeValidatorWithoutInfo,
-]
-
-AnyModeAfterValidator = Union[
-    ModelAfterValidator,
-    ModelAfterValidatorWithoutInfo,
-]
+AnyModelWrapValidator = Union[ModelWrapValidator, ModelWrapValidatorWithoutInfo]
+AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
+AnyModeAfterValidator = Union[ModelAfterValidator, ModelAfterValidatorWithoutInfo]
 
 
 @overload
