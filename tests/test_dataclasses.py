@@ -1668,24 +1668,22 @@ def test_inheritance_replace(decorator1: Callable[[Any], Any], expected_parent: 
     assert Child(a=[]).a == expected_child
 
 
-# @pytest.mark.parametrize(
-#     'decorator1',
-#     [
-#         pydantic.dataclasses.dataclass,
-#         dataclasses.dataclass,
-#     ],
-#     ids=['pydantic', 'stdlib'],
-# )
-# @pytest.mark.parametrize(
-#     'default',
-#     [1, dataclasses.field(default=1), Field(default=1)],
-#     ids=['1', 'dataclasses.field(default=1)', 'pydantic.Field(default=1)'],
-# )
+@pytest.mark.parametrize(
+    'decorator1',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+@pytest.mark.parametrize(
+    'default',
+    [1, dataclasses.field(default=1), Field(default=1)],
+    ids=['1', 'dataclasses.field(default=1)', 'pydantic.Field(default=1)'],
+)
 def test_dataclasses_inheritance_default_value_is_not_deleted(
-    # decorator1: Callable[[Any], Any], default: Literal[1]
+    decorator1: Callable[[Any], Any], default: Literal[1]
 ) -> None:
-    default = Field(default=1)
-    decorator1 = pydantic.dataclasses.dataclass
     if decorator1 is dataclasses.dataclass and isinstance(default, FieldInfo):
         pytest.skip(reason="stdlib dataclasses don't support Pydantic fields")
 
