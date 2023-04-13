@@ -1,3 +1,4 @@
+"""Defining fields on models."""
 from __future__ import annotations as _annotations
 
 import typing
@@ -20,9 +21,32 @@ if typing.TYPE_CHECKING:
 
 
 class FieldInfo(_repr.Representation):
-    """
-    Hold information about a field, FieldInfo is used however a field is defined, whether or not the `Field()`
-    function below is explicitly used.
+    """Hold information about a field.
+
+    FieldInfo is used for any field definition whether or not the `Field()` function is explicitly used.
+
+    Attributes:
+        annotation (type): The type annotation of the field.
+        default (Any): The default value of the field.
+        default_factory (callable): The factory function used to construct the default value of the field.
+        alias (str): The alias name of the field.
+        alias_priority (int): The priority of the field's alias.
+        validation_alias (str): The validation alias name of the field.
+        serialization_alias (str): The serialization alias name of the field.
+        title (str): The title of the field.
+        description (str): The description of the field.
+        examples (List[str]): List of examples of the field.
+        exclude (bool): Whether or not to exclude the field from the model schema.
+        include (bool): Whether or not to include the field in the model schema.
+        metadata (Dict[str, Any]): Dictionary of metadata constraints.
+        repr (bool): Whether or not to include the field in representation of the model.
+        discriminator (bool): Whether or not to include the field in the "discriminator" schema property of the model.
+        json_schema_extra (Dict[str, Any]): Dictionary of extra JSON schema properties.
+        init_var (bool): Whether or not the field should be included in the constructor of the model.
+        kw_only (bool): Whether or not the field should be a keyword-only argument in the constructor of the model.
+        validate_default (bool): Whether or not to validate the default value of the field.
+        frozen (bool): Whether or not the field is frozen.
+        final (bool): Whether or not the field is final.
     """
 
     # TODO: Need to add attribute annotations
@@ -111,6 +135,30 @@ class FieldInfo(_repr.Representation):
         >>> class MyModel(pydantic.BaseModel):
         >>>     foo: int = pydantic.Field(4, ...)  # <-- like this
         """
+        """
+        Create a new `FieldInfo` object with the `Field` function.
+
+        Args:
+            cls (type): The class of the object to create.
+            default (Any): The default value for the field. Defaults to Undefined.
+            **kwargs: Additional arguments dictionary.
+
+        Raises:
+            TypeError: If 'annotation' is passed as a keyword argument.
+
+        Returns:
+            FieldInfo: A new FieldInfo object with the given parameters.
+
+        Examples:
+            This is how you can create a field with default value like this:
+
+            ```python
+            import pydantic
+
+            class MyModel(pydantic.BaseModel):
+                foo: int = pydantic.Field(4, ...)
+            ```
+        """
         # TODO: This is a good place to add migration warnings; should we use overload for type-hinting the signature?
         if 'annotation' in kwargs:
             raise TypeError('"annotation" is not permitted as a Field keyword argument')
@@ -130,6 +178,37 @@ class FieldInfo(_repr.Representation):
         >>> class MyModel(pydantic.BaseModel):
         >>>     foo: typing.Annotated[int, annotated_types.Gt(42)]
         >>>     bar: typing.Annotated[int, Field(gt=42)]
+        """
+        """
+        Creates a `FieldInfo` instance from a bare annotation.
+
+        Args:
+            cls (class): A class that has a `_find_field_info_arg` method.
+            annotation (Union[type[Any], _forward_ref.PydanticForwardRef]): An annotation object.
+
+        Returns:
+            FieldInfo: An instance of the field metadata.
+
+        Examples:
+            This is how you can create a field from a bare annotation like this:
+
+            ```python
+            import pydantic
+            class MyModel(pydantic.BaseModel):
+                foo: int  # <-- like this
+            ```
+
+            We also account for the case where the annotation can be an instance of `Annotated` and where
+            one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:
+
+            ```python
+            import pydantic, annotated_types, typing
+
+            class MyModel(pydantic.BaseModel):
+                foo: typing.Annotated[int, annotated_types.Gt(42)]
+                bar: typing.Annotated[int, Field(gt=42)]
+            ```
+
         """
         final = False
         if _typing_extra.is_finalvar(annotation):
@@ -154,12 +233,25 @@ class FieldInfo(_repr.Representation):
     @classmethod
     def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
         """
-        Create `FieldInfo` from an annotation with a default value, e.g.:
-        >>> import pydantic, annotated_types, typing
-        >>> class MyModel(pydantic.BaseModel):
-        >>>     foo: int = 4  # <-- like this
-        >>>     bar: typing.Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
-        >>>     spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
+        Create `FieldInfo` from an annotation with a default value.
+
+        Args:
+            cls (Type[FieldInfo]): The class of the field to return.
+            annotation (type[Any]): The type annotation of the field.
+            default (Any): The default value of the field.
+
+        Returns:
+            FieldInfo: A field object with the passed values.
+
+        Examples:
+        ```python
+        import pydantic, annotated_types, typing
+
+        class MyModel(pydantic.BaseModel):
+            foo: int = 4  # <-- like this
+            bar: typing.Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
+            spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
+        ```
         """
         import dataclasses
 
@@ -198,7 +290,17 @@ class FieldInfo(_repr.Representation):
     @classmethod
     def from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
         """
-        Construct a `FieldInfo` from a `dataclasses.Field` instance.
+        Return a new `FieldInfo` instance from a `dataclasses.Field` instance.
+
+        Args:
+            cls (type): The class containing the dataclass field.
+            dc_field (dataclasses.Field): The `dataclasses.Field` instance to convert.
+
+        Returns:
+            FieldInfo: The corresponding `FieldInfo` instance.
+
+        Raises:
+            TypeError: If any of the `FieldInfo` kwargs does not match the `dataclass.Field` kwargs.
         """
         import dataclasses
 
@@ -220,10 +322,18 @@ class FieldInfo(_repr.Representation):
 
     @classmethod
     def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
-        """
-        Try to extract metadata/constraints from an annotation if it's using `Annotated`.
+        """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
 
-        Returns a tuple of `(annotation_type, annotation_metadata)`.
+        Args:
+            cls (class): The class this method is being called on.
+            annotation (type[Any] | None): The type hint annotation for which metadata has to be extracted.
+
+        Returns:
+            tuple[type[Any] | None, list[Any]]: A tuple containing the extracted metadata type and the list
+            of extra arguments.
+
+        Raises:
+            TypeError: If a `Field` is used twice on the same field.
         """
         if annotation is not None:
             if _typing_extra.is_annotated(annotation):
@@ -237,18 +347,31 @@ class FieldInfo(_repr.Representation):
     @staticmethod
     def _find_field_info_arg(args: Any) -> FieldInfo | None:
         """
-        Find an instance of `FieldInfo` if it's in args, expected to be called with all but the first argument of
-        `Annotated`.
+        Find an instance of `FieldInfo` in the provided arguments.
+
+        Args:
+            args (Any): The argument list to search for `FieldInfo`.
+
+        Returns:
+            FieldInfo | None: An instance of `FieldInfo` if found, otherwise `None`.
         """
         return next((a for a in args if isinstance(a, FieldInfo)), None)
 
     @classmethod
     def _collect_metadata(cls, kwargs: dict[str, Any]) -> list[Any]:
         """
-        Collect annotations from kwargs, the return type is actually `annotated_types.BaseMetadata | PydanticMetadata`
-        but it gets combined with `list[Any]` from `Annotated[T, ...]`, hence types.
-        """
+        Collect annotations from kwargs.
 
+        The return type is actually `annotated_types.BaseMetadata | PydanticMetadata`,
+        but it gets combined with `list[Any]` from `Annotated[T, ...]`, hence types.
+
+        Args:
+            kwargs (dict[str, Any]): Keyword arguments passed to the function.
+
+        Returns:
+            list[Any]: A list of metadata objects - a combination of `annotated_types.BaseMetadata` and
+                `PydanticMetadata`.
+        """
         metadata: list[Any] = []
         general_metadata = {}
         for key, value in list(kwargs.items()):
@@ -269,9 +392,17 @@ class FieldInfo(_repr.Representation):
 
     def get_default(self, *, call_default_factory: bool = False) -> Any:
         """
+        Get the default value.
+
         We expose an option for whether to call the default_factory (if present), as calling it may
         result in side effects that we want to avoid. However, there are times when it really should
         be called (namely, when instantiating a model via `model_construct`).
+
+        Args:
+            call_default_factory (bool, optional): Whether to call the default_factory or not. Defaults to False.
+
+        Returns:
+            Any: Returns the default value, calling the default factory if requested or `None` if not set.
         """
         if self.default_factory is None:
             return _utils.smart_deepcopy(self.default)
@@ -281,6 +412,11 @@ class FieldInfo(_repr.Representation):
             return None
 
     def is_required(self) -> bool:
+        """Check if the argument is required.
+
+        Returns:
+            bool: True if the argument is required, False otherwise.
+        """
         return self.default is Undefined and self.default_factory is None
 
     def rebuild_annotation(self) -> Any:
@@ -481,6 +617,20 @@ def Field(
 
 
 class ModelPrivateAttr(_repr.Representation):
+    """A descriptor for private attributes in class models.
+
+    Args:
+        default (Any, optional): The default value of the attribute if not provided. Defaults to `Undefined`.
+        default_factory (typing.Callable[[], Any], optional): A callable function that generates the default
+            value of the attribute if not provided. Defaults to None.
+
+    Attributes:
+        default (Any): The default value of the attribute if not provided.
+        default_factory (typing.Callable[[], Any]): A callable function that generates the default value of the
+            attribute if not provided.
+
+    """
+
     __slots__ = 'default', 'default_factory'
 
     def __init__(self, default: Any = Undefined, *, default_factory: typing.Callable[[], Any] | None = None) -> None:
@@ -501,6 +651,14 @@ class ModelPrivateAttr(_repr.Representation):
                     set_name(cls, name)
 
     def get_default(self) -> Any:
+        """Returns the default value for the object.
+
+        If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.
+        If `self.default_factory` is not `None`, it will call `self.default_factory` and return the value returned.
+
+        Returns:
+            Any: The default value of the object.
+        """
         return _utils.smart_deepcopy(self.default) if self.default_factory is None else self.default_factory()
 
     def __eq__(self, other: Any) -> bool:
@@ -518,13 +676,21 @@ def PrivateAttr(
     """
     Indicates that attribute is only used internally and never mixed with regular fields.
 
-    Types or values of private attrs are not checked by pydantic, it's up to you to keep them relevant.
+    Private attributes are not checked by Pydantic, so it's up to you to maintain their accuracy.
 
-    Private attrs are stored in model __slots__.
+    Private attributes are stored in the model `__slots__`.
 
-    :param default: the attribute's default value
-    :param default_factory: callable that will be called when a default value is needed for this attribute
-      If both `default` and `default_factory` are set, an error is raised.
+    Args:
+        default (Any): The attribute's default value. Defaults to Undefined.
+        default_factory (typing.Callable[[], Any], optional): Callable that will be
+            called when a default value is needed for this attribute.
+            If both `default` and `default_factory` are set, an error will be raised.
+
+    Returns:
+        Any: Returns an instance of `ModelPrivateAttr` class.
+
+    Raises:
+        ValueError: If both `default` and `default_factory` are set.
     """
     if default is not Undefined and default_factory is not None:
         raise ValueError('cannot specify both default and default_factory')
