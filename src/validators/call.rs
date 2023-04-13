@@ -37,7 +37,22 @@ impl BuildValidator for CallValidator {
             None => None,
         };
         let function: &PyAny = schema.get_as_req(intern!(py, "function"))?;
-        let function_name: &str = function.getattr(intern!(py, "__name__"))?.extract()?;
+        let function_name: &str = match schema.get_as(intern!(py, "function_name"))? {
+            Some(name) => name,
+            None => {
+                match function.getattr(intern!(py, "__name__")) {
+                    Ok(name) => name.extract()?,
+                    Err(_) => {
+                        // partials we use `function.func.__name__`
+                        if let Ok(func) = function.getattr(intern!(py, "func")) {
+                            func.getattr(intern!(py, "__name__"))?.extract()?
+                        } else {
+                            "<unknown>"
+                        }
+                    }
+                }
+            }
+        };
         let name = format!("{}[{function_name}]", Self::EXPECTED_TYPE);
 
         Ok(Self {

@@ -1,6 +1,7 @@
 import dataclasses
 import re
 from collections import namedtuple
+from functools import partial
 
 import pytest
 
@@ -178,3 +179,45 @@ def test_named_tuple():
     assert isinstance(d, Point)
     assert d.x == 1.1
     assert d.y == 2.2
+
+
+def test_function_call_partial():
+    def my_function(a, b, c):
+        return a + b + c
+
+    v = SchemaValidator(
+        {
+            'type': 'call',
+            'function': partial(my_function, c=3),
+            'arguments_schema': {
+                'type': 'arguments',
+                'arguments_schema': [
+                    {'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                    {'name': 'b', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}},
+                ],
+            },
+        }
+    )
+    assert 'name:"call[my_function]"' in plain_repr(v)
+    assert v.validate_python((1, 2)) == 6
+    assert v.validate_python((1, '2')) == 6
+
+
+def test_custom_name():
+    def my_function(a):
+        return a
+
+    v = SchemaValidator(
+        {
+            'type': 'call',
+            'function': my_function,
+            'function_name': 'foobar',
+            'arguments_schema': {
+                'type': 'arguments',
+                'arguments_schema': [{'name': 'a', 'mode': 'positional_or_keyword', 'schema': {'type': 'int'}}],
+            },
+        }
+    )
+    assert 'name:"call[foobar]"' in plain_repr(v)
+    assert v.validate_python((1,)) == 1
+    assert v.validate_python(('2',)) == 2
