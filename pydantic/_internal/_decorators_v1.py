@@ -10,15 +10,7 @@ from pydantic_core import core_schema
 from typing_extensions import Protocol
 
 from ..errors import PydanticUserError
-from ._decorators import AnyDecoratorCallable, can_be_positional, unwrap_wrapped_function
-
-
-def is_instance_method_from_sig(function: AnyDecoratorCallable) -> bool:
-    sig = signature(unwrap_wrapped_function(function))
-    first = next(iter(sig.parameters.values()), None)
-    if first and first.name == 'self':
-        return True
-    return False
+from ._decorators import can_be_positional
 
 
 class V1OnlyValueValidator(Protocol):
