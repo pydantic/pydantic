@@ -167,7 +167,7 @@ def test_annotated_field_can_provide_factory() -> None:
     assert foo2(1) == 100
 
 
-@skip_pre_38
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 def test_positional_only(create_module):
     module = create_module(
         # language=Python
@@ -334,6 +334,7 @@ def test_item_method():
     ]
 
 
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='testing >= 3.9 behaviour only')
 def test_class_method():
     class X:
         @classmethod
@@ -363,6 +364,7 @@ def test_config_title():
 
     assert foo(1, 2) == '1, 2'
     assert foo(1, b=2) == '1, 2'
+    assert foo(1) == '1, None'
     # TODO waiting for https://github.com/pydantic/pydantic/issues/5395
     # insert_assert(AnalyzedType(foo).json_schema())
     assert AnalyzedType(foo).json_schema() == {
@@ -467,7 +469,7 @@ def test_validate_all():
     assert foo(0) == datetime(1970, 1, 1)
 
 
-@skip_pre_38
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 def test_validate_all_positional(create_module):
     module = create_module(
         # language=Python
