@@ -117,6 +117,10 @@ The `field` argument is no longer available.
 
 TODO
 
+## Unrecognized field_validator signature {#field-validator-signature}
+
+TODO
+
 ## Unrecognized field_serializer signature {#field-serializer-signature}
 
 Valid serializer signatures are:
