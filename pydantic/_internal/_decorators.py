@@ -34,11 +34,6 @@ from ..errors import PydanticUserError
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
 
-FIELD_VALIDATOR_TAG = '_field_validator'
-ROOT_VALIDATOR_TAG = '_root_validator'
-
-FIELD_SERIALIZER_TAG = '_field_serializer'
-
 
 @slots_dataclass
 class ValidatorDecoratorInfo:
@@ -295,9 +290,6 @@ def gather_decorator_functions(cls: type[Any]) -> DecoratorInfos:
     return res
 
 
-_FUNCS: set[str] = set()
-
-
 AnyDecoratorCallable: TypeAlias = (
     'Union[classmethod[Any, Any, Any], staticmethod[Any, Any], partialmethod[Any], Callable[..., Any]]'
 )
@@ -340,15 +332,6 @@ def unwrap_wrapped_function(
     return func
 
 
-def get_function_ref(func: Any) -> str:
-    func = unwrap_wrapped_function(func)
-    return (
-        getattr(func, '__module__', '<No __module__>')
-        + '.'
-        + getattr(func, '__qualname__', f'<No __qualname__: id:{id(func)}>')
-    )
-
-
 def is_classmethod_from_sig(function: AnyDecoratorCallable) -> bool:
     sig = signature(unwrap_wrapped_function(function))
     first = next(iter(sig.parameters.values()), None)
@@ -365,9 +348,7 @@ def is_instance_method_from_sig(function: AnyDecoratorCallable) -> bool:
     return False
 
 
-def ensure_classmethod_based_on_signature(
-    function: AnyDecoratorCallable,
-) -> Any:
+def ensure_classmethod_based_on_signature(function: AnyDecoratorCallable) -> Any:
     if not isinstance(
         unwrap_wrapped_function(function, unwrap_class_static_method=False), classmethod
     ) and is_classmethod_from_sig(function):
@@ -526,7 +507,7 @@ def make_v1_generic_root_validator(
     ) -> tuple[RootValidatorValues, RootValidatorFieldsSet]:
         values, fields_set = values_and_fields_set
         values = validator(values)
-        return (values, fields_set)
+        return values, fields_set
 
     return _wrapper2
 
@@ -555,43 +536,19 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
         for param in sig.parameters.values()
         if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
     )
-    if mode == 'plain':
-        if is_field_serializer:
-            if n_positional == 2:
-                # (__model: Any, __input_value: Any) -> Any
-                return is_field_serializer, False
-            elif n_positional == 3:
-                # (__model: Any, __input_value: Any, __info: FieldSerializationInfo) -> Any
-                return is_field_serializer, True
-        else:
-            if n_positional == 1:
-                # (__input_value: Any) -> Any
-                return is_field_serializer, False
-            elif n_positional == 2:
-                # (__model: Any, __input_value: Any) -> Any
-                return is_field_serializer, True
+    if is_field_serializer:
+        # -1 to correct for self parameter
+        info_arg = _serializer_info_arg(mode, n_positional - 1)
     else:
-        assert mode == 'wrap'
-        if is_field_serializer:
-            if n_positional == 3:
-                # (__model: Any, __input_value: Any, __serializer: SerializerFunctionWrapHandler) -> Any
-                return is_field_serializer, False
-            elif n_positional == 4:
-                # (__model: Any, __input_value: Any,
-                #  __serializer: SerializerFunctionWrapHandler, __info: FieldSerializationInfo) -> Any
-                return is_field_serializer, True
-        else:
-            if n_positional == 2:
-                # (__input_value: Any, __serializer: SerializerFunctionWrapHandler) -> Any
-                return is_field_serializer, False
-            elif n_positional == 3:
-                # (__input_value: Any, __serializer: SerializerFunctionWrapHandler, __info: SerializationInfo) -> Any
-                return is_field_serializer, True
+        info_arg = _serializer_info_arg(mode, n_positional)
 
-    raise PydanticUserError(
-        f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
-        code='field-serializer-signature',
-    )
+    if info_arg is None:
+        raise PydanticUserError(
+            f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
+            code='field-serializer-signature',
+        )
+    else:
+        return is_field_serializer, info_arg
 
 
 def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
@@ -614,26 +571,14 @@ def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['
         for param in sig.parameters.values()
         if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
     )
-    if mode == 'plain':
-        if n_positional == 1:
-            # (__input_value: Any) -> Any
-            return False
-        elif n_positional == 2:
-            # (__model: Any, __input_value: Any) -> Any
-            return True
+    info_arg = _serializer_info_arg(mode, n_positional)
+    if info_arg is None:
+        raise PydanticUserError(
+            f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
+            code='field-serializer-signature',
+        )
     else:
-        assert mode == 'wrap'
-        if n_positional == 2:
-            # (__input_value: Any, __serializer: SerializerFunctionWrapHandler) -> Any
-            return False
-        elif n_positional == 3:
-            # (__input_value: Any, __serializer: SerializerFunctionWrapHandler, __info: SerializationInfo) -> Any
-            return True
-
-    raise PydanticUserError(
-        f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
-        code='field-serializer-signature',
-    )
+        return info_arg
 
 
 def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
@@ -663,6 +608,17 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
         if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
     )
 
+    info_arg = _serializer_info_arg(mode, n_positional)
+    if info_arg is None:
+        raise PydanticUserError(
+            f'Unrecognized model_serializer function signature for {serializer} with `mode={mode}`:{sig}',
+            code='model-serializer-signature',
+        )
+    else:
+        return info_arg
+
+
+def _serializer_info_arg(mode: Literal['plain', 'wrap'], n_positional: int) -> bool | None:
     if mode == 'plain':
         if n_positional == 1:
             # (__input_value: Any) -> Any
@@ -671,7 +627,6 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
             # (__model: Any, __input_value: Any) -> Any
             return True
     else:
-        assert mode == 'wrap'
         if n_positional == 2:
             # (__input_value: Any, __serializer: SerializerFunctionWrapHandler) -> Any
             return False
@@ -679,7 +634,4 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
             # (__input_value: Any, __serializer: SerializerFunctionWrapHandler, __info: SerializationInfo) -> Any
             return True
 
-    raise PydanticUserError(
-        f'Unrecognized model_serializer function signature for {serializer} with `mode={mode}`:{sig}',
-        code='model-serializer-signature',
-    )
+    return None
