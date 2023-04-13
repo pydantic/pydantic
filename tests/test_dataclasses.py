@@ -1758,6 +1758,8 @@ def test_unparametrized_generic_dataclass(dataclass_decorator):
     class GenericDataclass(Generic[T]):
         x: T
 
+    # In principle we could call GenericDataclass(...) below, but this won't do validation
+    # for standard dataclasses, so we just use AnalyzedType to get validation for each.
     validator = pydantic.AnalyzedType(GenericDataclass)
 
     assert validator.validate_python({'x': None}).x is None
@@ -1798,6 +1800,8 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
     class GenericDataclass(Generic[T]):
         x: T
 
+    # Need to use AnalyzedType here because GenericDataclass[annotation] will be a GenericAlias, which delegates
+    # method calls to the (non-parametrized) origin class. This is essentially a limitation of typing._GenericAlias.
     validator = pydantic.AnalyzedType(GenericDataclass[annotation])
 
     if not error:
