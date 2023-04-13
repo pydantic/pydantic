@@ -40,8 +40,10 @@ from ._decorators import (
     ModelValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
-    make_generic_serializer,
-    make_generic_validator,
+    inspect_annotated_serializer,
+    inspect_field_serializer,
+    inspect_model_serializer,
+    inspect_validator,
 )
 from ._fields import PydanticGeneralMetadata, PydanticMetadata, Undefined, collect_fields, get_type_hints_infer_globalns
 from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
@@ -49,6 +51,7 @@ from ._generics import recursively_defined_type_refs, replace_types
 from ._typing_extra import is_finalvar
 
 if TYPE_CHECKING:
+    from ..decorators import FieldValidatorModes
     from ..main import BaseModel
     from ._dataclasses import StandardDataclass
 
@@ -868,8 +871,8 @@ class GenerateSchema:
         from . import _serializers, _validators
 
         metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'regex'})
-        ser = core_schema.general_plain_serializer_function_ser_schema(
-            _serializers.pattern_serializer, json_return_type='str'
+        ser = core_schema.plain_serializer_function_ser_schema(
+            _serializers.pattern_serializer, info_arg=True, json_return_type='str'
         )
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
@@ -945,16 +948,21 @@ class GenerateSchema:
 
 
 _VALIDATOR_F_MATCH: Mapping[
-    tuple[str, bool], Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema]
+    tuple[FieldValidatorModes, Literal['no-info', 'general', 'field']],
+    Callable[[Callable[..., Any], core_schema.CoreSchema], core_schema.CoreSchema],
 ] = {
-    ('before', True): core_schema.field_before_validator_function,
-    ('after', True): core_schema.field_after_validator_function,
-    ('plain', True): lambda f, _: core_schema.field_plain_validator_function(f),
-    ('wrap', True): core_schema.field_wrap_validator_function,
-    ('before', False): core_schema.general_before_validator_function,
-    ('after', False): core_schema.general_after_validator_function,
-    ('plain', False): lambda f, _: core_schema.general_plain_validator_function(f),
-    ('wrap', False): core_schema.general_wrap_validator_function,
+    ('before', 'no-info'): core_schema.no_info_before_validator_function,
+    ('after', 'no-info'): core_schema.no_info_after_validator_function,
+    ('plain', 'no-info'): lambda f, _: core_schema.no_info_plain_validator_function(f),
+    ('wrap', 'no-info'): core_schema.no_info_wrap_validator_function,
+    ('before', 'general'): core_schema.general_before_validator_function,
+    ('after', 'general'): core_schema.general_after_validator_function,
+    ('plain', 'general'): lambda f, _: core_schema.general_plain_validator_function(f),
+    ('wrap', 'general'): core_schema.general_wrap_validator_function,
+    ('before', 'field'): core_schema.field_before_validator_function,
+    ('after', 'field'): core_schema.field_after_validator_function,
+    ('plain', 'field'): lambda f, _: core_schema.field_plain_validator_function(f),
+    ('wrap', 'field'): core_schema.field_wrap_validator_function,
 }
 
 
@@ -968,8 +976,14 @@ def apply_validators(
     Apply validators to a schema.
     """
     for validator in validators:
-        is_field = isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo))
-        schema = _VALIDATOR_F_MATCH[(validator.info.mode, is_field)](validator.func, schema)
+        info_arg = inspect_validator(validator.func, validator.info.mode)
+        if not info_arg:
+            val_type: Literal['no-info', 'general', 'field'] = 'no-info'
+        elif isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo)):
+            val_type = 'field'
+        else:
+            val_type = 'general'
+        schema = _VALIDATOR_F_MATCH[(validator.info.mode, val_type)](validator.func, schema)
     return schema
 
 
@@ -999,26 +1013,21 @@ def apply_field_serializers(
     if serializers:
         # use the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
+        is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
         if serializer.info.mode == 'wrap':
-            sf = (
-                core_schema.field_wrap_serializer_function_ser_schema
-                if serializer.info.type == 'field'
-                else core_schema.general_wrap_serializer_function_ser_schema
-            )
-            schema['serialization'] = sf(  # type: ignore[operator]
+            schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
+                is_field_serializer=is_field_serializer,
+                info_arg=info_arg,
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
             )
         else:
             assert serializer.info.mode == 'plain'
-            sf = (
-                core_schema.field_plain_serializer_function_ser_schema
-                if serializer.info.type == 'field'
-                else core_schema.general_plain_serializer_function_ser_schema
-            )
-            schema['serialization'] = sf(  # type: ignore[operator]
+            schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
                 serializer.func,
+                is_field_serializer=is_field_serializer,
+                info_arg=info_arg,
                 json_return_type=serializer.info.json_return_type,
                 when_used=serializer.info.when_used,
             )
@@ -1033,16 +1042,18 @@ def apply_model_serializers(
     """
     if serializers:
         serializer = list(serializers)[-1]
-
+        info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
         if serializer.info.mode == 'wrap':
-            ser_schema: core_schema.SerSchema = core_schema.general_wrap_serializer_function_ser_schema(
+            ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
+                info_arg=info_arg,
                 json_return_type=serializer.info.json_return_type,
             )
         else:
             # plain
-            ser_schema = core_schema.general_plain_serializer_function_ser_schema(
+            ser_schema = core_schema.plain_serializer_function_ser_schema(
                 serializer.func,
+                info_arg=info_arg,
                 json_return_type=serializer.info.json_return_type,
             )
         schema['serialization'] = ser_schema
@@ -1056,22 +1067,23 @@ def apply_model_validators(
     Apply model validators to a schema.
     """
     for validator in validators:
+        info_arg = inspect_validator(validator.func, validator.info.mode)
         if validator.info.mode == 'wrap':
-            schema = core_schema.general_wrap_validator_function(
-                function=validator.func,
-                schema=schema,
-            )
+            if info_arg:
+                schema = core_schema.general_wrap_validator_function(function=validator.func, schema=schema)
+            else:
+                schema = core_schema.no_info_wrap_validator_function(function=validator.func, schema=schema)
         elif validator.info.mode == 'before':
-            schema = core_schema.general_before_validator_function(
-                function=validator.func,
-                schema=schema,
-            )
+            if info_arg:
+                schema = core_schema.general_before_validator_function(function=validator.func, schema=schema)
+            else:
+                schema = core_schema.no_info_before_validator_function(function=validator.func, schema=schema)
         else:
             assert validator.info.mode == 'after'
-            schema = core_schema.general_after_validator_function(
-                function=validator.func,
-                schema=schema,
-            )
+            if info_arg:
+                schema = core_schema.general_after_validator_function(function=validator.func, schema=schema)
+            else:
+                schema = core_schema.no_info_after_validator_function(function=validator.func, schema=schema)
     return schema
 
 
@@ -1115,30 +1127,35 @@ def apply_single_annotation(  # noqa C901
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
     elif isinstance(metadata, AfterValidator):
-        return core_schema.general_after_validator_function(
-            make_generic_validator(metadata.func, mode='after'),
-            schema=schema,
-        )
+        info_arg = inspect_validator(metadata.func, 'after')
+        if info_arg:
+            return core_schema.general_after_validator_function(metadata.func, schema=schema)  # type: ignore
+        else:
+            return core_schema.no_info_after_validator_function(metadata.func, schema=schema)  # type: ignore
     elif isinstance(metadata, BeforeValidator):
-        return core_schema.general_before_validator_function(
-            make_generic_validator(metadata.func, mode='before'),
-            schema=schema,
-        )
+        info_arg = inspect_validator(metadata.func, 'before')
+        if info_arg:
+            return core_schema.general_before_validator_function(metadata.func, schema=schema)  # type: ignore
+        else:
+            return core_schema.no_info_before_validator_function(metadata.func, schema=schema)  # type: ignore
     elif isinstance(metadata, WrapValidator):
-        return core_schema.general_wrap_validator_function(
-            make_generic_validator(metadata.func, mode='wrap'),
-            schema=schema,
-        )
+        info_arg = inspect_validator(metadata.func, 'wrap')
+        if info_arg:
+            return core_schema.general_wrap_validator_function(metadata.func, schema=schema)  # type: ignore
+        else:
+            return core_schema.no_info_wrap_validator_function(metadata.func, schema=schema)  # type: ignore
     elif isinstance(metadata, PlainSerializer):
-        schema['serialization'] = core_schema.general_plain_serializer_function_ser_schema(
-            function=make_generic_serializer(metadata.func, mode='plain', type='general'),
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
+            function=metadata.func,
+            info_arg=inspect_annotated_serializer(metadata.func, 'plain'),
             json_return_type=metadata.json_return_type,
             when_used=metadata.when_used,
         )
         return schema
     elif isinstance(metadata, WrapSerializer):
-        schema['serialization'] = core_schema.general_wrap_serializer_function_ser_schema(
-            function=make_generic_serializer(metadata.func, mode='wrap', type='general'),
+        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+            function=metadata.func,
+            info_arg=inspect_annotated_serializer(metadata.func, 'wrap'),
             json_return_type=metadata.json_return_type,
             when_used=metadata.when_used,
         )

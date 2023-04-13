@@ -214,8 +214,8 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) ->
 def _deque_ser_schema(
     inner_schema: core_schema.CoreSchema | None = None,
 ) -> core_schema.WrapSerializerFunctionSerSchema:
-    return core_schema.general_wrap_serializer_function_ser_schema(
-        _serializers.serialize_deque, schema=inner_schema or core_schema.any_schema()
+    return core_schema.wrap_serializer_function_ser_schema(
+        _serializers.serialize_deque, info_arg=True, schema=inner_schema or core_schema.any_schema()
     )
 
 

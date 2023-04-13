@@ -116,7 +116,7 @@ def dataclass(
         # since dataclasses.dataclass will set this as the __doc__
         original_doc = cls.__doc__
 
-        decorators = _decorators.gather_decorator_functions(cls)
+        decorators = _decorators.DecoratorInfos.build(cls)
         if dataclasses.is_dataclass(cls) and not hasattr(cls, '__pydantic_fields__'):
             # don't preserve the docstring for vanilla dataclasses, as it may include the signature
             # this matches v1 behavior, and there was an explicit test for it

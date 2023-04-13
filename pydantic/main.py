@@ -120,7 +120,7 @@ class ModelMetaclass(ABCMeta):
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
 
-            cls.__pydantic_decorators__ = _decorators.gather_decorator_functions(cls)
+            cls.__pydantic_decorators__ = _decorators.DecoratorInfos.build(cls)
 
             # Use the getattr below to grab the __parameters__ from the `typing.Generic` parent class
             if __pydantic_generic_metadata__:

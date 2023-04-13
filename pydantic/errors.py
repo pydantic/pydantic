@@ -45,6 +45,7 @@ PydanticErrorCodes = Literal[
     'model-serializer-instance-method',
     'validator-field-config-info',
     'validator-v1-signature',
+    'field-validator-signature',
     'field-serializer-signature',
     'model-serializer-signature',
     'multiple-field-serializers',
