@@ -10,7 +10,7 @@ from pydantic_core import core_schema
 from typing_extensions import Protocol
 
 from ..errors import PydanticUserError
-from ._decorators import AnyDecoratorCallable, unwrap_wrapped_function
+from ._decorators import AnyDecoratorCallable, can_be_positional, unwrap_wrapped_function
 
 
 def is_instance_method_from_sig(function: AnyDecoratorCallable) -> bool:
@@ -53,10 +53,6 @@ class V1ValidatorWithValuesAndKwargs(Protocol):
 V1Validator = Union[
     V1ValidatorWithValues, V1ValidatorWithValuesKwOnly, V1ValidatorWithKwargs, V1ValidatorWithValuesAndKwargs
 ]
-
-
-def can_be_positional(param: Parameter) -> bool:
-    return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
 
 
 def can_be_keyword(param: Parameter) -> bool:

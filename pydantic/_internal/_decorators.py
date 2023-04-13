@@ -289,18 +289,18 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
     Returns:
         Whether the validator takes an info argument.
     """
-    sig = _remove_params_with_defaults(signature(validator))
-    params = len(sig.parameters)
+    sig = signature(validator)
+    n_positional = count_positional_params(sig)
     if mode == 'wrap':
-        if params == 3:
+        if n_positional == 3:
             return True
-        elif params == 2:
+        elif n_positional == 2:
             return False
     else:
         assert mode in {'before', 'after', 'plain'}, f"invalid mode: {mode!r}, expected 'before', 'after' or 'plain"
-        if params == 2:
+        if n_positional == 2:
             return True
-        elif params == 1:
+        elif n_positional == 1:
             return False
 
     raise PydanticUserError(
@@ -328,11 +328,7 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
     first = next(iter(sig.parameters.values()), None)
     is_field_serializer = first is not None and first.name == 'self'
 
-    n_positional = sum(
-        1
-        for param in sig.parameters.values()
-        if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
-    )
+    n_positional = count_positional_params(sig)
     if is_field_serializer:
         # -1 to correct for self parameter
         info_arg = _serializer_info_arg(mode, n_positional - 1)
@@ -362,13 +358,7 @@ def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['
         info_arg
     """
     sig = signature(serializer)
-
-    n_positional = sum(
-        1
-        for param in sig.parameters.values()
-        if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
-    )
-    info_arg = _serializer_info_arg(mode, n_positional)
+    info_arg = _serializer_info_arg(mode, count_positional_params(sig))
     if info_arg is None:
         raise PydanticUserError(
             f'Unrecognized field_serializer function signature for {serializer} with `mode={mode}`:{sig}',
@@ -398,14 +388,7 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
         )
 
     sig = signature(serializer)
-
-    n_positional = sum(
-        1
-        for param in sig.parameters.values()
-        if param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
-    )
-
-    info_arg = _serializer_info_arg(mode, n_positional)
+    info_arg = _serializer_info_arg(mode, count_positional_params(sig))
     if info_arg is None:
         raise PydanticUserError(
             f'Unrecognized model_serializer function signature for {serializer} with `mode={mode}`:{sig}',
@@ -501,5 +484,9 @@ def unwrap_wrapped_function(
     return func
 
 
-def _remove_params_with_defaults(sig: Signature) -> Signature:
-    return Signature([p for p in sig.parameters.values() if p.default is Parameter.empty])
+def count_positional_params(sig: Signature) -> int:
+    return sum(1 for param in sig.parameters.values() if can_be_positional(param))
+
+
+def can_be_positional(param: Parameter) -> bool:
+    return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
