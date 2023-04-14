@@ -499,11 +499,11 @@ def Field(
             include defined fields in a schema, by default `asdict` includes all fields.
         gt (float, optional): Greater than. If set, value must be greater than this. Only applicable to numbers.
         ge (float, optional): Greater than or equal. If set, value must be
-        greater than or equal to this. Only applicable to numbers.
+            greater than or equal to this. Only applicable to numbers.
         lt (float, optional): Less than. If set, value must be
-        less than this. Only applicable to numbers.
+            less than this. Only applicable to numbers.
         le (float, optional): Less than or equal. If set, value must be
-        less than or equal to this. Only applicable to numbers.
+            less than or equal to this. Only applicable to numbers.
         multiple_of (float, optional): Value must be a multiple of this. Only applicable to numbers.
         allow_inf_nan (bool, optional): Allow `inf`, `-inf`, `nan`. Only applicable to numbers.
         max_digits (int, optional): Maximum number of allow digits for strings.
