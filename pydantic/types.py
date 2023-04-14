@@ -246,14 +246,13 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
-        ) -> core_schema.CoreSchema:
-            if schema is None or schema == {'type': 'any'}:
-                # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-                return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
-            else:
-                return core_schema.general_before_validator_function(lambda v, _: _validators.import_string(v), schema)
+        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+            # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
+            return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
+
+        @classmethod
+        def __modify_pydantic_core_schema__(cls, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+            return core_schema.general_before_validator_function(lambda v, _: _validators.import_string(v), schema)
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -296,7 +295,7 @@ class UuidVersion:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
         return field_schema
 
-    def __get_pydantic_core_schema__(
+    def __modify_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
     ) -> core_schema.AfterValidatorFunctionSchema:
         return core_schema.general_after_validator_function(
@@ -329,7 +328,7 @@ class PathType:
         field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
         return field_schema
 
-    def __get_pydantic_core_schema__(
+    def __modify_pydantic_core_schema__(
         self, schema: core_schema.CoreSchema, **_kwargs: Any
     ) -> core_schema.AfterValidatorFunctionSchema:
         function_lookup = {
@@ -389,8 +388,13 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
+            cls,
+            **_kwargs: Any,
         ) -> core_schema.JsonSchema:
+            return core_schema.json_schema(None)
+
+        @classmethod
+        def __modify_pydantic_core_schema__(cls, schema: core_schema.CoreSchema) -> core_schema.JsonSchema:
             return core_schema.json_schema(schema)
 
         @classmethod
@@ -693,6 +697,11 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
+    def __modify_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+        # TODO better schema
+        return core_schema.general_plain_validator_function(cls.validate)
+
+    @classmethod
     def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
         # TODO better schema
         return core_schema.general_plain_validator_function(cls.validate)
@@ -758,32 +767,34 @@ else:
 
     class PastDate:
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
+        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+            # used directly as a type
+            return core_schema.date_schema(now_op='past')
+
+        @classmethod
+        def __modify_pydantic_core_schema__(
+            cls, schema: core_schema.CoreSchema, **_kwargs: Any
         ) -> core_schema.CoreSchema:
-            if schema is None:
-                # used directly as a type
-                return core_schema.date_schema(now_op='past')
-            else:
-                assert schema['type'] == 'date'
-                schema['now_op'] = 'past'
-                return schema
+            assert schema['type'] == 'date'
+            schema['now_op'] = 'past'
+            return schema
 
         def __repr__(self) -> str:
             return 'PastDate'
 
     class FutureDate:
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
+        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+            # used directly as a type
+            return core_schema.date_schema(now_op='future')
+
+        @classmethod
+        def __modify_pydantic_core_schema__(
+            cls, schema: core_schema.CoreSchema, **_kwargs: Any
         ) -> core_schema.CoreSchema:
-            if schema is None:
-                # used directly as a type
-                return core_schema.date_schema(now_op='future')
-            else:
-                assert schema['type'] == 'date'
-                schema['now_op'] = 'future'
-                return schema
+            assert schema['type'] == 'date'
+            schema['now_op'] = 'future'
+            return schema
 
         def __repr__(self) -> str:
             return 'FutureDate'
@@ -813,32 +824,34 @@ else:
 
     class AwareDatetime:
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
+        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+            # used directly as a type
+            return core_schema.datetime_schema(tz_constraint='aware')
+
+        @classmethod
+        def __modify_pydantic_core_schema__(
+            cls, schema: core_schema.CoreSchema, **_kwargs: Any
         ) -> core_schema.CoreSchema:
-            if schema is None:
-                # used directly as a type
-                return core_schema.datetime_schema(tz_constraint='aware')
-            else:
-                assert schema['type'] == 'datetime'
-                schema['tz_constraint'] = 'aware'
-                return schema
+            assert schema['type'] == 'datetime'
+            schema['tz_constraint'] = 'aware'
+            return schema
 
         def __repr__(self) -> str:
             return 'AwareDatetime'
 
     class NaiveDatetime:
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
+        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+            # used directly as a type
+            return core_schema.datetime_schema(tz_constraint='naive')
+
+        @classmethod
+        def __modify_pydantic_core_schema__(
+            cls, schema: core_schema.CoreSchema, **_kwargs: Any
         ) -> core_schema.CoreSchema:
-            if schema is None:
-                # used directly as a type
-                return core_schema.datetime_schema(tz_constraint='naive')
-            else:
-                assert schema['type'] == 'datetime'
-                schema['tz_constraint'] = 'naive'
-                return schema
+            assert schema['type'] == 'datetime'
+            schema['tz_constraint'] = 'naive'
+            return schema
 
         def __repr__(self) -> str:
             return 'NaiveDatetime'
