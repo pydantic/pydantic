@@ -108,7 +108,6 @@ nav:
   - 'pydantic.main': api/main.md
   - 'pydantic.mypy': api/mypy.md
   - 'pydantic.networks': api/networks.md
-  - 'pydantic.tools': api/tools.md
   - 'pydantic.types': api/types.md
   - 'pydantic.version': api/version.md
 
