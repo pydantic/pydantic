@@ -13,10 +13,10 @@ from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUs
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
 from ._decorators import PydanticDecoratorMarker
-from ._fields import Undefined, collect_fields
+from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
-from ._generics import get_typevars_map
-from ._typing_extra import add_module_globals, is_classvar
+from ._generics import get_model_typevars_map
+from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
@@ -132,17 +132,12 @@ def single_underscore(name: str) -> bool:
     return name.startswith('_') and not name.startswith('__')
 
 
-def get_model_types_namespace(cls: type[BaseModel], parent_frame_namespace: dict[str, Any] | None) -> dict[str, Any]:
-    ns = add_module_globals(cls, parent_frame_namespace)
-    ns[cls.__name__] = cls
-    return ns
-
-
 def set_model_fields(cls: type[BaseModel], bases: tuple[type[Any], ...], types_namespace: dict[str, Any]) -> None:
     """
     Collect and set `cls.model_fields` and `cls.__class_vars__`.
     """
-    fields, class_vars = collect_fields(cls, bases, types_namespace)
+    typevars_map = get_model_typevars_map(cls)
+    fields, class_vars = collect_model_fields(cls, bases, types_namespace, typevars_map=typevars_map)
 
     apply_alias_generator(cls.model_config, fields)
     cls.model_fields = fields
@@ -153,9 +148,9 @@ def complete_model_class(
     cls: type[BaseModel],
     cls_name: str,
     config_wrapper: ConfigWrapper,
-    types_namespace: dict[str, Any] | None,
     *,
     raise_errors: bool = True,
+    types_namespace: dict[str, Any] | None,
 ) -> bool:
     """
     Finish building a model class.
@@ -165,8 +160,7 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-    generic_metadata = cls.__pydantic_generic_metadata__
-    typevars_map = get_typevars_map(generic_metadata['origin'], generic_metadata['args'])
+    typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
         types_namespace,
