@@ -366,9 +366,10 @@ included.
 
 ```py
 from dataclasses import dataclass
-from typing import Annotated, Sequence
+from typing import Sequence
 
 from pydantic_core import core_schema
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, ValidationError
 
