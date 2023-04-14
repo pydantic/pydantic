@@ -355,14 +355,79 @@ Defaults can be set outside `Annotated` as the assigned value or with `Field.def
 
 For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
-## Modifying schema in custom fields
+## Modifying schema in custom types and custom fields
 
-Custom field types can customise the schema generated for them using the `__modify_schema__` class method;
-see [Custom Data Types](types.md#custom-data-types) for more details.
+Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) can *override* schema generation by implementing a `__get_pydantic_core_schema__` method.
+This method receives a single positional argument with the type annotation that corresponds to this type (so in the case of `TheType[T][int]` it would be `TheType[int]`).
+All implementation of `__get_pydantic_core_schema__` *must* accept `**_kwargs` and ignore them; they are used for private implementations.
 
-`__modify_schema__` can also take a `field` argument which will have type `Optional[ModelField]`.
-*pydantic* will inspect the signature of `__modify_schema__` to determine whether the `field` argument should be
-included.
+```py
+from dataclasses import dataclass
+from typing import Any, Dict, List
+
+from pydantic_core import core_schema
+
+from pydantic import BaseModel
+
+
+@dataclass
+class CompressedString:
+    dictionary: Dict[int, str]
+    text: List[int]
+
+    def build(self) -> str:
+        return ' '.join([self.dictionary[key] for key in self.text])
+
+    @classmethod
+    def __get_pydantic_core_schema__(
+        cls, source: Any, **_kwargs: Any
+    ) -> core_schema.CoreSchema:
+        assert source is CompressedString
+        return core_schema.no_info_after_validator_function(
+            cls._validate,
+            core_schema.str_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                cls._serialize, info_arg=False, json_return_type='str'
+            ),
+        )
+
+    @staticmethod
+    def _validate(value: str) -> 'CompressedString':
+        inverse_dictionary: Dict[str, int] = {}
+        text: List[int] = []
+        for word in value.split(' '):
+            if word not in inverse_dictionary:
+                inverse_dictionary[word] = len(inverse_dictionary)
+            text.append(inverse_dictionary[word])
+        return CompressedString({v: k for k, v in inverse_dictionary.items()}, text)
+
+    @staticmethod
+    def _serialize(value: 'CompressedString') -> str:
+        return value.build()
+
+
+class MyModel(BaseModel):
+    value: CompressedString
+
+
+print(MyModel.model_json_schema())
+"""
+{
+    'title': 'MyModel',
+    'type': 'object',
+    'properties': {'value': {'type': 'string', 'title': 'Value'}},
+    'required': ['value'],
+}
+"""
+print(MyModel(value='fox fox fox dog fox'))
+#> value=CompressedString(dictionary={0: 'fox', 1: 'dog'}, text=[0, 0, 0, 1, 0])
+
+print(MyModel(value='fox fox fox dog fox').model_dump(mode='json'))
+#> {'value': 'fox fox fox dog fox'}
+```
+
+Annotations / constraints can implement `__modify_pydantic_core_schema__` to *modify or override* the core schema that is being generated.
+This method receives a single positional argument `schema: pydantic_core.core_schema.CoreSchema` which you can wrap or ignore and return a completely new schema.
 
 ```py
 from dataclasses import dataclass
