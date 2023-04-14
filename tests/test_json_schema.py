@@ -3458,3 +3458,30 @@ def test_override_generate_json_schema():
         'title': 'MyModel',
         'type': 'object',
     }
+
+
+def test_nested_default_json_schema():
+    class InnerModel(BaseModel):
+        foo: str = 'bar'
+        baz: str = Field(default='foobar', alias='my_alias')
+
+    class OuterModel(BaseModel):
+        nested_field: InnerModel = InnerModel()
+
+    assert OuterModel.model_json_schema() == {
+        '$defs': {
+            'InnerModel': {
+                'properties': {
+                    'foo': {'default': 'bar', 'title': 'Foo', 'type': 'string'},
+                    'my_alias': {'default': 'foobar', 'title': 'My Alias', 'type': 'string'},
+                },
+                'title': 'InnerModel',
+                'type': 'object',
+            }
+        },
+        'properties': {
+            'nested_field': {'allOf': [{'$ref': '#/$defs/InnerModel'}], 'default': {'my_alias': 'foobar', 'foo': 'bar'}}
+        },
+        'title': 'OuterModel',
+        'type': 'object',
+    }
