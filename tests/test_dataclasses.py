@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
 
 import pytest
+from dirty_equals import HasRepr
 from typing_extensions import Literal
 
 import pydantic
@@ -692,7 +693,6 @@ def test_inheritance_post_init():
     assert post_init_called
 
 
-@pytest.mark.xfail(reason='support Hashable')
 def test_hashable_required():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
@@ -702,15 +702,30 @@ def test_hashable_required():
     with pytest.raises(ValidationError) as exc_info:
         MyDataclass(v=[])
     assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value is not a valid hashable', 'type': 'type_error.hashable'}
+        {'input': [], 'loc': ('v',), 'msg': 'Input should be hashable', 'type': 'is_hashable'}
     ]
-    with pytest.raises(TypeError) as exc_info:
+
+    with pytest.raises(ValidationError) as exc_info:
+        # Should this raise a TypeError instead? https://github.com/pydantic/pydantic/issues/5487
         MyDataclass()
-    assert "__init__() missing 1 required positional argument: 'v'" in str(exc_info.value)
+    assert exc_info.value.errors() == [
+        {'input': HasRepr('ArgsKwargs(())'), 'loc': ('v',), 'msg': 'Field required', 'type': 'missing'}
+    ]
 
 
-@pytest.mark.xfail(reason='support Hashable')
-@pytest.mark.parametrize('default', [1, None, ...])
+@pytest.mark.parametrize(
+    'default',
+    [
+        1,
+        None,
+        pytest.param(
+            ...,
+            marks=pytest.mark.xfail(
+                reason='... makes field required: https://github.com/pydantic/pydantic/issues/5488'
+            ),
+        ),
+    ],
+)
 def test_hashable_optional(default):
     @pydantic.dataclasses.dataclass
     class MyDataclass:

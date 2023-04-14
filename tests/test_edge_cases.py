@@ -1989,22 +1989,11 @@ def test_hashable_required():
     class Model(BaseModel):
         v: Hashable
 
-        # TODO: Should arbitrary_types_allowed be necessary for Hashable?
-        #   "ideally I guess we should have a validator for this."
-        #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130684977
-        model_config = dict(arbitrary_types_allowed=True)
-
     Model(v=None)
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[])
     assert exc_info.value.errors() == [
-        {
-            'ctx': {'class': 'Hashable'},
-            'input': [],
-            'loc': ('v',),
-            'msg': 'Input should be an instance of Hashable',
-            'type': 'is_instance_of',
-        }
+        {'input': [], 'loc': ('v',), 'msg': 'Input should be hashable', 'type': 'is_hashable'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -2015,8 +2004,6 @@ def test_hashable_required():
 def test_hashable_optional(default):
     class Model(BaseModel):
         v: Hashable = default
-
-        model_config = dict(arbitrary_types_allowed=True)
 
     Model(v=None)
     Model()

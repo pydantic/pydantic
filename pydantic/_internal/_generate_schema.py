@@ -358,6 +358,8 @@ class GenerateSchema:
             return self.generate_schema(obj.__supertype__)
         elif obj == re.Pattern:
             return self._pattern_schema(obj)
+        elif obj is collections.abc.Hashable or obj is typing.Hashable:
+            return self._hashable_schema()
         elif isinstance(obj, type):
             if obj is dict:
                 return self._dict_schema(obj)
@@ -916,6 +918,13 @@ class GenerateSchema:
             )
         else:
             raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {pattern_type!r}.')
+
+    def _hashable_schema(self) -> core_schema.CoreSchema:
+        return core_schema.custom_error_schema(
+            core_schema.is_instance_schema(collections.abc.Hashable),
+            custom_error_type='is_hashable',
+            custom_error_message='Input should be hashable',
+        )
 
     def _std_types_schema(self, obj: Any) -> core_schema.CoreSchema | None:
         """
