@@ -364,40 +364,61 @@ see [Custom Data Types](types.md#custom-data-types) for more details.
 *pydantic* will inspect the signature of `__modify_schema__` to determine whether the `field` argument should be
 included.
 
-```py output="json" test="xfail needs work" lint="skip"
-from typing import Any, Callable, Dict, Generator, Optional
+```py
+from dataclasses import dataclass
+from typing import Annotated, Sequence
 
-from pydantic import BaseModel, Field
-from pydantic_core.core_schema import ValidationInfo
+from pydantic_core import core_schema
+
+from pydantic import BaseModel, ValidationError
 
 
-class RestrictedAlphabetStr(str):
-    @classmethod
-    def __get_validators__(cls) -> Generator[Callable, None, None]:
-        yield cls.validate
+@dataclass
+class RestrictCharacters:
+    alphabet: Sequence[str]
 
-    @classmethod
-    def validate(cls, value: str, info: ValidationInfo):
-        alphabet = field.field_info.extra['alphabet']
-        if any(c not in alphabet for c in value):
-            raise ValueError(f'{value!r} is not restricted to {alphabet!r}')
-        return cls(value)
+    def __get_pydantic_core_schema__(
+        self,
+        schema: core_schema.CoreSchema,
+    ) -> core_schema.CoreSchema:
+        if schema['type'] != 'str':
+            raise TypeError('RestrictCharacters can only be applied to strings')
+        return core_schema.no_info_after_validator_function(
+            self.validate,
+            schema,
+        )
 
-    @classmethod
-    def __pydantic_modify_json_schema__(
-        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
-    ) -> Dict[str, Any]:
-        if field:
-            alphabet = field.field_info.extra['alphabet']
-            field_schema['examples'] = [c * 3 for c in alphabet]
-        return field_schema
+    def validate(self, value: str) -> str:
+        if any(c not in self.alphabet for c in value):
+            raise ValueError(f'{value!r} is not restricted to {self.alphabet!r}')
+        return value
 
 
 class MyModel(BaseModel):
-    value: RestrictedAlphabetStr = Field(alphabet='ABC')
+    value: Annotated[str, RestrictCharacters('ABC')]
 
 
-print(MyModel.schema_json(indent=2))
+print(MyModel.model_json_schema())
+"""
+{
+    'title': 'MyModel',
+    'type': 'object',
+    'properties': {'value': {'type': 'string', 'title': 'Value'}},
+    'required': ['value'],
+}
+"""
+print(MyModel(value='CBA'))
+#> value='CBA'
+
+try:
+    MyModel(value='XYZ')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for MyModel
+    value
+      Value error, 'XYZ' is not restricted to 'ABC' [type=value_error, input_value='XYZ', input_type=str]
+    """
 ```
 
 
