@@ -9,7 +9,10 @@ import re
 import sys
 import typing
 import warnings
+from functools import partial
+from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
+from types import FunctionType, LambdaType, MethodType
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
 from annotated_types import BaseMetadata, GroupedMetadata
@@ -352,6 +355,8 @@ class GenerateSchema:
             if obj is Final:
                 return core_schema.AnySchema(type='any')
             return self.generate_schema(get_args(obj)[0])
+        elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
+            return self._callable_schema(obj)
 
         # TODO: _std_types_schema iterates over the __mro__ looking for an expected schema.
         #   This will catch subclasses of typing.Deque, preventing us from properly supporting user-defined
@@ -660,21 +665,32 @@ class GenerateSchema:
         self,
         name: str,
         annotation: type[Any],
+        default: Any = Parameter.empty,
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
         """
-        Prepare a ArgumentsParameter to represent a field in a namedtuple, dataclass or function signature.
+        Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature.
         """
-        field = FieldInfo.from_annotation(annotation)
+        if default is Parameter.empty:
+            field = FieldInfo.from_annotation(annotation)
+        else:
+            field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = self.generate_schema(field.annotation)
         schema = apply_annotations(schema, field.metadata, self.definitions)
+
+        if not field.is_required():
+            schema = wrap_default(field, schema)
 
         parameter_schema = core_schema.arguments_parameter(name, schema)
         if mode is not None:
             parameter_schema['mode'] = mode
         if field.alias is not None:
             parameter_schema['alias'] = field.alias
+        else:
+            alias_generator = self.config_wrapper.alias_generator
+            if alias_generator:
+                parameter_schema['alias'] = alias_generator(name)
         return parameter_schema
 
     def _generic_collection_schema(
@@ -939,6 +955,60 @@ class GenerateSchema:
         dc_schema = core_schema.dataclass_schema(dataclass, inner_schema, post_init=has_post_init, ref=dataclass_ref)
         schema = apply_model_serializers(dc_schema, decorators.model_serializer.values())
         return apply_model_validators(schema, decorators.model_validator.values())
+
+    def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
+        """
+        Generate schema for a Callable.
+
+        TODO support functional validators once we support them in Config
+        """
+        sig = signature(function)
+
+        type_hints = _typing_extra.get_function_type_hints(function)
+
+        mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
+            Parameter.POSITIONAL_ONLY: 'positional_only',
+            Parameter.POSITIONAL_OR_KEYWORD: 'positional_or_keyword',
+            Parameter.KEYWORD_ONLY: 'keyword_only',
+        }
+
+        arguments_list: list[core_schema.ArgumentsParameter] = []
+        var_args_schema: core_schema.CoreSchema | None = None
+        var_kwargs_schema: core_schema.CoreSchema | None = None
+
+        for i, (name, p) in enumerate(sig.parameters.items()):
+            if p.annotation is sig.empty:
+                annotation = Any
+            else:
+                annotation = type_hints[name]
+
+            parameter_mode = mode_lookup.get(p.kind)
+            if parameter_mode is not None:
+                arg_schema = self._generate_parameter_schema(name, annotation, p.default, parameter_mode)
+                arguments_list.append(arg_schema)
+            elif p.kind == Parameter.VAR_POSITIONAL:
+                var_args_schema = self.generate_schema(annotation)
+            else:
+                assert p.kind == Parameter.VAR_KEYWORD, p.kind
+                var_kwargs_schema = self.generate_schema(annotation)
+
+        return_schema: core_schema.CoreSchema | None = None
+        config_wrapper = self.config_wrapper
+        if config_wrapper.validate_return:
+            return_hint = type_hints.get('return')
+            if return_hint is not None:
+                return_schema = self.generate_schema(return_hint)
+
+        return core_schema.call_schema(
+            core_schema.arguments_schema(
+                arguments_list,
+                var_args_schema=var_args_schema,
+                var_kwargs_schema=var_kwargs_schema,
+                populate_by_name=config_wrapper.populate_by_name,
+            ),
+            function,
+            return_schema=return_schema,
+        )
 
     def _unsubstituted_typevar_schema(self, typevar: typing.TypeVar) -> core_schema.CoreSchema:
         assert isinstance(typevar, typing.TypeVar)

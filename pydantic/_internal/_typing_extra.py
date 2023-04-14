@@ -8,6 +8,7 @@ import sys
 import types
 import typing
 from collections.abc import Callable
+from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, ForwardRef
 
@@ -206,7 +207,7 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
         return frame.f_locals
 
 
-def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, Any]:
+def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     module_name = getattr(obj, '__module__', None)
     if module_name:
         try:
@@ -254,13 +255,37 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
     if value is None:
         value = NoneType
     elif isinstance(value, str):
-        value = _make_forward_ref(value, is_argument=False, is_class=True)  # type: ignore
+        value = _make_forward_ref(value, is_argument=False, is_class=True)
 
     try:
-        return typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
+        return typing._eval_type(value, globalns, localns)  # type: ignore
     except NameError:
         # the point of this function is to be tolerant to this case
         return value
+
+
+def get_function_type_hints(function: Callable[..., Any]) -> dict[str, Any]:
+    """
+    Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
+    copes with `partial`.
+    """
+
+    if isinstance(function, partial):
+        annotations = function.func.__annotations__
+    else:
+        annotations = function.__annotations__
+
+    globalns = add_module_globals(function)
+    type_hints = {}
+    for name, value in annotations.items():
+        if value is None:
+            value = NoneType
+        elif isinstance(value, str):
+            value = _make_forward_ref(value)
+
+        type_hints[name] = typing._eval_type(value, globalns, None)  # type: ignore
+
+    return type_hints
 
 
 if sys.version_info < (3, 9):

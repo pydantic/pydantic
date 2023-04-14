@@ -1,7 +1,6 @@
 import re
 import sys
 from contextlib import nullcontext as does_not_raise
-from functools import partial
 from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
@@ -16,7 +15,7 @@ from pydantic import (
     PydanticSchemaGenerationError,
     ValidationError,
     create_model,
-    validate_arguments,
+    validate_call,
 )
 from pydantic._internal._config import ConfigWrapper, config_defaults
 from pydantic.config import ConfigDict
@@ -457,7 +456,7 @@ Valid config keys have changed in V2:
 
     with pytest.warns(UserWarning, match=re.escape(warning_message)):
 
-        @validate_arguments(config=config_dict)
+        @validate_call(config=config_dict)
         def my_function():
             pass
 
@@ -483,35 +482,11 @@ def test_invalid_extra():
         class MyDataclass:
             pass
 
-    with pytest.raises(SchemaError, match=extra_error):
-
-        @validate_arguments(config=config_dict)
-        def my_function():
-            pass
-
-    with pytest.raises(SchemaError, match=extra_error):
-        # This case happens when the function passed to `validate_arguments` has no `__name__`.
-        # This is a pretty exotic case, but it has caused issues in the past, so I wanted to add a test.
-        def my_wrapped_function():
-            pass
-
-        my_partial_function = partial(my_wrapped_function)
-        my_partial_function.__annotations__ = my_wrapped_function.__annotations__
-        validate_arguments(config=config_dict)(my_partial_function)
-
 
 def test_invalid_config_keys():
-    with pytest.raises(
-        PydanticUserError,
-        match=re.escape(
-            'Setting the "alias_generator" property on custom Config for'
-            ' @validate_arguments is not yet supported, please remove.'
-        ),
-    ):
-
-        @validate_arguments(config={'alias_generator': lambda x: x})
-        def my_function():
-            pass
+    @validate_call(config={'alias_generator': lambda x: x})
+    def my_function():
+        pass
 
 
 def test_multiple_inheritance_config():
