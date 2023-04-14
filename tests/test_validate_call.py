@@ -66,6 +66,22 @@ def test_args():
     ]
 
 
+def test_optional():
+    @validate_call
+    def foo_bar(a: int = None):
+        return f'a={a}'
+
+    assert foo_bar() == 'a=None'
+    assert foo_bar(1) == 'a=1'
+    with pytest.raises(ValidationError) as exc_info:
+        foo_bar(None)
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': None}
+    ]
+
+
 def test_wrap():
     @validate_call
     def foo_bar(a: int, b: int):
@@ -357,25 +373,31 @@ def test_class_method():
     ]
 
 
-def test_config_title():
-    @validate_call(config=dict(title='Testing'))
+def test_json_schema():
+    @validate_call
     def foo(a: int, b: int = None):
         return f'{a}, {b}'
 
     assert foo(1, 2) == '1, 2'
     assert foo(1, b=2) == '1, 2'
     assert foo(1) == '1, None'
-    # TODO waiting for https://github.com/pydantic/pydantic/issues/5395
     # insert_assert(AnalyzedType(foo).json_schema())
     assert AnalyzedType(foo).json_schema() == {
         'type': 'object',
-        'properties': {
-            'a': {'type': 'integer', 'title': 'A'},
-            'b': {'anyOf': [{'type': 'integer'}, {'type': 'null'}], 'default': None, 'title': 'B'},
-        },
+        'properties': {'a': {'title': 'A', 'type': 'integer'}, 'b': {'default': None, 'title': 'B', 'type': 'integer'}},
         'required': ['a'],
         'additionalProperties': False,
     }
+
+
+@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic/issues/5395')
+def test_config_title():
+    @validate_call(config=dict(title='Testing'))
+    def foo(a: int, b: int = None):
+        return f'{a}, {b}'
+
+    js = AnalyzedType(foo).json_schema()
+    assert js['title'] == 'Testing'
 
 
 def test_alias_generator():

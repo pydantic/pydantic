@@ -202,7 +202,7 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
         return frame.f_locals
 
 
-def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, Any]:
+def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     module_name = getattr(obj, '__module__', None)
     if module_name:
         try:
@@ -237,14 +237,28 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
                 if value is None:
                     value = NoneType
                 elif isinstance(value, str):
-                    value = _make_forward_ref(value, is_argument=False, is_class=True)  # type: ignore
+                    value = _make_forward_ref(value, is_argument=False, is_class=True)
 
                 try:
-                    hints[name] = typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
+                    hints[name] = typing._eval_type(value, globalns, localns)  # type: ignore
                 except NameError:
                     # the point of this function is to be tolerant to this case
                     hints[name] = value
     return hints
+
+
+def eval_type(value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None) -> Any:
+    """
+    Evaluate a type, including forward references, in the given namespace.
+
+    This is effectively the same logic as `get_type_hints` or `get_cls_type_hints_lenient` without the leniency.
+    """
+    if value is None:
+        value = NoneType
+    elif isinstance(value, str):
+        value = _make_forward_ref(value, is_argument=False, is_class=True)
+
+    return typing._eval_type(value, globalns, localns)  # type: ignore
 
 
 if sys.version_info < (3, 9):
