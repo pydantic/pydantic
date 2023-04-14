@@ -1181,7 +1181,7 @@ def apply_single_annotation(  # noqa C901
     if metadata_schema is not None:
         return metadata_schema
 
-    metadata_get_schema = getattr(metadata, '__get_pydantic_core_schema__', None)
+    metadata_get_schema = getattr(metadata, '__modify_pydantic_core_schema__', None)
     if metadata_get_schema is not None:
         return metadata_get_schema(schema)
 

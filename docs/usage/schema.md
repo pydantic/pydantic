@@ -377,7 +377,7 @@ from pydantic import BaseModel, ValidationError
 class RestrictCharacters:
     alphabet: Sequence[str]
 
-    def __get_pydantic_core_schema__(
+    def __modify_pydantic_core_schema__(
         self,
         schema: core_schema.CoreSchema,
     ) -> core_schema.CoreSchema:
