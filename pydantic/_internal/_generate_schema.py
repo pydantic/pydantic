@@ -58,6 +58,7 @@ from ._fields import (
 from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, recursively_defined_type_refs, replace_types
 from ._typing_extra import is_finalvar
+from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
     from ..decorators import FieldValidatorModes
@@ -186,7 +187,7 @@ class GenerateSchema:
 
         return schema
 
-    def model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
+    def _model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
         """
         Generate schema for a pydantic model.
         """
@@ -293,6 +294,11 @@ class GenerateSchema:
         from_property = self._generate_schema_from_property(obj, obj)
         if from_property is not None:
             return from_property
+
+        from pydantic.main import BaseModel
+
+        if lenient_issubclass(obj, BaseModel):
+            return self._model_schema(obj)
 
         if isinstance(obj, PydanticRecursiveRef):
             return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
