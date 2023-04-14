@@ -234,8 +234,7 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
     """
     Collect annotations from a class, including those from parent classes.
 
-    Unlike `typing.get_type_hints`, this function will not evaluate forward references so won't error if
-    a forward reference is not resolvable.
+    Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
     """
     # TODO: Try handling typevars_map here
     hints = {}
@@ -248,7 +247,10 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
     return hints
 
 
-def eval_type_lenient(value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None) -> Any:
+def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict[str, Any] | None) -> Any:
+    """
+    Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved.
+    """
     if value is None:
         value = NoneType
     elif isinstance(value, str):
