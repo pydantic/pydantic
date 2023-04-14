@@ -3,7 +3,6 @@ import inspect
 import sys
 from datetime import datetime
 from functools import partial
-from pathlib import Path
 from typing import List
 
 import pytest
@@ -306,10 +305,10 @@ def test_async():
 
 def test_string_annotation():
     @validate_call
-    def foo(a: 'List[int]', b: 'Path'):
+    def foo(a: 'List[int]', b: 'float'):
         return f'a={a!r} b={b!r}'
 
-    assert foo([1, 2, 3], '/')
+    assert foo([1, 2, 3], 22) == 'a=[1, 2, 3] b=22.0'
 
     with pytest.raises(ValidationError) as exc_info:
         foo(['x'])
@@ -323,6 +322,29 @@ def test_string_annotation():
             'input': 'x',
         },
         {'type': 'missing_argument', 'loc': ('b',), 'msg': 'Missing required argument', 'input': ArgsKwargs((['x'],))},
+    ]
+
+
+def test_local_annotation():
+    ListInt = List[int]
+
+    @validate_call
+    def foo(a: ListInt):
+        return f'a={a!r}'
+
+    assert foo([1, 2, 3]) == 'a=[1, 2, 3]'
+
+    with pytest.raises(ValidationError) as exc_info:
+        foo(['x'])
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_parsing',
+            'loc': (0, 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'x',
+        },
     ]
 
 

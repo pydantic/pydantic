@@ -7,6 +7,7 @@ import sys
 import types
 import typing
 from collections.abc import Callable
+from functools import partial
 from types import GetSetDescriptorType
 from typing import Any, ForwardRef
 
@@ -247,18 +248,28 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
     return hints
 
 
-def eval_type(value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None) -> Any:
+def get_function_type_hints(function: Callable[..., Any]) -> dict[str, Any]:
     """
-    Evaluate a type, including forward references, in the given namespace.
-
-    This is effectively the same logic as `get_type_hints` or `get_cls_type_hints_lenient` without the leniency.
+    Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
+    copes with `partial`.
     """
-    if value is None:
-        value = NoneType
-    elif isinstance(value, str):
-        value = _make_forward_ref(value, is_argument=False, is_class=True)
 
-    return typing._eval_type(value, globalns, localns)  # type: ignore
+    if isinstance(function, partial):
+        annotations = function.func.__annotations__
+    else:
+        annotations = function.__annotations__
+
+    globalns = add_module_globals(function)
+    type_hints = {}
+    for name, value in annotations.items():
+        if value is None:
+            value = NoneType
+        elif isinstance(value, str):
+            value = _make_forward_ref(value)
+
+        type_hints[name] = typing._eval_type(value, globalns, None)  # type: ignore
+
+    return type_hints
 
 
 if sys.version_info < (3, 9):

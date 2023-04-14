@@ -958,14 +958,7 @@ class GenerateSchema:
         """
         sig = signature(function)
 
-        # we have to use `__annotations__` here because `typing.get_type_hints` converts the type annotation to
-        # `Optional[...]` if the default value is `None` before 3.11
-        if isinstance(function, partial):
-            type_hints = function.func.__annotations__
-        else:
-            type_hints = function.__annotations__
-
-        globalns = _typing_extra.add_module_globals(function)
+        type_hints = _typing_extra.get_function_type_hints(function)
 
         mode_lookup: dict[_ParameterKind, Literal['positional_only', 'positional_or_keyword', 'keyword_only']] = {
             Parameter.POSITIONAL_ONLY: 'positional_only',
@@ -981,8 +974,7 @@ class GenerateSchema:
             if p.annotation is sig.empty:
                 annotation = Any
             else:
-                hint = type_hints[name]
-                annotation = _typing_extra.eval_type(hint, globalns)
+                annotation = type_hints[name]
 
             parameter_mode = mode_lookup.get(p.kind)
             if parameter_mode is not None:
