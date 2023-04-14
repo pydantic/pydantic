@@ -676,13 +676,9 @@ class GenerateJsonSchema:
             if positional_possible:
                 return self.p_arguments_schema(p_only_arguments + kw_or_p_arguments, var_args_schema)
 
-        return {
-            'type': 'object',
-            'properties': {
-                '__args__': self.p_arguments_schema(p_only_arguments, var_args_schema),
-                '__kwargs__': self.kw_arguments_schema(kw_or_p_arguments + kw_only_arguments, var_args_schema),
-            },
-        }
+        raise PydanticInvalidForJsonSchema(
+            'Unable to generate JSON schema for arguments validator with positional only and keyword only arguments'
+        )
 
     def kw_arguments_schema(
         self, arguments: list[core_schema.ArgumentsParameter], var_kwargs_schema: CoreSchema | None
@@ -827,7 +823,7 @@ class GenerateJsonSchema:
             return True  # anything else should have title set
 
         else:
-            raise TypeError(f'Unexpected schema type: schema={schema}')
+            raise PydanticInvalidForJsonSchema(f'Unexpected schema type: schema={schema}')
 
     def normalize_name(self, name: str) -> str:
         return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name).replace('.', '__')

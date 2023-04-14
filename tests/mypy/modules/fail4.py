@@ -1,9 +1,9 @@
 from typing import Any
 
-from pydantic import BaseModel, root_validator, validate_arguments
+from pydantic import BaseModel, root_validator, validate_call
 
 
-@validate_arguments
+@validate_call
 def foo(a: int, *, c: str = 'x') -> str:
     return c * a
 
@@ -19,7 +19,7 @@ foo(1, d=2)
 callable(foo.raw_function)
 
 
-@validate_arguments
+@validate_call
 def bar() -> str:
     return 'x'
 

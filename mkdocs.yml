@@ -100,7 +100,7 @@ nav:
   - 'pydantic.color': api/color.md
   - 'pydantic.config': api/config.md
   - 'pydantic.dataclasses': api/dataclasses.md
-  - 'pydantic.decorator': api/decorator.md
+  - 'pydantic.validate_call': api/validate_call.md
   - 'pydantic.decorators': api/decorators.md
   - 'pydantic.errors': api/errors.md
   - 'pydantic.fields': api/fields.md
