@@ -148,12 +148,12 @@ class FieldInfo(_repr.Representation):
         Examples:
             This is how you can create a field with default value like this:
 
-            ``python
+            ```python
             import pydantic
 
             class MyModel(pydantic.BaseModel):
                 foo: int = pydantic.Field(4, ...)
-            ``
+            ```
         """
         # TODO: This is a good place to add migration warnings; should we use overload for type-hinting the signature?
         if 'annotation' in kwargs:
@@ -174,22 +174,22 @@ class FieldInfo(_repr.Representation):
         Examples:
             This is how you can create a field from a bare annotation like this:
 
-            ``python
+            ```python
             import pydantic
             class MyModel(pydantic.BaseModel):
                 foo: int  # <-- like this
-            ``
+            ```
 
             We also account for the case where the annotation can be an instance of `Annotated` and where
             one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:
 
-            ``python
+            ```python
             import pydantic, annotated_types, typing
 
             class MyModel(pydantic.BaseModel):
                 foo: typing.Annotated[int, annotated_types.Gt(42)]
                 bar: typing.Annotated[int, Field(gt=42)]
-            ``
+            ```
 
         """
         final = False
@@ -218,7 +218,6 @@ class FieldInfo(_repr.Representation):
         Create `FieldInfo` from an annotation with a default value.
 
         Args:
-            cls (Type[FieldInfo]): The class of the field to return.
             annotation (type[Any]): The type annotation of the field.
             default (Any): The default value of the field.
 
@@ -226,14 +225,14 @@ class FieldInfo(_repr.Representation):
             FieldInfo: A field object with the passed values.
 
         Examples:
-        ``python
+        ```python
         import pydantic, annotated_types, typing
 
         class MyModel(pydantic.BaseModel):
             foo: int = 4  # <-- like this
             bar: typing.Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
             spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
-        ``
+        ```
         """
         import dataclasses
 
@@ -275,7 +274,6 @@ class FieldInfo(_repr.Representation):
         Return a new `FieldInfo` instance from a `dataclasses.Field` instance.
 
         Args:
-            cls (type): The class containing the dataclass field.
             dc_field (dataclasses.Field): The `dataclasses.Field` instance to convert.
 
         Returns:
@@ -307,7 +305,6 @@ class FieldInfo(_repr.Representation):
         """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
 
         Args:
-            cls (class): The class this method is being called on.
             annotation (type[Any] | None): The type hint annotation for which metadata has to be extracted.
 
         Returns:
@@ -492,11 +489,13 @@ def Field(
             the alias' or set of aliases' fields and all the other fields will be ignored at serialization time.
         title (str, optional): human-readable title.
         description (str, optional): human-readable description.
-        examples (list of Any, optional): An example value for this field.
-        exclude (set or Mapping or Any, optional): An optional set, mapping, or object with attribute-access to
-            exclude fields that don't belong in a schema such as `__dict__` or user-defined methods.
-        include (set or Mapping or Any, optional): An optional set, mapping or object with attribute-access to
-            include defined fields in a schema, by default `asdict` includes all fields.
+        examples (list[Any], optional): An example value for this field.
+        exclude (Union[AbstractSet[Union[str, int]], Mapping[Union[str, int], Any], Any]):
+            Parameters that should be excluded from the field. If `None`, default
+            Pydantic behaviors are used.
+        include (Union[AbstractSet[Union[str, int]], Mapping[Union[str, int], Any], Any]):
+            Parameters that should be included in the field. If `None`, default
+            Pydantic behaviors are used.
         gt (float, optional): Greater than. If set, value must be greater than this. Only applicable to numbers.
         ge (float, optional): Greater than or equal. If set, value must be
             greater than or equal to this. Only applicable to numbers.
@@ -517,7 +516,7 @@ def Field(
         discriminator (str, optional): Codename for discriminating a field among others of the same type.
         repr (bool, optional): If `True` (the default), return a string representation of the field.
         strict (bool, optional): If `True` (the default is `None`), the field should be validated strictly.
-        json_schema_extra (dict, optional): Extra keys and values to include in the json schema.
+        json_schema_extra (dict[str, Any]): Any other additional JSON schema data for the schema property.
         validate_default (bool, optional): Run validation that isn't only checking existence of defaults. This is
             `True` by default.
         const (bool, optional): Value is always the same literal object. This is typically a singleton object,
@@ -526,11 +525,9 @@ def Field(
         allow_mutation (bool, optional): If `False`, the dataclass will be frozen (made immutable).
         regex (str, optional): Regular expression pattern that the field must match against.
 
+
     Returns:
         Any: return the generated field object.
-
-        The object can be added to an object's attributes to ensure that the attribute follows the field's schema.
-
     """
     # Check deprecated & removed params of V1.
     # This has to be removed deprecation period over.
@@ -607,16 +604,10 @@ def Field(
 class ModelPrivateAttr(_repr.Representation):
     """A descriptor for private attributes in class models.
 
-    Args:
-        default (Any, optional): The default value of the attribute if not provided. Defaults to `Undefined`.
-        default_factory (typing.Callable[[], Any], optional): A callable function that generates the default
-            value of the attribute if not provided. Defaults to None.
-
     Attributes:
         default (Any): The default value of the attribute if not provided.
         default_factory (typing.Callable[[], Any]): A callable function that generates the default value of the
             attribute if not provided.
-
     """
 
     __slots__ = 'default', 'default_factory'
