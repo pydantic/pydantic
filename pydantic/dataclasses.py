@@ -39,6 +39,7 @@ if sys.version_info >= (3, 10):
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
+        """Overload for `dataclass`."""
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
@@ -56,6 +57,7 @@ if sys.version_info >= (3, 10):
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
     ) -> type[PydanticDataclass]:
+        """Overload for `dataclass`."""
         ...
 
 else:
@@ -73,6 +75,7 @@ else:
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
+        """Overload for `dataclass`."""
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
@@ -89,6 +92,7 @@ else:
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
     ) -> type[PydanticDataclass]:
+        """Overload for `dataclass`."""
         ...
 
 
@@ -107,7 +111,31 @@ def dataclass(
     kw_only: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
     """
-    Like the python standard lib dataclasses but enhanced with validation.
+    A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
+    but with added validation.
+
+    Args:
+        _cls (type[_T] | None): The target dataclass.
+        init (Literal[False]): If set to `False`, the `dataclass` will not generate an `__init__`,
+            and you will need to provide one. Defaults to `False`.
+        repr (bool): Determines if a `__repr__` should be generated for the class. Defaults to `True`.
+        eq (bool): Determines if a `__eq__` should be generated for the class. Defaults to `True`.
+        order (bool): Determines if comparison magic methods should be generated, such as `__lt__`, but
+            not `__eq__`. Defaults to `False`.
+        unsafe_hash (bool): Determines if an unsafe hashing function should be included in the class.
+        frozen (bool): Determines if the generated class should be a 'frozen' dataclass, which does not allow its
+            attributes to be modified from its constructor. Defaults to `False`.
+        config (ConfigDict | type[object] | None): A configuration for the `dataclass` generation. Defaults to `None`.
+        validate_on_init (bool | None): Determines whether the `dataclass` will be validated upon creation.
+        kw_only (bool): Determines if keyword-only parameters should be used on the `__init__` method. Defaults
+            to `False`.
+
+    Returns:
+        A callable that takes a `type` as its argument, and returns a `type` of `PydanticDataclass`. This can
+        also return a `tyoe` of `PydanticDataclass` directly.
+
+    Raises:
+        AssertionError: Raised if `init` is not `False`.
     """
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
 
@@ -117,6 +145,18 @@ def dataclass(
         kwargs = {}
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
+        """Create a Pydantic dataclass from a regular dataclass.
+
+        Args:
+            cls (type[Any]): The class to create the Pydantic dataclass from.
+
+        Returns:
+            type[PydanticDataclass]: A Pydantic dataclass.
+
+        Raises:
+            TypeError: If a non-class value is provided.
+        """
+
         config_wrapper = _config.ConfigWrapper(config)
         decorators = _decorators.DecoratorInfos.build(cls)
 
