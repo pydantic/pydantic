@@ -355,49 +355,136 @@ Defaults can be set outside `Annotated` as the assigned value or with `Field.def
 
 For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
-## Modifying schema in custom fields
+## Modifying schema in custom types and custom fields
 
-Custom field types can customise the schema generated for them using the `__modify_schema__` class method;
-see [Custom Data Types](types.md#custom-data-types) for more details.
+Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) can *override* schema generation by implementing a `__get_pydantic_core_schema__` method.
+This method receives a single positional argument with the type annotation that corresponds to this type (so in the case of `TheType[T][int]` it would be `TheType[int]`).
+All implementation of `__get_pydantic_core_schema__` *must* accept `**_kwargs` and ignore them; they are used for private implementations.
 
-`__modify_schema__` can also take a `field` argument which will have type `Optional[ModelField]`.
-*pydantic* will inspect the signature of `__modify_schema__` to determine whether the `field` argument should be
-included.
+```py
+from dataclasses import dataclass
+from typing import Any, Dict, List
 
-```py output="json" test="xfail needs work" lint="skip"
-from typing import Any, Callable, Dict, Generator, Optional
+from pydantic_core import core_schema
 
-from pydantic import BaseModel, Field
-from pydantic_core.core_schema import ValidationInfo
+from pydantic import BaseModel
 
 
-class RestrictedAlphabetStr(str):
-    @classmethod
-    def __get_validators__(cls) -> Generator[Callable, None, None]:
-        yield cls.validate
+@dataclass
+class CompressedString:
+    dictionary: Dict[int, str]
+    text: List[int]
 
-    @classmethod
-    def validate(cls, value: str, info: ValidationInfo):
-        alphabet = field.field_info.extra['alphabet']
-        if any(c not in alphabet for c in value):
-            raise ValueError(f'{value!r} is not restricted to {alphabet!r}')
-        return cls(value)
+    def build(self) -> str:
+        return ' '.join([self.dictionary[key] for key in self.text])
 
     @classmethod
-    def __pydantic_modify_json_schema__(
-        cls, field_schema: Dict[str, Any], field: Optional[ModelField]
-    ) -> Dict[str, Any]:
-        if field:
-            alphabet = field.field_info.extra['alphabet']
-            field_schema['examples'] = [c * 3 for c in alphabet]
-        return field_schema
+    def __get_pydantic_core_schema__(
+        cls, source: Any, **_kwargs: Any
+    ) -> core_schema.CoreSchema:
+        assert source is CompressedString
+        return core_schema.no_info_after_validator_function(
+            cls._validate,
+            core_schema.str_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                cls._serialize, info_arg=False, json_return_type='str'
+            ),
+        )
+
+    @staticmethod
+    def _validate(value: str) -> 'CompressedString':
+        inverse_dictionary: Dict[str, int] = {}
+        text: List[int] = []
+        for word in value.split(' '):
+            if word not in inverse_dictionary:
+                inverse_dictionary[word] = len(inverse_dictionary)
+            text.append(inverse_dictionary[word])
+        return CompressedString({v: k for k, v in inverse_dictionary.items()}, text)
+
+    @staticmethod
+    def _serialize(value: 'CompressedString') -> str:
+        return value.build()
 
 
 class MyModel(BaseModel):
-    value: RestrictedAlphabetStr = Field(alphabet='ABC')
+    value: CompressedString
 
 
-print(MyModel.schema_json(indent=2))
+print(MyModel.model_json_schema())
+"""
+{
+    'title': 'MyModel',
+    'type': 'object',
+    'properties': {'value': {'type': 'string', 'title': 'Value'}},
+    'required': ['value'],
+}
+"""
+print(MyModel(value='fox fox fox dog fox'))
+#> value=CompressedString(dictionary={0: 'fox', 1: 'dog'}, text=[0, 0, 0, 1, 0])
+
+print(MyModel(value='fox fox fox dog fox').model_dump(mode='json'))
+#> {'value': 'fox fox fox dog fox'}
+```
+
+Annotations / constraints can implement `__modify_pydantic_core_schema__` to *modify or override* the core schema that is being generated.
+This method receives a single positional argument `schema: pydantic_core.core_schema.CoreSchema` which you can wrap or ignore and return a completely new schema.
+
+```py
+from dataclasses import dataclass
+from typing import Sequence
+
+from pydantic_core import core_schema
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, ValidationError
+
+
+@dataclass
+class RestrictCharacters:
+    alphabet: Sequence[str]
+
+    def __modify_pydantic_core_schema__(
+        self,
+        schema: core_schema.CoreSchema,
+    ) -> core_schema.CoreSchema:
+        if schema['type'] != 'str':
+            raise TypeError('RestrictCharacters can only be applied to strings')
+        return core_schema.no_info_after_validator_function(
+            self.validate,
+            schema,
+        )
+
+    def validate(self, value: str) -> str:
+        if any(c not in self.alphabet for c in value):
+            raise ValueError(f'{value!r} is not restricted to {self.alphabet!r}')
+        return value
+
+
+class MyModel(BaseModel):
+    value: Annotated[str, RestrictCharacters('ABC')]
+
+
+print(MyModel.model_json_schema())
+"""
+{
+    'title': 'MyModel',
+    'type': 'object',
+    'properties': {'value': {'type': 'string', 'title': 'Value'}},
+    'required': ['value'],
+}
+"""
+print(MyModel(value='CBA'))
+#> value='CBA'
+
+try:
+    MyModel(value='XYZ')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for MyModel
+    value
+      Value error, 'XYZ' is not restricted to 'ABC' [type=value_error, input_value='XYZ', input_type=str]
+    """
 ```
 
 

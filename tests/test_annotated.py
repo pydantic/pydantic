@@ -64,6 +64,11 @@ NO_VALUE = object()
             5,
             'FieldInfo(annotation=int, required=False, default=5, metadata=[Gt(gt=0), Lt(lt=2)])',
         ),
+        (
+            lambda: Annotated[int, Field(alias='foobar')],
+            Undefined,
+            "FieldInfo(annotation=int, required=True, alias='foobar', alias_priority=2)",
+        ),
     ],
 )
 def test_annotated(hint_fn, value, expected_repr):

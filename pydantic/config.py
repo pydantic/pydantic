@@ -6,7 +6,9 @@ from warnings import warn
 
 from typing_extensions import Literal, TypedDict
 
-__all__ = 'ConfigDict', 'Extra'
+from .deprecated.config import BaseConfig
+
+__all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
 
 class _Extra:
@@ -87,3 +89,5 @@ class ConfigDict(TypedDict, total=False):
     ser_json_bytes: Literal['utf8', 'base64']
     # whether to validate default values during validation, default False
     validate_default: bool
+    # whether to validate the return value from call validator
+    validate_return: bool

@@ -40,7 +40,7 @@ from pydantic import (
     field_validator,
     parse_obj_as,
     root_validator,
-    validate_arguments,
+    validate_call,
 )
 from pydantic.fields import Field, PrivateAttr
 from pydantic.networks import AnyUrl
@@ -156,7 +156,7 @@ class WithField(BaseModel):
 
 
 # simple decorator
-@validate_arguments
+@validate_call
 def foo(a: int, *, c: str = 'x') -> str:
     return c * a
 
@@ -166,7 +166,7 @@ foo(1)
 
 
 # nested decorator should not produce an error
-@validate_arguments(config={'arbitrary_types_allowed': True})
+@validate_call(config={'arbitrary_types_allowed': True})
 def bar(a: int, *, c: str = 'x') -> str:
     return c * a
 

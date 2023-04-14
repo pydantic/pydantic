@@ -161,14 +161,14 @@ class ModelMetaclass(ABCMeta):
                 cls.__pydantic_parent_namespace__ = _typing_extra.parent_frame_namespace()
             parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
 
-            types_namespace = _model_construction.get_model_types_namespace(cls, parent_namespace)
+            types_namespace = _typing_extra.get_cls_types_namespace(cls, parent_namespace)
             _model_construction.set_model_fields(cls, bases, types_namespace)
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
                 config_wrapper,
-                types_namespace,
                 raise_errors=False,
+                types_namespace=types_namespace,
             )
             # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
             # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
@@ -231,8 +231,17 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: type[BaseModel], gen_schema: GenerateSchema) -> CoreSchema:
-        return gen_schema.model_schema(cls)
+    def __get_pydantic_core_schema__(cls, source: type[BaseModel], gen_schema: GenerateSchema) -> CoreSchema | None:
+        # Only use the cached value from this _exact_ class; we don't want one from a parent class
+        # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
+        if '__pydantic_core_schema__' in cls.__dict__:
+            # Due to the way generic classes are built, it's possible that an invalid schema may be temporarily
+            # set on generic classes. I think we could resolve this to ensure that we get proper schema caching
+            # for generics, but for simplicity for now, we just always rebuild if the class has a generic origin.
+            if not cls.__pydantic_generic_metadata__['origin']:
+                return cls.__pydantic_core_schema__
+
+        return None
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
@@ -453,13 +462,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
                 types_namespace = cls.__pydantic_parent_namespace__
 
-                types_namespace = _model_construction.get_model_types_namespace(cls, types_namespace)
+                types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
             return _model_construction.complete_model_class(
                 cls,
                 cls.__name__,
                 _config.ConfigWrapper(cls.model_config, check=False),
-                types_namespace,
                 raise_errors=raise_errors,
+                types_namespace=types_namespace,
             )
 
     def __iter__(self) -> TupleGenerator:

@@ -3,14 +3,19 @@ Logic for interacting with type annotations, mostly extensions, shims and hacks 
 """
 from __future__ import annotations as _annotations
 
+import dataclasses
 import sys
 import types
 import typing
 from collections.abc import Callable
+from functools import partial
 from types import GetSetDescriptorType
-from typing import Any, ForwardRef
+from typing import TYPE_CHECKING, Any, ForwardRef
 
-from typing_extensions import Annotated, Final, Literal, get_args, get_origin
+from typing_extensions import Annotated, Final, Literal, TypeGuard, get_args, get_origin
+
+if TYPE_CHECKING:
+    from ._dataclasses import StandardDataclass
 
 try:
     from typing import _TypingBase  # type: ignore[attr-defined]
@@ -202,7 +207,7 @@ def parent_frame_namespace(*, parent_depth: int = 2) -> dict[str, Any] | None:
         return frame.f_locals
 
 
-def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, Any]:
+def add_module_globals(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     module_name = getattr(obj, '__module__', None)
     if module_name:
         try:
@@ -220,12 +225,17 @@ def add_module_globals(obj: Any, globalns: dict[str, Any] | None) -> dict[str, A
     return globalns or {}
 
 
+def get_cls_types_namespace(cls: type[Any], parent_namespace: dict[str, Any] | None = None) -> dict[str, Any]:
+    ns = add_module_globals(cls, parent_namespace)
+    ns[cls.__name__] = cls
+    return ns
+
+
 def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None) -> dict[str, Any]:
     """
     Collect annotations from a class, including those from parent classes.
 
-    Unlike `typing.get_type_hints`, this function will not evaluate forward references so won't error if
-    a forward reference is not resolvable.
+    Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
     """
     # TODO: Try handling typevars_map here
     hints = {}
@@ -234,17 +244,48 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
         localns = dict(vars(base))
         if ann is not None and ann is not GetSetDescriptorType:
             for name, value in ann.items():
-                if value is None:
-                    value = NoneType
-                elif isinstance(value, str):
-                    value = _make_forward_ref(value, is_argument=False, is_class=True)  # type: ignore
-
-                try:
-                    hints[name] = typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
-                except NameError:
-                    # the point of this function is to be tolerant to this case
-                    hints[name] = value
+                hints[name] = eval_type_lenient(value, globalns, localns)
     return hints
+
+
+def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict[str, Any] | None) -> Any:
+    """
+    Behaves like typing._eval_type, except it won't raise an error if a forward reference can't be resolved.
+    """
+    if value is None:
+        value = NoneType
+    elif isinstance(value, str):
+        value = _make_forward_ref(value, is_argument=False, is_class=True)
+
+    try:
+        return typing._eval_type(value, globalns, localns)  # type: ignore
+    except NameError:
+        # the point of this function is to be tolerant to this case
+        return value
+
+
+def get_function_type_hints(function: Callable[..., Any]) -> dict[str, Any]:
+    """
+    Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
+    copes with `partial`.
+    """
+
+    if isinstance(function, partial):
+        annotations = function.func.__annotations__
+    else:
+        annotations = function.__annotations__
+
+    globalns = add_module_globals(function)
+    type_hints = {}
+    for name, value in annotations.items():
+        if value is None:
+            value = NoneType
+        elif isinstance(value, str):
+            value = _make_forward_ref(value)
+
+        type_hints[name] = typing._eval_type(value, globalns, None)  # type: ignore
+
+    return type_hints
 
 
 if sys.version_info < (3, 9):
@@ -422,3 +463,9 @@ else:
         ref: ForwardRef, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None
     ) -> Any:
         return ref._evaluate(globalns=globalns, localns=localns, recursive_guard=frozenset())
+
+
+def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
+    # The dataclasses.is_dataclass function doesn't seem to provide TypeGuard functionality,
+    # so I created this convenience function
+    return dataclasses.is_dataclass(_cls)

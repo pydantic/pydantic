@@ -5,20 +5,20 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
-import typing
 from abc import ABC, abstractmethod
 from copy import copy
 from typing import TYPE_CHECKING, Any
 
 from pydantic_core import core_schema
 
+from . import _typing_extra
 from ._forward_ref import PydanticForwardRef
-from ._generics import get_typevars_map, replace_types
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
 if TYPE_CHECKING:
     from ..fields import FieldInfo
+    from ._dataclasses import StandardDataclass
 
 
 def get_type_hints_infer_globalns(
@@ -111,19 +111,16 @@ class CustomValidator(ABC):
 DC_KW_ONLY = getattr(dataclasses, 'KW_ONLY', None)
 
 
-def collect_fields(  # noqa: C901
+def collect_model_fields(  # noqa: C901
     cls: type[Any],
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None,
     *,
-    is_dataclass: bool = False,
-    dc_kw_only: bool | None = None,
+    typevars_map: dict[Any, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
     """
-    Collect the fields of:
-    * a nascent pydantic model
-    * a nascent pydantic dataclass
-    * or, a standard library dataclass
+    Collect the fields of a nascent pydantic model
+
     Also collect the names of any ClassVars present in the type hints.
 
     The returned value is a tuple of two items: the fields dict, and the set of ClassVar names.
@@ -131,8 +128,6 @@ def collect_fields(  # noqa: C901
     :param cls: BaseModel or dataclass
     :param bases: parents of the class, generally `cls.__bases__`
     :param types_namespace: optional extra namespace to look for types in
-    :param is_dataclass: whether the class is a dataclass, used to decide about kw_only setting
-    :param dc_kw_only: whether the whole dataclass is kw_only
     """
     from ..fields import FieldInfo
 
@@ -143,10 +138,6 @@ def collect_fields(  # noqa: C901
     annotations = cls.__dict__.get('__annotations__', {})
     fields: dict[str, FieldInfo] = {}
 
-    # currently just used for `init=False` dataclass fields, this logic can probably be removed if
-    # we simplify this function to not be "all things to all men"
-    omitted_fields: set[str] | None = getattr(cls, '__pydantic_omitted_fields__', None)
-
     class_vars: set[str] = set()
     for ann_name, ann_type in type_hints.items():
         if is_classvar(ann_type):
@@ -155,25 +146,8 @@ def collect_fields(  # noqa: C901
         if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, Undefined)):
             class_vars.add(ann_name)
             continue
-        if ann_name.startswith('_') or (omitted_fields and ann_name in omitted_fields):
+        if ann_name.startswith('_'):
             continue
-
-        if DC_KW_ONLY and ann_type is DC_KW_ONLY:
-            # all field fields will be kw_only
-            dc_kw_only = True
-            continue
-        kw_only = dc_kw_only
-
-        init_var = False
-        if ann_type is dataclasses.InitVar:
-            if sys.version_info < (3, 8):
-                raise RuntimeError('InitVar is not supported in Python 3.7 as type information is lost')
-
-            init_var = True
-            ann_type = Any
-        elif isinstance(ann_type, dataclasses.InitVar):
-            init_var = True
-            ann_type = ann_type.type
 
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
         # "... shadows an attribute" errors
@@ -182,9 +156,6 @@ def collect_fields(  # noqa: C901
             if hasattr(base, ann_name):
                 if base is generic_origin:
                     # Don't error when "shadowing" of attributes in parametrized generics
-                    continue
-                if is_dataclass and dataclasses.is_dataclass(base):
-                    # Don't error when shadowing a field in a parent dataclass
                     continue
                 raise NameError(
                     f'Field name "{ann_name}" shadows an attribute in parent "{base.__qualname__}"; '
@@ -214,13 +185,6 @@ def collect_fields(  # noqa: C901
                     # Nothing stops us from just creating a new FieldInfo for this type hint, so we do this.
                     field_info = FieldInfo.from_annotation(ann_type)
         else:
-            if isinstance(default, dataclasses.Field):
-                if not default.init:
-                    # dataclasses.Field with init=False are not fields
-                    continue
-                if DC_KW_ONLY and default.kw_only is True:  # type: ignore
-                    kw_only = True
-
             field_info = FieldInfo.from_annotated_attribute(ann_type, default)
             # attributes which are fields are removed from the class namespace:
             # 1. To match the behaviour of annotation-only fields
@@ -230,38 +194,11 @@ def collect_fields(  # noqa: C901
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
 
-            if is_dataclass:
-                # for dataclasses we preserve the default value if it is set
-                # field, e.g. `a: int = 1` gets kept as is
-                # and `a: int = field(default=1, repr=False)` gets converted to the above
-                if isinstance(default, (dataclasses.Field, FieldInfo)):
-                    if default.default not in (
-                        Undefined,
-                        dataclasses.MISSING,
-                    ):
-                        setattr(cls, ann_name, default.default)
-                else:
-                    # not a field default
-                    setattr(cls, ann_name, default)
-
-        if init_var:
-            field_info.init_var = True
-        if kw_only is not None:
-            field_info.kw_only = kw_only
         fields[ann_name] = field_info
 
-    generic_metadata = getattr(cls, '__pydantic_generic_metadata__', None)
-    if generic_metadata:
-        typevars_map = get_typevars_map(generic_metadata['origin'], generic_metadata['args'])
-        if typevars_map:
-            for field in fields.values():
-                try:
-                    field.annotation = typing._eval_type(  # type: ignore[attr-defined]
-                        field.annotation, types_namespace, None
-                    )
-                except NameError:
-                    pass
-                field.annotation = replace_types(field.annotation, typevars_map)
+    if typevars_map:
+        for field in fields.values():
+            field.apply_typevars_map(typevars_map, types_namespace)
 
     return fields, class_vars
 
@@ -277,3 +214,39 @@ def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
         return False
     else:
         return True
+
+
+def collect_dataclass_fields(
+    cls: type[StandardDataclass], types_namespace: dict[str, Any] | None, *, typevars_map: dict[Any, Any] | None = None
+) -> dict[str, FieldInfo]:
+    from ..fields import FieldInfo
+
+    fields: dict[str, FieldInfo] = {}
+    dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
+    cls_localns = dict(vars(cls))  # this matches get_cls_type_hints_lenient, but all tests pass with `= None` instead
+
+    for ann_name, dataclass_field in dataclass_fields.items():
+        ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
+        if is_classvar(ann_type):
+            continue
+
+        if not dataclass_field.init:
+            # TODO: We should probably do something with this so that validate_assignment behaves properly
+            #   See https://github.com/pydantic/pydantic/issues/5470
+            continue
+
+        if isinstance(dataclass_field.default, FieldInfo):
+            field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field.default)
+        else:
+            field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
+        fields[ann_name] = field_info
+
+        if field_info.default is not Undefined:
+            # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
+            setattr(cls, ann_name, field_info.default)
+
+    if typevars_map:
+        for field in fields.values():
+            field.apply_typevars_map(typevars_map, types_namespace)
+
+    return fields
