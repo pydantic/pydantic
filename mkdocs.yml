@@ -46,10 +46,35 @@ nav:
 - Get Started:
   - Welcome to pydantic: index.md
   - Installation: install.md
+  - Migration Guide: migration.md
   - changelog.md
 - Usage:
   - usage/models.md
-  - 'Field Types': usage/types.md
+  - Field Types:
+    - Types Overview: usage/types.md
+    - Standard Library Types: usage/standard_types.md
+    - Booleans: usage/booleans.md
+    - ByteSize: usage/bytesize.md
+    - Callables: usage/callables.md
+    - Color Types: usage/color_types.md
+    - Datetimes: usage/datetime.md
+    - Dicts and Mapping: usage/dicts_mapping.md
+    - Enums and Choices: usage/enums.md
+    - File Types: usage/filetypes.md
+    - JSON: usage/json.md
+    - Lists and Tuples: usage/list_types.md
+    - Number Types: usage/number_types.md
+    - Payment Card Numbers: usage/payment_cards.md
+    - Secret Types: usage/secrets.md
+    - Sequence, Iterable, & Iterator: usage/sequence_iterable.md
+    - Sets and frozenset: usage/set_types.md
+    - String Types: usage/string_types.md
+    - Type and TypeVar: usage/typevars.md
+    - Types with Fields: usage/types_fields.md
+    - Unions: usage/unions.md
+    - URLs: usage/urls.md
+    - UUIDs: usage/uuids.md
+    - Custom Data Types: usage/custom.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
   - usage/schema.md
@@ -57,6 +82,10 @@ nav:
   - usage/dataclasses.md
   - usage/validation_decorator.md
   - usage/postponed_annotations.md
+  - Errors:
+    - Usage Errors: usage/errors.md
+    - Validation Errors: usage/validation_errors.md
+  - usage/conversion_table.md
 - Integrations:
   - 'Mypy': integrations/mypy.md
   - 'PyCharm': integrations/pycharm.md
@@ -68,6 +97,22 @@ nav:
 - Contribute: contributing.md
 - Blog:
   - blog/pydantic-v2.md
+- API:
+  - 'pydantic.analyzed_type': api/analyzed_type.md
+  - 'pydantic.color': api/color.md
+  - 'pydantic.config': api/config.md
+  - 'pydantic.dataclasses': api/dataclasses.md
+  - 'pydantic.validate_call': api/validate_call.md
+  - 'pydantic.decorators': api/decorators.md
+  - 'pydantic.errors': api/errors.md
+  - 'pydantic.fields': api/fields.md
+  - 'pydantic.json_schema': api/json_schema.md
+  - 'pydantic.main': api/main.md
+  - 'pydantic.mypy': api/mypy.md
+  - 'pydantic.networks': api/networks.md
+  - 'pydantic.tools': api/tools.md
+  - 'pydantic.types': api/types.md
+  - 'pydantic.version': api/version.md
 
 
 markdown_extensions:
@@ -84,6 +129,9 @@ markdown_extensions:
 - pymdownx.tabbed:
     alternate_style: true
 
+watch:
+- pydantic
+
 plugins:
 - search
 - exclude:
@@ -91,6 +139,10 @@ plugins:
     - theme/announce.html
     - plugins/*
     - __pycache__/*
+- mkdocstrings:
+    handlers:
+      python:
+        path: .
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'

@@ -9,7 +9,7 @@ from pydantic.version import version_info
 def test_version_info():
     s = version_info()
     assert re.match(' *pydantic version: ', s)
-    assert s.count('\n') == 4
+    assert s.count('\n') == 5
 
 
 def test_standard_version():

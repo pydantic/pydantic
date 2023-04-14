@@ -12,6 +12,8 @@ from tempfile import NamedTemporaryFile
 import pytest
 from pytest_examples import CodeExample, EvalExample, find_examples
 
+from pydantic.errors import PydanticErrorCodes
+
 INDEX_MAIN = None
 DOCS_ROOT = Path(__file__).parent.parent / 'docs'
 
@@ -180,3 +182,13 @@ def test_docs_devtools_example(example: CodeExample, eval_example: EvalExample, 
         pytest.fail(f'output file {output_file} does not exist')
     else:
         assert output_html == output_file.read_text()
+
+
+def test_error_codes():
+    error_text = (DOCS_ROOT / 'usage/errors.md').read_text()
+
+    code_error_codes = PydanticErrorCodes.__args__
+
+    documented_error_codes = tuple(re.findall(r'^## .+ \{#(.+?)}$', error_text, flags=re.MULTILINE))
+
+    assert code_error_codes == documented_error_codes, 'Error codes in code and docs do not match'

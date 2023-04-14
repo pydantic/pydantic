@@ -12,6 +12,8 @@ from mkdocs.config import Config
 from mkdocs.structure.files import Files
 from mkdocs.structure.pages import Page
 
+from .conversion_table import table
+
 logger = logging.getLogger('mkdocs.plugin')
 THIS_DIR = Path(__file__).parent
 DOCS_DIR = THIS_DIR.parent
@@ -42,6 +44,8 @@ def on_page_markdown(markdown: str, page: Page, config: Config, files: Files) ->
     if md := add_version(markdown, page):
         return md
     elif md := build_schema_mappings(markdown, page):
+        return md
+    elif md := build_conversion_table(markdown, page):
         return md
     elif md := devtools_example(markdown, page):
         return md
@@ -165,23 +169,27 @@ def add_version(markdown: str, page: Page) -> str | None:
     return markdown
 
 
-headings = [
-    'Python type',
-    'JSON Schema Type',
-    'Additional JSON Schema',
-    'Defined in',
-]
+def _generate_table_row(col_values: list[str]) -> str:
+    return f'| {" | ".join(col_values)} |\n'
 
 
-def md2html(s: str) -> str:
-    return re.sub(r'`(.+?)`', r'<code>\1</code>', s)
+def _generate_table_heading(col_names: list[str]) -> str:
+    return _generate_table_row(col_names) + _generate_table_row(['-'] * len(col_names))
 
 
 def build_schema_mappings(markdown: str, page: Page) -> str | None:
     if page.file.src_uri != 'usage/schema.md':
         return None
 
-    rows = []
+    col_names = [
+        'Python type',
+        'JSON Schema Type',
+        'Additional JSON Schema',
+        'Defined in',
+        'Notes',
+    ]
+    table_text = _generate_table_heading(col_names)
+
     with (THIS_DIR / 'schema_mappings.toml').open('rb') as f:
         table = tomli.load(f)
 
@@ -193,37 +201,36 @@ def build_schema_mappings(markdown: str, page: Page) -> str | None:
         notes = t['notes']
         if additional and not isinstance(additional, str):
             additional = json.dumps(additional)
-        cols = [
-            f'<code>{py_type}</code>',
-            f'<code>{json_type}</code>',
-            f'<code>{additional}</code>' if additional else '',
-            md2html(defined_in),
-        ]
-        rows.append('\n'.join(f'  <td>\n    {c}\n  </td>' for c in cols))
-        if notes:
-            rows.append(
-                f'  <td colspan=4 style="border-top: none; padding-top: 0">\n'
-                f'    <em>{md2html(notes)}</em>\n'
-                f'  </td>'
-            )
+        cols = [f'`{py_type}`', f'`{json_type}`', f'`{additional}`' if additional else '', defined_in, notes]
+        table_text += _generate_table_row(cols)
 
-    heading = '\n'.join(f'  <th>{h}</th>' for h in headings)
-    body = '\n</tr>\n<tr>\n'.join(rows)
-    table_text = f"""\
-<table style="width:100%">
-<thead>
-<tr>
-{heading}
-</tr>
-</thead>
-<tbody>
-<tr>
-{body}
-</tr>
-</tbody>
-</table>
-"""
     return re.sub(r'{{ *schema_mappings_table *}}', table_text, markdown)
+
+
+def build_conversion_table(markdown: str, page: Page) -> str | None:
+    if page.file.src_uri != 'usage/conversion_table.md':
+        return None
+
+    col_names = [
+        'Field Type',
+        'Input',
+        'Mode',
+        'Input Source',
+        'Conditions',
+    ]
+    table_text = _generate_table_heading(col_names)
+
+    for row in table:
+        cols = [
+            f'`{row.field_type.__name__}`' if hasattr(row.field_type, '__name__') else f'`{row.field_type}`',
+            f'`{row.input_type.__name__}`' if hasattr(row.input_type, '__name__') else f'`{row.input_type}`',
+            row.mode,
+            row.input_format,
+            row.condition if row.condition else '',
+        ]
+        table_text += _generate_table_row(cols)
+
+    return re.sub(r'{{ *conversion_table *}}', table_text, markdown)
 
 
 def devtools_example(markdown: str, page: Page) -> str | None:

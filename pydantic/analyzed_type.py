@@ -1,15 +1,15 @@
+"""A class representing the analyzed type."""
 from __future__ import annotations as _annotations
 
 import sys
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
 
-from pydantic_core import CoreConfig, CoreSchema, SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 from typing_extensions import Literal
 
-from pydantic.config import ConfigDict
-from pydantic.json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
-
-from ._internal import _generate_schema, _typing_extra
+from ._internal import _config, _generate_schema, _typing_extra
+from .config import ConfigDict
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
 
 T = TypeVar('T')
 
@@ -18,17 +18,19 @@ if TYPE_CHECKING:
     IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
 
 
-def _get_schema(type_: Any, config: CoreConfig | None, parent_depth: int) -> CoreSchema:
+def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
     """
-      BaseModel uses it's own __module__ to find out where it was defined
-    and then look for symbols to resolve forward references in those globals
+    `BaseModel` uses its own `__module__` to find out where it was defined
+    and then look for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
-    including type aliases where __module__ (always `typing.py`) is not useful
-    So instead we look at the globals in our parent stack frame
+    including type aliases where `__module__` (always `typing.py`) is not useful.
+    So instead we look at the globals in our parent stack frame.
+
     This works for the case where this function is called in a module that
-    has the target of forward references in its scope but
-    does not work for more complex cases
-    for example, take the following:
+    has the target of forward references in its scope, but
+    does not work for more complex cases.
+
+    For example, take the following:
 
     a.py
     ```python
@@ -46,58 +48,35 @@ def _get_schema(type_: Any, config: CoreConfig | None, parent_depth: int) -> Cor
     v({"x": 1})  # should fail but doesn't
     ```
 
-    If OuterDict were a BaseModel this would work because it would resolve
+    If OuterDict were a `BaseModel`, this would work because it would resolve
     the forward reference within the `a.py` namespace.
     But `AnalyzedType(OuterDict)`
     can't know what module OuterDict came from.
+
     In other words, the assumption that _all_ forward references exist in the
-    module we are being called from is not technically always true
-    Although most of the time it is and it works fine for recursive models and such/
-    BaseModel's behavior isn't perfect either and _can_ break in similar ways,
+    module we are being called from is not technically always true.
+    Although most of the time it is and it works fine for recursive models and such,
+    `BaseModel`'s behavior isn't perfect either and _can_ break in similar ways,
     so there is no right or wrong between the two.
-    But at the very least this behavior is _subtly_ different from BaseModel's.
+
+    But at the very least this behavior is _subtly_ different from `BaseModel`'s.
     """
-    arbitrary_types = bool((config or {}).get('arbitrary_types_allowed', False))
     local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
     global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
     global_ns.update(local_ns or {})
-    gen = _generate_schema.GenerateSchema(arbitrary_types=arbitrary_types, types_namespace=global_ns, typevars_map={})
+    gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
     return gen.generate_schema(type_)
 
 
-# TODO: merge / replace this with _internal/_generate_schema.py::generate_config
-# once we change the config logic to make ConfigDict not be a partial
-def _translate_config(config: ConfigDict) -> core_schema.CoreConfig:
-    """
-    Create a pydantic-core config from a pydantic config.
-    """
-    unset: Any = object()
-    core_config: dict[str, Any] = dict(
-        title=config['title'] if 'title' in config and config['title'] is not None else unset,
-        typed_dict_extra_behavior=config['extra'].value if 'extra' in config and config['extra'] is not None else unset,
-        allow_inf_nan=config['allow_inf_nan'] if 'allow_inf_nan' in config else unset,
-        populate_by_name=config['populate_by_name'] if 'populate_by_name' in config else unset,
-        str_strip_whitespace=config['str_strip_whitespace'] if 'str_strip_whitespace' in config else unset,
-        str_to_lower=config['str_to_lower'] if 'str_to_lower' in config else unset,
-        str_to_upper=config['str_to_upper'] if 'str_to_upper' in config else unset,
-        strict=config['strict'] if 'strict' in config else unset,
-        ser_json_timedelta=config['ser_json_timedelta'] if 'ser_json_timedelta' in config else unset,
-        ser_json_bytes=config['ser_json_bytes'] if 'ser_json_bytes' in config else unset,
-        from_attributes=config['from_attributes'] if 'from_attributes' in config else unset,
-        loc_by_alias=config['loc_by_alias'] if 'loc_by_alias' in config else unset,
-        revalidate_instances=config['revalidate_instances'] if 'revalidate_instances' in config else unset,
-        validate_default=config['validate_default'] if 'validate_default' in config else unset,
-        str_max_length=(
-            config['str_max_length'] if 'str_max_length' in config and config['str_max_length'] is not None else unset
-        ),
-        str_min_length=config['str_min_length'] if 'str_min_length' in config else unset,
-    )
-    for k in [k for k in core_config if core_config[k] is unset]:
-        core_config.pop(k)
-    return CoreConfig(**core_config)  # type: ignore[misc]
-
-
 class AnalyzedType(Generic[T]):
+    """A class representing the analyzed type.
+
+    Attributes:
+        core_schema (CoreSchema): The core schema for the analyzed data.
+        validator (SchemaValidator): The schema validator for the analyzed data.
+        serializer (SchemaSerializer): The schema serializer for the analyzed data.
+    """
+
     if TYPE_CHECKING:
 
         @overload
@@ -115,22 +94,16 @@ class AnalyzedType(Generic[T]):
             raise NotImplementedError
 
     def __init__(self, __type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
-        core_config: CoreConfig
-        if config is not None:
-            core_config = _translate_config(config)
-        else:
-            core_config = CoreConfig()
-        try:
-            core_config.update(__type.__pydantic_core_config__)
-        except AttributeError:
-            pass
+        """Initializes the AnalyzedType object."""
+        config_wrapper = _config.ConfigWrapper(config)
 
         core_schema: CoreSchema
         try:
             core_schema = __type.__pydantic_core_schema__
         except AttributeError:
-            core_schema = _get_schema(__type, core_config, parent_depth=_parent_depth + 1)
+            core_schema = _get_schema(__type, config_wrapper, parent_depth=_parent_depth + 1)
 
+        core_config = config_wrapper.core_config()
         validator: SchemaValidator
         if hasattr(__type, '__pydantic_validator__') and config is None:
             validator = __type.__pydantic_validator__
@@ -148,11 +121,34 @@ class AnalyzedType(Generic[T]):
         self.serializer = serializer
 
     def validate_python(self, __object: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
+        """
+        Validate a Python object against the model.
+
+        Args:
+            __object (Any): The Python object to validate against the model.
+            strict (bool | None, optional): Whether to strictly check types. Defaults to None.
+            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.
+
+        Returns:
+            T: The validated object.
+
+        """
         return self.validator.validate_python(__object, strict=strict, context=context)
 
     def validate_json(
         self, __data: str | bytes, *, strict: bool | None = None, context: dict[str, Any] | None = None
     ) -> T:
+        """Validate a JSON string or bytes against the model.
+
+        Args:
+            __data (str | bytes): The JSON data to validate against the model.
+            strict (bool | None, optional): Whether to strictly check types. Defaults to None.
+            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.
+
+        Returns:
+            T: The validated object.
+
+        """
         return self.validator.validate_json(__data, strict=strict, context=context)
 
     def dump_python(
@@ -169,6 +165,25 @@ class AnalyzedType(Generic[T]):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> Any:
+        """Dump a Python object to a serialized format.
+
+        Args:
+            __instance (T): The Python object to serialize.
+            mode (Literal['json', 'python'], optional): The output format. Defaults to 'python'.
+            include (IncEx | None, optional): Fields to include in the output. Defaults to None.
+            exclude (IncEx | None, optional): Fields to exclude from the output. Defaults to None.
+            by_alias (bool, optional): Whether to use alias names for field names. Defaults to False.
+            exclude_unset (bool, optional): Whether to exclude unset fields. Defaults to False.
+            exclude_defaults (bool, optional): Whether to exclude fields with default values. Defaults to False.
+            exclude_none (bool, optional): Whether to exclude fields with None values. Defaults to False.
+            round_trip (bool, optional): Whether to output the serialized data in a way that is compatible with
+                deserialization. Defaults to False.
+            warnings (bool, optional): Whether to display serialization warnings. Defaults to True.
+
+        Returns:
+            Any: The serialized object.
+
+        """
         return self.serializer.to_python(
             __instance,
             mode=mode,
@@ -196,6 +211,24 @@ class AnalyzedType(Generic[T]):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> bytes:
+        """Serialize the given instance to JSON.
+
+        Args:
+            __instance (T): The instance to be serialized.
+            indent (Optional[int]): Number of spaces for JSON indentation (default: None).
+            include (Optional[IncEx]): Fields to include (default: None).
+            exclude (Optional[IncEx]): Fields to exclude (default: None).
+            by_alias (bool): Whether to use alias names (default: False).
+            exclude_unset (bool): Whether to exclude unset fields (default: False).
+            exclude_defaults (bool): Whether to exclude fields with default values (default: False).
+            exclude_none (bool): Whether to exclude fields with a value of None (default: False).
+            round_trip (bool): Whether to serialize and deserialize the instance to ensure
+                round-tripping (default: False).
+            warnings (bool): Whether to emit serialization warnings (default: True).
+
+        Returns:
+            bytes: The JSON representation of the given instance as bytes.
+        """
         return self.serializer.to_json(
             __instance,
             indent=indent,
@@ -216,6 +249,17 @@ class AnalyzedType(Generic[T]):
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     ) -> dict[str, Any]:
+        """Generate a JSON schema for the model.
+
+        Args:
+            by_alias (bool): Whether to use alias names (default: True).
+            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
+            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the schema
+                (default: GenerateJsonSchema).
+
+        Returns:
+            Dict[str, Any]: The JSON schema for the model as a dictionary.
+        """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
         return schema_generator_instance.generate(self.core_schema)
 
@@ -229,6 +273,20 @@ class AnalyzedType(Generic[T]):
         description: str | None = None,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     ) -> dict[str, Any]:
+        """Generate JSON schemas for multiple models.
+
+        Args:
+            __analyzed_types (Iterable[AnalyzedType[Any]]): The types to generate schemas for.
+            by_alias (bool): Whether to use alias names (default: True).
+            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
+            title (Optional[str]): The title for the schema (default: None).
+            description (Optional[str]): The description for the schema (default: None).
+            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the
+                schema (default: GenerateJsonSchema).
+
+        Returns:
+            Dict[str, Any]: The JSON schema for the models as a dictionary.
+        """
         # TODO: can we use model.__schema_cache__?
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 

@@ -1,10 +1,10 @@
-The `validate_arguments` decorator allows the arguments passed to a function to be parsed and validated using
+The `validate_call` decorator allows the arguments passed to a function to be parsed and validated using
 the function's annotations before the function is called. While under the hood this uses the same approach of model
 creation and initialisation; it provides an extremely easy way to apply validation to your code with minimal
 boilerplate.
 
 !!! info "In Beta"
-    The `validate_arguments` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
+    The `validate_call` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its interface will not be concrete
     until **v2**. Feedback from the community while it's still provisional would be extremely useful; either comment
     on [#1205](https://github.com/pydantic/pydantic/issues/1205) or create a new issue.
@@ -12,10 +12,10 @@ boilerplate.
 Example of usage:
 
 ```py
-from pydantic import ValidationError, validate_arguments
+from pydantic import ValidationError, validate_call
 
 
-@validate_arguments
+@validate_call
 def repeat(s: str, count: int, *, separator: bytes = b'') -> bytes:
     b = s.encode()
     return separator.join(b for _ in range(count))
@@ -34,8 +34,8 @@ try:
 except ValidationError as exc:
     print(exc)
     """
-    1 validation error for Repeat
-    count
+    1 validation error for repeat
+    1
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
     """
 ```
@@ -53,10 +53,10 @@ import os
 from pathlib import Path
 from typing import Optional, Pattern
 
-from pydantic import DirectoryPath, validate_arguments
+from pydantic import DirectoryPath, validate_call
 
 
-@validate_arguments
+@validate_call
 def find_file(path: DirectoryPath, regex: Pattern, max=None) -> Optional[Path]:
     for i, f in enumerate(path.glob('**/*')):
         if max and i > max:
@@ -79,7 +79,7 @@ by the decorator
 - `max` has no type annotation, so will be considered as `Any` by the decorator
 
 Type coercion like this can be extremely helpful but also confusing or not desired,
-see [below](#coercion-and-strictness) for a discussion of `validate_arguments`'s limitations in this regard.
+see [below](#coercion-and-strictness) for a discussion of `validate_call`'s limitations in this regard.
 
 ## Function Signatures
 
@@ -95,10 +95,10 @@ combinations of these:
 To demonstrate all the above parameter types:
 
 ```py requires="3.8"
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments
+@validate_call
 def pos_or_kw(a: int, b: int = 2) -> str:
     return f'a={a} b={b}'
 
@@ -113,7 +113,7 @@ print(pos_or_kw(a=1, b=3))
 #> a=1 b=3
 
 
-@validate_arguments
+@validate_call
 def kw_only(*, a: int, b: int = 2) -> str:
     return f'a={a} b={b}'
 
@@ -124,7 +124,7 @@ print(kw_only(a=1, b=3))
 #> a=1 b=3
 
 
-@validate_arguments
+@validate_call
 def pos_only(a: int, b: int = 2, /) -> str:  # python 3.8 only
     return f'a={a} b={b}'
 
@@ -135,7 +135,7 @@ print(pos_only(1, 2))
 #> a=1 b=2
 
 
-@validate_arguments
+@validate_call
 def var_args(*args: int) -> str:
     return str(args)
 
@@ -148,7 +148,7 @@ print(var_args(1, 2, 3))
 #> (1, 2, 3)
 
 
-@validate_arguments
+@validate_call
 def var_kwargs(**kwargs: int) -> str:
     return str(kwargs)
 
@@ -159,29 +159,28 @@ print(var_kwargs(a=1, b=2))
 #> {'a': 1, 'b': 2}
 
 
-@validate_arguments
+@validate_call
 def armageddon(
     a: int,
     /,  # python 3.8 only
     b: int,
-    c: int = None,
-    *d: int,
-    e: int,
-    f: int = None,
-    **g: int,
+    *c: int,
+    d: int,
+    e: int = None,
+    **f: int,
 ) -> str:
-    return f'a={a} b={b} c={c} d={d} e={e} f={f} g={g}'
+    return f'a={a} b={b} c={c} d={d} e={e} f={f}'
 
 
-print(armageddon(1, 2, e=3))
-#> a=1 b=2 c=None d=() e=3 f=None g={}
-print(armageddon(1, 2, 3, 4, 5, 6, e=8, f=9, g=10, spam=11))
-#> a=1 b=2 c=3 d=(4, 5, 6) e=8 f=9 g={'g': 10, 'spam': 11}
+print(armageddon(1, 2, d=3))
+#> a=1 b=2 c=() d=3 e=None f={}
+print(armageddon(1, 2, 3, 4, 5, 6, d=8, e=9, f=10, spam=11))
+#> a=1 b=2 c=(3, 4, 5, 6) d=8 e=9 f={'f': 10, 'spam': 11}
 ```
 
 ## Using Field to describe function arguments
 
-[Field](schema.md#field-customization) can also be used with `validate_arguments` to provide extra information about
+[Field](schema.md#field-customization) can also be used with `validate_call` to provide extra information about
 the field and validations. In general it should be used in a type hint with
 [Annotated](schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
 as the default value of the field:
@@ -191,10 +190,10 @@ from datetime import datetime
 
 from typing_extensions import Annotated
 
-from pydantic import Field, ValidationError, validate_arguments
+from pydantic import Field, ValidationError, validate_call
 
 
-@validate_arguments
+@validate_call
 def how_many(num: Annotated[int, Field(gt=10)]):
     return num
 
@@ -204,13 +203,13 @@ try:
 except ValidationError as e:
     print(e)
     """
-    1 validation error for HowMany
-    num
+    1 validation error for how_many
+    0
       Input should be greater than 10 [type=greater_than, input_value=1, input_type=int]
     """
 
 
-@validate_arguments
+@validate_call
 def when(dt: datetime = Field(default_factory=datetime.now)):
     return dt
 
@@ -224,10 +223,10 @@ The [alias](model_config.md#alias-precedence) can be used with the decorator as 
 ```py
 from typing_extensions import Annotated
 
-from pydantic import Field, validate_arguments
+from pydantic import Field, validate_call
 
 
-@validate_arguments
+@validate_call
 def how_many(num: Annotated[int, Field(gt=10, alias='number')]):
     return num
 
@@ -238,7 +237,7 @@ how_many(number=42)
 
 ## Usage with mypy
 
-The `validate_arguments` decorator should work "out of the box" with [mypy](http://mypy-lang.org/) since it's
+The `validate_call` decorator should work "out of the box" with [mypy](http://mypy-lang.org/) since it's
 defined to return a function with the same signature as the function it decorates. The only limitation is that
 since we trick mypy into thinking the function returned by the decorator is the same as the function being
 decorated; access to the [raw function](#raw-function) or other attributes will require `type: ignore`.
@@ -249,31 +248,7 @@ By default, arguments validation is done by directly calling the decorated funct
 But what if you wanted to validate them without *actually* calling the function?
 To do that you can call the `validate` method bound to the decorated function.
 
-```py
-from pydantic import ValidationError, validate_arguments
-
-
-@validate_arguments
-def slow_sum(a: int, b: int) -> int:
-    print(f'Called with a={a}, b={b}')
-    #> Called with a=1, b=1
-    return a + b
-
-
-slow_sum(1, 1)
-
-slow_sum.validate(2, 2)
-
-try:
-    slow_sum.validate(1, 'b')
-except ValidationError as exc:
-    print(exc)
-    """
-    1 validation error for SlowSum
-    b
-      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='b', input_type=str]
-    """
-```
+**TODO** this no longer exists.
 
 ## Raw function
 
@@ -281,10 +256,10 @@ The raw function which was decorated is accessible, this is useful if in some sc
 arguments and want to call the function in the most performant way (see [notes on performance](#performance) below):
 
 ```py
-from pydantic import validate_arguments
+from pydantic import validate_call
 
 
-@validate_arguments
+@validate_call
 def repeat(s: str, count: int, *, separator: bytes = b'') -> bytes:
     b = s.encode()
     return separator.join(b for _ in range(count))
@@ -301,7 +276,7 @@ print(b)
 
 ## Async Functions
 
-`validate_arguments` can also be used on async functions:
+`validate_call` can also be used on async functions:
 
 ```py
 class Connection:
@@ -313,10 +288,10 @@ conn = Connection()
 # ignore-above
 import asyncio
 
-from pydantic import PositiveInt, ValidationError, validate_arguments
+from pydantic import PositiveInt, ValidationError, validate_call
 
 
-@validate_arguments
+@validate_call
 async def get_user_email(user_id: PositiveInt):
     # `conn` is some fictional connection to a database
     email = await conn.execute('select email from users where id=$1', user_id)
@@ -338,7 +313,7 @@ async def main():
         [
             {
                 'type': 'greater_than',
-                'loc': ('user_id',),
+                'loc': (0,),
                 'msg': 'Input should be greater than 0',
                 'input': -4,
                 'ctx': {'gt': 0},
@@ -353,18 +328,18 @@ asyncio.run(main())
 
 ## Custom Config
 
-The model behind `validate_arguments` can be customised using a config setting which is equivalent to
+The model behind `validate_call` can be customised using a config setting which is equivalent to
 setting the `Config` sub-class in normal models.
 
 !!! warning
     The `fields` and `alias_generator` properties of `Config` which allow aliases to be configured are not supported
-    yet with `@validate_arguments`, using them will raise an error.
+    yet with `@validate_call`, using them will raise an error.
 
 Configuration is set using the `config` keyword argument to the decorator, it may be either a config class
 or a dict of properties which are converted to a class later.
 
 ```py
-from pydantic import ValidationError, validate_arguments
+from pydantic import ValidationError, validate_call
 
 
 class Foobar:
@@ -378,7 +353,7 @@ class Foobar:
         return f'Foobar({self.v})'
 
 
-@validate_arguments(config=dict(arbitrary_types_allowed=True))
+@validate_call(config=dict(arbitrary_types_allowed=True))
 def add_foobars(a: Foobar, b: Foobar):
     return a + b
 
@@ -392,17 +367,17 @@ try:
 except ValidationError as e:
     print(e)
     """
-    2 validation errors for AddFoobars
-    a
+    2 validation errors for add_foobars
+    0
       Input should be an instance of Foobar [type=is_instance_of, input_value=1, input_type=int]
-    b
+    1
       Input should be an instance of Foobar [type=is_instance_of, input_value=2, input_type=int]
     """
 ```
 
 ## Limitations
 
-`validate_arguments` has been released on a provisional basis without all the bells and whistles, which may
+`validate_call` has been released on a provisional basis without all the bells and whistles, which may
 be added later, see [#1205](https://github.com/pydantic/pydantic/issues/1205) for some more discussion of this.
 
 In particular:
@@ -421,21 +396,21 @@ exception by default, or both.
 ### Coercion and Strictness
 
 *pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
-see [model data conversion](models.md#data-conversion) and `validate_arguments` is no different.
+see [model data conversion](models.md#data-conversion) and `validate_call` is no different.
 
 See [#1098](https://github.com/pydantic/pydantic/issues/1098) and other issues with the "strictness" label
-for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_arguments` will have an option
+for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_call` will have an option
 to use this, it may even become the default for the decorator.
 
 ### Performance
 
 We've made a big effort to make *pydantic* as performant as possible
 and argument inspect and model creation is only performed once when the function is defined, however
-there will still be a performance impact to using the `validate_arguments` decorator compared to
+there will still be a performance impact to using the `validate_call` decorator compared to
 calling the raw function.
 
 In many situations this will have little or no noticeable effect, however be aware that
-`validate_arguments` is not an equivalent or alternative to function definitions in strongly typed languages;
+`validate_call` is not an equivalent or alternative to function definitions in strongly typed languages;
 it never will be.
 
 ### Return Value

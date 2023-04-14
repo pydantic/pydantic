@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 # Rebuild lockfiles from scratch, updating all dependencies
 
 command -v pip-compile >/dev/null 2>&1 || {
@@ -13,6 +16,7 @@ pip-compile -q --resolver backtracking -o requirements/all.txt --strip-extras re
 pip-compile -q --resolver backtracking -o requirements/docs.txt requirements/docs-constrained.in
 pip-compile -q --resolver backtracking -o requirements/linting.txt requirements/linting-constrained.in
 pip-compile -q --resolver backtracking -o requirements/testing.txt  requirements/testing-constrained.in
+pip-compile -q --resolver backtracking -o requirements/testing-mypy.txt  requirements/testing-mypy-constrained.in
 pip-compile -q --resolver backtracking -o requirements/testing-extra.txt requirements/testing-extra-constrained.in
 pip-compile -q --resolver backtracking -o requirements/pyproject-min.txt --pip-args '-c requirements/all.txt' pyproject.toml
 pip-compile -q --resolver backtracking -o requirements/pyproject-all.txt --pip-args '-c requirements/all.txt' --all-extras pyproject.toml

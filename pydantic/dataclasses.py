@@ -9,9 +9,9 @@ from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
 
 from typing_extensions import Literal, dataclass_transform
 
+from ._internal import _config, _decorators
 from ._internal import _dataclasses as _pydantic_dataclasses
-from ._internal import _decorators
-from .config import ConfigDict, get_config
+from .config import ConfigDict
 from .fields import Field, FieldInfo
 
 if TYPE_CHECKING:
@@ -37,13 +37,13 @@ if sys.version_info >= (3, 10):
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
-    ) -> Callable[[type[_T]], type[PydanticDataclass]]:
+    ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
-        _cls: type[_T],
+        _cls: type[_T],  # type: ignore
         *,
         init: Literal[False] = False,
         repr: bool = True,
@@ -71,13 +71,13 @@ else:
         frozen: bool = False,
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
-    ) -> Callable[[type[_T]], type[PydanticDataclass]]:
+    ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
     @overload
     def dataclass(
-        _cls: type[_T],
+        _cls: type[_T],  # type: ignore
         *,
         init: Literal[False] = False,
         repr: bool = True,
@@ -116,7 +116,7 @@ def dataclass(
         # since dataclasses.dataclass will set this as the __doc__
         original_doc = cls.__doc__
 
-        decorators = _decorators.gather_decorator_functions(cls)
+        decorators = _decorators.DecoratorInfos.build(cls)
         if dataclasses.is_dataclass(cls) and not hasattr(cls, '__pydantic_fields__'):
             # don't preserve the docstring for vanilla dataclasses, as it may include the signature
             # this matches v1 behavior, and there was an explicit test for it
@@ -146,8 +146,9 @@ def dataclass(
         else:
             setattr(cls, '__pydantic_decorators__', decorators)
 
-        config_dict = get_config(config, cls.__name__)
-        _pydantic_dataclasses.prepare_dataclass(cls, config_dict, kw_only)
+        config_wrapper = _config.ConfigWrapper(config)
+        # TODO set title
+        _pydantic_dataclasses.prepare_dataclass(cls, config_wrapper, kw_only)
 
         if sys.version_info >= (3, 10):
             kwargs = dict(kw_only=kw_only)

@@ -13,9 +13,9 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import core_schema
 
 from ._forward_ref import PydanticForwardRef
-from ._generics import replace_types
+from ._generics import get_typevars_map, replace_types
 from ._repr import Representation
-from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar
+from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
 
 if TYPE_CHECKING:
     from ..fields import FieldInfo
@@ -152,6 +152,9 @@ def collect_fields(  # noqa: C901
         if is_classvar(ann_type):
             class_vars.add(ann_name)
             continue
+        if _is_finalvar_with_default_val(ann_type, getattr(cls, ann_name, Undefined)):
+            class_vars.add(ann_name)
+            continue
         if ann_name.startswith('_') or (omitted_fields and ann_name in omitted_fields):
             continue
 
@@ -174,7 +177,7 @@ def collect_fields(  # noqa: C901
 
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
         # "... shadows an attribute" errors
-        generic_origin = getattr(cls, '__pydantic_generic_origin__', None)
+        generic_origin = getattr(cls, '__pydantic_generic_metadata__', {}).get('origin')
         for base in bases:
             if hasattr(base, ann_name):
                 if base is generic_origin:
@@ -190,8 +193,6 @@ def collect_fields(  # noqa: C901
 
         try:
             default = getattr(cls, ann_name, Undefined)
-            if default is Undefined and generic_origin:
-                default = (generic_origin.__pydantic_generic_defaults__ or {}).get(ann_name, Undefined)
             if default is Undefined:
                 raise AttributeError
         except AttributeError:
@@ -217,7 +218,7 @@ def collect_fields(  # noqa: C901
                 if not default.init:
                     # dataclasses.Field with init=False are not fields
                     continue
-                if DC_KW_ONLY and default.kw_only is True:
+                if DC_KW_ONLY and default.kw_only is True:  # type: ignore
                     kw_only = True
 
             field_info = FieldInfo.from_annotated_attribute(ann_type, default)
@@ -226,9 +227,6 @@ def collect_fields(  # noqa: C901
             # 2. To avoid false positives in the NameError check above
             try:
                 delattr(cls, ann_name)
-                if cls.__pydantic_generic_parameters__:  # model can be parametrized
-                    assert cls.__pydantic_generic_defaults__ is not None
-                    cls.__pydantic_generic_defaults__[ann_name] = default
             except AttributeError:
                 pass  # indicates the attribute was on a parent class
 
@@ -252,15 +250,30 @@ def collect_fields(  # noqa: C901
             field_info.kw_only = kw_only
         fields[ann_name] = field_info
 
-    typevars_map = getattr(cls, '__pydantic_generic_typevars_map__', None)
-    if typevars_map:
-        for field in fields.values():
-            try:
-                field.annotation = typing._eval_type(  # type: ignore[attr-defined]
-                    field.annotation, types_namespace, None
-                )
-            except NameError:
-                pass
-            field.annotation = replace_types(field.annotation, typevars_map)
+    generic_metadata = getattr(cls, '__pydantic_generic_metadata__', None)
+    if generic_metadata:
+        typevars_map = get_typevars_map(generic_metadata['origin'], generic_metadata['args'])
+        if typevars_map:
+            for field in fields.values():
+                try:
+                    field.annotation = typing._eval_type(  # type: ignore[attr-defined]
+                        field.annotation, types_namespace, None
+                    )
+                except NameError:
+                    pass
+                field.annotation = replace_types(field.annotation, typevars_map)
 
     return fields, class_vars
+
+
+def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
+    from pydantic.fields import FieldInfo
+
+    if not is_finalvar(type_):
+        return False
+    elif val is Undefined:
+        return False
+    elif isinstance(val, FieldInfo) and (val.default is Undefined and val.default_factory is None):
+        return False
+    else:
+        return True

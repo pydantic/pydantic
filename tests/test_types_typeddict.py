@@ -67,8 +67,8 @@ def test_typeddict_all(TypedDictAll):
         class M(BaseModel):
             d: MyDict
 
-    except TypeError as e:
-        assert str(e) == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
+    except PydanticUserError as e:
+        assert e.message == 'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.'
     else:
         assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
 
@@ -86,10 +86,10 @@ def test_typeddict_annotated_simple(TypedDict, req_no_req):
 
     assert M(d=dict(foo='baz', bar='8')).d == {'foo': 'baz', 'bar': 8}
     assert M(d=dict(foo='baz', bar='8', spam='44.4')).d == {'foo': 'baz', 'bar': 8, 'spam': 44.4}
-    with pytest.raises(ValidationError, match=r'd -> bar\s+Field required \[type=missing,'):
+    with pytest.raises(ValidationError, match=r'd\.bar\s+Field required \[type=missing,'):
         M(d=dict(foo='baz'))
 
-    with pytest.raises(ValidationError, match=r'd -> bar\s+Input should be less than 10 \[type=less_than,'):
+    with pytest.raises(ValidationError, match=r'd\.bar\s+Input should be less than 10 \[type=less_than,'):
         M(d=dict(foo='baz', bar='11'))
 
 
@@ -105,7 +105,7 @@ def test_typeddict_total_false(TypedDict, req_no_req):
 
     assert M(d=dict(foo='baz', bar='8')).d == {'foo': 'baz', 'bar': 8}
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
-    with pytest.raises(ValidationError, match=r'd -> foo\s+Field required \[type=missing,'):
+    with pytest.raises(ValidationError, match=r'd\.foo\s+Field required \[type=missing,'):
         M(d={})
 
 
@@ -124,7 +124,6 @@ def test_typeddict(TypedDict):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(td={'a': [1], 'b': 2, 'c': 3, 'd': 'qwe'})
-    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {'type': 'int_type', 'loc': ('td', 'a'), 'msg': 'Input should be a valid integer', 'input': [1]}
     ]
@@ -140,7 +139,6 @@ def test_typeddict_non_total(TypedDict):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(movie={'year': '2002'})
-    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {'type': 'missing', 'loc': ('movie', 'name'), 'msg': 'Field required', 'input': {'year': '2002'}}
     ]
@@ -258,6 +256,27 @@ def test_typeddict_required(TypedDict, req_no_req):
             }
         },
     }
+
+
+def test_typeddict_from_attributes():
+    class UserCls:
+        def __init__(self, name: str, age: int):
+            self.name = name
+            self.age = age
+
+    class User(TypedDict):
+        name: str
+        age: int
+
+    class FromAttributesModel(BaseModel, from_attributes=True):
+        u: Annotated[User, Field(strict=False)]
+
+    class Model(BaseModel):
+        u: Annotated[User, Field(strict=False)]
+
+    assert FromAttributesModel(u=UserCls('foo', 15)).u == {'name': 'foo', 'age': 15}
+    with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
+        Model(u=UserCls('foo', 15))
 
 
 def test_typeddict_not_required_schema(TypedDict, req_no_req):

@@ -24,14 +24,14 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from typing_extensions import Final, Literal
+from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
     BaseModel,
     ConfigDict,
-    Extra,
     Field,
     PrivateAttr,
+    PydanticUndefinedAnnotation,
     PydanticUserError,
     SecretStr,
     ValidationError,
@@ -217,15 +217,31 @@ def test_not_required():
 
 def test_allow_extra():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float = ...
 
-    assert Model(a='10.2', b=12).model_dump() == {'a': 10.2, 'b': 12}
+    assert Model(a='10.2', b=12).b == 12
+
+
+@pytest.mark.parametrize('extra', ['ignore', 'forbid', 'allow'])
+def test_allow_extra_from_attributes(extra: Literal['ignore', 'forbid', 'allow']):
+    class Model(BaseModel):
+        a: float
+
+        model_config = ConfigDict(extra=extra, from_attributes=True)
+
+    class TestClass:
+        a = 1.0
+        b = 12
+
+    m = Model.model_validate(TestClass())
+    assert m.a == 1.0
+    assert not hasattr(m, 'b')
 
 
 def test_allow_extra_repr():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float = ...
 
     assert str(Model(a='10.2', b=12)) == 'a=10.2 b=12'
@@ -233,7 +249,7 @@ def test_allow_extra_repr():
 
 def test_forbidden_extra_success():
     class ForbiddenExtra(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid)
+        model_config = ConfigDict(extra='forbid')
         foo: str = 'whatever'
 
     m = ForbiddenExtra()
@@ -242,7 +258,7 @@ def test_forbidden_extra_success():
 
 def test_forbidden_extra_fails():
     class ForbiddenExtra(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid)
+        model_config = ConfigDict(extra='forbid')
         foo: str = 'whatever'
 
     with pytest.raises(ValidationError) as exc_info:
@@ -285,7 +301,7 @@ def test_assign_extra_validate():
 
 def test_extra_allowed():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: float
 
     model = Model(a=0.2, b=0.1)
@@ -299,7 +315,7 @@ def test_extra_allowed():
 
 def test_extra_ignored():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.ignore)
+        model_config = ConfigDict(extra='ignore')
         a: float
 
     model = Model(a=0.2, b=0.1)
@@ -382,7 +398,7 @@ def test_mutability():
     class TestModel(BaseModel):
         a: int = 10
 
-        model_config = ConfigDict(extra=Extra.forbid, frozen=False)
+        model_config = ConfigDict(extra='forbid', frozen=False)
 
     m = TestModel()
 
@@ -393,7 +409,7 @@ def test_mutability():
 
 def test_frozen_model():
     class FrozenModel(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid, frozen=True)
+        model_config = ConfigDict(extra='forbid', frozen=True)
 
         a: int = 10
 
@@ -749,13 +765,13 @@ def test_fields_set():
         b: int = 2
 
     m = MyModel(a=5)
-    assert m.__fields_set__ == {'a'}
+    assert m.model_fields_set == {'a'}
 
     m.b = 2
-    assert m.__fields_set__ == {'a', 'b'}
+    assert m.model_fields_set == {'a', 'b'}
 
     m = MyModel(a=5, b=2)
-    assert m.__fields_set__ == {'a', 'b'}
+    assert m.model_fields_set == {'a', 'b'}
 
 
 def test_exclude_unset_dict():
@@ -854,7 +870,7 @@ def test_dir_fields():
 
 def test_dict_with_extra_keys():
     class MyModel(BaseModel):
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
         a: str = Field(None, alias='alias_a')
 
     m = MyModel(extra_key='extra')
@@ -1315,8 +1331,8 @@ def test_untyped_fields_warning():
         PydanticUserError,
         match=re.escape(
             "A non-annotated attribute was detected: `x = 1`. All model fields require a type annotation; "
-            "if 'x' is not meant to be a field, you may be able to resolve this error by annotating it "
-            "as a ClassVar or updating model_config[\"ignored_types\"]."
+            "if `x` is not meant to be a field, you may be able to resolve this error by annotating it "
+            "as a `ClassVar` or updating `model_config['ignored_types']`."
         ),
     ):
 
@@ -1496,7 +1512,6 @@ def test_base_config_type_hinting():
     get_type_hints(type(M.model_config))
 
 
-@pytest.mark.xfail(reason='frozen field; https://github.com/pydantic/pydantic-core/pull/237')
 def test_frozen_field():
     """assigning a frozen=True field should raise a TypeError"""
 
@@ -1510,8 +1525,9 @@ def test_frozen_field():
     r.val = 101
     assert r.val == 101
     assert r.id == 1
-    with pytest.raises(TypeError, match='"id" has frozen set to True and cannot be assigned'):
+    with pytest.raises(ValidationError) as exc_info:
         r.id = 2
+    assert exc_info.value.errors() == [{'input': 2, 'loc': ('id',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
 
 
 def test_repr_field():
@@ -1668,14 +1684,14 @@ def test_class_kwargs_config():
     class Base(BaseModel, extra='forbid', alias_generator=str.upper):
         a: int
 
-    assert Base.model_config['extra'] is Extra.forbid
+    assert Base.model_config['extra'] == 'forbid'
     assert Base.model_config['alias_generator'] is str.upper
     # assert Base.model_fields['a'].alias == 'A'
 
     class Model(Base, extra='allow'):
         b: int
 
-    assert Model.model_config['extra'] is Extra.allow  # overwritten as intended
+    assert Model.model_config['extra'] == 'allow'  # overwritten as intended
     assert Model.model_config['alias_generator'] is str.upper  # inherited as intended
     # assert Model.model_fields['b'].alias == 'B'  # alias_generator still works
 
@@ -1685,7 +1701,7 @@ def test_class_kwargs_config_and_attr_conflict():
         model_config = ConfigDict(extra='forbid', title='Foobar')
         b: int
 
-    assert Model.model_config['extra'] is Extra.allow
+    assert Model.model_config['extra'] == 'allow'
     assert Model.model_config['alias_generator'] is str.upper
     assert Model.model_config['title'] == 'Foobar'
 
@@ -1719,7 +1735,6 @@ def test_new_union_origin():
     # }
 
 
-@pytest.mark.xfail(reason='implement final')
 @pytest.mark.parametrize(
     'ann',
     [Final, Final[int]],
@@ -1737,15 +1752,12 @@ def test_final_field_decl_without_default_val(ann, value):
         if value is not None:
             a = value
 
-    Model.model_rebuild(ann=ann)
-
     assert 'a' not in Model.__class_vars__
     assert 'a' in Model.model_fields
 
     assert Model.model_fields['a'].final
 
 
-@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 @pytest.mark.parametrize(
     'ann',
     [Final, Final[int]],
@@ -1755,27 +1767,23 @@ def test_final_field_decl_with_default_val(ann):
     class Model(BaseModel):
         a: ann = 10
 
-    Model.model_rebuild(ann=ann)
-
     assert 'a' in Model.__class_vars__
     assert 'a' not in Model.model_fields
 
 
-@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 def test_final_field_reassignment():
     class Model(BaseModel):
+        model_config = ConfigDict(validate_assignment=True)
+
         a: Final[int]
 
     obj = Model(a=10)
 
-    with pytest.raises(
-        TypeError,
-        match=r'^"Model" object "a" field is final and does not support reassignment$',
-    ):
+    with pytest.raises(ValidationError) as exc_info:
         obj.a = 20
+    assert exc_info.value.errors() == [{'input': 20, 'loc': ('a',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
 
 
-@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic-core/pull/237')
 def test_field_by_default_is_not_final():
     class Model(BaseModel):
         a: int
@@ -1783,36 +1791,104 @@ def test_field_by_default_is_not_final():
     assert not Model.model_fields['a'].final
 
 
+def test_annotated_final():
+    class Model(BaseModel):
+        a: Annotated[Final[int], Field(title='abc')]
+
+    assert Model.model_fields['a'].final
+    assert Model.model_fields['a'].title == 'abc'
+
+    class Model2(BaseModel):
+        a: Final[Annotated[int, Field(title='def')]]
+
+    assert Model2.model_fields['a'].final
+    assert Model2.model_fields['a'].title == 'def'
+
+
 def test_post_init():
     calls = []
 
-    class SubModel(BaseModel):
+    class InnerModel(BaseModel):
         a: int
         b: int
 
-        def model_post_init(self, _context) -> None:
+        def model_post_init(self, __context) -> None:
+            super().model_post_init(__context)  # this is included just to show it doesn't error
             assert self.model_dump() == {'a': 3, 'b': 4}
-            calls.append('submodel_post_init')
+            calls.append('inner_model_post_init')
 
     class Model(BaseModel):
         c: int
         d: int
-        sub: SubModel
+        sub: InnerModel
 
-        def model_post_init(self, _context) -> None:
+        def model_post_init(self, __context) -> None:
             assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
             calls.append('model_post_init')
 
     m = Model(c=1, d='2', sub={'a': 3, 'b': '4'})
+    assert calls == ['inner_model_post_init', 'model_post_init']
     assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
-    assert calls == ['submodel_post_init', 'model_post_init']
+
+    class SubModel(Model):
+        def model_post_init(self, __context) -> None:
+            assert self.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
+            super().model_post_init(__context)
+            calls.append('submodel_post_init')
+
+    calls.clear()
+    m = SubModel(c=1, d='2', sub={'a': 3, 'b': '4'})
+    assert calls == ['inner_model_post_init', 'model_post_init', 'submodel_post_init']
+    assert m.model_dump() == {'c': 1, 'd': 2, 'sub': {'a': 3, 'b': 4}}
 
 
-def test_extra_args_to_field_type_error():
-    with pytest.raises(TypeError, match='unexpected keyword argument'):
+@pytest.mark.parametrize('include_private_attribute', [True, False])
+def test_post_init_call_signatures(include_private_attribute):
+    calls = []
 
-        class Model(BaseModel):
-            a: int = Field(thing=1)
+    class Model(BaseModel):
+        a: int
+        b: int
+        if include_private_attribute:
+            _x: int = PrivateAttr(1)
+
+        def model_post_init(self, *args, **kwargs) -> None:
+            calls.append((args, kwargs))
+
+    Model(a=1, b=2)
+    assert calls == [((None,), {})]
+    Model.model_construct(a=3, b=4)
+    assert calls == [((None,), {}), ((None,), {})]
+
+
+def test_post_init_not_called_without_override():
+    calls = []
+
+    def monkey_patched_model_post_init(cls, __context):
+        calls.append('BaseModel.model_post_init')
+
+    original_base_model_post_init = BaseModel.model_post_init
+    try:
+        BaseModel.model_post_init = monkey_patched_model_post_init
+
+        class WithoutOverrideModel(BaseModel):
+            pass
+
+        WithoutOverrideModel()
+        WithoutOverrideModel.model_construct()
+        assert calls == []
+
+        class WithOverrideModel(BaseModel):
+            def model_post_init(self, __context: Any) -> None:
+                calls.append('WithOverrideModel.model_post_init')
+
+        WithOverrideModel()
+        assert calls == ['WithOverrideModel.model_post_init']
+        WithOverrideModel.model_construct()
+        assert calls == ['WithOverrideModel.model_post_init', 'WithOverrideModel.model_post_init']
+
+    finally:
+        BaseModel.model_post_init = original_base_model_post_init
 
 
 def test_deeper_recursive_model():
@@ -1831,6 +1907,26 @@ def test_deeper_recursive_model():
 
     m = A(b=B(c=C(a=None)))
     assert m.model_dump() == {'b': {'c': {'a': None}}}
+
+
+def test_model_rebuild_localns():
+    class A(BaseModel, undefined_types_warning=False):
+        x: int
+
+    class B(BaseModel, undefined_types_warning=False):
+        a: 'Model'  # noqa F821
+
+    B.model_rebuild(_types_namespace={'Model': A})
+
+    m = B(a={'x': 1})
+    assert m.model_dump() == {'a': {'x': 1}}
+    assert isinstance(m.a, A)
+
+    class C(BaseModel, undefined_types_warning=False):
+        a: 'Model'  # noqa F821
+
+    with pytest.raises(PydanticUndefinedAnnotation, match="name 'Model' is not defined"):
+        C.model_rebuild(_types_namespace={'A': A})
 
 
 @pytest.fixture(scope='session', name='InnerEqualityModel')
@@ -1889,7 +1985,7 @@ def test_model_equality_dump(EqualityModel, InnerEqualityModel):
 def test_model_equality_fields_set(InnerEqualityModel):
     m1 = InnerEqualityModel(iw=0)
     m2 = InnerEqualityModel(iw=0, ix=0)
-    assert m1.__fields_set__ != m2.__fields_set__
+    assert m1.model_fields_set != m2.model_fields_set
     assert m1 == m2
 
 
@@ -2060,3 +2156,25 @@ def test_validate_json_context() -> None:
     Model.model_validate_json(json.dumps({'x': 1}), context=None)
     Model.model_validate_json(json.dumps({'x': 1}), context={'foo': 'bar'})
     assert contexts == []
+
+
+def test_pydantic_init_subclass() -> None:
+    calls = []
+
+    class MyModel(BaseModel):
+        def __init_subclass__(cls, **kwargs):
+            super().__init_subclass__()  # can't pass kwargs to object.__init_subclass__, weirdly
+            calls.append((cls.__name__, '__init_subclass__', kwargs))
+
+        @classmethod
+        def __pydantic_init_subclass__(cls, **kwargs):
+            super().__pydantic_init_subclass__(**kwargs)
+            calls.append((cls.__name__, '__pydantic_init_subclass__', kwargs))
+
+    class MySubModel(MyModel, a=1):
+        pass
+
+    assert calls == [
+        ('MySubModel', '__init_subclass__', {'a': 1}),
+        ('MySubModel', '__pydantic_init_subclass__', {'a': 1}),
+    ]

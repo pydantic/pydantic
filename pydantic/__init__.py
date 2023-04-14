@@ -10,15 +10,16 @@ from pydantic_core.core_schema import (
 
 from . import dataclasses
 from .analyzed_type import AnalyzedType
-from .config import BaseConfig, ConfigDict, Extra
-from .decorator import validate_arguments
+from .config import ConfigDict, Extra
 from .decorators import field_serializer, field_validator, model_serializer, root_validator, validator
+from .deprecated.config import BaseConfig
 from .errors import *
 from .fields import Field, PrivateAttr
 from .main import *
 from .networks import *
 from .tools import *
 from .types import *
+from .validate_call import validate_call
 from .version import VERSION
 
 __version__ = VERSION
@@ -45,8 +46,8 @@ __all__ = [
     'BaseConfig',
     'ConfigDict',
     'Extra',
-    # decorator
-    'validate_arguments',
+    # validate_call
+    'validate_call',
     # error_wrappers
     'ValidationError',
     'PydanticUserError',
@@ -109,6 +110,7 @@ __all__ = [
     'UUID5',
     'FilePath',
     'DirectoryPath',
+    'NewPath',
     'Json',
     'SecretField',
     'SecretStr',

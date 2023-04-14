@@ -37,7 +37,7 @@ KwargsModel.from_orm({})  # type: ignore[pydantic-orm]
 
 
 class ForbidExtraModel(BaseModel):
-    model_config = ConfigDict(extra='forbid')  # type: ignore[typeddict-item]
+    model_config = ConfigDict(extra=Extra.forbid)
 
 
 ForbidExtraModel(x=1)

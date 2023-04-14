@@ -1,6 +1,6 @@
-from typing import ClassVar, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator
+from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator, validator
 from pydantic.dataclasses import dataclass
 
 
@@ -194,7 +194,7 @@ def f(name: str) -> str:
 
 class ModelWithAllowReuseValidator(BaseModel):
     name: str
-    normalize_name = field_validator('name', allow_reuse=True)(f)
+    normalize_name = field_validator('name')(f)
 
 
 model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
@@ -276,3 +276,19 @@ class MyDataClass:
 
 
 MyDataClass(foo='foo', bar='bar')
+
+
+def get_my_custom_validator(field_name: str) -> Any:
+    @validator(field_name, allow_reuse=True)
+    def my_custom_validator(cls: Any, v: int) -> int:
+        return v
+
+    return my_custom_validator
+
+
+def foo() -> None:
+    class MyModel(BaseModel):
+        number: int
+        custom_validator = get_my_custom_validator('number')  # type: ignore[pydantic-field]
+
+    MyModel(number=2)

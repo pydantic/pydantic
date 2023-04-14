@@ -1,19 +1,24 @@
 import asyncio
 import inspect
 import sys
-from datetime import datetime, timezone
 from pathlib import Path
 from typing import List
 
 import pytest
 from dirty_equals import IsInstance
-from typing_extensions import Annotated, TypedDict
+from typing_extensions import Annotated
 
-from pydantic import BaseModel, Extra, Field, ValidationError, validate_arguments
-from pydantic.decorator import ValidatedFunction
+from pydantic import BaseModel, Field, ValidationError
+from pydantic.deprecated.decorator import ValidatedFunction
+from pydantic.deprecated.decorator import validate_arguments as validate_arguments_deprecated
 from pydantic.errors import PydanticUserError
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
+
+
+def validate_arguments(*args, **kwargs):
+    with pytest.warns(DeprecationWarning, match='^The `validate_arguments` method is deprecated; use `validate_call`'):
+        return validate_arguments_deprecated(*args, **kwargs)
 
 
 def test_args():
@@ -65,7 +70,7 @@ def test_wrap():
 
     assert foo_bar.__doc__ == 'This is the foo_bar method.'
     assert foo_bar.__name__ == 'foo_bar'
-    assert foo_bar.__module__ == 'tests.test_decorator'
+    assert foo_bar.__module__ == 'tests.test_deprecated_validate_arguments'
     assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
     assert isinstance(foo_bar.vd, ValidatedFunction)
     assert callable(foo_bar.raw_function)
@@ -139,28 +144,19 @@ def test_field_can_provide_factory() -> None:
     assert foo(1, 2, 3) == 6
 
 
-@pytest.mark.xfail(reason='Using Annotated to get a field default is not working properly yet')
-def test_annotated_field_can_provide_factory() -> None:
-    @validate_arguments
-    def foo2(a: int, b: Annotated[int, Field(default_factory=lambda: 99)], *args: int) -> int:
-        """mypy reports Incompatible default for argument "b" if we don't supply ANY as default"""
-        return a + b + sum(args)
-
-    assert foo2(1) == 100
-
-
 @skip_pre_38
 def test_positional_only(create_module):
-    module = create_module(
-        # language=Python
-        """
-from pydantic import validate_arguments
+    with pytest.warns(DeprecationWarning):
+        module = create_module(
+            # language=Python
+            """
+from pydantic.deprecated.decorator import validate_arguments
 
 @validate_arguments
 def foo(a, b, /, c=None):
     return f'{a}, {b}, {c}'
 """
-    )
+        )
     assert module.foo(1, 2) == '1, 2, None'
     assert module.foo(1, 2, 44) == '1, 2, 44'
     assert module.foo(1, 2, c=44) == '1, 2, 44'
@@ -374,25 +370,6 @@ def test_validate(mocker):
     stub.assert_not_called()
 
 
-@pytest.mark.xfail(reason='Annotated does not seem to be respected')
-def test_annotated_use_of_alias():
-    @validate_arguments
-    def foo(a: Annotated[int, Field(alias='b')], c: Annotated[int, Field()], d: Annotated[int, Field(alias='')]):
-        return a + c + d
-
-    assert foo(**{'b': 10, 'c': 12, '': 1}) == 23
-
-    with pytest.raises(ValidationError) as exc_info:
-        assert foo(a=10, c=12, d=1) == 10
-
-    assert exc_info.value.errors() == [
-        {'loc': ('b',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('',), 'msg': 'field required', 'type': 'value_error.missing'},
-        {'loc': ('a',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
-        {'loc': ('d',), 'msg': 'extra fields not permitted', 'type': 'value_error.extra'},
-    ]
-
-
 def test_use_of_alias():
     @validate_arguments
     def foo(c: int = Field(default_factory=lambda: 20), a: int = Field(default_factory=lambda: 10, alias='b')):
@@ -409,52 +386,3 @@ def test_populate_by_name():
     assert foo(a=10, d=1) == 11
     assert foo(b=10, c=1) == 11
     assert foo(a=10, c=1) == 11
-
-
-@pytest.mark.xfail(reason='validate_all')
-def test_validate_all():
-    # TODO remove or rename, validate_all doesn't exist anymore
-    @validate_arguments(config=dict(validate_all=True))
-    def foo(dt: datetime = Field(default_factory=lambda: 946684800)):
-        return dt
-
-    assert foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
-    assert foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
-
-
-@pytest.mark.xfail(reason='validate_all')
-@skip_pre_38
-def test_validate_all_positional(create_module):
-    # TODO remove or rename, validate_all doesn't exist anymore
-    module = create_module(
-        # language=Python
-        """
-from datetime import datetime
-
-from pydantic import Field, validate_arguments
-
-@validate_arguments(config=dict(validate_all=True))
-def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
-    return dt
-"""
-    )
-    assert module.foo() == datetime(2000, 1, 1, tzinfo=timezone.utc)
-    assert module.foo(0) == datetime(1970, 1, 1, tzinfo=timezone.utc)
-
-
-@pytest.mark.xfail(reason='config["extra"] does not seem to be respected')
-def test_validate_extra():
-    class TypedTest(TypedDict):
-        y: str
-
-    @validate_arguments(config={'extra': Extra.allow})
-    def test(other: TypedTest):
-        return other
-
-    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b', 'z': 'a'}
-
-    @validate_arguments(config={'extra': Extra.ignore})
-    def test(other: TypedTest):
-        return other
-
-    assert test(other={'y': 'b', 'z': 'a'}) == {'y': 'b'}

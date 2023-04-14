@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 import typing
 from copy import copy
 from typing import Any
+from warnings import warn
 
 import annotated_types
 import typing_extensions
@@ -10,6 +11,7 @@ import typing_extensions
 from . import types
 from ._internal import _fields, _forward_ref, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
+from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
     from dataclasses import Field as DataclassField
@@ -31,6 +33,8 @@ class FieldInfo(_repr.Representation):
         'default_factory',
         'alias',
         'alias_priority',
+        'validation_alias',
+        'serialization_alias',
         'title',
         'description',
         'examples',
@@ -43,6 +47,8 @@ class FieldInfo(_repr.Representation):
         'init_var',
         'kw_only',
         'validate_default',
+        'frozen',
+        'final',
     )
 
     # used to convert kwargs to metadata/constraints,
@@ -58,9 +64,6 @@ class FieldInfo(_repr.Representation):
         'max_length': annotated_types.MaxLen,
         'pattern': None,
         'allow_inf_nan': None,
-        'min_items': None,
-        'max_items': None,
-        'frozen': None,
         'max_digits': None,
         'decimal_places': None,
     }
@@ -83,6 +86,8 @@ class FieldInfo(_repr.Representation):
         self.alias = kwargs.get('alias')
         self.alias_priority = kwargs.get('alias_priority') or 2 if self.alias is not None else None
         self.title = kwargs.get('title')
+        self.validation_alias = kwargs.get('validation_alias', None)
+        self.serialization_alias = kwargs.get('serialization_alias', None)
         self.description = kwargs.get('description')
         self.examples = kwargs.get('examples')
         self.exclude = kwargs.get('exclude')
@@ -95,6 +100,8 @@ class FieldInfo(_repr.Representation):
         self.init_var = kwargs.get('init_var', None)
         self.kw_only = kwargs.get('kw_only', None)
         self.validate_default = kwargs.get('validate_default', None)
+        self.frozen = kwargs.get('frozen', None)
+        self.final = kwargs.get('final', None)
 
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
@@ -124,16 +131,25 @@ class FieldInfo(_repr.Representation):
         >>>     foo: typing.Annotated[int, annotated_types.Gt(42)]
         >>>     bar: typing.Annotated[int, Field(gt=42)]
         """
+        final = False
+        if _typing_extra.is_finalvar(annotation):
+            final = True
+            if annotation is not typing_extensions.Final:
+                annotation = typing_extensions.get_args(annotation)[0]
+
         if _typing_extra.is_annotated(annotation):
             first_arg, *extra_args = typing_extensions.get_args(annotation)
+            if _typing_extra.is_finalvar(first_arg):
+                final = True
             field_info = cls._find_field_info_arg(extra_args)
             if field_info:
                 new_field_info = copy(field_info)
                 new_field_info.annotation = first_arg
+                new_field_info.final = final
                 new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                 return new_field_info
 
-        return cls(annotation=annotation)
+        return cls(annotation=annotation, final=final)
 
     @classmethod
     def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
@@ -147,14 +163,22 @@ class FieldInfo(_repr.Representation):
         """
         import dataclasses
 
+        final = False
+        if _typing_extra.is_finalvar(annotation):
+            final = True
+            if annotation is not typing_extensions.Final:
+                annotation = typing_extensions.get_args(annotation)[0]
+
         if isinstance(default, cls):
             default.annotation, annotation_metadata = cls._extract_metadata(annotation)
             default.metadata += annotation_metadata
+            default.final = final
             return default
         elif isinstance(default, dataclasses.Field):
             pydantic_field = cls.from_dataclass_field(default)
             pydantic_field.annotation, annotation_metadata = cls._extract_metadata(annotation)
             pydantic_field.metadata += annotation_metadata
+            pydantic_field.final = final
             return pydantic_field
         else:
             if _typing_extra.is_annotated(annotation):
@@ -169,7 +193,7 @@ class FieldInfo(_repr.Representation):
                     new_field_info.metadata += [a for a in extra_args if not isinstance(a, FieldInfo)]
                     return new_field_info
 
-            return cls(annotation=annotation, default=default)
+            return cls(annotation=annotation, default=default, final=final)
 
     @classmethod
     def from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
@@ -279,6 +303,14 @@ class FieldInfo(_repr.Representation):
                 continue
             elif s == 'repr' and self.repr is True:
                 continue
+            elif s == 'final':
+                continue
+            if s == 'frozen' and self.frozen is False:
+                continue
+            if s == 'validation_alias' and self.validation_alias == self.alias:
+                continue
+            if s == 'serialization_alias' and self.serialization_alias == self.alias:
+                continue
             if s == 'default_factory' and self.default_factory is not None:
                 yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
             else:
@@ -291,92 +323,136 @@ def Field(
     default: Any = Undefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
-    alias: str = None,
-    # TODO:
-    #  Alternative 1: we could drop alias_priority and tell people to manually override aliases in child classes
-    #  Alternative 2: we could add a new argument `override_with_alias_generator=True` equivalent to `alias_priority=1`
-    alias_priority: int = None,
-    title: str = None,
-    description: str = None,
-    examples: list[Any] = None,
+    alias: str | None = None,
+    alias_priority: int | None = None,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    serialization_alias: str | None = None,
+    title: str | None = None,
+    description: str | None = None,
+    examples: list[Any] | None = None,
     exclude: typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any = None,
     include: typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any = None,
-    gt: float = None,
-    ge: float = None,
-    lt: float = None,
-    le: float = None,
-    multiple_of: float = None,
-    allow_inf_nan: bool = None,
-    max_digits: int = None,
-    decimal_places: int = None,
-    min_items: int = None,
-    max_items: int = None,
-    min_length: int = None,
-    max_length: int = None,
-    frozen: bool = None,
-    pattern: str = None,
-    discriminator: str = None,
+    gt: float | None = None,
+    ge: float | None = None,
+    lt: float | None = None,
+    le: float | None = None,
+    multiple_of: float | None = None,
+    allow_inf_nan: bool | None = None,
+    max_digits: int | None = None,
+    decimal_places: int | None = None,
+    min_items: int | None = None,
+    max_items: int | None = None,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    frozen: bool = False,
+    pattern: str | None = None,
+    discriminator: str | None = None,
     repr: bool = True,
     strict: bool | None = None,
     json_schema_extra: dict[str, Any] | None = None,
     validate_default: bool | None = None,
+    const: bool | None = None,
+    unique_items: bool | None = None,
+    allow_mutation: bool = True,
+    regex: str | None = None,
+    **extra: Any,
 ) -> Any:
     """
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
-    apply only to number fields (``int``, ``float``, ``Decimal``) and some apply only to ``str``.
+    apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
 
-    :param default: since this is replacing the field's default, its first argument is used
-      to set the default, use ellipsis (``...``) to indicate the field is required
-    :param default_factory: callable that will be called when a default value is needed for this field
-      If both `default` and `default_factory` are set, an error is raised.
-    :param alias: the public name of the field
-    :param title: can be any string, used in the schema
-    :param description: can be any string, used in the schema
-    :param examples: can be any list of json-encodable data, used in the schema
-    :param exclude: exclude this field while dumping.
-      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
-    :param include: include this field while dumping.
-      Takes same values as the ``include`` and ``exclude`` arguments on the ``.dict`` method.
-    :param gt: only applies to numbers, requires the field to be "greater than". The schema
-      will have an ``exclusiveMinimum`` validation keyword
-    :param ge: only applies to numbers, requires the field to be "greater than or equal to". The
-      schema will have a ``minimum`` validation keyword
-    :param lt: only applies to numbers, requires the field to be "less than". The schema
-      will have an ``exclusiveMaximum`` validation keyword
-    :param le: only applies to numbers, requires the field to be "less than or equal to". The
-      schema will have a ``maximum`` validation keyword
-    :param multiple_of: only applies to numbers, requires the field to be "a multiple of". The
-      schema will have a ``multipleOf`` validation keyword
-    :param allow_inf_nan: only applies to numbers, allows the field to be NaN or infinity (+inf or -inf),
-        which is a valid Python float. Default True, set to False for compatibility with JSON.
-    :param max_digits: only applies to Decimals, requires the field to have a maximum number
-      of digits within the decimal. It does not include a zero before the decimal point or trailing decimal zeroes.
-    :param decimal_places: only applies to Decimals, requires the field to have at most a number of decimal places
-      allowed. It does not include trailing decimal zeroes.
-    :param min_items: only applies to lists, requires the field to have a minimum number of
-      elements. The schema will have a ``minItems`` validation keyword
-    :param max_items: only applies to lists, requires the field to have a maximum number of
-      elements. The schema will have a ``maxItems`` validation keyword
-    :param min_length: only applies to strings, requires the field to have a minimum length. The
-      schema will have a ``minLength`` validation keyword
-    :param max_length: only applies to strings, requires the field to have a maximum length. The
-      schema will have a ``maxLength`` validation keyword
-    :param frozen: a boolean which defaults to True. When False, the field raises a TypeError if the field is
-      assigned on an instance.  The BaseModel Config must set validate_assignment to True
-    :param pattern: only applies to strings, requires the field match against a regular expression
-      pattern string. The schema will have a ``pattern`` validation keyword
-    :param discriminator: only useful with a (discriminated a.k.a. tagged) `Union` of sub models with a common field.
-      The `discriminator` is the name of this common field to shorten validation and improve generated schema
-    :param repr: show this field in the representation
-    :param json_schema_extra: extra dict to be merged with the JSON Schema for this field
-    :param strict: enable or disable strict parsing mode
-    :param validate_default: whether the default value should be validated for this field
+    Args:
+        default (Any): The default value is returned if the corresponding field value is not present in the input data
+            or if the data value is None. Defaults to `Undefined`.
+        default_factory (typing.Callable[[], Any] | None): A callable that returns the default value for the field.
+            Only used if default is not set. Defaults to `None`.
+        alias (str | None): The alias for the field. Defaults to `None`.
+        alias_priority (int | None): The priority score for the field if it is an alias for another field. Defaults to
+            `None`.
+        validation_alias (str | list[str | int] | list[list[str | int]] | None): The alias(es) to use to find the field
+            value during validation. Defaults to `None`. TODO: Add documentation reference for non-str alias variants
+        serialization_alias (str | None): The alias to use as a key when serializing. Defaults to `None`.
+        title (str | None): The title for the field. Defaults to `None`.
+        description (str | None): The description for the field. Defaults to `None`.
+        examples (list[Any] | None): Examples of the field values. Defaults to `None`.
+        exclude (typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any): A set or mapping of keys that
+            should be excluded from the input data. Defaults to `None`.
+        include (typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any): A set or mapping of keys that
+            should be included in the input data. Defaults to `None`.
+        gt (float | None): The minimum value of the field. Defaults to `None`.
+        ge (float | None): The minimum value of the field (inclusive). Defaults to `None`.
+        lt (float | None): The maximum value of the field. Defaults to `None`.
+        le (float | None): The maximum value of the field (inclusive). Defaults to `None`.
+        multiple_of (float | None): The field value must be a multiple of this value. Defaults to `None`.
+        allow_inf_nan (bool | None): Determines whether the field can be populated with infinity or NaN values.
+            Defaults to `None`.
+        max_digits (int | None): The maximum number of digits in a decimal number. Defaults to `None`.
+        decimal_places (int | None): The maximum number of decimal places allowed in a decimal number.
+            Defaults to `None`.
+        min_items (int | None): The minimum number of items allowed in a sequence. Defaults to `None`.
+        max_items (int | None): The maximum number of items allowed in a sequence. Defaults to `None`.
+        min_length (int | None): The minimum length of a string field. Defaults to `None`.
+        max_length (int | None): The maximum length of a string field. Defaults to `None`.
+        frozen (bool | None): Determines whether the value is immutable. Defaults to `None`.
+        pattern (str | None): A regular expression pattern used to validate string fields. Defaults to `None`.
+        discriminator (str | None): The discriminator value for a polymorphic model. Defaults to `None`.
+        repr (bool): Determines whether the field value should be included in the object's string representation.
+            Defaults to True.
+        strict (bool | None): Used to determine whether the object should be marked as invalid if an unknown field is
+            detected. Defaults to `None`.
+        json_schema_extra (dict[str, Any] | None): A dictionary containing any additional metadata about the field.
+            Defaults to `None`.
+        validate_default (bool | None): Determines whether the default value for the field should be validated.
+            Defaults to `None`.
+
+    Returns:
+        Any: The field for the attribute.
     """
+    # Check deprecated & removed params of V1.
+    # This has to be removed deprecation period over.
+    if const:
+        raise PydanticUserError('`const` is removed. use `Literal` instead', code='deprecated_kwargs')
+    if min_items:
+        warn('`min_items` is deprecated and will be removed. use `min_length` instead', DeprecationWarning)
+        if min_length is None:
+            min_length = min_items
+    if max_items:
+        warn('`max_items` is deprecated and will be removed. use `max_length` instead', DeprecationWarning)
+        if max_length is None:
+            max_length = max_items
+    if unique_items:
+        raise PydanticUserError(
+            (
+                '`unique_items` is removed, use `Set` instead'
+                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
+            ),
+            code='deprecated_kwargs',
+        )
+    if allow_mutation is False:
+        warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
+        frozen = True
+    if regex:
+        raise PydanticUserError('`regex` is removed. use `Pattern` instead', code='deprecated_kwargs')
+    if extra:
+        warn(
+            'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
+            DeprecationWarning,
+        )
+        if not json_schema_extra:
+            json_schema_extra = extra
+
+    if validation_alias is None:
+        validation_alias = alias
+    if serialization_alias is None and isinstance(alias, str):
+        serialization_alias = alias
+
     return FieldInfo.from_field(
         default,
         default_factory=default_factory,
         alias=alias,
         alias_priority=alias_priority,
+        validation_alias=validation_alias,
+        serialization_alias=serialization_alias,
         title=title,
         description=description,
         examples=examples,

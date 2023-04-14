@@ -96,12 +96,8 @@ mkdocs-redirects==1.2.0
     # via -r requirements/docs.in
 mkdocs-simple-hooks==0.1.5
     # via -r requirements/docs.in
-mypy==1.1.1
-    # via -r requirements/linting.in
 mypy-extensions==1.0.0
-    # via
-    #   black
-    #   mypy
+    # via black
 nodeenv==1.7.0
     # via pre-commit
 packaging==23.0
@@ -119,8 +115,10 @@ pluggy==1.0.0
     # via pytest
 pre-commit==2.21.0
     # via -r requirements/linting.in
-pydantic-core==0.22.0
-    # via -r requirements/linting.in
+pydantic-core==0.24.0
+    # via
+    #   -r requirements/docs.in
+    #   -r requirements/linting.in
 pyflakes==3.0.1
     # via autoflake
 pygments==2.14.0
@@ -183,12 +181,10 @@ tomli==2.0.1
     #   autoflake
     #   black
     #   coverage
-    #   mypy
     #   pytest
 typing-extensions==4.5.0
     # via
     #   dirty-equals
-    #   mypy
     #   pydantic-core
 urllib3==1.26.15
     # via requests

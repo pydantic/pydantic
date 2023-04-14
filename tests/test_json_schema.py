@@ -33,7 +33,6 @@ from typing_extensions import Annotated, Literal
 
 from pydantic import (
     BaseModel,
-    Extra,
     Field,
     ImportString,
     ValidationError,
@@ -1927,7 +1926,7 @@ def test_color_type():
 
 def test_model_with_extra_forbidden():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid)
+        model_config = ConfigDict(extra='forbid')
         a: str
 
     assert Model.model_json_schema() == {

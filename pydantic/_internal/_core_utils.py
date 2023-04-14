@@ -65,8 +65,12 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     This `args_override` argument was added for the purpose of creating valid recursive references
     when creating generic models without needing to create a concrete class.
     """
-    origin = getattr(type_, '__pydantic_generic_origin__', None) or type_
-    args = getattr(type_, '__pydantic_generic_args__', None) or args_override or ()
+    origin = type_
+    args = args_override or ()
+    generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
+    if generic_metadata:
+        origin = generic_metadata['origin'] or origin
+        args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
     qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
@@ -99,7 +103,7 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     tree with a re-used ref, with the intent that that schema gets replaced with a recursive reference once the
     specific generic parametrization to use can be determined.
     """
-    refs = set()
+    refs: set[str] = set()
 
     def _replace_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
         ref: str | None = s.get('ref')  # type: ignore[assignment]
@@ -141,11 +145,17 @@ def remove_unnecessary_invalid_definitions(schema: core_schema.CoreSchema) -> co
 
         new_schema = s.copy()
 
-        new_definitions = []
+        new_definitions: list[CoreSchema] = []
         for definition in s['definitions']:
             metadata = definition.get('metadata')
-            if isinstance(metadata, dict) and 'invalid' in metadata and definition['ref'] in valid_refs:
+            # fmt: off
+            if (
+                isinstance(metadata, dict)
+                and 'invalid' in metadata
+                and definition['ref'] in valid_refs  # type: ignore
+            ):
                 continue
+            # fmt: on
             new_definitions.append(definition)
 
         new_schema['definitions'] = new_definitions

@@ -2,7 +2,7 @@ from typing import Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, ValidationError, create_model, errors
+from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, create_model, errors
 from pydantic.decorators import field_validator, validator
 from pydantic.fields import ModelPrivateAttr
 
@@ -113,7 +113,7 @@ def test_custom_config_inherits():
 
 
 def test_custom_config_extras():
-    config = ConfigDict(extra=Extra.forbid)
+    config = ConfigDict(extra='forbid')
 
     model = create_model('FooModel', foo=(int, ...), __config__=config)
     assert model(foo=654)
@@ -285,3 +285,14 @@ def test_create_model_non_annotated():
         match='A non-annotated attribute was detected: `bar = 123`. All model fields require a type annotation',
     ):
         create_model('FooModel', foo=(str, ...), bar=123)
+
+
+def test_create_model_tuple():
+    model = create_model('FooModel', foo=(Tuple[int, int], (1, 2)))
+    assert model().foo == (1, 2)
+    assert model(foo=(3, 4)).foo == (3, 4)
+
+
+def test_create_model_tuple_3():
+    with pytest.raises(PydanticUserError, match=r'^Field definitions should either be a `\(<type>, <default>\)`\.\n'):
+        create_model('FooModel', foo=(Tuple[int, int], (1, 2), 'more'))

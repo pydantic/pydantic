@@ -1,10 +1,11 @@
 from contextlib import nullcontext as does_not_raise
+from inspect import signature
 from typing import Any, ContextManager, List, Optional
 
 import pytest
 from dirty_equals import IsStr
 
-from pydantic import BaseModel, ConfigDict, Extra, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 from pydantic.fields import Field
 
 
@@ -45,6 +46,16 @@ def test_basic_alias():
     assert Model(_a='different').a == 'different'
     assert repr(Model.model_fields['a']) == (
         "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', alias_priority=2)"
+    )
+
+
+def test_field_info_repr_with_aliases():
+    class Model(BaseModel):
+        a: str = Field('foobar', alias='_a', validation_alias='a_val', serialization_alias='a_ser')
+
+    assert repr(Model.model_fields['a']) == (
+        "FieldInfo(annotation=str, required=False, default='foobar', alias='_a', "
+        "alias_priority=2, validation_alias='a_val', serialization_alias='a_ser')"
     )
 
 
@@ -98,7 +109,7 @@ def test_annotation_config():
 
 def test_pop_by_field_name():
     class Model(BaseModel):
-        model_config = ConfigDict(extra=Extra.forbid, populate_by_name=True)
+        model_config = ConfigDict(extra='forbid', populate_by_name=True)
         last_updated_by: Optional[str] = Field(None, alias='lastUpdatedBy')
 
     assert Model(lastUpdatedBy='foo').model_dump() == {'last_updated_by': 'foo'}
@@ -210,8 +221,10 @@ def test_low_priority_alias():
     #  Alternative 1: we could drop alias_priority and tell people to manually override aliases in child classes
     #  Alternative 2: we could add a new argument `override_with_alias_generator=True` equivalent to `alias_priority=1`
     class Parent(BaseModel):
-        w: bool = Field(..., alias='w_')
-        x: bool = Field(..., alias='abc', alias_priority=1)
+        w: bool = Field(..., alias='w_', validation_alias='w_val_alias', serialization_alias='w_ser_alias')
+        x: bool = Field(
+            ..., alias='abc', alias_priority=1, validation_alias='x_val_alias', serialization_alias='x_ser_alias'
+        )
         y: str
 
     class Child(Parent):
@@ -221,7 +234,11 @@ def test_low_priority_alias():
         z: str
 
     assert [f.alias for f in Parent.model_fields.values()] == ['w_', 'abc', None]
+    assert [f.validation_alias for f in Parent.model_fields.values()] == ['w_val_alias', 'x_val_alias', None]
+    assert [f.serialization_alias for f in Parent.model_fields.values()] == ['w_ser_alias', 'x_ser_alias', None]
     assert [f.alias for f in Child.model_fields.values()] == ['w_', 'X', 'Y', 'Z']
+    assert [f.validation_alias for f in Child.model_fields.values()] == ['w_val_alias', 'X', 'Y', 'Z']
+    assert [f.serialization_alias for f in Child.model_fields.values()] == ['w_ser_alias', 'X', 'Y', 'Z']
 
 
 def test_empty_string_alias():
@@ -266,3 +283,135 @@ def test_populate_by_name_config(
             f = Foo(**{arg_name: expected_value})
 
         assert f.bar_ == expected_value
+
+
+def test_validation_alias():
+    class Model(BaseModel):
+        x: str = Field(validation_alias='foo')
+
+    data = {'foo': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='bar')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing',
+            'loc': ('foo',),
+            'msg': 'Field required',
+            'input': {'x': 'bar'},
+        }
+    ]
+
+
+def test_validation_alias_with_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='x_alias', validation_alias='foo')
+
+    data = {'foo': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+    sig = signature(Model)
+    assert 'x_alias' in sig.parameters
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='bar')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing',
+            'loc': ('foo',),
+            'msg': 'Field required',
+            'input': {'x': 'bar'},
+        }
+    ]
+
+
+def test_validation_alias_from_str_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='foo')
+
+    data = {'foo': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+    sig = signature(Model)
+    assert 'foo' in sig.parameters
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x='bar')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing',
+            'loc': ('foo',),
+            'msg': 'Field required',
+            'input': {'x': 'bar'},
+        }
+    ]
+
+
+def test_validation_alias_from_list_alias():
+    class Model(BaseModel):
+        x: str = Field(alias=['foo', 'bar'])
+
+    data = {'foo': {'bar': 'test'}}
+    m = Model(**data)
+    assert m.x == 'test'
+    sig = signature(Model)
+    assert 'x' in sig.parameters
+
+    class Model(BaseModel):
+        x: str = Field(alias=['foo', 1])
+
+    data = {'foo': ['bar0', 'bar1']}
+    m = Model(**data)
+    assert m.x == 'bar1'
+    sig = signature(Model)
+    assert 'x' in sig.parameters
+
+
+def test_serialization_alias():
+    class Model(BaseModel):
+        x: str = Field(serialization_alias='foo')
+
+    m = Model(x='bar')
+    assert m.x == 'bar'
+    assert m.model_dump() == {'x': 'bar'}
+    assert m.model_dump(by_alias=True) == {'foo': 'bar'}
+
+
+def test_serialization_alias_with_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='x_alias', serialization_alias='foo')
+
+    data = {'x_alias': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+    assert m.model_dump() == {'x': 'bar'}
+    assert m.model_dump(by_alias=True) == {'foo': 'bar'}
+    sig = signature(Model)
+    assert 'x_alias' in sig.parameters
+
+
+def test_serialization_alias_from_alias():
+    class Model(BaseModel):
+        x: str = Field(alias='foo')
+
+    data = {'foo': 'bar'}
+    m = Model(**data)
+    assert m.x == 'bar'
+    assert m.model_dump() == {'x': 'bar'}
+    assert m.model_dump(by_alias=True) == {'foo': 'bar'}
+    sig = signature(Model)
+    assert 'foo' in sig.parameters
+
+
+def test_aliases_json_schema():
+    class Model(BaseModel):
+        x: str = Field(alias='x_alias', validation_alias='x_val_alias', serialization_alias='x_ser_alias')
+
+    assert Model.model_json_schema() == {
+        'properties': {'x_val_alias': {'title': 'X Val Alias', 'type': 'string'}},
+        'required': ['x_val_alias'],
+        'title': 'Model',
+        'type': 'object',
+    }

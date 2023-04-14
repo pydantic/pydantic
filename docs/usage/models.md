@@ -58,7 +58,7 @@ assert user.name == 'Jane Doe'
 `name` wasn't set when user was initialised, so it has the default value
 
 ```py group="basic-model"
-assert user.__fields_set__ == {'id'}
+assert user.model_fields_set == {'id'}
 ```
 
 The fields which were supplied when user was initialised.
@@ -115,7 +115,7 @@ Models possess the following methods and attributes:
 : a class method for creating models without running validation;
   cf. [Creating models without validation](#creating-models-without-validation)
 
-`__fields_set__`
+`model_fields_set`
 : Set of names of fields which were set when the model instance was initialised
 
 `model_fields`
@@ -438,16 +438,16 @@ try:
 except ValidationError as e:
     print(e)
     """
-    5 validation errors for Location
+    5 validation errors for Model
     is_required
       Field required [type=missing, input_value={'list_of_ints': ['1', 2,...ew York'}, 'gt_int': 21}, input_type=dict]
     gt_int
       Input should be greater than 42 [type=greater_than, input_value=21, input_type=int]
-    list_of_ints -> 2
+    list_of_ints.2
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
     a_float
       Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='not a float', input_type=str]
-    recursive_model -> lng
+    recursive_model.lng
       Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='New York', input_type=str]
     """
 
@@ -548,7 +548,7 @@ from pydantic import BaseModel, ValidationError, field_validator
 class Model(BaseModel):
     foo: str
 
-    @field_validator('foo', allow_reuse=True)  # TODO remove after #4436
+    @field_validator('foo')
     def value_must_equal_bar(cls, v):
         if v != 'bar':
             raise PydanticCustomError(
@@ -650,7 +650,7 @@ original_user = User(id=123, age=32)
 user_data = original_user.model_dump()
 print(user_data)
 #> {'id': 123, 'age': 32, 'name': 'John Doe'}
-fields_set = original_user.__fields_set__
+fields_set = original_user.model_fields_set
 print(fields_set)
 #> {'age', 'id'}
 
@@ -663,7 +663,7 @@ print(fields_set)
 new_user = User.model_construct(_fields_set=fields_set, **user_data)
 print(repr(new_user))
 #> User(id=123, age=32, name='John Doe')
-print(new_user.__fields_set__)
+print(new_user.model_fields_set)
 #> {'age', 'id'}
 
 # construct can be dangerous, only use it with validated data!:
@@ -673,11 +673,11 @@ print(repr(bad_user))
 ```
 
 The `_fields_set` keyword argument to `model_construct()` is optional, but allows you to be more precise about
-which fields were originally set and which weren't. If it's omitted `__fields_set__` will just be the keys
+which fields were originally set and which weren't. If it's omitted `model_fields_set` will just be the keys
 of the data provided.
 
 For example, in the example above, if `_fields_set` was not provided,
-`new_user.__fields_set__` would be `{'id', 'age', 'name'}`.
+`new_user.model_fields_set` would be `{'id', 'age', 'name'}`.
 
 ## Generic Models
 
@@ -853,7 +853,7 @@ try:
 except ValidationError as e:
     print(e)
     """
-    2 validation errors for InnerT[int]
+    2 validation errors for OuterT[int]
     outer
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='a', input_type=str]
     nested
@@ -1015,9 +1015,9 @@ except ValidationError as e:
     print(e)
     """
     2 validation errors for list[typed-dict]
-    0 -> id
+    0.id
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
-    0 -> other
+    0.other
       Extra inputs are not permitted [type=extra_forbidden, input_value='no', input_type=str]
     """
 ```

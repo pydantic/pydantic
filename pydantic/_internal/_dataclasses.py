@@ -6,23 +6,22 @@ from __future__ import annotations as _annotations
 import typing
 import warnings
 from functools import wraps
-from typing import Any, Callable, ClassVar
+from typing import Any, Callable, ClassVar, cast
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
 
-from ..config import ConfigDict
 from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from . import _decorators
 from ._core_utils import get_type_ref
 from ._fields import collect_fields
 from ._forward_ref import PydanticForwardRef
-from ._generate_schema import dataclass_schema, generate_config
+from ._generate_schema import dataclass_schema
 from ._model_construction import MockValidator
 
-__all__ = 'StandardDataclass', 'PydanticDataclass', 'prepare_dataclass'
-
 if typing.TYPE_CHECKING:
+    from ..config import ConfigDict
+    from ._config import ConfigWrapper
 
     class StandardDataclass(typing.Protocol):
         __dataclass_fields__: ClassVar[dict[str, Any]]
@@ -44,7 +43,7 @@ if typing.TYPE_CHECKING:
 
 def prepare_dataclass(
     cls: type[Any],
-    config: ConfigDict,
+    config_wrapper: ConfigWrapper,
     kw_only: bool,
     *,
     raise_errors: bool = True,
@@ -62,6 +61,8 @@ def prepare_dataclass(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
+    cls = cast('type[PydanticDataclass]', cls)
+
     name = cls.__name__
     bases = cls.__bases__
 
@@ -76,9 +77,9 @@ def prepare_dataclass(
         warning_string = (
             f'`{name}` is not fully defined, you should define `{e}`, then call TODO! `methods.rebuild({name})`'
         )
-        if config['undefined_types_warning']:
+        if config_wrapper.undefined_types_warning:
             raise UserWarning(warning_string)
-        cls.__pydantic_validator__ = MockValidator(warning_string)
+        cls.__pydantic_validator__ = MockValidator(warning_string, code='dataclass-not-fully-defined')  # type: ignore
         return False
 
     decorators = cls.__pydantic_decorators__
@@ -88,24 +89,24 @@ def prepare_dataclass(
         dataclass_ref,
         fields,
         decorators,
-        config['arbitrary_types_allowed'],
+        config_wrapper,
         types_namespace,
     )
 
-    core_config = generate_config(config, cls)
+    core_config = config_wrapper.core_config(cls)
     cls.__pydantic_fields__ = fields
     cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
     # this works because cls has been transformed into a dataclass by the time "cls" is called
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
-    cls.__pydantic_config__ = config
+    cls.__pydantic_config__ = config_wrapper.config_dict
 
-    if config.get('validate_assignment'):
+    if config_wrapper.validate_assignment:
 
         @wraps(cls.__setattr__)
         def validated_setattr(instance: Any, __field: str, __value: str) -> None:
             validator.validate_assignment(instance, __field, __value)
 
-        cls.__setattr__ = validated_setattr.__get__(None, cls)
+        cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
     # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't copied.
 
@@ -115,7 +116,7 @@ def prepare_dataclass(
         s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
-    cls.__init__ = __init__
+    cls.__init__ = __init__  # type: ignore
 
     return True
 

@@ -44,15 +44,10 @@ identify==2.5.21
     # via
     #   -c requirements/all.txt
     #   pre-commit
-mypy==1.1.1
-    # via
-    #   -c requirements/all.txt
-    #   -r requirements/linting.in
 mypy-extensions==1.0.0
     # via
     #   -c requirements/all.txt
     #   black
-    #   mypy
 nodeenv==1.7.0
     # via
     #   -c requirements/all.txt
@@ -74,7 +69,7 @@ pre-commit==2.21.0
     # via
     #   -c requirements/all.txt
     #   -r requirements/linting.in
-pydantic-core==0.22.0
+pydantic-core==0.24.0
     # via
     #   -c requirements/all.txt
     #   -r requirements/linting.in
@@ -102,11 +97,9 @@ tomli==2.0.1
     # via
     #   -c requirements/all.txt
     #   black
-    #   mypy
 typing-extensions==4.5.0
     # via
     #   -c requirements/all.txt
-    #   mypy
     #   pydantic-core
 virtualenv==20.21.0
     # via

@@ -16,7 +16,6 @@ from typing import (
     Hashable,
     List,
     Set,
-    Tuple,
     TypeVar,
     cast,
 )
@@ -55,6 +54,7 @@ __all__ = [
     'UUID5',
     'FilePath',
     'DirectoryPath',
+    'NewPath',
     'Json',
     'SecretField',
     'SecretStr',
@@ -79,6 +79,9 @@ from ._internal._utils import update_not_none
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):
     strict: bool = True
+
+    def __hash__(self) -> int:
+        return hash(self.strict)
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -117,6 +120,9 @@ StrictInt = Annotated[int, Strict()]
 @_dataclasses.dataclass
 class AllowInfNan(_fields.PydanticMetadata):
     allow_inf_nan: bool = True
+
+    def __hash__(self) -> int:
+        return hash(self.allow_inf_nan)
 
 
 def confloat(
@@ -199,7 +205,7 @@ HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 
 
 def conset(
-    item_type: type[HashableItemType], *, min_length: int = None, max_length: int = None
+    item_type: type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> type[set[HashableItemType]]:
     return Annotated[  # type: ignore[return-value]
         Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
@@ -223,15 +229,6 @@ def conlist(
 ) -> type[list[AnyItemType]]:
     return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
-        annotated_types.Len(min_length or 0, max_length),
-    ]
-
-
-def contuple(
-    item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
-) -> type[tuple[AnyItemType]]:
-    return Annotated[  # type: ignore[return-value]
-        Tuple[item_type],
         annotated_types.Len(min_length or 0, max_length),
     ]
 
@@ -369,6 +366,9 @@ class PathType:
         else:
             return path
 
+    def __hash__(self) -> int:
+        return hash(type(self.path_type))
+
 
 FilePath = Annotated[Path, PathType('file')]
 DirectoryPath = Annotated[Path, PathType('dir')]
@@ -449,8 +449,8 @@ class SecretField(abc.ABC, Generic[SecretType]):
                 custom_error_type=cls._error_kind,
             ),
             metadata=metadata,
-            serialization=core_schema.general_plain_serializer_function_ser_schema(
-                cls._serialize, json_return_type='str'
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                cls._serialize, info_arg=True, json_return_type='str'
             ),
         )
 
@@ -789,7 +789,14 @@ else:
             return 'FutureDate'
 
 
-def condate(*, strict: bool = None, gt: date = None, ge: date = None, lt: date = None, le: date = None) -> type[date]:
+def condate(
+    *,
+    strict: bool | None = None,
+    gt: date | None = None,
+    ge: date | None = None,
+    lt: date | None = None,
+    le: date | None = None,
+) -> type[date]:
     return Annotated[  # type: ignore[return-value]
         date,
         Strict(strict) if strict is not None else None,

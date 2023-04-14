@@ -130,7 +130,8 @@ class GenerateJsonSchema:
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
-                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.'
+                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.',
+                code='json-schema-already-used',
             )
         for schema in schemas:
             self.generate_inner(schema)
@@ -144,7 +145,8 @@ class GenerateJsonSchema:
         if self._used:
             raise PydanticUserError(
                 'This JSON schema generator has already been used to generate a JSON schema. '
-                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.'
+                f'You must create a new instance of {type(self).__name__} to generate a new JSON schema.',
+                code='json-schema-already-used',
             )
 
         json_schema = self.generate_inner(schema)
@@ -153,7 +155,8 @@ class GenerateJsonSchema:
         # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
         ref = json_schema.get('$ref')
         while ref is not None:  # may need to unpack multiple levels
-            ref_json_schema = self.get_schema_from_definitions(JsonRef(ref))
+            ref = JsonRef(ref)
+            ref_json_schema = self.get_schema_from_definitions(ref)
             if json_ref_counts[ref] > 1 or ref_json_schema is None:
                 # Keep the ref, but use an allOf to remove the top level $ref
                 json_schema = {'allOf': [{'$ref': ref}]}
@@ -252,13 +255,13 @@ class GenerateJsonSchema:
         return {'type': 'boolean'}
 
     def int_schema(self, schema: core_schema.IntSchema) -> JsonSchemaValue:
-        json_schema = {'type': 'integer'}
+        json_schema: dict[str, Any] = {'type': 'integer'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
         json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
         return json_schema
 
     def float_schema(self, schema: core_schema.FloatSchema) -> JsonSchemaValue:
-        json_schema = {'type': 'number'}
+        json_schema: dict[str, Any] = {'type': 'number'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
         json_schema = {k: v for k, v in json_schema.items() if v not in {math.inf, -math.inf}}
         return json_schema
@@ -438,7 +441,7 @@ class GenerateJsonSchema:
             try:
                 generated.append(self.generate_inner(s))
             except PydanticInvalidForJsonSchema as exc:
-                self.emit_warning('skipped-choice', str(exc))
+                self.emit_warning('skipped-choice', exc.message)
         if len(generated) == 1:
             return generated[0]
         return self.get_flattened_anyof(generated)
@@ -452,13 +455,14 @@ class GenerateJsonSchema:
                     # it's the closest that can be represented in valid JSON
                     generated[str(k)] = self.generate_inner(v).copy()
                 except PydanticInvalidForJsonSchema as exc:
-                    self.emit_warning('skipped-choice', str(exc))
+                    self.emit_warning('skipped-choice', exc.message)
 
         # Populate the schema with any "indirect" references
         for k, v in schema['choices'].items():
             if isinstance(v, (str, int)):
                 while isinstance(schema['choices'][v], (str, int)):
                     v = schema['choices'][v]
+                    assert isinstance(v, (int, str))
                 if str(v) in generated:
                     # while it might seem unnecessary to check `if str(v) in generated`, a PydanticInvalidForJsonSchema
                     # may have been raised above, which would mean that the schema we want to reference won't be present
@@ -542,7 +546,9 @@ class GenerateJsonSchema:
             return self.generate_inner(schema['lax_schema'])
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
-        named_required_fields = [(k, v['required'], v) for k, v in schema['fields'].items()]
+        named_required_fields = [
+            (k, v['required'], v) for k, v in schema['fields'].items()  # type: ignore  # required is always populated
+        ]
         return self._named_required_fields_schema(named_required_fields)
 
     def _named_required_fields_schema(
@@ -552,10 +558,11 @@ class GenerateJsonSchema:
         required_fields: list[str] = []
         for name, required, field in named_required_fields:
             if self.by_alias:
-                alias = field.get('validation_alias', name)
+                alias: Any = field.get('validation_alias', name)
                 if isinstance(alias, str):
                     name = alias
                 elif isinstance(alias, list):
+                    alias = cast('list[str] | str', alias)
                     for path in alias:
                         if isinstance(path, list) and len(path) == 1 and isinstance(path[0], str):
                             # Use the first valid single-item string path; the code that constructs the alias array
@@ -573,7 +580,7 @@ class GenerateJsonSchema:
 
         json_schema = {'type': 'object', 'properties': properties}
         if required_fields:
-            json_schema['required'] = required_fields
+            json_schema['required'] = required_fields  # type: ignore
         return json_schema
 
     def typed_dict_field_schema(self, schema: core_schema.TypedDictField) -> JsonSchemaValue:
@@ -669,13 +676,9 @@ class GenerateJsonSchema:
             if positional_possible:
                 return self.p_arguments_schema(p_only_arguments + kw_or_p_arguments, var_args_schema)
 
-        return {
-            'type': 'object',
-            'properties': {
-                '__args__': self.p_arguments_schema(p_only_arguments, var_args_schema),
-                '__kwargs__': self.kw_arguments_schema(kw_or_p_arguments + kw_only_arguments, var_args_schema),
-            },
-        }
+        raise PydanticInvalidForJsonSchema(
+            'Unable to generate JSON schema for arguments validator with positional only and keyword only arguments'
+        )
 
     def kw_arguments_schema(
         self, arguments: list[core_schema.ArgumentsParameter], var_kwargs_schema: CoreSchema | None
@@ -781,7 +784,7 @@ class GenerateJsonSchema:
 
     def definition_ref_schema(self, schema: core_schema.DefinitionReferenceSchema) -> JsonSchemaValue:
         core_ref = CoreRef(schema['schema_ref'])
-        defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+        _, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
         return ref_json_schema
 
     # ### Utility methods
@@ -820,7 +823,7 @@ class GenerateJsonSchema:
             return True  # anything else should have title set
 
         else:
-            raise TypeError(f'Unexpected schema type: schema={schema}')
+            raise PydanticInvalidForJsonSchema(f'Unexpected schema type: schema={schema}')
 
     def normalize_name(self, name: str) -> str:
         return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name).replace('.', '__')

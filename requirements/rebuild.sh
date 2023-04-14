@@ -1,3 +1,6 @@
+#!/bin/bash
+set -e
+
 # Sync lockfiles with requirements files.
 
 command -v pip-compile >/dev/null 2>&1 || {
