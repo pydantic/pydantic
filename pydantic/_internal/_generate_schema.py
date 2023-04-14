@@ -247,11 +247,12 @@ class GenerateSchema:
             # Can return None to tell pydantic not to override
             return get_schema(source=source, gen_schema=self)
 
-        if not _typing_extra.is_dataclass(obj):
-            schema_property = getattr(obj, '__pydantic_core_schema__', None)
-        else:
-            # Only use the __pydantic_core_schema__ if it is defined on this exact class, not a parent class
+        if _typing_extra.is_dataclass(obj):
+            # For dataclasses, only use the __pydantic_core_schema__ if it is defined on this exact class, not a parent
             schema_property = obj.__dict__.get('__pydantic_core_schema__')
+        else:
+            schema_property = getattr(obj, '__pydantic_core_schema__', None)
+
         if schema_property is not None:
             return schema_property
 

@@ -215,6 +215,10 @@ def get_origin(v: Any) -> Any:
 
 
 def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
+    """
+    Package a generic type's typevars and parametrization (if present) into a dictionary compatible with the
+    `replace_types` function. Specifically, this works with standard typing generics and typing._GenericAlias.
+    """
     origin = get_origin(cls)
     if origin is None:
         return None
@@ -226,7 +230,14 @@ def get_standard_typevars_map(cls: type[Any]) -> dict[TypeVarType, Any] | None:
     return dict(zip(parameters, args))
 
 
-def get_basemodel_typevars_map(cls: type[BaseModel]) -> dict[TypeVarType, Any] | None:
+def get_model_typevars_map(cls: type[BaseModel]) -> dict[TypeVarType, Any] | None:
+    """
+    Package a generic BaseModel's typevars and concrete parametrization (if present) into a dictionary compatible
+    with the `replace_types` function.
+
+    Since BaseModel.__class_getitem__ does not produce a typing._GenericAlias, and the BaseModel generic info is
+    stored in the __pydantic_generic_metadata__ attribute, we need special handling here.
+    """
     # TODO: This could be unified with `get_standard_typevars_map` if we stored the generic metadata
     #   in the __origin__, __args__, and __parameters__ attributes of the model.
     generic_metadata = cls.__pydantic_generic_metadata__

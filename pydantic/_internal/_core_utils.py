@@ -113,7 +113,7 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
             refs.add(ref)
         return s
 
-    schema = WalkAndApply(_replace_refs, apply_before_recurse=True).walk(schema)
+    schema = WalkCoreSchema(_replace_refs, apply_before_recurse=True).walk(schema)
     return schema
 
 
@@ -131,7 +131,7 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
                 valid_definitions[ref] = s
         return s
 
-    WalkAndApply(_record_valid_refs).walk(schema)
+    WalkCoreSchema(_record_valid_refs).walk(schema)
 
     return valid_definitions
 
@@ -161,7 +161,7 @@ def remove_unnecessary_invalid_definitions(schema: core_schema.CoreSchema) -> co
         new_schema['definitions'] = new_definitions
         return new_schema
 
-    return WalkAndApply(_remove_invalid_defs).walk(schema)
+    return WalkCoreSchema(_remove_invalid_defs).walk(schema)
 
 
 def define_expected_missing_refs(
@@ -175,7 +175,7 @@ def define_expected_missing_refs(
             refs.add(ref)
         return s
 
-    WalkAndApply(_record_refs).walk(schema)
+    WalkCoreSchema(_record_refs).walk(schema)
 
     expected_missing_refs = allowed_missing_refs.difference(refs)
     if expected_missing_refs:
@@ -196,11 +196,11 @@ def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.
             invalid_schemas.append(s)
         return s
 
-    WalkAndApply(_is_schema_valid).walk(schema)
+    WalkCoreSchema(_is_schema_valid).walk(schema)
     return invalid_schemas
 
 
-class WalkAndApply:
+class WalkCoreSchema:
     """
     Transforms a CoreSchema by recursively calling the provided function on all (nested) fields of type CoreSchema
 

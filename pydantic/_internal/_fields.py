@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 
 from pydantic_core import core_schema
 
+from . import _typing_extra
 from ._forward_ref import PydanticForwardRef
 from ._repr import Representation
 from ._typing_extra import get_cls_type_hints_lenient, get_type_hints, is_classvar, is_finalvar
@@ -110,7 +111,7 @@ class CustomValidator(ABC):
 DC_KW_ONLY = getattr(dataclasses, 'KW_ONLY', None)
 
 
-def collect_basemodel_fields(  # noqa: C901
+def collect_model_fields(  # noqa: C901
     cls: type[Any],
     bases: tuple[type[Any], ...],
     types_namespace: dict[str, Any] | None,
@@ -221,11 +222,11 @@ def collect_dataclass_fields(
     from ..fields import FieldInfo
 
     fields: dict[str, FieldInfo] = {}
-    type_hints = get_cls_type_hints_lenient(cls, types_namespace)
     dataclass_fields: dict[str, dataclasses.Field] = cls.__dataclass_fields__
+    cls_localns = dict(vars(cls))  # this matches get_cls_type_hints_lenient, but all tests pass with `= None` instead
 
     for ann_name, dataclass_field in dataclass_fields.items():
-        ann_type = type_hints[ann_name]
+        ann_type = _typing_extra.eval_type_lenient(dataclass_field.type, types_namespace, cls_localns)
         if is_classvar(ann_type):
             continue
 
@@ -239,15 +240,9 @@ def collect_dataclass_fields(
         else:
             field_info = FieldInfo.from_annotated_attribute(ann_type, dataclass_field)
         fields[ann_name] = field_info
-        try:
-            delattr(cls, ann_name)
-        except AttributeError:
-            pass
 
         if field_info.default is not Undefined:
-            # attributes which are fields are removed from the class namespace:
-            # 1. To match the behaviour of annotation-only fields
-            # 2. To avoid false positives in the NameError check above
+            # We need this to fix the default when the "default" from __dataclass_fields__ is a pydantic.FieldInfo
             setattr(cls, ann_name, field_info.default)
 
     if typevars_map:

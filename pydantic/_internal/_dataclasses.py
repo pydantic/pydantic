@@ -3,6 +3,7 @@ Private logic for creating pydantic dataclasses.
 """
 from __future__ import annotations as _annotations
 
+import dataclasses
 import typing
 import warnings
 from functools import wraps
@@ -157,8 +158,6 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     In this case, when we first check `B`, we make an extra check and look at the annotations ('y'),
     which won't be a superset of all the dataclass fields (only the stdlib fields i.e. 'x')
     """
-    import dataclasses
-
     return (
         dataclasses.is_dataclass(_cls)
         and not hasattr(_cls, '__pydantic_validator__')
@@ -167,6 +166,4 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
 
 
 def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
-    import dataclasses
-
     return dataclasses.is_dataclass(_cls) and hasattr(_cls, '__pydantic_validator__')

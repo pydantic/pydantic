@@ -1,8 +1,10 @@
 from __future__ import annotations as _annotations
 
+import dataclasses
 import sys
 import typing
 from copy import copy
+from dataclasses import Field as DataclassField
 from typing import Any
 from warnings import warn
 
@@ -16,8 +18,6 @@ from ._internal._generics import replace_types
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
-    from dataclasses import Field as DataclassField
-
     from ._internal._repr import ReprArgs
 
 
@@ -163,8 +163,6 @@ class FieldInfo(_repr.Representation):
         >>>     bar: typing.Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
         >>>     spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
         """
-        import dataclasses
-
         final = False
         if _typing_extra.is_finalvar(annotation):
             final = True
@@ -214,8 +212,6 @@ class FieldInfo(_repr.Representation):
         """
         Construct a `FieldInfo` from a `dataclasses.Field` instance.
         """
-        import dataclasses
-
         default = dc_field.default
         if default is dataclasses.MISSING:
             default = Undefined
@@ -307,11 +303,15 @@ class FieldInfo(_repr.Representation):
             return typing_extensions._AnnotatedAlias(self.annotation, self.metadata)
 
     def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
-        try:
-            self.annotation = typing._eval_type(self.annotation, types_namespace, None)  # type: ignore[attr-defined]
-        except NameError:
-            pass
-        self.annotation = replace_types(self.annotation, typevars_map)
+        """
+        Apply a typevars_map to the annotation.
+
+        This is used when analyzing parametrized generic types to replace typevars with their concrete types.
+
+        See pydantic._internal._generics.replace_types for more details.
+        """
+        annotation = _typing_extra.eval_type_lenient(self.annotation, types_namespace, None)
+        self.annotation = replace_types(annotation, typevars_map)
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))

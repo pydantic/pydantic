@@ -3,6 +3,7 @@ Logic for interacting with type annotations, mostly extensions, shims and hacks 
 """
 from __future__ import annotations as _annotations
 
+import dataclasses
 import sys
 import types
 import typing
@@ -243,17 +244,21 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
         localns = dict(vars(base))
         if ann is not None and ann is not GetSetDescriptorType:
             for name, value in ann.items():
-                if value is None:
-                    value = NoneType
-                elif isinstance(value, str):
-                    value = _make_forward_ref(value, is_argument=False, is_class=True)  # type: ignore
-
-                try:
-                    hints[name] = typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
-                except NameError:
-                    # the point of this function is to be tolerant to this case
-                    hints[name] = value
+                hints[name] = eval_type_lenient(value, globalns, localns)
     return hints
+
+
+def eval_type_lenient(value: Any, globalns: dict[str, Any] | None = None, localns: dict[str, Any] | None = None) -> Any:
+    if value is None:
+        value = NoneType
+    elif isinstance(value, str):
+        value = _make_forward_ref(value, is_argument=False, is_class=True)  # type: ignore
+
+    try:
+        return typing._eval_type(value, globalns, localns)  # type: ignore[attr-defined]
+    except NameError:
+        # the point of this function is to be tolerant to this case
+        return value
 
 
 if sys.version_info < (3, 9):
@@ -436,6 +441,4 @@ else:
 def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     # The dataclasses.is_dataclass function doesn't seem to provide TypeGuard functionality,
     # so I created this convenience function
-    import dataclasses
-
     return dataclasses.is_dataclass(_cls)

@@ -13,9 +13,9 @@ from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUs
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
 from ._decorators import PydanticDecoratorMarker
-from ._fields import Undefined, collect_basemodel_fields
+from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
-from ._generics import get_basemodel_typevars_map
+from ._generics import get_model_typevars_map
 from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
@@ -136,8 +136,8 @@ def set_model_fields(cls: type[BaseModel], bases: tuple[type[Any], ...], types_n
     """
     Collect and set `cls.model_fields` and `cls.__class_vars__`.
     """
-    typevars_map = get_basemodel_typevars_map(cls)
-    fields, class_vars = collect_basemodel_fields(cls, bases, types_namespace, typevars_map=typevars_map)
+    typevars_map = get_model_typevars_map(cls)
+    fields, class_vars = collect_model_fields(cls, bases, types_namespace, typevars_map=typevars_map)
 
     apply_alias_generator(cls.model_config, fields)
     cls.model_fields = fields
@@ -160,7 +160,7 @@ def complete_model_class(
     This logic must be called after class has been created since validation functions must be bound
     and `get_type_hints` requires a class object.
     """
-    typevars_map = get_basemodel_typevars_map(cls)
+    typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
         types_namespace,
