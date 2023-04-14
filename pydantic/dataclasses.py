@@ -110,7 +110,7 @@ def dataclass(
     kw_only: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
     """
-    Returns a decorator that creates a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
+    A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
     but with added validation.
 
     Args:
@@ -145,7 +145,7 @@ def dataclass(
             cls (type[Any]): The class to create the Pydantic dataclass from.
 
         Returns:
-            type[PydanticDataclass]: Returns a Pydantic dataclass.
+            type[PydanticDataclass]: A Pydantic dataclass.
 
         Raises:
             TypeError: If a non-class value is provided.
