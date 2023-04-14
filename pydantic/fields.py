@@ -148,12 +148,12 @@ class FieldInfo(_repr.Representation):
         Examples:
             This is how you can create a field with default value like this:
 
-            ```python
+            ``python
             import pydantic
 
             class MyModel(pydantic.BaseModel):
                 foo: int = pydantic.Field(4, ...)
-            ```
+            ``
         """
         # TODO: This is a good place to add migration warnings; should we use overload for type-hinting the signature?
         if 'annotation' in kwargs:
@@ -174,22 +174,22 @@ class FieldInfo(_repr.Representation):
         Examples:
             This is how you can create a field from a bare annotation like this:
 
-            ```python
+            ``python
             import pydantic
             class MyModel(pydantic.BaseModel):
                 foo: int  # <-- like this
-            ```
+            ``
 
             We also account for the case where the annotation can be an instance of `Annotated` and where
             one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:
 
-            ```python
+            ``python
             import pydantic, annotated_types, typing
 
             class MyModel(pydantic.BaseModel):
                 foo: typing.Annotated[int, annotated_types.Gt(42)]
                 bar: typing.Annotated[int, Field(gt=42)]
-            ```
+            ``
 
         """
         final = False
@@ -226,14 +226,14 @@ class FieldInfo(_repr.Representation):
             FieldInfo: A field object with the passed values.
 
         Examples:
-        ```python
+        ``python
         import pydantic, annotated_types, typing
 
         class MyModel(pydantic.BaseModel):
             foo: int = 4  # <-- like this
             bar: typing.Annotated[int, annotated_types.Gt(4)] = 4  # <-- or this
             spam: typing.Annotated[int, pydantic.Field(gt=4)] = 4  # <-- or this
-        ```
+        ``
         """
         import dataclasses
 
@@ -476,55 +476,61 @@ def Field(
     **extra: Any,
 ) -> Any:
     """
+    Create a field for objects that can be configured.
+
     Used to provide extra information about a field, either for the model schema or complex validation. Some arguments
     apply only to number fields (`int`, `float`, `Decimal`) and some apply only to `str`.
 
     Args:
-        default (Any): The default value is returned if the corresponding field value is not present in the input data
-            or if the data value is None. Defaults to `Undefined`.
-        default_factory (typing.Callable[[], Any] | None): A callable that returns the default value for the field.
-            Only used if default is not set. Defaults to `None`.
-        alias (str | None): The alias for the field. Defaults to `None`.
-        alias_priority (int | None): The priority score for the field if it is an alias for another field. Defaults to
-            `None`.
-        validation_alias (str | list[str | int] | list[list[str | int]] | None): The alias(es) to use to find the field
-            value during validation. Defaults to `None`. TODO: Add documentation reference for non-str alias variants
-        serialization_alias (str | None): The alias to use as a key when serializing. Defaults to `None`.
-        title (str | None): The title for the field. Defaults to `None`.
-        description (str | None): The description for the field. Defaults to `None`.
-        examples (list[Any] | None): Examples of the field values. Defaults to `None`.
-        exclude (typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any): A set or mapping of keys that
-            should be excluded from the input data. Defaults to `None`.
-        include (typing.AbstractSet[int | str] | typing.Mapping[int | str, Any] | Any): A set or mapping of keys that
-            should be included in the input data. Defaults to `None`.
-        gt (float | None): The minimum value of the field. Defaults to `None`.
-        ge (float | None): The minimum value of the field (inclusive). Defaults to `None`.
-        lt (float | None): The maximum value of the field. Defaults to `None`.
-        le (float | None): The maximum value of the field (inclusive). Defaults to `None`.
-        multiple_of (float | None): The field value must be a multiple of this value. Defaults to `None`.
-        allow_inf_nan (bool | None): Determines whether the field can be populated with infinity or NaN values.
-            Defaults to `None`.
-        max_digits (int | None): The maximum number of digits in a decimal number. Defaults to `None`.
-        decimal_places (int | None): The maximum number of decimal places allowed in a decimal number.
-            Defaults to `None`.
-        min_items (int | None): The minimum number of items allowed in a sequence. Defaults to `None`.
-        max_items (int | None): The maximum number of items allowed in a sequence. Defaults to `None`.
-        min_length (int | None): The minimum length of a string field. Defaults to `None`.
-        max_length (int | None): The maximum length of a string field. Defaults to `None`.
-        frozen (bool | None): Determines whether the value is immutable. Defaults to `None`.
-        pattern (str | None): A regular expression pattern used to validate string fields. Defaults to `None`.
-        discriminator (str | None): The discriminator value for a polymorphic model. Defaults to `None`.
-        repr (bool): Determines whether the field value should be included in the object's string representation.
-            Defaults to True.
-        strict (bool | None): Used to determine whether the object should be marked as invalid if an unknown field is
-            detected. Defaults to `None`.
-        json_schema_extra (dict[str, Any] | None): A dictionary containing any additional metadata about the field.
-            Defaults to `None`.
-        validate_default (bool | None): Determines whether the default value for the field should be validated.
-            Defaults to `None`.
+        default (Any, optional): default value if the field is not set.
+        default_factory (callable, optional): A callable to generate the default value like :func:`~datetime.utcnow`.
+        alias (str, optional): an alternative name for the attribute.
+        alias_priority (int, optional): priority of the alias. This defines which alias should be used in serialization.
+        validation_alias (str, list of str, list of list of str, optional): 'whitelist' validation step. The field
+            will be the single one allowed by the alias or set of aliases defined.
+        serialization_alias (str, optional): 'blacklist' validation step. The vanilla field will be the single one of
+            the alias' or set of aliases' fields and all the other fields will be ignored at serialization time.
+        title (str, optional): human-readable title.
+        description (str, optional): human-readable description.
+        examples (list of Any, optional): An example value for this field.
+        exclude (set or Mapping or Any, optional): An optional set, mapping, or object with attribute-access to
+            exclude fields that don't belong in a schema such as `__dict__` or user-defined methods.
+        include (set or Mapping or Any, optional): An optional set, mapping or object with attribute-access to
+            include defined fields in a schema, by default `asdict` includes all fields.
+        gt (float, optional): Greater than. If set, value must be greater than this. Only applicable to numbers.
+        ge (float, optional): Greater than or equal. If set, value must be
+        greater than or equal to this. Only applicable to numbers.
+        lt (float, optional): Less than. If set, value must be
+        less than this. Only applicable to numbers.
+        le (float, optional): Less than or equal. If set, value must be
+        less than or equal to this. Only applicable to numbers.
+        multiple_of (float, optional): Value must be a multiple of this. Only applicable to numbers.
+        allow_inf_nan (bool, optional): Allow `inf`, `-inf`, `nan`. Only applicable to numbers.
+        max_digits (int, optional): Maximum number of allow digits for strings.
+        decimal_places (int, optional): Maximum number decimal places allowed for numbers.
+        min_items (int, optional): Minimum number of items in a collection.
+        max_items (int, optional): Maximum number of items in a collection.
+        min_length (int, optional): Minimum length for strings.
+        max_length (int, optional): Maximum length for strings.
+        frozen (bool, optional): Store the value as a frozen object if is mutable.
+        pattern (str, optional): Pattern for strings.
+        discriminator (str, optional): Codename for discriminating a field among others of the same type.
+        repr (bool, optional): If `True` (the default), return a string representation of the field.
+        strict (bool, optional): If `True` (the default is `None`), the field should be validated strictly.
+        json_schema_extra (dict, optional): Extra keys and values to include in the json schema.
+        validate_default (bool, optional): Run validation that isn't only checking existence of defaults. This is
+            `True` by default.
+        const (bool, optional): Value is always the same literal object. This is typically a singleton object,
+            such as `True` or `None`.
+        unique_items (bool, optional): Require that collection items be unique.
+        allow_mutation (bool, optional): If `False`, the dataclass will be frozen (made immutable).
+        regex (str, optional): Regular expression pattern that the field must match against.
 
     Returns:
-        Any: The field for the attribute.
+        Any: return the generated field object.
+
+        The object can be added to an object's attributes to ensure that the attribute follows the field's schema.
+
     """
     # Check deprecated & removed params of V1.
     # This has to be removed deprecation period over.
