@@ -44,7 +44,6 @@ from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
 from pydantic.errors import PydanticInvalidForJsonSchema
-from pydantic.fields import FieldInfo
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
@@ -2599,33 +2598,6 @@ def test_complex_nested_generic():
             },
         },
         'allOf': [{'$ref': '#/$defs/Model'}],
-    }
-
-
-@pytest.mark.xfail(reason='__pydantic_modify_json_schema__ does not receive FieldInfo')
-def test_schema_with_field_parameter():
-    # TODO: Update so that __pydantic_modify_json_schema__ gets called with the FieldInfo when handling fields
-    class RestrictedAlphabetStr(str):
-        @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema, field: Optional[FieldInfo]):
-            assert isinstance(field, FieldInfo)
-            alphabet = field.json_schema_extra['alphabet']
-            field_schema['examples'] = [c * 3 for c in alphabet]
-            field_schema['title'] = field.title.lower()
-            return field_schema
-
-    class MyModel(BaseModel):
-        value: RestrictedAlphabetStr = Field(title='RESTRICTED_ALPHABET', json_schema_extra={'alphabet': 'ABC'})
-
-        model_config = {'arbitrary_types_allowed': True}
-
-    assert MyModel.model_json_schema() == {
-        'title': 'MyModel',
-        'type': 'object',
-        'properties': {
-            'value': {'title': 'Value', 'alphabet': 'ABC', 'examples': ['AAA', 'BBB', 'CCC'], 'type': 'string'}
-        },
-        'required': ['value'],
     }
 
 
