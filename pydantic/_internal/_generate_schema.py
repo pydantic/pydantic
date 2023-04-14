@@ -210,7 +210,7 @@ class GenerateSchema:
         self._config_wrapper_stack.append(config_wrapper)
         try:
             fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
-                {k: self.generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
+                {k: self._generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
                 return_fields_set=True,
             )
         finally:
@@ -441,7 +441,7 @@ class GenerateSchema:
                     f'Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.'
                 )
 
-    def generate_td_field_schema(
+    def _generate_td_field_schema(
         self,
         name: str,
         field_info: FieldInfo,
@@ -463,7 +463,7 @@ class GenerateSchema:
             metadata=common_field['metadata'],
         )
 
-    def generate_dc_field_schema(
+    def _generate_dc_field_schema(
         self,
         name: str,
         field_info: FieldInfo,
@@ -622,7 +622,7 @@ class GenerateSchema:
                 annotation = get_args(annotation)[0]
 
             field_info = FieldInfo.from_annotation(annotation)
-            fields[field_name] = self.generate_td_field_schema(
+            fields[field_name] = self._generate_td_field_schema(
                 field_name, field_info, DecoratorInfos(), required=required
             )
 
@@ -932,7 +932,7 @@ class GenerateSchema:
                 typevars_map=typevars_map,
             )
         decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos()
-        args = [self.generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
+        args = [self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
         has_post_init = hasattr(dataclass, '__post_init__')
         args_schema = core_schema.dataclass_args_schema(dataclass.__name__, args, collect_init_only=has_post_init)
         inner_schema = apply_validators(args_schema, decorators.root_validator.values())
