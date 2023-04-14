@@ -6,7 +6,9 @@ from warnings import warn
 
 from typing_extensions import Literal, TypedDict
 
-__all__ = 'ConfigDict', 'Extra'
+from .deprecated.config import BaseConfig
+
+__all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
 
 class _Extra:
