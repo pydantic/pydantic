@@ -1,4 +1,6 @@
-"""Defining fields on models."""
+"""
+Defining fields on models.
+"""
 from __future__ import annotations as _annotations
 
 import typing
@@ -21,7 +23,8 @@ if typing.TYPE_CHECKING:
 
 
 class FieldInfo(_repr.Representation):
-    """Hold information about a field.
+    """
+    Hold information about a field.
 
     FieldInfo is used for any field definition whether or not the `Field()` function is explicitly used.
 
@@ -130,16 +133,9 @@ class FieldInfo(_repr.Representation):
     @classmethod
     def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
         """
-        Create `FieldInfo` with the `Field` function, e.g.:
-        >>> import pydantic
-        >>> class MyModel(pydantic.BaseModel):
-        >>>     foo: int = pydantic.Field(4, ...)  # <-- like this
-        """
-        """
         Create a new `FieldInfo` object with the `Field` function.
 
         Args:
-            cls (type): The class of the object to create.
             default (Any): The default value for the field. Defaults to Undefined.
             **kwargs: Additional arguments dictionary.
 
@@ -167,23 +163,9 @@ class FieldInfo(_repr.Representation):
     @classmethod
     def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> FieldInfo:
         """
-        Create `FieldInfo` from a bare annotation, e.g.:
-        >>> import pydantic
-        >>> class MyModel(pydantic.BaseModel):
-        >>>     foo: int  # <-- like this
-
-        We also account for the case where the annotation can be an instance of `Annotated` and where
-        one of the (not first) arguments in `Annotated` are an instance of `FieldInfo`, e.g.:
-        >>> import pydantic, annotated_types, typing
-        >>> class MyModel(pydantic.BaseModel):
-        >>>     foo: typing.Annotated[int, annotated_types.Gt(42)]
-        >>>     bar: typing.Annotated[int, Field(gt=42)]
-        """
-        """
         Creates a `FieldInfo` instance from a bare annotation.
 
         Args:
-            cls (class): A class that has a `_find_field_info_arg` method.
             annotation (Union[type[Any], _forward_ref.PydanticForwardRef]): An annotation object.
 
         Returns:
@@ -402,7 +384,7 @@ class FieldInfo(_repr.Representation):
             call_default_factory (bool, optional): Whether to call the default_factory or not. Defaults to False.
 
         Returns:
-            Any: Returns the default value, calling the default factory if requested or `None` if not set.
+            Any: The default value, calling the default factory if requested or `None` if not set.
         """
         if self.default_factory is None:
             return _utils.smart_deepcopy(self.default)
@@ -415,7 +397,7 @@ class FieldInfo(_repr.Representation):
         """Check if the argument is required.
 
         Returns:
-            bool: True if the argument is required, False otherwise.
+            bool: `True` if the argument is required, `False` otherwise.
         """
         return self.default is Undefined and self.default_factory is None
 
@@ -687,7 +669,7 @@ def PrivateAttr(
             If both `default` and `default_factory` are set, an error will be raised.
 
     Returns:
-        Any: Returns an instance of `ModelPrivateAttr` class.
+        Any: An instance of `ModelPrivateAttr` class.
 
     Raises:
         ValueError: If both `default` and `default_factory` are set.
