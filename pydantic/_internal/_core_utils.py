@@ -167,6 +167,10 @@ def remove_unnecessary_invalid_definitions(schema: core_schema.CoreSchema) -> co
 def define_expected_missing_refs(
     schema: core_schema.CoreSchema, allowed_missing_refs: set[str]
 ) -> core_schema.CoreSchema:
+    if not allowed_missing_refs:
+        # in this case, there are no missing refs to potentially substitute, so there's no need to walk the schema
+        # this is a common case (will be hit for all non-generic models), so it's worth optimizing for
+        return schema
     refs = set()
 
     def _record_refs(s: core_schema.CoreSchema) -> core_schema.CoreSchema:
