@@ -6,7 +6,6 @@ from functools import partial
 from typing import Any, Callable
 
 import pydantic_core
-from typing_extensions import Self
 
 from ..config import ConfigDict
 from . import _generate_schema, _typing_extra
@@ -67,7 +66,7 @@ class ValidateCallWrapper:
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
 
-    def __get__(self, obj: Any, objtype: type[Any] | None = None) -> Self:
+    def __get__(self, obj: Any, objtype: type[Any] | None = None) -> ValidateCallWrapper:
         """
         Bind the raw function and return another ValidateCallWrapper wrapping that.
         """
