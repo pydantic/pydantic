@@ -132,15 +132,9 @@ else:
 
     class EmailStr:
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
             import_email_validator()
-            if schema is None:
-                return core_schema.general_after_validator_function(cls.validate, core_schema.str_schema())
-            else:
-                assert schema['type'] == 'str', 'EmailStr must be used with string fields'
-                return core_schema.general_after_validator_function(cls.validate, schema)
+            return core_schema.general_after_validator_function(cls.validate, core_schema.str_schema())
 
         @classmethod
         def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> dict[str, Any]:
