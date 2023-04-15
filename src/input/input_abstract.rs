@@ -90,6 +90,8 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.strict_str()
     }
 
+    fn as_str_strict(&self) -> Option<&str>;
+
     fn validate_bytes(&'a self, strict: bool) -> ValResult<EitherBytes<'a>> {
         if strict {
             self.strict_bytes()
@@ -128,6 +130,8 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     fn lax_int(&self) -> ValResult<i64> {
         self.strict_int()
     }
+
+    fn as_int_strict(&self) -> Option<i64>;
 
     fn validate_float(&self, strict: bool, ultra_strict: bool) -> ValResult<f64> {
         if ultra_strict {
