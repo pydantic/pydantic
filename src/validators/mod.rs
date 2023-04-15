@@ -410,7 +410,7 @@ pub fn build_validator<'a>(
         // function call - validation around a function call
         call::CallValidator,
         // literals
-        literal::LiteralBuilder,
+        literal::LiteralValidator,
         // any
         any::AnyValidator,
         // bytes
@@ -540,11 +540,7 @@ pub enum CombinedValidator {
     // function call - validation around a function call
     FunctionCall(call::CallValidator),
     // literals
-    LiteralSingleString(literal::LiteralSingleStringValidator),
-    LiteralSingleInt(literal::LiteralSingleIntValidator),
-    LiteralMultipleStrings(literal::LiteralMultipleStringsValidator),
-    LiteralMultipleInts(literal::LiteralMultipleIntsValidator),
-    LiteralGeneral(literal::LiteralGeneralValidator),
+    Literal(literal::LiteralValidator),
     // any
     Any(any::AnyValidator),
     // bytes

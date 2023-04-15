@@ -1333,10 +1333,20 @@ LARGE_STR_PREFIX = 'a' * 50
         'few_mixed',
     ],
 )
-def test_validate_literal(benchmark: Any, allowed_values: List[Any], input: Any, expected_val_res: Any) -> None:
+@pytest.mark.parametrize('py_or_json', ['python', 'json'])
+def test_validate_literal(
+    benchmark: Any, allowed_values: List[Any], input: Any, expected_val_res: Any, py_or_json: str
+) -> None:
     validator = SchemaValidator(core_schema.literal_schema(expected=allowed_values))
 
-    res = validator.validate_python(input)
-    assert res == expected_val_res
+    if py_or_json == 'python':
+        res = validator.validate_python(input)
+        assert res == expected_val_res
 
-    benchmark(validator.validate_python, input)
+        benchmark(validator.validate_python, input)
+    else:
+        input_json = json.dumps(input)
+        res = validator.validate_json(input_json)
+        assert res == expected_val_res
+
+        benchmark(validator.validate_json, input_json)
