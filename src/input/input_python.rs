@@ -220,6 +220,14 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
+    fn as_str_strict(&self) -> Option<&str> {
+        if self.get_type().is(get_py_str_type(self.py())) {
+            self.extract().ok()
+        } else {
+            None
+        }
+    }
+
     fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         if let Ok(py_bytes) = self.downcast::<PyBytes>() {
             Ok(py_bytes.into())
@@ -286,6 +294,14 @@ impl<'a> Input<'a> for PyAny {
             float_as_int(self, float)
         } else {
             Err(ValError::new(ErrorType::IntType, self))
+        }
+    }
+
+    fn as_int_strict(&self) -> Option<i64> {
+        if self.get_type().is(get_py_int_type(self.py())) {
+            self.extract().ok()
+        } else {
+            None
         }
     }
 
@@ -696,4 +712,16 @@ pub fn list_as_tuple(list: &PyList) -> &PyTuple {
         Py::from_owned_ptr(list.py(), tuple_ptr)
     };
     py_tuple.into_ref(list.py())
+}
+
+static PY_INT_TYPE: GILOnceCell<PyObject> = GILOnceCell::new();
+
+fn get_py_int_type(py: Python) -> &PyObject {
+    PY_INT_TYPE.get_or_init(py, || PyInt::type_object(py).into())
+}
+
+static PY_STR_TYPE: GILOnceCell<PyObject> = GILOnceCell::new();
+
+fn get_py_str_type(py: Python) -> &PyObject {
+    PY_STR_TYPE.get_or_init(py, || PyString::type_object(py).into())
 }

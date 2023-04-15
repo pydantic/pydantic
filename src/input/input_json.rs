@@ -92,6 +92,13 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
+    fn as_str_strict(&self) -> Option<&str> {
+        match self {
+            JsonInput::String(s) => Some(s.as_str()),
+            _ => None,
+        }
+    }
+
     fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_bytes().into()),
@@ -138,6 +145,13 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::Float(f) => float_as_int(self, *f),
             JsonInput::String(str) => str_as_int(self, str),
             _ => Err(ValError::new(ErrorType::IntType, self)),
+        }
+    }
+
+    fn as_int_strict(&self) -> Option<i64> {
+        match self {
+            JsonInput::Int(i) => Some(*i),
+            _ => None,
         }
     }
 
@@ -349,6 +363,10 @@ impl<'a> Input<'a> for String {
         self.validate_str(false)
     }
 
+    fn as_str_strict(&self) -> Option<&str> {
+        Some(self.as_str())
+    }
+
     fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
         Ok(self.as_bytes().into())
     }
@@ -372,6 +390,10 @@ impl<'a> Input<'a> for String {
             Ok(i) => Ok(i),
             Err(_) => Err(ValError::new(ErrorType::IntParsing, self)),
         }
+    }
+
+    fn as_int_strict(&self) -> Option<i64> {
+        None
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]

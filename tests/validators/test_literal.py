@@ -1,5 +1,6 @@
 import re
 from enum import Enum
+from typing import Any, Callable, List
 
 import pytest
 
@@ -168,7 +169,8 @@ def test_literal_none():
     assert v.isinstance_python(0) is False
     assert v.isinstance_json('null') is True
     assert v.isinstance_json('""') is False
-    assert plain_repr(v) == 'SchemaValidator(title="none",validator=None(NoneValidator),slots=[])'
+    expected_repr_start = 'SchemaValidator(title="literal[None]"'
+    assert plain_repr(v)[: len(expected_repr_start)] == expected_repr_start
 
 
 def test_union():
@@ -195,9 +197,10 @@ def test_union():
     ]
 
 
-def test_enum():
+def test_enum_value():
     class FooEnum(Enum):
         foo = 'foo_value'
+        bar = 'bar_value'
 
     v = SchemaValidator(core_schema.literal_schema([FooEnum.foo]))
     assert v.validate_python(FooEnum.foo) == FooEnum.foo
@@ -213,3 +216,167 @@ def test_enum():
             'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
         }
     ]
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('unknown')
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'literal_error',
+            'loc': (),
+            'msg': "Input should be <FooEnum.foo: 'foo_value'>",
+            'input': 'unknown',
+            'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('"foo_value"')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'literal_error',
+            'loc': (),
+            'msg': "Input should be <FooEnum.foo: 'foo_value'>",
+            'input': 'foo_value',
+            'ctx': {'expected': "<FooEnum.foo: 'foo_value'>"},
+        }
+    ]
+
+
+def test_str_enum_values():
+    class Foo(str, Enum):
+        foo = 'foo_value'
+        bar = 'bar_value'
+
+    v = SchemaValidator(core_schema.literal_schema([Foo.foo]))
+
+    assert v.validate_python(Foo.foo) == Foo.foo
+    assert v.validate_python('foo_value') == Foo.foo
+    assert v.validate_json('"foo_value"') == Foo.foo
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('unknown')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'literal_error',
+            'loc': (),
+            'msg': "Input should be <Foo.foo: 'foo_value'>",
+            'input': 'unknown',
+            'ctx': {'expected': "<Foo.foo: 'foo_value'>"},
+        }
+    ]
+
+
+def test_int_enum_values():
+    class Foo(int, Enum):
+        foo = 2
+        bar = 3
+
+    v = SchemaValidator(core_schema.literal_schema([Foo.foo]))
+
+    assert v.validate_python(Foo.foo) == Foo.foo
+    assert v.validate_python(2) == Foo.foo
+    assert v.validate_json('2') == Foo.foo
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(4)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'literal_error',
+            'loc': (),
+            'msg': 'Input should be <Foo.foo: 2>',
+            'input': 4,
+            'ctx': {'expected': '<Foo.foo: 2>'},
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'reverse, err',
+    [
+        (
+            lambda x: list(reversed(x)),
+            [
+                {
+                    'type': 'literal_error',
+                    'loc': (),
+                    'msg': 'Input should be <Foo.foo: 1> or 1',
+                    'input': 2,
+                    'ctx': {'expected': '<Foo.foo: 1> or 1'},
+                }
+            ],
+        ),
+        (
+            lambda x: x,
+            [
+                {
+                    'type': 'literal_error',
+                    'loc': (),
+                    'msg': 'Input should be 1 or <Foo.foo: 1>',
+                    'input': 2,
+                    'ctx': {'expected': '1 or <Foo.foo: 1>'},
+                }
+            ],
+        ),
+    ],
+)
+def test_mix_int_enum_with_int(reverse: Callable[[List[Any]], List[Any]], err: Any):
+    class Foo(int, Enum):
+        foo = 1
+
+    v = SchemaValidator(core_schema.literal_schema(reverse([1, Foo.foo])))
+
+    assert v.validate_python(Foo.foo) is Foo.foo
+    val = v.validate_python(1)
+    assert val == 1 and val is not Foo.foo
+    val = v.validate_json('1')
+    assert val == 1 and val is not Foo.foo
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(2)
+    assert exc_info.value.errors() == err
+
+
+@pytest.mark.parametrize(
+    'reverse, err',
+    [
+        (
+            lambda x: list(reversed(x)),
+            [
+                {
+                    'type': 'literal_error',
+                    'loc': (),
+                    'msg': "Input should be <Foo.foo: 'foo_val'> or 'foo_val'",
+                    'input': 'bar_val',
+                    'ctx': {'expected': "<Foo.foo: 'foo_val'> or 'foo_val'"},
+                }
+            ],
+        ),
+        (
+            lambda x: x,
+            [
+                {
+                    'type': 'literal_error',
+                    'loc': (),
+                    'msg': "Input should be 'foo_val' or <Foo.foo: 'foo_val'>",
+                    'input': 'bar_val',
+                    'ctx': {'expected': "'foo_val' or <Foo.foo: 'foo_val'>"},
+                }
+            ],
+        ),
+    ],
+)
+def test_mix_str_enum_with_str(reverse: Callable[[List[Any]], List[Any]], err: Any):
+    class Foo(str, Enum):
+        foo = 'foo_val'
+
+    v = SchemaValidator(core_schema.literal_schema(reverse(['foo_val', Foo.foo])))
+
+    assert v.validate_python(Foo.foo) is Foo.foo
+    val = v.validate_python('foo_val')
+    assert val == 'foo_val' and val is not Foo.foo
+    val = v.validate_json('"foo_val"')
+    assert val == 'foo_val' and val is not Foo.foo
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python('bar_val')
+    assert exc_info.value.errors() == err
