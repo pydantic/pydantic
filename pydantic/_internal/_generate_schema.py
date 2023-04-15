@@ -5,6 +5,7 @@ from __future__ import annotations as _annotations
 
 import collections.abc
 import dataclasses
+import inspect
 import re
 import sys
 import typing
@@ -168,7 +169,7 @@ class GenerateSchema:
         return self.config_wrapper.arbitrary_types_allowed
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
-        schema = self._generate_schema(obj)
+        schema = self._generate_schema(obj, from_dunder_get_core_schema=True)
 
         schema = remove_unnecessary_invalid_definitions(schema)
 
@@ -187,9 +188,12 @@ class GenerateSchema:
 
         return schema
 
-    def _model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
+    def model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
         """
         Generate schema for a pydantic model.
+
+        Since models generate schemas for themselves this method is public and can be called
+        from within BaseModel's metaclass.
         """
         model_ref, schema = self._get_or_cache_recursive_ref(cls)
         if schema is not None:
@@ -248,8 +252,16 @@ class GenerateSchema:
         """
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         if get_schema is not None:
+            # (source) -> CoreSchema
+            if len(inspect.signature(get_schema).parameters) == 1:
+                return get_schema(source)
+
+            # (source, handler) -> CoreSchema
+            def handler(source: Any) -> core_schema.CoreSchema:
+                return self._generate_schema(source, False)
+
             # Can return None to tell pydantic not to override
-            return get_schema(source=source, gen_schema=self)
+            return get_schema(source, handler)
 
         if _typing_extra.is_dataclass(obj):
             # For dataclasses, only use the __pydantic_core_schema__ if it is defined on this exact class, not a parent
@@ -262,7 +274,7 @@ class GenerateSchema:
 
         return None
 
-    def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
+    def _generate_schema(self, obj: Any, from_dunder_get_core_schema: bool) -> core_schema.CoreSchema:  # noqa: C901
         """
         Recursively generate a pydantic-core schema for any supported python type.
         """
@@ -291,14 +303,15 @@ class GenerateSchema:
             if self.typevars_map is not None:
                 obj = replace_types(obj, self.typevars_map)
 
-        from_property = self._generate_schema_from_property(obj, obj)
-        if from_property is not None:
-            return from_property
+        if from_dunder_get_core_schema:
+            from_property = self._generate_schema_from_property(obj, obj)
+            if from_property is not None:
+                return from_property
 
         from pydantic.main import BaseModel
 
         if lenient_issubclass(obj, BaseModel):
-            return self._model_schema(obj)
+            return self.model_schema(obj)
 
         if isinstance(obj, PydanticRecursiveRef):
             return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
@@ -1201,12 +1214,15 @@ def apply_annotations(
             continue
         metadata_get_schema = getattr(metadata, '__modify_pydantic_core_schema__', None)
         if metadata_get_schema is not None:
+            if len(inspect.signature(metadata_get_schema).parameters) == 1:
+                return metadata_get_schema(source_type)
+            else:
 
-            def wrap_handler() -> core_schema.CoreSchema:
-                return apply_annotations(schema, annotations, definitions, source_type)
+                def wrap_handler() -> core_schema.CoreSchema:
+                    return apply_annotations(schema, annotations, definitions, source_type)
 
-            schema = metadata_get_schema(source_type, wrap_handler)
-            annotations.clear()
+                schema = metadata_get_schema(source_type, wrap_handler)
+                annotations.clear()
         else:
             schema = apply_single_annotation(schema, metadata, definitions)
 

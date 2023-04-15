@@ -10,7 +10,7 @@ from copy import copy, deepcopy
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
-from typing import Any, Generic, Mapping, Tuple, cast
+from typing import Any, Callable, Generic, Mapping, Tuple, cast
 
 import pydantic_core
 import typing_extensions
@@ -38,7 +38,6 @@ if typing.TYPE_CHECKING:
 
     from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 
-    from ._internal._generate_schema import GenerateSchema
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
     AnyClassMethod = classmethod[Any, Any, Any]
@@ -231,7 +230,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: type[BaseModel], gen_schema: GenerateSchema) -> CoreSchema | None:
+    def __get_pydantic_core_schema__(cls, source: type[BaseModel], handler: Callable[[Any], CoreSchema]) -> CoreSchema:
         # Only use the cached value from this _exact_ class; we don't want one from a parent class
         # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
         if '__pydantic_core_schema__' in cls.__dict__:
@@ -241,7 +240,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             if not cls.__pydantic_generic_metadata__['origin']:
                 return cls.__pydantic_core_schema__
 
-        return None
+        return handler(source)
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:

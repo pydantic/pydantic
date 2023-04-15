@@ -363,7 +363,7 @@ All implementation of `__get_pydantic_core_schema__` *must* accept `**_kwargs` a
 
 ```py
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Type
 
 from pydantic_core import core_schema
 
@@ -380,7 +380,7 @@ class CompressedString:
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Any, **_kwargs: Any
+        cls, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         assert source is CompressedString
         return core_schema.no_info_after_validator_function(

@@ -247,7 +247,9 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
             # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
             return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
 
@@ -391,9 +393,8 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls,
-            **_kwargs: Any,
-        ) -> core_schema.JsonSchema:
+            cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
             return core_schema.json_schema(None)
 
         @classmethod
@@ -432,7 +433,9 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.AfterValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         validator = SecretFieldValidator(cls)
         if issubclass(cls, SecretStr):
             # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
@@ -600,7 +603,9 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.AfterValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             cls.validate,
             core_schema.str_schema(
@@ -709,7 +714,9 @@ class ByteSize(int):
         return core_schema.general_plain_validator_function(cls.validate)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         # TODO better schema
         return core_schema.general_plain_validator_function(cls.validate)
 
@@ -774,7 +781,9 @@ else:
 
     class PastDate:
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
             # used directly as a type
             return core_schema.date_schema(now_op='past')
 
@@ -792,7 +801,9 @@ else:
 
     class FutureDate:
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
             # used directly as a type
             return core_schema.date_schema(now_op='future')
 
@@ -833,7 +844,9 @@ else:
 
     class AwareDatetime:
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
             # used directly as a type
             return core_schema.datetime_schema(tz_constraint='aware')
 
@@ -851,7 +864,9 @@ else:
 
     class NaiveDatetime:
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
             # used directly as a type
             return core_schema.datetime_schema(tz_constraint='naive')
 
