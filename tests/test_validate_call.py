@@ -531,7 +531,6 @@ def foo(dt: datetime = Field(default_factory=lambda: 946684800), /):
     assert module.foo(0) == datetime(1970, 1, 1)
 
 
-@pytest.mark.xfail(reason='waiting for pydantic/pydantic-core#546')
 def test_partial():
     def my_wrapped_function(a: int, b: int, c: int):
         return a + b + c

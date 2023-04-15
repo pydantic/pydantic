@@ -1494,7 +1494,6 @@ def test_literal_validator():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2 - enum validator bug https://github.com/pydantic/pydantic/issues/5242')
 def test_literal_validator_str_enum():
     class Bar(str, Enum):
         FIZ = 'fiz'
