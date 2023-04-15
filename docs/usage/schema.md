@@ -431,7 +431,7 @@ This method receives a single positional argument `schema: pydantic_core.core_sc
 
 ```py
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Callable, Sequence, Type
 
 from pydantic_core import core_schema
 from typing_extensions import Annotated
@@ -444,9 +444,9 @@ class RestrictCharacters:
     alphabet: Sequence[str]
 
     def __modify_pydantic_core_schema__(
-        self,
-        schema: core_schema.CoreSchema,
+        self, source: Type[Any], handler: Callable[[], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
+        schema = handler()  # get the CoreSchema from the type / inner constraints
         if schema['type'] != 'str':
             raise TypeError('RestrictCharacters can only be applied to strings')
         return core_schema.no_info_after_validator_function(

@@ -13,13 +13,11 @@ from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
 from types import FunctionType, LambdaType, MethodType
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Iterator, Mapping, TypeVar, Union
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, get_origin, is_typeddict
-
-from pydantic.annotated_arguments import AfterValidator, BeforeValidator, PlainSerializer, WrapSerializer, WrapValidator
 
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo
@@ -43,10 +41,9 @@ from ._decorators import (
     ModelValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
-    inspect_annotated_serializer,
+    check_if_validator_requires_info_arg,
     inspect_field_serializer,
     inspect_model_serializer,
-    inspect_validator,
 )
 from ._fields import (
     PydanticGeneralMetadata,
@@ -503,7 +500,7 @@ class GenerateSchema:
 
         if field_info.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator, self.definitions)
-        schema = apply_annotations(schema, field_info.metadata, self.definitions)
+        schema = apply_annotations(schema, field_info.metadata, self.definitions, field_info.annotation)
 
         # TODO: remove this V1 compatibility shim once it's deprecated
         # push down any `each_item=True` validators
@@ -575,7 +572,7 @@ class GenerateSchema:
         """
         first_arg, *other_args = get_args(annotated_type)
         schema = self.generate_schema(first_arg)
-        return apply_annotations(schema, other_args, self.definitions)
+        return apply_annotations(schema, other_args, self.definitions, first_arg)
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -683,7 +680,7 @@ class GenerateSchema:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = self.generate_schema(field.annotation)
-        schema = apply_annotations(schema, field.metadata, self.definitions)
+        schema = apply_annotations(schema, field.metadata, self.definitions, annotation)
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -1064,7 +1061,7 @@ def apply_validators(
     Apply validators to a schema.
     """
     for validator in validators:
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        info_arg = check_if_validator_requires_info_arg(validator.func, validator.info.mode)
         if not info_arg:
             val_type: Literal['no-info', 'general', 'field'] = 'no-info'
         elif isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo)):
@@ -1155,7 +1152,7 @@ def apply_model_validators(
     Apply model validators to a schema.
     """
     for validator in validators:
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        info_arg = check_if_validator_requires_info_arg(validator.func, validator.info.mode)
         if validator.info.mode == 'wrap':
             if info_arg:
                 schema = core_schema.general_wrap_validator_function(function=validator.func, schema=schema)
@@ -1176,76 +1173,56 @@ def apply_model_validators(
 
 
 def apply_annotations(
-    schema: core_schema.CoreSchema, annotations: typing.Iterable[Any], definitions: dict[str, core_schema.CoreSchema]
+    schema: core_schema.CoreSchema,
+    annotations: typing.Iterable[Any],
+    definitions: dict[str, core_schema.CoreSchema],
+    source_type: Any,
 ) -> core_schema.CoreSchema:
     """
     Apply arguments from `Annotated` or from `FieldInfo` to a schema.
     """
     handler = CoreMetadataHandler(schema)
-    for metadata in annotations:
-        schema = apply_single_annotation(schema, metadata, definitions)
+
+    def expand_grouped_metadata(annotation: Any) -> Iterator[Any]:
+        if isinstance(annotation, GroupedMetadata):
+            for a in annotation:
+                yield from expand_grouped_metadata(a)
+        else:
+            yield annotation
+
+    annotations = [a_inner for a in annotations for a_inner in expand_grouped_metadata(a)]
+
+    while annotations:
+        metadata = annotations.pop()
+        if metadata is None:
+            continue
+        metadata_get_schema = getattr(metadata, '__modify_pydantic_core_schema__', None)
+        if metadata_get_schema is not None:
+
+            def wrap_handler() -> core_schema.CoreSchema:
+                return apply_annotations(schema, annotations, definitions, source_type)
+
+            schema = metadata_get_schema(source_type, wrap_handler)
+            annotations.clear()
+        else:
+            schema = apply_single_annotation(schema, metadata, definitions)
 
         metadata_js_modify_function = _get_pydantic_modify_json_schema(metadata)
         handler.compose_js_modify_functions(metadata_js_modify_function)
-
     return schema
 
 
-def apply_single_annotation(  # noqa C901
+def apply_single_annotation(
     schema: core_schema.CoreSchema, metadata: Any, definitions: dict[str, core_schema.CoreSchema]
 ) -> core_schema.CoreSchema:
-    if metadata is None:
-        return schema
-
-    metadata_get_schema = getattr(metadata, '__modify_pydantic_core_schema__', None)
-    if metadata_get_schema is not None:
-        return metadata_get_schema(schema)
-
-    if isinstance(metadata, GroupedMetadata):
-        # GroupedMetadata yields `BaseMetadata`s
-        return apply_annotations(schema, metadata, definitions)
-    elif isinstance(metadata, FieldInfo):
-        schema = apply_annotations(schema, metadata.metadata, definitions)
+    if isinstance(metadata, FieldInfo):
+        for field_metadata in metadata.metadata:
+            schema = apply_single_annotation(schema, field_metadata, definitions)
         if metadata.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator, definitions)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
-    elif isinstance(metadata, AfterValidator):
-        info_arg = inspect_validator(metadata.func, 'after')
-        if info_arg:
-            return core_schema.general_after_validator_function(metadata.func, schema=schema)  # type: ignore
-        else:
-            return core_schema.no_info_after_validator_function(metadata.func, schema=schema)  # type: ignore
-    elif isinstance(metadata, BeforeValidator):
-        info_arg = inspect_validator(metadata.func, 'before')
-        if info_arg:
-            return core_schema.general_before_validator_function(metadata.func, schema=schema)  # type: ignore
-        else:
-            return core_schema.no_info_before_validator_function(metadata.func, schema=schema)  # type: ignore
-    elif isinstance(metadata, WrapValidator):
-        info_arg = inspect_validator(metadata.func, 'wrap')
-        if info_arg:
-            return core_schema.general_wrap_validator_function(metadata.func, schema=schema)  # type: ignore
-        else:
-            return core_schema.no_info_wrap_validator_function(metadata.func, schema=schema)  # type: ignore
-    elif isinstance(metadata, PlainSerializer):
-        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
-            function=metadata.func,
-            info_arg=inspect_annotated_serializer(metadata.func, 'plain'),
-            json_return_type=metadata.json_return_type,
-            when_used=metadata.when_used,
-        )
-        return schema
-    elif isinstance(metadata, WrapSerializer):
-        schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-            function=metadata.func,
-            info_arg=inspect_annotated_serializer(metadata.func, 'wrap'),
-            json_return_type=metadata.json_return_type,
-            when_used=metadata.when_used,
-        )
-        return schema
-
-    if isinstance(metadata, PydanticGeneralMetadata):
+    elif isinstance(metadata, PydanticGeneralMetadata):
         metadata_dict = metadata.__dict__
     elif isinstance(metadata, (BaseMetadata, PydanticMetadata)):
         metadata_dict = dataclasses.asdict(metadata)  # type: ignore[call-overload]

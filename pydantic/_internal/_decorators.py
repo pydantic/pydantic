@@ -276,7 +276,7 @@ class DecoratorInfos:
         return res
 
 
-def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:
+def check_if_validator_requires_info_arg(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:
     """
     Look at a field or model validator function and determine if it whether it takes an info argument.
 
@@ -344,7 +344,9 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
         return is_field_serializer, info_arg
 
 
-def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
+def check_if_annotated_serializer_requires_info_arg(
+    serializer: Callable[..., Any], mode: Literal['plain', 'wrap']
+) -> bool:
     """
     Look at a serializer function used via `Annotated` and determine whether it takes an info argument.
 

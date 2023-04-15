@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     ClassVar,
     FrozenSet,
     Generic,
@@ -251,8 +252,10 @@ else:
             return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
 
         @classmethod
-        def __modify_pydantic_core_schema__(cls, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-            return core_schema.general_before_validator_function(lambda v, _: _validators.import_string(v), schema)
+        def __modify_pydantic_core_schema__(
+            cls, _source: Any, handler: Callable[[], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
+            return core_schema.general_before_validator_function(lambda v, _: _validators.import_string(v), handler())
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -296,10 +299,10 @@ class UuidVersion:
         return field_schema
 
     def __modify_pydantic_core_schema__(
-        self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.AfterValidatorFunctionSchema:
+        self, _source: Any, handler: Callable[[], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
-            cast(core_schema.GeneralValidatorFunction, self.validate), schema
+            cast(core_schema.GeneralValidatorFunction, self.validate), handler()
         )
 
     def validate(self, value: UUID, _: core_schema.ValidationInfo) -> UUID:
@@ -329,8 +332,8 @@ class PathType:
         return field_schema
 
     def __modify_pydantic_core_schema__(
-        self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.AfterValidatorFunctionSchema:
+        self, _source: Any, handler: Callable[[], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         function_lookup = {
             'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
             'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
@@ -339,7 +342,7 @@ class PathType:
 
         return core_schema.general_after_validator_function(
             function_lookup[self.path_type],
-            schema,
+            handler(),
         )
 
     @staticmethod
@@ -394,8 +397,10 @@ else:
             return core_schema.json_schema(None)
 
         @classmethod
-        def __modify_pydantic_core_schema__(cls, schema: core_schema.CoreSchema) -> core_schema.JsonSchema:
-            return core_schema.json_schema(schema)
+        def __modify_pydantic_core_schema__(
+            cls, _source: Any, handler: Callable[[], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
+            return core_schema.json_schema(handler())
 
         @classmethod
         def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> dict[str, Any]:
@@ -697,7 +702,9 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __modify_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+    def __modify_pydantic_core_schema__(
+        cls, _source: Any, _handler: Callable[[], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         # TODO better schema
         return core_schema.general_plain_validator_function(cls.validate)
 
@@ -773,8 +780,9 @@ else:
 
         @classmethod
         def __modify_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema, **_kwargs: Any
+            cls, _source: Any, handler: Callable[[], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
+            schema = handler()
             assert schema['type'] == 'date'
             schema['now_op'] = 'past'
             return schema
@@ -790,8 +798,9 @@ else:
 
         @classmethod
         def __modify_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema, **_kwargs: Any
+            cls, _source: Any, handler: Callable[[], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
+            schema = handler()
             assert schema['type'] == 'date'
             schema['now_op'] = 'future'
             return schema
@@ -830,8 +839,9 @@ else:
 
         @classmethod
         def __modify_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema, **_kwargs: Any
+            cls, _source: Any, handler: Callable[[], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
+            schema = handler()
             assert schema['type'] == 'datetime'
             schema['tz_constraint'] = 'aware'
             return schema
@@ -847,8 +857,9 @@ else:
 
         @classmethod
         def __modify_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema, **_kwargs: Any
+            cls, _source: Any, handler: Callable[[], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
+            schema = handler()
             assert schema['type'] == 'datetime'
             schema['tz_constraint'] = 'naive'
             return schema
