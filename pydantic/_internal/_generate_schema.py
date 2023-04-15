@@ -43,10 +43,10 @@ from ._decorators import (
     ModelValidatorDecoratorInfo,
     RootValidatorDecoratorInfo,
     ValidatorDecoratorInfo,
-    inspect_annotated_serializer,
-    inspect_field_serializer,
-    inspect_model_serializer,
-    inspect_validator,
+    does_annotated_serializer_require_info_arg,
+    does_any_validator_require_info_arg,
+    does_field_serializer_require_info_arg,
+    does_model_serializer_require_info_arg,
 )
 from ._fields import (
     PydanticGeneralMetadata,
@@ -1064,7 +1064,7 @@ def apply_validators(
     Apply validators to a schema.
     """
     for validator in validators:
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        info_arg = does_any_validator_require_info_arg(validator.func, validator.info.mode)
         if not info_arg:
             val_type: Literal['no-info', 'general', 'field'] = 'no-info'
         elif isinstance(validator.info, (FieldValidatorDecoratorInfo, ValidatorDecoratorInfo)):
@@ -1101,7 +1101,7 @@ def apply_field_serializers(
     if serializers:
         # use the last serializer to make it easy to override a serializer set on a parent model
         serializer = serializers[-1]
-        is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
+        is_field_serializer, info_arg = does_field_serializer_require_info_arg(serializer.func, serializer.info.mode)
         if serializer.info.mode == 'wrap':
             schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
@@ -1130,7 +1130,7 @@ def apply_model_serializers(
     """
     if serializers:
         serializer = list(serializers)[-1]
-        info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
+        info_arg = does_model_serializer_require_info_arg(serializer.func, serializer.info.mode)
         if serializer.info.mode == 'wrap':
             ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
@@ -1155,7 +1155,7 @@ def apply_model_validators(
     Apply model validators to a schema.
     """
     for validator in validators:
-        info_arg = inspect_validator(validator.func, validator.info.mode)
+        info_arg = does_any_validator_require_info_arg(validator.func, validator.info.mode)
         if validator.info.mode == 'wrap':
             if info_arg:
                 schema = core_schema.general_wrap_validator_function(function=validator.func, schema=schema)
@@ -1211,19 +1211,19 @@ def apply_single_annotation(  # noqa C901
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
     elif isinstance(metadata, AfterValidator):
-        info_arg = inspect_validator(metadata.func, 'after')
+        info_arg = does_any_validator_require_info_arg(metadata.func, 'after')
         if info_arg:
             return core_schema.general_after_validator_function(metadata.func, schema=schema)  # type: ignore
         else:
             return core_schema.no_info_after_validator_function(metadata.func, schema=schema)  # type: ignore
     elif isinstance(metadata, BeforeValidator):
-        info_arg = inspect_validator(metadata.func, 'before')
+        info_arg = does_any_validator_require_info_arg(metadata.func, 'before')
         if info_arg:
             return core_schema.general_before_validator_function(metadata.func, schema=schema)  # type: ignore
         else:
             return core_schema.no_info_before_validator_function(metadata.func, schema=schema)  # type: ignore
     elif isinstance(metadata, WrapValidator):
-        info_arg = inspect_validator(metadata.func, 'wrap')
+        info_arg = does_any_validator_require_info_arg(metadata.func, 'wrap')
         if info_arg:
             return core_schema.general_wrap_validator_function(metadata.func, schema=schema)  # type: ignore
         else:
@@ -1231,7 +1231,7 @@ def apply_single_annotation(  # noqa C901
     elif isinstance(metadata, PlainSerializer):
         schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
             function=metadata.func,
-            info_arg=inspect_annotated_serializer(metadata.func, 'plain'),
+            info_arg=does_annotated_serializer_require_info_arg(metadata.func, 'plain'),
             json_return_type=metadata.json_return_type,
             when_used=metadata.when_used,
         )
@@ -1239,7 +1239,7 @@ def apply_single_annotation(  # noqa C901
     elif isinstance(metadata, WrapSerializer):
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=metadata.func,
-            info_arg=inspect_annotated_serializer(metadata.func, 'wrap'),
+            info_arg=does_annotated_serializer_require_info_arg(metadata.func, 'wrap'),
             json_return_type=metadata.json_return_type,
             when_used=metadata.when_used,
         )
