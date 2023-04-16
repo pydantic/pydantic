@@ -39,7 +39,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic._internal._core_metadata import build_metadata_dict
-from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -2276,12 +2275,14 @@ def test_schema_for_generic_field():
             return v
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, gen_schema: GenerateSchema, **_kwargs: Any
+        def __modify_pydantic_core_schema__(
+            cls,
+            source: Any,
+            handler: Callable[[Any], core_schema.CoreSchema],
         ) -> core_schema.PlainValidatorFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
-            metadata = build_metadata_dict(js_cs_override=gen_schema.generate_schema(param))
+            metadata = build_metadata_dict(js_cs_override=handler(param))
             return core_schema.general_plain_validator_function(
                 GenModel,
                 metadata=metadata,
@@ -2373,19 +2374,19 @@ def test_advanced_generic_schema():
             return v
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, gen_schema: GenerateSchema, **_kwargs: Any
-        ) -> core_schema.PlainValidatorFunctionSchema:
+        def __modify_pydantic_core_schema__(
+            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
                 param = source.__args__[0]
-                metadata = build_metadata_dict(js_cs_override=gen_schema.generate_schema(Optional[param]))
+                metadata = build_metadata_dict(js_cs_override=handler(Optional[param]))
                 return core_schema.general_plain_validator_function(
                     Gen,
                     metadata=metadata,
                 )
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema):
+        def __pydantic_modify_json_schema__(cls, field_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
             the_type = field_schema.pop('anyOf', [{'type': 'string'}])[0]
             field_schema.update(title='Gen title', anyOf=[the_type, {'type': 'array', 'items': the_type}])
             return field_schema
@@ -2404,18 +2405,19 @@ def test_advanced_generic_schema():
             return cls(*v)
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, gen_schema: GenerateSchema, **_kwargs: Any
-        ) -> core_schema.PlainValidatorFunctionSchema:
+        def __modify_pydantic_core_schema__(
+            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema], **_kwargs: Any
+        ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
-                metadata = build_metadata_dict(js_cs_override=gen_schema.generate_schema(Tuple[source.__args__]))
+                metadata = build_metadata_dict(js_cs_override=handler(Tuple[source.__args__]))
                 return core_schema.general_plain_validator_function(
                     GenTwoParams,
                     metadata=metadata,
                 )
+            return handler(source)
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema):
+        def __pydantic_modify_json_schema__(cls, field_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
             field_schema.pop('minItems')
             field_schema.pop('maxItems')
             field_schema.update(examples='examples')
@@ -2426,7 +2428,7 @@ def test_advanced_generic_schema():
         B = 'b'
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema):
+        def __pydantic_modify_json_schema__(cls, field_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
             field_schema.update(title='CustomType title', type='string')
             return field_schema
 

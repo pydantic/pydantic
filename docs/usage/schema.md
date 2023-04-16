@@ -357,13 +357,12 @@ For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
 ## Modifying schema in custom types and custom fields
 
-Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) can *override* schema generation by implementing a `__get_pydantic_core_schema__` method.
+Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) can *override* schema generation by implementing a `__modify_pydantic_core_schema__` method.
 This method receives a single positional argument with the type annotation that corresponds to this type (so in the case of `TheType[T][int]` it would be `TheType[int]`).
-All implementation of `__get_pydantic_core_schema__` *must* accept `**_kwargs` and ignore them; they are used for private implementations.
 
 ```py
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Type
 
 from pydantic_core import core_schema
 
@@ -379,8 +378,8 @@ class CompressedString:
         return ' '.join([self.dictionary[key] for key in self.text])
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: Any, **_kwargs: Any
+    def __modify_pydantic_core_schema__(
+        cls, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         assert source is CompressedString
         return core_schema.no_info_after_validator_function(
@@ -431,7 +430,7 @@ This method receives a single positional argument `schema: pydantic_core.core_sc
 
 ```py
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Callable, Sequence, Type
 
 from pydantic_core import core_schema
 from typing_extensions import Annotated
@@ -444,9 +443,11 @@ class RestrictCharacters:
     alphabet: Sequence[str]
 
     def __modify_pydantic_core_schema__(
-        self,
-        schema: core_schema.CoreSchema,
+        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
+        if not self.alphabet:
+            raise ValueError('Alphabet may not be empty')
+        schema = handler(source)  # get the CoreSchema from the type / inner constraints
         if schema['type'] != 'str':
             raise TypeError('RestrictCharacters can only be applied to strings')
         return core_schema.no_info_after_validator_function(
@@ -487,6 +488,151 @@ except ValidationError as e:
     """
 ```
 
+You can also use the `source` argument to `__modify_pydantic_core_schema__` for runtime type checking within `Annotated` or to otherwise customize the metadata or constraint to match the type it is being applied to.
+
+```py
+from dataclasses import dataclass
+from functools import partial
+from typing import Any, Callable, Generic, Sequence, Set, Type, TypeVar, Union
+
+from pydantic_core import core_schema
+from typing_extensions import Annotated
+
+from pydantic import BaseModel
+
+EitherStr = TypeVar('EitherStr', bound=Union[str, bytes])
+
+
+@dataclass
+class RestrictCharacters(Generic[EitherStr]):
+    alphabet: Sequence[EitherStr]
+
+    def __modify_pydantic_core_schema__(
+        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        if not self.alphabet:
+            raise ValueError('Alphabet may not be empty')
+        # since there is no type checking between the first and subsequent
+        # arguments of Annotated it's easy to do:
+        #   `Annotated[str, RestrictedCharacters(b'not str!')]`
+        # since we have the source type, we can check for this
+        if not isinstance(next(iter(self.alphabet)), source):
+            alphabet_type = type(next(iter(self.alphabet)))
+            raise TypeError(
+                f'RestrictedCharacters[{alphabet_type}] cannot be applied to a field of type {source}'
+            )
+        return core_schema.no_info_after_validator_function(
+            partial(self.validate, alphabet=set(self.alphabet)),
+            handler(source),
+        )
+
+    @staticmethod
+    def validate(value: EitherStr, alphabet: Set[EitherStr]) -> EitherStr:
+        if any(c not in alphabet for c in value):
+            raise ValueError(f'{value!r} is not restricted to {alphabet!r}')
+        return value
+
+
+try:
+
+    class MyModel(BaseModel):
+        value: Annotated[bytes, RestrictCharacters('ABC')]
+
+except TypeError as e:
+    print(e)
+    """
+    RestrictedCharacters[<class 'str'>] cannot be applied to a field of type <class 'bytes'>
+    """
+```
+
+So far we have been wrapping the schema, but if you just want to *modify* it or *ignore* it you can as well.
+To modify the schema first call the handler and then mutate the result:
+
+```py
+from typing import Any, Callable, Type
+
+from pydantic_core import ValidationError, core_schema
+from typing_extensions import Annotated
+
+from pydantic import BaseModel
+
+
+class SmallString:
+    def __modify_pydantic_core_schema__(
+        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        schema = handler(source)
+        assert schema['type'] == 'str'
+        schema['max_length'] = 10  # modify in place
+        return schema
+
+
+class MyModel(BaseModel):
+    value: Annotated[str, SmallString()]
+
+
+try:
+    MyModel(value='too long!!!!!')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for MyModel
+    value
+      String should have at most 10 characters [type=string_too_long, input_value='too long!!!!!', input_type=str]
+    """
+```
+
+To override the schema completely do not call the handler and return your own `CoreSchema`:
+
+```py
+from typing import Any, Callable, Type
+
+from pydantic_core import ValidationError, core_schema
+from typing_extensions import Annotated
+
+from pydantic import BaseModel
+
+
+class AllowAnySubclass:
+    def __modify_pydantic_core_schema__(
+        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        # we can't call handler since it will fail for abitrary types
+        def validate(value: Any) -> Any:
+            if not isinstance(value, source):
+                raise ValueError(
+                    f'Expected an instance of {source}, got an instance of {type(value)}'
+                )
+
+        return core_schema.no_info_plain_validator_function(validate)
+
+
+class Foo:
+    pass
+
+
+class Model(BaseModel):
+    f: Annotated[Foo, AllowAnySubclass()]
+
+
+print(Model(f=Foo()))
+#> f=None
+
+
+class NotFoo:
+    pass
+
+
+try:
+    Model(f=NotFoo())
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    f
+      Value error, Expected an instance of <class '__main__.Foo'>, got an instance of <class '__main__.NotFoo'> [type=value_error, input_value=<__main__.NotFoo object at 0x0123456789ab>, input_type=NotFoo]
+    """
+```
 
 ## JSON Schema Types
 

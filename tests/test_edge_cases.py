@@ -4,7 +4,7 @@ import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
+from typing import Any, Callable, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -1861,7 +1861,7 @@ def test_custom_generic_validators():
             self.t2 = t2
 
         @classmethod
-        def __get_pydantic_core_schema__(cls, source, **kwargs):
+        def __modify_pydantic_core_schema__(cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]):
             schema = core_schema.is_instance_schema(cls)
 
             args = get_args(source)
