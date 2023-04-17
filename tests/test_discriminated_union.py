@@ -363,7 +363,7 @@ if sys.version_info >= (3, 11):
 
 
 @pytest.mark.xfail(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=True
+    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
 )
 @pytest.mark.parametrize('base_class,choices', ENUM_TEST_CASES)
 def test_discriminated_union_enum(base_class, choices):

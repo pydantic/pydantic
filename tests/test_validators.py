@@ -1477,7 +1477,7 @@ def test_assignment_validator_cls():
 
 
 @pytest.mark.xfail(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=True
+    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
 )
 def test_literal_validator():
     class Model(BaseModel):
@@ -1498,9 +1498,6 @@ def test_literal_validator():
     ]
 
 
-@pytest.mark.xfail(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=True
-)
 def test_literal_validator_str_enum():
     class Bar(str, Enum):
         FIZ = 'fiz'
@@ -1525,7 +1522,7 @@ def test_literal_validator_str_enum():
 
 
 @pytest.mark.xfail(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=True
+    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
 )
 def test_nested_literal_validator():
     L1 = Literal['foo']
