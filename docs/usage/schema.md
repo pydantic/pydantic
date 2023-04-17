@@ -549,7 +549,7 @@ class AllowAnySubclass:
     def __get_pydantic_core_schema__(
         self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
-        # we can't call handler since it will fail for abitrary types
+        # we can't call handler since it will fail for arbitrary types
         def validate(value: Any) -> Any:
             if not isinstance(value, source):
                 raise ValueError(
