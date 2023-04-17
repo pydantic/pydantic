@@ -119,7 +119,7 @@ def timedelta_isoformat(td: datetime.timedelta) -> str:
     ISO 8601 encoding for Python timedelta object.
     """
     warnings.warn(
-        'timedelta_isoformat is deprecated, use timedelta.total_seconds() instead.',
+        'timedelta_isoformat is deprecated.',
         DeprecationWarning,
         stacklevel=2,
     )
