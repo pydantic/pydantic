@@ -15,6 +15,7 @@ from . import types
 from ._internal import _fields, _forward_ref, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
 from ._internal._generics import replace_types
+from ._internal._internal_dataclass import slots_dataclass
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
@@ -340,17 +341,23 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
+@slots_dataclass
 class AliasPath:
+    path: list[int | str]
+
     def __init__(self, first_arg: str, *args: str | int) -> None:
-        self.paths = [first_arg] + list(args)
+        self.path = [first_arg] + list(args)
 
     def convert_to_aliases(self) -> list[str | int]:
-        return self.paths
+        return self.path
 
 
+@slots_dataclass
 class AliasChoices:
+    choices: list[str | AliasPath]
+
     def __init__(self, *args: str | AliasPath) -> None:
-        self.choices = args
+        self.choices = list(args)
 
     def convert_to_aliases(self) -> list[list[str | int]]:
         aliases: list[list[str | int]] = []
@@ -368,7 +375,7 @@ def Field(  # noqa C901
     default_factory: typing.Callable[[], Any] | None = None,
     alias: str | None = None,
     alias_priority: int | None = None,
-    validation_alias: str | AliasChoices | AliasPath | None = None,
+    validation_alias: str | AliasPath | AliasChoices | None = None,
     serialization_alias: str | None = None,
     title: str | None = None,
     description: str | None = None,

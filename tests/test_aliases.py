@@ -421,7 +421,7 @@ def test_aliases_json_schema():
     'input,expected',
     [
         ('a', 'a'),
-        (AliasPath('a', 1), ['a', 1]),
+        (AliasPath('a', 'b', 1), ['a', 'b', 1]),
         (AliasChoices('a', 'b'), [['a'], ['b']]),
         (AliasChoices('a', AliasPath('b', 1)), [['a'], ['b', 1]]),
         (AliasChoices(), None),
@@ -440,3 +440,23 @@ def test_validation_alias_invalid_value_type():
 
         class Model(BaseModel):
             x: str = Field(validation_alias=123)
+
+
+def test_validation_alias_parse_data():
+    class Model(BaseModel):
+        x: str = Field(validation_alias=AliasChoices('a', AliasPath('b', 1), 'c'))
+
+    assert Model.model_fields['x'].validation_alias == [['a'], ['b', 1], ['c']]
+    assert Model.model_validate({'a': 'hello'}).x == 'hello'
+    assert Model.model_validate({'b': ['hello', 'world']}).x == 'world'
+    assert Model.model_validate({'c': 'test'}).x == 'test'
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate({'b': ['hello']})
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing',
+            'loc': ('a',),
+            'msg': 'Field required',
+            'input': {'b': ['hello']},
+        }
+    ]
