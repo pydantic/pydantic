@@ -1430,15 +1430,40 @@ def test_int_enum_type():
 
 
 @pytest.mark.parametrize('enum_base', [Enum, IntEnum])
-def test_enum_from_json(enum_base):
+@pytest.mark.parametrize('strict', [True, False])
+def test_enum_from_json(enum_base, strict):
     class MyEnum(enum_base):
         a = 1
 
     class Model(BaseModel):
         my_enum: MyEnum
 
-    m = Model.model_validate_json('{"my_enum":1}', strict=True)
+    m = Model.model_validate_json('{"my_enum":1}', strict=strict)
     assert m.my_enum is MyEnum.a
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_json('{"my_enum":2}', strict=strict)
+
+    if strict:
+        assert exc_info.value.errors() == [
+            {
+                'ctx': {'error': '2 is not a valid test_enum_from_json.<locals>.MyEnum'},
+                'input': 2,
+                'loc': ('my_enum',),
+                'msg': 'Value error, 2 is not a valid test_enum_from_json.<locals>.MyEnum',
+                'type': 'value_error',
+            }
+        ]
+    else:
+        assert exc_info.value.errors() == [
+            {
+                'ctx': {'expected': '1'},
+                'input': 2,
+                'loc': ('my_enum',),
+                'msg': 'Input should be 1',
+                'type': 'literal_error',
+            }
+        ]
 
 
 @pytest.mark.parametrize(
