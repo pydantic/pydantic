@@ -291,6 +291,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         If you override `model_post_init`, it will be called at the end of `__init__` and `model_construct`
         """
         pass
+    
+    def __getitem__(self, item):
+        return getattr(self, item)
 
     def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__class_vars__:
