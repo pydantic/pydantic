@@ -1444,13 +1444,15 @@ def test_enum_from_json(enum_base, strict):
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate_json('{"my_enum":2}', strict=strict)
 
+    my_enum_label = MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
+
     if strict:
         assert exc_info.value.errors() == [
             {
-                'ctx': {'error': '2 is not a valid test_enum_from_json.<locals>.MyEnum'},
+                'ctx': {'error': f'2 is not a valid {my_enum_label}'},
                 'input': 2,
                 'loc': ('my_enum',),
-                'msg': 'Value error, 2 is not a valid test_enum_from_json.<locals>.MyEnum',
+                'msg': f'Value error, 2 is not a valid {my_enum_label}',
                 'type': 'value_error',
             }
         ]
