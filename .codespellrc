@@ -1,3 +1,4 @@
 [codespell]
 skip = .git,*.pdf,*.svg
-# ignore-words-list = 
+# GIR - part of a regex in docs/examples/types_custom_type.py
+ignore-words-list = gir
