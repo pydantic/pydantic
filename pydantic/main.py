@@ -31,7 +31,7 @@ from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import Field, FieldInfo, ModelPrivateAttr
-from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaValue, model_json_schema
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, model_json_schema
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -424,7 +424,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return model_json_schema(cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
 
     @classmethod
-    def model_modify_json_schema(cls, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+    def __pydantic_modify_json_schema__(cls, schema: dict[str, Any]) -> dict[str, Any]:
         """
         Overriding this method provides a simple way to modify the JSON schema generated for the model.
 
@@ -436,7 +436,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         metadata = {'title': cls.model_config.get('title', None) or cls.__name__, 'description': getdoc(cls) or None}
         metadata = {k: v for k, v in metadata.items() if v is not None}
-        return {**metadata, **json_schema}
+        return {**metadata, **schema}
 
     @classmethod
     def model_rebuild(

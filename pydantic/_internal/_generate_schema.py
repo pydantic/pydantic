@@ -236,7 +236,7 @@ class GenerateSchema:
             ref=model_ref,
             config=core_config,
             post_init=model_post_init,
-            metadata=build_metadata_dict(js_modify_function=cls.model_modify_json_schema),
+            metadata=build_metadata_dict(js_modify_function=cls.__pydantic_modify_json_schema__),
         )
         schema = apply_model_serializers(model_schema, decorators.model_serializer.values())
         return apply_model_validators(schema, decorators.model_validator.values())

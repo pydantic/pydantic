@@ -88,7 +88,7 @@ def test_model_validate_root():
     assert m.model_dump_json() == '"a"'
 
     # JSON schema
-    assert m.model_json_schema() == {'title': 'Root', 'type': 'string'}
+    assert m.model_json_schema() == {'title': 'MyModel', 'type': 'string'}
 
 
 def test_parse_root_list():
