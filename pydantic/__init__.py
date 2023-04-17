@@ -15,7 +15,7 @@ from .decorators import field_serializer, field_validator, model_serializer, roo
 from .deprecated.config import BaseConfig
 from .deprecated.tools import *
 from .errors import *
-from .fields import Field, PrivateAttr
+from .fields import AliasPath, AliasPathChoices, Field, PrivateAttr
 from .main import *
 from .networks import *
 from .types import *
@@ -55,6 +55,8 @@ __all__ = [
     'PydanticUndefinedAnnotation',
     # fields
     'Field',
+    'AliasPath',
+    'AliasPathChoices',
     # main
     'BaseModel',
     'create_model',

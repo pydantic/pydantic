@@ -340,13 +340,35 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-def Field(
+class AliasPath:
+    def __init__(self, first_arg: str, *args: str | int) -> None:
+        self.paths = [first_arg] + list(args)
+
+    def convert_to_aliases(self) -> list[str | int]:
+        return self.paths
+
+
+class AliasPathChoices:
+    def __init__(self, *args: str | AliasPath) -> None:
+        self.choices = args
+
+    def convert_to_aliases(self) -> list[list[str | int]]:
+        aliases: list[list[str | int]] = []
+        for c in self.choices:
+            if isinstance(c, AliasPath):
+                aliases.append(c.convert_to_aliases())
+            else:
+                aliases.append([c])
+        return aliases
+
+
+def Field(  # noqa C901
     default: Any = Undefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
     alias: str | None = None,
     alias_priority: int | None = None,
-    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    validation_alias: str | AliasPathChoices | AliasPath | None = None,
     serialization_alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
@@ -462,8 +484,16 @@ def Field(
         if not json_schema_extra:
             json_schema_extra = extra
 
-    if validation_alias is None:
-        validation_alias = alias
+    converted_validation_alias: str | list[str | int] | list[list[str | int]] | None = None
+    if validation_alias:
+        if not isinstance(validation_alias, (str, AliasPathChoices, AliasPath)):
+            raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasPathChoices`, or `AliasPath`')
+
+        if isinstance(validation_alias, (AliasPathChoices, AliasPath)):
+            converted_validation_alias = validation_alias.convert_to_aliases()
+        else:
+            converted_validation_alias = validation_alias
+
     if serialization_alias is None and isinstance(alias, str):
         serialization_alias = alias
 
@@ -472,7 +502,7 @@ def Field(
         default_factory=default_factory,
         alias=alias,
         alias_priority=alias_priority,
-        validation_alias=validation_alias,
+        validation_alias=converted_validation_alias or alias,
         serialization_alias=serialization_alias,
         title=title,
         description=description,
