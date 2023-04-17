@@ -80,7 +80,7 @@ def inspect_namespace(  # noqa C901
     for var_name, value in list(namespace.items()):
         if var_name == 'model_config':
             continue
-        elif isinstance(value, all_ignored_types):
+        elif isinstance(value, all_ignored_types) or value.__class__.__module__ == 'functools':
             ignored_names.add(var_name)
             continue
         elif isinstance(value, ModelPrivateAttr):

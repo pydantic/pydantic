@@ -5,9 +5,11 @@ import pytest
 from pydantic import BaseModel, Field, PrivateAttr, ValidationError, computed_field
 
 try:
-    from functools import cached_property
+    from functools import cached_property, lru_cache, singledispatchmethod
 except ImportError:
     cached_property = None
+    lru_cache = None
+    singledispatchmethod = None
 
 
 def test_computed_fields_get():
@@ -138,7 +140,7 @@ def test_computed_fields_del():
     assert user.model_dump() == {'first': '', 'last': '', 'fullname': ' '}
 
 
-@pytest.mark.skipif(cached_property is None, reason='Need cached_property')
+@pytest.mark.skipif(cached_property is None, reason='cached_property not available')
 def test_cached_property():
     class Model(BaseModel):
         minimum: int = Field(alias='min')
@@ -150,7 +152,18 @@ def test_cached_property():
             """An awesome area"""
             return random.randint(self.minimum, self.maximum)
 
+        @cached_property
+        def cached_property_2(self) -> int:
+            return 42
+
+        @cached_property
+        def _cached_property_3(self) -> int:
+            return 43
+
     rect = Model(min=10, max=10_000)
+    assert rect.__private_attributes__ == {}
+    assert rect.cached_property_2 == 42
+    assert rect._cached_property_3 == 43
     first_n = rect.random_number
     second_n = rect.random_number
     assert first_n == second_n
@@ -226,3 +239,31 @@ def test_computed_fields_repr():
             return self.x * 3
 
     assert repr(Model(x=2)) == 'Model(x=2, triple=6)'
+
+
+@pytest.mark.skipif(singledispatchmethod is None, reason='singledispatchmethod not available')
+def test_functools():
+    class Model(BaseModel, frozen=True):
+        x: int
+
+        @lru_cache
+        def x_pow(self, p):
+            return self.x**p
+
+        @singledispatchmethod
+        def neg(self, arg):
+            raise NotImplementedError('Cannot negate a')
+
+        @neg.register
+        def _(self, arg: int):
+            return -arg
+
+        @neg.register
+        def _(self, arg: bool):
+            return not arg
+
+    m = Model(x=2)
+    assert m.x_pow(1) == 2
+    assert m.x_pow(2) == 4
+    assert m.neg(1) == -1
+    assert m.neg(True) is False
