@@ -1,4 +1,5 @@
 [codespell]
 skip = .git,*.pdf,*.svg
 # GIR - part of a regex in docs/examples/types_custom_type.py
-ignore-words-list = gir
+# ser - popular abbreviation for something "ser"ialized, could be a typo for set
+ignore-words-list = gir,ser
