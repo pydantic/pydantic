@@ -98,6 +98,20 @@ class ModelValidatorDecoratorInfo:
     mode: Literal['wrap', 'before', 'after']
 
 
+@slots_dataclass
+class ComputedFieldInfo:
+    """
+    A container for data from `@computed_field` so that we can access it
+    while building the pydantic-core schema.
+    """
+
+    decorator_repr: ClassVar[str] = '@computed_field'
+    json_return_type: core_schema.JsonReturnTypes | None
+    alias: str | None
+    title: str | None
+    description: str | None
+
+
 DecoratorInfo = Union[
     ValidatorDecoratorInfo,
     FieldValidatorDecoratorInfo,
@@ -105,6 +119,7 @@ DecoratorInfo = Union[
     FieldSerializerDecoratorInfo,
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
+    ComputedFieldInfo,
 ]
 
 ReturnType = TypeVar('ReturnType')
@@ -202,9 +217,10 @@ class DecoratorInfos:
     field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
     model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
     model_validator: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
+    computed_field: dict[str, Decorator[ComputedFieldInfo]] = field(default_factory=dict)
 
     @staticmethod
-    def build(model_dc: type[Any]) -> DecoratorInfos:
+    def build(model_dc: type[Any]) -> DecoratorInfos:  # noqa: C901 (ignore complexity)
         """
         We want to collect all DecFunc instances that exist as
         attributes in the namespace of the class (a BaseModel or dataclass)
@@ -229,6 +245,7 @@ class DecoratorInfos:
                 res.root_validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validator.items()})
                 res.field_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_serializer.items()})
                 res.model_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_serializer.items()})
+                res.computed_field.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_field.items()})
 
         for var_name, var_value in vars(model_dc).items():
             if isinstance(var_value, PydanticDecoratorMarker):
@@ -267,9 +284,13 @@ class DecoratorInfos:
                     res.model_validator[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
-                else:
-                    assert isinstance(info, ModelSerializerDecoratorInfo)
+                elif isinstance(info, ModelSerializerDecoratorInfo):
                     res.model_serializer[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
+                    )
+                else:
+                    assert isinstance(info, ComputedFieldInfo)
+                    res.computed_field[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 setattr(model_dc, var_name, var_value.wrapped)

@@ -573,3 +573,41 @@ def model_validator(
         return _decorators.PydanticDecoratorMarker(f, dec_info)
 
     return dec
+
+
+@overload
+def computed_field(
+    *,
+    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    alias: str | None = None,
+    title: str | None = None,
+    description: str | None = None,
+) -> Callable[[property], property]:
+    ...
+
+
+@overload
+def computed_field(__func: property) -> property:
+    ...
+
+
+def computed_field(
+    __f: property | None = None,
+    *,
+    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    alias: str | None = None,
+    title: str | None = None,
+    description: str | None = None,
+) -> property | Callable[[property], property]:
+    """
+    Decorator to validate the arguments passed to a function, and optionally the return value.
+    """
+
+    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+        dec_info = _decorators.ComputedFieldInfo(json_return_type, alias, title, description)
+        return _decorators.PydanticDecoratorMarker(f, dec_info)
+
+    if __f is None:
+        return dec
+    else:
+        return dec(__f)

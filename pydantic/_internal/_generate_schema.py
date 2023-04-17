@@ -34,6 +34,7 @@ from ._core_utils import (
     remove_unnecessary_invalid_definitions,
 )
 from ._decorators import (
+    ComputedFieldInfo,
     Decorator,
     DecoratorInfos,
     FieldSerializerDecoratorInfo,
@@ -218,6 +219,7 @@ class GenerateSchema:
         try:
             fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
                 {k: self._generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
+                computed_fields=generate_computed_field(decorators.computed_field),
                 return_fields_set=True,
             )
         finally:
@@ -1337,3 +1339,14 @@ def _common_field(
         'frozen': frozen,
         'metadata': metadata,
     }
+
+
+def generate_computed_field(d: dict[str, Decorator[ComputedFieldInfo]]) -> list[core_schema.ComputedField] | None:
+    return [
+        core_schema.computed_field(
+            d.cls_var_name,
+            json_return_type=d.info.json_return_type,
+            alias=d.info.alias,
+        )
+        for d in d.values()
+    ]

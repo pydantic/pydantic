@@ -11,7 +11,7 @@ from pydantic_core.core_schema import (
 from . import dataclasses
 from .analyzed_type import AnalyzedType
 from .config import ConfigDict, Extra
-from .decorators import field_serializer, field_validator, model_serializer, root_validator, validator
+from .decorators import computed_field, field_serializer, field_validator, model_serializer, root_validator, validator
 from .deprecated.config import BaseConfig
 from .deprecated.tools import *
 from .errors import *
@@ -36,6 +36,7 @@ __all__ = [
     'field_validator',
     'field_serializer',
     'model_serializer',
+    'computed_field',
     'ValidationInfo',
     'FieldValidationInfo',
     'SerializationInfo',
