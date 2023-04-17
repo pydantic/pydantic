@@ -84,6 +84,7 @@ impl BuildSerializer for FormatSerializer {
         }
     }
 }
+
 impl FormatSerializer {
     fn call(&self, value: &PyAny) -> Result<PyObject, String> {
         let py = value.py();
