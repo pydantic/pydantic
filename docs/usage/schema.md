@@ -355,15 +355,22 @@ Defaults can be set outside `Annotated` as the assigned value or with `Field.def
 
 For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 
-## Modifying schema in custom types and custom fields
+## Modifying the schema
 
-Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) can *override* schema generation by implementing a `__get_pydantic_core_schema__` method.
-This method receives a single positional argument with the type annotation that corresponds to this type (so in the case of `TheType[T][int]` it would be `TheType[int]`).
-All implementation of `__get_pydantic_core_schema__` *must* accept `**_kwargs` and ignore them; they are used for private implementations.
+Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) as well as Annotated metadata (used as `field_name: Annotated[int, SomeMetadata]`)
+can modify or override the generated schema by implementing `__get_pydantic_core_schema__`.
+This method receives two positional arguments:
+
+1. The type annotation that corresponds to this type (so in the case of `TheType[T][int]` it would be `TheType[int]`).
+2. A handler / callback to call the next implementer of `__get_pydantic_core_schema__`.
+
+The handler system works just like `mode='wrap'` validators. In this case the input is the type and the output is a `CoreSchema`.
+
+Here is an example of a custom type that *overrides* the generated core schema:
 
 ```py
 from dataclasses import dataclass
-from typing import Any, Dict, List
+from typing import Any, Callable, Dict, List, Type
 
 from pydantic_core import core_schema
 
@@ -380,7 +387,7 @@ class CompressedString:
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Any, **_kwargs: Any
+        cls, source: Type[Any], handler: Callable[[Type[Any]], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         assert source is CompressedString
         return core_schema.no_info_after_validator_function(
@@ -426,12 +433,13 @@ print(MyModel(value='fox fox fox dog fox').model_dump(mode='json'))
 #> {'value': 'fox fox fox dog fox'}
 ```
 
-Annotations / constraints can implement `__modify_pydantic_core_schema__` to *modify or override* the core schema that is being generated.
-This method receives a single positional argument `schema: pydantic_core.core_schema.CoreSchema` which you can wrap or ignore and return a completely new schema.
+Since Pydantic would not know how to generate a schema for `CompressedString` if you call `handler(source)` in it's `__get_pydantic_core_schema__` method you would get a `pydantic.errors.PydanticSchemaGenerationError` error. This will be the case for most custom types so you almost never want to call into `handler` for custom types.
+
+The process for Annotated metadata is much the same except that you can generally call into `handler` to have Pydantic handle generating the schema.
 
 ```py
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Any, Callable, Sequence, Type
 
 from pydantic_core import core_schema
 from typing_extensions import Annotated
@@ -443,10 +451,12 @@ from pydantic import BaseModel, ValidationError
 class RestrictCharacters:
     alphabet: Sequence[str]
 
-    def __modify_pydantic_core_schema__(
-        self,
-        schema: core_schema.CoreSchema,
+    def __get_pydantic_core_schema__(
+        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
+        if not self.alphabet:
+            raise ValueError('Alphabet may not be empty')
+        schema = handler(source)  # get the CoreSchema from the type / inner constraints
         if schema['type'] != 'str':
             raise TypeError('RestrictCharacters can only be applied to strings')
         return core_schema.no_info_after_validator_function(
@@ -487,6 +497,94 @@ except ValidationError as e:
     """
 ```
 
+So far we have been wrapping the schema, but if you just want to *modify* it or *ignore* it you can as well.
+To modify the schema first call the handler and then mutate the result:
+
+```py
+from typing import Any, Callable, Type
+
+from pydantic_core import ValidationError, core_schema
+from typing_extensions import Annotated
+
+from pydantic import BaseModel
+
+
+class SmallString:
+    def __get_pydantic_core_schema__(
+        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        schema = handler(source)
+        assert schema['type'] == 'str'
+        schema['max_length'] = 10  # modify in place
+        return schema
+
+
+class MyModel(BaseModel):
+    value: Annotated[str, SmallString()]
+
+
+try:
+    MyModel(value='too long!!!!!')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for MyModel
+    value
+      String should have at most 10 characters [type=string_too_long, input_value='too long!!!!!', input_type=str]
+    """
+```
+
+To override the schema completely do not call the handler and return your own `CoreSchema`:
+
+```py
+from typing import Any, Callable, Type
+
+from pydantic_core import ValidationError, core_schema
+from typing_extensions import Annotated
+
+from pydantic import BaseModel
+
+
+class AllowAnySubclass:
+    def __get_pydantic_core_schema__(
+        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        # we can't call handler since it will fail for abitrary types
+        def validate(value: Any) -> Any:
+            if not isinstance(value, source):
+                raise ValueError(
+                    f'Expected an instance of {source}, got an instance of {type(value)}'
+                )
+
+        return core_schema.no_info_plain_validator_function(validate)
+
+
+class Foo:
+    pass
+
+
+class Model(BaseModel):
+    f: Annotated[Foo, AllowAnySubclass()]
+
+
+print(Model(f=Foo()))
+#> f=None
+
+
+class NotFoo:
+    pass
+
+
+try:
+    Model(f=NotFoo())
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    f
+      Value error, Expected an instance of <class '__main__.Foo'>, got an instance of <class '__main__.NotFoo'> [type=value_error, input_value=<__main__.NotFoo object at 0x0123456789ab>, input_type=NotFoo]
+    """
+```
 
 ## JSON Schema Types
 

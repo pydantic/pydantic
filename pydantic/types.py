@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     ClassVar,
     FrozenSet,
     Generic,
@@ -246,13 +247,16 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
-            # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-            return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
-
-        @classmethod
-        def __modify_pydantic_core_schema__(cls, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-            return core_schema.general_before_validator_function(lambda v, _: _validators.import_string(v), schema)
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
+            if cls is source:
+                # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
+                return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
+            else:
+                return core_schema.general_before_validator_function(
+                    lambda v, _: _validators.import_string(v), handler(source)
+                )
 
         def __repr__(self) -> str:
             return 'ImportString'
@@ -295,11 +299,11 @@ class UuidVersion:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
         return field_schema
 
-    def __modify_pydantic_core_schema__(
-        self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.AfterValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
-            cast(core_schema.GeneralValidatorFunction, self.validate), schema
+            cast(core_schema.GeneralValidatorFunction, self.validate), handler(source)
         )
 
     def validate(self, value: UUID, _: core_schema.ValidationInfo) -> UUID:
@@ -328,9 +332,9 @@ class PathType:
         field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
         return field_schema
 
-    def __modify_pydantic_core_schema__(
-        self, schema: core_schema.CoreSchema, **_kwargs: Any
-    ) -> core_schema.AfterValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         function_lookup = {
             'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
             'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
@@ -339,7 +343,7 @@ class PathType:
 
         return core_schema.general_after_validator_function(
             function_lookup[self.path_type],
-            schema,
+            handler(source),
         )
 
     @staticmethod
@@ -388,19 +392,12 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls,
-            **_kwargs: Any,
-        ) -> core_schema.JsonSchema:
-            return core_schema.json_schema(None)
-
-        @classmethod
-        def __modify_pydantic_core_schema__(cls, schema: core_schema.CoreSchema) -> core_schema.JsonSchema:
-            return core_schema.json_schema(schema)
-
-        @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> dict[str, Any]:
-            field_schema.update(type='string', format='json-string')
-            return field_schema
+            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
+            if cls is source:
+                return core_schema.json_schema(None)
+            else:
+                return core_schema.json_schema(handler(source))
 
         def __repr__(self) -> str:
             return 'Json'
@@ -427,7 +424,9 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.AfterValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         validator = SecretFieldValidator(cls)
         if issubclass(cls, SecretStr):
             # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
@@ -595,7 +594,9 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.AfterValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             cls.validate,
             core_schema.str_schema(
@@ -697,12 +698,9 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __modify_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
-        # TODO better schema
-        return core_schema.general_plain_validator_function(cls.validate)
-
-    @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         # TODO better schema
         return core_schema.general_plain_validator_function(cls.validate)
 
@@ -767,34 +765,34 @@ else:
 
     class PastDate:
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
-            # used directly as a type
-            return core_schema.date_schema(now_op='past')
-
-        @classmethod
-        def __modify_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema, **_kwargs: Any
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
-            assert schema['type'] == 'date'
-            schema['now_op'] = 'past'
-            return schema
+            if cls is source:
+                # used directly as a type
+                return core_schema.date_schema(now_op='past')
+            else:
+                schema = handler(source)
+                assert schema['type'] == 'date'
+                schema['now_op'] = 'past'
+                return schema
 
         def __repr__(self) -> str:
             return 'PastDate'
 
     class FutureDate:
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
-            # used directly as a type
-            return core_schema.date_schema(now_op='future')
-
-        @classmethod
-        def __modify_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema, **_kwargs: Any
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
-            assert schema['type'] == 'date'
-            schema['now_op'] = 'future'
-            return schema
+            if cls is source:
+                # used directly as a type
+                return core_schema.date_schema(now_op='future')
+            else:
+                schema = handler(source)
+                assert schema['type'] == 'date'
+                schema['now_op'] = 'future'
+                return schema
 
         def __repr__(self) -> str:
             return 'FutureDate'
@@ -824,34 +822,34 @@ else:
 
     class AwareDatetime:
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
-            # used directly as a type
-            return core_schema.datetime_schema(tz_constraint='aware')
-
-        @classmethod
-        def __modify_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema, **_kwargs: Any
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
-            assert schema['type'] == 'datetime'
-            schema['tz_constraint'] = 'aware'
-            return schema
+            if cls is source:
+                # used directly as a type
+                return core_schema.datetime_schema(tz_constraint='aware')
+            else:
+                schema = handler(source)
+                assert schema['type'] == 'datetime'
+                schema['tz_constraint'] = 'aware'
+                return schema
 
         def __repr__(self) -> str:
             return 'AwareDatetime'
 
     class NaiveDatetime:
         @classmethod
-        def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.CoreSchema:
-            # used directly as a type
-            return core_schema.datetime_schema(tz_constraint='naive')
-
-        @classmethod
-        def __modify_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema, **_kwargs: Any
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
-            assert schema['type'] == 'datetime'
-            schema['tz_constraint'] = 'naive'
-            return schema
+            if cls is source:
+                # used directly as a type
+                return core_schema.datetime_schema(tz_constraint='naive')
+            else:
+                schema = handler(source)
+                assert schema['type'] == 'datetime'
+                schema['tz_constraint'] = 'naive'
+                return schema
 
         def __repr__(self) -> str:
             return 'NaiveDatetime'
