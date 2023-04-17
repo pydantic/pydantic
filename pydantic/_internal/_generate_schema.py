@@ -1198,39 +1198,26 @@ def apply_annotations(
     for metadata in annotations:
         if metadata is None:
             continue
-        metadata_get_schema = getattr(metadata, '__get_pydantic_core_schema__', None)
-        if metadata_get_schema is not None:
-
-            def _new_inner_schema_handler(
-                source: Any,
-                handler: ModifyCoreSchemaWrapHandler = get_inner_schema,
-                metadata: Any = metadata,
-                metadata_get_schema: Callable[
-                    [Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema
-                ] = metadata_get_schema,
-            ) -> core_schema.CoreSchema:
-                schema = metadata_get_schema(source, handler)
-                metadata_js_modify_function = _get_pydantic_modify_json_schema(metadata)
-                CoreMetadataHandler(schema).compose_js_modify_functions(metadata_js_modify_function)
-                return schema
-
-            get_inner_schema = _new_inner_schema_handler
-        else:
-
-            def _new_inner_after_handler(
-                source: Any,
-                handler: ModifyCoreSchemaWrapHandler = get_inner_schema,
-                metadata: Any = metadata,
-            ) -> core_schema.CoreSchema:
-                schema = handler(source)
-                schema = apply_single_annotation(schema, metadata, definitions)
-                metadata_js_modify_function = _get_pydantic_modify_json_schema(metadata)
-                CoreMetadataHandler(schema).compose_js_modify_functions(metadata_js_modify_function)
-                return schema
-
-            get_inner_schema = _new_inner_after_handler
+        get_inner_schema = get_wrapped_inner_schema(get_inner_schema, metadata, definitions)
 
     return get_inner_schema
+
+
+def get_wrapped_inner_schema(
+    get_inner_schema: ModifyCoreSchemaWrapHandler, metadata: Any, definitions: dict[str, core_schema.CoreSchema]
+) -> Callable[[Any], core_schema.CoreSchema]:
+    metadata_get_schema = getattr(metadata, '__get_pydantic_core_schema__', None) or (
+        lambda source, handler: handler(source)
+    )
+
+    def _new_inner_schema_handler(source: Any) -> core_schema.CoreSchema:
+        schema = metadata_get_schema(source, get_inner_schema)
+        schema = apply_single_annotation(schema, metadata, definitions)
+        metadata_js_modify_function = _get_pydantic_modify_json_schema(metadata)
+        CoreMetadataHandler(schema).compose_js_modify_functions(metadata_js_modify_function)
+        return schema
+
+    return _new_inner_schema_handler
 
 
 def apply_single_annotation(
