@@ -5,7 +5,7 @@ from __future__ import annotations as _annotations
 
 from dataclasses import field
 from functools import partial, partialmethod
-from inspect import Parameter, Signature, signature
+from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast, overload
 
 from pydantic_core import core_schema
@@ -17,6 +17,12 @@ from ._internal_dataclass import slots_dataclass
 
 if TYPE_CHECKING:
     from ..decorators import FieldValidatorModes
+
+try:
+    from functools import cached_property
+except ImportError:
+    # python 3.7
+    cached_property = None
 
 
 @slots_dataclass
@@ -98,20 +104,6 @@ class ModelValidatorDecoratorInfo:
     mode: Literal['wrap', 'before', 'after']
 
 
-@slots_dataclass
-class ComputedFieldInfo:
-    """
-    A container for data from `@computed_field` so that we can access it
-    while building the pydantic-core schema.
-    """
-
-    decorator_repr: ClassVar[str] = '@computed_field'
-    json_return_type: core_schema.JsonReturnTypes | None
-    alias: str | None
-    title: str | None
-    description: str | None
-
-
 DecoratorInfo = Union[
     ValidatorDecoratorInfo,
     FieldValidatorDecoratorInfo,
@@ -119,12 +111,11 @@ DecoratorInfo = Union[
     FieldSerializerDecoratorInfo,
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
-    ComputedFieldInfo,
 ]
 
 ReturnType = TypeVar('ReturnType')
 DecoratedType: TypeAlias = (
-    'Union[classmethod[Any, Any, ReturnType], staticmethod[Any, ReturnType], Callable[..., ReturnType]]'
+    'Union[classmethod[Any, Any, ReturnType], staticmethod[Any, ReturnType], Callable[..., ReturnType], property]'
 )
 
 
@@ -161,7 +152,46 @@ class PydanticDecoratorMarker(Generic[ReturnType]):
             return self.wrapped  # type: ignore[return-value]
 
 
-DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
+@slots_dataclass
+class ComputedFieldInfo:
+    """
+    A container for data from `@computed_field` so that we can access it
+    while building the pydantic-core schema.
+    """
+
+    wrapped_property: property
+    json_return_type: core_schema.JsonReturnTypes | None
+    alias: str | None
+    title: str | None
+    description: str | None
+    repr: bool
+
+    def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> Callable[[], Any]:
+        self.wrapped_property = p = self.wrapped_property.__get__(obj, obj_type)
+        return p
+
+    @property
+    def setter(self) -> Callable[[Callable[[Any], None]], ComputedFieldInfo]:
+        def setter_wrapper(func: Callable[[Any], None]) -> ComputedFieldInfo:
+            self.wrapped_property = self.wrapped_property.setter(func)
+            return self
+
+        return setter_wrapper
+
+    @property
+    def deleter(self) -> Callable[[Callable[[Any], None]], ComputedFieldInfo]:
+        def deleter_wrapper(func: Callable[[Any], None]) -> ComputedFieldInfo:
+            self.wrapped_property = self.wrapped_property.deleter(func)
+            return self
+
+        return deleter_wrapper
+
+    def __set_name__(self, instance: Any, name: str) -> None:
+        if hasattr(self.wrapped_property, '__set_name__'):
+            self.wrapped_property.__set_name__(instance, name)
+
+
+DecoratorInfoType = TypeVar('DecoratorInfoType', bound=Union[DecoratorInfo, ComputedFieldInfo])
 
 
 @slots_dataclass
@@ -182,6 +212,7 @@ class Decorator(Generic[DecoratorInfoType]):
     @staticmethod
     def build(
         cls_: Any,
+        *,
         cls_var_name: str,
         shim: Callable[[Any], Any] | None,
         info: DecoratorInfoType,
@@ -211,13 +242,14 @@ class DecoratorInfos:
     # mapping of name in the class namespace to decorator info
     # note that the name in the class namespace is the function or attribute name
     # not the field name!
+    # TODO these all need to be renamed to plural
     validator: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
     field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
     root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
     field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
     model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
     model_validator: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
-    computed_field: dict[str, Decorator[ComputedFieldInfo]] = field(default_factory=dict)
+    computed_fields: dict[str, Decorator[ComputedFieldInfo]] = field(default_factory=dict)
 
     @staticmethod
     def build(model_dc: type[Any]) -> DecoratorInfos:  # noqa: C901 (ignore complexity)
@@ -245,7 +277,7 @@ class DecoratorInfos:
                 res.root_validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validator.items()})
                 res.field_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_serializer.items()})
                 res.model_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_serializer.items()})
-                res.computed_field.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_field.items()})
+                res.computed_fields.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_fields.items()})
 
         for var_name, var_value in vars(model_dc).items():
             if isinstance(var_value, PydanticDecoratorMarker):
@@ -284,16 +316,17 @@ class DecoratorInfos:
                     res.model_validator[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
-                elif isinstance(info, ModelSerializerDecoratorInfo):
+                else:
+                    assert isinstance(info, ModelSerializerDecoratorInfo)
                     res.model_serializer[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
-                else:
-                    assert isinstance(info, ComputedFieldInfo)
-                    res.computed_field[var_name] = Decorator.build(
-                        model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
-                    )
                 setattr(model_dc, var_name, var_value.wrapped)
+            if isinstance(var_value, ComputedFieldInfo):
+                res.computed_fields[var_name] = Decorator.build(
+                    model_dc, cls_var_name=var_name, shim=None, info=var_value
+                )
+                setattr(model_dc, var_name, var_value.wrapped_property)
         return res
 
 
@@ -511,3 +544,20 @@ def count_positional_params(sig: Signature) -> int:
 
 def can_be_positional(param: Parameter) -> bool:
     return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+
+
+def ensure_property(f: Any) -> Any:
+    """
+    Ensure that a function is a `property` or `cached_property`, or is a valid descriptor.
+
+    Args:
+        f: The function to check.
+
+    Returns:
+        The function, or a `property` or `cached_property` instance wrapping the function.
+    """
+
+    if ismethoddescriptor(f) or isdatadescriptor(f):
+        return f
+    else:
+        return property(f)
