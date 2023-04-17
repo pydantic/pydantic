@@ -271,7 +271,7 @@ if TYPE_CHECKING:
     MappingIntStrAny = Mapping[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
     ReprArgs = Sequence[Tuple[Optional[str], Any]]
-    AnyClassMethod = classmethod[Any]
+    AnyClassMethod = classmethod[Any, Any, Any]
 
 __all__ = (
     'AnyCallable',
