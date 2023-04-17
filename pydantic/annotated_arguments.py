@@ -13,7 +13,7 @@ from ._internal._internal_dataclass import slots_dataclass
 class AfterValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source_type: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         schema = handler(source_type)
@@ -28,7 +28,7 @@ class AfterValidator:
 class BeforeValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source_type: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         schema = handler(source_type)
@@ -43,7 +43,7 @@ class BeforeValidator:
 class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source_type: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         schema = handler(source_type)
@@ -58,7 +58,7 @@ class PlainValidator:
 class WrapValidator:
     func: core_schema.GeneralWrapValidatorFunction | core_schema.FieldWrapValidatorFunction
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source_type: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         schema = handler(source_type)
@@ -75,7 +75,7 @@ class PlainSerializer:
     json_return_type: core_schema.JsonReturnTypes | None = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source_type: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         schema = handler(source_type)
@@ -94,7 +94,7 @@ class WrapSerializer:
     json_return_type: core_schema.JsonReturnTypes | None = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source_type: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         schema = handler(source_type)

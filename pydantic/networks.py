@@ -132,7 +132,7 @@ else:
 
     class EmailStr:
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             import_email_validator()
@@ -164,7 +164,7 @@ class NameEmail(_repr.Representation):
         return field_schema
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         import_email_validator()
@@ -206,7 +206,7 @@ class IPvAnyAddress:
         return field_schema
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.general_plain_validator_function(cls._validate)
@@ -236,7 +236,7 @@ class IPvAnyInterface:
         return field_schema
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.general_plain_validator_function(cls._validate)
@@ -268,7 +268,7 @@ class IPvAnyNetwork:
         return field_schema
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.general_plain_validator_function(cls._validate)

@@ -206,7 +206,7 @@ def test_modify_get_schema_annotated() -> None:
 
     class CustomType:
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             calls.append('CustomType:before')
@@ -217,7 +217,7 @@ def test_modify_get_schema_annotated() -> None:
             return schema
 
     class PydanticMetadata:
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             calls.append('PydanticMetadata:before')
@@ -263,7 +263,7 @@ def test_get_pydantic_core_schema_source_type() -> None:
     types: Set[Any] = set()
 
     class PydanticMarker:
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             types.add(source)

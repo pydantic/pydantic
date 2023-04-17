@@ -358,11 +358,11 @@ For versions of Python prior to 3.9, `typing_extensions.Annotated` can be used.
 ## Modifying the schema
 
 Custom types (used as `field_name: TheType` or `field_name: Annotated[TheType, ...]`) as well as Annotated metadata (used as `field_name: Annotated[int, SomeMetadata]`)
-can modify or override the generated schema by implementing `__modify_pydantic_core_schema__`.
+can modify or override the generated schema by implementing `__get_pydantic_core_schema__`.
 This method receives two positional arguments:
 
 1. The type annotation that corresponds to this type (so in the case of `TheType[T][int]` it would be `TheType[int]`).
-2. A handler / callback to call the next implementer of `__modify_pydantic_core_schema__`.
+2. A handler / callback to call the next implementer of `__get_pydantic_core_schema__`.
 
 The handler system works just like `mode='wrap'` validators. In this case the input is the type and the output is a `CoreSchema`.
 
@@ -386,7 +386,7 @@ class CompressedString:
         return ' '.join([self.dictionary[key] for key in self.text])
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: Type[Any], handler: Callable[[Type[Any]], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         assert source is CompressedString
@@ -433,7 +433,7 @@ print(MyModel(value='fox fox fox dog fox').model_dump(mode='json'))
 #> {'value': 'fox fox fox dog fox'}
 ```
 
-Since Pydantic would not know how to generate a schema for `CompressedString` if you call `handler(source)` in it's `__modify_pydantic_core_schema__` method you would get a `pydantic.errors.PydanticSchemaGenerationError` error. This will be the case for most custom types so you almost never want to call into `handler` for custom types.
+Since Pydantic would not know how to generate a schema for `CompressedString` if you call `handler(source)` in it's `__get_pydantic_core_schema__` method you would get a `pydantic.errors.PydanticSchemaGenerationError` error. This will be the case for most custom types so you almost never want to call into `handler` for custom types.
 
 The process for Annotated metadata is much the same except that you can generally call into `handler` to have Pydantic handle generating the schema.
 
@@ -451,7 +451,7 @@ from pydantic import BaseModel, ValidationError
 class RestrictCharacters:
     alphabet: Sequence[str]
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         if not self.alphabet:
@@ -510,7 +510,7 @@ from pydantic import BaseModel
 
 
 class SmallString:
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         schema = handler(source)
@@ -546,7 +546,7 @@ from pydantic import BaseModel
 
 
 class AllowAnySubclass:
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         # we can't call handler since it will fail for abitrary types

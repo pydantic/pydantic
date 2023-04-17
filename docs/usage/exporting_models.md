@@ -265,7 +265,7 @@ class DayThisYear(date):
     """
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(

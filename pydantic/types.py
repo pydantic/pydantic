@@ -247,7 +247,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             if cls is source:
@@ -299,7 +299,7 @@ class UuidVersion:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
         return field_schema
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
@@ -332,7 +332,7 @@ class PathType:
         field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
         return field_schema
 
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         function_lookup = {
@@ -391,7 +391,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             if cls is source:
@@ -424,7 +424,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         validator = SecretFieldValidator(cls)
@@ -594,7 +594,7 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
@@ -698,7 +698,7 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         # TODO better schema
@@ -765,7 +765,7 @@ else:
 
     class PastDate:
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             if cls is source:
@@ -782,7 +782,7 @@ else:
 
     class FutureDate:
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             if cls is source:
@@ -822,7 +822,7 @@ else:
 
     class AwareDatetime:
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             if cls is source:
@@ -839,7 +839,7 @@ else:
 
     class NaiveDatetime:
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             if cls is source:

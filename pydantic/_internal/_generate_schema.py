@@ -243,13 +243,13 @@ class GenerateSchema:
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """
-        Try to generate schema from either the `__modify_pydantic_core_schema__` function or
+        Try to generate schema from either the `__get_pydantic_core_schema__` function or
         `__pydantic_core_schema__` property.
 
-        Note: `__modify_pydantic_core_schema__` takes priority so it can
+        Note: `__get_pydantic_core_schema__` takes priority so it can
         decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
         """
-        get_schema = getattr(obj, '__modify_pydantic_core_schema__', None)
+        get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
         if get_schema is not None:
             # (source) -> CoreSchema
             if len(inspect.signature(get_schema).parameters) == 1:
@@ -1199,7 +1199,7 @@ def apply_annotations(
         if metadata is None:
             continue
         # check if this supports
-        metadata_get_schema = getattr(metadata, '__modify_pydantic_core_schema__', None)
+        metadata_get_schema = getattr(metadata, '__get_pydantic_core_schema__', None)
         if metadata_get_schema is not None:
 
             def _new_inner_schema_handler(

@@ -225,7 +225,7 @@ class Color(_repr.Representation):
         return 1 if self._rgba.alpha is None else self._rgba.alpha
 
     @classmethod
-    def __modify_pydantic_core_schema__(
+    def __get_pydantic_core_schema__(
         cls, source: Type[Any], handler: Callable[[Any], CoreSchema]
     ) -> core_schema.CoreSchema:
         return core_schema.general_plain_validator_function(

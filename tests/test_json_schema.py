@@ -2275,7 +2275,7 @@ def test_schema_for_generic_field():
             return v
 
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls,
             source: Any,
             handler: Callable[[Any], core_schema.CoreSchema],
@@ -2374,7 +2374,7 @@ def test_advanced_generic_schema():
             return v
 
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
@@ -2405,7 +2405,7 @@ def test_advanced_generic_schema():
             return cls(*v)
 
         @classmethod
-        def __modify_pydantic_core_schema__(
+        def __get_pydantic_core_schema__(
             cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema], **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):

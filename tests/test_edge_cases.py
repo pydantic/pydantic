@@ -1861,7 +1861,7 @@ def test_custom_generic_validators():
             self.t2 = t2
 
         @classmethod
-        def __modify_pydantic_core_schema__(cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]):
+        def __get_pydantic_core_schema__(cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]):
             schema = core_schema.is_instance_schema(cls)
 
             args = get_args(source)
