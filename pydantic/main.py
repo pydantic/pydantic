@@ -274,6 +274,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         return self.__pydantic_fields_set__
 
+    @property
+    def model_computed_fields(self) -> dict[str, _decorators.Decorator[_decorators.ComputedFieldInfo]]:
+        """
+        The computed fields of this model instance.
+        """
+        return self.__pydantic_decorators__.computed_fields
+
     @classmethod
     def model_validate_json(
         cls: type[Model],
@@ -298,10 +305,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 f'"{name}" is a ClassVar of `{self.__class__.__name__}` and cannot be set on an instance. '
                 f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
             )
-        if name.startswith('_'):
+        elif name.startswith('_'):
             _object_setattr(self, name, value)
+            return
         elif self.model_config.get('frozen', None):
             raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
+
+        attr = getattr(self.__class__, name, None)
+        if isinstance(attr, property):
+            attr.__set__(self, value)
         elif self.model_config.get('validate_assignment', None):
             self.__pydantic_validator__.validate_assignment(self, name, value)
         elif self.model_config.get('extra') != 'allow' and name not in self.model_fields:
@@ -546,11 +558,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return m
 
     def __repr_args__(self) -> _repr.ReprArgs:
-        return [
+        yield from [
             (k, v)
             for k, v in self.__dict__.items()
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
+        yield from [(k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.info.repr]
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]

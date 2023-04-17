@@ -8,6 +8,7 @@ Public methods related to:
 
 from __future__ import annotations as _annotations
 
+import inspect
 from functools import partial, partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
@@ -582,12 +583,13 @@ def computed_field(
     alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
-) -> Callable[[property], property]:
+    repr: bool = True,
+) -> Callable[[property], _decorators.ComputedFieldInfo]:
     ...
 
 
 @overload
-def computed_field(__func: property) -> property:
+def computed_field(__func: property) -> _decorators.ComputedFieldInfo:
     ...
 
 
@@ -598,14 +600,20 @@ def computed_field(
     alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
-) -> property | Callable[[property], property]:
+    repr: bool = True,
+) -> _decorators.ComputedFieldInfo | Callable[[property], _decorators.ComputedFieldInfo]:
     """
     Decorator to validate the arguments passed to a function, and optionally the return value.
     """
 
-    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
-        dec_info = _decorators.ComputedFieldInfo(json_return_type, alias, title, description)
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+    def dec(f: Any) -> _decorators.ComputedFieldInfo:
+        nonlocal description
+        if description is None and f.__doc__:
+            description = inspect.cleandoc(f.__doc__)
+
+        # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
+        f = _decorators.ensure_property(f)
+        return _decorators.ComputedFieldInfo(f, json_return_type, alias, title, description, repr)
 
     if __f is None:
         return dec
