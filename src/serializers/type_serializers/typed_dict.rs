@@ -12,8 +12,8 @@ use crate::build_tools::{py_error_type, schema_or_config, ExtraBehavior, SchemaD
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
-    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
-    PydanticSerializer, SchemaFilter, SerializeInfer, TypeSerializer,
+    infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer,
+    ComputedFields, Extra, PydanticSerializer, SchemaFilter, SerializeInfer, TypeSerializer,
 };
 
 #[derive(Debug, Clone)]
@@ -65,6 +65,7 @@ impl TypedDictField {
 #[derive(Debug, Clone)]
 pub struct TypedDictSerializer {
     fields: AHashMap<String, TypedDictField>,
+    computed_fields: Option<ComputedFields>,
     include_extra: bool,
     // isize because we look up include exclude via `.hash()` which returns an isize
     filter: SchemaFilter<isize>,
@@ -93,10 +94,11 @@ impl BuildSerializer for TypedDictSerializer {
         let mut exclude: Vec<Py<PyString>> = Vec::with_capacity(fields_dict.len());
 
         for (key, value) in fields_dict.iter() {
-            let key: String = key.extract()?;
+            let key_py: &PyString = key.downcast()?;
+            let key: String = key_py.extract()?;
             let field_info: &PyDict = value.downcast()?;
 
-            let key_py: Py<PyString> = PyString::intern(py, &key).into_py(py);
+            let key_py: Py<PyString> = key_py.into_py(py);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
                 exclude.push(key_py.clone_ref(py));
@@ -121,8 +123,9 @@ impl BuildSerializer for TypedDictSerializer {
         }
 
         let filter = SchemaFilter::from_vec_hash(py, exclude)?;
+        let computed_fields = ComputedFields::new(schema)?;
 
-        Ok(Self::new(fields, include_extra, filter).into())
+        Ok(Self::new(fields, include_extra, filter, computed_fields).into())
     }
 }
 
@@ -131,11 +134,13 @@ impl TypedDictSerializer {
         fields: AHashMap<String, TypedDictField>,
         include_extra: bool,
         filter: SchemaFilter<isize>,
+        computed_fields: Option<ComputedFields>,
     ) -> Self {
         Self {
             fields,
             include_extra,
             filter,
+            computed_fields,
         }
     }
 
@@ -163,15 +168,15 @@ impl TypeSerializer for TypedDictSerializer {
         // If there is already a model registered (from a dataclass, BaseModel)
         // then do not touch it
         // If there is no model, we (a TypedDict) are the model
-        let extra = Extra {
+        let td_extra = Extra {
             model: extra.model.map_or_else(|| Some(value), Some),
             ..*extra
         };
         match value.downcast::<PyDict>() {
             Ok(py_dict) => {
                 // NOTE! we maintain the order of the input dict assuming that's right
-                let new_dict = PyDict::new(py);
-                let mut used_fields = if extra.check.enabled() {
+                let output_dict = PyDict::new(py);
+                let mut used_fields = if td_extra.check.enabled() {
                     Some(AHashSet::with_capacity(self.fields.len()))
                 } else {
                     None
@@ -180,7 +185,7 @@ impl TypeSerializer for TypedDictSerializer {
                 for (key, value) in py_dict {
                     let extra = Extra {
                         field_name: Some(key.extract()?),
-                        ..extra
+                        ..td_extra
                     };
                     if extra.exclude_none && value.is_none() {
                         continue;
@@ -194,7 +199,7 @@ impl TypeSerializer for TypedDictSerializer {
                                 }
                                 let value = field.serializer.to_python(value, next_include, next_exclude, &extra)?;
                                 let output_key = field.get_key_py(py, &extra);
-                                new_dict.set_item(output_key, value)?;
+                                output_dict.set_item(output_key, value)?;
 
                                 if let Some(ref mut used_fields) = used_fields {
                                     used_fields.insert(key_str);
@@ -203,8 +208,9 @@ impl TypeSerializer for TypedDictSerializer {
                             }
                         }
                         if self.include_extra {
-                            let value = infer_to_python(value, include, exclude, &extra)?;
-                            new_dict.set_item(key, value)?;
+                            // TODO test this
+                            let value = infer_to_python(value, next_include, next_exclude, &extra)?;
+                            output_dict.set_item(key, value)?;
                         } else if extra.check.enabled() {
                             return Err(PydanticSerializationUnexpectedValue::new_err(None));
                         }
@@ -219,11 +225,16 @@ impl TypeSerializer for TypedDictSerializer {
                         return Err(PydanticSerializationUnexpectedValue::new_err(None));
                     }
                 }
-                Ok(new_dict.into_py(py))
+                if let Some(ref computed_fields) = self.computed_fields {
+                    if let Some(model) = td_extra.model {
+                        computed_fields.to_python(model, output_dict, &self.filter, include, exclude, extra)?;
+                    }
+                }
+                Ok(output_dict.into_py(py))
             }
             Err(_) => {
-                extra.warnings.on_fallback_py(self.get_name(), value, &extra)?;
-                infer_to_python(value, include, exclude, &extra)
+                td_extra.warnings.on_fallback_py(self.get_name(), value, &td_extra)?;
+                infer_to_python(value, include, exclude, &td_extra)
             }
         }
     }
@@ -245,7 +256,7 @@ impl TypeSerializer for TypedDictSerializer {
                 // If there is already a model registered (from a dataclass, BaseModel)
                 // then do not touch it
                 // If there is no model, we (a TypedDict) are the model
-                let extra = Extra {
+                let td_extra = Extra {
                     model: extra.model.map_or_else(|| Some(value), Some),
                     ..*extra
                 };
@@ -260,7 +271,7 @@ impl TypeSerializer for TypedDictSerializer {
                 for (key, value) in py_dict {
                     let extra = Extra {
                         field_name: Some(key.extract().map_err(py_err_se_err)?),
-                        ..extra
+                        ..td_extra
                     };
                     if extra.exclude_none && value.is_none() {
                         continue;
@@ -291,6 +302,11 @@ impl TypeSerializer for TypedDictSerializer {
                             let output_key = infer_json_key(key, &extra).map_err(py_err_se_err)?;
                             map.serialize_entry(&output_key, &s)?
                         }
+                    }
+                }
+                if let Some(ref computed_fields) = self.computed_fields {
+                    if let Some(model) = td_extra.model {
+                        computed_fields.serde_serialize::<S>(model, &mut map, &self.filter, include, exclude, extra)?;
                     }
                 }
                 map.end()

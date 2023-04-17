@@ -6,12 +6,10 @@ use ahash::AHashMap;
 
 use crate::build_context::BuildContext;
 use crate::build_tools::{py_error_type, SchemaDict};
-use crate::serializers::filter::SchemaFilter;
-use crate::serializers::shared::CombinedSerializer;
 
 use super::model::ModelSerializer;
 use super::typed_dict::{TypedDictField, TypedDictSerializer};
-use super::BuildSerializer;
+use super::{BuildSerializer, CombinedSerializer, ComputedFields, SchemaFilter};
 
 pub struct DataclassArgsBuilder;
 
@@ -48,8 +46,9 @@ impl BuildSerializer for DataclassArgsBuilder {
         }
 
         let filter = SchemaFilter::from_vec_hash(py, exclude)?;
+        let computed_fields = ComputedFields::new(schema)?;
 
-        Ok(TypedDictSerializer::new(fields, false, filter).into())
+        Ok(TypedDictSerializer::new(fields, false, filter, computed_fields).into())
     }
 }
 

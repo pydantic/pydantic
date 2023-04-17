@@ -23,6 +23,7 @@ pub mod union;
 pub mod url;
 pub mod with_default;
 
+pub(self) use super::computed_fields::ComputedFields;
 pub(self) use super::config::utf8_py_error;
 pub(self) use super::errors::{py_err_se_err, PydanticSerializationError};
 pub(self) use super::extra::{Extra, ExtraOwned, SerMode};

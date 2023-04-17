@@ -85,3 +85,38 @@ def test_serialization_alias():
         assert json.loads(j) == {'a': 'hello', 'BAR': 'more'}
     else:
         assert j == b'{"a":"hello","BAR":"more"}'
+
+
+def test_properties():
+    @dataclasses.dataclass
+    class FooProp:
+        a: str
+        b: bytes
+
+        @property
+        def c(self) -> str:
+            return f'{self.a} {self.b.decode()}'
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'FooProp',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+                core_schema.dataclass_field(name='b', schema=core_schema.bytes_schema()),
+            ],
+            computed_fields=[core_schema.computed_field('c')],
+        ),
+    )
+    s = SchemaSerializer(schema)
+    assert s.to_python(FooProp(a='hello', b=b'more')) == IsStrictDict(a='hello', b=b'more', c='hello more')
+    assert s.to_python(FooProp(a='hello', b=b'more'), mode='json') == IsStrictDict(a='hello', b='more', c='hello more')
+    j = s.to_json(FooProp(a='hello', b=b'more'))
+
+    if on_pypy:
+        assert json.loads(j) == {'a': 'hello', 'b': 'more', 'c': 'hello more'}
+    else:
+        assert j == b'{"a":"hello","b":"more","c":"hello more"}'
+
+    assert s.to_python(FooProp(a='hello', b=b'more'), exclude={'b'}) == IsStrictDict(a='hello', c='hello more')
+    assert s.to_json(FooProp(a='hello', b=b'more'), include={'a'}) == b'{"a":"hello"}'

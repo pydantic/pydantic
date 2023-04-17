@@ -1,11 +1,17 @@
 import dataclasses
 import json
 import platform
+from random import randint
 from typing import Any, ClassVar
+
+try:
+    from functools import cached_property
+except ImportError:
+    cached_property = None
 
 import pytest
 
-from pydantic_core import SchemaSerializer, SchemaValidator, core_schema
+from pydantic_core import PydanticSerializationError, SchemaSerializer, SchemaValidator, core_schema
 
 on_pypy = platform.python_implementation() == 'PyPy'
 # pypy doesn't seem to maintain order of `__dict__`
@@ -511,3 +517,230 @@ def test_function_wrap_field_serializer_to_json():
         )
     )
     assert json.loads(s.to_json(Model(x=1000))) == {'x': '1_000'}
+
+
+def test_property():
+    @dataclasses.dataclass
+    class Model:
+        def __init__(self, **kwargs):
+            for key, value in kwargs.items():
+                setattr(self, key, value)
+
+        @property
+        def area(self) -> bytes:
+            a = self.width * self.height
+            return b'%d' % a
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.typed_dict_schema(
+                {
+                    'width': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'height': core_schema.typed_dict_field(core_schema.int_schema()),
+                },
+                computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
+            ),
+        )
+    )
+    assert s.to_python(Model(width=3, height=4)) == {'width': 3, 'height': 4, 'area': b'12'}
+    assert s.to_python(Model(width=3, height=4), mode='json') == {'width': 3, 'height': 4, 'area': '12'}
+    assert s.to_json(Model(width=3, height=4)) == b'{"width":3,"height":4,"area":"12"}'
+
+
+def test_property_alias():
+    @dataclasses.dataclass
+    class Model:
+        width: int
+        height: int
+
+        @property
+        def area(self) -> int:
+            return self.width * self.height
+
+        @property
+        def volume(self) -> int:
+            return self.area * self.height
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.typed_dict_schema(
+                {
+                    'width': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'height': core_schema.typed_dict_field(core_schema.int_schema()),
+                },
+                computed_fields=[
+                    core_schema.computed_field('area', alias='Area'),
+                    core_schema.computed_field('volume'),
+                ],
+            ),
+        )
+    )
+    assert s.to_python(Model(3, 4)) == {'width': 3, 'height': 4, 'Area': 12, 'volume': 48}
+    assert s.to_python(Model(3, 4), mode='json') == {'width': 3, 'height': 4, 'Area': 12, 'volume': 48}
+    assert s.to_json(Model(3, 4)) == b'{"width":3,"height":4,"Area":12,"volume":48}'
+
+
+@pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
+def test_cached_property_alias():
+    @dataclasses.dataclass
+    class Model:
+        width: int
+        height: int
+
+        @cached_property
+        def area(self) -> int:
+            return self.width * self.height
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.typed_dict_schema(
+                {
+                    'width': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'height': core_schema.typed_dict_field(core_schema.int_schema()),
+                },
+                computed_fields=[core_schema.computed_field('area')],
+            ),
+        )
+    )
+    assert s.to_python(Model(3, 4)) == {'width': 3, 'height': 4, 'area': 12}
+    assert s.to_python(Model(3, 4), mode='json') == {'width': 3, 'height': 4, 'area': 12}
+    assert s.to_json(Model(3, 4)) == b'{"width":3,"height":4,"area":12}'
+
+
+def test_property_attribute_error():
+    @dataclasses.dataclass
+    class Model:
+        width: int
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.typed_dict_schema(
+                {'width': core_schema.typed_dict_field(core_schema.int_schema())},
+                computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
+            ),
+        )
+    )
+    with pytest.raises(AttributeError, match="^'Model' object has no attribute 'area'$"):
+        s.to_python(Model(3))
+    with pytest.raises(AttributeError, match="^'Model' object has no attribute 'area'$"):
+        s.to_python(Model(3), mode='json')
+
+    e = "^Error serializing to JSON: AttributeError: 'Model' object has no attribute 'area'$"
+    with pytest.raises(PydanticSerializationError, match=e):
+        s.to_json(Model(3))
+
+
+def test_property_other_error():
+    @dataclasses.dataclass
+    class Model:
+        width: int
+
+        @property
+        def area(self) -> int:
+            raise ValueError('xxx')
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.typed_dict_schema(
+                {'width': core_schema.typed_dict_field(core_schema.int_schema())},
+                computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
+            ),
+        )
+    )
+    with pytest.raises(ValueError, match='^xxx$'):
+        s.to_python(Model(3))
+
+    with pytest.raises(ValueError, match='^xxx$'):
+        s.to_python(Model(3), mode='json')
+
+    e = '^Error serializing to JSON: ValueError: xxx$'
+    with pytest.raises(PydanticSerializationError, match=e):
+        s.to_json(Model(3))
+
+
+def test_property_include_exclude():
+    @dataclasses.dataclass
+    class Model:
+        a: int
+
+        @property
+        def b(self):
+            return [1, 2, b'3']
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Model,
+            core_schema.typed_dict_schema(
+                {'a': core_schema.typed_dict_field(core_schema.int_schema())},
+                computed_fields=[core_schema.computed_field('b')],
+            ),
+        )
+    )
+    assert s.to_python(Model(1)) == {'a': 1, 'b': [1, 2, b'3']}
+    assert s.to_python(Model(1), exclude={'b'}) == {'a': 1}
+    assert s.to_python(Model(1), include={'a'}) == {'a': 1}
+    assert s.to_python(Model(1), exclude={'b': [0]}) == {'a': 1, 'b': [2, b'3']}
+
+    assert s.to_python(Model(1), mode='json') == {'a': 1, 'b': [1, 2, '3']}
+    assert s.to_python(Model(1), mode='json', exclude={'b'}) == {'a': 1}
+    assert s.to_python(Model(1), mode='json', include={'a'}) == {'a': 1}
+    assert s.to_python(Model(1), mode='json', exclude={'b': [0]}) == {'a': 1, 'b': [2, '3']}
+
+    assert s.to_json(Model(1)) == b'{"a":1,"b":[1,2,"3"]}'
+    assert s.to_json(Model(1), exclude={'b'}) == b'{"a":1}'
+    assert s.to_json(Model(1), include={'a'}) == b'{"a":1}'
+    assert s.to_json(Model(1), exclude={'b': [0]}) == b'{"a":1,"b":[2,"3"]}'
+
+
+@pytest.mark.skipif(cached_property is None, reason='cached_property is not available')
+def test_property_setter():
+    class Square:
+        side: float
+
+        def __init__(self, **kwargs):
+            self.__dict__ = kwargs
+
+        @property
+        def area(self) -> float:
+            return self.side**2
+
+        @area.setter
+        def area(self, area: float) -> None:
+            self.side = area**0.5
+
+        @area.deleter
+        def area(self) -> None:
+            self.side = 0.0
+
+        @cached_property
+        def random_n(self) -> int:
+            return randint(0, 1_000)
+
+    s = SchemaSerializer(
+        core_schema.model_schema(
+            Square,
+            core_schema.typed_dict_schema(
+                {'side': core_schema.typed_dict_field(core_schema.float_schema())},
+                computed_fields=[
+                    core_schema.computed_field('area', json_return_type='float'),
+                    core_schema.computed_field('random_n', alias='The random number', json_return_type='int'),
+                ],
+            ),
+        )
+    )
+
+    sq = Square(side=10.0)
+    the_random_n = sq.random_n
+    assert s.to_python(sq, by_alias=True) == {'side': 10.0, 'area': 100.0, 'The random number': the_random_n}
+    assert s.to_json(sq, by_alias=True) == b'{"side":10.0,"area":100.0,"The random number":%d}' % the_random_n
+    sq.area = 49.0
+    assert s.to_python(sq, by_alias=False) == {'side': 7, 'area': 49, 'random_n': the_random_n}
+    assert s.to_json(sq, by_alias=False) == b'{"side":7.0,"area":49.0,"random_n":%d}' % the_random_n
+    del sq.area
+    assert s.to_python(sq, by_alias=False) == {'side': 0, 'area': 0, 'random_n': the_random_n}
+    assert s.to_python(sq, exclude={'random_n'}) == {'side': 0, 'area': 0}
