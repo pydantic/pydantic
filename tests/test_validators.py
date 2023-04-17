@@ -1,4 +1,5 @@
 import re
+import sys
 from collections import deque
 from datetime import date, datetime
 from enum import Enum
@@ -1475,6 +1476,7 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1494,6 +1496,7 @@ def test_literal_validator():
     ]
 
 
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 def test_literal_validator_str_enum():
     class Bar(str, Enum):
         FIZ = 'fiz'
