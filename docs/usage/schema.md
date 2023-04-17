@@ -679,11 +679,11 @@ You can customize the generated `$ref` JSON location: the definitions are always
 
 This is useful if you need to extend or modify the JSON Schema default definitions location. E.g. with OpenAPI:
 
-```py output="json" test="xfail - what happened to ref_prefix?"
+```py output="json"
 import json
 
 from pydantic import BaseModel
-from pydantic.json_schema import models_json_schema
+from pydantic.analyzed_type import AnalyzedType
 
 
 class Foo(BaseModel):
@@ -695,52 +695,52 @@ class Model(BaseModel):
 
 
 # Default location for OpenAPI
-top_level_schema = models_json_schema([Model], ref_prefix='#/components/schemas/')
+top_level_schema = AnalyzedType.json_schemas(
+    [AnalyzedType(Model)], ref_template='#/components/schemas/{model}'
+)
 print(json.dumps(top_level_schema, indent=2))
+"""
+{
+  "$defs": {
+    "Foo": {
+      "title": "Foo",
+      "type": "object",
+      "properties": {
+        "a": {
+          "type": "integer",
+          "title": "A"
+        }
+      },
+      "required": [
+        "a"
+      ]
+    },
+    "Model": {
+      "title": "Model",
+      "type": "object",
+      "properties": {
+        "a": {
+          "$ref": "#/components/schemas/Foo"
+        }
+      },
+      "required": [
+        "a"
+      ]
+    }
+  }
+}
+"""
 ```
-
 
 It's also possible to extend/override the generated JSON schema in a model.
 
-To do it, use the `Config` sub-class attribute `schema_extra`.
+To do it, implement `__pydantic_modify_json_schema__` on your model:
 
 For example, you could add `examples` to the JSON Schema:
 
-```py output="json" test="xfail - replace schema_extra"
-from pydantic import BaseModel
-
-
-class Person(BaseModel):
-    name: str
-    age: int
-
-    class Config:
-        # TODO: This is no longer valid in v2;
-        #   update example to use __pydantic_modify_json_schema__
-        schema_extra = {
-            'examples': [
-                {
-                    'name': 'John Doe',
-                    'age': 25,
-                }
-            ]
-        }
-
-
-print(Person.schema_json(indent=2))
-```
-
-
-For more fine-grained control, you can alternatively set `schema_extra` to a callable and post-process the generated schema.
-The callable can have one or two positional arguments.
-The first will be the schema dictionary.
-The second, if accepted, will be the model class.
-The callable is expected to mutate the schema dictionary *in-place*; the return value is not used.
-
-For example, the `title` key can be removed from the model's `properties`:
-
-```py output="json" test="xfail - replace schema_extra"
-from typing import Any, Dict, Type
+```py output="json"
+import json
+from typing import Any, Dict
 
 from pydantic import BaseModel
 
@@ -749,14 +749,44 @@ class Person(BaseModel):
     name: str
     age: int
 
-    class Config:
-        # TODO: This is no longer valid in v2;
-        #   update example to use __pydantic_modify_json_schema__
-        @staticmethod
-        def schema_extra(schema: Dict[str, Any], model: Type['Person']) -> None:
-            for prop in schema.get('properties', {}).values():
-                prop.pop('title', None)
+    @classmethod
+    def __pydantic_modify_json_schema__(cls, schema: Dict[str, Any]) -> Dict[str, Any]:
+        schema['examples'] = [
+            {
+                'name': 'John Doe',
+                'age': 25,
+            }
+        ]
+        return schema
 
 
-print(Person.schema_json(indent=2))
+print(json.dumps(Person.model_json_schema(), indent=2))
+"""
+{
+  "title": "Person",
+  "type": "object",
+  "properties": {
+    "name": {
+      "type": "string",
+      "title": "Name"
+    },
+    "age": {
+      "type": "integer",
+      "title": "Age"
+    }
+  },
+  "required": [
+    "name",
+    "age"
+  ],
+  "examples": [
+    {
+      "name": "John Doe",
+      "age": 25
+    }
+  ]
+}
+"""
 ```
+
+Note that you *must* return a schema, even if you are just mutating it in-place.
