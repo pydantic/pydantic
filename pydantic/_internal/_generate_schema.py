@@ -1198,7 +1198,6 @@ def apply_annotations(
     for metadata in annotations:
         if metadata is None:
             continue
-        # check if this supports
         metadata_get_schema = getattr(metadata, '__get_pydantic_core_schema__', None)
         if metadata_get_schema is not None:
 
