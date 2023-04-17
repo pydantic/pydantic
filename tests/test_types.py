@@ -1429,6 +1429,18 @@ def test_int_enum_type():
         Model.model_json_schema()
 
 
+@pytest.mark.parametrize('enum_base', [Enum, IntEnum])
+def test_enum_from_json(enum_base):
+    class MyEnum(enum_base):
+        a = 1
+
+    class Model(BaseModel):
+        my_enum: MyEnum
+
+    m = Model.model_validate_json('{"my_enum":1}', strict=True)
+    assert m.my_enum is MyEnum.a
+
+
 @pytest.mark.parametrize(
     'kwargs,type_',
     [
