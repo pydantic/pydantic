@@ -348,7 +348,7 @@ class AliasPath:
         return self.paths
 
 
-class AliasPathChoices:
+class AliasChoices:
     def __init__(self, *args: str | AliasPath) -> None:
         self.choices = args
 
@@ -368,7 +368,7 @@ def Field(  # noqa C901
     default_factory: typing.Callable[[], Any] | None = None,
     alias: str | None = None,
     alias_priority: int | None = None,
-    validation_alias: str | AliasPathChoices | AliasPath | None = None,
+    validation_alias: str | AliasChoices | AliasPath | None = None,
     serialization_alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
@@ -486,10 +486,10 @@ def Field(  # noqa C901
 
     converted_validation_alias: str | list[str | int] | list[list[str | int]] | None = None
     if validation_alias:
-        if not isinstance(validation_alias, (str, AliasPathChoices, AliasPath)):
-            raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasPathChoices`, or `AliasPath`')
+        if not isinstance(validation_alias, (str, AliasChoices, AliasPath)):
+            raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`')
 
-        if isinstance(validation_alias, (AliasPathChoices, AliasPath)):
+        if isinstance(validation_alias, (AliasChoices, AliasPath)):
             converted_validation_alias = validation_alias.convert_to_aliases()
         else:
             converted_validation_alias = validation_alias

@@ -6,7 +6,7 @@ import pytest
 from dirty_equals import IsStr
 
 from pydantic import BaseModel, ConfigDict, ValidationError
-from pydantic.fields import AliasPath, AliasPathChoices, Field
+from pydantic.fields import AliasChoices, AliasPath, Field
 
 
 def test_alias_generator():
@@ -422,9 +422,9 @@ def test_aliases_json_schema():
     [
         ('a', 'a'),
         (AliasPath('a', 1), ['a', 1]),
-        (AliasPathChoices('a', 'b'), [['a'], ['b']]),
-        (AliasPathChoices('a', AliasPath('b', 1)), [['a'], ['b', 1]]),
-        (AliasPathChoices(), None),
+        (AliasChoices('a', 'b'), [['a'], ['b']]),
+        (AliasChoices('a', AliasPath('b', 1)), [['a'], ['b', 1]]),
+        (AliasChoices(), None),
     ],
 )
 def test_validation_alias_path(input, expected):
@@ -435,7 +435,7 @@ def test_validation_alias_path(input, expected):
 
 
 def test_validation_alias_invalid_value_type():
-    m = 'Invalid `validation_alias` type. it should be `str`, `AliasPathChoices`, or `AliasPath`'
+    m = 'Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`'
     with pytest.raises(TypeError, match=m):
 
         class Model(BaseModel):

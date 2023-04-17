@@ -15,7 +15,7 @@ from .decorators import field_serializer, field_validator, model_serializer, roo
 from .deprecated.config import BaseConfig
 from .deprecated.tools import *
 from .errors import *
-from .fields import AliasPath, AliasPathChoices, Field, PrivateAttr
+from .fields import AliasChoices, AliasPath, Field, PrivateAttr
 from .main import *
 from .networks import *
 from .types import *
@@ -54,9 +54,9 @@ __all__ = [
     'PydanticSchemaGenerationError',
     'PydanticUndefinedAnnotation',
     # fields
-    'Field',
     'AliasPath',
-    'AliasPathChoices',
+    'AliasChoices',
+    'Field',
     # main
     'BaseModel',
     'create_model',
