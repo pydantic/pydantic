@@ -1,5 +1,8 @@
 import platform
 import re
+import sys
+from datetime import timedelta
+from pathlib import Path
 from types import SimpleNamespace
 from typing import Any, Dict, List, Type
 
@@ -8,6 +11,15 @@ from typing_extensions import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, model_serializer, root_validator
 from pydantic.config import Extra
+from pydantic.deprecated.decorator import validate_arguments
+from pydantic.deprecated.json import custom_pydantic_encoder, pydantic_encoder, timedelta_isoformat
+from pydantic.deprecated.parse import load_file, load_str_bytes
+from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
+
+if sys.version_info < (3, 11):
+    from typing_extensions import get_overloads
+else:
+    from typing import get_overloads
 
 
 def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
@@ -612,3 +624,60 @@ def test_get_value():
             exclude_none=False,
         )
     assert v == [1, 2, 3]
+
+
+def test_deprecated_module(tmp_path: Path) -> None:
+    class Model(BaseModel):
+        x: int
+
+    assert hasattr(parse_obj_as, '__deprecated__')
+    with pytest.warns(
+        DeprecationWarning, match='parse_obj_as is deprecated. Use pydantic.AnalyzedType.validate_python instead.'
+    ):
+        parse_obj_as(Model, {'x': 1})
+
+    assert hasattr(schema_json_of, '__deprecated__')
+    with pytest.warns(
+        DeprecationWarning, match='schema_json_of is deprecated. Use pydantic.AnalyzedType.json_schema instead.'
+    ):
+        schema_json_of(Model)
+
+    assert hasattr(schema_of, '__deprecated__')
+    with pytest.warns(
+        DeprecationWarning, match='schema_of is deprecated. Use pydantic.AnalyzedType.json_schema instead.'
+    ):
+        schema_of(Model)
+
+    assert hasattr(load_str_bytes, '__deprecated__')
+    with pytest.warns(DeprecationWarning, match='load_str_bytes is deprecated.'):
+        load_str_bytes('{"x": 1}')
+
+    assert hasattr(load_file, '__deprecated__')
+    file = tmp_path / 'main.py'
+    file.write_text('{"x": 1}')
+    with pytest.warns(DeprecationWarning, match='load_file is deprecated.'):
+        load_file(file)
+
+    assert hasattr(pydantic_encoder, '__deprecated__')
+    with pytest.warns(DeprecationWarning, match='pydantic_encoder is deprecated, use BaseModel.model_dump instead.'):
+        pydantic_encoder(Model(x=1))
+
+    assert hasattr(custom_pydantic_encoder, '__deprecated__')
+    with pytest.warns(
+        DeprecationWarning, match='custom_pydantic_encoder is deprecated, use BaseModel.model_dump instead.'
+    ):
+        custom_pydantic_encoder({int: lambda x: str(x)}, Model(x=1))
+
+    assert hasattr(timedelta_isoformat, '__deprecated__')
+    with pytest.warns(DeprecationWarning, match='timedelta_isoformat is deprecated.'):
+        timedelta_isoformat(timedelta(seconds=1))
+
+    assert all(hasattr(func, '__deprecated__') for func in get_overloads(validate_arguments))
+    with pytest.warns(
+        DeprecationWarning, match='The `validate_arguments` method is deprecated; use `validate_call` instead.'
+    ):
+
+        def test(a: int, b: int):
+            pass
+
+        validate_arguments()(test)
