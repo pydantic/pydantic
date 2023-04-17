@@ -446,10 +446,10 @@ def constr(
     to_upper: bool = False,
     to_lower: bool = False,
     strict: bool = False,
-    min_length: int = None,
-    max_length: int = None,
-    curtail_length: int = None,
-    regex: str = None,
+    min_length: Optional[int] = None,
+    max_length: Optional[int] = None,
+    curtail_length: Optional[int] = None,
+    regex: Optional[str] = None,
 ) -> Type[str]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
