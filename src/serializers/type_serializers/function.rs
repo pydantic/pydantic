@@ -447,7 +447,7 @@ impl SerializationCallable {
     }
 }
 
-fn get_json_return_type(schema: &PyDict) -> PyResult<Option<ObType>> {
+pub fn get_json_return_type(schema: &PyDict) -> PyResult<Option<ObType>> {
     match schema.get_as::<&str>(intern!(schema.py(), "json_return_type"))? {
         Some(t) => Ok(Some(
             ObType::from_str(t).map_err(|_| py_error_type!("Unknown return type {:?}", t))?,

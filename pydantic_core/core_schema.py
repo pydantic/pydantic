@@ -412,6 +412,29 @@ SerSchema = Union[
 ]
 
 
+class ComputedField(TypedDict, total=False):
+    type: Required[Literal['computed-field']]
+    property_name: Required[str]
+    json_return_type: JsonReturnTypes
+    alias: str
+
+
+def computed_field(
+    property_name: str, *, json_return_type: JsonReturnTypes | None = None, alias: str | None = None
+) -> ComputedField:
+    """
+    ComputedFields are properties of a model or dataclass that are included in serialization.
+
+    Args:
+        property_name: The name of the property on the model or dataclass
+        json_return_type: The type that the property returns if `mode='json'`
+        alias: The name to use in the serialized output
+    """
+    return dict_not_none(
+        type='computed-field', property_name=property_name, json_return_type=json_return_type, alias=alias
+    )
+
+
 class AnySchema(TypedDict, total=False):
     type: Required[Literal['any']]
     ref: str
@@ -2633,6 +2656,7 @@ def typed_dict_field(
 class TypedDictSchema(TypedDict, total=False):
     type: Required[Literal['typed-dict']]
     fields: Required[Dict[str, TypedDictField]]
+    computed_fields: List[ComputedField]
     strict: bool
     extra_validator: CoreSchema
     return_fields_set: bool
@@ -2649,6 +2673,7 @@ class TypedDictSchema(TypedDict, total=False):
 def typed_dict_schema(
     fields: Dict[str, TypedDictField],
     *,
+    computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extra_validator: CoreSchema | None = None,
     return_fields_set: bool | None = None,
@@ -2675,6 +2700,7 @@ def typed_dict_schema(
 
     Args:
         fields: The fields to use for the typed dict
+        computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
         extra_validator: The extra validator to use for the typed dict
         return_fields_set: Whether the typed dict should return a fields set
@@ -2689,6 +2715,7 @@ def typed_dict_schema(
     return dict_not_none(
         type='typed-dict',
         fields=fields,
+        computed_fields=computed_fields,
         strict=strict,
         extra_validator=extra_validator,
         return_fields_set=return_fields_set,
@@ -2851,6 +2878,7 @@ class DataclassArgsSchema(TypedDict, total=False):
     type: Required[Literal['dataclass-args']]
     dataclass_name: Required[str]
     fields: Required[List[DataclassField]]
+    computed_fields: List[ComputedField]
     populate_by_name: bool  # default: False
     collect_init_only: bool  # default: False
     ref: str
@@ -2863,6 +2891,7 @@ def dataclass_args_schema(
     dataclass_name: str,
     fields: list[DataclassField],
     *,
+    computed_fields: List[ComputedField] | None = None,
     populate_by_name: bool | None = None,
     collect_init_only: bool | None = None,
     ref: str | None = None,
@@ -2890,6 +2919,7 @@ def dataclass_args_schema(
     Args:
         dataclass_name: The name of the dataclass being validated
         fields: The fields to use for the dataclass
+        computed_fields: Computed fields to use when serializing the dataclass
         populate_by_name: Whether to populate by name
         collect_init_only: Whether to collect init only fields into a dict to pass to `__post_init__`
         ref: optional unique identifier of the schema, used to reference the schema in other places
@@ -2901,6 +2931,7 @@ def dataclass_args_schema(
         type='dataclass-args',
         dataclass_name=dataclass_name,
         fields=fields,
+        computed_fields=computed_fields,
         populate_by_name=populate_by_name,
         collect_init_only=collect_init_only,
         ref=ref,
