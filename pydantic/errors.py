@@ -57,7 +57,7 @@ PydanticErrorCodes = Literal[
 
 class PydanticErrorMixin:
     """
-    A Pydantic Mixin class for common functions.
+    A mixin class for common functionality shared by all Pydantic-specific errors.
 
     Attributes:
         message (str): A message describing the error.
@@ -77,14 +77,14 @@ class PydanticErrorMixin:
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
     """
-    Error raised by incorrect use of Pydantic.
+    Error raised due to incorrect use of Pydantic.
     """
 
     pass
 
 
 class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
-    """Defines a `NameError` that occurred due to an undefined annotation.
+    """A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.
 
     Attributes:
         name (str): Name of the error.
@@ -115,7 +115,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
 
 class PydanticSchemaGenerationError(PydanticUserError):
     """
-    Error raised when a schema has not been generated correctly.
+    Error raised during failures to generate a `CoreSchema` for some type.
 
     Attributes:
         message (str): Description of the error.
@@ -127,7 +127,7 @@ class PydanticSchemaGenerationError(PydanticUserError):
 
 class PydanticInvalidForJsonSchema(PydanticUserError):
     """
-    Error raised when a type from a `CoreSchema` is not compatible with JSON schema generation.
+    Error raised during failures to generate a JSON schema for some `CoreSchema`.
 
     Attributes:
         message (str): Description of the error.
