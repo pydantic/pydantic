@@ -63,49 +63,56 @@ def timedelta_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_s
 
 @schema_function(Enum)
 def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> core_schema.CoreSchema:
+    cases = list(enum_type.__members__.values())
+
+    if not cases:
+        # Use an isinstance check for enums with no cases.
+        # This won't work with serialization or JSON schema, but that's okay -- the most important
+        # use case for this is creating typevar bounds for generics that should be restricted to enums.
+        # This is more consistent than it might seem at first, since you can only subclass enum.Enum
+        # (or subclasses of enum.Enum) if all parent classes have no cases.
+        return core_schema.is_instance_schema(enum_type)
+
+    if len(cases) == 1:
+        expected = repr(cases[0].value)
+    else:
+        expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
+
     def to_enum(__input_value: Any, _: core_schema.ValidationInfo) -> Enum:
         try:
             return enum_type(__input_value)
         except ValueError:
-            raise PydanticCustomError('enum', 'Input is not a valid enum member')
+            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})
 
     enum_ref = get_type_ref(enum_type)
-    literal_schema = core_schema.literal_schema(
-        [m.value for m in enum_type.__members__.values()],
-    )
     description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
     if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
         description = None
     updates = {'title': enum_type.__name__, 'description': description}
     updates = {k: v for k, v in updates.items() if v is not None}
     metadata = build_metadata_dict(
-        js_cs_override=literal_schema.copy(), js_modify_function=lambda s: update_json_schema(s, updates)
+        js_cs_override=core_schema.literal_schema([x.value for x in cases]),
+        js_modify_function=lambda s: update_json_schema(s, updates),
     )
 
-    lax: CoreSchema
-    json_type: Literal['int', 'float', 'str']
+    strict_json_types: set[Literal['int', 'float', 'str']]
+    to_enum_validator = core_schema.general_plain_validator_function(to_enum)
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         updates['type'] = 'integer'
-        lax = core_schema.chain_schema(
-            [core_schema.int_schema(), literal_schema, core_schema.general_plain_validator_function(to_enum)],
-            metadata=metadata,
-        )
-        json_type = 'int'
+        strict_json_types = {'int'}
+        lax: core_schema.CoreSchema = core_schema.chain_schema([core_schema.int_schema(), to_enum_validator])
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'string'
-        lax = core_schema.chain_schema(
-            [core_schema.str_schema(), literal_schema, core_schema.general_plain_validator_function(to_enum)],
-            metadata=metadata,
-        )
-        json_type = 'str'
+        strict_json_types = {'str'}
+        lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
     else:
-        lax = core_schema.general_after_validator_function(to_enum, literal_schema, metadata=metadata)
-        json_type = 'str'
+        lax = to_enum_validator
+        strict_json_types = {'int', 'float', 'str'}
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
-        strict_schema=core_schema.is_instance_schema(enum_type, json_types={json_type}),
+        strict_schema=core_schema.is_instance_schema(enum_type, json_types=strict_json_types, json_function=enum_type),
         ref=enum_ref,
         metadata=metadata,
     )

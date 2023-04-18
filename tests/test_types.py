@@ -31,7 +31,7 @@ from uuid import UUID
 
 import annotated_types
 import pytest
-from dirty_equals import HasRepr
+from dirty_equals import HasRepr, IsStr
 from pydantic_core._pydantic_core import PydanticCustomError, SchemaError
 from typing_extensions import Annotated, Literal, TypedDict
 
@@ -40,6 +40,7 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
+    AnalyzedType,
     AwareDatetime,
     BaseModel,
     ByteSize,
@@ -63,6 +64,7 @@ from pydantic import (
     PastDate,
     PositiveFloat,
     PositiveInt,
+    PydanticInvalidForJsonSchema,
     SecretBytes,
     SecretStr,
     StrictBool,
@@ -1325,7 +1327,7 @@ def test_enum_fails(cooking_model):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'type': 'literal_error',
+            'type': 'enum',
             'loc': ('tool',),
             'msg': 'Input should be 1 or 2',
             'input': 3,
@@ -1341,18 +1343,143 @@ def test_int_enum_successful_for_str_int(cooking_model):
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
-def test_enum_type():
-    with pytest.raises(SchemaError, match='"expected" should have length > 0'):
+def test_plain_enum_validate():
+    class MyEnum(Enum):
+        a = 1
 
-        class Model(BaseModel):
-            my_int_enum: Enum
+    class Model(BaseModel):
+        x: MyEnum
+
+    m = Model(x=MyEnum.a)
+    assert m.x is MyEnum.a
+
+    assert AnalyzedType(MyEnum).validate_python(1) is MyEnum.a
+    with pytest.raises(ValidationError) as exc_info:
+        AnalyzedType(MyEnum).validate_python(1, strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'class': 'test_plain_enum_validate.<locals>.MyEnum'},
+            'input': 1,
+            'loc': (),
+            'msg': IsStr(regex='Input should be an instance of test_plain_enum_validate.<locals>.MyEnum'),
+            'type': 'is_instance_of',
+        }
+    ]
+
+
+def test_plain_enum_validate_json():
+    class MyEnum(Enum):
+        a = 1
+
+    class Model(BaseModel):
+        x: MyEnum
+
+    m = Model.model_validate_json('{"x":1}')
+    assert m.x is MyEnum.a
+
+
+def test_enum_type():
+    class Model(BaseModel):
+        my_enum: Enum
+
+    class MyEnum(Enum):
+        a = 1
+
+    m = Model(my_enum=MyEnum.a)
+    assert m.my_enum == MyEnum.a
+    assert m.model_dump() == {'my_enum': MyEnum.a}
+    assert m.model_dump_json() == '{"my_enum":1}'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(my_enum=1)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'class': 'Enum'},
+            'input': 1,
+            'loc': ('my_enum',),
+            'msg': 'Input should be an instance of Enum',
+            'type': 'is_instance_of',
+        }
+    ]
+
+    with pytest.raises(
+        PydanticInvalidForJsonSchema,
+        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'Enum'>)"),
+    ):
+        Model.model_json_schema()
 
 
 def test_int_enum_type():
-    with pytest.raises(SchemaError, match='"expected" should have length > 0'):
+    class Model(BaseModel):
+        my_enum: IntEnum
 
-        class Model(BaseModel):
-            my_int_enum: IntEnum
+    class MyEnum(Enum):
+        a = 1
+
+    class MyIntEnum(IntEnum):
+        b = 2
+
+    m = Model(my_enum=MyIntEnum.b)
+    assert m.my_enum == MyIntEnum.b
+    assert m.model_dump() == {'my_enum': MyIntEnum.b}
+    assert m.model_dump_json() == '{"my_enum":2}'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(my_enum=MyEnum.a)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'class': 'IntEnum'},
+            'input': MyEnum.a,
+            'loc': ('my_enum',),
+            'msg': 'Input should be an instance of IntEnum',
+            'type': 'is_instance_of',
+        }
+    ]
+
+    with pytest.raises(
+        PydanticInvalidForJsonSchema,
+        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'IntEnum'>)"),
+    ):
+        Model.model_json_schema()
+
+
+@pytest.mark.parametrize('enum_base', [Enum, IntEnum])
+@pytest.mark.parametrize('strict', [True, False])
+def test_enum_from_json(enum_base, strict):
+    class MyEnum(enum_base):
+        a = 1
+
+    class Model(BaseModel):
+        my_enum: MyEnum
+
+    m = Model.model_validate_json('{"my_enum":1}', strict=strict)
+    assert m.my_enum is MyEnum.a
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_json('{"my_enum":2}', strict=strict)
+
+    my_enum_label = MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
+
+    if strict:
+        assert exc_info.value.errors() == [
+            {
+                'ctx': {'error': f'2 is not a valid {my_enum_label}'},
+                'input': 2,
+                'loc': ('my_enum',),
+                'msg': f'Value error, 2 is not a valid {my_enum_label}',
+                'type': 'value_error',
+            }
+        ]
+    else:
+        assert exc_info.value.errors() == [
+            {
+                'ctx': {'expected': '1'},
+                'input': 2,
+                'loc': ('my_enum',),
+                'msg': 'Input should be 1',
+                'type': 'enum',
+            }
+        ]
 
 
 @pytest.mark.parametrize(
