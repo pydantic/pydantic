@@ -4,8 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict
 
 dataclass_kwargs: Dict[str, Any]
 if sys.version_info >= (3, 10):
-    # dataclass_kwargs = {'slots': True}
-    dataclass_kwargs = {}
+    dataclass_kwargs = {'slots': True}
 else:
     dataclass_kwargs = {}
 
