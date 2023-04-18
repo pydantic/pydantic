@@ -8,10 +8,9 @@ from copy import copy, deepcopy
 from typing import Callable, Dict, ForwardRef, List, NewType, Tuple, TypeVar, Union
 
 import pytest
-from pkg_resources import safe_version
 from typing_extensions import Annotated, Literal
 
-from pydantic import VERSION, BaseModel, ConstrainedList, conlist
+from pydantic import BaseModel, ConstrainedList, conlist
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
@@ -375,10 +374,6 @@ def test_version_info():
     s = version_info()
     assert re.match(' *pydantic version: ', s)
     assert s.count('\n') == 5
-
-
-def test_standard_version():
-    assert safe_version(VERSION) == VERSION
 
 
 def test_class_attribute():
