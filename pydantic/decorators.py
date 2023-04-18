@@ -596,14 +596,30 @@ def computed_field(__func: property) -> _decorators.ComputedFieldInfo:
 def computed_field(
     __f: property | None = None,
     *,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
     alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
+    json_return_type: _core_schema.JsonReturnTypes | None = None,
 ) -> _decorators.ComputedFieldInfo | Callable[[property], _decorators.ComputedFieldInfo]:
     """
-    Decorator to validate the arguments passed to a function, and optionally the return value.
+    Decorate to include `property` and `cached_property` when serialising models.
+
+    If applied to functions not yet decorated with `@property` or `@cached_property`, the function is
+    automatically wrapped with `property`.
+
+    Args:
+        __f: the function to wrap.
+        alias: alias to use when serializing this computed field, only used when `by_alias=True`
+        title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697
+        description: Description to used when including this computed field in JSON Schema, defaults to the functions
+            docstring, currently unused waiting for #4697
+        repr: whether to include this computed field in model repr
+        json_return_type: optional return for serialization logic to expect when serialising to JSON, if included
+            this must be correct, otherwise a `TypeError` is raised
+
+    Returns:
+        A proxy wrapper for the property.
     """
 
     def dec(f: Any) -> _decorators.ComputedFieldInfo:
