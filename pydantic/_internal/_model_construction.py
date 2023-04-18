@@ -12,7 +12,7 @@ from pydantic_core import SchemaSerializer, SchemaValidator
 from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
-from ._decorators import ComputedFieldInfo, PydanticDecoratorMarker
+from ._decorators import ComputedFieldInfo, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_model_typevars_map
@@ -32,7 +32,7 @@ IGNORED_TYPES: tuple[Any, ...] = (
     type,
     classmethod,
     staticmethod,
-    PydanticDecoratorMarker,
+    PydanticDescriptorProxy,
     ComputedFieldInfo,
 )
 object_setattr = object.__setattr__

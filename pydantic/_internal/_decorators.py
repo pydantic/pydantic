@@ -6,12 +6,13 @@ from __future__ import annotations as _annotations
 from dataclasses import field
 from functools import partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast
 
 from pydantic_core import core_schema
 from typing_extensions import Literal, TypeAlias
 
 from ..errors import PydanticUserError
+from ..fields import ComputedFieldInfo
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
 
@@ -111,6 +112,7 @@ DecoratorInfo = Union[
     FieldSerializerDecoratorInfo,
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
+    ComputedFieldInfo,
 ]
 
 ReturnType = TypeVar('ReturnType')
@@ -120,7 +122,7 @@ DecoratedType: TypeAlias = (
 
 
 @slots_dataclass
-class PydanticDecoratorMarker(Generic[ReturnType]):
+class PydanticDescriptorProxy(Generic[ReturnType]):
     """
     Wrap a classmethod, staticmethod or unbound function
     and act as a descriptor that allows us to detect decorated items
@@ -134,64 +136,42 @@ class PydanticDecoratorMarker(Generic[ReturnType]):
     decorator_info: DecoratorInfo
     shim: Callable[[Callable[..., Any]], Callable[..., Any]] | None = None
 
-    @overload
-    def __get__(self, obj: None, objtype: None) -> PydanticDecoratorMarker[ReturnType]:
-        ...
-
-    @overload
-    def __get__(self, obj: object, objtype: type[object]) -> Callable[..., ReturnType]:
-        ...
-
-    def __get__(
-        self, obj: object | None, objtype: type[object] | None = None
-    ) -> Callable[..., ReturnType] | PydanticDecoratorMarker[ReturnType]:
+    def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
         try:
-            return self.wrapped.__get__(obj, objtype)
+            return self.wrapped.__get__(obj, obj_type)
         except AttributeError:
             # not a descriptor, e.g. a partial object
             return self.wrapped  # type: ignore[return-value]
 
 
 @slots_dataclass
-class ComputedFieldInfo:
+class PydanticFullDescriptorProxy(PydanticDescriptorProxy[ReturnType]):
     """
-    A container for data from `@computed_field` so that we can access it
-    while building the pydantic-core schema.
+    Extension of PydanticDescriptorProxy that also supports setter and getter to support full usage of
+    `property` and `cached_property`.
     """
-
-    wrapped_property: property
-    json_return_type: core_schema.JsonReturnTypes | None
-    alias: str | None
-    title: str | None
-    description: str | None
-    repr: bool
-
-    def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> Callable[[], Any]:
-        self.wrapped_property = p = self.wrapped_property.__get__(obj, obj_type)
-        return p
 
     @property
-    def setter(self) -> Callable[[Callable[[Any], None]], ComputedFieldInfo]:
-        def setter_wrapper(func: Callable[[Any], None]) -> ComputedFieldInfo:
-            self.wrapped_property = self.wrapped_property.setter(func)
+    def setter(self) -> Callable[[Callable[[Any], None]], PydanticDescriptorProxy[ReturnType]]:
+        def setter_wrapper(func: Callable[[Any], None]) -> PydanticDescriptorProxy[ReturnType]:
+            self.wrapped = self.wrapped.setter(func)
             return self
 
         return setter_wrapper
 
     @property
-    def deleter(self) -> Callable[[Callable[[Any], None]], ComputedFieldInfo]:
-        def deleter_wrapper(func: Callable[[Any], None]) -> ComputedFieldInfo:
-            self.wrapped_property = self.wrapped_property.deleter(func)
+    def deleter(self) -> Callable[[Callable[[Any], None]], PydanticDescriptorProxy[ReturnType]]:
+        def deleter_wrapper(func: Callable[[Any], None]) -> PydanticDescriptorProxy[ReturnType]:
+            self.wrapped = self.wrapped.deleter(func)
             return self
 
         return deleter_wrapper
 
     def __set_name__(self, instance: Any, name: str) -> None:
-        if hasattr(self.wrapped_property, '__set_name__'):
-            self.wrapped_property.__set_name__(instance, name)
+        self.wrapped.__set_name__(instance, name)
 
 
-DecoratorInfoType = TypeVar('DecoratorInfoType', bound=Union[DecoratorInfo, ComputedFieldInfo])
+DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
 
 
 @slots_dataclass
@@ -280,7 +260,7 @@ class DecoratorInfos:
                 res.computed_fields.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_fields.items()})
 
         for var_name, var_value in vars(model_dc).items():
-            if isinstance(var_value, PydanticDecoratorMarker):
+            if isinstance(var_value, PydanticDescriptorProxy):
                 info = var_value.decorator_info
                 if isinstance(info, ValidatorDecoratorInfo):
                     res.validator[var_name] = Decorator.build(
@@ -316,17 +296,16 @@ class DecoratorInfos:
                     res.model_validator[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
-                else:
-                    assert isinstance(info, ModelSerializerDecoratorInfo)
+                elif isinstance(info, ModelSerializerDecoratorInfo):
                     res.model_serializer[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
+                else:
+                    isinstance(var_value, ComputedFieldInfo)
+                    res.computed_fields[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=None, info=info
+                    )
                 setattr(model_dc, var_name, var_value.wrapped)
-            if isinstance(var_value, ComputedFieldInfo):
-                res.computed_fields[var_name] = Decorator.build(
-                    model_dc, cls_var_name=var_name, shim=None, info=var_value
-                )
-                setattr(model_dc, var_name, var_value.wrapped_property)
         return res
 
 

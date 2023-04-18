@@ -11,11 +11,11 @@ from pydantic_core.core_schema import (
 from . import dataclasses
 from .analyzed_type import AnalyzedType
 from .config import ConfigDict, Extra
-from .decorators import computed_field, field_serializer, field_validator, model_serializer, root_validator, validator
+from .decorators import field_serializer, field_validator, model_serializer, root_validator, validator
 from .deprecated.config import BaseConfig
 from .deprecated.tools import *
 from .errors import *
-from .fields import AliasChoices, AliasPath, Field, PrivateAttr
+from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .main import *
 from .networks import *
 from .types import *
@@ -36,7 +36,6 @@ __all__ = [
     'field_validator',
     'field_serializer',
     'model_serializer',
-    'computed_field',
     'ValidationInfo',
     'FieldValidationInfo',
     'SerializationInfo',
@@ -58,6 +57,7 @@ __all__ = [
     'AliasPath',
     'AliasChoices',
     'Field',
+    'computed_field',
     # main
     'BaseModel',
     'create_model',

@@ -4,7 +4,6 @@ Public methods used as decorators within pydantic models and dataclasses
 
 from __future__ import annotations as _annotations
 
-import inspect
 from functools import partial, partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
@@ -168,7 +167,7 @@ def validator(
 
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
 
-    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+    def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
                 '`@validator` cannot be applied to instance methods', code='validator-instance-method'
@@ -183,7 +182,7 @@ def validator(
             always=always,
             check_fields=check_fields,
         )
-        return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
+        return _decorators.PydanticDescriptorProxy(f, validator_wrapper_info, shim=wrap)
 
     return dec  # type: ignore[return-value]
 
@@ -246,7 +245,7 @@ def field_validator(
 
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
-    ) -> _decorators.PydanticDecoratorMarker[Any]:
+    ) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
                 '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
@@ -256,7 +255,7 @@ def field_validator(
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
         dec_info = _decorators.FieldValidatorDecoratorInfo(fields=fields, mode=mode, check_fields=check_fields)
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec
 
@@ -333,7 +332,7 @@ def root_validator(
         # auto apply the @classmethod decorator and warn users if we had to do so
         res = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
-        return _decorators.PydanticDecoratorMarker(res, dec_info, shim=wrap)
+        return _decorators.PydanticDescriptorProxy(res, dec_info, shim=wrap)
 
     return dec
 
@@ -412,7 +411,7 @@ def field_serializer(
 
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
-    ) -> _decorators.PydanticDecoratorMarker[Any]:
+    ) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
@@ -420,7 +419,7 @@ def field_serializer(
             when_used=when_used,
             check_fields=check_fields,
         )
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec
 
@@ -430,7 +429,7 @@ def model_serializer(
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
-) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
+) -> Callable[[Any], _decorators.PydanticDescriptorProxy[Any]] | _decorators.PydanticDescriptorProxy[Any]:
     """
     Decorator to add a function which will be called to serialize the model.
 
@@ -449,9 +448,9 @@ def model_serializer(
             The decorated function.
     """
 
-    def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker[Any]:
+    def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, json_return_type=json_return_type)
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:
         return dec
@@ -541,7 +540,7 @@ AnyModeAfterValidator = Union[ModelAfterValidator, ModelAfterValidatorWithoutInf
 def model_validator(
     *,
     mode: Literal['wrap'],
-) -> Callable[[AnyModelWrapValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[[AnyModelWrapValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
     ...
 
 
@@ -549,7 +548,7 @@ def model_validator(
 def model_validator(
     *,
     mode: Literal['before'],
-) -> Callable[[AnyModeBeforeValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[[AnyModeBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
     ...
 
 
@@ -557,7 +556,7 @@ def model_validator(
 def model_validator(
     *,
     mode: Literal['after'],
-) -> Callable[[AnyModeAfterValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[[AnyModeAfterValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
     ...
 
 
@@ -565,74 +564,8 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+    def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec
-
-
-# this should really be `property[T], cached_proprety[T]` but property is not generic unlike cached_property
-# See https://github.com/python/typing/issues/985 and linked issues
-PropertyT = TypeVar('PropertyT')
-
-
-@overload
-def computed_field(
-    *,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
-    alias: str | None = None,
-    title: str | None = None,
-    description: str | None = None,
-    repr: bool = True,
-) -> Callable[[PropertyT], PropertyT]:
-    ...
-
-
-@overload
-def computed_field(__func: PropertyT) -> PropertyT:
-    ...
-
-
-def computed_field(
-    __f: PropertyT | None = None,
-    *,
-    alias: str | None = None,
-    title: str | None = None,
-    description: str | None = None,
-    repr: bool = True,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
-) -> PropertyT | Callable[[PropertyT], PropertyT]:
-    """
-    Decorate to include `property` and `cached_property` when serialising models.
-
-    If applied to functions not yet decorated with `@property` or `@cached_property`, the function is
-    automatically wrapped with `property`.
-
-    Args:
-        __f: the function to wrap.
-        alias: alias to use when serializing this computed field, only used when `by_alias=True`
-        title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697
-        description: Description to used when including this computed field in JSON Schema, defaults to the functions
-            docstring, currently unused waiting for #4697
-        repr: whether to include this computed field in model repr
-        json_return_type: optional return for serialization logic to expect when serialising to JSON, if included
-            this must be correct, otherwise a `TypeError` is raised
-
-    Returns:
-        A proxy wrapper for the property.
-    """
-
-    def dec(f: Any) -> Any:
-        nonlocal description
-        if description is None and f.__doc__:
-            description = inspect.cleandoc(f.__doc__)
-
-        # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
-        f = _decorators.ensure_property(f)
-        return _decorators.ComputedFieldInfo(f, json_return_type, alias, title, description, repr)
-
-    if __f is None:
-        return dec
-    else:
-        return dec(__f)

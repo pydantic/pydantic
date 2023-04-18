@@ -39,9 +39,9 @@ def test_computed_fields_get():
     assert set(rect.model_computed_fields) == {'area', 'area2'}
     assert rect.__dict__ == {'width': 10, 'length': 5}
 
-    assert rect.model_computed_fields['area'].info.description == 'An awesome area'
-    assert rect.model_computed_fields['area2'].info.title == 'Pikarea'
-    assert rect.model_computed_fields['area2'].info.description == 'Another area'
+    assert rect.model_computed_fields['area'].description == 'An awesome area'
+    assert rect.model_computed_fields['area2'].title == 'Pikarea'
+    assert rect.model_computed_fields['area2'].description == 'Another area'
 
     assert rect.area == 50
     assert rect.double_width == 20
