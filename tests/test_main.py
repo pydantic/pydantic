@@ -61,6 +61,16 @@ def ultra_simple_model_fixture():
     return UltraSimpleModel
 
 
+def test_success_with_string_access():
+    class Model(BaseModel):
+        a: float
+        b: int = 10
+
+    m = Model(a=10.2)
+    assert m['a'] == 10.2
+    assert m['b'] == 10
+
+
 def test_ultra_simple_missing(UltraSimpleModel):
     with pytest.raises(ValidationError) as exc_info:
         UltraSimpleModel()
