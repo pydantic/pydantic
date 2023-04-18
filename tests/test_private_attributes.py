@@ -1,3 +1,4 @@
+import functools
 import platform
 from typing import ClassVar, Generic, TypeVar
 
@@ -312,3 +313,14 @@ def test_ignored_types_are_ignored() -> None:
         _g = 1  # Note: this is completely ignored, in keeping with v1
 
     assert sorted(MyModel.__private_attributes__.keys()) == ['_e', '_f']
+
+
+@pytest.mark.skipif(not hasattr(functools, 'cached_property'), reason='cached_property is not available')
+def test_ignored_types_are_ignored_cached_property():
+    """Demonstrate the members of functools are ignore here as with fields."""
+
+    class MyModel(BaseModel):
+        _a: functools.cached_property
+        _b: int
+
+    assert set(MyModel.__private_attributes__) == {'_b'}

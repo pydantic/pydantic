@@ -337,3 +337,35 @@ def test_dataclass():
     m = MyDataClass(x=2)
     assert m.double == 4
     assert AnalyzedType(MyDataClass).dump_python(m) == {'x': 2, 'double': 4}
+
+
+def test_free_function():
+    @property
+    def double_func(self) -> int:
+        return self.x * 2
+
+    class MyModel(BaseModel):
+        x: int
+        double = computed_field(double_func)
+
+    m = MyModel(x=2)
+    assert set(m.model_fields) == {'x'}
+    assert m.__private_attributes__ == {}
+    assert m.double == 4
+    assert repr(m) == 'MyModel(x=2, double=4)'
+    assert m.model_dump() == {'x': 2, 'double': 4}
+
+
+def test_private_computed_field():
+    class MyModel(BaseModel):
+        x: int
+
+        @computed_field
+        def _double(self) -> int:
+            return self.x * 2
+
+    m = MyModel(x=2)
+    assert repr(m) == 'MyModel(x=2, _double=4)'
+    assert m.__private_attributes__ == {}
+    assert m._double == 4
+    assert m.model_dump() == {'x': 2, '_double': 4}
