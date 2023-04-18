@@ -77,6 +77,7 @@ cases = [
     ('pyproject-plugin.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-baseConfig.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_success_baseConfig.py', 'plugin-success-strict-baseConfig.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-strict-baseConfig.txt'),
+    ('pyproject-default.toml', 'computed_fields.py', 'computed_fields.txt'),
 ]
 
 

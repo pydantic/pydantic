@@ -1,9 +1,5 @@
 """
-Public methods related to:
-
-* `validator` - a decorator to add validation to a field on a model
-* `root_validator` - a decorator to add validation to a model as a whole
-* `serializer` - a decorator to add serialization to a field on a model
+Public methods used as decorators within pydantic models and dataclasses
 """
 
 from __future__ import annotations as _annotations
@@ -576,6 +572,11 @@ def model_validator(
     return dec
 
 
+# this should really be `property[T], cached_proprety[T]` but property is not generic unlike cached_property
+# See https://github.com/python/typing/issues/985 and linked issues
+PropertyT = TypeVar('PropertyT')
+
+
 @overload
 def computed_field(
     *,
@@ -584,24 +585,24 @@ def computed_field(
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
-) -> Callable[[property], _decorators.ComputedFieldInfo]:
+) -> Callable[[PropertyT], PropertyT]:
     ...
 
 
 @overload
-def computed_field(__func: property) -> _decorators.ComputedFieldInfo:
+def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
 def computed_field(
-    __f: property | None = None,
+    __f: PropertyT | None = None,
     *,
     alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
     json_return_type: _core_schema.JsonReturnTypes | None = None,
-) -> _decorators.ComputedFieldInfo | Callable[[property], _decorators.ComputedFieldInfo]:
+) -> PropertyT | Callable[[PropertyT], PropertyT]:
     """
     Decorate to include `property` and `cached_property` when serialising models.
 
@@ -622,7 +623,7 @@ def computed_field(
         A proxy wrapper for the property.
     """
 
-    def dec(f: Any) -> _decorators.ComputedFieldInfo:
+    def dec(f: Any) -> Any:
         nonlocal description
         if description is None and f.__doc__:
             description = inspect.cleandoc(f.__doc__)

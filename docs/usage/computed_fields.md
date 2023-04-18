@@ -1,6 +1,6 @@
 ## Field with computed value based on other fields
 
-Computed fields allow `property` and `cached_property` to be included when serialisating models
+Computed fields allow `property` and `cached_property` to be included when serializing models or dataclasses.
 
 ```py
 from pydantic import BaseModel, computed_field
@@ -20,10 +20,17 @@ print(Rectangle(width=3, length=2).model_dump())
 #> {'width': 3, 'length': 2, 'area': 6}
 ```
 
-!!! note
-    If the `computed_field` decorator doesn't wrap a decorator like `property`, `cached_property`
-    it will fallback and create `property` itself. Although this is more concise, you will lose
-    IntelliSense in your IDE, and confuse static type checkers, thus explicit use of `@property` is recommended.
+If the `computed_field` decorator is applied to a bare function
+(e.g. a function with the `@property` or `@cached_property` decorator)
+it will wrap the function in `property` itself. Although this is more concise, you will lose IntelliSense in your IDE,
+and confuse static type checkers, thus explicit use of `@property` is recommended.
+
+!!! warning "Mypy Warning"
+    Even with the `@property` or `@cached_property` applied to your function before `@computed_field`,
+    mypy won't be happy because of [this issue](https://github.com/python/mypy/issues/1362),
+    you'll need to add `# type: ignore[misc]` to the `@computed_field` line.
+
+In contract, [pyright](https://github.com/microsoft/pyright) works nicely with `@computed_field`.
 
 ```py requires="3.8"
 import random
@@ -35,8 +42,8 @@ from pydantic import BaseModel, computed_field
 class Square(BaseModel):
     width: float
 
-    @computed_field(title='The area', description='the area of the square')
-    def area(self) -> float:  # converted to `property`
+    @computed_field
+    def area(self) -> float:  # converted to a `property` by `computed_field`
         return round(self.width**2, 2)
 
     @area.setter
@@ -46,7 +53,6 @@ class Square(BaseModel):
     @computed_field(alias='the magic number', repr=False)
     @cached_property
     def random_number(self) -> int:
-        """An awesome number"""
         return random.randint(0, 1_000)
 
 
