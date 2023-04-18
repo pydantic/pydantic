@@ -970,7 +970,12 @@ class GenerateSchema:
         decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos()
         args = [self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
         has_post_init = hasattr(dataclass, '__post_init__')
-        args_schema = core_schema.dataclass_args_schema(dataclass.__name__, args, collect_init_only=has_post_init)
+        args_schema = core_schema.dataclass_args_schema(
+            dataclass.__name__,
+            args,
+            computed_fields=generate_computed_field(decorators.computed_fields),
+            collect_init_only=has_post_init,
+        )
         inner_schema = apply_validators(args_schema, decorators.root_validator.values())
         dc_schema = core_schema.dataclass_schema(dataclass, inner_schema, post_init=has_post_init, ref=dataclass_ref)
         schema = apply_model_serializers(dc_schema, decorators.model_serializer.values())

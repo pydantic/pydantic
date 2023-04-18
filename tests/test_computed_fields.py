@@ -5,7 +5,7 @@ import random
 import pytest
 from pydantic_core import PydanticSerializationError
 
-from pydantic import BaseModel, Field, PrivateAttr, computed_field
+from pydantic import AnalyzedType, BaseModel, Field, PrivateAttr, computed_field, dataclasses
 
 try:
     from functools import cached_property, lru_cache, singledispatchmethod
@@ -302,3 +302,38 @@ def test_expected_type_wrong():
         m.model_dump(mode='json')
     with pytest.raises(PydanticSerializationError, match="Error serializing to JSON: 'str' object cannot be converted"):
         m.model_dump_json()
+
+
+def test_inheritance():
+    class Base(BaseModel):
+        x: int
+
+        @computed_field
+        def double(self) -> int:
+            return self.x * 2
+
+    class Child(Base):
+        y: int
+
+        @computed_field
+        def triple(self) -> int:
+            return self.y * 3
+
+    c = Child(x=2, y=3)
+    assert c.double == 4
+    assert c.triple == 9
+    assert c.model_dump() == {'x': 2, 'y': 3, 'double': 4, 'triple': 9}
+
+
+def test_dataclass():
+    @dataclasses.dataclass
+    class MyDataClass:
+        x: int
+
+        @computed_field
+        def double(self) -> int:
+            return self.x * 2
+
+    m = MyDataClass(x=2)
+    assert m.double == 4
+    assert AnalyzedType(MyDataClass).dump_python(m) == {'x': 2, 'double': 4}
