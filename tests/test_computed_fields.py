@@ -1,8 +1,9 @@
 import random
 
 import pytest
+from pydantic_core import PydanticSerializationError
 
-from pydantic import BaseModel, Field, PrivateAttr, ValidationError, computed_field
+from pydantic import BaseModel, Field, PrivateAttr, computed_field
 
 try:
     from functools import cached_property
@@ -147,7 +148,6 @@ def test_cached_property():
         @computed_field(alias='the magic number')
         @cached_property
         def random_number(self) -> int:
-            """An awesome area"""
             return random.randint(self.minimum, self.maximum)
 
     rect = Model(min=10, max=10_000)
@@ -186,31 +186,6 @@ def test_properties_and_computed_fields():
     assert m.model_dump() == {'x': 'pika', 'public_str': 'public 2'}
 
 
-@pytest.mark.skip(reason='ComputedField not implemented yet')
-def test_computed_field_syntax():
-    from pydantic import ComputedField
-
-    class User(BaseModel):
-        first_name: str
-        surname: str
-        full_name: str = ComputedField(lambda self: f'{self.first_name} {self.surname}')
-
-    u = User(first_name='John', surname='Smith')
-    assert u.model_dump() == {'first_name': 'John', 'surname': 'Smith', 'full_name': 'John Smith'}
-    u.first_name = 'Mike'
-    assert u.model_dump()['full_name'] == 'Mike Smith'
-
-    with pytest.raises(ValidationError) as exc_info:
-        User(first_name='pika', surname='chu')
-    assert exc_info.value.errors() == [
-        {
-            'loc': ('full_name',),
-            'msg': 'We love pika but not that much!',
-            'type': 'value_error',
-        }
-    ]
-
-
 def test_computed_fields_repr():
     class Model(BaseModel):
         x: int
@@ -226,3 +201,60 @@ def test_computed_fields_repr():
             return self.x * 3
 
     assert repr(Model(x=2)) == 'Model(x=2, triple=6)'
+
+
+def test_include_exclude():
+    class Model(BaseModel):
+        x: int
+        y: int
+
+        @computed_field
+        def x_list(self) -> list[int]:
+            return [self.x, self.x + 1]
+
+        @computed_field
+        def y_list(self) -> list[int]:
+            return [self.y, self.y + 1, self.y + 2]
+
+    m = Model(x=1, y=2)
+    assert m.model_dump() == {'x': 1, 'y': 2, 'x_list': [1, 2], 'y_list': [2, 3, 4]}
+    assert m.model_dump(include={'x'}) == {'x': 1}
+    assert m.model_dump(include={'x': None, 'x_list': {0}}) == {'x': 1, 'x_list': [1]}
+    assert m.model_dump(exclude={'x': ..., 'y_list': {2}}) == {'y': 2, 'x_list': [1, 2], 'y_list': [2, 3]}
+
+
+def test_expected_type():
+    class Model(BaseModel):
+        x: int
+        y: int
+
+        @computed_field(json_return_type='list')
+        def x_list(self) -> list[int]:
+            return [self.x, self.x + 1]
+
+        @computed_field(json_return_type='bytes')
+        def y_str(self) -> bytes:
+            s = f'y={self.y}'
+            return s.encode()
+
+    m = Model(x=1, y=2)
+    assert m.model_dump() == {'x': 1, 'y': 2, 'x_list': [1, 2], 'y_str': b'y=2'}
+    assert m.model_dump(mode='json') == {'x': 1, 'y': 2, 'x_list': [1, 2], 'y_str': 'y=2'}
+    assert m.model_dump_json() == '{"x":1,"y":2,"x_list":[1,2],"y_str":"y=2"}'
+
+
+def test_expected_type_wrong():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field(json_return_type='list')
+        def x_list(self) -> list[int]:
+            return 'not a list'
+
+    m = Model(x=1)
+    with pytest.raises(TypeError, match="^'str' object cannot be converted to 'PyList'$"):
+        m.model_dump()
+    with pytest.raises(TypeError, match="^'str' object cannot be converted to 'PyList'$"):
+        m.model_dump(mode='json')
+    with pytest.raises(PydanticSerializationError, match="Error serializing to JSON: 'str' object cannot be converted"):
+        m.model_dump_json()
