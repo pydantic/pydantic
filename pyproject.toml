@@ -145,3 +145,8 @@ skip-string-normalization = true
 [tool.pyright]
 include = ['pydantic']
 exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']
+
+[tool.codespell]
+skip = '.git,env*'
+# `ser` - abbreviation for "ser"ialisation
+ignore-words-list = 'gir,ser'

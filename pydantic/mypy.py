@@ -631,7 +631,7 @@ class PydanticModelTransformer:
             # only required if default is Ellipsis (i.e., `field_name: Annotation = Field(...)`) or if default_factory
             # is specified.
             for arg, name in zip(expr.args, expr.arg_names):
-                # If name is None, then this arg is the default because it is the only positonal argument.
+                # If name is None, then this arg is the default because it is the only positional argument.
                 if name is None or name == 'default':
                     return arg.__class__ is EllipsisExpr
                 if name == 'default_factory':
