@@ -520,3 +520,95 @@ def test_field_extra_arguments():
     assert Model.model_json_schema(by_alias=True)['properties'] == {
         'x': {'default': 'test', 'test': 'test', 'title': 'X', 'type': 'string'}
     }
+
+
+class SimpleModel(BaseModel):
+    x: int
+
+
+def test_dict():
+    m = SimpleModel(x=1)
+    with pytest.warns(DeprecationWarning, match=r'^The `dict` method is deprecated; use `model_dump` instead\.$'):
+        assert m.dict() == {'x': 1}
+
+
+def test_json():
+    m = SimpleModel(x=1)
+    with pytest.warns(DeprecationWarning, match=r'^The `json` method is deprecated; use `model_dump_json` instead\.$'):
+        assert m.json() == '{"x":1}'
+
+    with pytest.warns(DeprecationWarning):
+        with pytest.raises(TypeError, match='The `encoder` argument is no longer supported'):
+            m.json(encoder=1)
+        with pytest.raises(TypeError, match='The `models_as_dict` argument is no longer supported'):
+            m.json(models_as_dict=True)
+        with pytest.raises(TypeError, match='`dumps_kwargs` keyword arguments are no longer supported.'):
+            m.json(foo=4)
+
+
+def test_parse_obj():
+    with pytest.warns(DeprecationWarning, match='^The `parse_obj` method is deprecated; use `model_validate` instead.'):
+        m = SimpleModel.parse_obj({'x': 1})
+
+    assert m.model_dump() == {'x': 1}
+
+
+def test_parse_file(tmp_path):
+    path = tmp_path / 'test.json'
+    path.write_text('{"x": 12}')
+    with pytest.warns(DeprecationWarning, match='^The `parse_file` method is deprecated; load the data from file,'):
+        assert SimpleModel.parse_file(str(path)).model_dump() == {'x': 12}
+
+
+def test_construct():
+    with pytest.warns(DeprecationWarning, match='The `construct` method is deprecated; use `model_construct` instead.'):
+        m = SimpleModel.construct(x='not an int')
+
+    assert m.x == 'not an int'
+
+
+def test_json_schema():
+    m = SimpleModel(x=1)
+    with pytest.warns(DeprecationWarning, match='^The `schema` method is deprecated; use `model_json_schema` instead.'):
+        assert m.schema() == {
+            'title': 'SimpleModel',
+            'type': 'object',
+            'properties': {'x': {'title': 'X', 'type': 'integer'}},
+            'required': ['x'],
+        }
+
+
+def test_validate():
+    with pytest.warns(DeprecationWarning, match='^The `validate` method is deprecated; use `model_validate` instead.'):
+        m = SimpleModel.validate({'x': 1})
+
+    assert m.model_dump() == {'x': 1}
+
+
+def test_update_forward_refs():
+    with pytest.warns(DeprecationWarning, match='^The `update_forward_refs` method is deprecated;'):
+        SimpleModel.update_forward_refs()
+
+
+def test_copy_and_set_values():
+    m = SimpleModel(x=1)
+    with pytest.warns(DeprecationWarning, match='^The private method  `_copy_and_set_values` will be removed and '):
+        m2 = m._copy_and_set_values(values={'x': 2}, fields_set={'x'}, deep=False)
+
+    assert m2.x == 2
+
+
+def test_get_value():
+    m = SimpleModel(x=1)
+    with pytest.warns(DeprecationWarning, match='^The private method  `_get_value` will be removed and '):
+        v = m._get_value(
+            [1, 2, 3],
+            to_dict=False,
+            by_alias=False,
+            include=None,
+            exclude=None,
+            exclude_unset=False,
+            exclude_defaults=False,
+            exclude_none=False,
+        )
+    assert v == [1, 2, 3]

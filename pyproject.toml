@@ -125,7 +125,9 @@ exclude_lines = [
     'pragma: no cover',
     'raise NotImplementedError',
     'if TYPE_CHECKING:',
+    'if typing.TYPE_CHECKING:',
     '@overload',
+    '@typing.overload',
     '\(Protocol\):$',
 ]
 
