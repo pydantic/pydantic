@@ -625,7 +625,7 @@ def test_serializer_allow_reuse_inheritance_override():
 
     # overriding a serializer with a function / class var
     # of the same name is allowed
-    # to mimick how inheritance works
+    # to mimic how inheritance works
     # the serializer in the child class replaces the parent
     # (without modifying the parent class itself)
     class Child1(Parent):
