@@ -4,7 +4,22 @@ import sys
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    ForwardRef,
+    FrozenSet,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -2248,3 +2263,31 @@ def test_parent_field_with_default():
     assert c.a == 1
     assert c.b == 2
     assert c.c == 3
+
+
+def test_invalid_forward_ref_model():
+    class A(BaseModel):
+        model_config = {'undefined_types_warning': False}
+
+        B: ForwardRef('B') = Field()
+
+    assert A.model_fields['B'].annotation == ForwardRef('B')
+    A.model_rebuild(raise_errors=False)
+    assert A.model_fields['B'].annotation == ForwardRef('B')
+
+    class B(BaseModel):
+        pass
+
+    class C(BaseModel):
+        pass
+
+    assert not A.__pydantic_model_complete__
+    A.model_rebuild(_types_namespace={'B': B})
+    assert A.__pydantic_model_complete__
+
+    assert A(B=B()).B == B()
+    with pytest.raises(ValidationError) as exc_info:
+        A(B=C())
+    assert exc_info.value.errors() == [
+        {'input': C(), 'loc': ('B',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+    ]

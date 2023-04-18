@@ -259,7 +259,7 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
 
     try:
         return typing._eval_type(value, globalns, localns)  # type: ignore
-    except NameError:
+    except (NameError, TypeError):
         # the point of this function is to be tolerant to this case
         return value
 
