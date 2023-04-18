@@ -10,9 +10,9 @@ eg. `Color((0, 255, 255)).as_named() == 'cyan'` because "cyan" comes after "aqua
 import math
 import re
 from colorsys import hls_to_rgb, rgb_to_hls
-from typing import Any, Dict, Optional, Tuple, Union, cast
+from typing import Any, Callable, Dict, Optional, Tuple, Type, Union, cast
 
-from pydantic_core import PydanticCustomError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 
 from ._internal import _repr, _utils
 
@@ -225,7 +225,9 @@ class Color(_repr.Representation):
         return 1 if self._rgba.alpha is None else self._rgba.alpha
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.PlainValidatorFunctionSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: Type[Any], handler: Callable[[Any], CoreSchema]
+    ) -> core_schema.CoreSchema:
         return core_schema.general_plain_validator_function(
             cls._validate, serialization=core_schema.to_string_ser_schema()
         )

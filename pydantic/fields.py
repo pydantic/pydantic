@@ -15,6 +15,7 @@ from . import types
 from ._internal import _fields, _forward_ref, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
 from ._internal._generics import replace_types
+from ._internal._internal_dataclass import slots_dataclass
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
@@ -340,13 +341,41 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-def Field(
+@slots_dataclass
+class AliasPath:
+    path: list[int | str]
+
+    def __init__(self, first_arg: str, *args: str | int) -> None:
+        self.path = [first_arg] + list(args)
+
+    def convert_to_aliases(self) -> list[str | int]:
+        return self.path
+
+
+@slots_dataclass
+class AliasChoices:
+    choices: list[str | AliasPath]
+
+    def __init__(self, *args: str | AliasPath) -> None:
+        self.choices = list(args)
+
+    def convert_to_aliases(self) -> list[list[str | int]]:
+        aliases: list[list[str | int]] = []
+        for c in self.choices:
+            if isinstance(c, AliasPath):
+                aliases.append(c.convert_to_aliases())
+            else:
+                aliases.append([c])
+        return aliases
+
+
+def Field(  # noqa C901
     default: Any = Undefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
     alias: str | None = None,
     alias_priority: int | None = None,
-    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    validation_alias: str | AliasPath | AliasChoices | None = None,
     serialization_alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
@@ -462,8 +491,16 @@ def Field(
         if not json_schema_extra:
             json_schema_extra = extra
 
-    if validation_alias is None:
-        validation_alias = alias
+    converted_validation_alias: str | list[str | int] | list[list[str | int]] | None = None
+    if validation_alias:
+        if not isinstance(validation_alias, (str, AliasChoices, AliasPath)):
+            raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`')
+
+        if isinstance(validation_alias, (AliasChoices, AliasPath)):
+            converted_validation_alias = validation_alias.convert_to_aliases()
+        else:
+            converted_validation_alias = validation_alias
+
     if serialization_alias is None and isinstance(alias, str):
         serialization_alias = alias
 
@@ -472,7 +509,7 @@ def Field(
         default_factory=default_factory,
         alias=alias,
         alias_priority=alias_priority,
-        validation_alias=validation_alias,
+        validation_alias=converted_validation_alias or alias,
         serialization_alias=serialization_alias,
         title=title,
         description=description,

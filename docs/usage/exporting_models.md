@@ -251,6 +251,7 @@ Subclasses of common types are automatically encoded like their super-classes:
 
 ```py
 from datetime import date, timedelta
+from typing import Any, Callable, Type
 
 from pydantic_core import core_schema
 
@@ -264,7 +265,9 @@ class DayThisYear(date):
     """
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **kwargs):
+    def __get_pydantic_core_schema__(
+        cls, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             cls.validate,
             core_schema.int_schema(),

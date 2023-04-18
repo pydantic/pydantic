@@ -4,11 +4,11 @@ import json
 import warnings
 from typing import Any, Callable, Type, TypeVar, Union
 
-from . import AnalyzedType
+from .. import AnalyzedType
 
 __all__ = 'parse_obj_as', 'schema_of', 'schema_json_of'
 
-from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
+from ..json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
 
 NameFactory = Union[str, Callable[[Type[Any]], str]]
 

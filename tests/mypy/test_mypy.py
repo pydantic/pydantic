@@ -210,9 +210,9 @@ def test_success_cases_run(module: str) -> None:
 
 def test_explicit_reexports():
     from pydantic import __all__ as root_all
+    from pydantic.deprecated.tools import __all__ as tools
     from pydantic.main import __all__ as main
     from pydantic.networks import __all__ as networks
-    from pydantic.tools import __all__ as tools
     from pydantic.types import __all__ as types
 
     for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:

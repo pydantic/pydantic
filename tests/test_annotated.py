@@ -1,11 +1,13 @@
 import sys
-from typing import List
+from typing import Any, Callable, Generic, Iterator, List, Set, TypeVar
 
 import pytest
-from annotated_types import Gt, Lt
+from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
+from pydantic_core import core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
+from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import Undefined
 
 NO_VALUE = object()
@@ -197,3 +199,89 @@ def test_annotated_alias() -> None:
         ),
     }
     assert MyModel(b='def', e=['xyz']).model_dump() == dict(a='abc', b='def', c=2, d=2, e=['xyz'])
+
+
+def test_modify_get_schema_annotated() -> None:
+    calls: List[str] = []
+
+    class CustomType:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
+            calls.append('CustomType:before')
+            with pytest.raises(PydanticSchemaGenerationError):
+                handler(source)
+            schema = core_schema.no_info_plain_validator_function(lambda _: CustomType())
+            calls.append('CustomType:after')
+            return schema
+
+    class PydanticMetadata:
+        def __get_pydantic_core_schema__(
+            self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
+            calls.append('PydanticMetadata:before')
+            schema = handler(source)
+            calls.append('PydanticMetadata:after')
+            return schema
+
+    class GroupedMetadataMarker(GroupedMetadata):
+        def __iter__(self) -> Iterator[BaseMetadata]:
+            # no way to actually hook into schema building
+            # so just register when our iter is called
+            calls.append('GroupedMetadataMarker:iter')
+            yield from []
+
+    class _(BaseModel):
+        x: Annotated[CustomType, GroupedMetadataMarker(), PydanticMetadata()]
+
+    assert calls == [
+        'PydanticMetadata:before',
+        'CustomType:before',
+        'CustomType:after',
+        'GroupedMetadataMarker:iter',
+        'PydanticMetadata:after',
+    ]
+
+    calls.clear()
+
+    class _(BaseModel):
+        x: Annotated[CustomType, PydanticMetadata(), GroupedMetadataMarker()]
+
+    assert calls == [
+        'PydanticMetadata:before',
+        'CustomType:before',
+        'CustomType:after',
+        'PydanticMetadata:after',
+        'GroupedMetadataMarker:iter',
+    ]
+
+    calls.clear()
+
+
+def test_get_pydantic_core_schema_source_type() -> None:
+    types: Set[Any] = set()
+
+    class PydanticMarker:
+        def __get_pydantic_core_schema__(
+            self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
+            types.add(source)
+            return handler(source)
+
+    class _(BaseModel):
+        x: Annotated[Annotated[int, 'foo'], PydanticMarker()]
+
+    assert types == {int}
+    types.clear()
+
+    T = TypeVar('T')
+
+    class GenericModel(Generic[T], BaseModel):
+        y: T
+
+    class _(BaseModel):
+        x: Annotated[GenericModel[int], PydanticMarker()]
+
+    assert types == {GenericModel[int]}
+    types.clear()

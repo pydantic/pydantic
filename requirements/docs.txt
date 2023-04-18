@@ -98,7 +98,7 @@ packaging==23.0
     # via
     #   -c requirements/all.txt
     #   mkdocs
-pydantic-core==0.24.0
+pydantic-core==0.25.0
     # via
     #   -c requirements/all.txt
     #   -r requirements/docs.in

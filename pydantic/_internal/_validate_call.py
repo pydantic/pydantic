@@ -49,12 +49,14 @@ class ValidateCallWrapper:
             self.__name__ = f'partial({func.__name__})'
             self.__qualname__ = f'partial({func.__qualname__})'
             self.__annotations__ = func.__annotations__
+            self.__module__ = func.__module__
+            self.__doc__ = func.__doc__
         else:
             self.__name__ = function.__name__
             self.__qualname__ = function.__qualname__
             self.__annotations__ = function.__annotations__
-        self.__doc__ = function.__doc__
-        self.__module__ = function.__module__
+            self.__module__ = function.__module__
+            self.__doc__ = function.__doc__
 
         namespace = _typing_extra.add_module_globals(function, None)
         config_wrapper = ConfigWrapper(config)

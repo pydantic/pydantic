@@ -3898,7 +3898,7 @@ def test_deque_typed_maxlen():
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
-@pytest.mark.parametrize('value_type', (None, type(None), None.__class__, Literal[None]))
+@pytest.mark.parametrize('value_type', (None, type(None), None.__class__))
 def test_none(value_type):
     class Model(BaseModel):
         my_none: value_type
@@ -3913,25 +3913,17 @@ def test_none(value_type):
         my_json_none='null',
     )
 
-    # assert Model.model_json_schema() == {
-    #     'title': 'Model',
-    #     'type': 'object',
-    #     'properties': {
-    #         'my_none': {'title': 'My None', 'type': 'null'},
-    #         'my_none_list': {
-    #             'title': 'My None List',
-    #             'type': 'array',
-    #             'items': {'type': 'null'},
-    #         },
-    #         'my_none_dict': {
-    #             'title': 'My None Dict',
-    #             'type': 'object',
-    #             'additionalProperties': {'type': 'null'},
-    #         },
-    #         'my_json_none': {'title': 'My Json None', 'type': 'null'},
-    #     },
-    #     'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
-    # }
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'my_none': {'type': 'null', 'title': 'My None'},
+            'my_none_list': {'type': 'array', 'items': {'type': 'null'}, 'title': 'My None List'},
+            'my_none_dict': {'type': 'object', 'additionalProperties': {'type': 'null'}, 'title': 'My None Dict'},
+            'my_json_none': {'type': 'string', 'format': 'json-string', 'title': 'My Json None'},
+        },
+        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(
@@ -3957,6 +3949,79 @@ def test_none(value_type):
             'input': 1,
         },
         {'type': 'none_required', 'loc': ('my_json_none',), 'msg': 'Input should be None', 'input': 'a'},
+    ]
+
+
+def test_none_literal():
+    class Model(BaseModel):
+        my_none: Literal[None]
+        my_none_list: List[Literal[None]]
+        my_none_dict: Dict[str, Literal[None]]
+        my_json_none: Json[Literal[None]]
+
+    Model(
+        my_none=None,
+        my_none_list=[None] * 3,
+        my_none_dict={'a': None, 'b': None},
+        my_json_none='null',
+    )
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'my_none': {'const': None, 'title': 'My None'},
+            'my_none_list': {'type': 'array', 'items': {'const': None}, 'title': 'My None List'},
+            'my_none_dict': {'type': 'object', 'additionalProperties': {'const': None}, 'title': 'My None Dict'},
+            'my_json_none': {'type': 'string', 'format': 'json-string', 'title': 'My Json None'},
+        },
+        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            my_none='qwe',
+            my_none_list=[1, None, 'qwe'],
+            my_none_dict={'a': 1, 'b': None},
+            my_json_none='"a"',
+        )
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'literal_error',
+            'loc': ('my_none',),
+            'msg': 'Input should be None',
+            'input': 'qwe',
+            'ctx': {'expected': 'None'},
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('my_none_list', 0),
+            'msg': 'Input should be None',
+            'input': 1,
+            'ctx': {'expected': 'None'},
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('my_none_list', 2),
+            'msg': 'Input should be None',
+            'input': 'qwe',
+            'ctx': {'expected': 'None'},
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('my_none_dict', 'a'),
+            'msg': 'Input should be None',
+            'input': 1,
+            'ctx': {'expected': 'None'},
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('my_json_none',),
+            'msg': 'Input should be None',
+            'input': 'a',
+            'ctx': {'expected': 'None'},
+        },
     ]
 
 

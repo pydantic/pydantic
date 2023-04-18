@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from ..decorators import FieldValidatorModes
 
 try:
-    from functools import cached_property
+    from functools import cached_property  # type: ignore
 except ImportError:
     # python 3.7
     cached_property = None

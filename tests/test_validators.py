@@ -1,4 +1,5 @@
 import re
+import sys
 from collections import deque
 from datetime import date, datetime
 from enum import Enum
@@ -1475,6 +1476,9 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
+@pytest.mark.xfail(
+    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
+)
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1494,7 +1498,6 @@ def test_literal_validator():
     ]
 
 
-@pytest.mark.xfail(reason='working on V2 - enum validator bug https://github.com/pydantic/pydantic/issues/5242')
 def test_literal_validator_str_enum():
     class Bar(str, Enum):
         FIZ = 'fiz'
@@ -1518,6 +1521,9 @@ def test_literal_validator_str_enum():
     assert my_foo.fizfuz is Bar.FUZ
 
 
+@pytest.mark.xfail(
+    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
+)
 def test_nested_literal_validator():
     L1 = Literal['foo']
     L2 = Literal['bar']
