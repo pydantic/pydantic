@@ -77,7 +77,15 @@ cases = [
     ('pyproject-plugin.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-baseConfig.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_success_baseConfig.py', 'plugin-success-strict-baseConfig.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-strict-baseConfig.txt'),
-    ('pyproject-default.toml', 'computed_fields.py', 'computed_fields.txt'),
+    pytest.param(
+        'pyproject-default.toml',
+        'computed_fields.py',
+        'computed_fields.txt',
+        marks=pytest.mark.skipif(
+            sys.version_info < (3, 8) or MYPY_VERSION_TUPLE < (0, 982),
+            reason='cached_property is only available in Python 3.8+, errors are different with mypy 0.971',
+        ),
+    ),
 ]
 
 
