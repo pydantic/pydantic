@@ -1326,7 +1326,7 @@ def test_enum_fails(cooking_model):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'type': 'literal_error',
+            'type': 'enum',
             'loc': ('tool',),
             'msg': 'Input should be 1 or 2',
             'input': 3,
@@ -1463,7 +1463,7 @@ def test_enum_from_json(enum_base, strict):
                 'input': 2,
                 'loc': ('my_enum',),
                 'msg': 'Input should be 1',
-                'type': 'literal_error',
+                'type': 'enum',
             }
         ]
 

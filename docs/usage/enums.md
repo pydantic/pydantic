@@ -36,6 +36,6 @@ except ValidationError as e:
     """
     1 validation error for CookingModel
     fruit
-      Input should be 'pear' or 'banana' [type=literal_error, input_value='other', input_type=str]
+      Input should be 'pear' or 'banana' [type=enum, input_value='other', input_type=str]
     """
 ```

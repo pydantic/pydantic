@@ -17,7 +17,6 @@ from typing import Any, Callable
 from uuid import UUID
 
 from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, Url, core_schema
-from pydantic_core.core_schema import ValidatorFunctionWrapHandler
 from typing_extensions import Literal, get_args
 
 from ..json_schema import update_json_schema
@@ -64,7 +63,8 @@ def timedelta_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_s
 
 @schema_function(Enum)
 def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> core_schema.CoreSchema:
-    cases = [m.value for m in enum_type.__members__.values()]
+    cases = list(enum_type.__members__.values())
+
     if not cases:
         # Use an isinstance check for enums with no cases.
         # This won't work with serialization or JSON schema, but that's okay -- the most important
@@ -73,11 +73,16 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # (or subclasses of enum.Enum) if all parent classes have no cases.
         return core_schema.is_instance_schema(enum_type)
 
+    if len(cases) == 1:
+        expected = repr(cases[0].value)
+    else:
+        expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
+
     def to_enum(__input_value: Any, _: core_schema.ValidationInfo) -> Enum:
         try:
             return enum_type(__input_value)
         except ValueError:
-            raise PydanticCustomError('enum', 'Input is not a valid enum member')
+            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})
 
     enum_ref = get_type_ref(enum_type)
     literal_schema = core_schema.literal_schema(cases)
@@ -90,37 +95,22 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         js_cs_override=literal_schema.copy(), js_modify_function=lambda s: update_json_schema(s, updates)
     )
 
-    lax: CoreSchema
     json_types: set[Literal['int', 'float', 'str']]
+    lax_chain_steps: list[CoreSchema] = [core_schema.general_plain_validator_function(to_enum), literal_schema]
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         updates['type'] = 'integer'
-        lax = core_schema.chain_schema(
-            [core_schema.int_schema(), literal_schema, core_schema.general_plain_validator_function(to_enum)],
-        )
         json_types = {'int'}
+        lax_chain_steps = [core_schema.int_schema()] + lax_chain_steps
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'string'
-        lax = core_schema.chain_schema(
-            [core_schema.str_schema(), literal_schema, core_schema.general_plain_validator_function(to_enum)],
-        )
         json_types = {'str'}
+        lax_chain_steps = [core_schema.str_schema()] + lax_chain_steps
     else:
-
-        def wrap_to_enum(
-            __input_value: Any, __handler: ValidatorFunctionWrapHandler, _: core_schema.ValidationInfo
-        ) -> Enum:
-            if isinstance(__input_value, enum_type):
-                __input_value = __input_value.value
-            value = __handler(__input_value)
-            return to_enum(value, _)
-
-        lax = core_schema.general_wrap_validator_function(wrap_to_enum, literal_schema)
         json_types = {'int', 'float', 'str'}
-
     return core_schema.lax_or_strict_schema(
-        lax_schema=lax,
+        lax_schema=core_schema.chain_schema(lax_chain_steps),
         strict_schema=core_schema.is_instance_schema(enum_type, json_types=json_types, json_function=enum_type),
         ref=enum_ref,
         metadata=metadata,
