@@ -85,33 +85,34 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
             raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})
 
     enum_ref = get_type_ref(enum_type)
-    literal_schema = core_schema.literal_schema(cases)
     description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)
     if description == 'An enumeration.':  # This is the default value provided by enum.EnumMeta.__new__; don't use it
         description = None
     updates = {'title': enum_type.__name__, 'description': description}
     updates = {k: v for k, v in updates.items() if v is not None}
     metadata = build_metadata_dict(
-        js_cs_override=literal_schema.copy(), js_modify_function=lambda s: update_json_schema(s, updates)
+        js_cs_override=core_schema.literal_schema([x.value for x in cases]),
+        js_modify_function=lambda s: update_json_schema(s, updates),
     )
 
-    json_types: set[Literal['int', 'float', 'str']]
-    lax_chain_steps: list[CoreSchema] = [core_schema.general_plain_validator_function(to_enum), literal_schema]
+    strict_json_types: set[Literal['int', 'float', 'str']]
+    to_enum_validator = core_schema.general_plain_validator_function(to_enum)
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         updates['type'] = 'integer'
-        json_types = {'int'}
-        lax_chain_steps = [core_schema.int_schema()] + lax_chain_steps
+        strict_json_types = {'int'}
+        lax: core_schema.CoreSchema = core_schema.chain_schema([core_schema.int_schema(), to_enum_validator])
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'string'
-        json_types = {'str'}
-        lax_chain_steps = [core_schema.str_schema()] + lax_chain_steps
+        strict_json_types = {'str'}
+        lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
     else:
-        json_types = {'int', 'float', 'str'}
+        lax = to_enum_validator
+        strict_json_types = {'int', 'float', 'str'}
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.chain_schema(lax_chain_steps),
-        strict_schema=core_schema.is_instance_schema(enum_type, json_types=json_types, json_function=enum_type),
+        lax_schema=lax,
+        strict_schema=core_schema.is_instance_schema(enum_type, json_types=strict_json_types, json_function=enum_type),
         ref=enum_ref,
         metadata=metadata,
     )

@@ -31,7 +31,7 @@ from uuid import UUID
 
 import annotated_types
 import pytest
-from dirty_equals import HasRepr
+from dirty_equals import HasRepr, IsStr
 from pydantic_core._pydantic_core import PydanticCustomError, SchemaError
 from typing_extensions import Annotated, Literal, TypedDict
 
@@ -40,6 +40,7 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
+    AnalyzedType,
     AwareDatetime,
     BaseModel,
     ByteSize,
@@ -1351,9 +1352,19 @@ def test_plain_enum_validate():
 
     m = Model(x=MyEnum.a)
     assert m.x is MyEnum.a
-    
+
+    assert AnalyzedType(MyEnum).validate_python(1) is MyEnum.a
     with pytest.raises(ValidationError) as exc_info:
-        Model.validate_python({'x': 1})
+        AnalyzedType(MyEnum).validate_python(1, strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'class': 'test_plain_enum_validate.<locals>.MyEnum'},
+            'input': 1,
+            'loc': (),
+            'msg': IsStr(regex='Input should be an instance of test_plain_enum_validate.<locals>.MyEnum'),
+            'type': 'is_instance_of',
+        }
+    ]
 
 
 def test_plain_enum_validate_json():
