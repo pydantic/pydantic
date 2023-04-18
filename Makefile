@@ -27,6 +27,10 @@ lint:
 	ruff $(sources)
 	black $(sources) --check --diff
 
+.PHONY: codespell
+codespell:
+	pre-commit run codespell --all-files
+
 .PHONY: typecheck
 typecheck:
 	pre-commit run typecheck --all-files
@@ -64,7 +68,7 @@ test-fastapi:
 	./tests/test_fastapi.sh
 
 .PHONY: all
-all: lint typecheck testcov
+all: lint typecheck codespell testcov
 
 .PHONY: clean
 clean:
