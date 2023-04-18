@@ -71,7 +71,7 @@ TODO
 
 ## Import error {#import-error}
 
-This error is raised when you try to import an object that was available on V1, but it's not anymore on V2.
+This error is raised when you try to import an object that was available in V1 but has been removed in V2.
 
 ## create_model field definitions {#create-model-field-definitions}
 
