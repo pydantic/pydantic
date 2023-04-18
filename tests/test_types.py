@@ -1350,7 +1350,10 @@ def test_plain_enum_validate():
         x: MyEnum
 
     m = Model(x=MyEnum.a)
-    assert m.x == MyEnum.a
+    assert m.x is MyEnum.a
+    
+    with pytest.raises(ValidationError) as exc_info:
+        Model.validate_python({'x': 1})
 
 
 def test_plain_enum_validate_json():
@@ -1361,7 +1364,7 @@ def test_plain_enum_validate_json():
         x: MyEnum
 
     m = Model.model_validate_json('{"x":1}')
-    assert m.x == MyEnum.a
+    assert m.x is MyEnum.a
 
 
 def test_enum_type():
