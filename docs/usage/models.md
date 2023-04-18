@@ -693,10 +693,10 @@ In order to declare a generic model, you perform the following steps:
 
 Here is an example using `GenericModel` to create an easily-reused HTTP response payload wrapper:
 
-```py test="xfail looks like an error with generics!"
+```py
 from typing import Generic, List, Optional, TypeVar
 
-from pydantic import BaseModel, Field, ValidationError, field_validator
+from pydantic import BaseModel, ValidationError
 
 DataT = TypeVar('DataT')
 
@@ -713,29 +713,28 @@ class DataModel(BaseModel):
 
 class Response(BaseModel, Generic[DataT]):
     data: Optional[DataT] = None
-    error: Optional[Error] = Field(validate_default=True)
-
-    @field_validator('error')
-    def check_consistency(cls, v, info):
-        if v is not None and info.data['data'] is not None:
-            raise ValueError('must not provide both data and error')
-        if v is None and info.data.get('data') is None:
-            raise ValueError('must provide data or error')
-        return v
 
 
 data = DataModel(numbers=[1, 2, 3], people=[])
 error = Error(code=404, message='Not found')
 
 print(Response[int](data=1))
+#> data=1
 print(Response[str](data='value'))
+#> data='value'
 print(Response[str](data='value').model_dump())
+#> {'data': 'value'}
 print(Response[DataModel](data=data).model_dump())
-print(Response[DataModel](error=error).model_dump())
+#> {'data': {'numbers': [1, 2, 3], 'people': []}}
 try:
     Response[int](data='value')
 except ValidationError as e:
     print(e)
+    """
+    1 validation error for Response[int]
+    data
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='value', input_type=str]
+    """
 ```
 
 If you set `Config` or make use of `validator` in your generic model definition, it is applied
