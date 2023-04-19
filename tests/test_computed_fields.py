@@ -1,11 +1,13 @@
 from __future__ import annotations as _annotations
 
 import random
+from abc import abstractmethod
+from typing import ClassVar
 
 import pytest
-from pydantic_core import PydanticSerializationError
+from pydantic_core import PydanticSerializationError, ValidationError
 
-from pydantic import AnalyzedType, BaseModel, Field, PrivateAttr, computed_field, dataclasses
+from pydantic import AnalyzedType, BaseModel, Field, PrivateAttr, computed_field, dataclasses, field_validator
 
 try:
     from functools import cached_property, lru_cache, singledispatchmethod
@@ -369,3 +371,110 @@ def test_private_computed_field():
     assert m.__private_attributes__ == {}
     assert m._double == 4
     assert m.model_dump() == {'x': 2, '_double': 4}
+
+
+def test_classmethod():
+    class MyModel(BaseModel):
+        x: int
+        y: ClassVar[int] = 4
+
+        @computed_field
+        @classmethod
+        @property
+        def two_y(cls) -> int:
+            return cls.y * 2
+
+    m = MyModel(x=1)
+    assert m.two_y == 8
+    assert m.model_dump() == {'x': 1, 'two_y': 8}
+
+
+def test_frozen():
+    class Square(BaseModel, frozen=True):
+        side: float
+
+        @computed_field
+        @property
+        def area(self) -> float:
+            return self.side**2
+
+        @area.setter
+        def area(self, new_area: int):
+            self.side = new_area**0.5
+
+    m = Square(side=4)
+    assert m.area == 16.0
+    assert m.model_dump() == {'side': 4.0, 'area': 16.0}
+
+    with pytest.raises(TypeError, match='"Square" is frozen and does not support item assignment'):
+        m.area = 4
+
+
+def test_validate_assignment():
+    class Square(BaseModel, validate_assignment=True):
+        side: float
+
+        @field_validator('side')
+        def small_side(cls, s):
+            if s < 2:
+                raise ValueError('must be >=2')
+            return float(round(s))
+
+        @computed_field
+        @property
+        def area(self) -> float:
+            return self.side**2
+
+        @area.setter
+        def area(self, new_area: int):
+            self.side = new_area**0.5
+
+    with pytest.raises(ValidationError, match=r'side\s+Value error, must be >=2'):
+        Square(side=1)
+
+    m = Square(side=4.0)
+    assert m.area == 16.0
+    assert m.model_dump() == {'side': 4.0, 'area': 16.0}
+    m.area = 10.0
+    assert m.side == 3.0
+
+    with pytest.raises(ValidationError, match=r'side\s+Value error, must be >=2'):
+        m.area = 3
+
+
+def test_abstractmethod():
+    class AbstractSquare(BaseModel):
+        side: float
+
+        @computed_field
+        @property
+        @abstractmethod
+        def area(self) -> float:
+            raise NotImplementedError()
+
+    class Square(AbstractSquare):
+        @computed_field
+        @property
+        def area(self) -> float:
+            return self.side + 1
+
+    m = Square(side=4.0)
+    assert m.model_dump() == {'side': 4.0, 'area': 5.0}
+
+
+@pytest.mark.xfail(reason='missing abstractmethods are not raising an error')
+def test_abstractmethod_missing():
+    class AbstractSquare(BaseModel):
+        side: float
+
+        @computed_field
+        @property
+        @abstractmethod
+        def area(self) -> float:
+            raise NotImplementedError()
+
+    class Square(AbstractSquare):
+        pass
+
+    with pytest.raises(TypeError, match="Can't instantiate abstract class Square with abstract method area"):
+        Square(side=4.0)
