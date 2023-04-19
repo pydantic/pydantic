@@ -168,7 +168,9 @@ class PydanticFullDescriptorProxy(PydanticDescriptorProxy[ReturnType]):
         return deleter_wrapper
 
     def __set_name__(self, instance: Any, name: str) -> None:
-        self.wrapped.__set_name__(instance, name)
+        if hasattr(self.wrapped, '__set_name__'):
+            self.wrapped.__set_name__(instance, name)
+        # no error if there's no __set_name__, otherwise we get errors on <=3.9
 
 
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
