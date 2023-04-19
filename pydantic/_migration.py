@@ -3,12 +3,12 @@ from typing import Any, Callable
 
 from ._internal._validators import import_string
 
-MOVED_ON_V2 = {
+MOVED_IN_V2 = {
     'pydantic.utils.version_info': 'pydantic.version.version_info',
     'pydantic.error_wrappers.ValidationError': 'pydantic.ValidationError',
 }
 
-WARNLESS_MOVE_ON_V2 = {
+DEPRECATED_MOVED_IN_V2 = {
     'pydantic.tools.schema_of': 'pydantic.deprecated.tools.schema_of',
     'pydantic.tools.parse_obj_as': 'pydantic.deprecated.tools.parse_obj_as',
     'pydantic.tools.schema_json_of': 'pydantic.deprecated.tools.schema_json_of',
@@ -19,7 +19,7 @@ WARNLESS_MOVE_ON_V2 = {
     'pydantic.decorator.validate_arguments': 'pydantic.deprecated.decorator.validate_arguments',
 }
 
-REMOVED_ON_V2 = {
+REMOVED_IN_V2 = {
     'pydantic.BaseSettings',
     'pydantic.ConstrainedBytes',
     'pydantic.ConstrainedDate',
@@ -254,13 +254,14 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
             The object.
         """
         import_path = f'{module}.{name}'
-        if import_path in MOVED_ON_V2.keys():
-            new_location = MOVED_ON_V2[import_path]
+        if import_path in MOVED_IN_V2.keys():
+            new_location = MOVED_IN_V2[import_path]
             warnings.warn(f'`{import_path}` has been moved to `{new_location}`.')
-            return import_string(MOVED_ON_V2[import_path])
-        if import_path in WARNLESS_MOVE_ON_V2.keys():
-            return import_string(WARNLESS_MOVE_ON_V2[import_path])
-        if import_path in REMOVED_ON_V2:
+            return import_string(MOVED_IN_V2[import_path])
+        if import_path in DEPRECATED_MOVED_IN_V2.keys():
+            # skip the warning here because a deprecation warning will be raised elsewhere
+            return import_string(DEPRECATED_MOVED_IN_V2[import_path])
+        if import_path in REMOVED_IN_V2:
             raise PydanticImportError(f'`{import_path}` has been removed in V2.')
         raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 

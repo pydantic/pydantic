@@ -73,7 +73,7 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
 }
 
 
-@deprecated('pydantic_encoder is deprecated, use BaseModel.model_dump instead.')
+@deprecated('pydantic_encoder is deprecated, use pydantic_core.to_jsonable_python instead.')
 def pydantic_encoder(obj: Any) -> Any:
     from dataclasses import asdict, is_dataclass
 

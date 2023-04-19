@@ -115,7 +115,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
 
 
 class PydanticImportError(PydanticErrorMixin, ImportError):
-    """Error occurs when a module cannot be imported, given module changes between V1 and V2."""
+    """Error occurs when an import fails due to module changes between V1 and V2."""
 
     def __init__(self, message: str) -> None:
         super().__init__(message, code='import-error')
