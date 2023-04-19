@@ -412,7 +412,6 @@ def field_serializer(
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
     ) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
@@ -451,7 +450,6 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, json_return_type=json_return_type)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
