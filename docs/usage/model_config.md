@@ -113,7 +113,7 @@ except ValidationError as e:
 
 **`fields`**
 : a `dict` containing schema information for each field; this is equivalent to
-  using [the `Field` class](schema.md), except when a field is already
+  using [the `Field` class](/usage/schema/), except when a field is already
   defined through annotation or the Field class, in which case only
   `alias`, `include`, `exclude`, `min_length`, `max_length`, `regex`, `gt`, `lt`, `gt`, `le`,
   `multiple_of`, `max_digits`, `decimal_places`, `min_items`, `max_items`, `unique_items`
@@ -139,19 +139,19 @@ except ValidationError as e:
 : whether to allow arbitrary user types for fields (they are validated simply by
   checking if the value is an instance of the type). If `False`, `RuntimeError` will be
   raised on model declaration (default: `False`). See an example in
-  [Field Types](types.md#arbitrary-types-allowed).
+  [Field Types](/types/types/#arbitrary-types-allowed).
 
 **`undefined_types_warning`**
 : whether to raise a warning if a type is undefined when a model is declared. This occurs when a type is defined in another model declared elsewhere in code which has not yet executed.
   If `True`, `UserWarning` will be raised on model declaration (default: `True`).
-  See an example in [Field Types](types.md#undefined_types_warning).
+  See an example in [Field Types](/types/types/#undefined_types_warning).
 
 **`from_attributes`**
-: whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
+: whether to allow usage of [ORM mode](/usage/models/#orm-mode-aka-arbitrary-class-instances)
 
 **`getter_dict`**
 : a custom class (which should inherit from `GetterDict`) to use when decomposing arbitrary classes
-for validation, for use with `from_attributes`; see [Data binding](models.md#data-binding).
+for validation, for use with `from_attributes`; see [Data binding](/usage/models/#data-binding).
 
 **`alias_generator`**
 : a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
@@ -277,7 +277,7 @@ print(Character.model_json_schema(by_alias=True))
 
 **TODO: Smart Union behaviour has roughly become the default, this needs to be moved to the stuff on unions**
 
-By default, as explained [here](types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
+By default, as explained [here](/types/unions/), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
 So sometimes you may have unexpected coerced data.
 
 ```py

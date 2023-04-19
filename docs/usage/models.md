@@ -83,14 +83,14 @@ Models possess the following methods and attributes:
 
 `model_dump()`
 : returns a dictionary of the model's fields and values;
-  cf. [exporting models](exporting_models.md#modeldict)
+  cf. [exporting models](/usage/exporting_models/#modeldict)
 
 `model_dump_json()`
 : returns a JSON string representation `model_dump()`;
-  cf. [exporting models](exporting_models.md#modeljson)
+  cf. [exporting models](/usage/exporting_models/#modeljson)
 
 `copy()`
-: returns a copy (by default, shallow copy) of the model; cf. [exporting models](exporting_models.md#modelcopy)
+: returns a copy (by default, shallow copy) of the model; cf. [exporting models](/usage/exporting_models/#modelcopy)
 
 `model_validate()`
 : a utility for loading any object into a model with error handling if the object is not a dictionary;
@@ -106,10 +106,10 @@ Models possess the following methods and attributes:
 : loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
 
 `model_json_schema()`
-: returns a dictionary representing the model as JSON Schema; cf. [schema](schema.md)
+: returns a dictionary representing the model as JSON Schema; cf. [schema](/usage/schema/)
 
 `schema_json()`
-: returns a JSON string representation of `schema()`; cf. [schema](schema.md)
+: returns a JSON string representation of `schema()`; cf. [schema](/usage/schema/)
 
 `model_construct()`
 : a class method for creating models without running validation;
@@ -122,7 +122,7 @@ Models possess the following methods and attributes:
 : a dictionary of the model's fields
 
 `__config__`
-: the configuration class for the model, cf. [model config](model_config.md)
+: the configuration class for the model, cf. [model config](/usage/model_config/)
 
 ## Recursive Models
 
@@ -163,7 +163,7 @@ print(m.model_dump())
 """
 ```
 
-For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
+For self-referencing models, see [postponed annotations](/usage/postponed_annotations/#self-referencing-models).
 
 ## "From Attributes" (aka ORM Mode/Arbitrary Class Instances)
 
@@ -171,7 +171,7 @@ Pydantic models can be created from arbitrary class instances to support models 
 
 To do this:
 
-1. The [Config](model_config.md) property `from_attributes` must be set to `True`.
+1. The [Config](/usage/model_config/) property `from_attributes` must be set to `True`.
 2. The special constructor `from_orm` must be used to create the model instance.
 
 The example here uses SQLAlchemy, but the same approach should work for any ORM.
@@ -314,9 +314,9 @@ name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', s
 Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
 [utils.py](https://github.com/pydantic/pydantic/blob/main/pydantic/utils.py)), which attempts to
 provide a dictionary-like interface to any class. You can customise how this works by setting your own
-sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
+sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](/usage/model_config/)).
 
-You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`.
+You can also customise class validation using [root_validators](/usage/validators/#root-validators) with `pre=True`.
 In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
 
 The `GetterDict` instance will be called for each field with a sentinel as a fallback (if no other default
@@ -393,7 +393,7 @@ Each error object contains:
 
 `loc`
 : the error's location as a list. The first item in the list will be the field where the error occurred,
-  and if the field is a [sub-model](models.md#recursive-models), subsequent items will be present to indicate
+  and if the field is a [sub-model](/usage/models/#recursive-models), subsequent items will be present to indicate
   the nested location of the error.
 
 `type`
@@ -503,7 +503,7 @@ except ValidationError as e:
 
 In your custom data types or validators you should use `ValueError`, `TypeError` or `AssertionError` to raise errors.
 
-See [validators](validators.md) for more details on use of the `@validator` decorator.
+See [validators](/usage/validators/) for more details on use of the `@validator` decorator.
 
 ```py
 from pydantic import BaseModel, ValidationError, field_validator
@@ -824,7 +824,7 @@ print(repr(Response[str](data='a')))
 #> Response[str](data='a')
 ```
 
-Using the same TypeVar in nested models allows you to enforce typing relationships at different points in your model:
+Using the same `TypeVar` in nested models allows you to enforce typing relationships at different points in your model:
 
 ```py
 from typing import Generic, TypeVar
@@ -1117,7 +1117,7 @@ print([pet for pet in pets])
 ## Faux Immutability
 
 Models can be configured to be immutable via `allow_mutation = False`. When this is set, attempting to change the
-values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
+values of instance attributes will raise errors. See [model config](/usage/model_config/) for more details on `Config`.
 
 !!! warning
     Immutability in Python is never strict. If developers are determined/stupid they can always
@@ -1177,11 +1177,11 @@ class FooBarModel(BaseModel, abc.ABC):
 
 Field order is important in models for the following reasons:
 
-* validation is performed in the order fields are defined; [fields validators](validators.md)
+* validation is performed in the order fields are defined; [fields validators](/usage/validators/)
   can access the values of earlier fields, but not later ones
-* field order is preserved in the model [schema](schema.md)
+* field order is preserved in the model [schema](/usage/schema/)
 * field order is preserved in [validation errors](#error-handling)
-* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
+* field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](/usage/exporting_models/#modeldict)
 
 As of **v1.0** all fields with annotations (whether annotation-only or with a default value) will precede
 all fields without an annotation. Within their respective groups, fields remain in the order they were defined.
@@ -1234,10 +1234,10 @@ class Model(BaseModel):
     c: int = Field(...)
 ```
 
-Where `Field` refers to the [field function](schema.md#field-customization).
+Where `Field` refers to the [field function](/usage/schema/#field-customization).
 
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
-with [mypy](/mypy_plugin/), and as of **v1.0** should be avoided in most cases.
+with [mypy](/integrations/mypy/), and as of **v1.0** should be avoided in most cases.
 
 ### Required Optional fields
 
@@ -1308,7 +1308,7 @@ assert m1.uid != m2.uid
 assert m1.updated != m2.updated
 ```
 
-Where `Field` refers to the [field function](schema.md#field-customization).
+Where `Field` refers to the [field function](/usage/schema/#field-customization).
 
 !!! warning
     The `default_factory` expects the field type to be set.
@@ -1429,7 +1429,7 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
-Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
+Nevertheless, [strict type checking](/types/types/#strict-types) is partially supported.
 
 ## Model signature
 

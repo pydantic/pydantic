@@ -43,8 +43,8 @@ except ValidationError as exc:
 ## Argument Types
 
 Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
-as `Any`. All types listed in [types](types.md) can be validated, including *pydantic* models and
-[custom types](types.md#custom-data-types).
+as `Any`. All types listed in [types](/types/types/) can be validated, including *pydantic* models and
+[custom types](/types/types/#custom-data-types).
 As with the rest of *pydantic*, types can be coerced by the decorator before they're passed to the actual function:
 
 ```py test="no-print-intercept"
@@ -180,9 +180,9 @@ print(armageddon(1, 2, 3, 4, 5, 6, d=8, e=9, f=10, spam=11))
 
 ## Using Field to describe function arguments
 
-[Field](schema.md#field-customization) can also be used with `validate_call` to provide extra information about
+[Field](/usage/schema/#field-customization) can also be used with `validate_call` to provide extra information about
 the field and validations. In general it should be used in a type hint with
-[Annotated](schema.md#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
+[Annotated](/usage/schema/#typingannotated-fields), unless `default_factory` is specified, in which case it should be used
 as the default value of the field:
 
 ```py
@@ -218,7 +218,7 @@ print(type(when()))
 #> <class 'datetime.datetime'>
 ```
 
-The [alias](model_config.md#alias-precedence) can be used with the decorator as normal.
+The [alias](/usage/model_config/#alias-precedence) can be used with the decorator as normal.
 
 ```py
 from typing_extensions import Annotated
@@ -385,7 +385,7 @@ In particular:
 ### Validation Exception
 
 Currently upon validation failure, a standard *pydantic* `ValidationError` is raised,
-see [model error handling](models.md#error-handling).
+see [model error handling](/usage/models/#error-handling).
 
 This is helpful since it's `str()` method provides useful details of the error which occurred and methods like
 `.errors()` and `.json()` can be useful when exposing the errors to end users, however `ValidationError` inherits
@@ -396,7 +396,7 @@ exception by default, or both.
 ### Coercion and Strictness
 
 *pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
-see [model data conversion](models.md#data-conversion) and `validate_call` is no different.
+see [model data conversion](/usage/models/#data-conversion) and `validate_call` is no different.
 
 See [#1098](https://github.com/pydantic/pydantic/issues/1098) and other issues with the "strictness" label
 for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_call` will have an option
@@ -420,9 +420,9 @@ in future.
 
 ### Config and Validators
 
-`fields` and `alias_generator` on custom [`Config`](model_config.md) are not supported, see [above](#custom-config).
+`fields` and `alias_generator` on custom [`Config`](/usage/model_config/) are not supported, see [above](#custom-config).
 
-Neither are [validators](validators.md).
+Neither are [validators](/usage/validators/).
 
 ### Model fields and reserved arguments
 
