@@ -154,7 +154,7 @@ class GenerateSchema:
     ):
         # we need a stack for recursing into child models
         self._config_wrapper_stack: list[ConfigWrapper] = [config_wrapper]
-        self.types_namespace = types_namespace
+        self.types_namespace = types_namespace or {}
         self.typevars_map = typevars_map
 
         self.recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
@@ -371,6 +371,8 @@ class GenerateSchema:
             # probably need to take care of other subclasses here
         elif isinstance(obj, typing.TypeVar):
             return self._unsubstituted_typevar_schema(obj)
+        elif isinstance(obj, _RecursiveTypeWrapper):
+            return self._recursive_type_schema(obj)
         elif is_finalvar(obj):
             if obj is Final:
                 return core_schema.AnySchema(type='any')
@@ -1045,8 +1047,30 @@ class GenerateSchema:
         else:
             return core_schema.AnySchema(type='any')
 
-    def _get_or_cache_recursive_ref(self, cls: type[Any]) -> tuple[str, core_schema.DefinitionReferenceSchema | None]:
-        obj_ref = get_type_ref(cls)
+    def _recursive_type_schema(self, obj: _RecursiveTypeWrapper) -> core_schema.CoreSchema:
+        recursive_ref, schema = self._get_or_cache_recursive_ref(obj)
+        if schema is not None:
+            return schema
+        self.types_namespace[obj.name] = obj
+        try:
+            result = self.generate_schema(obj.type_)
+            if result['type'] == 'definitions':
+                raise NotImplementedError  # This schema can't have a ref; TODO: Handle this..?
+            if result['type'] == 'definition-ref':
+                raise NotImplementedError  # Can't have a ref; TODO: This shouldn't happen? But handle just in case..
+            # Probably should make sure that the resulting schema can have a 'ref' key..
+            result['ref'] = recursive_ref
+        finally:
+            self.types_namespace.pop(obj.name)
+        return result
+
+    def _get_or_cache_recursive_ref(
+        self, cls: type[Any] | _RecursiveTypeWrapper
+    ) -> tuple[str, core_schema.DefinitionReferenceSchema | None]:
+        if isinstance(cls, _RecursiveTypeWrapper):
+            obj_ref = f'RecursiveType:{cls.name}:{id(cls)}'
+        else:
+            obj_ref = get_type_ref(cls)
         if obj_ref in self.recursion_cache:
             return obj_ref, self.recursion_cache[obj_ref]
         else:
@@ -1356,3 +1380,12 @@ def generate_computed_field(d: dict[str, Decorator[ComputedFieldInfo]]) -> list[
         for d in d.values()
     ]
     return r
+
+
+class _RecursiveTypeWrapper:
+    type_: Any
+    name: str
+
+    def __init__(self, type_: Any, name: str):
+        self.type_ = type_
+        self.name = name

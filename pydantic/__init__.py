@@ -18,6 +18,7 @@ from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .main import *
 from .networks import *
+from .recursive_type import *
 from .types import *
 from .validate_call import validate_call
 from .version import VERSION
@@ -81,6 +82,8 @@ __all__ = [
     'MySQLDsn',
     'MariaDBDsn',
     'validate_email',
+    # recursive_type
+    'RecursiveType',
     # tools
     'parse_obj_as',
     'schema_of',
