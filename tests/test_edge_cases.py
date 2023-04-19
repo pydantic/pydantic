@@ -10,7 +10,6 @@ from typing import Any, Callable, Dict, FrozenSet, Generic, List, Optional, Sequ
 import pytest
 from dirty_equals import HasRepr, IsStr
 from pydantic_core import core_schema
-from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import Annotated, get_args
 
 from pydantic import (
@@ -23,7 +22,6 @@ from pydantic import (
     errors,
 )
 from pydantic.decorators import (
-    ModelWrapValidatorHandler,
     field_serializer,
     field_validator,
     model_serializer,
@@ -2268,28 +2266,26 @@ def test_parent_field_with_default():
         (BaseModel,),
     ],
 )
-def test_abstractmethod_missing_for_all_decorators(bases: tuple[Any, ...]):
+def test_abstractmethod_missing_for_all_decorators(bases):
     class AbstractSquare(*bases):
         side: float
 
         @field_validator('side')
         @classmethod
         @abstractmethod
-        def my_field_validator(cls, v) -> float:
+        def my_field_validator(cls, v):
             raise NotImplementedError
 
         @model_validator(mode='wrap')
         @classmethod
         @abstractmethod
-        def my_model_validator(
-            cls, values: Any, handler: ModelWrapValidatorHandler['AbstractSquare'], info: ValidationInfo
-        ) -> 'AbstractSquare':
+        def my_model_validator(cls, values, handler, info):
             raise NotImplementedError
 
         @root_validator(skip_on_failure=True)
         @classmethod
         @abstractmethod
-        def my_root_validator(cls, values: Any) -> Any:
+        def my_root_validator(cls, values):
             raise NotImplementedError
 
         with pytest.warns(DeprecationWarning):
@@ -2297,7 +2293,7 @@ def test_abstractmethod_missing_for_all_decorators(bases: tuple[Any, ...]):
             @validator('side')
             @classmethod
             @abstractmethod
-            def my_validator(cls, value: Any, **kwargs: Any) -> Any:
+            def my_validator(cls, value, **kwargs):
                 raise NotImplementedError
 
         @model_serializer(mode='wrap')
@@ -2313,7 +2309,7 @@ def test_abstractmethod_missing_for_all_decorators(bases: tuple[Any, ...]):
         @computed_field
         @property
         @abstractmethod
-        def my_computed_field(self) -> float:
+        def my_computed_field(self):
             raise NotImplementedError
 
     class Square(AbstractSquare):
