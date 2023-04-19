@@ -8,13 +8,14 @@ from typing import Any, Callable, Dict, FrozenSet, Generic, List, Optional, Sequ
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import core_schema
+from pydantic_core import PydanticSerializationError, core_schema
 from typing_extensions import Annotated, get_args
 
 from pydantic import (
     AnalyzedType,
     BaseModel,
     ConfigDict,
+    PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
     ValidationError,
     constr,
@@ -2007,6 +2008,35 @@ def test_hashable_optional(default):
 
     Model(v=None)
     Model()
+
+
+def test_hashable_serialization():
+    class Model(BaseModel):
+        v: Hashable
+
+    class HashableButNotSerializable:
+        def __hash__(self):
+            return 0
+
+    assert Model(v=(1,)).model_dump_json() == '{"v":[1]}'
+    m = Model(v=HashableButNotSerializable())
+    with pytest.raises(
+        PydanticSerializationError, match='Unable to serialize unknown type:.*HashableButNotSerializable'
+    ):
+        m.model_dump_json()
+
+
+def test_hashable_json_schema():
+    class Model(BaseModel):
+        v: Hashable
+
+    with pytest.raises(
+        PydanticInvalidForJsonSchema,
+        match=re.escape(
+            "Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<class 'collections.abc.Hashable'>)"
+        ),
+    ):
+        Model.model_json_schema()
 
 
 def test_default_factory_called_once():
