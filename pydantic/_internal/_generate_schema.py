@@ -154,10 +154,10 @@ class GenerateSchema:
     ):
         # we need a stack for recursing into child models
         self._config_wrapper_stack: list[ConfigWrapper] = [config_wrapper]
-        self.types_namespace = types_namespace or {}
+        self.types_namespace: dict[str, Any] = types_namespace or {}
         self.typevars_map = typevars_map
 
-        self.recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
+        self.recursion_cache: dict[str | int, core_schema.DefinitionReferenceSchema] = {}
         self.definitions: dict[str, core_schema.CoreSchema] = {}
 
     @property
@@ -169,6 +169,9 @@ class GenerateSchema:
         return self.config_wrapper.arbitrary_types_allowed
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
+        if id(obj) in self.recursion_cache:
+            return self.recursion_cache[id(obj)]
+
         schema = self._generate_schema(obj, from_dunder_get_core_schema=True)
 
         schema = remove_unnecessary_invalid_definitions(schema)
@@ -1051,6 +1054,7 @@ class GenerateSchema:
         recursive_ref, schema = self._get_or_cache_recursive_ref(obj)
         if schema is not None:
             return schema
+        original_namespace_value = self.types_namespace.get(obj.name, Undefined)
         self.types_namespace[obj.name] = obj
         try:
             result = self.generate_schema(obj.type_)
@@ -1061,7 +1065,10 @@ class GenerateSchema:
             # Probably should make sure that the resulting schema can have a 'ref' key..
             result['ref'] = recursive_ref
         finally:
-            self.types_namespace.pop(obj.name)
+            if original_namespace_value is Undefined:
+                self.types_namespace.pop(obj.name)
+            else:
+                self.types_namespace[obj.name] = original_namespace_value
         return result
 
     def _get_or_cache_recursive_ref(
