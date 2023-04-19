@@ -71,6 +71,10 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     if generic_metadata:
         origin = generic_metadata['origin'] or origin
         args = generic_metadata['args'] or args
+    elif hasattr(type_, '__origin__') and hasattr(type_, '__args__'):
+        # "Standard" generic type
+        origin = type_.__origin__ or origin
+        args = type_.__args__ or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
     qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')

@@ -144,7 +144,14 @@ def apply_each_item_validators(
 
 
 class GenerateSchema:
-    __slots__ = '_config_wrapper_stack', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions'
+    __slots__ = (
+        '_config_wrapper_stack',
+        'types_namespace',
+        'typevars_map',
+        'recursion_cache',
+        'definitions',
+        'recursion_hits',
+    )
 
     def __init__(
         self,
@@ -157,7 +164,8 @@ class GenerateSchema:
         self.types_namespace: dict[str, Any] = types_namespace or {}
         self.typevars_map = typevars_map
 
-        self.recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
+        self.recursion_cache: set[str] = set()
+        self.recursion_hits = set()
         self.definitions: dict[str, core_schema.CoreSchema] = {}
 
     @property
@@ -169,6 +177,16 @@ class GenerateSchema:
         return self.config_wrapper.arbitrary_types_allowed
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
+        ref_obj = obj
+        if isinstance(ref_obj, ForwardRef):
+            if ref_obj.__forward_arg__ in self.types_namespace:
+                ref_obj = self.types_namespace[ref_obj.__forward_arg__]
+        recursive_ref = get_type_ref(ref_obj)
+        if recursive_ref in self.recursion_cache:
+            self.recursion_hits.add(recursive_ref)
+            return core_schema.definition_reference_schema(recursive_ref)
+
+        self.recursion_cache.add(recursive_ref)
         schema = self._generate_schema(obj, from_dunder_get_core_schema=True)
 
         schema = remove_unnecessary_invalid_definitions(schema)
@@ -185,7 +203,11 @@ class GenerateSchema:
             # definitions and definition-ref schemas don't have 'ref', causing the type error ignored on the next line
             schema_ref = schema['ref']  # type: ignore[typeddict-item]
             self.definitions[schema_ref] = schema
+        elif recursive_ref in self.recursion_hits:
+            schema['ref'] = recursive_ref
+            self.recursion_hits.discard(recursive_ref)
 
+        self.recursion_cache.discard(recursive_ref)
         return schema
 
     def model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
@@ -195,9 +217,7 @@ class GenerateSchema:
         Since models generate schemas for themselves this method is public and can be called
         from within BaseModel's metaclass.
         """
-        model_ref, schema = self._get_or_cache_recursive_ref(cls)
-        if schema is not None:
-            return schema
+        model_ref = get_type_ref(cls)
 
         from pydantic.main import BaseModel
 
@@ -618,9 +638,7 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
         """
-        typed_dict_ref, schema = self._get_or_cache_recursive_ref(typed_dict_cls)
-        if schema is not None:
-            return schema
+        typed_dict_ref = get_type_ref(typed_dict_cls)
 
         typevars_map = get_standard_typevars_map(typed_dict_cls)
         if origin is not None:
@@ -948,9 +966,7 @@ class GenerateSchema:
         """
         Generate schema for a dataclass.
         """
-        dataclass_ref, schema = self._get_or_cache_recursive_ref(dataclass)
-        if schema is not None:
-            return schema
+        dataclass_ref = get_type_ref(dataclass)
 
         typevars_map = get_standard_typevars_map(dataclass)
         if origin is not None:
@@ -1046,40 +1062,6 @@ class GenerateSchema:
             return self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
         else:
             return core_schema.AnySchema(type='any')
-
-    def _recursive_type_schema(self, obj: _RecursiveTypeWrapper) -> core_schema.CoreSchema:
-        recursive_ref, schema = self._get_or_cache_recursive_ref(obj)
-        if schema is not None:
-            return schema
-        original_namespace_value = self.types_namespace.get(obj.name, Undefined)
-        self.types_namespace[obj.name] = obj
-        try:
-            result = self.generate_schema(obj.type_)
-            if result['type'] == 'definitions':
-                raise NotImplementedError  # This schema can't have a ref; TODO: Handle this..?
-            if result['type'] == 'definition-ref':
-                raise NotImplementedError  # Can't have a ref; TODO: This shouldn't happen? But handle just in case..
-            # Probably should make sure that the resulting schema can have a 'ref' key..
-            result['ref'] = recursive_ref
-        finally:
-            if original_namespace_value is Undefined:
-                self.types_namespace.pop(obj.name)
-            else:
-                self.types_namespace[obj.name] = original_namespace_value
-        return result
-
-    def _get_or_cache_recursive_ref(
-        self, cls: type[Any] | _RecursiveTypeWrapper
-    ) -> tuple[str, core_schema.DefinitionReferenceSchema | None]:
-        if isinstance(cls, _RecursiveTypeWrapper):
-            obj_ref = f'RecursiveType:{cls.name}:{id(cls)}'
-        else:
-            obj_ref = get_type_ref(cls)
-        if obj_ref in self.recursion_cache:
-            return obj_ref, self.recursion_cache[obj_ref]
-        else:
-            self.recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
-            return obj_ref, None
 
 
 _VALIDATOR_F_MATCH: Mapping[

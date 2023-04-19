@@ -7,7 +7,7 @@ import typing
 from types import FunctionType
 from typing import Any, Callable
 
-from pydantic_core import SchemaSerializer, SchemaValidator
+from pydantic_core import SchemaError, SchemaSerializer, SchemaValidator
 
 from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
@@ -201,7 +201,13 @@ def complete_model_class(
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
+    try:
+        cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
+    except SchemaError:
+        from pprint import pprint
+
+        pprint(schema)
+        raise
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_model_complete__ = True
 

@@ -1,15 +1,15 @@
 import pytest
 from pydantic_core import ValidationError
-from typing_extensions import Annotated, TypeAlias
+from typing_extensions import TypeAlias
 
-from pydantic import BaseModel, RecursiveType
+from pydantic import BaseModel
 
 Json: TypeAlias = list['Json'] | dict[str, 'Json'] | str | int | float | bool | None
 
 
 def test_recursive_type():
     class Model(BaseModel):
-        x: Annotated[Json, RecursiveType('Json')]
+        x: Json
 
     assert Model(x=[1, 2, 3]).x == [1, 2, 3]
 
@@ -20,7 +20,10 @@ def test_recursive_type():
     assert exc_info.value.errors() == [
         {
             'input': {'a': [1, {'b': 3}, Ellipsis]},
-            'loc': ('x', 'list[nullable[union[list[...],dict[str,...],str,int,float,bool]]]'),
+            'loc': (
+                'x',
+                'list[nullable[union[list[nullable[union[list[...],dict[str,...],str,int,float,bool]]],dict[str,...],str,int,float,bool]]]',
+            ),
             'msg': 'Input should be a valid list',
             'type': 'list_type',
         },
@@ -30,7 +33,7 @@ def test_recursive_type():
                 'x',
                 'dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 'a',
-                'list[nullable[union[list[nullable[union[list[...],dict[str,...],str,int,float,bool]]],dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]],str,int,float,bool]]]',
+                'list[nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 2,
                 'list[nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
             ),
@@ -43,9 +46,9 @@ def test_recursive_type():
                 'x',
                 'dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 'a',
-                'list[nullable[union[list[nullable[union[list[...],dict[str,...],str,int,float,bool]]],dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]],str,int,float,bool]]]',
+                'list[nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 2,
-                'dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
+                'dict[str,...]',
             ),
             'msg': 'Input should be a valid dictionary',
             'type': 'dict_type',
@@ -56,7 +59,7 @@ def test_recursive_type():
                 'x',
                 'dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 'a',
-                'list[nullable[union[list[nullable[union[list[...],dict[str,...],str,int,float,bool]]],dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]],str,int,float,bool]]]',
+                'list[nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 2,
                 'str',
             ),
@@ -69,7 +72,7 @@ def test_recursive_type():
                 'x',
                 'dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 'a',
-                'list[nullable[union[list[nullable[union[list[...],dict[str,...],str,int,float,bool]]],dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]],str,int,float,bool]]]',
+                'list[nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 2,
                 'int',
             ),
@@ -82,7 +85,7 @@ def test_recursive_type():
                 'x',
                 'dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 'a',
-                'list[nullable[union[list[nullable[union[list[...],dict[str,...],str,int,float,bool]]],dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]],str,int,float,bool]]]',
+                'list[nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 2,
                 'float',
             ),
@@ -95,7 +98,7 @@ def test_recursive_type():
                 'x',
                 'dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 'a',
-                'list[nullable[union[list[nullable[union[list[...],dict[str,...],str,int,float,bool]]],dict[str,nullable[union[list[...],dict[str,...],str,int,float,bool]]],str,int,float,bool]]]',
+                'list[nullable[union[list[...],dict[str,...],str,int,float,bool]]]',
                 2,
                 'bool',
             ),
