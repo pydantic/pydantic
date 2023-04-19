@@ -329,7 +329,7 @@ def root_validator(
     def dec(f: Callable[..., Any] | classmethod[Any, Any, Any] | staticmethod[Any, Any]) -> Any:
         if _decorators.is_instance_method_from_sig(f):
             raise TypeError('`@root_validator` cannot be applied to instance methods')
-        # auto apply the @classmethod decorator and warn users if we had to do so
+        # auto apply the @classmethod decorator
         res = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDescriptorProxy(res, dec_info, shim=wrap)
@@ -412,6 +412,8 @@ def field_serializer(
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
     ) -> _decorators.PydanticDescriptorProxy[Any]:
+        # auto apply the @classmethod decorator
+        f = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
@@ -449,6 +451,8 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
+        # auto apply the @classmethod decorator
+        f = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, json_return_type=json_return_type)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
@@ -565,6 +569,8 @@ def model_validator(
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
+        # auto apply the @classmethod decorator
+        f = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
