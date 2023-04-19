@@ -96,7 +96,8 @@ def pydantic_encoder(obj: Any) -> Any:
         raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")
 
 
-@deprecated('custom_pydantic_encoder is deprecated, use BaseModel.model_dump instead.')
+# TODO: Add a suggested migration path once there is a way to use custom encoders
+@deprecated('custom_pydantic_encoder is deprecated.')
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
     # Check the class type and its superclasses for a matching encoder
     warnings.warn(
