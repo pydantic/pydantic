@@ -12,7 +12,7 @@ from pydantic_core import SchemaSerializer, SchemaValidator
 from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
-from ._decorators import PydanticDecoratorMarker
+from ._decorators import ComputedFieldInfo, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_model_typevars_map
@@ -26,7 +26,15 @@ if typing.TYPE_CHECKING:
     from ..main import BaseModel
 
 
-IGNORED_TYPES: tuple[Any, ...] = (FunctionType, property, type, classmethod, staticmethod, PydanticDecoratorMarker)
+IGNORED_TYPES: tuple[Any, ...] = (
+    FunctionType,
+    property,
+    type,
+    classmethod,
+    staticmethod,
+    PydanticDescriptorProxy,
+    ComputedFieldInfo,
+)
 object_setattr = object.__setattr__
 
 
@@ -72,7 +80,7 @@ def inspect_namespace(  # noqa C901
     for var_name, value in list(namespace.items()):
         if var_name == 'model_config':
             continue
-        elif isinstance(value, all_ignored_types):
+        elif isinstance(value, all_ignored_types) or value.__class__.__module__ == 'functools':
             ignored_names.add(var_name)
             continue
         elif isinstance(value, ModelPrivateAttr):
@@ -122,6 +130,7 @@ def inspect_namespace(  # noqa C901
             and ann_name not in ignored_names
             and not is_classvar(ann_type)
             and ann_type not in all_ignored_types
+            and ann_type.__module__ != 'functools'
         ):
             private_attributes[ann_name] = PrivateAttr()
 

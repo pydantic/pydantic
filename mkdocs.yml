@@ -79,6 +79,7 @@ nav:
   - 'Model Config': usage/model_config.md
   - usage/schema.md
   - usage/exporting_models.md
+  - usage/computed_fields.md
   - usage/dataclasses.md
   - usage/validation_decorator.md
   - usage/postponed_annotations.md

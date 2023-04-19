@@ -3,20 +3,27 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
-from dataclasses import field
+from dataclasses import dataclass, field
 from functools import partial, partialmethod
-from inspect import Parameter, Signature, signature
-from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast, overload
+from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
+from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast
 
 from pydantic_core import core_schema
 from typing_extensions import Literal, TypeAlias
 
 from ..errors import PydanticUserError
+from ..fields import ComputedFieldInfo
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
 
 if TYPE_CHECKING:
     from ..decorators import FieldValidatorModes
+
+try:
+    from functools import cached_property  # type: ignore
+except ImportError:
+    # python 3.7
+    cached_property = None
 
 
 @slots_dataclass
@@ -105,18 +112,19 @@ DecoratorInfo = Union[
     FieldSerializerDecoratorInfo,
     ModelSerializerDecoratorInfo,
     ModelValidatorDecoratorInfo,
+    ComputedFieldInfo,
 ]
 
 ReturnType = TypeVar('ReturnType')
 DecoratedType: TypeAlias = (
-    'Union[classmethod[Any, Any, ReturnType], staticmethod[Any, ReturnType], Callable[..., ReturnType]]'
+    'Union[classmethod[Any, Any, ReturnType], staticmethod[Any, ReturnType], Callable[..., ReturnType], property]'
 )
 
 
-@slots_dataclass
-class PydanticDecoratorMarker(Generic[ReturnType]):
+@dataclass  # can't use slots here since we set attributes on `__post_init__`
+class PydanticDescriptorProxy(Generic[ReturnType]):
     """
-    Wrap a classmethod, staticmethod or unbound function
+    Wrap a classmethod, staticmethod, property or unbound function
     and act as a descriptor that allows us to detect decorated items
     from the class' attributes.
 
@@ -128,22 +136,30 @@ class PydanticDecoratorMarker(Generic[ReturnType]):
     decorator_info: DecoratorInfo
     shim: Callable[[Callable[..., Any]], Callable[..., Any]] | None = None
 
-    @overload
-    def __get__(self, obj: None, objtype: None) -> PydanticDecoratorMarker[ReturnType]:
-        ...
+    def __post_init__(self):
+        for attr in 'setter', 'deleter':
+            if hasattr(self.wrapped, attr):
+                f = partial(self._call_wrapped_attr, name=attr)
+                setattr(self, attr, f)
 
-    @overload
-    def __get__(self, obj: object, objtype: type[object]) -> Callable[..., ReturnType]:
-        ...
+    def _call_wrapped_attr(self, func: Callable[[Any], None], *, name: str) -> PydanticDescriptorProxy[ReturnType]:
+        self.wrapped = getattr(self.wrapped, name)(func)
+        return self
 
-    def __get__(
-        self, obj: object | None, objtype: type[object] | None = None
-    ) -> Callable[..., ReturnType] | PydanticDecoratorMarker[ReturnType]:
+    def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
         try:
-            return self.wrapped.__get__(obj, objtype)
+            return self.wrapped.__get__(obj, obj_type)
         except AttributeError:
             # not a descriptor, e.g. a partial object
             return self.wrapped  # type: ignore[return-value]
+
+    def __set_name__(self, instance: Any, name: str) -> None:
+        if hasattr(self.wrapped, '__set_name__'):
+            self.wrapped.__set_name__(instance, name)
+
+    def __getattr__(self, __name: str) -> Any:
+        """Forward checks for __isabstractmethod__ and such"""
+        return getattr(self.wrapped, __name)
 
 
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
@@ -167,6 +183,7 @@ class Decorator(Generic[DecoratorInfoType]):
     @staticmethod
     def build(
         cls_: Any,
+        *,
         cls_var_name: str,
         shim: Callable[[Any], Any] | None,
         info: DecoratorInfoType,
@@ -196,15 +213,17 @@ class DecoratorInfos:
     # mapping of name in the class namespace to decorator info
     # note that the name in the class namespace is the function or attribute name
     # not the field name!
+    # TODO these all need to be renamed to plural
     validator: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
     field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
     root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
     field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
     model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
     model_validator: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
+    computed_fields: dict[str, Decorator[ComputedFieldInfo]] = field(default_factory=dict)
 
     @staticmethod
-    def build(model_dc: type[Any]) -> DecoratorInfos:
+    def build(model_dc: type[Any]) -> DecoratorInfos:  # noqa: C901 (ignore complexity)
         """
         We want to collect all DecFunc instances that exist as
         attributes in the namespace of the class (a BaseModel or dataclass)
@@ -229,9 +248,10 @@ class DecoratorInfos:
                 res.root_validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validator.items()})
                 res.field_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_serializer.items()})
                 res.model_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_serializer.items()})
+                res.computed_fields.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_fields.items()})
 
         for var_name, var_value in vars(model_dc).items():
-            if isinstance(var_value, PydanticDecoratorMarker):
+            if isinstance(var_value, PydanticDescriptorProxy):
                 info = var_value.decorator_info
                 if isinstance(info, ValidatorDecoratorInfo):
                     res.validator[var_name] = Decorator.build(
@@ -267,10 +287,14 @@ class DecoratorInfos:
                     res.model_validator[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
-                else:
-                    assert isinstance(info, ModelSerializerDecoratorInfo)
+                elif isinstance(info, ModelSerializerDecoratorInfo):
                     res.model_serializer[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
+                    )
+                else:
+                    isinstance(var_value, ComputedFieldInfo)
+                    res.computed_fields[var_name] = Decorator.build(
+                        model_dc, cls_var_name=var_name, shim=None, info=info
                     )
                 setattr(model_dc, var_name, var_value.wrapped)
         return res
@@ -490,3 +514,20 @@ def count_positional_params(sig: Signature) -> int:
 
 def can_be_positional(param: Parameter) -> bool:
     return param.kind in (Parameter.POSITIONAL_ONLY, Parameter.POSITIONAL_OR_KEYWORD)
+
+
+def ensure_property(f: Any) -> Any:
+    """
+    Ensure that a function is a `property` or `cached_property`, or is a valid descriptor.
+
+    Args:
+        f: The function to check.
+
+    Returns:
+        The function, or a `property` or `cached_property` instance wrapping the function.
+    """
+
+    if ismethoddescriptor(f) or isdatadescriptor(f):
+        return f
+    else:
+        return property(f)

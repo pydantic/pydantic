@@ -1,9 +1,5 @@
 """
-Public methods related to:
-
-* `validator` - a decorator to add validation to a field on a model
-* `root_validator` - a decorator to add validation to a model as a whole
-* `serializer` - a decorator to add serialization to a field on a model
+Public methods used as decorators within pydantic models and dataclasses
 """
 
 from __future__ import annotations as _annotations
@@ -171,7 +167,7 @@ def validator(
 
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
 
-    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+    def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
                 '`@validator` cannot be applied to instance methods', code='validator-instance-method'
@@ -186,7 +182,7 @@ def validator(
             always=always,
             check_fields=check_fields,
         )
-        return _decorators.PydanticDecoratorMarker(f, validator_wrapper_info, shim=wrap)
+        return _decorators.PydanticDescriptorProxy(f, validator_wrapper_info, shim=wrap)
 
     return dec  # type: ignore[return-value]
 
@@ -249,7 +245,7 @@ def field_validator(
 
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
-    ) -> _decorators.PydanticDecoratorMarker[Any]:
+    ) -> _decorators.PydanticDescriptorProxy[Any]:
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
                 '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
@@ -259,7 +255,7 @@ def field_validator(
         f = _decorators.ensure_classmethod_based_on_signature(f)
 
         dec_info = _decorators.FieldValidatorDecoratorInfo(fields=fields, mode=mode, check_fields=check_fields)
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec
 
@@ -336,7 +332,7 @@ def root_validator(
         # auto apply the @classmethod decorator and warn users if we had to do so
         res = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
-        return _decorators.PydanticDecoratorMarker(res, dec_info, shim=wrap)
+        return _decorators.PydanticDescriptorProxy(res, dec_info, shim=wrap)
 
     return dec
 
@@ -415,7 +411,7 @@ def field_serializer(
 
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
-    ) -> _decorators.PydanticDecoratorMarker[Any]:
+    ) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
@@ -423,7 +419,7 @@ def field_serializer(
             when_used=when_used,
             check_fields=check_fields,
         )
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec
 
@@ -433,7 +429,7 @@ def model_serializer(
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
-) -> Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
+) -> Callable[[Any], _decorators.PydanticDescriptorProxy[Any]] | _decorators.PydanticDescriptorProxy[Any]:
     """
     Decorator to add a function which will be called to serialize the model.
 
@@ -452,9 +448,9 @@ def model_serializer(
             The decorated function.
     """
 
-    def dec(f: Callable[..., Any]) -> _decorators.PydanticDecoratorMarker[Any]:
+    def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, json_return_type=json_return_type)
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:
         return dec
@@ -544,7 +540,7 @@ AnyModeAfterValidator = Union[ModelAfterValidator, ModelAfterValidatorWithoutInf
 def model_validator(
     *,
     mode: Literal['wrap'],
-) -> Callable[[AnyModelWrapValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[[AnyModelWrapValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
     ...
 
 
@@ -552,7 +548,7 @@ def model_validator(
 def model_validator(
     *,
     mode: Literal['before'],
-) -> Callable[[AnyModeBeforeValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[[AnyModeBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
     ...
 
 
@@ -560,7 +556,7 @@ def model_validator(
 def model_validator(
     *,
     mode: Literal['after'],
-) -> Callable[[AnyModeAfterValidator], _decorators.PydanticDecoratorMarker[_decorators.ModelValidatorDecoratorInfo]]:
+) -> Callable[[AnyModeAfterValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
     ...
 
 
@@ -568,8 +564,8 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    def dec(f: Any) -> _decorators.PydanticDecoratorMarker[Any]:
+    def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
-        return _decorators.PydanticDecoratorMarker(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec

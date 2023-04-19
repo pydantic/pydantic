@@ -4,6 +4,7 @@ Defining fields on models.
 from __future__ import annotations as _annotations
 
 import dataclasses
+import inspect
 import sys
 import typing
 from copy import copy
@@ -15,13 +16,14 @@ import annotated_types
 import typing_extensions
 
 from . import types
-from ._internal import _fields, _forward_ref, _repr, _typing_extra, _utils
+from ._internal import _decorators, _fields, _forward_ref, _internal_dataclass, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
 from ._internal._generics import replace_types
-from ._internal._internal_dataclass import slots_dataclass
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
+    from pydantic_core import core_schema as _core_schema
+
     from ._internal._repr import ReprArgs
 
 
@@ -456,7 +458,7 @@ class FieldInfo(_repr.Representation):
                     yield s, value
 
 
-@slots_dataclass
+@_internal_dataclass.slots_dataclass
 class AliasPath:
     path: list[int | str]
 
@@ -467,7 +469,7 @@ class AliasPath:
         return self.path
 
 
-@slots_dataclass
+@_internal_dataclass.slots_dataclass
 class AliasChoices:
     choices: list[str | AliasPath]
 
@@ -736,3 +738,86 @@ def PrivateAttr(
         default,
         default_factory=default_factory,
     )
+
+
+@_internal_dataclass.slots_dataclass
+class ComputedFieldInfo:
+    """
+    A container for data from `@computed_field` so that we can access it
+    while building the pydantic-core schema.
+    """
+
+    decorator_repr: typing.ClassVar[str] = '@computed_field'
+    wrapped_property: property
+    json_return_type: _core_schema.JsonReturnTypes | None
+    alias: str | None
+    title: str | None
+    description: str | None
+    repr: bool
+
+
+# this should really be `property[T], cached_proprety[T]` but property is not generic unlike cached_property
+# See https://github.com/python/typing/issues/985 and linked issues
+PropertyT = typing.TypeVar('PropertyT')
+
+
+@typing.overload
+def computed_field(
+    *,
+    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    alias: str | None = None,
+    title: str | None = None,
+    description: str | None = None,
+    repr: bool = True,
+) -> typing.Callable[[PropertyT], PropertyT]:
+    ...
+
+
+@typing.overload
+def computed_field(__func: PropertyT) -> PropertyT:
+    ...
+
+
+def computed_field(
+    __f: PropertyT | None = None,
+    *,
+    alias: str | None = None,
+    title: str | None = None,
+    description: str | None = None,
+    repr: bool = True,
+    json_return_type: _core_schema.JsonReturnTypes | None = None,
+) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
+    """
+    Decorate to include `property` and `cached_property` when serialising models.
+
+    If applied to functions not yet decorated with `@property` or `@cached_property`, the function is
+    automatically wrapped with `property`.
+
+    Args:
+        __f: the function to wrap.
+        alias: alias to use when serializing this computed field, only used when `by_alias=True`
+        title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697
+        description: Description to used when including this computed field in JSON Schema, defaults to the functions
+            docstring, currently unused waiting for #4697
+        repr: whether to include this computed field in model repr
+        json_return_type: optional return for serialization logic to expect when serialising to JSON, if included
+            this must be correct, otherwise a `TypeError` is raised
+
+    Returns:
+        A proxy wrapper for the property.
+    """
+
+    def dec(f: Any) -> Any:
+        nonlocal description
+        if description is None and f.__doc__:
+            description = inspect.cleandoc(f.__doc__)
+
+        # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
+        f = _decorators.ensure_property(f)
+        dec_info = ComputedFieldInfo(f, json_return_type, alias, title, description, repr)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
+
+    if __f is None:
+        return dec
+    else:
+        return dec(__f)
