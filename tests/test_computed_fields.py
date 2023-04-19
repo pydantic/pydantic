@@ -484,5 +484,5 @@ def test_abstractmethod_missing(bases: tuple[Any, ...]):
     class Square(AbstractSquare):
         pass
 
-    with pytest.raises(TypeError, match="Can't instantiate abstract class Square with abstract method area"):
+    with pytest.raises(TypeError, match="Can't instantiate abstract class Square with abstract methods? area"):
         Square(side=4.0)
