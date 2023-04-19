@@ -150,6 +150,7 @@ class GenerateSchema:
         'typevars_map',
         'recursion_cache',
         'definitions',
+        'other_recursion_cache',
         'recursion_hits',
     )
 
@@ -165,8 +166,10 @@ class GenerateSchema:
         self.typevars_map = typevars_map
 
         self.recursion_cache: set[str] = set()
-        self.recursion_hits = set()
         self.definitions: dict[str, core_schema.CoreSchema] = {}
+
+        self.other_recursion_cache: set[str] = set()
+        self.recursion_hits = set()
 
     @property
     def config_wrapper(self) -> ConfigWrapper:
@@ -177,17 +180,7 @@ class GenerateSchema:
         return self.config_wrapper.arbitrary_types_allowed
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
-        ref_obj = obj
-        if isinstance(ref_obj, ForwardRef):
-            if ref_obj.__forward_arg__ in self.types_namespace:
-                ref_obj = self.types_namespace[ref_obj.__forward_arg__]
-        recursive_ref = get_type_ref(ref_obj)
-        if recursive_ref in self.recursion_cache:
-            self.recursion_hits.add(recursive_ref)
-            return core_schema.definition_reference_schema(recursive_ref)
-
-        self.recursion_cache.add(recursive_ref)
-        schema = self._generate_schema(obj, from_dunder_get_core_schema=True)
+        schema, recursive_ref = self._generate_schema_middle(obj)
 
         schema = remove_unnecessary_invalid_definitions(schema)
 
@@ -207,8 +200,41 @@ class GenerateSchema:
             schema['ref'] = recursive_ref
             self.recursion_hits.discard(recursive_ref)
 
-        self.recursion_cache.discard(recursive_ref)
         return schema
+
+    def _generate_schema_middle(self, obj):
+        recursive_ref = get_type_ref(obj)
+        if recursive_ref in self.other_recursion_cache:
+            self.recursion_hits.add(recursive_ref)
+            return core_schema.definition_reference_schema(recursive_ref), recursive_ref
+
+        if isinstance(obj, ForwardRef):
+            # we assume that types_namespace has the target of forward references in its scope,
+            # but this could fail, for example, if calling Validator on an imported type which contains
+            # forward references to other types only defined in the module from which it was imported
+            # `Validator(SomeImportedTypeAliasWithAForwardReference)`
+            # or the equivalent for BaseModel
+            # class Model(BaseModel):
+            #   x: SomeImportedTypeAliasWithAForwardReference
+            try:
+                obj = _typing_extra.evaluate_fwd_ref(obj, globalns=self.types_namespace)
+            except NameError as e:
+                raise PydanticUndefinedAnnotation.from_name_error(e) from e
+
+            # if obj is still a ForwardRef, it means we can't evaluate it, raise PydanticUndefinedAnnotation
+            if isinstance(obj, ForwardRef):
+                raise PydanticUndefinedAnnotation(obj.__forward_arg__, f'Unable to evaluate forward reference {obj}')
+
+            if self.typevars_map is not None:
+                obj = replace_types(obj, self.typevars_map)
+
+        self.other_recursion_cache.add(recursive_ref)
+        try:
+            schema = self._generate_schema(obj, from_dunder_get_core_schema=True)
+        finally:
+            self.other_recursion_cache.discard(recursive_ref)
+
+        return schema, recursive_ref
 
     def model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
         """
@@ -217,7 +243,10 @@ class GenerateSchema:
         Since models generate schemas for themselves this method is public and can be called
         from within BaseModel's metaclass.
         """
-        model_ref = get_type_ref(cls)
+        # model_ref = get_type_ref(cls)
+        model_ref, schema = self._get_or_cache_recursive_ref(cls)
+        if schema is not None:
+            return schema
 
         from pydantic.main import BaseModel
 
@@ -304,25 +333,6 @@ class GenerateSchema:
         elif isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
-        elif isinstance(obj, ForwardRef):
-            # we assume that types_namespace has the target of forward references in its scope,
-            # but this could fail, for example, if calling Validator on an imported type which contains
-            # forward references to other types only defined in the module from which it was imported
-            # `Validator(SomeImportedTypeAliasWithAForwardReference)`
-            # or the equivalent for BaseModel
-            # class Model(BaseModel):
-            #   x: SomeImportedTypeAliasWithAForwardReference
-            try:
-                obj = _typing_extra.evaluate_fwd_ref(obj, globalns=self.types_namespace)
-            except NameError as e:
-                raise PydanticUndefinedAnnotation.from_name_error(e) from e
-
-            # if obj is still a ForwardRef, it means we can't evaluate it, raise PydanticUndefinedAnnotation
-            if isinstance(obj, ForwardRef):
-                raise PydanticUndefinedAnnotation(obj.__forward_arg__, f'Unable to evaluate forward reference {obj}')
-
-            if self.typevars_map is not None:
-                obj = replace_types(obj, self.typevars_map)
 
         if from_dunder_get_core_schema:
             from_property = self._generate_schema_from_property(obj, obj)
@@ -391,8 +401,6 @@ class GenerateSchema:
             # probably need to take care of other subclasses here
         elif isinstance(obj, typing.TypeVar):
             return self._unsubstituted_typevar_schema(obj)
-        elif isinstance(obj, _RecursiveTypeWrapper):
-            return self._recursive_type_schema(obj)
         elif is_finalvar(obj):
             if obj is Final:
                 return core_schema.AnySchema(type='any')
@@ -638,7 +646,10 @@ class GenerateSchema:
         Hence to avoid creating validators that do not do what users expect we only
         support typing.TypedDict on Python >= 3.11 or typing_extension.TypedDict on all versions
         """
-        typed_dict_ref = get_type_ref(typed_dict_cls)
+        # typed_dict_ref = get_type_ref(typed_dict_cls)
+        typed_dict_ref, schema = self._get_or_cache_recursive_ref(typed_dict_cls)
+        if schema is not None:
+            return schema
 
         typevars_map = get_standard_typevars_map(typed_dict_cls)
         if origin is not None:
@@ -966,7 +977,10 @@ class GenerateSchema:
         """
         Generate schema for a dataclass.
         """
-        dataclass_ref = get_type_ref(dataclass)
+        # dataclass_ref = get_type_ref(dataclass)
+        dataclass_ref, schema = self._get_or_cache_recursive_ref(dataclass)
+        if schema is not None:
+            return schema
 
         typevars_map = get_standard_typevars_map(dataclass)
         if origin is not None:
@@ -1062,6 +1076,15 @@ class GenerateSchema:
             return self._union_schema(typing.Union[typevar.__constraints__])  # type: ignore
         else:
             return core_schema.AnySchema(type='any')
+
+    def _get_or_cache_recursive_ref(self, cls: type[Any]) -> tuple[str, core_schema.DefinitionReferenceSchema | None]:
+        obj_ref = get_type_ref(cls)
+        self.other_recursion_cache.discard(obj_ref)
+        if obj_ref in self.recursion_cache:
+            return obj_ref, core_schema.definition_reference_schema(obj_ref)
+        else:
+            self.recursion_cache.add(obj_ref)
+            return obj_ref, None
 
 
 _VALIDATOR_F_MATCH: Mapping[
@@ -1366,12 +1389,3 @@ def generate_computed_field(d: dict[str, Decorator[ComputedFieldInfo]]) -> list[
         for d in d.values()
     ]
     return r
-
-
-class _RecursiveTypeWrapper:
-    type_: Any
-    name: str
-
-    def __init__(self, type_: Any, name: str):
-        self.type_ = type_
-        self.name = name
