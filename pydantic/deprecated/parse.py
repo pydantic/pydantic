@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import json
 import pickle
+import warnings
 from enum import Enum
 from pathlib import Path
 from typing import Any, Callable
+
+from typing_extensions import deprecated
 
 
 class Protocol(str, Enum):
@@ -12,6 +15,7 @@ class Protocol(str, Enum):
     pickle = 'pickle'
 
 
+@deprecated('load_str_bytes is deprecated.')
 def load_str_bytes(
     b: str | bytes,
     *,
@@ -21,6 +25,7 @@ def load_str_bytes(
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
+    warnings.warn('load_str_bytes is deprecated.', DeprecationWarning, stacklevel=2)
     if proto is None and content_type:
         if content_type.endswith(('json', 'javascript')):
             pass
@@ -44,6 +49,7 @@ def load_str_bytes(
         raise TypeError(f'Unknown protocol: {proto}')
 
 
+@deprecated('load_file is deprecated.')
 def load_file(
     path: str | Path,
     *,
@@ -53,6 +59,7 @@ def load_file(
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
+    warnings.warn('load_file is deprecated.', DeprecationWarning, stacklevel=2)
     path = Path(path)
     b = path.read_bytes()
     if content_type is None:

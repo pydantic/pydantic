@@ -27,6 +27,7 @@ from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import Annotated, Literal
 
 from ._internal import _fields, _validators
+from ._migration import getattr_migration
 
 __all__ = [
     'Strict',
@@ -853,3 +854,6 @@ else:
 
         def __repr__(self) -> str:
             return 'NaiveDatetime'
+
+
+__getattr__ = getattr_migration(__name__)

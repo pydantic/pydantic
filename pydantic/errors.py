@@ -7,11 +7,13 @@ import re
 
 from typing_extensions import Literal
 
+from ._migration import getattr_migration
 from .version import VERSION
 
 __all__ = (
     'PydanticUserError',
     'PydanticUndefinedAnnotation',
+    'PydanticImportError',
     'PydanticSchemaGenerationError',
     'PydanticInvalidForJsonSchema',
 )
@@ -39,6 +41,7 @@ PydanticErrorCodes = Literal[
     'base-model-instantiated',
     'undefined-annotation',
     'schema-for-unknown-type',
+    'import-error',
     'create-model-field-definitions',
     'create-model-config-base',
     'validator-no-fields',
@@ -80,8 +83,6 @@ class PydanticUserError(PydanticErrorMixin, TypeError):
     Error raised due to incorrect use of Pydantic.
     """
 
-    pass
-
 
 class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     """A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.
@@ -113,6 +114,13 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
         return cls(name=name, message=str(name_error))
 
 
+class PydanticImportError(PydanticErrorMixin, ImportError):
+    """Error occurs when an import fails due to module changes between V1 and V2."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, code='import-error')
+
+
 class PydanticSchemaGenerationError(PydanticUserError):
     """
     Error raised during failures to generate a `CoreSchema` for some type.
@@ -135,3 +143,6 @@ class PydanticInvalidForJsonSchema(PydanticUserError):
 
     def __init__(self, message: str) -> None:
         super().__init__(message, code='invalid-for-json-schema')
+
+
+__getattr__ = getattr_migration(__name__)

@@ -210,6 +210,7 @@ def test_bad_toml_config() -> None:
 
 
 @pytest.mark.parametrize('module', sorted(executable_modules))
+@pytest.mark.filterwarnings('ignore:.*is deprecated.*:DeprecationWarning')
 def test_success_cases_run(module: str) -> None:
     """
     Ensure the "success" files can actually be executed

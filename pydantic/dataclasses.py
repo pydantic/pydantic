@@ -13,6 +13,7 @@ from typing_extensions import Literal, dataclass_transform
 from ._internal import _config, _decorators
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._internal._dataclasses import is_builtin_dataclass
+from ._migration import getattr_migration
 from .config import ConfigDict
 from .fields import Field
 
@@ -200,3 +201,6 @@ def dataclass(
         return create_dataclass
 
     return create_dataclass(_cls)
+
+
+__getattr__ = getattr_migration(__name__)

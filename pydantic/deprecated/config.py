@@ -3,6 +3,8 @@ from __future__ import annotations as _annotations
 import warnings
 from typing import Any
 
+from typing_extensions import deprecated
+
 from .._internal import _config
 
 __all__ = ('BaseConfig',)
@@ -18,6 +20,7 @@ class _ConfigMetaclass(type):
             raise AttributeError(f"type object '{self.__name__}' has no attribute {exc}") from exc
 
 
+@deprecated('BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead.')
 class BaseConfig(metaclass=_ConfigMetaclass):
     """
     This class is only retained for backwards compatibility.

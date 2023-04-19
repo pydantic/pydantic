@@ -1,4 +1,5 @@
 import datetime
+import warnings
 from collections import deque
 from decimal import Decimal
 from enum import Enum
@@ -8,6 +9,8 @@ from re import Pattern
 from types import GeneratorType
 from typing import Any, Callable, Dict, Type, Union
 from uuid import UUID
+
+from typing_extensions import deprecated
 
 from ..color import Color
 from ..networks import NameEmail
@@ -70,11 +73,13 @@ ENCODERS_BY_TYPE: Dict[Type[Any], Callable[[Any], Any]] = {
 }
 
 
+@deprecated('pydantic_encoder is deprecated, use pydantic_core.to_jsonable_python instead.')
 def pydantic_encoder(obj: Any) -> Any:
     from dataclasses import asdict, is_dataclass
 
     from ..main import BaseModel
 
+    warnings.warn('pydantic_encoder is deprecated, use BaseModel.model_dump instead.', DeprecationWarning, stacklevel=2)
     if isinstance(obj, BaseModel):
         return obj.model_dump()
     elif is_dataclass(obj):
@@ -91,8 +96,13 @@ def pydantic_encoder(obj: Any) -> Any:
         raise TypeError(f"Object of type '{obj.__class__.__name__}' is not JSON serializable")
 
 
+# TODO: Add a suggested migration path once there is a way to use custom encoders
+@deprecated('custom_pydantic_encoder is deprecated.')
 def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]], obj: Any) -> Any:
     # Check the class type and its superclasses for a matching encoder
+    warnings.warn(
+        'custom_pydantic_encoder is deprecated, use BaseModel.model_dump instead.', DeprecationWarning, stacklevel=2
+    )
     for base in obj.__class__.__mro__[:-1]:
         try:
             encoder = type_encoders[base]
@@ -104,10 +114,12 @@ def custom_pydantic_encoder(type_encoders: Dict[Any, Callable[[Type[Any]], Any]]
         return pydantic_encoder(obj)
 
 
+@deprecated('timedelta_isoformat is deprecated.')
 def timedelta_isoformat(td: datetime.timedelta) -> str:
     """
     ISO 8601 encoding for Python timedelta object.
     """
+    warnings.warn('timedelta_isoformat is deprecated.', DeprecationWarning, stacklevel=2)
     minutes, seconds = divmod(td.seconds, 60)
     hours, minutes = divmod(minutes, 60)
     return f'{"-" if td.days < 0 else ""}P{abs(td.days)}DT{hours:d}H{minutes:d}M{seconds:d}.{td.microseconds:06d}S'
