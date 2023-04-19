@@ -2,8 +2,8 @@ from __future__ import annotations as _annotations
 
 import random
 import sys
-from abc import abstractmethod
-from typing import ClassVar
+from abc import ABC, abstractmethod
+from typing import Any, ClassVar
 
 import pytest
 from pydantic_core import PydanticSerializationError, ValidationError
@@ -464,9 +464,15 @@ def test_abstractmethod():
     assert m.model_dump() == {'side': 4.0, 'area': 5.0}
 
 
-@pytest.mark.xfail(reason='missing abstractmethods are not raising an error')
-def test_abstractmethod_missing():
-    class AbstractSquare(BaseModel):
+@pytest.mark.parametrize(
+    'bases',
+    [
+        (BaseModel, ABC),
+        (ABC, BaseModel),
+    ],
+)
+def test_abstractmethod_missing(bases: tuple[Any, ...]):
+    class AbstractSquare(*bases):
         side: float
 
         @computed_field

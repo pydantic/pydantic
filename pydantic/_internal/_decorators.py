@@ -143,6 +143,9 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
             # not a descriptor, e.g. a partial object
             return self.wrapped  # type: ignore[return-value]
 
+    def __getattr__(self, __name: str) -> Any:
+        return getattr(self.wrapped, __name)
+
 
 @slots_dataclass
 class PydanticFullDescriptorProxy(PydanticDescriptorProxy[ReturnType]):
