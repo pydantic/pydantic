@@ -248,6 +248,7 @@ class DecoratorInfos:
                 res.root_validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validator.items()})
                 res.field_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_serializer.items()})
                 res.model_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_serializer.items()})
+                res.model_validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_validator.items()})
                 res.computed_fields.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_fields.items()})
 
         for var_name, var_value in vars(model_dc).items():
