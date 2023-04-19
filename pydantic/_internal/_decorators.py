@@ -3,7 +3,7 @@ Logic related to validators applied to models etc. via the `@validator` and `@ro
 """
 from __future__ import annotations as _annotations
 
-from dataclasses import field
+from dataclasses import dataclass, field
 from functools import partial, partialmethod
 from inspect import Parameter, Signature, isdatadescriptor, ismethoddescriptor, signature
 from typing import TYPE_CHECKING, Any, Callable, ClassVar, Generic, TypeVar, Union, cast
@@ -121,10 +121,10 @@ DecoratedType: TypeAlias = (
 )
 
 
-@slots_dataclass
+@dataclass  # can't use slots here since we set attributes on `__post_init__`
 class PydanticDescriptorProxy(Generic[ReturnType]):
     """
-    Wrap a classmethod, staticmethod or unbound function
+    Wrap a classmethod, staticmethod, property or unbound function
     and act as a descriptor that allows us to detect decorated items
     from the class' attributes.
 
@@ -136,6 +136,16 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
     decorator_info: DecoratorInfo
     shim: Callable[[Callable[..., Any]], Callable[..., Any]] | None = None
 
+    def __post_init__(self):
+        for attr in 'setter', 'deleter':
+            if hasattr(self.wrapped, attr):
+                f = partial(self._call_wrapped_attr, name=attr)
+                setattr(self, attr, f)
+
+    def _call_wrapped_attr(self, func: Callable[[Any], None], *, name: str) -> PydanticDescriptorProxy[ReturnType]:
+        self.wrapped = getattr(self.wrapped, name)(func)
+        return self
+
     def __get__(self, obj: object | None, obj_type: type[object] | None = None) -> PydanticDescriptorProxy[ReturnType]:
         try:
             return self.wrapped.__get__(obj, obj_type)
@@ -143,37 +153,13 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
             # not a descriptor, e.g. a partial object
             return self.wrapped  # type: ignore[return-value]
 
-    def __getattr__(self, __name: str) -> Any:
-        return getattr(self.wrapped, __name)
-
-
-@slots_dataclass
-class PydanticFullDescriptorProxy(PydanticDescriptorProxy[ReturnType]):
-    """
-    Extension of PydanticDescriptorProxy that also supports setter and getter to support full usage of
-    `property` and `cached_property`.
-    """
-
-    @property
-    def setter(self) -> Callable[[Callable[[Any], None]], PydanticDescriptorProxy[ReturnType]]:
-        def setter_wrapper(func: Callable[[Any], None]) -> PydanticDescriptorProxy[ReturnType]:
-            self.wrapped = self.wrapped.setter(func)
-            return self
-
-        return setter_wrapper
-
-    @property
-    def deleter(self) -> Callable[[Callable[[Any], None]], PydanticDescriptorProxy[ReturnType]]:
-        def deleter_wrapper(func: Callable[[Any], None]) -> PydanticDescriptorProxy[ReturnType]:
-            self.wrapped = self.wrapped.deleter(func)
-            return self
-
-        return deleter_wrapper
-
     def __set_name__(self, instance: Any, name: str) -> None:
         if hasattr(self.wrapped, '__set_name__'):
             self.wrapped.__set_name__(instance, name)
-        # no error if there's no __set_name__, otherwise we get errors on <=3.9
+
+    @property
+    def __isabstractmethod__(self) -> bool:
+        return self.wrapped.__isabstractmethod__
 
 
 DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)

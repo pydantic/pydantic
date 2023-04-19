@@ -670,7 +670,7 @@ def computed_field(
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
         dec_info = ComputedFieldInfo(f, json_return_type, alias, title, description, repr)
-        return _decorators.PydanticFullDescriptorProxy(f, dec_info)
+        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:
         return dec

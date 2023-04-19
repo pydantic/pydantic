@@ -469,6 +469,7 @@ def test_abstractmethod():
     [
         (BaseModel, ABC),
         (ABC, BaseModel),
+        (BaseModel,),
     ],
 )
 def test_abstractmethod_missing(bases: tuple[Any, ...]):
