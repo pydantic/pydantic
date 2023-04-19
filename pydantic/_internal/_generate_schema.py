@@ -157,7 +157,7 @@ class GenerateSchema:
         self.types_namespace: dict[str, Any] = types_namespace or {}
         self.typevars_map = typevars_map
 
-        self.recursion_cache: dict[str | int, core_schema.DefinitionReferenceSchema] = {}
+        self.recursion_cache: dict[str, core_schema.DefinitionReferenceSchema] = {}
         self.definitions: dict[str, core_schema.CoreSchema] = {}
 
     @property
@@ -169,9 +169,6 @@ class GenerateSchema:
         return self.config_wrapper.arbitrary_types_allowed
 
     def generate_schema(self, obj: Any) -> core_schema.CoreSchema:
-        if id(obj) in self.recursion_cache:
-            return self.recursion_cache[id(obj)]
-
         schema = self._generate_schema(obj, from_dunder_get_core_schema=True)
 
         schema = remove_unnecessary_invalid_definitions(schema)
