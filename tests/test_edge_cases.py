@@ -1,6 +1,7 @@
 import importlib.util
 import re
 import sys
+from abc import ABC, abstractmethod
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
@@ -20,8 +21,15 @@ from pydantic import (
     constr,
     errors,
 )
-from pydantic.decorators import field_validator
-from pydantic.fields import Field
+from pydantic.decorators import (
+    field_serializer,
+    field_validator,
+    model_serializer,
+    model_validator,
+    root_validator,
+    validator,
+)
+from pydantic.fields import Field, computed_field
 
 
 def test_str_bytes():
@@ -2248,3 +2256,76 @@ def test_parent_field_with_default():
     assert c.a == 1
     assert c.b == 2
     assert c.c == 3
+
+
+@pytest.mark.parametrize(
+    'bases',
+    [
+        (BaseModel, ABC),
+        (ABC, BaseModel),
+        (BaseModel,),
+    ],
+)
+def test_abstractmethod_missing_for_all_decorators(bases):
+    class AbstractSquare(*bases):
+        side: float
+
+        @field_validator('side')
+        @classmethod
+        @abstractmethod
+        def my_field_validator(cls, v):
+            raise NotImplementedError
+
+        @model_validator(mode='wrap')
+        @classmethod
+        @abstractmethod
+        def my_model_validator(cls, values, handler, info):
+            raise NotImplementedError
+
+        @root_validator(skip_on_failure=True)
+        @classmethod
+        @abstractmethod
+        def my_root_validator(cls, values):
+            raise NotImplementedError
+
+        with pytest.warns(DeprecationWarning):
+
+            @validator('side')
+            @classmethod
+            @abstractmethod
+            def my_validator(cls, value, **kwargs):
+                raise NotImplementedError
+
+        @model_serializer(mode='wrap')
+        @abstractmethod
+        def my_model_serializer(self, handler, info):
+            raise NotImplementedError
+
+        @field_serializer('side')
+        @abstractmethod
+        def my_serializer(self, v, _info):
+            raise NotImplementedError
+
+        @computed_field
+        @property
+        @abstractmethod
+        def my_computed_field(self):
+            raise NotImplementedError
+
+    class Square(AbstractSquare):
+        pass
+
+    with pytest.raises(
+        TypeError,
+        match=(
+            "Can't instantiate abstract class Square with abstract methods"
+            " my_computed_field,"
+            " my_field_validator,"
+            " my_model_serializer,"
+            " my_model_validator,"
+            " my_root_validator,"
+            " my_serializer,"
+            " my_validator"
+        ),
+    ):
+        Square(side=1.0)
