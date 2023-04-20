@@ -1,9 +1,8 @@
-import re
 from dataclasses import asdict, is_dataclass
 from typing import Any, List
 
 import pytest
-from dirty_equals import HasRepr, IsStr
+from dirty_equals import HasRepr
 
 from pydantic import ValidationError, root_validator
 from pydantic.dataclasses import dataclass
@@ -180,7 +179,7 @@ def test_root_validator():
     assert exc_info.value.errors() == [
         {
             'ctx': {'error': 'foobar'},
-            'input': HasRepr(IsStr(regex=re.escape("ArgsKwargs((1,), {'b': 'snap dragon'})"))),
+            'input': HasRepr("ArgsKwargs((1,), {'b': 'snap dragon'})"),
             'loc': (),
             'msg': 'Value error, foobar',
             'type': 'value_error',

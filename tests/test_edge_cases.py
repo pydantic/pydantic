@@ -9,13 +9,14 @@ from typing import Any, Callable, Dict, FrozenSet, Generic, List, Optional, Sequ
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import core_schema
+from pydantic_core import PydanticSerializationError, core_schema
 from typing_extensions import Annotated, get_args
 
 from pydantic import (
     AnalyzedType,
     BaseModel,
     ConfigDict,
+    PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
     ValidationError,
     constr,
@@ -1997,22 +1998,11 @@ def test_hashable_required():
     class Model(BaseModel):
         v: Hashable
 
-        # TODO: Should arbitrary_types_allowed be necessary for Hashable?
-        #   "ideally I guess we should have a validator for this."
-        #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130684977
-        model_config = dict(arbitrary_types_allowed=True)
-
     Model(v=None)
     with pytest.raises(ValidationError) as exc_info:
         Model(v=[])
     assert exc_info.value.errors() == [
-        {
-            'ctx': {'class': 'Hashable'},
-            'input': [],
-            'loc': ('v',),
-            'msg': 'Input should be an instance of Hashable',
-            'type': 'is_instance_of',
-        }
+        {'input': [], 'loc': ('v',), 'msg': 'Input should be hashable', 'type': 'is_hashable'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model()
@@ -2024,10 +2014,37 @@ def test_hashable_optional(default):
     class Model(BaseModel):
         v: Hashable = default
 
-        model_config = dict(arbitrary_types_allowed=True)
-
     Model(v=None)
     Model()
+
+
+def test_hashable_serialization():
+    class Model(BaseModel):
+        v: Hashable
+
+    class HashableButNotSerializable:
+        def __hash__(self):
+            return 0
+
+    assert Model(v=(1,)).model_dump_json() == '{"v":[1]}'
+    m = Model(v=HashableButNotSerializable())
+    with pytest.raises(
+        PydanticSerializationError, match='Unable to serialize unknown type:.*HashableButNotSerializable'
+    ):
+        m.model_dump_json()
+
+
+def test_hashable_json_schema():
+    class Model(BaseModel):
+        v: Hashable
+
+    with pytest.raises(
+        PydanticInvalidForJsonSchema,
+        match=re.escape(
+            "Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<class 'collections.abc.Hashable'>)"
+        ),
+    ):
+        Model.model_json_schema()
 
 
 def test_default_factory_called_once():
