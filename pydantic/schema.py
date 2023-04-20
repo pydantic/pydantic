@@ -553,7 +553,7 @@ def field_type_schema(
             f_schema.update({'type': ['null', f_schema['type']]})
         if '$ref' in f_schema:
             assert len(f_schema) == 1
-            f_schema = {'oneOf': [{'type': 'null'}, {'$ref': f_schema['$ref']} ]}
+            f_schema = {'oneOf': [{'type': 'null'}, {'$ref': f_schema['$ref']}]}
         if 'anyOf' in f_schema and {'type': 'null'} not in f_schema['anyOf']:
             new_arr = [{'type': 'null'}]
             new_arr.extend(f_schema['anyOf'])
