@@ -301,9 +301,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         pass
 
-    def __getitem__(self, item):
-        return getattr(self, item)
-
     def __setattr__(self, name: str, value: Any) -> None:
         if name in self.__class_vars__:
             raise AttributeError(
