@@ -546,10 +546,8 @@ def field_type_schema(
         modify_schema = getattr(field_type, '__modify_schema__', None)
         if modify_schema:
             _apply_modify_schema(modify_schema, field, f_schema)
-            
     if 'type' in f_schema and field.allow_none:
         f_schema.update({'type': ['null', f_schema['type']]})
-    
     return f_schema, definitions, nested_models
 
 
