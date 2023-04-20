@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
 
+import pydantic_core
 import pytest
 from typing_extensions import Literal
 
@@ -692,21 +693,36 @@ def test_inheritance_post_init():
     assert post_init_called
 
 
-@pytest.mark.xfail(reason='support Hashable')
+def extract_error_details(errors: list[pydantic_core.ErrorDetails], value_keys: list[str]) -> list[dict[str, Any]]:
+    return [{k: v for k, v in error.items() if k in value_keys} for error in errors]
+
+
 def test_hashable_required():
-    @pydantic.dataclasses.dataclass
+    @pydantic.dataclasses.dataclass(config=ConfigDict(arbitrary_types_allowed=True))
     class MyDataclass:
         v: Hashable
 
     MyDataclass(v=None)
-    with pytest.raises(ValidationError) as exc_info:
+    with pytest.raises(ValidationError) as e:
         MyDataclass(v=[])
-    assert exc_info.value.errors() == [
-        {'loc': ('v',), 'msg': 'value is not a valid hashable', 'type': 'type_error.hashable'}
+    assert e.value.errors() == [
+        {
+            'type': 'is_instance_of',
+            'msg': 'Input should be an instance of Hashable',
+            'ctx': {'class': 'Hashable'},
+            'loc': ('v',),
+            'input': [],
+        }
     ]
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(ValidationError) as e:
         MyDataclass()
-    assert "__init__() missing 1 required positional argument: 'v'" in str(exc_info.value)
+    assert extract_error_details(e.value.errors(), ['type', 'msg', 'loc']) == [
+        {
+            'type': 'missing',
+            'msg': 'Field required',
+            'loc': ('v',),
+        }
+    ]
 
 
 @pytest.mark.xfail(reason='support Hashable')
