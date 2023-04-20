@@ -153,7 +153,10 @@ def test_ref_template():
     assert ApplePie.schema(ref_template='foobar/{model}.json') == {
         'title': 'Apple Pie',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': ['null', 'number']}, 'key_lime': {'oneOf': [{'type': 'null'}, {'$ref': 'foobar/KeyLimePie.json'}], 'title': 'Key Lime'}},
+        'properties': {
+            'a': {'title': 'A', 'type': ['null', 'number']},
+            'key_lime': {'oneOf': [{'type': 'null'}, {'$ref': 'foobar/KeyLimePie.json'}], 'title': 'Key Lime'},
+        },
         'definitions': {
             'KeyLimePie': {
                 'title': 'KeyLimePie',
@@ -162,7 +165,10 @@ def test_ref_template():
             },
         },
     }
-    assert ApplePie.schema()['properties']['key_lime'] == {'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/KeyLimePie'}], 'title': 'Key Lime'}
+    assert ApplePie.schema()['properties']['key_lime'] == {
+        'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/KeyLimePie'}],
+        'title': 'Key Lime',
+    }
     json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
     assert 'foobar/KeyLimePie.json' in json_schema
     assert '#/definitions/KeyLimePie' not in json_schema
@@ -209,7 +215,10 @@ def test_sub_model():
                 'required': ['b'],
             }
         },
-        'properties': {'a': {'type': 'integer', 'title': 'A'}, 'b': {'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'title': 'B'}},
+        'properties': {
+            'a': {'type': 'integer', 'title': 'A'},
+            'b': {'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'title': 'B'},
+        },
         'required': ['a'],
     }
 
@@ -531,7 +540,11 @@ def test_optional():
     class Model(BaseModel):
         a: Optional[str]
 
-    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': ['null', 'string'], 'title': 'A'}}}
+    assert Model.schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'type': ['null', 'string'], 'title': 'A'}},
+    }
 
 
 def test_any():
@@ -807,7 +820,10 @@ def test_date_constrained_types(field_type, expected_schema):
             NoneStrBytes,
             {
                 'properties': {
-                    'a': {'title': 'A', 'anyOf': [{'type': 'null'}, {'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                    'a': {
+                        'title': 'A',
+                        'anyOf': [{'type': 'null'}, {'type': 'string'}, {'type': 'string', 'format': 'binary'}],
+                    }
                 }
             },
         ),
@@ -1279,7 +1295,11 @@ def test_schema_overrides():
                 'type': 'object',
                 'properties': {'b': {'title': 'B', 'default': {'a': 'foo'}, 'allOf': [{'$ref': '#/definitions/Foo'}]}},
             },
-            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'title': 'C', 'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/Bar'}]}}},
+            'Baz': {
+                'title': 'Baz',
+                'type': 'object',
+                'properties': {'c': {'title': 'C', 'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/Bar'}]}},
+            },
         },
         'properties': {'d': {'$ref': '#/definitions/Baz'}},
         'required': ['d'],

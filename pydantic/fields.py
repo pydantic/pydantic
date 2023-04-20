@@ -178,7 +178,6 @@ class FieldInfo(Representation):
         self.extra = kwargs
 
     def __repr_args__(self) -> 'ReprArgs':
-
         field_defaults_to_hide: Dict[str, Any] = {
             'repr': True,
             **self.__field_constraints__,
@@ -405,7 +404,6 @@ class ModelField(Representation):
         alias: Optional[str] = None,
         field_info: Optional[FieldInfo] = None,
     ) -> None:
-
         self.name: str = name
         self.has_alias: bool = alias is not None
         self.alias: str = alias if alias is not None else name
@@ -852,7 +850,6 @@ class ModelField(Representation):
     def validate(
         self, v: Any, values: Dict[str, Any], *, loc: 'LocStr', cls: Optional['ModelOrDc'] = None
     ) -> 'ValidateReturn':
-
         assert self.type_.__class__ is not DeferredType
 
         if self.type_.__class__ is ForwardRef:

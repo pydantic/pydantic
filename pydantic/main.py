@@ -737,7 +737,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_defaults: bool,
         exclude_none: bool,
     ) -> Any:
-
         if isinstance(v, BaseModel):
             if to_dict:
                 v_dict = v.dict(
@@ -830,7 +829,6 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         exclude_defaults: bool = False,
         exclude_none: bool = False,
     ) -> 'TupleGenerator':
-
         # Merge field set excludes with explicit exclude parameter with explicit overriding field set options.
         # The extra "is not None" guards are not logically necessary but optimizes performance for the simple case.
         if exclude is not None or self.__exclude_fields__ is not None:

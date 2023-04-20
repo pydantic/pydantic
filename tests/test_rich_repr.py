@@ -25,7 +25,6 @@ def test_rich_repr() -> None:
 
 
 def test_rich_repr_color() -> None:
-
     color = Color((10, 20, 30, 0.1))
     rich_repr = list(color.__rich_repr__())
 
