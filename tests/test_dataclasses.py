@@ -490,17 +490,17 @@ def test_schema():
                 'type': 'object',
                 'additionalProperties': {'type': 'string'},
             },
-            'signup_ts': {'title': 'Signup Ts', 'type': 'string', 'format': 'date-time'},
+            'signup_ts': {'title': 'Signup Ts', 'type': ['null', 'string'], 'format': 'date-time'},
             'age': {
                 'title': 'The age of the user',
                 'description': 'do not lie!',
-                'type': 'integer',
+                'type': ['null', 'integer'],
             },
             'height': {
                 'title': 'The height in cm',
                 'minimum': 50,
                 'maximum': 300,
-                'type': 'integer',
+                'type': ['null', 'integer'],
             },
         },
         'required': ['id'],
@@ -781,7 +781,7 @@ def test_override_builtin_dataclass_nested_schema():
         'definitions': {
             'Meta': {
                 'properties': {
-                    'modified_date': {'format': 'date-time', 'title': 'Modified ' 'Date', 'type': 'string'},
+                    'modified_date': {'format': 'date-time', 'title': 'Modified ' 'Date', 'type': ['null', 'string']},
                     'seen_count': {'title': 'Seen Count', 'type': 'integer'},
                 },
                 'required': ['modified_date', 'seen_count'],

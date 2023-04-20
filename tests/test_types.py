@@ -375,7 +375,7 @@ def test_conlist():
             },
             'bar': {
                 'title': 'Bar',
-                'type': 'array',
+                'type': ['null', 'array'],
                 'items': {'type': 'string'},
                 'minItems': 1,
                 'maxItems': 4,
@@ -570,7 +570,7 @@ def test_conset():
             },
             'bar': {
                 'title': 'Bar',
-                'type': 'array',
+                'type': ['null', 'array'],
                 'items': {'type': 'string'},
                 'uniqueItems': True,
                 'minItems': 1,
@@ -631,7 +631,7 @@ def test_confrozenset():
             },
             'bar': {
                 'title': 'Bar',
-                'type': 'array',
+                'type': ['null', 'array'],
                 'items': {'type': 'string'},
                 'uniqueItems': True,
                 'minItems': 1,

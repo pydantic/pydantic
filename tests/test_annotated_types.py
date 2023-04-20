@@ -338,7 +338,7 @@ def test_typeddict_required():
                 'title': 'DataTD',
                 'type': 'object',
                 'properties': {
-                    'a': {'title': 'A', 'type': 'integer'},
+                    'a': {'title': 'A', 'type': ['null', 'integer']},
                     'b': {'title': 'B', 'type': 'string'},
                 },
                 'required': ['b'],
@@ -365,7 +365,7 @@ def test_typeddict_not_required():
                 'title': 'DataTD',
                 'type': 'object',
                 'properties': {
-                    'a': {'title': 'A', 'type': 'integer'},
+                    'a': {'title': 'A', 'type': ['null', 'integer']},
                     'b': {'title': 'B', 'type': 'string'},
                 },
                 'required': ['b'],
@@ -396,10 +396,10 @@ def test_typed_dict_inheritance():
                 'title': 'DataTD',
                 'type': 'object',
                 'properties': {
-                    'a': {'title': 'A', 'type': 'integer'},
+                    'a': {'title': 'A', 'type': ['null', 'integer']},
                     'b': {'title': 'B', 'type': 'string'},
                     'c': {'title': 'C', 'type': 'integer'},
-                    'd': {'title': 'D', 'type': 'string'},
+                    'd': {'title': 'D', 'type': ['null', 'string']},
                 },
                 'required': ['b', 'c'],
             }
@@ -427,10 +427,10 @@ def test_typeddict_annotated_nonoptional():
                 'type': 'object',
                 'title': 'DataTD',
                 'properties': {
-                    'a': {'title': 'A', 'type': 'integer'},
-                    'b': {'title': 'B', 'type': 'integer'},
-                    'c': {'title': 'C', 'type': 'integer', 'description': 'Test'},
-                    'd': {'title': 'D', 'type': 'integer'},
+                    'a': {'title': 'A', 'type': ['null', 'integer']},
+                    'b': {'title': 'B', 'type': ['null', 'integer']},
+                    'c': {'title': 'C', 'type': ['null', 'integer'], 'description': 'Test'},
+                    'd': {'title': 'D', 'type': ['null', 'integer']},
                 },
                 'required': ['a', 'b', 'c'],
             },

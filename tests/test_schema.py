@@ -153,16 +153,16 @@ def test_ref_template():
     assert ApplePie.schema(ref_template='foobar/{model}.json') == {
         'title': 'Apple Pie',
         'type': 'object',
-        'properties': {'a': {'title': 'A', 'type': 'number'}, 'key_lime': {'$ref': 'foobar/KeyLimePie.json'}},
+        'properties': {'a': {'title': 'A', 'type': ['null', 'number']}, 'key_lime': {'oneOf': [{'type': 'null'}, {'$ref': 'foobar/KeyLimePie.json'}], 'title': 'Key Lime'}},
         'definitions': {
             'KeyLimePie': {
                 'title': 'KeyLimePie',
                 'type': 'object',
-                'properties': {'x': {'title': 'X', 'type': 'string'}},
+                'properties': {'x': {'title': 'X', 'type': ['null', 'string']}},
             },
         },
     }
-    assert ApplePie.schema()['properties']['key_lime'] == {'$ref': '#/definitions/KeyLimePie'}
+    assert ApplePie.schema()['properties']['key_lime'] == {'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/KeyLimePie'}], 'title': 'Key Lime'}
     json_schema = ApplePie.schema_json(ref_template='foobar/{model}.json')
     assert 'foobar/KeyLimePie.json' in json_schema
     assert '#/definitions/KeyLimePie' not in json_schema
@@ -209,7 +209,7 @@ def test_sub_model():
                 'required': ['b'],
             }
         },
-        'properties': {'a': {'type': 'integer', 'title': 'A'}, 'b': {'$ref': '#/definitions/Foo'}},
+        'properties': {'a': {'type': 'integer', 'title': 'A'}, 'b': {'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'title': 'B'}},
         'required': ['a'],
     }
 
@@ -269,7 +269,7 @@ def test_choices():
         'properties': {
             'foo': {'$ref': '#/definitions/FooEnum'},
             'bar': {'$ref': '#/definitions/BarEnum'},
-            'spam': {'$ref': '#/definitions/SpamEnum'},
+            'spam': {'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/SpamEnum'}]},
         },
         'required': ['foo', 'bar'],
         'definitions': {
@@ -302,7 +302,7 @@ def test_enum_modify_schema():
                 'type': 'string',
             }
         },
-        'properties': {'spam': {'$ref': '#/definitions/SpamEnum'}},
+        'properties': {'spam': {'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/SpamEnum'}]}},
         'title': 'Model',
         'type': 'object',
     }
@@ -531,7 +531,7 @@ def test_optional():
     class Model(BaseModel):
         a: Optional[str]
 
-    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': 'string', 'title': 'A'}}}
+    assert Model.schema() == {'title': 'Model', 'type': 'object', 'properties': {'a': {'type': ['null', 'string'], 'title': 'A'}}}
 
 
 def test_any():
@@ -728,7 +728,7 @@ class Foo(BaseModel):
                         'required': ['a'],
                     }
                 },
-                'properties': {'a': {'$ref': '#/definitions/Foo'}},
+                'properties': {'a': {'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/Foo'}], 'title': 'A'}},
             },
         ),
         (Dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}, 'required': ['a']}),
@@ -792,8 +792,8 @@ def test_date_constrained_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        (NoneStr, {'properties': {'a': {'title': 'A', 'type': 'string'}}}),
-        (NoneBytes, {'properties': {'a': {'title': 'A', 'type': 'string', 'format': 'binary'}}}),
+        (NoneStr, {'properties': {'a': {'title': 'A', 'type': ['null', 'string']}}}),
+        (NoneBytes, {'properties': {'a': {'title': 'A', 'type': ['null', 'string'], 'format': 'binary'}}}),
         (
             StrBytes,
             {
@@ -807,7 +807,7 @@ def test_date_constrained_types(field_type, expected_schema):
             NoneStrBytes,
             {
                 'properties': {
-                    'a': {'title': 'A', 'anyOf': [{'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
+                    'a': {'title': 'A', 'anyOf': [{'type': 'null'}, {'type': 'string'}, {'type': 'string', 'format': 'binary'}]}
                 }
             },
         ),
@@ -1000,13 +1000,15 @@ def test_json_type():
         b: Json[int]
         c: Json[Any]
 
+    # TODO: Is it correct that this test passes with 'b': {'title': 'B', 'type': 'integer'} ?
+    # Shouldn't it be 'b': {'title': 'B', 'type': ['null', 'integer']} ?
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
         'properties': {
-            'a': {'title': 'A', 'type': 'string', 'format': 'json-string'},
+            'a': {'title': 'A', 'type': ['null', 'string'], 'format': 'json-string'},
             'b': {'title': 'B', 'type': 'integer'},
-            'c': {'title': 'C', 'type': 'string', 'format': 'json-string'},
+            'c': {'title': 'C', 'type': ['null', 'string'], 'format': 'json-string'},
         },
         'required': ['b'],
     }
@@ -1277,7 +1279,7 @@ def test_schema_overrides():
                 'type': 'object',
                 'properties': {'b': {'title': 'B', 'default': {'a': 'foo'}, 'allOf': [{'$ref': '#/definitions/Foo'}]}},
             },
-            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'$ref': '#/definitions/Bar'}}},
+            'Baz': {'title': 'Baz', 'type': 'object', 'properties': {'c': {'title': 'C', 'oneOf': [{'type': 'null'}, {'$ref': '#/definitions/Bar'}]}}},
         },
         'properties': {'d': {'$ref': '#/definitions/Baz'}},
         'required': ['d'],
@@ -1754,7 +1756,7 @@ def test_optional_dict():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'title': 'Something', 'type': 'object'}},
+        'properties': {'something': {'title': 'Something', 'type': ['null', 'object']}},
     }
 
     assert Model().dict() == {'something': None}
@@ -1773,7 +1775,7 @@ def test_optional_validator():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'title': 'Something', 'type': 'string'}},
+        'properties': {'something': {'title': 'Something', 'type': ['null', 'string']}},
     }
 
     assert Model().dict() == {'something': None}
@@ -1792,7 +1794,7 @@ def test_field_with_validator():
     assert Model.schema() == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'something': {'type': 'integer', 'title': 'Something'}},
+        'properties': {'something': {'type': ['null', 'integer'], 'title': 'Something'}},
     }
 
 
@@ -2069,7 +2071,7 @@ def test_model_with_extra_forbidden():
     'annotation,kwargs,field_schema',
     [
         (int, dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
-        (Optional[int], dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': 'integer'}),
+        (Optional[int], dict(gt=0), {'title': 'A', 'exclusiveMinimum': 0, 'type': ['null', 'integer']}),
         (
             Tuple[int, ...],
             dict(gt=0),

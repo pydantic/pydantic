@@ -546,8 +546,22 @@ def field_type_schema(
         modify_schema = getattr(field_type, '__modify_schema__', None)
         if modify_schema:
             _apply_modify_schema(modify_schema, field, f_schema)
-    if 'type' in f_schema and field.allow_none:
-        f_schema.update({'type': ['null', f_schema['type']]})
+    if field.allow_none:
+        if 'type' in f_schema and f_schema['type'] == 'null':
+            return f_schema, definitions, nested_models
+        if 'type' in f_schema:
+            f_schema.update({'type': ['null', f_schema['type']]})
+        if '$ref' in f_schema:
+            assert len(f_schema) == 1
+            f_schema = {'oneOf': [{'type': 'null'}, {'$ref': f_schema['$ref']} ]}
+        if 'anyOf' in f_schema and {'type': 'null'} not in f_schema['anyOf']:
+            new_arr = [{'type': 'null'}]
+            new_arr.extend(f_schema['anyOf'])
+            f_schema['anyOf'] = new_arr
+        if 'oneOf' in f_schema and {'type': 'null'} not in f_schema['oneOf']:
+            new_arr = [{'type': 'null'}]
+            new_arr.extend(f_schema['oneOf'])
+            f_schema['oneOf'] = new_arr
     return f_schema, definitions, nested_models
 
 
