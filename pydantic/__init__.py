@@ -82,6 +82,7 @@ __all__ = [
     'KafkaDsn',
     'MySQLDsn',
     'MariaDBDsn',
+    'PulsarDsn',
     'validate_email',
     # tools
     'parse_obj_as',
