@@ -641,7 +641,7 @@ def test_pulsar_dsns(dsn):
         a: PulsarDsn
 
     m = Model(a=dsn)
-    assert m.a.scheme == 'pulsar' or 'pulsar+ssl'
+    assert m.a.scheme in ('pulsar', 'pulsar+ssl')
     assert str(Model(a=dsn).a) == dsn
 
 
