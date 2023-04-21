@@ -37,6 +37,7 @@ For URI/URL validation the following types are available:
 - `RedisDsn`: scheme `redis` or `rediss`, user info not required, tld not required, host not required (CHANGED: user info) (e.g., `rediss://:pass@localhost`)
 - `MongoDsn` : scheme `mongodb`, user info not required, database name not required, port
   not required from **v1.6** onwards), user info may be passed without user part (e.g., `mongodb://mongodb0.example.com:27017`)
+- `PulsarDsn`: schema `pulsar` or `pulsar+ssl`, user info not required, database name not required, port not required
 - `stricturl`: method with the following keyword arguments:
     - `strip_whitespace: bool = True`
     - `min_length: int = 1`

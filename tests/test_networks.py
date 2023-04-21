@@ -15,6 +15,7 @@ from pydantic import (
     MySQLDsn,
     NameEmail,
     PostgresDsn,
+    PulsarDsn,
     RedisDsn,
     Strict,
     UrlConstraints,
@@ -625,6 +626,23 @@ def test_kafka_dsns():
     m = Model(a='kafka://kafka3:9093')
     assert m.a.username is None
     assert m.a.password is None
+
+
+@pytest.mark.parametrize(
+    'dsn',
+    [
+        'pulsar://localhost:6650',
+        'pulsar+ssl://pulsar.us-west.example.com:6651',
+        'pulsar+ssl://localhost:6550,localhost:6651,localhost:6652',
+    ],
+)
+def test_pulsar_dsns(dsn):
+    class Model(BaseModel):
+        a: PulsarDsn
+
+    m = Model(a=dsn)
+    assert m.a.scheme == 'pulsar' or 'pulsar+ssl'
+    assert str(Model(a=dsn).a) == dsn
 
 
 def test_custom_schemes():

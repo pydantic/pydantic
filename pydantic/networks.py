@@ -37,6 +37,7 @@ __all__ = [
     'RedisDsn',
     'MongoDsn',
     'KafkaDsn',
+    'PulsarDsn',
     'validate_email',
     'MySQLDsn',
     'MariaDBDsn',
@@ -94,6 +95,9 @@ RedisDsn = Annotated[
 ]
 MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)]
 KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
+PulsarDsn = Annotated[
+    MultiHostUrl, UrlConstraints(allowed_schemes=['pulsar', 'pulsar+ssl'], default_host='localhost', default_port=6650)
+]
 MySQLDsn = Annotated[
     Url,
     UrlConstraints(
