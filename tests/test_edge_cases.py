@@ -2346,3 +2346,23 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         ),
     ):
         Square(side=1.0)
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='cannot use list.__class_getitem__ before 3.9')
+def test_generic_wrapped_forwardref():
+    class Operation(BaseModel):
+        callbacks: list['PathItem']
+
+        model_config = {'undefined_types_warning': False}
+
+    class PathItem(BaseModel):
+        pass
+
+    Operation.model_rebuild()
+
+    Operation.model_validate({'callbacks': [PathItem()]})
+    with pytest.raises(ValidationError) as exc_info:
+        Operation.model_validate({'callbacks': [1]})
+    assert exc_info.value.errors() == [
+        {'input': 1, 'loc': ('callbacks', 0), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+    ]

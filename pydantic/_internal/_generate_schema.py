@@ -279,12 +279,14 @@ class GenerateSchema:
         """
         Recursively generate a pydantic-core schema for any supported python type.
         """
-        if isinstance(obj, str):
-            return {'type': obj}  # type: ignore[return-value,misc]
-        elif isinstance(obj, dict):
+        if isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
-        elif isinstance(obj, ForwardRef):
+
+        if isinstance(obj, str):
+            obj = ForwardRef(obj)
+
+        if isinstance(obj, ForwardRef):
             # we assume that types_namespace has the target of forward references in its scope,
             # but this could fail, for example, if calling Validator on an imported type which contains
             # forward references to other types only defined in the module from which it was imported
