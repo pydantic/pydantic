@@ -226,7 +226,6 @@ class GenerateSchema:
             self._config_wrapper_stack.pop()
         inner_schema = apply_validators(fields_schema, decorators.root_validator.values())
 
-        inner_schema = consolidate_refs(inner_schema)
         inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
         core_config = config_wrapper.core_config()
@@ -240,6 +239,7 @@ class GenerateSchema:
             post_init=model_post_init,
             metadata=build_metadata_dict(js_modify_function=cls.model_modify_json_schema),
         )
+        model_schema = consolidate_refs(model_schema)
         schema = apply_model_serializers(model_schema, decorators.model_serializer.values())
         return apply_model_validators(schema, decorators.model_validator.values())
 
@@ -301,7 +301,7 @@ class GenerateSchema:
             if isinstance(obj, ForwardRef):
                 raise PydanticUndefinedAnnotation(obj.__forward_arg__, f'Unable to evaluate forward reference {obj}')
 
-            if self.typevars_map is not None:
+            if self.typevars_map:
                 obj = replace_types(obj, self.typevars_map)
 
         if from_dunder_get_core_schema:

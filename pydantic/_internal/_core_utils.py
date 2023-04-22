@@ -98,10 +98,15 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     This makes the fundamental assumption that any time two schemas have the same ref, occurrences
     after the first can safely be replaced.
 
-    In most cases, schemas with the same ref should not actually be produced, or should be completely identical.
-    However, as an implementation detail, recursive generic models will emit a non-identical schema deeper in the
-    tree with a re-used ref, with the intent that that schema gets replaced with a recursive reference once the
-    specific generic parametrization to use can be determined.
+    In most cases, schemas with the same ref should not actually be produced. However, when building recursive
+    models with multiple references to themselves at some level in the field hierarchy, it is difficult to avoid
+    getting multiple (identical) copies of the same schema with the same ref. This function removes the copied refs,
+    but is safe because the "duplicate" refs refer to the same schema.
+
+    There is one case where we purposely emit multiple (different) schemas with the same ref: when building
+    recursive generic models. In this case, as an implementation detail, recursive generic models will emit
+    a _non_-identical schema deeper in the tree with a re-used ref, with the intent that _that_ schema will
+    be replaced with a recursive reference once the specific generic parametrization to use can be determined.
     """
     refs: set[str] = set()
 
