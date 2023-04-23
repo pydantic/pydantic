@@ -340,6 +340,7 @@ jobs:
         run: pip install -U twine build packaging
 
       - name: check GITHUB_REF matches package version
+        id: check-tag
         uses: samuelcolvin/check-python-version@v3
         with:
           version_file_path: pydantic/version.py
