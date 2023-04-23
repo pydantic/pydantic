@@ -341,7 +341,7 @@ jobs:
 
       - name: check GITHUB_REF matches package version
         id: check-tag
-        uses: samuelcolvin/check-python-version@v3
+        uses: samuelcolvin/check-python-version@v3.1
         with:
           version_file_path: pydantic/version.py
 
