@@ -80,7 +80,7 @@ assert my_cos == my_cos_2
 ```
 
 **Serializing an `ImportString` type to json is possible with a
-[custom encoder](exporting_models.md#json_encoders) which accounts for
+[custom encoder](../exporting_models.md#json_encoders) which accounts for
 the evaluated object:**
 ```py test="xfail - replace json_encoders"
 from types import BuiltinFunctionType

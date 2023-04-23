@@ -1429,7 +1429,7 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
-Nevertheless, [strict type checking](types.md#strict-types) is partially supported.
+Nevertheless, [strict type checking](types/types.md#strict-types) is partially supported.
 
 ## Model signature
 

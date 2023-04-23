@@ -377,7 +377,7 @@ class Model(BaseModel):
     bigger_int: int = Field(..., gt=10000)
 ```
 
-Where `Field` refers to the [field function](schema.md#field-customization).
+Where `Field` refers to the [field function](../schema.md#field-customization).
 
 ### Arguments to `conlist`
 The following arguments are available when using the `conlist` type function
