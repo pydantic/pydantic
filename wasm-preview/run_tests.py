@@ -16,7 +16,7 @@ sys.setrecursionlimit(200)
 
 
 async def main(tests_zip: str, tag_name: str):
-    print(f'using pyodide version: {pyodide.__version__}')
+    print(f'Using pyodide version: {pyodide.__version__}')
     print(f'Extracting test files (size: {len(tests_zip):,})...')
     # File saved on the GH release
     pydantic_core_wheel = (
