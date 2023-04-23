@@ -75,11 +75,15 @@ async function get(url, mode) {
 }
 
 async function main() {
-  const latest_release = await get('https://api.github.com/repos/pydantic/pydantic-core/releases/latest', 'json');
-  const {tag_name} = latest_release;
-  self.postMessage(`Running tests against latest pydantic-core release (${tag_name}).\n`);
+  const query_args = new URLSearchParams(location.search);
+  let pydantic_core_version = query_args.get('pydantic_core_version');
+  if (!pydantic_core_version) {
+    const latest_release = await get('https://api.github.com/repos/pydantic/pydantic-core/releases/latest', 'json');
+    pydantic_core_version = latest_release.tag_name;
+  }
+  self.postMessage(`Running tests against latest pydantic-core release (${pydantic_core_version}).\n`);
   self.postMessage(`Downloading repo archive to get tests...\n`);
-  const zip_url = `https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/archive/refs/tags/${tag_name}.zip`;
+  const zip_url = `https://githubproxy.samuelcolvin.workers.dev/pydantic/pydantic-core/archive/refs/tags/${pydantic_core_version}.zip`;
   try {
     const [python_code, tests_zip] = await Promise.all([
       get(`./run_tests.py?v=${Date.now()}`, 'text'),
@@ -94,7 +98,7 @@ async function main() {
     FS.mkdir('/test_dir');
     FS.chdir('/test_dir');
     await pyodide.loadPackage(['micropip', 'pytest', 'pytz']);
-    await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({tag_name, tests_zip})});
+    await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({pydantic_core_version, tests_zip})});
     post();
   } catch (err) {
     console.error(err);

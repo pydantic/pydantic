@@ -58,7 +58,9 @@
       let terminal_output = '';
 
       output_el.innerText = 'Starting worker...';
-      const worker = new Worker(`./worker.js?v=${Date.now()}`);
+      const query_args = new URLSearchParams(location.search);
+      query_args.set('ts', Date.now());
+      const worker = new Worker(`./worker.js?${query_args.toString()}`);
       worker.onmessage = ({data}) => {
         if (typeof data == 'string') {
           terminal_output += data;
