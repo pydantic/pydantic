@@ -8,6 +8,7 @@ from pathlib import Path
 from zipfile import ZipFile
 
 import micropip
+import pyodide
 import pytest
 
 # this seems to be required for me on M1 Mac
@@ -15,6 +16,7 @@ sys.setrecursionlimit(200)
 
 
 async def main(tests_zip: str, tag_name: str):
+    print(f'using pyodide version: {pyodide.__version__}')
     print(f'Extracting test files (size: {len(tests_zip):,})...')
     # File saved on the GH release
     pydantic_core_wheel = (
@@ -45,7 +47,7 @@ async def main(tests_zip: str, tag_name: str):
 
 
 try:
-    await main(tests_zip, tag_name)  # noqa: F821,F704
+    await main(tests_zip, pydantic_core_version)  # noqa: F821,F704
 except Exception:
     traceback.print_exc()
     raise
