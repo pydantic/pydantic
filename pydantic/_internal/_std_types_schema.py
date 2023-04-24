@@ -185,6 +185,7 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
                 ),
             ],
             metadata=metadata,
+            serialization=core_schema.to_string_ser_schema(),
         ),
     )
 
