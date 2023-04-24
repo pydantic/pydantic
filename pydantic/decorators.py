@@ -463,7 +463,6 @@ def field_serializer(
 
         Returns:
             _decorators.PydanticDescriptorProxy[Any]: A `PydanticDescriptorProxy` object.
-
         """
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
@@ -648,7 +647,6 @@ def model_validator(
 
         Returns:
             _decorators.PydanticDescriptorProxy[Any]: A PydanticDescriptorProxy object.
-
         """
         # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
