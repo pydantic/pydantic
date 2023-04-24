@@ -3487,3 +3487,18 @@ def test_definitions_schema():
         'type': 'array',
         'items': {'$ref': '#/$defs/foobar'},
     }
+
+
+def test_function_wrap_schema():
+    class TestGenerateJsonSchema(GenerateJsonSchema):
+        pass
+
+    def fn(
+        v: str,
+        validator: core_schema.ValidatorFunctionWrapHandler,
+    ) -> str:
+        return validator(input_value=v)
+
+    schema = core_schema.no_info_wrap_validator_function(function=fn, schema=core_schema.str_schema())
+    json_schema_generator = TestGenerateJsonSchema()
+    assert json_schema_generator.function_wrap_schema(schema=schema) == {'type': 'string'}
