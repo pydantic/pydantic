@@ -31,7 +31,9 @@ click==8.1.3
     #   black
     #   mkdocs
 colorama==0.4.6
-    # via mkdocs-material
+    # via
+    #   griffe
+    #   mkdocs-material
 coverage==7.2.2
     # via -r requirements/testing.in
 devtools==0.10.0
@@ -52,6 +54,8 @@ ghp-import==2.1.0
     # via mkdocs
 greenlet==2.0.2
     # via sqlalchemy
+griffe==0.27.1
+    # via mkdocstrings-python
 hypothesis==6.70.0
     # via
     #   -r requirements/linting.in
@@ -66,15 +70,20 @@ jinja2==3.1.2
     # via
     #   mkdocs
     #   mkdocs-material
+    #   mkdocstrings
 markdown==3.3.7
     # via
     #   mkdocs
+    #   mkdocs-autorefs
     #   mkdocs-material
+    #   mkdocstrings
     #   pymdown-extensions
 markdown-it-py==2.2.0
     # via rich
 markupsafe==2.1.2
-    # via jinja2
+    # via
+    #   jinja2
+    #   mkdocstrings
 mdurl==0.1.2
     # via markdown-it-py
 mergedeep==1.3.4
@@ -82,10 +91,14 @@ mergedeep==1.3.4
 mkdocs==1.4.2
     # via
     #   -r requirements/docs.in
+    #   mkdocs-autorefs
     #   mkdocs-exclude
     #   mkdocs-material
     #   mkdocs-redirects
     #   mkdocs-simple-hooks
+    #   mkdocstrings
+mkdocs-autorefs==0.4.1
+    # via mkdocstrings
 mkdocs-exclude==1.0.2
     # via -r requirements/docs.in
 mkdocs-material==9.1.4
@@ -95,6 +108,10 @@ mkdocs-material-extensions==1.1.1
 mkdocs-redirects==1.2.0
     # via -r requirements/docs.in
 mkdocs-simple-hooks==0.1.5
+    # via -r requirements/docs.in
+mkdocstrings==0.21.2
+    # via mkdocstrings-python
+mkdocstrings-python==0.9.0
     # via -r requirements/docs.in
 mypy-extensions==1.0.0
     # via black
@@ -126,7 +143,9 @@ pygments==2.14.0
     #   mkdocs-material
     #   rich
 pymdown-extensions==9.10
-    # via mkdocs-material
+    # via
+    #   mkdocs-material
+    #   mkdocstrings
 pytest==7.2.2
     # via
     #   -r requirements/testing.in
