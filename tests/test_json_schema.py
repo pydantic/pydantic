@@ -3470,7 +3470,7 @@ def test_multi_host_url_schema():
     assert json_schema_generator.multi_host_url_schema(schema=schema) == {
         'type': 'string',
         'format': 'multi-host-uri',
-        'minLength': 1
+        'minLength': 1,
     }
 
 
@@ -3485,8 +3485,5 @@ def test_definitions_schema():
     json_schema_generator = TestGenerateJsonSchema()
     assert json_schema_generator.definitions_schema(schema=schema) == {
         'type': 'array',
-        'items': {'$ref': '#/$defs/foobar'}
+        'items': {'$ref': '#/$defs/foobar'},
     }
-
-
-
