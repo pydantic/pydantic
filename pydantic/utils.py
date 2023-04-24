@@ -65,7 +65,6 @@ __all__ = (
     'update_not_none',
     'almost_equal_floats',
     'get_model',
-    'to_camel',
     'is_valid_field',
     'smart_deepcopy',
     'PyObjectStr',
@@ -308,17 +307,6 @@ def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseMod
     if not issubclass(model_cls, BaseModel):
         raise TypeError('Unsupported type, must be either BaseModel or dataclass')
     return model_cls
-
-
-def to_camel(string: str) -> str:
-    return ''.join(word.capitalize() for word in string.split('_'))
-
-
-def to_lower_camel(string: str) -> str:
-    if len(string) >= 1:
-        pascal_string = to_camel(string)
-        return pascal_string[0].lower() + pascal_string[1:]
-    return string.lower()
 
 
 T = TypeVar('T')

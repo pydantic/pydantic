@@ -11,6 +11,7 @@ import pytest
 from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel, ConstrainedList, conlist
+from pydantic.alias_generators import to_lower_camel
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
@@ -34,7 +35,6 @@ from pydantic.utils import (
     lenient_issubclass,
     path_type,
     smart_deepcopy,
-    to_lower_camel,
     truncate,
     unique_list,
 )
