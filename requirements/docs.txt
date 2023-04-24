@@ -29,8 +29,10 @@ ghp-import==2.1.0
     # via
     #   -c requirements/all.txt
     #   mkdocs
-griffe==0.26.0
-    # via mkdocstrings-python
+griffe==0.27.1
+    # via
+    #   -c requirements/all.txt
+    #   mkdocstrings-python
 idna==3.4
     # via
     #   -c requirements/all.txt
@@ -69,7 +71,9 @@ mkdocs==1.4.2
     #   mkdocs-simple-hooks
     #   mkdocstrings
 mkdocs-autorefs==0.4.1
-    # via mkdocstrings
+    # via
+    #   -c requirements/all.txt
+    #   mkdocstrings
 mkdocs-exclude==1.0.2
     # via
     #   -c requirements/all.txt
@@ -91,9 +95,13 @@ mkdocs-simple-hooks==0.1.5
     #   -c requirements/all.txt
     #   -r requirements/docs.in
 mkdocstrings==0.21.2
-    # via mkdocstrings-python
+    # via
+    #   -c requirements/all.txt
+    #   mkdocstrings-python
 mkdocstrings-python==0.9.0
-    # via -r requirements/docs.in
+    # via
+    #   -c requirements/all.txt
+    #   -r requirements/docs.in
 packaging==23.0
     # via
     #   -c requirements/all.txt
