@@ -163,6 +163,7 @@ REMOVED_IN_V2 = {
     'pydantic.types.NoneStrBytes',
     'pydantic.types.PyObject',
     'pydantic.types.StrBytes',
+    'pydantic.typing.evaluate_forwardref',
     'pydantic.typing.AbstractSetIntStr',
     'pydantic.typing.AnyCallable',
     'pydantic.typing.AnyClassMethod',
