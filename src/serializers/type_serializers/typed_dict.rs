@@ -144,6 +144,13 @@ impl TypedDictSerializer {
         }
     }
 
+    pub fn n_computed_fields(&self) -> usize {
+        match self.computed_fields {
+            None => 0,
+            Some(ref computed_fields) => computed_fields.len(),
+        }
+    }
+
     fn exclude_default(&self, value: &PyAny, extra: &Extra, field: &TypedDictField) -> PyResult<bool> {
         if extra.exclude_defaults {
             if let Some(default) = field.serializer.get_default(value.py())? {
@@ -262,7 +269,7 @@ impl TypeSerializer for TypedDictSerializer {
                 };
                 let expected_len = match self.include_extra {
                     true => py_dict.len(),
-                    false => self.fields.len(),
+                    false => self.fields.len() + self.n_computed_fields(),
                 };
                 // NOTE! As above, we maintain the order of the input dict assuming that's right
                 // we don't both with `used_fields` here because on unions, `to_python(..., mode='json')` is used

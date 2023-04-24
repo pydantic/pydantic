@@ -28,4 +28,40 @@ mod tests {
             SchemaSerializer::py_new(py, schema, None).unwrap();
         })
     }
+
+    #[test]
+    fn test_serialize_computed_fields() {
+        Python::with_gil(|py| {
+            let code = r#"
+class A:
+    @property
+    def b(self) -> str:
+        return "b"
+
+schema = {
+    "cls": A,
+    "config": {},
+    "schema": {
+        "computed_fields": [{"property_name": "b", "type": "computed-field"}],
+        "fields": {},
+        "return_fields_set": True,
+        "type": "typed-dict",
+    },
+    "type": "model",
+}
+a = A()
+            "#;
+            let locals = PyDict::new(py);
+            py.run(code, None, Some(locals)).unwrap();
+            let a: &PyAny = locals.get_item("a").unwrap().extract().unwrap();
+            let schema: &PyDict = locals.get_item("schema").unwrap().extract().unwrap();
+            let serialized: Vec<u8> = SchemaSerializer::py_new(py, schema, None)
+                .unwrap()
+                .to_json(py, a, None, None, None, true, false, false, false, false, true, None)
+                .unwrap()
+                .extract(py)
+                .unwrap();
+            assert_eq!(serialized, b"{\"b\":\"b\"}");
+        })
+    }
 }

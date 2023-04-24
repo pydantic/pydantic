@@ -32,6 +32,10 @@ impl ComputedFields {
         }
     }
 
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
     pub fn to_python(
         &self,
         model: &PyAny,
