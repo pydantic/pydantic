@@ -1,5 +1,5 @@
 """
-Public methods used as decorators within pydantic models and dataclasses
+Public methods used as decorators within pydantic models and dataclasses.
 """
 
 from __future__ import annotations as _annotations
@@ -168,6 +168,18 @@ def validator(
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
 
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
+        """
+        A decorator function for pydantic validation.
+
+        Args:
+            f (Any): A function to be decorated.
+
+        Returns:
+            PydanticDescriptorProxy: A pydantic descriptor proxy.
+
+        Raises:
+            PydanticUserError: If the function is an instance method.
+        """
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
                 '`@validator` cannot be applied to instance methods', code='validator-instance-method'
@@ -220,14 +232,16 @@ def field_validator(
     Decorate methods on the class indicating that they should be used to validate fields.
 
     Args:
-        __field: The first field the field_validator should be called on; this is separate
+        __field (str): The first field the field_validator should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
-        *fields: Additional field(s) the field_validator should be called on.
-        mode: Defaults to 'after'.
-        check_fields: Whether to check that the fields actually exist on the model. Defaults to None.
+        *fields (tuple): Additional field(s) the field_validator should be called on.
+        mode (FieldValidatorModes): Specifies whether to validate the fields before or after validation.
+             Defaults to 'after'.
+        check_fields (bool | None): If set to True, checks that the fields actually exist on the model.
+            Defaults to None.
 
     Returns:
-        A decorator that can be used to decorate a function to be used as a field_validator.
+        Callable[[Any], Any]: A decorator that can be used to decorate a function to be used as a field_validator.
     """
     if isinstance(__field, FunctionType):
         raise PydanticUserError(
@@ -246,6 +260,22 @@ def field_validator(
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
     ) -> _decorators.PydanticDescriptorProxy[Any]:
+        """
+        Decorator for use with Pydantic validators.
+
+        Args:
+            f (Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]):
+                The wrapped function, which must be a `classmethod` or `staticmethod`.
+
+        Returns:
+            _decorators.PydanticDescriptorProxy: An instance of the `_decorators.PydanticDescriptorProxy` defined in
+            the Pydantic library that can be used to validate fields.
+
+        Raises:
+            PydanticUserError: If the wrapped function is attempted to be used with an instance method since the
+                decorator cannot be applied to instance methods.
+
+        """
         if _decorators.is_instance_method_from_sig(f):
             raise PydanticUserError(
                 '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
@@ -327,6 +357,19 @@ def root_validator(
     wrap = partial(_decorators_v1.make_v1_generic_root_validator, pre=pre)
 
     def dec(f: Callable[..., Any] | classmethod[Any, Any, Any] | staticmethod[Any, Any]) -> Any:
+        """
+        `root_validator` decorator that may be applied to a function, class method, or `staticmethod`.
+
+        Args:
+            f (Union[Callable[..., Any], classmethod[Any, Any, Any], staticmethod[Any, Any]]):
+                A function, classmethod, or staticmethod to decorate.
+
+        Returns:
+            Any: Returns the decorated function, classmethod, or staticmethod.
+
+        Raises:
+            TypeError: Raised if `@root_validator` is applied to an instance method.
+        """
         if _decorators.is_instance_method_from_sig(f):
             raise TypeError('`@root_validator` cannot be applied to instance methods')
         # auto apply the @classmethod decorator
@@ -400,10 +443,9 @@ def field_serializer(
 
     Args:
         fields (str): Which field(s) the method should be called on.
-        mode (str):
-            - `'plain'` means the function will be called instead of the default serialization logic,
-            - `'wrap'` means the function will be called with an argument to optionally call the
-                default serialization logic.
+        mode (str): `plain` means the function will be called instead of the default serialization logic,
+            `wrap` means the function will be called with an argument to optionally call the
+            default serialization logic.
         json_return_type (str): The type that the function returns if the serialization mode is JSON.
         when_used (str): When the function should be called.
         check_fields (bool): Whether to check that the fields actually exist on the model.
@@ -412,6 +454,17 @@ def field_serializer(
     def dec(
         f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
     ) -> _decorators.PydanticDescriptorProxy[Any]:
+        """
+        Decorator that creates a `PydanticDescriptorProxy` object.
+
+        Args:
+            f (Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]):
+                A callable object or a static/class method.
+
+        Returns:
+            _decorators.PydanticDescriptorProxy[Any]: A `PydanticDescriptorProxy` object.
+
+        """
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
@@ -431,7 +484,7 @@ def model_serializer(
     json_return_type: _core_schema.JsonReturnTypes | None = None,
 ) -> Callable[[Any], _decorators.PydanticDescriptorProxy[Any]] | _decorators.PydanticDescriptorProxy[Any]:
     """
-    Decorator to add a function which will be called to serialize the model.
+    Decorate a function which will be called to serialize the model.
 
     (`when_used` is not permitted here since it makes no sense.)
 
@@ -449,6 +502,16 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
+        """
+        Decorator to add Pydantic serialization functionality to a function.
+
+        Args:
+            f (Callable[..., Any]): The function to decorate.
+
+        Returns:
+            _decorators.PydanticDescriptorProxy[Any]: A descriptor proxy with Pydantic serialization functionality.
+
+        """
         dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, json_return_type=json_return_type)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
@@ -564,7 +627,29 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
+    """
+    Decorate model methods for validation purposes.
+
+    Args:
+        mode (Literal['wrap', 'before', 'after']): A required string literal that specifies the validation mode.
+            It can be one of the following: 'wrap', 'before', or 'after'.
+
+    Returns:
+        Any: A decorator function.
+    """
+
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
+        """
+        Decorator that applies the `@classmethod` decorator to a function and returns a
+        `PydanticDescriptorProxy` object.
+
+        Args:
+            f (Any): The function to be decorated.
+
+        Returns:
+            _decorators.PydanticDescriptorProxy[Any]: A PydanticDescriptorProxy object.
+
+        """
         # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
