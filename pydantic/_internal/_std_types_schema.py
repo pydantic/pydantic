@@ -91,8 +91,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     updates = {'title': enum_type.__name__, 'description': description}
     updates = {k: v for k, v in updates.items() if v is not None}
     metadata = build_metadata_dict(
-        js_cs_override=core_schema.literal_schema([x.value for x in cases]),
-        js_modify_function=lambda s: update_json_schema(s, updates),
+        js_function=lambda _c, h: update_json_schema(h(core_schema.literal_schema([x.value for x in cases])), updates)
     )
 
     to_enum_validator = core_schema.general_plain_validator_function(to_enum)
@@ -134,7 +133,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
     metadata = build_metadata_dict(
         cs_update_function=decimal_validator.__pydantic_update_schema__,
         # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
-        js_cs_override=lambda: decimal_validator.json_schema_override_schema(),
+        js_function=lambda _c, h: h(decimal_validator.json_schema_override_schema()),
     )
     lax = core_schema.general_after_validator_function(
         decimal_validator,
@@ -161,7 +160,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
 
 @schema_function(UUID)
 def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> core_schema.LaxOrStrictSchema:
-    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'uuid'})
+    metadata = build_metadata_dict(js_function=lambda _c, _h: {'type': 'string', 'format': 'uuid'})
     # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
     lax = core_schema.union_schema(
         [
@@ -201,7 +200,7 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
 
 @schema_function(PurePath)
 def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) -> core_schema.LaxOrStrictSchema:
-    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'path'})
+    metadata = build_metadata_dict(js_function=lambda _c, _h: {'type': 'string', 'format': 'path'})
     # TODO, is this actually faster than `function_after(...)` as above?
     lax = core_schema.union_schema(
         [
@@ -237,7 +236,7 @@ def _deque_ser_schema(
 
 
 def _deque_any_schema() -> core_schema.LaxOrStrictSchema:
-    metadata = build_metadata_dict(js_cs_override=lambda: core_schema.list_schema(core_schema.any_schema()))
+    metadata = build_metadata_dict(js_function=lambda _c, h: h(core_schema.list_schema(core_schema.any_schema())))
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_wrap_validator_function(
             _validators.deque_any_validator,
@@ -271,7 +270,7 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
         # `Deque[Something]`
         inner_schema = schema_generator.generate_schema(arg)
         # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
-        metadata = build_metadata_dict(js_cs_override=lambda: core_schema.list_schema(inner_schema))
+        metadata = build_metadata_dict(js_function=lambda _c, h: h(core_schema.list_schema(inner_schema)))
         lax_schema = core_schema.general_wrap_validator_function(
             _validators.deque_typed_validator,
             core_schema.list_schema(inner_schema, strict=False),
@@ -347,7 +346,7 @@ def make_strict_ip_schema(tp: type[Any], metadata: Any) -> CoreSchema:
 
 @schema_function(IPv4Address)
 def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv4'})
+    metadata = build_metadata_dict(js_function=lambda _c, _h: {'type': 'string', 'format': 'ipv4'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(_validators.ip_v4_address_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv4Address, metadata=metadata),
@@ -357,7 +356,7 @@ def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv4Interface)
 def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv4interface'})
+    metadata = build_metadata_dict(js_function=lambda _c, _h: {'type': 'string', 'format': 'ipv4interface'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(
             _validators.ip_v4_interface_validator, metadata=metadata
@@ -369,7 +368,7 @@ def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 
 @schema_function(IPv4Network)
 def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv4network'})
+    metadata = build_metadata_dict(js_function=lambda _c, _h: {'type': 'string', 'format': 'ipv4network'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(_validators.ip_v4_network_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv4Network, metadata=metadata),
@@ -379,7 +378,7 @@ def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv6Address)
 def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv6'})
+    metadata = build_metadata_dict(js_function=lambda _c, _h: {'type': 'string', 'format': 'ipv6'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(_validators.ip_v6_address_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv6Address, metadata=metadata),
@@ -389,7 +388,7 @@ def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 
 @schema_function(IPv6Interface)
 def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv6interface'})
+    metadata = build_metadata_dict(js_function=lambda _c, _h: {'type': 'string', 'format': 'ipv6interface'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(
             _validators.ip_v6_interface_validator, metadata=metadata
@@ -401,7 +400,7 @@ def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 
 @schema_function(IPv6Network)
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'ipv6network'})
+    metadata = build_metadata_dict(js_function=lambda _c, _h: {'type': 'string', 'format': 'ipv6network'})
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.general_plain_validator_function(_validators.ip_v6_network_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv6Network, metadata=metadata),

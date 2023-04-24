@@ -22,10 +22,16 @@ from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, ge
 
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo
-from ..json_schema import JsonSchemaValue, update_json_schema
+from ..json_schema import JsonSchemaValue
 from . import _discriminated_union, _typing_extra
 from ._config import ConfigWrapper
-from ._core_metadata import CoreMetadataHandler, build_metadata_dict
+from ._core_metadata import (
+    CoreMetadataHandler,
+    CoreSchemaOrField,
+    GetJsonSchemaFunction,
+    GetJsonSchemaHandler,
+    build_metadata_dict,
+)
 from ._core_utils import (
     consolidate_refs,
     define_expected_missing_refs,
@@ -75,6 +81,7 @@ AnyFieldDecorator = Union[
 ]
 
 ModifyCoreSchemaWrapHandler = Callable[[Any], core_schema.CoreSchema]
+GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 
 
 def check_validator_fields_against_field_name(
@@ -173,13 +180,15 @@ class GenerateSchema:
 
         schema = remove_unnecessary_invalid_definitions(schema)
 
-        js_modify_function = _get_pydantic_modify_json_schema(obj)
-        if js_modify_function is None:
+        metadata_js_function = _get_pydantic_modify_json_schema(obj)
+        if metadata_js_function is None:
             # Need to do this to handle custom generics:
             if hasattr(obj, '__origin__'):
-                js_modify_function = _get_pydantic_modify_json_schema(obj.__origin__)
-
-        CoreMetadataHandler(schema).compose_js_modify_functions(js_modify_function)
+                metadata_js_function = _get_pydantic_modify_json_schema(obj.__origin__)
+        if metadata_js_function is not None:
+            metadata = CoreMetadataHandler(schema).metadata
+            metadata['pydantic_js_functions'] = metadata.get('pydantic_js_functions', [])
+            metadata['pydantic_js_functions'].append(metadata_js_function)
 
         if 'ref' in schema:
             # definitions and definition-ref schemas don't have 'ref', causing the type error ignored on the next line
@@ -232,13 +241,25 @@ class GenerateSchema:
         core_config = config_wrapper.core_config()
         model_post_init = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
 
+        def modify_json_schema(schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            cls_modify = getattr(cls, '__pydantic_modify_json_schema__', None)
+            if cls_modify is not None:
+                json_schema = cls_modify(schema_or_field, handler)
+            else:
+                json_schema = handler(schema_or_field)
+            if 'title' not in json_schema:
+                json_schema['title'] = cls.__name__
+            return json_schema
+
+        metadata = build_metadata_dict(js_functions=[modify_json_schema])
+
         model_schema = core_schema.model_schema(
             cls,
             inner_schema,
             ref=model_ref,
             config=core_config,
             post_init=model_post_init,
-            metadata=build_metadata_dict(js_modify_function=cls.model_modify_json_schema),
+            metadata=metadata,
         )
         schema = apply_model_serializers(model_schema, decorators.model_serializer.values())
         return apply_model_validators(schema, decorators.model_validator.values())
@@ -557,7 +578,13 @@ class GenerateSchema:
         }
         json_schema_updates = {k: v for k, v in json_schema_updates.items() if v is not None}
         json_schema_updates.update(field_info.json_schema_extra or {})
-        metadata = build_metadata_dict(js_modify_function=lambda s: update_json_schema(s, json_schema_updates))
+
+        def json_schema_update_func(
+            schema: CoreSchemaOrField, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {**handler(schema), **json_schema_updates}
+
+        metadata = build_metadata_dict(js_functions=[json_schema_update_func])
         return _common_field(
             schema,
             serialization_exclude=True if field_info.exclude else None,
@@ -656,13 +683,18 @@ class GenerateSchema:
                 field_name, field_info, DecoratorInfos(), required=required
             )
 
+        def modify_json_schema(core_schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            json_schema = handler(core_schema_or_field)
+            json_schema['title'] = json_schema.get('title', typed_dict_cls.__name__)
+            return json_schema
+
+        metadata = build_metadata_dict(js_functions=[modify_json_schema])
+
         return core_schema.typed_dict_schema(
             fields,
             extra_behavior='forbid',
             ref=typed_dict_ref,
-            metadata=build_metadata_dict(
-                js_modify_function=lambda s: update_json_schema(s, {'title': typed_dict_cls.__name__}),
-            ),
+            metadata=metadata,
         )
 
     def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
@@ -901,7 +933,11 @@ class GenerateSchema:
     def _pattern_schema(self, pattern_type: Any) -> core_schema.CoreSchema:
         from . import _serializers, _validators
 
-        metadata = build_metadata_dict(js_override={'type': 'string', 'format': 'regex'})
+        metadata = build_metadata_dict(
+            js_functions=[
+                lambda core_schema, handler: {**handler(core_schema), **{'type': 'string', 'format': 'regex'}}
+            ]
+        )
         ser = core_schema.plain_serializer_function_ser_schema(
             _serializers.pattern_serializer, info_arg=True, json_return_type='str'
         )
@@ -1213,26 +1249,30 @@ def apply_annotations(
     """
     Apply arguments from `Annotated` or from `FieldInfo` to a schema.
     """
-    for metadata in annotations:
-        if metadata is None:
+    for annotation in annotations:
+        if annotation is None:
             continue
-        get_inner_schema = get_wrapped_inner_schema(get_inner_schema, metadata, definitions)
+        get_inner_schema = get_wrapped_inner_schema(get_inner_schema, annotation, definitions)
 
     return get_inner_schema
 
 
 def get_wrapped_inner_schema(
-    get_inner_schema: ModifyCoreSchemaWrapHandler, metadata: Any, definitions: dict[str, core_schema.CoreSchema]
+    get_inner_schema: ModifyCoreSchemaWrapHandler, annotation: Any, definitions: dict[str, core_schema.CoreSchema]
 ) -> Callable[[Any], core_schema.CoreSchema]:
-    metadata_get_schema = getattr(metadata, '__get_pydantic_core_schema__', None) or (
+    metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
         lambda source, handler: handler(source)
     )
 
     def _new_inner_schema_handler(source: Any) -> core_schema.CoreSchema:
         schema = metadata_get_schema(source, get_inner_schema)
-        schema = apply_single_annotation(schema, metadata, definitions)
-        metadata_js_modify_function = _get_pydantic_modify_json_schema(metadata)
-        CoreMetadataHandler(schema).compose_js_modify_functions(metadata_js_modify_function)
+        schema = apply_single_annotation(schema, annotation, definitions)
+
+        metadata_js_function = _get_pydantic_modify_json_schema(annotation)
+        if metadata_js_function is not None:
+            metadata = CoreMetadataHandler(schema).metadata
+            metadata['pydantic_js_functions'] = metadata.get('pydantic_js_functions', [])
+            metadata['pydantic_js_functions'].append(metadata_js_function)
         return schema
 
     return _new_inner_schema_handler
@@ -1316,7 +1356,7 @@ def get_first_arg(type_: Any) -> Any:
         return Any
 
 
-def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaValue], JsonSchemaValue] | None:
+def _get_pydantic_modify_json_schema(obj: Any) -> GetJsonSchemaFunction | None:
     js_modify_function = getattr(obj, '__pydantic_modify_json_schema__', None)
 
     if js_modify_function is None and hasattr(obj, '__modify_schema__'):
@@ -1324,7 +1364,7 @@ def _get_pydantic_modify_json_schema(obj: Any) -> typing.Callable[[JsonSchemaVal
             'The __modify_schema__ method is deprecated, use __pydantic_modify_json_schema__ instead',
             DeprecationWarning,
         )
-        return obj.__modify_schema__
+        return lambda c, h: obj.__modify_schema__(h(c))
 
     return js_modify_function
 
