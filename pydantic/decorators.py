@@ -1,5 +1,5 @@
 """
-Public methods used as decorators within pydantic models and dataclasses
+Public methods used as decorators within pydantic models and dataclasses.
 """
 
 from __future__ import annotations as _annotations
@@ -138,7 +138,7 @@ def validator(
             the decorated function. Defaults to False.
 
     Returns:
-        Callable[[_V1ValidatorType], _V1ValidatorType]: A decorator that can be used to decorate a
+        Callable: A decorator that can be used to decorate a
             function to be used as a validator.
     """
     if allow_reuse is True:  # pragma: no cover
@@ -220,14 +220,16 @@ def field_validator(
     Decorate methods on the class indicating that they should be used to validate fields.
 
     Args:
-        __field: The first field the field_validator should be called on; this is separate
+        __field (str): The first field the field_validator should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
-        *fields: Additional field(s) the field_validator should be called on.
-        mode: Defaults to 'after'.
-        check_fields: Whether to check that the fields actually exist on the model. Defaults to None.
+        *fields (tuple): Additional field(s) the field_validator should be called on.
+        mode (FieldValidatorModes): Specifies whether to validate the fields before or after validation.
+             Defaults to 'after'.
+        check_fields (bool | None): If set to True, checks that the fields actually exist on the model.
+            Defaults to None.
 
     Returns:
-        A decorator that can be used to decorate a function to be used as a field_validator.
+        Callable: A decorator that can be used to decorate a function to be used as a field_validator.
     """
     if isinstance(__field, FunctionType):
         raise PydanticUserError(
@@ -400,13 +402,15 @@ def field_serializer(
 
     Args:
         fields (str): Which field(s) the method should be called on.
-        mode (str):
-            - `'plain'` means the function will be called instead of the default serialization logic,
-            - `'wrap'` means the function will be called with an argument to optionally call the
-                default serialization logic.
+        mode (str): `plain` means the function will be called instead of the default serialization logic,
+            `wrap` means the function will be called with an argument to optionally call the
+            default serialization logic.
         json_return_type (str): The type that the function returns if the serialization mode is JSON.
         when_used (str): When the function should be called.
         check_fields (bool): Whether to check that the fields actually exist on the model.
+
+    Returns:
+        Callable: A decorator that can be used to decorate a function to be used as a field serializer.
     """
 
     def dec(
@@ -431,7 +435,7 @@ def model_serializer(
     json_return_type: _core_schema.JsonReturnTypes | None = None,
 ) -> Callable[[Any], _decorators.PydanticDescriptorProxy[Any]] | _decorators.PydanticDescriptorProxy[Any]:
     """
-    Decorator to add a function which will be called to serialize the model.
+    Decorate a function which will be called to serialize the model.
 
     (`when_used` is not permitted here since it makes no sense.)
 
@@ -444,8 +448,7 @@ def model_serializer(
             serialization mode is JSON.
 
     Returns:
-        Callable[[Any], _decorators.PydanticDecoratorMarker[Any]] | _decorators.PydanticDecoratorMarker[Any]:
-            The decorated function.
+        Callable: A decorator that can be used to decorate a function to be used as a model serializer.
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
@@ -564,6 +567,17 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
+    """
+    Decorate model methods for validation purposes.
+
+    Args:
+        mode (Literal['wrap', 'before', 'after']): A required string literal that specifies the validation mode.
+            It can be one of the following: 'wrap', 'before', or 'after'.
+
+    Returns:
+        Any: A decorator that can be used to decorate a function to be used as a model validator.
+    """
+
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
         # auto apply the @classmethod decorator
         f = _decorators.ensure_classmethod_based_on_signature(f)
