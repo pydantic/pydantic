@@ -3459,3 +3459,34 @@ def test_nested_default_json_schema():
         'title': 'OuterModel',
         'type': 'object',
     }
+
+
+def test_multi_host_url_schema():
+    class TestGenerateJsonSchema(GenerateJsonSchema):
+        pass
+
+    schema = core_schema.multi_host_url_schema()
+    json_schema_generator = TestGenerateJsonSchema()
+    assert json_schema_generator.multi_host_url_schema(schema=schema) == {
+        'type': 'string',
+        'format': 'multi-host-uri',
+        'minLength': 1
+    }
+
+
+def test_definitions_schema():
+    class TestGenerateJsonSchema(GenerateJsonSchema):
+        pass
+
+    schema = core_schema.definitions_schema(
+        core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
+        [core_schema.int_schema(ref='foobar')],
+    )
+    json_schema_generator = TestGenerateJsonSchema()
+    assert json_schema_generator.definitions_schema(schema=schema) == {
+        'type': 'array',
+        'items': {'$ref': '#/$defs/foobar'}
+    }
+
+
+
