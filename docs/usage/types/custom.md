@@ -8,7 +8,7 @@ You use a custom class with a classmethod `__get_validators__`. It will be calle
 to get validators to parse and validate the input data.
 
 !!! tip
-    These validators have the same semantics as in [Validators](validators.md), you can
+    These validators have the same semantics as in [Validators](../validators.md), you can
     declare a parameter `config`, `field`, etc.
 
 ```py test="xfail - replace with Annoated[str, PostCodeLogic]"
@@ -86,12 +86,12 @@ print(Model.model_json_schema())
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
 
-See [schema](schema.md) for more details on how the model's schema is generated.
+See [schema](../schema.md) for more details on how the model's schema is generated.
 
 ### Arbitrary Types Allowed
 
 You can allow arbitrary types using the `arbitrary_types_allowed` config in the
-[Model Config](model_config.md).
+[Model Config](../model_config.md).
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -147,7 +147,7 @@ print(type(model2.pet))
 ### Undefined Types Warning
 
 You can suppress the Undefined Types Warning by setting `undefined_types_warning` to `False` in the
-[Model Config](model_config.md).
+[Model Config](../model_config.md).
 
 ```py test="xfail - what do we do with undefined_types_warning?"
 from __future__ import annotations

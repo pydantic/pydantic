@@ -124,7 +124,7 @@ for i in m.infinite:
 
 ## Validating the first value
 
-You can create a [validator](validators.md) to validate the first value in an infinite generator and still not consume it entirely.
+You can create a [validator](../validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
 ```py test="xfail - what's going on here?"
 import itertools

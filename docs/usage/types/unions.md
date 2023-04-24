@@ -6,7 +6,7 @@ The `Union` type allows a model attribute to accept different types, e.g.:
 
 !!! info
     You may get unexpected coercion with `Union`; see below.<br />
-    Know that you can also make the check slower but stricter by using [Smart Union](model_config.md#smart-union)
+    Know that you can also make the check slower but stricter by using [Smart Union](../model_config.md#smart-union)
 
 ```py
 from typing import Union
@@ -86,7 +86,7 @@ print(user_03_uuid.int)
 
     `Optional[x]` can also be used to specify a required field that can take `None` as a value.
 
-    See more details in [Required Fields](models.md#required-fields).
+    See more details in [Required Fields](../models.md#required-fields).
 
 #### Discriminated Unions (a.k.a. Tagged Unions)
 
