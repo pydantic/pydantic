@@ -21,7 +21,7 @@ if sys.version_info >= (3, 10):
     from typing import _UnionGenericAlias  # type: ignore[attr-defined]
 
 if TYPE_CHECKING:
-    from pydantic import BaseModel
+    from ..main import BaseModel
 
 GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
 
