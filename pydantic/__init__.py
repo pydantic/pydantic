@@ -131,6 +131,7 @@ __all__ = [
     'FutureDate',
     'AwareDatetime',
     'NaiveDatetime',
+    'AllowInfNan',
     # version
     'VERSION',
 ]

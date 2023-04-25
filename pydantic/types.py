@@ -72,6 +72,7 @@ __all__ = [
     'condate',
     'AwareDatetime',
     'NaiveDatetime',
+    'AllowInfNan',
 ]
 
 from ._internal._core_metadata import build_metadata_dict

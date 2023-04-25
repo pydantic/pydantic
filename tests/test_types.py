@@ -84,7 +84,7 @@ from pydantic import (
     constr,
 )
 from pydantic.decorators import field_validator
-from pydantic.types import ImportString, SecretField, Strict
+from pydantic.types import AllowInfNan, ImportString, SecretField, Strict
 
 try:
     import email_validator
@@ -861,6 +861,27 @@ def test_decimal():
     assert m.v == Decimal('1.234')
     assert isinstance(m.v, Decimal)
     assert m.model_dump() == {'v': Decimal('1.234')}
+
+
+def test_decimal_allow_inf():
+    class MyModel(BaseModel):
+        value: Annotated[Decimal, AllowInfNan(True)]
+
+    m = MyModel(value='inf')
+    assert m.value == Decimal('inf')
+
+    m = MyModel(value=Decimal('inf'))
+    assert m.value == Decimal('inf')
+
+
+def test_decimal_dont_allow_inf():
+    class MyModel(BaseModel):
+        value: Decimal
+
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        MyModel(value='inf')
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        MyModel(value=Decimal('inf'))
 
 
 def test_decimal_strict():
