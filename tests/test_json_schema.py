@@ -3462,11 +3462,8 @@ def test_nested_default_json_schema():
 
 
 def test_multi_host_url_schema():
-    class TestGenerateJsonSchema(GenerateJsonSchema):
-        pass
-
     schema = core_schema.multi_host_url_schema()
-    json_schema_generator = TestGenerateJsonSchema()
+    json_schema_generator = GenerateJsonSchema()
     assert json_schema_generator.multi_host_url_schema(schema=schema) == {
         'type': 'string',
         'format': 'multi-host-uri',
@@ -3475,14 +3472,11 @@ def test_multi_host_url_schema():
 
 
 def test_definitions_schema():
-    class TestGenerateJsonSchema(GenerateJsonSchema):
-        pass
-
     schema = core_schema.definitions_schema(
         core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
         [core_schema.int_schema(ref='foobar')],
     )
-    json_schema_generator = TestGenerateJsonSchema()
+    json_schema_generator = GenerateJsonSchema()
     assert json_schema_generator.definitions_schema(schema=schema) == {
         'type': 'array',
         'items': {'$ref': '#/$defs/foobar'},
@@ -3490,9 +3484,6 @@ def test_definitions_schema():
 
 
 def test_function_wrap_schema():
-    class TestGenerateJsonSchema(GenerateJsonSchema):
-        pass
-
     def fn(
         v: str,
         validator: core_schema.ValidatorFunctionWrapHandler,
@@ -3500,5 +3491,5 @@ def test_function_wrap_schema():
         return validator(input_value=v)
 
     schema = core_schema.no_info_wrap_validator_function(function=fn, schema=core_schema.str_schema())
-    json_schema_generator = TestGenerateJsonSchema()
+    json_schema_generator = GenerateJsonSchema()
     assert json_schema_generator.function_wrap_schema(schema=schema) == {'type': 'string'}
