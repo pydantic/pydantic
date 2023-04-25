@@ -113,7 +113,7 @@ class FieldInfo(_repr.Representation):
         self.default_factory = kwargs.get('default_factory')
 
         if self.default is not Undefined and self.default_factory is not None:
-            raise ValueError('cannot specify both default and default_factory')
+            raise TypeError('cannot specify both default and default_factory')
 
         self.alias = kwargs.get('alias')
         self.alias_priority = kwargs.get('alias_priority') or 2 if self.alias is not None else None
@@ -732,7 +732,7 @@ def PrivateAttr(
         ValueError: If both `default` and `default_factory` are set.
     """
     if default is not Undefined and default_factory is not None:
-        raise ValueError('cannot specify both default and default_factory')
+        raise TypeError('cannot specify both default and default_factory')
 
     return ModelPrivateAttr(
         default,

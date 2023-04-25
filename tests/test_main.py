@@ -1376,7 +1376,7 @@ def test_recursive_model():
 
 
 def test_two_defaults():
-    with pytest.raises(ValueError, match='^cannot specify both default and default_factory$'):
+    with pytest.raises(TypeError, match='^cannot specify both default and default_factory$'):
 
         class Model(BaseModel):
             a: int = Field(default=3, default_factory=lambda: 3)
