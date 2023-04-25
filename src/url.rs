@@ -1,6 +1,10 @@
+use std::collections::hash_map::DefaultHasher;
+use std::hash::{Hash, Hasher};
+
 use idna::punycode::decode_to_string;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
+use pyo3::pyclass::CompareOp;
 use pyo3::types::PyDict;
 use url::Url;
 
@@ -115,6 +119,31 @@ impl PyUrl {
 
     pub fn __repr__(&self) -> String {
         format!("Url('{}')", self.lib_url)
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Lt => Ok(self.lib_url < other.lib_url),
+            CompareOp::Le => Ok(self.lib_url <= other.lib_url),
+            CompareOp::Eq => Ok(self.lib_url == other.lib_url),
+            CompareOp::Ne => Ok(self.lib_url != other.lib_url),
+            CompareOp::Gt => Ok(self.lib_url > other.lib_url),
+            CompareOp::Ge => Ok(self.lib_url >= other.lib_url),
+        }
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut s = DefaultHasher::new();
+        self.lib_url.to_string().hash(&mut s);
+        s.finish()
+    }
+
+    fn __bool__(&self) -> bool {
+        true // an empty string is not a valid URL
+    }
+
+    pub fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> Py<PyAny> {
+        self.clone().into_py(py)
     }
 }
 
@@ -249,6 +278,32 @@ impl PyMultiHostUrl {
 
     pub fn __repr__(&self) -> String {
         format!("Url('{}')", self.__str__())
+    }
+
+    fn __richcmp__(&self, other: &Self, op: CompareOp) -> PyResult<bool> {
+        match op {
+            CompareOp::Lt => Ok(self.unicode_string() < other.unicode_string()),
+            CompareOp::Le => Ok(self.unicode_string() <= other.unicode_string()),
+            CompareOp::Eq => Ok(self.unicode_string() == other.unicode_string()),
+            CompareOp::Ne => Ok(self.unicode_string() != other.unicode_string()),
+            CompareOp::Gt => Ok(self.unicode_string() > other.unicode_string()),
+            CompareOp::Ge => Ok(self.unicode_string() >= other.unicode_string()),
+        }
+    }
+
+    fn __hash__(&self) -> u64 {
+        let mut s = DefaultHasher::new();
+        self.ref_url.clone().into_url().to_string().hash(&mut s);
+        self.extra_urls.hash(&mut s);
+        s.finish()
+    }
+
+    fn __bool__(&self) -> bool {
+        true // an empty string is not a valid URL
+    }
+
+    pub fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> Py<PyAny> {
+        self.clone().into_py(py)
     }
 }
 

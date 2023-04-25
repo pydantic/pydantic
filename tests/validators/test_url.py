@@ -1,5 +1,6 @@
 import re
-from typing import Optional, Union
+from copy import deepcopy
+from typing import Dict, Optional, Union
 
 import pytest
 from dirty_equals import HasRepr, IsInstance
@@ -1140,3 +1141,75 @@ def test_url_vulnerabilities(url_validator, url, expected):
             else:
                 output_parts[key] = getattr(output_url, key)
         assert output_parts == expected
+
+
+def test_multi_host_url_comparison() -> None:
+    assert MultiHostUrl('http://example.com,www.example.com') == MultiHostUrl('http://example.com,www.example.com')
+    assert MultiHostUrl('http://example.com,www.example.com') == MultiHostUrl('http://example.com,www.example.com/')
+    assert MultiHostUrl('http://example.com,www.example.com') != MultiHostUrl('http://example.com,www.example.com/123')
+    assert MultiHostUrl('http://example.com,www.example.com/123') > MultiHostUrl('http://example.com,www.example.com')
+    assert MultiHostUrl('http://example.com,www.example.com/123') >= MultiHostUrl('http://example.com,www.example.com')
+    assert MultiHostUrl('http://example.com,www.example.com') >= MultiHostUrl('http://example.com,www.example.com')
+    assert MultiHostUrl('http://example.com,www.example.com') < MultiHostUrl('http://example.com,www.example.com/123')
+    assert MultiHostUrl('http://example.com,www.example.com') <= MultiHostUrl('http://example.com,www.example.com/123')
+    assert MultiHostUrl('http://example.com,www.example.com') <= MultiHostUrl('http://example.com')
+
+
+def test_multi_host_url_bool() -> None:
+    assert bool(MultiHostUrl('http://example.com,www.example.com')) is True
+
+
+def test_multi_host_url_hash() -> None:
+    data: Dict[MultiHostUrl, int] = {}
+
+    data[MultiHostUrl('http://example.com,www.example.com')] = 1
+    assert data == {MultiHostUrl('http://example.com,www.example.com/'): 1}
+
+    data[MultiHostUrl('http://example.com,www.example.com/123')] = 2
+    assert data == {
+        MultiHostUrl('http://example.com,www.example.com/'): 1,
+        MultiHostUrl('http://example.com,www.example.com/123'): 2,
+    }
+
+    data[MultiHostUrl('http://example.com,www.example.com')] = 3
+    assert data == {
+        MultiHostUrl('http://example.com,www.example.com/'): 3,
+        MultiHostUrl('http://example.com,www.example.com/123'): 2,
+    }
+
+
+def test_multi_host_url_deepcopy() -> None:
+    assert deepcopy(MultiHostUrl('http://example.com')) == MultiHostUrl('http://example.com/')
+
+
+def test_url_comparison() -> None:
+    assert Url('http://example.com') == Url('http://example.com')
+    assert Url('http://example.com') == Url('http://example.com/')
+    assert Url('http://example.com') != Url('http://example.com/123')
+    assert Url('http://example.com/123') > Url('http://example.com')
+    assert Url('http://example.com/123') >= Url('http://example.com')
+    assert Url('http://example.com') >= Url('http://example.com')
+    assert Url('http://example.com') < Url('http://example.com/123')
+    assert Url('http://example.com') <= Url('http://example.com/123')
+    assert Url('http://example.com') <= Url('http://example.com')
+
+
+def test_url_bool() -> None:
+    assert bool(Url('http://example.com')) is True
+
+
+def test_url_hash() -> None:
+    data: Dict[Url, int] = {}
+
+    data[Url('http://example.com')] = 1
+    assert data == {Url('http://example.com/'): 1}
+
+    data[Url('http://example.com/123')] = 2
+    assert data == {Url('http://example.com/'): 1, Url('http://example.com/123'): 2}
+
+    data[Url('http://example.com')] = 3
+    assert data == {Url('http://example.com/'): 3, Url('http://example.com/123'): 2}
+
+
+def test_url_deepcopy() -> None:
+    assert deepcopy(Url('http://example.com')) == Url('http://example.com/')
