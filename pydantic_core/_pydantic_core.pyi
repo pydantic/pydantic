@@ -15,6 +15,8 @@ if sys.version_info < (3, 11):
 else:
     from typing import Literal, NotRequired, TypeAlias
 
+from _typeshed import SupportsAllComparisons
+
 __all__ = (
     '__version__',
     'build_profile',
@@ -126,7 +128,7 @@ def to_jsonable_python(
     fallback: 'Callable[[Any], Any] | None' = None,
 ) -> Any: ...
 
-class Url:
+class Url(SupportsAllComparisons):
     @property
     def scheme(self) -> str: ...
     @property
@@ -156,7 +158,7 @@ class MultiHostHost(TypedDict):
     query: 'str | None'
     fragment: 'str | None'
 
-class MultiHostUrl:
+class MultiHostUrl(SupportsAllComparisons):
     @property
     def scheme(self) -> str: ...
     @property
