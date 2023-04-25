@@ -3493,3 +3493,10 @@ def test_function_wrap_schema():
     schema = core_schema.no_info_wrap_validator_function(function=fn, schema=core_schema.str_schema())
     json_schema_generator = GenerateJsonSchema()
     assert json_schema_generator.function_wrap_schema(schema=schema) == {'type': 'string'}
+
+
+def test_if_schema_has_no_default_or_default_factory():
+    json_schema_generator = GenerateJsonSchema()
+    with pytest.raises(ValueError) as val_error:
+        json_schema_generator.default_schema(schema={'type': 'no_default', 'schema': {'type': 'int'}})
+    assert str(val_error.value) == '`schema` has neither default nor default_factory'
