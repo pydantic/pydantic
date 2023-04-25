@@ -199,7 +199,7 @@ class GenerateSchema:
         if schema is not None:
             return schema
 
-        from pydantic.main import BaseModel
+        from ..main import BaseModel
 
         fields = cls.model_fields
         decorators = cls.__pydantic_decorators__
@@ -311,7 +311,7 @@ class GenerateSchema:
             if from_property is not None:
                 return from_property
 
-        from pydantic.main import BaseModel
+        from ..main import BaseModel
 
         if lenient_issubclass(obj, BaseModel):
             return self.model_schema(obj)

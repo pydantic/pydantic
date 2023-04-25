@@ -6,9 +6,8 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 from pydantic_core import core_schema
 from typing_extensions import Literal, Self
 
-from pydantic.errors import PydanticUserError
-
 from ..config import ConfigDict, ExtraValues
+from ..errors import PydanticUserError
 
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
 

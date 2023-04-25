@@ -15,8 +15,8 @@ from .._internal import (
 from .._internal._fields import Undefined
 
 if typing.TYPE_CHECKING:
-    from pydantic import BaseModel
-    from pydantic._internal._utils import AbstractSetIntStr, MappingIntStrAny
+    from .. import BaseModel
+    from .._internal._utils import AbstractSetIntStr, MappingIntStrAny
 
     AnyClassMethod = classmethod[Any, Any, Any]
     TupleGenerator = typing.Generator[Tuple[str, Any], None, None]
@@ -122,7 +122,7 @@ def _get_value(
     exclude_defaults: bool,
     exclude_none: bool,
 ) -> Any:
-    from pydantic import BaseModel
+    from .. import BaseModel
 
     if isinstance(v, BaseModel):
         if to_dict:
