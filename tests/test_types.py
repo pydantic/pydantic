@@ -1,4 +1,5 @@
 import itertools
+import json
 import math
 import os
 import re
@@ -2914,7 +2915,7 @@ def test_path_validation_success(value, result):
         foo: Path
 
     assert Model(foo=value).foo == result
-    assert Model.model_validate_json('{"foo": "%s"}' % value).foo == result
+    assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
 def test_path_like():
