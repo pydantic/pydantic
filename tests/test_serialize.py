@@ -6,7 +6,7 @@ from functools import partial, partialmethod
 from typing import Any, Optional
 
 import pytest
-from pydantic_core import PydanticSerializationError, core_schema
+from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -768,3 +768,20 @@ def test_serializer_allow_reuse_different_field_4():
         not_ser_x = field_serializer('y')(ser)
 
     assert Model(x=1_000, y=2_000).model_dump() == {'x': '1,000', 'y': '2,000'}
+
+
+def test_serialize_any_model():
+    class Model(BaseModel):
+        m: str
+
+        @field_serializer('m')
+        def ser_m(self, v: str, _info: SerializationInfo) -> str:
+            return f'custom:{v}'
+
+    class AnyModel(BaseModel):
+        x: Any
+
+    m = Model(m='test')
+    assert m.model_dump() == {'m': 'custom:test'}
+    assert to_jsonable_python(AnyModel(x=m)) == {'x': {'m': 'custom:test'}}
+    assert AnyModel(x=m).model_dump() == {'x': {'m': 'custom:test'}}
