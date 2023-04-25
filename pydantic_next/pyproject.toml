@@ -1,0 +1,69 @@
+[build-system]
+requires = ['hatchling']
+build-backend = 'hatchling.build'
+
+[tool.hatch.version]
+path = 'pydantic_next/version.py'
+
+[tool.hatch.build.targets.sdist]
+# limit which files are included in the sdist (.tar.gz) asset,
+# see https://github.com/pydantic/pydantic/pull/4542
+include = [
+    '/README.md',
+    '/pydantic_next',
+]
+
+[project]
+name = 'pydantic_next'
+description = 'Data validation using Python type hints, future version'
+authors = [
+    {name = 'Samuel Colvin', email = 's@muelcolvin.com'},
+    {name = 'Eric Jolibois', email = 'em.jolibois@gmail.com'},
+    {name = 'Hasan Ramezani', email = 'hasan.r67@gmail.com'},
+    {name = 'Adrian Garcia Badaracco', email = '1755071+adriangb@users.noreply.github.com'},
+    {name = 'Terrence Dorsey', email = 'terry@pydantic.dev'},
+    {name = 'David Montague', email = 'david@pydantic.dev'},
+]
+license = 'MIT'
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Programming Language :: Python :: Implementation :: PyPy',
+    'Programming Language :: Python :: 3',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.7',
+    'Programming Language :: Python :: 3.8',
+    'Programming Language :: Python :: 3.9',
+    'Programming Language :: Python :: 3.10',
+    'Programming Language :: Python :: 3.11',
+    'Intended Audience :: Developers',
+    'Intended Audience :: Information Technology',
+    'Intended Audience :: System Administrators',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: Unix',
+    'Operating System :: POSIX :: Linux',
+    'Environment :: Console',
+    'Environment :: MacOS X',
+    'Framework :: Hypothesis',
+    'Framework :: Pydantic',
+    'Topic :: Software Development :: Libraries :: Python Modules',
+    'Topic :: Internet',
+]
+requires-python = '>=3.7'
+dependencies = [
+    'typing-extensions>=4.5.0',
+    'pydantic-core==0.25.0',
+    'annotated-types>=0.4.0',
+]
+optional-dependencies = { email = ['email-validator>=1.3.0'] }
+dynamic = ['version', 'readme']
+
+entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
+
+[project.urls]
+Homepage = 'https://github.com/pydantic/pydantic'
+Documentation = 'https://docs.pydantic.dev'
+Funding = 'https://github.com/sponsors/samuelcolvin'
+Source = 'https://github.com/pydantic/pydantic'
+Changelog = 'https://docs.pydantic.dev/changelog'
