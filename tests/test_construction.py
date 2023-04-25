@@ -37,13 +37,16 @@ def test_construct_fields_set():
     assert m.model_dump() == {'a': 3, 'b': -1}
 
 
-def test_construct_allow_extra():
-    """model_construct() should allow extra fields"""
+@pytest.mark.parametrize('extra', ['allow', 'ignore', 'forbid'])
+def test_construct_allow_extra(extra: str):
+    """model_construct() should allow extra fields regardless of the config"""
 
-    class Foo(BaseModel, extra='allow'):
+    class Foo(BaseModel, extra=extra):
         x: int
 
-    assert Foo.model_construct(x=1, y=2).model_dump() == {'x': 1, 'y': 2}
+    model = Foo.model_construct(x=1, y=2)
+    assert model.x == 1
+    assert model.y == 2
 
 
 def test_construct_keep_order():

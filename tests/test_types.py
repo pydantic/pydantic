@@ -1366,6 +1366,19 @@ def test_plain_enum_validate():
         }
     ]
 
+    assert AnalyzedType(MyEnum).validate_json('1') is MyEnum.a
+    with pytest.raises(ValidationError) as exc_info:
+        AnalyzedType(MyEnum).validate_json('1', strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': (),
+            'msg': 'Value error, Could not parse input, it cannot be converted to the target type',
+            'input': 1,
+            'ctx': {'error': 'Could not parse input, it cannot be converted to the target type'},
+        }
+    ]
+
 
 def test_plain_enum_validate_json():
     class MyEnum(Enum):
@@ -1443,8 +1456,7 @@ def test_int_enum_type():
         Model.model_json_schema()
 
 
-@pytest.mark.parametrize('enum_base', [Enum, IntEnum])
-@pytest.mark.parametrize('strict', [True, False])
+@pytest.mark.parametrize('enum_base,strict', [(Enum, False), (IntEnum, False), (IntEnum, True)])
 def test_enum_from_json(enum_base, strict):
     class MyEnum(enum_base):
         a = 1
