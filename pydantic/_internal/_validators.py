@@ -11,7 +11,6 @@ import typing
 from collections import OrderedDict, defaultdict, deque
 from decimal import Decimal, DecimalException
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -270,13 +269,6 @@ def uuid_validator(__input_value: str | bytes, _: core_schema.ValidationInfo) ->
                 return UUID(bytes=__input_value)
     except ValueError:
         raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
-
-
-def path_validator(__input_value: str, _: core_schema.ValidationInfo) -> Path:
-    try:
-        return Path(__input_value)
-    except TypeError:
-        raise PydanticCustomError('path_type', 'Input is not a valid path')
 
 
 def pattern_either_validator(__input_value: Any, _: core_schema.ValidationInfo) -> typing.Pattern[Any]:
