@@ -4039,3 +4039,15 @@ def test_sequences_int_json_schema(sequence_type):
         'required': ['int_seq'],
     }
     assert Model.model_validate_json('{"int_seq": [1, 2, 3]}')
+
+
+def test_validate_json_raises_if_json_schema_raises():
+    class Model(BaseModel):
+        int_seq: Sequence[int]
+
+    with pytest.raises(PydanticInvalidForJsonSchema) as e_json_schema:
+        Model.model_json_schema()
+    with pytest.raises(PydanticInvalidForJsonSchema) as e_validate_json:
+        Model.model_validate_json('{}')
+
+    assert e_json_schema.value.errors() == e_validate_json.value.errors()
