@@ -620,3 +620,14 @@ def test_loc_with_dots():
         "  Input should be a valid integer, unable to parse string as an integer "
         "[type=int_parsing, input_value='x', input_type=str]"
     )
+
+
+def subclass_validation_error():
+    class MyValidationError(ValidationError):
+        def __init__(self, title: str, errors, error_mode='python'):
+            self.body = 123
+            super().__init__(title, errors, error_mode)
+
+    e = MyValidationError('testing', [])
+    assert e.body == 123
+    assert e.title == 'testing'

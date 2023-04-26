@@ -21,7 +21,7 @@ use super::location::Location;
 use super::types::{ErrorMode, ErrorType};
 use super::ValError;
 
-#[pyclass(extends=PyValueError, module="pydantic_core._pydantic_core")]
+#[pyclass(subclass, extends=PyValueError, module="pydantic_core._pydantic_core")]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct ValidationError {
