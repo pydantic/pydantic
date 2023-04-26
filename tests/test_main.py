@@ -325,6 +325,22 @@ def test_extra_ignored():
         model.c = 1
 
 
+def test_field_order_is_preserved_with_extra():
+    """This test covers https://github.com/pydantic/pydantic/issues/1234."""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        a: int
+        b: str
+        c: float
+
+    model = Model(a=1, b='2', c=3.0, d=4)
+    assert repr(model) == "Model(a=1, b='2', c=3.0, d=4)"
+    assert str(model.model_dump()) == "{'a': 1, 'b': '2', 'c': 3.0, 'd': 4}"
+    assert str(model.model_dump_json()) == '{"a":1,"b":"2","c":3.0,"d":4}'
+
+
 def test_set_attr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert m.model_dump() == {'a': 10.2, 'b': 10}
