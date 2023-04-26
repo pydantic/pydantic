@@ -1348,11 +1348,11 @@ def test_enum_fails(cooking_model):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'type': 'enum',
+            'ctx': {'expected': '1 or 2'},
+            'input': 3,
             'loc': ('tool',),
             'msg': 'Input should be 1 or 2',
-            'input': 3,
-            'ctx': {'expected': '1 or 2'},
+            'type': 'enum',
         }
     ]
 
@@ -1388,16 +1388,11 @@ def test_plain_enum_validate():
     ]
 
     assert AnalyzedType(MyEnum).validate_json('1') is MyEnum.a
+    AnalyzedType(MyEnum).validate_json('1', strict=True)
     with pytest.raises(ValidationError) as exc_info:
-        AnalyzedType(MyEnum).validate_json('1', strict=True)
+        AnalyzedType(MyEnum).validate_json('"1"', strict=True)
     assert exc_info.value.errors() == [
-        {
-            'type': 'value_error',
-            'loc': (),
-            'msg': 'Value error, Could not parse input, it cannot be converted to the target type',
-            'input': 1,
-            'ctx': {'error': 'Could not parse input, it cannot be converted to the target type'},
-        }
+        {'ctx': {'expected': '1'}, 'input': '1', 'loc': (), 'msg': 'Input should be 1', 'type': 'enum'}
     ]
 
 
@@ -1481,6 +1476,7 @@ def test_int_enum_type():
 def test_enum_from_json(enum_base, strict):
     class MyEnum(enum_base):
         a = 1
+        b = 3
 
     class Model(BaseModel):
         my_enum: MyEnum
@@ -1491,25 +1487,25 @@ def test_enum_from_json(enum_base, strict):
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate_json('{"my_enum":2}', strict=strict)
 
-    my_enum_label = MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
+    MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
 
     if strict:
         assert exc_info.value.errors() == [
             {
-                'ctx': {'error': f'2 is not a valid {my_enum_label}'},
+                'ctx': {'expected': '1 or 3'},
                 'input': 2,
                 'loc': ('my_enum',),
-                'msg': f'Value error, 2 is not a valid {my_enum_label}',
-                'type': 'value_error',
+                'msg': 'Input should be 1 or 3',
+                'type': 'enum',
             }
         ]
     else:
         assert exc_info.value.errors() == [
             {
-                'ctx': {'expected': '1'},
+                'ctx': {'expected': '1 or 3'},
                 'input': 2,
                 'loc': ('my_enum',),
-                'msg': 'Input should be 1',
+                'msg': 'Input should be 1 or 3',
                 'type': 'enum',
             }
         ]

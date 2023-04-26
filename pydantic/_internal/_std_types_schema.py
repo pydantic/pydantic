@@ -13,7 +13,7 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import PurePath
-from typing import Any, Callable, NoReturn
+from typing import Any, Callable
 from uuid import UUID
 
 from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, Url, core_schema
@@ -79,7 +79,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     else:
         expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
 
-    def to_enum(__input_value: Any, _: core_schema.ValidationInfo) -> Enum:
+    def to_enum(__input_value: Any, info: core_schema.ValidationInfo | None = None) -> Enum:
         try:
             return enum_type(__input_value)
         except ValueError:
@@ -105,26 +105,23 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         updates['type'] = 'integer'
         lax = core_schema.chain_schema([core_schema.int_schema(), to_enum_validator])
-        strict = core_schema.is_instance_schema(enum_type, json_types={'int'}, json_function=enum_type)
+        # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
+        # Disallow float from JSON due to strict mode
+        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str'}, json_function=to_enum)
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'string'
         lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
-        strict = core_schema.is_instance_schema(enum_type, json_types={'str'}, json_function=enum_type)
+        # Allow all types from JSON to get better error messages (numeric types will still fail validation in to_enum)
+        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str', 'float'}, json_function=to_enum)
     elif issubclass(enum_type, float):
         updates['type'] = 'numeric'
         lax = core_schema.chain_schema([core_schema.float_schema(), to_enum_validator])
-        strict = core_schema.is_instance_schema(enum_type, json_types={'float'}, json_function=enum_type)
+        # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
+        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str', 'float'}, json_function=to_enum)
     else:
-
-        def unable_to_parse_from_json(_: Any) -> NoReturn:
-            raise ValueError('Could not parse input, it cannot be converted to the target type')
-
         lax = to_enum_validator
-        # allow inputs to pass thorough and hit our unable_to_parse_from_json function
-        strict = core_schema.is_instance_schema(
-            enum_type, json_types={'float', 'int', 'str'}, json_function=unable_to_parse_from_json
-        )
+        strict = core_schema.is_instance_schema(enum_type, json_types={'float', 'int', 'str'}, json_function=to_enum)
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=strict,
