@@ -2448,3 +2448,60 @@ def test_invalid_forward_ref_model():
     assert exc_info.value.errors() == [
         {'input': C(), 'loc': ('B',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='cannot parametrize types before 3.9')
+@pytest.mark.parametrize(
+    ('sequence_type', 'input_data', 'expected_error_type', 'expected_error_msg'),
+    [
+        pytest.param(list[str], '1bc', 'list_type', 'Input should be a valid list', id='list[str]'),
+        pytest.param(
+            Sequence[str],
+            '1bc',
+            'sequence_str_str_type',
+            '`str` instances are not allowed as a Sequence value',
+            id='Sequence[str]',
+        ),
+        pytest.param(
+            Sequence[bytes],
+            b'1bc',
+            'sequence_str_str_type',
+            '`bytes` instances are not allowed as a Sequence value',
+            id='Sequence[bytes]',
+        ),
+    ],
+)
+def test_sequences_str(sequence_type, input_data, expected_error_type, expected_error_msg):
+    input_sequence = [input_data[:1], input_data[1:]]
+
+    str_sequence_analyzer: AnalyzedType[sequence_type] = AnalyzedType(sequence_type)
+
+    class Model(BaseModel):
+        str_sequence: sequence_type
+
+    assert str_sequence_analyzer.validate_python(input_sequence) == input_sequence
+    assert Model(str_sequence=input_sequence).str_sequence == input_sequence
+
+    with pytest.raises(ValidationError) as e:
+        str_sequence_analyzer.validate_python(input_data)
+
+    assert e.value.errors() == [
+        {
+            'type': expected_error_type,
+            'input': input_data,
+            'loc': (),
+            'msg': expected_error_msg,
+        }
+    ]
+
+    with pytest.raises(ValidationError) as e:
+        Model(str_sequence=input_data)
+
+    assert e.value.errors() == [
+        {
+            'type': expected_error_type,
+            'input': input_data,
+            'loc': ('str_sequence',),
+            'msg': expected_error_msg,
+        }
+    ]

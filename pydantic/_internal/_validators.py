@@ -55,23 +55,19 @@ def sequence_validator(
     Validator for `Sequence` types, isinstance(v, Sequence) has already been called.
     """
     value_type = type(__input_value)
+
+    # we don't accept any plain string as a sequence
+    # Relevant issue: https://github.com/pydantic/pydantic/issues/5595
+    if issubclass(value_type, (str, bytes)):
+        raise PydanticCustomError(
+            'sequence_str_str_type', f'`{value_type.__name__}` instances are not allowed as a Sequence value'
+        )
+
     v_list = validator(__input_value)
 
     # the rest of the logic is just re-creating the original type from `v_list`
     if value_type == list:
         return v_list
-    elif issubclass(value_type, str):
-        try:
-            return ''.join(v_list)
-        except TypeError:
-            # can happen if you pass a string like '123' to `Sequence[int]`
-            raise PydanticKnownError('string_type')
-    elif issubclass(value_type, bytes):
-        try:
-            return b''.join(v_list)
-        except TypeError:
-            # can happen if you pass a string like '123' to `Sequence[int]`
-            raise PydanticKnownError('bytes_type')
     elif issubclass(value_type, range):
         # return the list as we probably can't re-create the range
         return v_list
