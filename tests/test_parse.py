@@ -74,7 +74,8 @@ def test_model_validate_root():
                 return data
 
         @classmethod
-        def model_modify_json_schema(cls, json_schema):
+        def __get_pydantic_json_schema__(cls, core_schema, handler):
+            json_schema = handler(core_schema)
             return json_schema['properties']['root']
 
     # Validation

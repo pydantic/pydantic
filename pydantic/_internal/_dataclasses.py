@@ -6,7 +6,7 @@ from __future__ import annotations as _annotations
 import dataclasses
 import typing
 import warnings
-from functools import wraps
+from functools import partial, wraps
 from typing import Any, Callable, ClassVar
 
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
@@ -82,7 +82,11 @@ def complete_dataclass(
     )
 
     try:
-        schema = gen_schema.generate_schema(cls)
+        get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
+        if get_core_schema:
+            schema = get_core_schema(cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False))
+        else:
+            schema = gen_schema.generate_schema(cls, False)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise

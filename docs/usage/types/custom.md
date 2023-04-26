@@ -46,8 +46,8 @@ class PostCode(str):
         yield cls.validate
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema):
-        # __pydantic_modify_json_schema__ should mutate the dict it receives
+    def __get_pydantic_json_schema__(cls, field_schema):
+        # __get_pydantic_json_schema__ should mutate the dict it receives
         # in place, the returned value will be ignored
         field_schema.update(
             # simplified regex here for brevity, see the wikipedia link above
