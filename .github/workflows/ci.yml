@@ -279,9 +279,11 @@ jobs:
       working-directory: pydantic_next
       run: pip install .
 
+    - name: install pydantic
+      run: pip install .
+
     - name: replace imports on test
-      run: |
-           find tests -type f -name '*.py' -exec sed -i -E 's/(import|from) pydantic([^_]|$)/\1 pydantic_next\2/g' {} +
+      run: find tests -type f -name '*.py' -exec sed -i -E 's/(import|from) pydantic([^_]|$)/\1 pydantic_next\2/g' {} +
 
     - run: pip freeze
 
