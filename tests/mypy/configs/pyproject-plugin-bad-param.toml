@@ -31,3 +31,9 @@ disallow_untyped_defs = true
 
 [tool.pydantic-mypy]
 init_forbid_extra = "foo"  # this will raise a ValueError for the config
+
+[[tool.mypy.overrides]]
+module = [
+    'pydantic_core.*',
+]
+follow_imports = "skip"

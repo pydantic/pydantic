@@ -1,6 +1,61 @@
 Custom validation and complex relationships between objects can be achieved using the `validator` decorator.
 
-{!.tmp_examples/validators_simple.md!}
+```py
+from pydantic_core.core_schema import FieldValidationInfo
+
+from pydantic import BaseModel, ValidationError, field_validator
+
+
+class UserModel(BaseModel):
+    name: str
+    username: str
+    password1: str
+    password2: str
+
+    @field_validator('name')
+    def name_must_contain_space(cls, v):
+        if ' ' not in v:
+            raise ValueError('must contain a space')
+        return v.title()
+
+    @field_validator('password2')
+    def passwords_match(cls, v, info: FieldValidationInfo):
+        if 'password1' in info.data and v != info.data['password1']:
+            raise ValueError('passwords do not match')
+        return v
+
+    @field_validator('username')
+    def username_alphanumeric(cls, v):
+        assert v.isalnum(), 'must be alphanumeric'
+        return v
+
+
+user = UserModel(
+    name='samuel colvin',
+    username='scolvin',
+    password1='zxcvbn',
+    password2='zxcvbn',
+)
+print(user)
+#> name='Samuel Colvin' username='scolvin' password1='zxcvbn' password2='zxcvbn'
+
+try:
+    UserModel(
+        name='samuel',
+        username='scolvin',
+        password1='zxcvbn',
+        password2='zxcvbn2',
+    )
+except ValidationError as e:
+    print(e)
+    """
+    2 validation errors for UserModel
+    name
+      Value error, must contain a space [type=value_error, input_value='samuel', input_type=str]
+    password2
+      Value error, passwords do not match [type=value_error, input_value='zxcvbn2', input_type=str]
+    """
+```
 
 A few things to note on validators:
 
@@ -34,22 +89,111 @@ A few things to note on validators:
 
 Validators can do a few more complex things:
 
-{!.tmp_examples/validators_pre_item.md!}
+```py
+from typing import List
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, ValidationError, field_validator
+from pydantic.annotated_arguments import AfterValidator
+
+
+def check_squares(v: int) -> int:
+    assert v**0.5 % 1 == 0, f'{v} is not a square number'
+    return v
+
+
+def check_cubes(v: int) -> int:
+    # 64 ** (1 / 3) == 3.9999999999999996 (!)
+    # this is not a good way of checking cubes
+    assert v ** (1 / 3) % 1 == 0, f'{v} is not a cubed number'
+    return v
+
+
+SquaredNumber = Annotated[int, AfterValidator(check_squares)]
+CubedNumberNumber = Annotated[int, AfterValidator(check_cubes)]
+
+
+class DemoModel(BaseModel):
+    square_numbers: List[SquaredNumber] = []
+    cube_numbers: List[CubedNumberNumber] = []
+
+    @field_validator('square_numbers', 'cube_numbers', mode='before')
+    def split_str(cls, v):
+        if isinstance(v, str):
+            return v.split('|')
+        return v
+
+    @field_validator('cube_numbers', 'square_numbers')
+    def check_sum(cls, v):
+        if sum(v) > 42:
+            raise ValueError('sum of numbers greater than 42')
+        return v
+
+
+print(DemoModel(square_numbers=[1, 4, 9]))
+#> square_numbers=[1, 4, 9] cube_numbers=[]
+print(DemoModel(square_numbers='1|4|16'))
+#> square_numbers=[1, 4, 16] cube_numbers=[]
+print(DemoModel(square_numbers=[16], cube_numbers=[8, 27]))
+#> square_numbers=[16] cube_numbers=[8, 27]
+try:
+    DemoModel(square_numbers=[1, 4, 2])
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for DemoModel
+    square_numbers.2
+      Assertion failed, 2 is not a square number
+    assert ((2 ** 0.5) % 1) == 0 [type=assertion_error, input_value=2, input_type=int]
+    """
+
+try:
+    DemoModel(cube_numbers=[27, 27])
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for DemoModel
+    cube_numbers
+      Value error, sum of numbers greater than 42 [type=value_error, input_value=[27, 27], input_type=list]
+    """
+```
 
 A few more things to note:
 
 * a single validator can be applied to multiple fields by passing it multiple field names
 * a single validator can also be called on *all* fields by passing the special value `'*'`
-* the keyword argument `pre` will cause the validator to be called prior to other validation
-* passing `each_item=True` will result in the validator being applied to individual values
-  (e.g. of `List`, `Dict`, `Set`, etc.), rather than the whole object
+* the keyword argument `mode='before'` will cause the validator to be called prior to other validation
+* using validator annotations inside of Annotated allows applying validators to items of collections
 
-## Subclass Validators and `each_item`
+### Generic validated collections
 
-If using a validator with a subclass that references a `List` type field on a parent class, using `each_item=True` will
-cause the validator not to run; instead, the list must be iterated over programmatically.
+To validate individual items of a collection (list, dict, etc.) field you can use `Annotated` to apply validators to the inner items.
+In this example we also use type aliases to create a generic validated collection to demonstrate how this approach leads to composability and coda re-use.
 
-{!.tmp_examples/validators_subclass_each_item.md!}
+```py
+from typing import List, TypeVar
+
+from typing_extensions import Annotated
+
+from pydantic import BaseModel
+from pydantic.annotated_arguments import AfterValidator
+
+T = TypeVar('T')
+
+SortedList = Annotated[List[T], AfterValidator(lambda x: sorted(x))]
+
+Name = Annotated[str, AfterValidator(lambda x: x.title())]
+
+
+class DemoModel(BaseModel):
+    int_list: SortedList[int]
+    name_list: SortedList[Name]
+
+
+print(DemoModel(int_list=[3, 2, 1], name_list=['adrian g', 'David']))
+#> int_list=[1, 2, 3] name_list=['Adrian G', 'David']
+```
 
 ## Validate Always
 
@@ -57,7 +201,23 @@ For performance reasons, by default validators are not called for fields when a 
 However there are situations where it may be useful or required to always call the validator, e.g.
 to set a dynamic default value.
 
-{!.tmp_examples/validators_always.md!}
+```py test="xfail - we need default value validation"
+from datetime import datetime
+
+from pydantic import BaseModel, validator
+
+
+class DemoModel(BaseModel):
+    ts: datetime = None
+
+    @validator('ts', pre=True, always=True)
+    def set_ts_now(cls, v):
+        return v or datetime.now()
+
+
+print(DemoModel())
+print(DemoModel(ts='2017-11-08T14:00'))
+```
 
 You'll often want to use this together with `pre`, since otherwise with `always=True`
 *pydantic* would try to validate the default `None` which would cause an error.
@@ -70,7 +230,33 @@ then call it from multiple decorators.  Obviously, this entails a lot of repetit
 boiler plate code. To circumvent this, the `allow_reuse` parameter has been added to
 `pydantic.validator` in **v1.2** (`False` by default):
 
-{!.tmp_examples/validators_allow_reuse.md!}
+```py
+from pydantic import BaseModel, field_validator
+
+
+def normalize(name: str) -> str:
+    return ' '.join((word.capitalize()) for word in name.split(' '))
+
+
+class Producer(BaseModel):
+    name: str
+
+    # validators
+    normalize_name = field_validator('name')(normalize)
+
+
+class Consumer(BaseModel):
+    name: str
+
+    # validators
+    normalize_name = field_validator('name')(normalize)
+
+
+jane_doe = Producer(name='JaNe DOE')
+john_doe = Consumer(name='joHN dOe')
+assert jane_doe.name == 'Jane Doe'
+assert john_doe.name == 'John Doe'
+```
 
 As it is obvious, repetition has been reduced and the models become again almost
 declarative.
@@ -84,7 +270,54 @@ declarative.
 
 Validation can also be performed on the entire model's data.
 
-{!.tmp_examples/validators_root.md!}
+```py
+from pydantic import BaseModel, ValidationError, root_validator
+
+
+class UserModel(BaseModel):
+    username: str
+    password1: str
+    password2: str
+
+    @root_validator(pre=True)
+    def check_card_number_omitted(cls, values):
+        assert 'card_number' not in values, 'card_number should not be included'
+        return values
+
+    @root_validator(skip_on_failure=True)
+    def check_passwords_match(cls, values):
+        pw1, pw2 = values.get('password1'), values.get('password2')
+        if pw1 is not None and pw2 is not None and pw1 != pw2:
+            raise ValueError('passwords do not match')
+        return values
+
+
+print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))
+#> username='scolvin' password1='zxcvbn' password2='zxcvbn'
+try:
+    UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn2')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for UserModel
+      Value error, passwords do not match [type=value_error, input_value={'username': 'scolvin', '... 'password2': 'zxcvbn2'}, input_type=dict]
+    """
+
+try:
+    UserModel(
+        username='scolvin',
+        password1='zxcvbn',
+        password2='zxcvbn',
+        card_number='1234',
+    )
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for UserModel
+      Assertion failed, card_number should not be included
+    assert 'card_number' not in {'card_number': '1234', 'password1': 'zxcvbn', 'password2': 'zxcvbn', 'username': 'scolvin'} [type=assertion_error, input_value={'username': 'scolvin', '..., 'card_number': '1234'}, input_type=dict]
+    """
+```
 
 As with field validators, root validators can have `pre=True`, in which case they're called before field
 validation occurs (and are provided with the raw input data), or `pre=False` (the default), in which case
@@ -107,4 +340,26 @@ In this case you should set `check_fields=False` on the validator.
 
 Validators also work with *pydantic* dataclasses.
 
-{!.tmp_examples/validators_dataclass.md!}
+# TODO: Change this example so that it _should_ use a validator; right now it would be better off with default_factory..
+
+```py
+from datetime import datetime
+
+from pydantic import Field, field_validator
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class DemoDataclass:
+    ts: datetime = Field(None, validate_default=True)
+
+    @field_validator('ts', mode='before')
+    def set_ts_now(cls, v):
+        return v or datetime.now()
+
+
+print(DemoDataclass())
+#> DemoDataclass(ts=datetime.datetime(2032, 1, 2, 3, 4, 5, 6))
+print(DemoDataclass(ts='2017-11-08T14:00'))
+#> DemoDataclass(ts=datetime.datetime(2017, 11, 8, 14, 0))
+```

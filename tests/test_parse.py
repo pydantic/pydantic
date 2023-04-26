@@ -1,10 +1,8 @@
-import json
-import pickle
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationError, parse_obj_as
+from pydantic import BaseModel, ValidationError, model_serializer, parse_obj_as, root_validator
 
 
 class Model(BaseModel):
@@ -17,74 +15,166 @@ def test_obj():
     assert str(m) == 'a=10.2 b=10'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_model_validate_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate([1, 2, 3])
     assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'Model expected dict not list', 'type': 'type_error'}
+        {'input': [1, 2, 3], 'loc': (), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_model_validate_submodel():
     m = Model.model_validate(Model(a=10.2))
     assert m.model_dump() == {'a': 10.2, 'b': 10}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_model_validate_wrong_model():
     class Foo(BaseModel):
-        c = 123
+        c: int = 123
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate(Foo())
-    assert exc_info.value.errors() == [{'loc': ('a',), 'msg': 'field required', 'type': 'value_error.missing'}]
+    assert exc_info.value.errors() == [
+        {'input': Foo(), 'loc': (), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate(Foo().model_dump())
+    assert exc_info.value.errors() == [{'input': {'c': 123}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}]
 
 
-@pytest.mark.xfail(reason='working on V2')
+def test_root_model_error():
+    with pytest.raises(
+        TypeError,
+        match='__root__ models are no longer supported in v2',
+    ):
+
+        class MyModel(BaseModel):
+            __root__: str
+
+
 def test_model_validate_root():
     class MyModel(BaseModel):
-        __root__: str
+        root: str
 
+        # Note that the following three definitions require no changes across all __root__ models
+        # I couldn't see a nice way to create a decorator that reduces the boilerplate,
+        # but if we want to discourage this pattern, perhaps that's okay?
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def __get_pydantic_json_schema__(cls, core_schema, handler):
+            json_schema = handler(core_schema)
+            return json_schema['properties']['root']
+
+    # Validation
     m = MyModel.model_validate('a')
-    assert m.model_dump() == {'__root__': 'a'}
-    assert m.__root__ == 'a'
+    assert m.root == 'a'
+
+    # Serialization
+    # TODO: Possible concern — `model_dump` is annotated as returning dict[str, Any] — is that okay, given
+    #   model_serializer could change that? Should we try to reflect it in the mypy plugin?
+    assert m.model_dump() == {'root': 'a'}
+    assert m.model_dump_json() == '"a"'
+
+    # JSON schema
+    assert m.model_json_schema() == {'title': 'Root', 'type': 'string'}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_root_list():
     class MyModel(BaseModel):
-        __root__: List[str]
+        root: List[str]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     m = MyModel.model_validate(['a'])
-    assert m.model_dump() == {'__root__': ['a']}
-    assert m.__root__ == ['a']
+    assert m.model_dump() == {'root': ['a']}
+    assert m.model_dump_json() == '["a"]'
+    assert m.root == ['a']
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_nested_root_list():
     class NestedData(BaseModel):
         id: str
 
     class NestedModel(BaseModel):
-        __root__: List[NestedData]
+        root: List[NestedData]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     class MyModel(BaseModel):
         nested: NestedModel
 
     m = MyModel.model_validate({'nested': [{'id': 'foo'}]})
     assert isinstance(m.nested, NestedModel)
-    assert isinstance(m.nested.__root__[0], NestedData)
+    assert isinstance(m.nested.root[0], NestedData)
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.filterwarnings('ignore:parse_obj_as is deprecated.*:DeprecationWarning')
 def test_parse_nested_root_tuple():
     class NestedData(BaseModel):
         id: str
 
     class NestedModel(BaseModel):
-        __root__: Tuple[int, NestedData]
+        root: Tuple[int, NestedData]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     class MyModel(BaseModel):
         nested: List[NestedModel]
@@ -92,117 +182,60 @@ def test_parse_nested_root_tuple():
     data = [0, {'id': 'foo'}]
     m = MyModel.model_validate({'nested': [data]})
     assert isinstance(m.nested[0], NestedModel)
-    assert isinstance(m.nested[0].__root__[1], NestedData)
+    assert isinstance(m.nested[0].root[1], NestedData)
 
     nested = parse_obj_as(NestedModel, data)
     assert isinstance(nested, NestedModel)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_nested_custom_root():
     class NestedModel(BaseModel):
-        __root__: List[str]
+        root: List[str]
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     class MyModel(BaseModel):
-        __root__: NestedModel
+        root: NestedModel
+
+        @root_validator(pre=True)
+        @classmethod
+        def populate_root(cls, values):
+            return {'root': values}
+
+        @model_serializer(mode='wrap')
+        def _serialize(self, handler, info):
+            data = handler(self)
+            if info.mode == 'json':
+                return data['root']
+            else:
+                return data
+
+        @classmethod
+        def model_modify_json_schema(cls, json_schema):
+            return json_schema['properties']['root']
 
     nested = ['foo', 'bar']
     m = MyModel.model_validate(nested)
     assert isinstance(m, MyModel)
-    assert isinstance(m.__root__, NestedModel)
-    assert isinstance(m.__root__.__root__, List)
-    assert isinstance(m.__root__.__root__[0], str)
+    assert isinstance(m.root, NestedModel)
+    assert isinstance(m.root.root, List)
+    assert isinstance(m.root.root[0], str)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_json():
-    assert Model.parse_raw('{"a": 12, "b": 8}') == Model(a=12, b=8)
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_json_ct():
-    assert Model.parse_raw('{"a": 12, "b": 8}', content_type='application/json') == Model(a=12, b=8)
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_pickle_ct():
-    data = pickle.dumps(dict(a=12, b=8))
-    assert Model.parse_raw(data, content_type='application/pickle', allow_pickle=True) == Model(a=12, b=8)
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_bad_ct():
-    with pytest.raises(ValidationError) as exc_info:
-        Model.parse_raw('{"a": 12, "b": 8}', content_type='application/missing')
-    assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'Unknown content-type: application/missing', 'type': 'type_error'}
-    ]
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_bad_proto():
-    with pytest.raises(ValidationError) as exc_info:
-        Model.parse_raw('{"a": 12, "b": 8}', proto='foobar')
-    assert exc_info.value.errors() == [{'loc': ('__root__',), 'msg': 'Unknown protocol: foobar', 'type': 'type_error'}]
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_file_json(tmpdir):
-    p = tmpdir.join('test.json')
-    p.write('{"a": 12, "b": 8}')
-    assert Model.parse_file(str(p)) == Model(a=12, b=8)
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_file_json_no_ext(tmpdir):
-    p = tmpdir.join('test')
-    p.write('{"a": 12, "b": 8}')
-    assert Model.parse_file(str(p)) == Model(a=12, b=8)
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_file_json_loads(tmp_path):
-    def custom_json_loads(*args, **kwargs):
-        data = json.loads(*args, **kwargs)
-        data['a'] = 99
-        return data
-
-    class Example(BaseModel):
-        model_config = ConfigDict(json_loads=custom_json_loads)
-        a: int
-
-    p = tmp_path / 'test_json_loads.json'
-    p.write_text('{"a": 12}')
-
-    assert Example.parse_file(p) == Example(a=99)
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_file_pickle(tmpdir):
-    p = tmpdir.join('test.pkl')
-    p.write_binary(pickle.dumps(dict(a=12, b=8)))
-    assert Model.parse_file(str(p), allow_pickle=True) == Model(a=12, b=8)
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_file_pickle_no_ext(tmpdir):
-    p = tmpdir.join('test')
-    p.write_binary(pickle.dumps(dict(a=12, b=8)))
-    assert Model.parse_file(str(p), content_type='application/pickle', allow_pickle=True) == Model(a=12, b=8)
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_const_differentiates_union():
-    class SubModelA(BaseModel):
-        key: str = Field('A', const=True)
-        foo: int
-
-    class SubModelB(BaseModel):
-        key: str = Field('B', const=True)
-        foo: int
-
-    class Model(BaseModel):
-        a: Union[SubModelA, SubModelB]
-
-    m = Model.model_validate({'a': {'key': 'B', 'foo': 3}})
-    assert isinstance(m.a, SubModelB)
+    assert Model.model_validate_json('{"a": 12, "b": 8}') == Model(a=12, b=8)

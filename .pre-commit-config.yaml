@@ -8,6 +8,13 @@ repos:
   - id: end-of-file-fixer
   - id: trailing-whitespace
 
+- repo: https://github.com/codespell-project/codespell
+  rev: v2.2.4
+  hooks:
+  - id: codespell
+    additional_dependencies:
+      - tomli
+
 - repo: local
   hooks:
   - id: lint
@@ -16,15 +23,10 @@ repos:
     types: [python]
     language: system
     pass_filenames: false
-  - id: mypy
-    name: Mypy
-    entry: make mypy
+  - id: typecheck
+    name: Typecheck
+    entry: pyright pydantic
     types: [python]
-    language: system
+    language: node
     pass_filenames: false
-  - id: pyupgrade
-    name: Pyupgrade
-    entry: pyupgrade --py37-plus
-    types: [python]
-    language: system
-    exclude: ^docs/.*$
+    additional_dependencies: ["pyright@1.1.302"]

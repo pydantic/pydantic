@@ -4,16 +4,16 @@ import pytest
 
 from pydantic import BaseModel, ValidationError
 from pydantic.dataclasses import dataclass
-from pydantic.tools import parse_obj_as, schema_json_of, schema_of
+from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
+
+pytestmark = pytest.mark.filterwarnings('ignore::DeprecationWarning')
 
 
-@pytest.mark.xfail(reason='working on V2')
 @pytest.mark.parametrize('obj,type_,parsed', [('1', int, 1), (['1'], List[int], [1])])
 def test_parse_obj(obj, type_, parsed):
     assert parse_obj_as(type_, obj) == parsed
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_as_model():
     class Model(BaseModel):
         x: int
@@ -24,7 +24,6 @@ def test_parse_obj_as_model():
     assert parse_obj_as(Model, model_inputs) == Model(**model_inputs)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_preserves_subclasses():
     class ModelA(BaseModel):
         a: Mapping[int, str]
@@ -38,32 +37,30 @@ def test_parse_obj_preserves_subclasses():
     assert parsed == [model_b]
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
     assert exc_info.value.errors() == [
-        {'loc': ('__root__',), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {
+            'input': 'a',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
     ]
-    assert exc_info.value.model.__name__ == 'ParsingModel[int]'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parsing_model_naming():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
-    assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel[int]'
+    assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 
     with pytest.raises(ValidationError) as exc_info:
-        parse_obj_as(int, 'a', type_name='ParsingModel')
-    assert str(exc_info.value).split('\n')[0] == '1 validation error for ParsingModel'
-
-    with pytest.raises(ValidationError) as exc_info:
-        parse_obj_as(int, 'a', type_name=lambda type_: type_.__name__)
+        with pytest.warns(DeprecationWarning, match='The type_name parameter is deprecated'):
+            parse_obj_as(int, 'a', type_name='ParsingModel')
     assert str(exc_info.value).split('\n')[0] == '1 validation error for int'
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_as_dataclass():
     @dataclass
     class PydanticDataclass:
@@ -73,13 +70,11 @@ def test_parse_as_dataclass():
     assert parse_obj_as(PydanticDataclass, inputs) == PydanticDataclass(1)
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_parse_mapping_as():
     inputs = {'1': '2'}
     assert parse_obj_as(Dict[int, int], inputs) == {1: 2}
 
 
-@pytest.mark.xfail(reason='working on V2')
 def test_schema():
     assert schema_of(Union[int, str], title='IntOrStr') == {
         'title': 'IntOrStr',
@@ -87,7 +82,6 @@ def test_schema():
     }
     assert schema_json_of(Union[int, str], title='IntOrStr', indent=2) == (
         '{\n'
-        '  "title": "IntOrStr",\n'
         '  "anyOf": [\n'
         '    {\n'
         '      "type": "integer"\n'
@@ -95,6 +89,7 @@ def test_schema():
         '    {\n'
         '      "type": "string"\n'
         '    }\n'
-        '  ]\n'
+        '  ],\n'
+        '  "title": "IntOrStr"\n'
         '}'
     )

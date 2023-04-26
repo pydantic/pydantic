@@ -1,45 +1,46 @@
 .DEFAULT_GOAL := all
-sources = pydantic tests docs/build
+sources = pydantic tests docs/plugins
 
 .PHONY: install
 install:
 	python -m pip install -U pip
 	pip install -r requirements/all.txt
+	pip install -r requirements/pyproject-all.txt
 	pip install -e .
 
 .PHONY: refresh-lockfiles
-refresh-lockfiles:
-	@echo "Updating requirements/*.txt files using pip-compile"
-	find requirements/ -name '*.txt' ! -name 'all.txt' -type f -delete
-	pip-compile -q --resolver backtracking -o requirements/docs.txt requirements/docs.in
-	pip-compile -q --resolver backtracking -o requirements/linting.txt requirements/linting.in
-	pip-compile -q --resolver backtracking -o requirements/testing.txt requirements/testing.in
-	pip-compile -q --resolver backtracking -o requirements/testing-extra.txt requirements/testing-extra.in
-	pip-compile -q --resolver backtracking -o requirements/pyproject-min.txt pyproject.toml
-	pip-compile -q --resolver backtracking -o requirements/pyproject-all.txt pyproject.toml --extra=email
-	pip install --dry-run -r requirements/all.txt
+refresh-lockfiles:       ## Sync lockfiles with requirements files.
+	bash requirements/refresh.sh
+
+
+.PHONY: rebuild-lockfiles
+rebuild-lockfiles:       ## Rebuild lockfiles from scratch, updating all dependencies
+	bash requirements/rebuild.sh
 
 .PHONY: format
 format:
-	isort $(sources)
 	black $(sources)
+	ruff --fix $(sources)
 
 .PHONY: lint
 lint:
 	ruff $(sources)
-	isort $(sources) --check-only --df
 	black $(sources) --check --diff
 
-.PHONY: mypy
-mypy:
-	mypy pydantic docs/build --disable-recursive-aliases
+.PHONY: codespell
+codespell:
+	pre-commit run codespell --all-files
 
-.PHONY: pyupgrade
-pyupgrade:
-	pyupgrade --py37-plus `find pydantic tests -name "*.py" -type f`
+.PHONY: typecheck
+typecheck:
+	pre-commit run typecheck --all-files
 
-.PHONY: pyright
-pyright:
+.PHONY: test-mypy
+test-mypy:
+	coverage run -m pytest tests/mypy --test-mypy
+
+.PHONY: test-pyright
+test-pyright:
 	cd tests/pyright && pyright
 
 .PHONY: test
@@ -67,7 +68,7 @@ test-fastapi:
 	./tests/test_fastapi.sh
 
 .PHONY: all
-all: lint mypy testcov
+all: lint typecheck codespell testcov
 
 .PHONY: clean
 clean:
@@ -77,14 +78,13 @@ clean:
 	rm -f `find . -type f -name '.*~'`
 	rm -rf .cache
 	rm -rf .pytest_cache
-	rm -rf .mypy_cache
+	rm -rf .ruff_cache
 	rm -rf htmlcov
 	rm -rf *.egg-info
 	rm -f .coverage
 	rm -f .coverage.*
 	rm -rf build
 	rm -rf dist
-	rm -f pydantic/*.c pydantic/*.so
 	rm -rf site
 	rm -rf docs/_build
 	rm -rf docs/.changelog.md docs/.version.md docs/.tmp_schema_mappings.html
@@ -93,11 +93,4 @@ clean:
 
 .PHONY: docs
 docs:
-	ruff docs/examples/
-	python docs/build/main.py
 	mkdocs build
-
-.PHONY: docs-serve
-docs-serve:
-	python docs/build/main.py
-	mkdocs serve

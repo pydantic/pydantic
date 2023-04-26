@@ -3,17 +3,20 @@ from __future__ import annotations as _annotations
 import dataclasses as _dataclasses
 import re
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Callable
 
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypeAlias
 
 from ._internal import _fields, _repr
+from ._internal._json_schema_shared import GetJsonSchemaHandler
+from ._migration import getattr_migration
+from .json_schema import JsonSchemaValue
 
 if TYPE_CHECKING:
     import email_validator
 
-    NetworkType = str | bytes | int | tuple[str | bytes | int, str | int]
+    NetworkType: TypeAlias = 'str | bytes | int | tuple[str | bytes | int, str | int]'
 
 else:
     email_validator = None
@@ -133,21 +136,21 @@ else:
     class EmailStr:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, schema: core_schema.CoreSchema | None = None, **_kwargs: Any
+            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             import_email_validator()
-            if schema is None:
-                return core_schema.function_after_schema(core_schema.str_schema(), cls.validate)
-            else:
-                assert schema['type'] == 'str', 'EmailStr must be used with string fields'
-                return core_schema.function_after_schema(schema, cls.validate)
+            return core_schema.general_after_validator_function(cls.validate, core_schema.str_schema())
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            field_schema = handler(core_schema)
             field_schema.update(type='string', format='email')
+            return field_schema
 
         @classmethod
-        def validate(cls, __input_value: str, **_kwargs: Any) -> str:
+        def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> str:
             return validate_email(__input_value)[1]
 
 
@@ -162,23 +165,26 @@ class NameEmail(_repr.Representation):
         return isinstance(other, NameEmail) and (self.name, self.email) == (other.name, other.email)
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = handler(core_schema)
         field_schema.update(type='string', format='name-email')
+        return field_schema
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionSchema:
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
         import_email_validator()
-        return core_schema.function_after_schema(
-            core_schema.union_schema(
-                core_schema.is_instance_schema(cls),
-                core_schema.str_schema(),
-            ),
+        return core_schema.general_after_validator_function(
             cls._validate,
+            core_schema.union_schema([core_schema.is_instance_schema(cls), core_schema.str_schema()]),
             serialization=core_schema.to_string_ser_schema(),
         )
 
     @classmethod
-    def _validate(cls, __input_value: NameEmail | str, **_kwargs: Any) -> NameEmail:
+    def _validate(cls, __input_value: NameEmail | str, _: core_schema.ValidationInfo) -> NameEmail:
         if isinstance(__input_value, cls):
             return __input_value
         else:
@@ -204,15 +210,21 @@ class IPvAnyAddress:
             raise PydanticCustomError('ip_any_address', 'value is not a valid IPv4 or IPv6 address')
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = {}
         field_schema.update(type='string', format='ipvanyaddress')
+        return field_schema
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: Any, **_kwargs: Any) -> IPv4Address | IPv6Address:
+    def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> IPv4Address | IPv6Address:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -231,15 +243,21 @@ class IPvAnyInterface:
             raise PydanticCustomError('ip_any_interface', 'value is not a valid IPv4 or IPv6 interface')
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = {}
         field_schema.update(type='string', format='ipvanyinterface')
+        return field_schema
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Interface | IPv6Interface:
+    def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Interface | IPv6Interface:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -247,7 +265,7 @@ class IPvAnyNetwork:
     __slots__ = ()
 
     def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:  # type: ignore[misc]
-        # Assume IP Network is defined with a default value for ``strict`` argument.
+        # Assume IP Network is defined with a default value for `strict` argument.
         # Define your own class if you want to specify network address check strictness.
         try:
             return IPv4Network(value)
@@ -260,15 +278,21 @@ class IPvAnyNetwork:
             raise PydanticCustomError('ip_any_network', 'value is not a valid IPv4 or IPv6 network')
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> None:
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = {}
         field_schema.update(type='string', format='ipvanynetwork')
+        return field_schema
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, **_kwargs: Any) -> core_schema.FunctionPlainSchema:
-        return core_schema.function_plain_schema(cls._validate)
+    def __get_pydantic_core_schema__(
+        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
-    def _validate(cls, __input_value: NetworkType, **_kwargs: Any) -> IPv4Network | IPv6Network:
+    def _validate(cls, __input_value: NetworkType, _: core_schema.ValidationInfo) -> IPv4Network | IPv6Network:
         return cls(__input_value)  # type: ignore[return-value]
 
 
@@ -302,3 +326,6 @@ def validate_email(value: str) -> tuple[str, str]:
         ) from e
 
     return name or parts['local'], parts['email']
+
+
+__getattr__ = getattr_migration(__name__)

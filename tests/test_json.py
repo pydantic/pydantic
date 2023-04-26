@@ -13,17 +13,20 @@ from uuid import UUID
 import pytest
 from pydantic_core import SchemaSerializer
 
-from pydantic import BaseModel, ConfigDict, NameEmail, serializer
+from pydantic import BaseModel, ConfigDict, NameEmail, field_serializer
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
-from pydantic.json import pydantic_encoder, timedelta_isoformat
+from pydantic.deprecated.json import pydantic_encoder, timedelta_isoformat
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 
 try:
     import email_validator
 except ImportError:
     email_validator = None
+
+
+pytestmark = pytest.mark.filterwarnings('ignore::DeprecationWarning')
 
 
 class MyEnum(Enum):
@@ -113,8 +116,8 @@ def test_model_encoding():
 
     m = Model(a=10.2, b='foobar', c=10.2, d={'x': 123, 'y': '123'})
     assert m.model_dump() == {'a': 10.2, 'b': b'foobar', 'c': Decimal('10.2'), 'd': {'x': 123, 'y': '123'}}
-    assert m.model_dump_json() == b'{"a":10.2,"b":"foobar","c":"10.2","d":{"x":123,"y":"123"}}'
-    assert m.model_dump_json(exclude={'b'}) == b'{"a":10.2,"c":"10.2","d":{"x":123,"y":"123"}}'
+    assert m.model_dump_json() == '{"a":10.2,"b":"foobar","c":"10.2","d":{"x":123,"y":"123"}}'
+    assert m.model_dump_json(exclude={'b'}) == '{"a":10.2,"c":"10.2","d":{"x":123,"y":"123"}}'
 
 
 def test_subclass_encoding():
@@ -127,7 +130,7 @@ def test_subclass_encoding():
 
     m = Model(a=datetime(2032, 1, 1, 1, 1), b=SubDate(2020, 2, 29, 12, 30))
     assert m.model_dump() == {'a': datetime(2032, 1, 1, 1, 1), 'b': SubDate(2020, 2, 29, 12, 30)}
-    assert m.model_dump_json() == b'{"a":"2032-01-01T01:01:00","b":"2020-02-29T12:30:00"}'
+    assert m.model_dump_json() == '{"a":"2032-01-01T01:01:00","b":"2020-02-29T12:30:00"}'
 
 
 def test_subclass_custom_encoding():
@@ -141,7 +144,7 @@ def test_subclass_custom_encoding():
         a: SubDt
         b: SubDelta
 
-        @serializer('a', when_used='json')
+        @field_serializer('a', when_used='json')
         def serialize_a(self, v: SubDt, _info):
             return v.strftime('%a, %d %b %C %H:%M:%S')
 
@@ -150,7 +153,7 @@ def test_subclass_custom_encoding():
     m = Model(a=SubDt(2032, 1, 1, 1, 1), b=SubDelta(hours=100))
     assert m.model_dump() == {'a': SubDt(2032, 1, 1, 1, 1), 'b': SubDelta(days=4, seconds=14400)}
     assert m.model_dump(mode='json') == {'a': 'Thu, 01 Jan 20 01:01:00', 'b': 360000.0}
-    assert m.model_dump_json() == b'{"a":"Thu, 01 Jan 20 01:01:00","b":360000.0}'
+    assert m.model_dump_json() == '{"a":"Thu, 01 Jan 20 01:01:00","b":360000.0}'
 
 
 def test_invalid_model():
@@ -180,15 +183,15 @@ def test_custom_encoder():
         y: Decimal
         z: date
 
-        @serializer('x')
+        @field_serializer('x')
         def serialize_x(self, v: timedelta, _info):
             return f'{v.total_seconds():0.3f}s'
 
-        @serializer('y')
+        @field_serializer('y')
         def serialize_y(self, v: Decimal, _info):
             return 'a decimal'
 
-    assert Model(x=123, y=5, z='2032-06-01').model_dump_json() == b'{"x":"123.000s","y":"a decimal","z":"2032-06-01"}'
+    assert Model(x=123, y=5, z='2032-06-01').model_dump_json() == '{"x":"123.000s","y":"a decimal","z":"2032-06-01"}'
 
 
 def test_iso_timedelta_simple():
@@ -197,7 +200,7 @@ def test_iso_timedelta_simple():
 
     m = Model(x=123)
     json_data = m.model_dump_json()
-    assert json_data == b'{"x":"PT123S"}'
+    assert json_data == '{"x":"PT123S"}'
     assert Model.model_validate_json(json_data).x == timedelta(seconds=123)
 
 
@@ -211,7 +214,7 @@ def test_con_decimal_encode() -> None:
         id: condecimal(gt=0, max_digits=22, decimal_places=0)
         price: Decimal = Decimal('0.01')
 
-    json_data = b'{"id":"1","price":"0.01"}'
+    json_data = '{"id":"1","price":"0.01"}'
     assert Obj(id=1).model_dump_json() == json_data
     assert Obj.model_validate_json(json_data) == Obj(id=1)
 
@@ -221,32 +224,16 @@ def test_json_encoder_simple_inheritance():
         dt: datetime = datetime.now()
         timedt: timedelta = timedelta(hours=100)
 
-        @serializer('dt')
+        @field_serializer('dt')
         def serialize_dt(self, _v: datetime, _info):
             return 'parent_encoder'
 
     class Child(Parent):
-        @serializer('timedt')
+        @field_serializer('timedt')
         def serialize_timedt(self, _v: timedelta, _info):
             return 'child_encoder'
 
-    assert Child().model_dump_json() == b'{"dt":"parent_encoder","timedt":"child_encoder"}'
-
-
-def test_json_encoder_inheritance_override():
-    class Parent(BaseModel):
-        dt: datetime = datetime.now()
-
-        @serializer('dt')
-        def serialize_dt(self, _v: datetime, _info):
-            return 'parent_encoder'
-
-    class Child(Parent):
-        @serializer('dt')
-        def serialize_dt(self, _v: datetime, _info):
-            return 'child_encoder'
-
-    assert Child().model_dump_json() == b'{"dt":"child_encoder"}'
+    assert Child().model_dump_json() == '{"dt":"parent_encoder","timedt":"child_encoder"}'
 
 
 def test_encode_dataclass():
@@ -259,7 +246,6 @@ def test_encode_dataclass():
     assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
 
 
-@pytest.mark.xfail(reason='dataclasses not implemented')
 def test_encode_pydantic_dataclass():
     @pydantic_dataclass
     class Foo:
@@ -267,7 +253,7 @@ def test_encode_pydantic_dataclass():
         spam: str
 
     f = Foo(bar=123, spam='apple pie')
-    assert '{"bar": 123, "spam": "apple pie"}' == json.dumps(f, default=pydantic_encoder)
+    assert json.dumps(f, default=pydantic_encoder) == '{"bar": 123, "spam": "apple pie"}'
 
 
 def test_json_nested_encode_models():
@@ -282,15 +268,15 @@ def test_json_nested_encode_models():
         phone: Phone
         friend: Optional['User'] = None
 
-        @serializer('birthday')
+        @field_serializer('birthday')
         def serialize_birthday(self, v: datetime, _info):
             return v.timestamp()
 
-        @serializer('phone', when_used='unless-none')
+        @field_serializer('phone', when_used='unless-none')
         def serialize_phone(self, v: Phone, _info):
             return v.number
 
-        @serializer('friend', when_used='unless-none')
+        @field_serializer('friend', when_used='unless-none')
         def serialize_user(self, v, _info):
             return v.SSN
 
@@ -304,13 +290,13 @@ def test_json_nested_encode_models():
 
     timon.friend = pumbaa
 
-    assert iphone.model_dump_json() == b'{"manufacturer":"Apple","number":18002752273}'
+    assert iphone.model_dump_json() == '{"manufacturer":"Apple","number":18002752273}'
     assert (
         pumbaa.model_dump_json()
-        == b'{"name":"Pumbaa","SSN":234,"birthday":737424000.0,"phone":18007267864,"friend":null}'
+        == '{"name":"Pumbaa","SSN":234,"birthday":737424000.0,"phone":18007267864,"friend":null}'
     )
     assert (
-        timon.model_dump_json() == b'{"name":"Timon","SSN":123,"birthday":738892800.0,"phone":18002752273,"friend":234}'
+        timon.model_dump_json() == '{"name":"Timon","SSN":123,"birthday":738892800.0,"phone":18002752273,"friend":234}'
     )
 
 
@@ -321,7 +307,7 @@ def test_custom_encode_fallback_basemodel():
     class Foo(BaseModel):
         x: MyExoticType
 
-        @serializer('x')
+        @field_serializer('x')
         def serialize_x(self, _v: MyExoticType, _info):
             return 'exo'
 
@@ -330,7 +316,7 @@ def test_custom_encode_fallback_basemodel():
     class Bar(BaseModel):
         foo: Foo
 
-    assert Bar(foo=Foo(x=MyExoticType())).model_dump_json() == b'{"foo":{"x":"exo"}}'
+    assert Bar(foo=Foo(x=MyExoticType())).model_dump_json() == '{"foo":{"x":"exo"}}'
 
 
 def test_recursive(create_module):
@@ -348,4 +334,4 @@ class Model(BaseModel):
     )
     M = module.Model
 
-    assert M(value=1, nested=M(value=2)).model_dump_json(exclude_none=True) == b'{"value":1,"nested":{"value":2}}'
+    assert M(value=1, nested=M(value=2)).model_dump_json(exclude_none=True) == '{"value":1,"nested":{"value":2}}'

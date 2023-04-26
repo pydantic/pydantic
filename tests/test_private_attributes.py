@@ -1,10 +1,11 @@
+import functools
+import platform
 from typing import ClassVar, Generic, TypeVar
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Extra, PrivateAttr
+from pydantic import BaseModel, ConfigDict, PrivateAttr
 from pydantic.fields import Undefined
-from pydantic.generics import GenericModel
 
 
 def test_private_attribute():
@@ -14,8 +15,10 @@ def test_private_attribute():
         _foo = PrivateAttr(default)
 
     assert Model.__slots__ == {'_foo'}
-    assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
-    assert Model.__private_attributes__ == {'_foo': PrivateAttr(default)}
+    if platform.python_implementation() == 'PyPy':
+        repr(Model._foo).startswith('<member_descriptor object at')
+    else:
+        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
 
     m = Model()
     assert m._foo == default
@@ -52,7 +55,11 @@ def test_private_attribute_factory():
         _foo = PrivateAttr(default_factory=factory)
 
     assert Model.__slots__ == {'_foo'}
-    assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        repr(Model._foo).startswith('<member_descriptor object at')
+    else:
+        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(default_factory=factory)}
 
     m = Model()
@@ -73,10 +80,11 @@ def test_private_attribute_annotation():
 
         _foo: str
 
-        model_config = ConfigDict(underscore_attrs_are_private=True)
-
     assert Model.__slots__ == {'_foo'}
-    assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        repr(Model._foo).startswith('<member_descriptor object at')
+    else:
+        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(Undefined)}
     assert repr(Model.__doc__) == "'The best model'"
 
@@ -102,16 +110,16 @@ def test_private_attribute_annotation():
     assert m.__dict__ == {}
 
 
-@pytest.mark.xfail(reason='ClassVar needs work')
 def test_underscore_attrs_are_private():
     class Model(BaseModel):
         _foo: str = 'abc'
         _bar: ClassVar[str] = 'cba'
 
-        model_config = ConfigDict(underscore_attrs_are_private=True)
-
     assert Model.__slots__ == {'_foo'}
-    assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        repr(Model._foo).startswith('<member_descriptor object at')
+    else:
+        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
     assert Model._bar == 'cba'
     assert Model.__private_attributes__ == {'_foo': PrivateAttr('abc')}
 
@@ -120,7 +128,13 @@ def test_underscore_attrs_are_private():
     m._foo = None
     assert m._foo is None
 
-    with pytest.raises(ValueError, match='"Model" object has no field "_bar"'):
+    with pytest.raises(
+        AttributeError,
+        match=(
+            '"_bar" is a ClassVar of `Model` and cannot be set on an instance. '
+            'If you want to set a value on the class, use `Model._bar = value`.'
+        ),
+    ):
         m._bar = 1
 
 
@@ -128,7 +142,7 @@ def test_private_attribute_intersection_with_extra_field():
     class Model(BaseModel):
         _foo = PrivateAttr('private_attribute')
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert Model.__slots__ == {'_foo'}
     m = Model(_foo='field')
@@ -143,14 +157,13 @@ def test_private_attribute_intersection_with_extra_field():
 def test_private_attribute_invalid_name():
     with pytest.raises(
         NameError,
-        match='Private attributes "foo" must not be a valid field name; Use sunder names, e. g. "_foo"',
+        match='Private attributes "foo" must not be a valid field name; use sunder names, e.g. "_foo"',
     ):
 
         class Model(BaseModel):
             foo = PrivateAttr()
 
 
-@pytest.mark.xfail(reason="not sure what's going on here???")
 def test_slots_are_ignored():
     class Model(BaseModel):
         __slots__ = (
@@ -165,15 +178,23 @@ def test_slots_are_ignored():
 
     assert Model.__private_attributes__ == {}
     assert set(Model.__slots__) == {'foo', '_bar'}
-    m = Model()
+    m1 = Model()
+    m2 = Model()
+
     for attr in Model.__slots__:
-        assert object.__getattribute__(m, attr) == 'spam'
-        with pytest.raises(ValueError, match=f'"Model" object has no field "{attr}"'):
-            setattr(m, attr, 'not spam')
+        assert object.__getattribute__(m1, attr) == 'spam'
+
+    # In v2, you are always allowed to set instance attributes if the name starts with `_`.
+    m1._bar = 'not spam'
+    assert m1._bar == 'not spam'
+    assert m2._bar == 'spam'
+
+    with pytest.raises(ValueError, match='"Model" object has no field "foo"'):
+        m1.foo = 'not spam'
 
 
 def test_default_and_default_factory_used_error():
-    with pytest.raises(ValueError, match='cannot specify both default and default_factory'):
+    with pytest.raises(TypeError, match='cannot specify both default and default_factory'):
         PrivateAttr(default=123, default_factory=lambda: 321)
 
 
@@ -186,29 +207,23 @@ def test_config_override_init():
             super().__init__(**data)
             self._private_attr = 123
 
-        model_config = ConfigDict(underscore_attrs_are_private=True)
-
     m = MyModel(x='hello')
     assert m.model_dump() == {'x': 'hello'}
     assert m._private_attr == 123
 
 
-@pytest.mark.xfail(reason='generics not implemented')
 def test_generic_private_attribute():
     T = TypeVar('T')
 
-    class Model(GenericModel, Generic[T]):
+    class Model(BaseModel, Generic[T]):
         value: T
         _private_value: T
-
-        model_config = ConfigDict(underscore_attrs_are_private=True)
 
     m = Model[int](value=1, _private_attr=3)
     m._private_value = 3
     assert m.model_dump() == {'value': 1}
 
 
-@pytest.mark.xfail(reason='config inheritance error')
 def test_private_attribute_multiple_inheritance():
     # We need to test this since PrivateAttr uses __slots__ and that has some restrictions with regards to
     # multiple inheritance
@@ -229,9 +244,14 @@ def test_private_attribute_multiple_inheritance():
     assert GrandParentModel.__slots__ == {'_foo'}
     assert ParentBModel.__slots__ == {'_bar'}
     assert Model.__slots__ == {'_baz'}
-    assert repr(Model._foo) == "<member '_foo' of 'GrandParentModel' objects>"
-    assert repr(Model._bar) == "<member '_bar' of 'ParentBModel' objects>"
-    assert repr(Model._baz) == "<member '_baz' of 'Model' objects>"
+    if platform.python_implementation() == 'PyPy':
+        assert repr(Model._foo).startswith('<member_descriptor object at')
+        assert repr(Model._bar).startswith('<member_descriptor object at')
+        assert repr(Model._baz).startswith('<member_descriptor object at')
+    else:
+        assert repr(Model._foo) == "<member '_foo' of 'GrandParentModel' objects>"
+        assert repr(Model._bar) == "<member '_bar' of 'ParentBModel' objects>"
+        assert repr(Model._baz) == "<member '_baz' of 'Model' objects>"
     assert Model.__private_attributes__ == {
         '_foo': PrivateAttr(default),
         '_bar': PrivateAttr(default),
@@ -262,3 +282,45 @@ def test_private_attribute_multiple_inheritance():
 
     assert m.model_dump() == {}
     assert m.__dict__ == {}
+
+
+def test_private_attributes_not_dunder() -> None:
+    with pytest.raises(
+        NameError,
+        match='Private attributes "__foo__" must not have dunder names; use a single underscore prefix instead.',
+    ):
+
+        class MyModel(BaseModel):
+            __foo__ = PrivateAttr({'private'})
+
+
+def test_ignored_types_are_ignored() -> None:
+    class IgnoredType:
+        pass
+
+    class MyModel(BaseModel):
+        model_config = ConfigDict(ignored_types=(IgnoredType,))
+
+        _a = IgnoredType()
+        _b: int = IgnoredType()
+        _c: IgnoredType
+        _d: IgnoredType = IgnoredType()
+
+        # The following are included to document existing behavior, and can be updated
+        # if the current behavior does not match the desired behavior
+        _e: int
+        _f: int = 1
+        _g = 1  # Note: this is completely ignored, in keeping with v1
+
+    assert sorted(MyModel.__private_attributes__.keys()) == ['_e', '_f']
+
+
+@pytest.mark.skipif(not hasattr(functools, 'cached_property'), reason='cached_property is not available')
+def test_ignored_types_are_ignored_cached_property():
+    """Demonstrate the members of functools are ignore here as with fields."""
+
+    class MyModel(BaseModel):
+        _a: functools.cached_property
+        _b: int
+
+    assert set(MyModel.__private_attributes__) == {'_b'}

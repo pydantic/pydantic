@@ -4,7 +4,7 @@ from collections import deque
 from typing import Any, Pattern
 
 from pydantic_core import PydanticOmit
-from pydantic_core.core_schema import SerializationInfo, SerializeWrapHandler
+from pydantic_core.core_schema import SerializationInfo, SerializerFunctionWrapHandler
 
 
 def pattern_serializer(input_value: Pattern[Any], info: SerializationInfo) -> str | Pattern[Any]:
@@ -15,7 +15,7 @@ def pattern_serializer(input_value: Pattern[Any], info: SerializationInfo) -> st
 
 
 def serialize_deque(
-    __value: Any, __serialize: SerializeWrapHandler, __info: SerializationInfo
+    __value: Any, __serialize: SerializerFunctionWrapHandler, __info: SerializationInfo
 ) -> list[Any] | deque[Any]:
     items = []
     for index, item in enumerate(__value):

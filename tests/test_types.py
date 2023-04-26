@@ -5,7 +5,7 @@ import re
 import sys
 import uuid
 from collections import OrderedDict, deque
-from datetime import date, datetime, time, timedelta
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
 from pathlib import Path
@@ -24,13 +24,14 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    TypeVar,
     Union,
 )
 from uuid import UUID
 
 import annotated_types
 import pytest
-from dirty_equals import AnyThing, HasRepr
+from dirty_equals import HasRepr, IsStr
 from pydantic_core._pydantic_core import PydanticCustomError, SchemaError
 from typing_extensions import Annotated, Literal, TypedDict
 
@@ -39,6 +40,8 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
+    AnalyzedType,
+    AwareDatetime,
     BaseModel,
     ByteSize,
     ConfigDict,
@@ -47,16 +50,21 @@ from pydantic import (
     Field,
     FilePath,
     FiniteFloat,
+    FutureDate,
     Json,
+    NaiveDatetime,
     NameEmail,
     NegativeFloat,
     NegativeInt,
+    NewPath,
     NonNegativeFloat,
     NonNegativeInt,
     NonPositiveFloat,
     NonPositiveInt,
+    PastDate,
     PositiveFloat,
     PositiveInt,
+    PydanticInvalidForJsonSchema,
     SecretBytes,
     SecretStr,
     StrictBool,
@@ -66,6 +74,7 @@ from pydantic import (
     StrictStr,
     ValidationError,
     conbytes,
+    condate,
     condecimal,
     confloat,
     confrozenset,
@@ -73,9 +82,9 @@ from pydantic import (
     conlist,
     conset,
     constr,
-    validator,
 )
-from pydantic.types import ImportString, SecretField, Strict
+from pydantic.decorators import field_validator
+from pydantic.types import AllowInfNan, ImportString, SecretField, Strict
 
 try:
     import email_validator
@@ -298,7 +307,7 @@ def test_constrained_list_constraints():
         ConListModelBoth(v=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': 1}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': 1}
     ]
 
 
@@ -368,7 +377,7 @@ def test_conlist():
         Model(foo=1)
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('foo',), 'msg': 'Input should be a valid list/array', 'input': 1}
+        {'type': 'list_type', 'loc': ('foo',), 'msg': 'Input should be a valid list', 'input': 1}
     ]
 
 
@@ -854,6 +863,143 @@ def test_decimal():
     assert m.model_dump() == {'v': Decimal('1.234')}
 
 
+def test_decimal_allow_inf():
+    class MyModel(BaseModel):
+        value: Annotated[Decimal, AllowInfNan(True)]
+
+    m = MyModel(value='inf')
+    assert m.value == Decimal('inf')
+
+    m = MyModel(value=Decimal('inf'))
+    assert m.value == Decimal('inf')
+
+
+def test_decimal_dont_allow_inf():
+    class MyModel(BaseModel):
+        value: Decimal
+
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        MyModel(value='inf')
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        MyModel(value=Decimal('inf'))
+
+
+def test_decimal_strict():
+    class Model(BaseModel):
+        v: Decimal
+
+        model_config = ConfigDict(strict=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=1.23)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'decimal_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid Decimal instance or decimal string in JSON',
+            'input': 1.23,
+        }
+    ]
+
+    v = Decimal(1.23)
+    assert Model(v=v).v == v
+    assert Model(v=v).model_dump() == {'v': v}
+
+
+def test_strict_date():
+    class Model(BaseModel):
+        v: Annotated[date, Field(strict=True)]
+
+    assert Model(v=date(2017, 5, 5)).v == date(2017, 5, 5)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=datetime(2017, 5, 5))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'date_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid date',
+            'input': datetime(2017, 5, 5),
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='2017-05-05')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'date_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid date',
+            'input': '2017-05-05',
+        }
+    ]
+
+
+def test_strict_datetime():
+    class Model(BaseModel):
+        v: Annotated[datetime, Field(strict=True)]
+
+    assert Model(v=datetime(2017, 5, 5, 10, 10, 10)).v == datetime(2017, 5, 5, 10, 10, 10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v=date(2017, 5, 5))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'datetime_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid datetime',
+            'input': date(2017, 5, 5),
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='2017-05-05T10:10:10')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'datetime_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid datetime',
+            'input': '2017-05-05T10:10:10',
+        }
+    ]
+
+
+def test_strict_time():
+    class Model(BaseModel):
+        v: Annotated[time, Field(strict=True)]
+
+    assert Model(v=time(10, 10, 10)).v == time(10, 10, 10)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='10:10:10')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'time_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid time',
+            'input': '10:10:10',
+        }
+    ]
+
+
+def test_strict_timedelta():
+    class Model(BaseModel):
+        v: Annotated[timedelta, Field(strict=True)]
+
+    assert Model(v=timedelta(days=1)).v == timedelta(days=1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(v='1 days')
+    assert exc_info.value.errors() == [
+        {
+            'type': 'time_delta_type',
+            'loc': ('v',),
+            'msg': 'Input should be a valid timedelta',
+            'input': '1 days',
+        }
+    ]
+
+
 @pytest.fixture(scope='session', name='CheckModel')
 def check_model_fixture():
     class CheckModel(BaseModel):
@@ -864,6 +1010,14 @@ def check_model_fixture():
         float_check: float = 1.0
         uuid_check: UUID = UUID('7bd00d58-6485-4ca6-b889-3da6d8df3ee4')
         decimal_check: condecimal(allow_inf_nan=False) = Decimal('42.24')
+        date_check: date = date(2017, 5, 5)
+        datetime_check: datetime = datetime(2017, 5, 5, 10, 10, 10)
+        time_check: time = time(10, 10, 10)
+        timedelta_check: timedelta = timedelta(days=1)
+        list_check: List[str] = ['1', '2']
+        tuple_check: Tuple[str, ...] = ('1', '2')
+        set_check: Set[str] = {'1', '2'}
+        frozenset_check: FrozenSet[str] = frozenset(['1', '2'])
 
     return CheckModel
 
@@ -879,6 +1033,8 @@ class BoolCastable:
     [
         ('bool_check', True, True),
         ('bool_check', 1, True),
+        ('bool_check', 1.0, True),
+        ('bool_check', Decimal(1), True),
         ('bool_check', 'y', True),
         ('bool_check', 'Y', True),
         ('bool_check', 'yes', True),
@@ -896,6 +1052,8 @@ class BoolCastable:
         ('bool_check', b'TRUE', True),
         ('bool_check', False, False),
         ('bool_check', 0, False),
+        ('bool_check', 0.0, False),
+        ('bool_check', Decimal(0), False),
         ('bool_check', 'n', False),
         ('bool_check', 'N', False),
         ('bool_check', 'no', False),
@@ -920,15 +1078,20 @@ class BoolCastable:
         ('bool_check', b'2', ValidationError),
         ('bool_check', '2', ValidationError),
         ('bool_check', 2, ValidationError),
+        ('bool_check', 2.0, ValidationError),
+        ('bool_check', Decimal(2), ValidationError),
         ('bool_check', b'\x81', ValidationError),
         ('bool_check', BoolCastable(), ValidationError),
         ('str_check', 's', 's'),
         ('str_check', '  s  ', 's'),
         ('str_check', b's', 's'),
         ('str_check', b'  s  ', 's'),
+        ('str_check', bytearray(b's' * 5), 'sssss'),
         ('str_check', 1, ValidationError),
         ('str_check', 'x' * 11, ValidationError),
         ('str_check', b'x' * 11, ValidationError),
+        ('str_check', b'\x81', ValidationError),
+        ('str_check', bytearray(b'\x81' * 5), ValidationError),
         ('bytes_check', 's', b's'),
         ('bytes_check', '  s  ', b'  s  '),
         ('bytes_check', b's', b's'),
@@ -942,6 +1105,8 @@ class BoolCastable:
         ('int_check', 1, 1),
         ('int_check', 1.0, 1),
         ('int_check', 1.9, ValidationError),
+        ('int_check', Decimal(1), 1),
+        ('int_check', Decimal(1.9), ValidationError),
         ('int_check', '1', 1),
         ('int_check', '1.9', ValidationError),
         ('int_check', b'1', 1),
@@ -950,10 +1115,15 @@ class BoolCastable:
         ('int_check', b'12', 12),
         ('float_check', 1, 1.0),
         ('float_check', 1.0, 1.0),
+        ('float_check', Decimal(1.0), 1.0),
         ('float_check', '1.0', 1.0),
         ('float_check', '1', 1.0),
         ('float_check', b'1.0', 1.0),
         ('float_check', b'1', 1.0),
+        ('float_check', True, 1.0),
+        ('float_check', False, 0.0),
+        ('float_check', 't', ValidationError),
+        ('float_check', b't', ValidationError),
         ('uuid_check', 'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8'), UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
         ('uuid_check', b'ebcdab58-6eb8-46fb-a190-d07a33e9eac8', UUID('ebcdab58-6eb8-46fb-a190-d07a33e9eac8')),
@@ -967,6 +1137,81 @@ class BoolCastable:
         ('decimal_check', Decimal('42.24'), Decimal('42.24')),
         ('decimal_check', 'not a valid decimal', ValidationError),
         ('decimal_check', 'NaN', ValidationError),
+        ('date_check', date(2017, 5, 5), date(2017, 5, 5)),
+        ('date_check', datetime(2017, 5, 5), date(2017, 5, 5)),
+        ('date_check', '2017-05-05', date(2017, 5, 5)),
+        ('date_check', b'2017-05-05', date(2017, 5, 5)),
+        ('date_check', 1493942400000, date(2017, 5, 5)),
+        ('date_check', 1493942400, date(2017, 5, 5)),
+        ('date_check', 1493942400000.0, date(2017, 5, 5)),
+        ('date_check', Decimal(1493942400000), date(2017, 5, 5)),
+        ('date_check', datetime(2017, 5, 5, 10), ValidationError),
+        ('date_check', '2017-5-5', ValidationError),
+        ('date_check', b'2017-5-5', ValidationError),
+        ('date_check', 1493942401000, ValidationError),
+        ('date_check', 1493942401000.0, ValidationError),
+        ('date_check', Decimal(1493942401000), ValidationError),
+        ('datetime_check', datetime(2017, 5, 5, 10, 10, 10), datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', date(2017, 5, 5), datetime(2017, 5, 5, 0, 0, 0)),
+        ('datetime_check', '2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
+        ('datetime_check', '2017-05-05 10:10:10', datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', '2017-05-05 10:10:10+00:00', datetime(2017, 5, 5, 10, 10, 10, tzinfo=timezone.utc)),
+        ('datetime_check', b'2017-05-05T10:10:10.0002', datetime(2017, 5, 5, 10, 10, 10, microsecond=200)),
+        ('datetime_check', 1493979010000, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', 1493979010, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', 1493979010000.0, datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', Decimal(1493979010), datetime(2017, 5, 5, 10, 10, 10)),
+        ('datetime_check', '2017-5-5T10:10:10', ValidationError),
+        ('datetime_check', b'2017-5-5T10:10:10', ValidationError),
+        ('time_check', time(10, 10, 10), time(10, 10, 10)),
+        ('time_check', '10:10:10.0002', time(10, 10, 10, microsecond=200)),
+        ('time_check', b'10:10:10.0002', time(10, 10, 10, microsecond=200)),
+        ('time_check', 3720, time(1, 2)),
+        ('time_check', 3720.0002, time(1, 2, microsecond=200)),
+        ('time_check', Decimal(3720.0002), time(1, 2, microsecond=200)),
+        ('time_check', '1:1:1', ValidationError),
+        ('time_check', b'1:1:1', ValidationError),
+        ('time_check', -1, ValidationError),
+        ('time_check', 86400, ValidationError),
+        ('time_check', 86400.0, ValidationError),
+        ('time_check', Decimal(86400), ValidationError),
+        ('timedelta_check', timedelta(days=1), timedelta(days=1)),
+        ('timedelta_check', '1 days 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', '1 d 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', b'1 days 10:10', timedelta(days=1, seconds=36600)),
+        ('timedelta_check', 123_000, timedelta(days=1, seconds=36600)),
+        ('timedelta_check', 123_000.0002, timedelta(days=1, seconds=36600, microseconds=200)),
+        ('timedelta_check', Decimal(123_000.0002), timedelta(days=1, seconds=36600, microseconds=200)),
+        ('timedelta_check', '1 10:10', ValidationError),
+        ('timedelta_check', b'1 10:10', ValidationError),
+        ('list_check', ['1', '2'], ['1', '2']),
+        ('list_check', ('1', '2'), ['1', '2']),
+        ('list_check', {'1': 1, '2': 2}.keys(), ['1', '2']),
+        ('list_check', {'1': '1', '2': '2'}.values(), ['1', '2']),
+        ('list_check', {'1', '2'}, ValidationError),
+        ('list_check', frozenset(['1', '2']), ValidationError),
+        ('list_check', {'1': 1, '2': 2}, ValidationError),
+        ('tuple_check', ('1', '2'), ('1', '2')),
+        ('tuple_check', ['1', '2'], ('1', '2')),
+        ('tuple_check', {'1': 1, '2': 2}.keys(), ('1', '2')),
+        ('tuple_check', {'1': '1', '2': '2'}.values(), ('1', '2')),
+        ('tuple_check', {'1', '2'}, ValidationError),
+        ('tuple_check', frozenset(['1', '2']), ValidationError),
+        ('tuple_check', {'1': 1, '2': 2}, ValidationError),
+        ('set_check', {'1', '2'}, {'1', '2'}),
+        ('set_check', ['1', '2', '1', '2'], {'1', '2'}),
+        ('set_check', ('1', '2', '1', '2'), {'1', '2'}),
+        ('set_check', frozenset(['1', '2']), {'1', '2'}),
+        ('set_check', {'1': 1, '2': 2}.keys(), {'1', '2'}),
+        ('set_check', {'1': '1', '2': '2'}.values(), {'1', '2'}),
+        ('set_check', {'1': 1, '2': 2}, ValidationError),
+        ('frozenset_check', frozenset(['1', '2']), frozenset(['1', '2'])),
+        ('frozenset_check', ['1', '2', '1', '2'], frozenset(['1', '2'])),
+        ('frozenset_check', ('1', '2', '1', '2'), frozenset(['1', '2'])),
+        ('frozenset_check', {'1', '2'}, frozenset(['1', '2'])),
+        ('frozenset_check', {'1': 1, '2': 2}.keys(), frozenset(['1', '2'])),
+        ('frozenset_check', {'1': '1', '2': '2'}.values(), frozenset(['1', '2'])),
+        ('frozenset_check', {'1': 1, '2': 2}, ValidationError),
     ],
 )
 def test_default_validators(field, value, result, CheckModel):
@@ -1103,7 +1348,7 @@ def test_enum_fails(cooking_model):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'type': 'literal_error',
+            'type': 'enum',
             'loc': ('tool',),
             'msg': 'Input should be 1 or 2',
             'input': 3,
@@ -1119,18 +1364,186 @@ def test_int_enum_successful_for_str_int(cooking_model):
     assert repr(m.tool) == '<ToolEnum.wrench: 2>'
 
 
-def test_enum_type():
-    with pytest.raises(SchemaError, match='"expected" should have length > 0'):
+def test_plain_enum_validate():
+    class MyEnum(Enum):
+        a = 1
 
-        class Model(BaseModel):
-            my_int_enum: Enum
+    class Model(BaseModel):
+        x: MyEnum
+
+    m = Model(x=MyEnum.a)
+    assert m.x is MyEnum.a
+
+    assert AnalyzedType(MyEnum).validate_python(1) is MyEnum.a
+    with pytest.raises(ValidationError) as exc_info:
+        AnalyzedType(MyEnum).validate_python(1, strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'class': 'test_plain_enum_validate.<locals>.MyEnum'},
+            'input': 1,
+            'loc': (),
+            'msg': IsStr(regex='Input should be an instance of test_plain_enum_validate.<locals>.MyEnum'),
+            'type': 'is_instance_of',
+        }
+    ]
+
+    assert AnalyzedType(MyEnum).validate_json('1') is MyEnum.a
+    with pytest.raises(ValidationError) as exc_info:
+        AnalyzedType(MyEnum).validate_json('1', strict=True)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'value_error',
+            'loc': (),
+            'msg': 'Value error, Could not parse input, it cannot be converted to the target type',
+            'input': 1,
+            'ctx': {'error': 'Could not parse input, it cannot be converted to the target type'},
+        }
+    ]
+
+
+def test_plain_enum_validate_json():
+    class MyEnum(Enum):
+        a = 1
+
+    class Model(BaseModel):
+        x: MyEnum
+
+    m = Model.model_validate_json('{"x":1}')
+    assert m.x is MyEnum.a
+
+
+def test_enum_type():
+    class Model(BaseModel):
+        my_enum: Enum
+
+    class MyEnum(Enum):
+        a = 1
+
+    m = Model(my_enum=MyEnum.a)
+    assert m.my_enum == MyEnum.a
+    assert m.model_dump() == {'my_enum': MyEnum.a}
+    assert m.model_dump_json() == '{"my_enum":1}'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(my_enum=1)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'class': 'Enum'},
+            'input': 1,
+            'loc': ('my_enum',),
+            'msg': 'Input should be an instance of Enum',
+            'type': 'is_instance_of',
+        }
+    ]
+
+    with pytest.raises(
+        PydanticInvalidForJsonSchema,
+        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'Enum'>)"),
+    ):
+        Model.model_json_schema()
 
 
 def test_int_enum_type():
-    with pytest.raises(SchemaError, match='"expected" should have length > 0'):
+    class Model(BaseModel):
+        my_enum: IntEnum
 
-        class Model(BaseModel):
-            my_int_enum: IntEnum
+    class MyEnum(Enum):
+        a = 1
+
+    class MyIntEnum(IntEnum):
+        b = 2
+
+    m = Model(my_enum=MyIntEnum.b)
+    assert m.my_enum == MyIntEnum.b
+    assert m.model_dump() == {'my_enum': MyIntEnum.b}
+    assert m.model_dump_json() == '{"my_enum":2}'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(my_enum=MyEnum.a)
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'class': 'IntEnum'},
+            'input': MyEnum.a,
+            'loc': ('my_enum',),
+            'msg': 'Input should be an instance of IntEnum',
+            'type': 'is_instance_of',
+        }
+    ]
+
+    with pytest.raises(
+        PydanticInvalidForJsonSchema,
+        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'IntEnum'>)"),
+    ):
+        Model.model_json_schema()
+
+
+@pytest.mark.parametrize('enum_base,strict', [(Enum, False), (IntEnum, False), (IntEnum, True)])
+def test_enum_from_json(enum_base, strict):
+    class MyEnum(enum_base):
+        a = 1
+
+    class Model(BaseModel):
+        my_enum: MyEnum
+
+    m = Model.model_validate_json('{"my_enum":1}', strict=strict)
+    assert m.my_enum is MyEnum.a
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_json('{"my_enum":2}', strict=strict)
+
+    my_enum_label = MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
+
+    if strict:
+        assert exc_info.value.errors() == [
+            {
+                'ctx': {'error': f'2 is not a valid {my_enum_label}'},
+                'input': 2,
+                'loc': ('my_enum',),
+                'msg': f'Value error, 2 is not a valid {my_enum_label}',
+                'type': 'value_error',
+            }
+        ]
+    else:
+        assert exc_info.value.errors() == [
+            {
+                'ctx': {'expected': '1'},
+                'input': 2,
+                'loc': ('my_enum',),
+                'msg': 'Input should be 1',
+                'type': 'enum',
+            }
+        ]
+
+
+@pytest.mark.parametrize(
+    'kwargs,type_',
+    [
+        ({'max_length': 5}, int),
+        ({'min_length': 2}, float),
+        ({'pattern': '^foo$'}, int),
+        ({'gt': 2}, str),
+        ({'lt': 5}, bytes),
+        ({'ge': 2}, str),
+        ({'le': 5}, bool),
+        ({'gt': 0}, Callable),
+        ({'gt': 0}, Callable[[int], int]),
+        ({'gt': 0}, conlist(int, min_length=4)),
+        ({'gt': 0}, conset(int, min_length=4)),
+        ({'gt': 0}, confrozenset(int, min_length=4)),
+    ],
+)
+def test_invalid_schema_constraints(kwargs, type_):
+    with pytest.raises(SchemaError, match='Invalid Schema:\n.*\n  Extra inputs are not permitted'):
+
+        class Foo(BaseModel):
+            a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+
+
+def test_invalid_decimal_constraint():
+    with pytest.raises(TypeError, match="'max_length' is not a valid constraint for DecimalValidator"):
+
+        class Foo(BaseModel):
+            a: Decimal = Field('foo', title='A title', description='A description', max_length=5)
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -1138,7 +1551,7 @@ def test_string_success():
     class MoreStringsModel(BaseModel):
         str_strip_enabled: constr(strip_whitespace=True)
         str_strip_disabled: constr(strip_whitespace=False)
-        str_regex: constr(pattern=r'^xxx\d{3}$') = ...  # noqa: F722
+        str_regex: constr(pattern=r'^xxx\d{3}$') = ...
         str_min_length: constr(min_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
@@ -1164,7 +1577,7 @@ def test_string_success():
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_string_fails():
     class MoreStringsModel(BaseModel):
-        str_regex: constr(pattern=r'^xxx\d{3}$') = ...  # noqa: F722
+        str_regex: constr(pattern=r'^xxx\d{3}$') = ...
         str_min_length: constr(min_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
@@ -1284,7 +1697,7 @@ def test_list_fails(value):
         {
             'type': 'list_type',
             'loc': ('v',),
-            'msg': 'Input should be a valid list/array',
+            'msg': 'Input should be a valid list',
             'input': value,
         }
     ]
@@ -1431,7 +1844,7 @@ def test_list_type_fails():
         Model(v='123')
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list/array', 'input': '123'}
+        {'type': 'list_type', 'loc': ('v',), 'msg': 'Input should be a valid list', 'input': '123'}
     ]
 
 
@@ -1553,8 +1966,9 @@ def test_infinite_iterable_validate_first():
         it: Iterable[int]
         b: int
 
-        @validator('it')
-        def infinite_first_int(cls, it, **kwargs):
+        @field_validator('it')
+        @classmethod
+        def infinite_first_int(cls, it):
             return itertools.chain([next(it)], it)
 
     m = Model(it=int_iterable(), b=3)
@@ -1700,7 +2114,7 @@ def test_sequence_generator_fails():
                 {
                     'type': 'list_type',
                     'loc': ('v', 0),
-                    'msg': 'Input should be a valid list/array',
+                    'msg': 'Input should be a valid list',
                     'input': {'a': 1, 'b': 2},
                 }
             ],
@@ -1728,7 +2142,7 @@ def test_int_validation():
         g: conint(multiple_of=5) = None
 
     m = Model(a=5, b=-5, c=0, d=0, e=5, f=0, g=25)
-    assert m == {'a': 5, 'b': -5, 'c': 0, 'd': 0, 'e': 5, 'f': 0, 'g': 25}
+    assert m.model_dump() == {'a': 5, 'b': -5, 'c': 0, 'd': 0, 'e': 5, 'f': 0, 'g': 25}
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=-5, b=5, c=-5, d=5, e=-5, f=11, g=42)
@@ -2020,6 +2434,12 @@ def test_strict_int():
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=3.14159)
 
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
+        Model(v=2**64)
+
+    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
+        Model(v=True)
+
 
 def test_strict_float():
     class Model(BaseModel):
@@ -2031,6 +2451,9 @@ def test_strict_float():
     with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
         Model(v='3.14159')
 
+    with pytest.raises(ValidationError, match=r'Input should be a valid number \[type=float_type,'):
+        Model(v=True)
+
 
 def test_bool_unhashable_fails():
     class Model(BaseModel):
@@ -2038,7 +2461,6 @@ def test_bool_unhashable_fails():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v={})
-    # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {'type': 'bool_type', 'loc': ('v',), 'msg': 'Input should be a valid boolean', 'input': {}}
     ]
@@ -2115,6 +2537,60 @@ def test_uuid_validation():
     ]
 
 
+def test_uuid_strict() -> None:
+    class UUIDModel(BaseModel):
+        a: UUID1
+        b: UUID3
+        c: UUID4
+        d: UUID5
+
+        model_config = ConfigDict(strict=True)
+
+    a = uuid.UUID('7fb48116-ca6b-11ed-a439-3274d3adddac')  # uuid1
+    b = uuid.UUID('6fa459ea-ee8a-3ca4-894e-db77e160355e')  # uuid3
+    c = uuid.UUID('260d1600-3680-4f4f-a968-f6fa622ffd8d')  # uuid4
+    d = uuid.UUID('886313e1-3b8a-5372-9b90-0c9aee199e5d')  # uuid5
+
+    with pytest.raises(ValidationError) as exc_info:
+        UUIDModel(a=str(a), b=str(b), c=str(c), d=str(d))
+    assert exc_info.value.errors() == [
+        {
+            'type': 'is_instance_of',
+            'loc': ('a',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '7fb48116-ca6b-11ed-a439-3274d3adddac',
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'is_instance_of',
+            'loc': ('b',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '6fa459ea-ee8a-3ca4-894e-db77e160355e',
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'is_instance_of',
+            'loc': ('c',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '260d1600-3680-4f4f-a968-f6fa622ffd8d',
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'is_instance_of',
+            'loc': ('d',),
+            'msg': 'Input should be an instance of UUID',
+            'input': '886313e1-3b8a-5372-9b90-0c9aee199e5d',
+            'ctx': {'class': 'UUID'},
+        },
+    ]
+
+    m = UUIDModel(a=a, b=b, c=c, d=d)
+    assert isinstance(m.a, type(a)) and m.a == a
+    assert isinstance(m.b, type(b)) and m.b == b
+    assert isinstance(m.c, type(c)) and m.c == c
+    assert isinstance(m.d, type(d)) and m.d == d
+
+
 @pytest.mark.parametrize(
     'enabled,str_check,result_str_check',
     [
@@ -2167,6 +2643,8 @@ pos_int_values = 'Inf', '+Inf', 'Infinity', '+Infinity'
 neg_int_values = '-Inf', '-Infinity'
 nan_values = 'NaN', '-NaN', '+NaN', 'sNaN', '-sNaN', '+sNaN'
 non_finite_values = nan_values + pos_int_values + neg_int_values
+# dirty_equals.AnyThing() doesn't work with Decimal on PyPy, hence this hack
+ANY_THING = object()
 
 
 @pytest.mark.parametrize(
@@ -2335,7 +2813,7 @@ non_finite_values = nan_values + pos_int_values + neg_int_values
                         'loc': ('foo',),
                         'msg': 'Input should be a finite number',
                         'type': 'finite_number',
-                        'input': AnyThing(),
+                        'input': ANY_THING,
                     }
                 ],
             )
@@ -2375,7 +2853,12 @@ def test_decimal_validation(mode, type_args, value, result):
             m = Model(foo=value)
             print(f'unexpected result: {m!r}')
         # debug(exc_info.value.errors())
-        assert exc_info.value.errors() == result
+        # dirty_equals.AnyThing() doesn't work with Decimal on PyPy, hence this hack
+        errors = exc_info.value.errors()
+        if result[0].get('input') is ANY_THING:
+            for e in errors:
+                e['input'] = ANY_THING
+        assert errors == result
         # assert exc_info.value.json().startswith('[')
     else:
         assert Model(foo=value).foo == result
@@ -2436,6 +2919,28 @@ def test_path_validation_fails():
     assert exc_info.value.errors() == [
         {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
     ]
+
+
+def test_path_validation_strict():
+    class Model(BaseModel):
+        foo: Path
+
+        model_config = ConfigDict(strict=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo='/test/path')
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'is_instance_of',
+            'loc': ('foo',),
+            'msg': 'Input should be an instance of Path',
+            'input': '/test/path',
+            'ctx': {'class': 'Path'},
+        }
+    ]
+
+    assert Model(foo=Path('/test/path')).foo == Path('/test/path')
 
 
 @pytest.mark.parametrize(
@@ -2828,14 +3333,15 @@ def test_json_not_str():
     ]
 
 
-def test_json_pre_validator():
+def test_json_before_validator():
     call_count = 0
 
     class JsonModel(BaseModel):
-        json_obj: Json
+        json_obj: Json[str]
 
-        @validator('json_obj', mode='before')
-        def check(cls, v, **kwargs):
+        @field_validator('json_obj', mode='before')
+        @classmethod
+        def check(cls, v):
             assert v == '"foobar"'
             nonlocal call_count
             call_count += 1
@@ -2971,8 +3477,59 @@ def test_secretstr_idempotent():
     assert m.password.get_secret_value() == '1234'
 
 
-def test_secretstr_is_hashable():
-    assert type(hash(SecretStr('secret'))) is int
+@pytest.mark.parametrize(
+    'pydantic_type',
+    [
+        Strict,
+        StrictBool,
+        conint,
+        PositiveInt,
+        NegativeInt,
+        NonPositiveInt,
+        NonNegativeInt,
+        StrictInt,
+        confloat,
+        PositiveFloat,
+        NegativeFloat,
+        NonPositiveFloat,
+        NonNegativeFloat,
+        StrictFloat,
+        FiniteFloat,
+        conbytes,
+        SecretBytes,
+        constr,
+        StrictStr,
+        SecretStr,
+        ImportString,
+        conset,
+        confrozenset,
+        conlist,
+        condecimal,
+        UUID1,
+        UUID3,
+        UUID4,
+        UUID5,
+        FilePath,
+        DirectoryPath,
+        NewPath,
+        Json,
+        ByteSize,
+        condate,
+        PastDate,
+        FutureDate,
+        AwareDatetime,
+        NaiveDatetime,
+    ],
+)
+def test_is_hashable(pydantic_type):
+    assert type(hash(pydantic_type)) is int
+
+
+def test_model_contain_hashable_type():
+    class MyModel(BaseModel):
+        v: Union[str, StrictStr]
+
+    assert MyModel(v='test').v == 'test'
 
 
 def test_secretstr_error():
@@ -3051,8 +3608,10 @@ def test_secretbytes():
     assert f.empty_password.get_secret_value() == b''
 
     # Assert that SecretBytes is equal to SecretBytes if the secret is the same.
-    assert f == f.copy()
-    assert f != f.copy(update=dict(password=b'4321'))
+    assert f == f.model_copy()
+    copied_with_changes = f.model_copy()
+    copied_with_changes.password = SecretBytes(b'4321')
+    assert f != copied_with_changes
 
 
 def test_secretbytes_is_secret_field():
@@ -3072,10 +3631,6 @@ def test_secretbytes_idempotent():
 
     # Should not raise an exception.
     _ = Foobar(password=SecretBytes(b'1234'))
-
-
-def test_secretbytes_is_hashable():
-    assert type(hash(SecretBytes(b'secret'))) is int
 
 
 def test_secretbytes_error():
@@ -3154,7 +3709,7 @@ def test_generic_without_params_error():
         {
             'type': 'list_type',
             'loc': ('generic_list',),
-            'msg': 'Input should be a valid list/array',
+            'msg': 'Input should be a valid list',
             'input': 0,
         },
         {
@@ -3322,13 +3877,42 @@ def test_deque_success():
         (Set[int], [{1, 2}, {3, 4}, {5, 6}], deque([{1, 2}, {3, 4}, {5, 6}])),
         (Tuple[int, str], ((1, 'a'), (2, 'b'), (3, 'c')), deque(((1, 'a'), (2, 'b'), (3, 'c')))),
         (str, [w for w in 'one two three'.split()], deque(['one', 'two', 'three'])),
-        # (float, {1.0, 2.0, 3.0}, deque([1.0, 2.0, 3.0])),
-        # (int, frozenset([1, 2, 3]), deque([1, 2, 3])),
+        (
+            int,
+            {1: 10, 2: 20, 3: 30}.keys(),
+            deque([1, 2, 3]),
+        ),
+        (
+            int,
+            {1: 10, 2: 20, 3: 30}.values(),
+            deque([10, 20, 30]),
+        ),
+        (
+            Tuple[int, int],
+            {1: 10, 2: 20, 3: 30}.items(),
+            deque([(1, 10), (2, 20), (3, 30)]),
+        ),
     ),
 )
 def test_deque_generic_success(cls, value, result):
     class Model(BaseModel):
         v: Deque[cls]
+
+    assert Model(v=value).v == result
+
+
+@pytest.mark.parametrize(
+    'cls,value,result',
+    (
+        (int, deque((1, 2, 3)), deque((1, 2, 3))),
+        (str, deque(('1', '2', '3')), deque(('1', '2', '3'))),
+    ),
+)
+def test_deque_generic_success_strict(cls, value: Any, result):
+    class Model(BaseModel):
+        v: Deque[cls]
+
+        model_config = ConfigDict(strict=True)
 
     assert Model(v=value).v == result
 
@@ -3342,7 +3926,7 @@ def test_deque_generic_success(cls, value, result):
             {
                 'type': 'list_type',
                 'loc': ('v',),
-                'msg': 'Input should be a valid list/array',
+                'msg': 'Input should be a valid list',
                 'input': {1, 2, 3},
             },
         ),
@@ -3352,7 +3936,7 @@ def test_deque_generic_success(cls, value, result):
             {
                 'type': 'list_type',
                 'loc': ('v',),
-                'msg': 'Input should be a valid list/array',
+                'msg': 'Input should be a valid list',
                 'input': frozenset((1, 2, 3)),
             },
         ),
@@ -3392,7 +3976,7 @@ def test_deque_generic_success(cls, value, result):
             {
                 'type': 'list_type',
                 'loc': ('v', 0),
-                'msg': 'Input should be a valid list/array',
+                'msg': 'Input should be a valid list',
                 'input': {
                     'a': 1,
                     'b': 2,
@@ -3407,9 +3991,9 @@ def test_deque_fails(cls, value, expected_error):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert exc_info.value.error_count() == 1
-    # debug(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == expected_error
+    # debug(exc_info.value.errors())
+    assert len(exc_info.value.errors()) == 1
+    assert expected_error == exc_info.value.errors()[0]
 
 
 def test_deque_model():
@@ -3427,10 +4011,54 @@ def test_deque_json():
     class Model(BaseModel):
         v: Deque[int]
 
-    assert Model(v=deque((1, 2, 3))).model_dump_json() == b'{"v":[1,2,3]}'
+    assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
 
 
-@pytest.mark.parametrize('value_type', (None, type(None), None.__class__, Literal[None]))
+def test_deque_any_maxlen():
+    class DequeModel1(BaseModel):
+        field: deque
+
+    assert DequeModel1(field=deque()).field.maxlen is None
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel2(BaseModel):
+        field: deque = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen is None
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel3(BaseModel):
+        field: deque = deque(maxlen=5)
+
+    assert DequeModel3().field.maxlen == 5
+    assert DequeModel3(field=deque()).field.maxlen is None
+    assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
+
+
+def test_deque_typed_maxlen():
+    class DequeModel1(BaseModel):
+        field: Deque[int]
+
+    assert DequeModel1(field=deque()).field.maxlen is None
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel2(BaseModel):
+        field: Deque[int] = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen is None
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel3(BaseModel):
+        field: Deque[int] = deque(maxlen=5)
+
+    assert DequeModel3().field.maxlen == 5
+    assert DequeModel3(field=deque()).field.maxlen is None
+    assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
+
+
+@pytest.mark.parametrize('value_type', (None, type(None), None.__class__))
 def test_none(value_type):
     class Model(BaseModel):
         my_none: value_type
@@ -3445,25 +4073,17 @@ def test_none(value_type):
         my_json_none='null',
     )
 
-    # assert Model.model_json_schema() == {
-    #     'title': 'Model',
-    #     'type': 'object',
-    #     'properties': {
-    #         'my_none': {'title': 'My None', 'type': 'null'},
-    #         'my_none_list': {
-    #             'title': 'My None List',
-    #             'type': 'array',
-    #             'items': {'type': 'null'},
-    #         },
-    #         'my_none_dict': {
-    #             'title': 'My None Dict',
-    #             'type': 'object',
-    #             'additionalProperties': {'type': 'null'},
-    #         },
-    #         'my_json_none': {'title': 'My Json None', 'type': 'null'},
-    #     },
-    #     'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
-    # }
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'my_none': {'type': 'null', 'title': 'My None'},
+            'my_none_list': {'type': 'array', 'items': {'type': 'null'}, 'title': 'My None List'},
+            'my_none_dict': {'type': 'object', 'additionalProperties': {'type': 'null'}, 'title': 'My None Dict'},
+            'my_json_none': {'type': 'string', 'format': 'json-string', 'title': 'My Json None'},
+        },
+        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    }
 
     with pytest.raises(ValidationError) as exc_info:
         Model(
@@ -3474,21 +4094,94 @@ def test_none(value_type):
         )
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'none_required', 'loc': ('my_none',), 'msg': 'Input should be None/null', 'input': 'qwe'},
-        {'type': 'none_required', 'loc': ('my_none_list', 0), 'msg': 'Input should be None/null', 'input': 1},
+        {'type': 'none_required', 'loc': ('my_none',), 'msg': 'Input should be None', 'input': 'qwe'},
+        {'type': 'none_required', 'loc': ('my_none_list', 0), 'msg': 'Input should be None', 'input': 1},
         {
             'type': 'none_required',
             'loc': ('my_none_list', 2),
-            'msg': 'Input should be None/null',
+            'msg': 'Input should be None',
             'input': 'qwe',
         },
         {
             'type': 'none_required',
             'loc': ('my_none_dict', 'a'),
-            'msg': 'Input should be None/null',
+            'msg': 'Input should be None',
             'input': 1,
         },
-        {'type': 'none_required', 'loc': ('my_json_none',), 'msg': 'Input should be None/null', 'input': 'a'},
+        {'type': 'none_required', 'loc': ('my_json_none',), 'msg': 'Input should be None', 'input': 'a'},
+    ]
+
+
+def test_none_literal():
+    class Model(BaseModel):
+        my_none: Literal[None]
+        my_none_list: List[Literal[None]]
+        my_none_dict: Dict[str, Literal[None]]
+        my_json_none: Json[Literal[None]]
+
+    Model(
+        my_none=None,
+        my_none_list=[None] * 3,
+        my_none_dict={'a': None, 'b': None},
+        my_json_none='null',
+    )
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'my_none': {'const': None, 'title': 'My None'},
+            'my_none_list': {'type': 'array', 'items': {'const': None}, 'title': 'My None List'},
+            'my_none_dict': {'type': 'object', 'additionalProperties': {'const': None}, 'title': 'My None Dict'},
+            'my_json_none': {'type': 'string', 'format': 'json-string', 'title': 'My Json None'},
+        },
+        'required': ['my_none', 'my_none_list', 'my_none_dict', 'my_json_none'],
+    }
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            my_none='qwe',
+            my_none_list=[1, None, 'qwe'],
+            my_none_dict={'a': 1, 'b': None},
+            my_json_none='"a"',
+        )
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'literal_error',
+            'loc': ('my_none',),
+            'msg': 'Input should be None',
+            'input': 'qwe',
+            'ctx': {'expected': 'None'},
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('my_none_list', 0),
+            'msg': 'Input should be None',
+            'input': 1,
+            'ctx': {'expected': 'None'},
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('my_none_list', 2),
+            'msg': 'Input should be None',
+            'input': 'qwe',
+            'ctx': {'expected': 'None'},
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('my_none_dict', 'a'),
+            'msg': 'Input should be None',
+            'input': 1,
+            'ctx': {'expected': 'None'},
+        },
+        {
+            'type': 'literal_error',
+            'loc': ('my_json_none',),
+            'msg': 'Input should be None',
+            'input': 'a',
+            'ctx': {'expected': 'None'},
+        },
     ]
 
 
@@ -3542,7 +4235,7 @@ def test_union_compound_types():
     assert Model(values={'L': '1'}).model_dump() == {'values': {'L': '1'}}
     assert Model(values=['L1']).model_dump() == {'values': ['L1']}
     assert Model(values=('L1',)).model_dump() == {'values': ['L1']}
-    assert Model(values={'x': ['pika']}) == {'values': {'x': ['pika']}}
+    assert Model(values={'x': ['pika']}) != {'values': {'x': ['pika']}}
     assert Model(values={'x': ('pika',)}).model_dump() == {'values': {'x': ['pika']}}
     with pytest.raises(ValidationError) as e:
         Model(values={'x': {'a': 'b'}})
@@ -3550,20 +4243,20 @@ def test_union_compound_types():
     assert e.value.errors() == [
         {
             'type': 'string_type',
-            'loc': ('values', 'function-wrap[mapping_validator(), dict[str,str]]', 'x'),
+            'loc': ('values', 'dict[str,str]', 'x'),
             'msg': 'Input should be a valid string',
             'input': {'a': 'b'},
         },
         {
             'type': 'list_type',
             'loc': ('values', 'list[str]'),
-            'msg': 'Input should be a valid list/array',
+            'msg': 'Input should be a valid list',
             'input': {'x': {'a': 'b'}},
         },
         {
             'type': 'list_type',
-            'loc': ('values', 'function-wrap[mapping_validator(), dict[str,list[str]]]', 'x'),
-            'msg': 'Input should be a valid list/array',
+            'loc': ('values', 'dict[str,list[str]]', 'x'),
+            'msg': 'Input should be a valid list',
             'input': {'a': 'b'},
         },
     ]
@@ -3589,3 +4282,28 @@ def test_union_typeddict():
         d: Union[Dict2, Dict1]
 
     assert M(d=dict(foo='baz')).d == {'foo': 'baz'}
+
+
+def test_custom_generic_containers():
+    T = TypeVar('T')
+
+    class GenericList(List[T]):
+        pass
+
+    class Model(BaseModel):
+        field: GenericList[int]
+
+    model = Model(field=['1', '2'])
+    assert model.field == [1, 2]
+    assert isinstance(model.field, GenericList)
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(field=['a'])
+    assert exc_info.value.errors() == [
+        {
+            'input': 'a',
+            'loc': ('field', 0),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+        }
+    ]

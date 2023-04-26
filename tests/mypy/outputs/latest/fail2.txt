@@ -1,0 +1,3 @@
+18: error: List item 1 has incompatible type "str"; expected "int"  [list-item]
+18: error: List item 2 has incompatible type "bytes"; expected "int"  [list-item]
+20: error: "Model" has no attribute "foobar"  [attr-defined]

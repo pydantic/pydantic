@@ -12,8 +12,10 @@ import typing_extensions
 from . import _typing_extra
 
 if typing.TYPE_CHECKING:
-    ReprArgs = typing.Iterable[tuple[str | None, Any]]
-    RichReprResult = typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]
+    ReprArgs: typing_extensions.TypeAlias = 'typing.Iterable[tuple[str | None, Any]]'
+    RichReprResult: typing_extensions.TypeAlias = (
+        'typing.Iterable[Any | tuple[Any] | tuple[str, Any] | tuple[str, Any, Any]]'
+    )
 
 
 class PlainRepr(str):
@@ -79,7 +81,7 @@ class Representation:
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
-    def __rich_repr__(self) -> 'RichReprResult':
+    def __rich_repr__(self) -> RichReprResult:
         """Get fields for Rich library"""
         for name, field_repr in self.__repr_args__():
             if name is None:

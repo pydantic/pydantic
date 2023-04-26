@@ -1,0 +1,3 @@
+# used to run mypy tests
+mypy==1.1.1
+-r testing.in

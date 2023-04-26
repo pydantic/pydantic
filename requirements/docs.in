@@ -1,10 +1,11 @@
+# pydantic-core is required for conversion table
+pydantic-core
 autoflake
-ansi2html
-markdown-include
-mdx-truly-sane-lists
 mkdocs
 mkdocs-exclude
 mkdocs-material
-orjson
-sqlalchemy
-ujson
+mkdocs-redirects
+mkdocs-simple-hooks
+mkdocstrings-python
+pyupgrade
+tomli

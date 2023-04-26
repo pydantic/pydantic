@@ -1,0 +1,4 @@
+7: error: Decorators on top of @property are not supported  [misc]
+19: error: Unsupported operand types for + ("str" and "float")  [operator]
+30: error: Decorators on top of @property are not supported  [misc]
+37: error: Unsupported operand types for + ("str" and "float")  [operator]

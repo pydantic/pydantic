@@ -7,7 +7,8 @@ import pydantic
 from pydantic.networks import import_email_validator
 
 try:
-    from hypothesis import HealthCheck, given, settings, strategies as st
+    from hypothesis import HealthCheck, given, settings
+    from hypothesis import strategies as st
 except ImportError:
     from unittest import mock
 

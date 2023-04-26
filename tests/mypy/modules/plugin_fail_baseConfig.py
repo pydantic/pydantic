@@ -1,10 +1,10 @@
 from typing import Any, Generic, List, Optional, Set, TypeVar, Union
 
-from pydantic import BaseModel, Extra, Field, validator
+from pydantic import BaseModel, Extra, Field, field_validator
 from pydantic.dataclasses import dataclass
-from pydantic.generics import GenericModel
 
 
+# placeholder for removed line
 class Model(BaseModel):
     x: int
     y: str
@@ -138,7 +138,7 @@ class Blah(BaseModel):
 T = TypeVar('T')
 
 
-class Response(GenericModel, Generic[T]):
+class Response(BaseModel, Generic[T]):
     data: T
     error: Optional[str]
 
@@ -299,7 +299,7 @@ class FieldDefaultTestingModel(BaseModel):
 class ModelWithAnnotatedValidator(BaseModel):
     name: str
 
-    @validator('name')
+    @field_validator('name')
     def noop_validator_with_annotations(self, name: str) -> str:
         # This is a mistake: the first argument to a validator is the class itself,
         # like a classmethod.

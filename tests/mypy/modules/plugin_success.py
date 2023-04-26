@@ -1,17 +1,15 @@
-from typing import ClassVar, Generic, List, Optional, TypeVar, Union
+from typing import Any, ClassVar, Generic, List, Optional, TypeVar, Union
 
-from pydantic import BaseModel, ConfigDict, Field, create_model, validator
+from pydantic import BaseModel, ConfigDict, Field, create_model, field_validator, validator
 from pydantic.dataclasses import dataclass
-from pydantic.generics import GenericModel
 
 
+# placeholder for removed line
 class Model(BaseModel):
     x: float
     y: str
 
     model_config = ConfigDict(from_attributes=True)
-
-    not_config = ConfigDict(frozen=True)
 
 
 class SelfReferencingModel(BaseModel):
@@ -27,7 +25,7 @@ SelfReferencingModel.model_rebuild()
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
 model.x = 2
-model.from_orm(model)
+model.model_validate(model.__dict__)  # TODO: Change this to .model_validate(model) when possible
 
 self_referencing_model = SelfReferencingModel(submodel=SelfReferencingModel(submodel=None))
 
@@ -36,23 +34,23 @@ class KwargsModel(BaseModel, from_attributes=True):
     x: float
     y: str
 
-    not_config = ConfigDict(frozen=True)
-
 
 kwargs_model = KwargsModel(x=1, y='y')
 KwargsModel(x=1, y='y', z='z')
 kwargs_model.x = 2
-kwargs_model.from_orm(kwargs_model)
+kwargs_model.model_validate(kwargs_model.__dict__)
 
 
 class InheritingModel(Model):
     z: int = 1
 
 
-InheritingModel.from_orm(model)
+InheritingModel.model_validate(model.__dict__)
 
 
 class ForwardReferencingModel(Model):
+    model_config = dict(undefined_types_warning=False)
+
     future: 'FutureModel'
 
 
@@ -72,13 +70,13 @@ class NoMutationModel(BaseModel):
 
 
 class MutationModel(NoMutationModel):
-    a = 1
+    a: int = 1
 
     model_config = ConfigDict(frozen=False, from_attributes=True)
 
 
 MutationModel(x=1).x = 2
-MutationModel.from_orm(model)
+MutationModel.model_validate(model.__dict__)
 
 
 class KwargsNoMutationModel(BaseModel, frozen=True):
@@ -86,18 +84,18 @@ class KwargsNoMutationModel(BaseModel, frozen=True):
 
 
 class KwargsMutationModel(KwargsNoMutationModel, frozen=False, from_attributes=True):
-    a = 1
+    a: int = 1
 
 
 KwargsMutationModel(x=1).x = 2
-KwargsMutationModel.from_orm(model)
+KwargsMutationModel.model_validate(model.__dict__)
 
 
 class OverrideModel(Model):
     x: int
 
 
-OverrideModel(x=1.5, y='b')
+OverrideModel(x=1, y='b')
 
 
 class Mixin:
@@ -128,11 +126,7 @@ class ClassVarModel(BaseModel):
 ClassVarModel(x=1)
 
 
-class Config:
-    validate_assignment = True
-
-
-@dataclass(config=Config)
+@dataclass(config={'validate_assignment': True})
 class AddProject:
     name: str
     slug: Optional[str]
@@ -175,7 +169,7 @@ class NotFrozenModel(FrozenModel):
 
 
 NotFrozenModel(x=1).x = 2
-NotFrozenModel.from_orm(model)
+NotFrozenModel.model_validate(model.__dict__)
 
 
 class KwargsFrozenModel(BaseModel, frozen=True):
@@ -187,7 +181,7 @@ class KwargsNotFrozenModel(FrozenModel, frozen=False, from_attributes=True):
 
 
 KwargsNotFrozenModel(x=1).x = 2
-KwargsNotFrozenModel.from_orm(model)
+KwargsNotFrozenModel.model_validate(model.__dict__)
 
 
 class ModelWithSelfField(BaseModel):
@@ -200,7 +194,7 @@ def f(name: str) -> str:
 
 class ModelWithAllowReuseValidator(BaseModel):
     name: str
-    _normalize_name = validator('name', allow_reuse=True)(f)
+    normalize_name = field_validator('name')(f)
 
 
 model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
@@ -209,7 +203,7 @@ model_with_allow_reuse_validator = ModelWithAllowReuseValidator(name='xyz')
 T = TypeVar('T')
 
 
-class Response(GenericModel, Generic[T]):
+class Response(BaseModel, Generic[T]):
     data: T
     error: Optional[str]
 
@@ -220,7 +214,7 @@ response = Response[Model](data=model, error=None)
 class ModelWithAnnotatedValidator(BaseModel):
     name: str
 
-    @validator('name')
+    @field_validator('name')
     def noop_validator_with_annotations(cls, name: str) -> str:
         return name
 
@@ -246,3 +240,55 @@ class FieldDefaultTestingModel(BaseModel):
     g: List[int] = Field(default_factory=_default_factory_list)
     h: str = Field(default_factory=_default_factory_str)
     i: str = Field(default_factory=lambda: 'test')
+
+
+_TModel = TypeVar('_TModel')
+_TType = TypeVar('_TType')
+
+
+class OrmMixin(Generic[_TModel, _TType]):
+    @classmethod
+    def from_orm(cls, model: _TModel) -> _TType:
+        raise NotImplementedError
+
+    @classmethod
+    def from_orm_optional(cls, model: Optional[_TModel]) -> Optional[_TType]:
+        if model is None:
+            return None
+        return cls.from_orm(model)
+
+
+import sys  # noqa E402
+
+if sys.version_info >= (3, 8):
+    from dataclasses import InitVar  # E402
+
+    InitVarStr = InitVar[str]
+else:
+    # InitVar is not supported in 3.7 due to loss of type information
+    InitVarStr = str
+
+
+@dataclass
+class MyDataClass:
+    foo: InitVarStr
+    bar: str
+
+
+MyDataClass(foo='foo', bar='bar')
+
+
+def get_my_custom_validator(field_name: str) -> Any:
+    @validator(field_name, allow_reuse=True)
+    def my_custom_validator(cls: Any, v: int) -> int:
+        return v
+
+    return my_custom_validator
+
+
+def foo() -> None:
+    class MyModel(BaseModel):
+        number: int
+        custom_validator = get_my_custom_validator('number')  # type: ignore[pydantic-field]
+
+    MyModel(number=2)

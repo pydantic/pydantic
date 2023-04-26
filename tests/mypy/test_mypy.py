@@ -11,23 +11,19 @@ try:
     from mypy.version import __version__ as mypy_version
 
     from pydantic.mypy import parse_mypy_version
+
 except ImportError:
     mypy_api = None
     mypy_version = None
     parse_mypy_version = lambda _: (0,)  # noqa: E731
 
+MYPY_VERSION_TUPLE = parse_mypy_version(mypy_version)
 
-def should_skip():
-    if sys.version_info >= (3, 11):
-        # mypy doesn't fully support 3.11 and tests are taking minutes, see #4738
-        # mypy v0.990 is even worse, see #4735
-        # TODO remove once 3.11 is fully supported by mypy
-        return True
-    else:
-        return sys.platform != 'linux' and 'CI' in os.environ
-
-
-pytestmark = pytest.mark.skipif(should_skip(), reason='Skip on 3.11, only run on linux when on CI')
+pytestmark = pytest.mark.skipif(
+    '--test-mypy' not in sys.argv
+    and os.environ.get('PYCHARM_HOSTED') != '1',  # never skip when running via the PyCharm runner
+    reason='Test only with "--test-mypy" flag',
+)
 
 # This ensures mypy can find the test files, no matter where tests are run from:
 os.chdir(Path(__file__).parent.parent.parent)
@@ -39,16 +35,28 @@ cases = [
     ('mypy-plugin-strict.ini', 'plugin_success.py', 'plugin-success-strict.txt'),
     ('mypy-plugin-strict.ini', 'plugin_fail.py', 'plugin-fail-strict.txt'),
     ('mypy-plugin-strict.ini', 'fail_defaults.py', 'fail_defaults.txt'),
-    ('mypy-default.ini', 'success.py', None),
+    pytest.param(
+        'mypy-default.ini',
+        'success.py',
+        None,
+        marks=pytest.mark.skipif(
+            MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'
+        ),
+    ),
     ('mypy-default.ini', 'fail1.py', 'fail1.txt'),
     ('mypy-default.ini', 'fail2.py', 'fail2.txt'),
     ('mypy-default.ini', 'fail3.py', 'fail3.txt'),
     ('mypy-default.ini', 'fail4.py', 'fail4.txt'),
     ('mypy-default.ini', 'plugin_success.py', 'plugin_success.txt'),
+    pytest.param('mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py', None),
     pytest.param(
-        'mypy-plugin-strict-no-any.ini', 'dataclass_no_any.py', None, marks=pytest.mark.xfail(reason='TODO dataclasses')
+        'pyproject-default.toml',
+        'success.py',
+        None,
+        marks=pytest.mark.skipif(
+            MYPY_VERSION_TUPLE > (1, 0, 1), reason='Need to handle some more things for mypy >=1.1.1'
+        ),
     ),
-    ('pyproject-default.toml', 'success.py', None),
     ('pyproject-default.toml', 'fail1.py', 'fail1.txt'),
     ('pyproject-default.toml', 'fail2.py', 'fail2.txt'),
     ('pyproject-default.toml', 'fail3.py', 'fail3.txt'),
@@ -69,22 +77,89 @@ cases = [
     ('pyproject-plugin.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-baseConfig.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_success_baseConfig.py', 'plugin-success-strict-baseConfig.txt'),
     ('pyproject-plugin-strict.toml', 'plugin_fail_baseConfig.py', 'plugin-fail-strict-baseConfig.txt'),
+    pytest.param(
+        'pyproject-default.toml',
+        'computed_fields.py',
+        'computed_fields.txt',
+        marks=pytest.mark.skipif(
+            sys.version_info < (3, 8) or MYPY_VERSION_TUPLE < (0, 982),
+            reason='cached_property is only available in Python 3.8+, errors are different with mypy 0.971',
+        ),
+    ),
 ]
-executable_modules = list({fname[:-3] for _, fname, out_fname in cases if out_fname is None})
 
 
-@pytest.mark.skipif(not mypy_api, reason='mypy is not installed')
+def build_executable_modules():
+    """
+    Iterates over the test cases and returns a list of modules that should be executable.
+    Specifically, we include any modules that are not expected to produce any typechecking errors.
+    Currently, we do not skip/xfail executable modules, but I have included code below that could
+    do so if uncommented.
+    """
+    modules = set()
+    for case in cases:
+        if type(case) != tuple:
+            # this means it is a pytest.param
+            skip_this_case = False
+            for mark in case.marks:
+                # Uncomment the lines below to respect skipif:
+                # if mark.markname == 'skipif' and mark.args[0]:
+                #     skip_this_case = True
+                #     break
+
+                # Uncomment the lines below to respect xfail:
+                # if mark.markname == 'xfail':
+                #     skip_this_case = True  # don't attempt to execute xfail modules
+                #     break
+                pass
+            if skip_this_case:
+                continue
+            case = case.values
+        _, fname, out_fname = case
+        if out_fname is None:
+            # no output file is present, so no errors should be produced; the module should be executable
+            modules.add(fname[:-3])
+    return sorted(modules)
+
+
+executable_modules = build_executable_modules()
+
+
 @pytest.mark.parametrize('config_filename,python_filename,output_filename', cases)
 def test_mypy_results(config_filename: str, python_filename: str, output_filename: str) -> None:
     full_config_filename = f'tests/mypy/configs/{config_filename}'
     full_filename = f'tests/mypy/modules/{python_filename}'
-    output_path = None if output_filename is None else Path(f'tests/mypy/outputs/{output_filename}')
+
+    # Idea: tests/mypy/outputs/latest should have the latest version of the output files
+    #   Older mypy versions can have their own versions of expected output files in tests/mypy/outputs/v1.0.1, etc.
+    #   Only folders corresponding to mypy versions equal to or newer than the installed mypy version will be searched
+    all_output_roots = [((1, 0, 1), Path('tests/mypy/outputs/v1.0.1')), ((9999,), Path('tests/mypy/outputs/latest'))]
+    output_roots = [(v, p) for (v, p) in all_output_roots if v >= MYPY_VERSION_TUPLE]
+
+    if output_filename is None:
+        output_path = None
+    else:
+        for max_version, output_root in output_roots:
+            maybe_output_path = output_root / output_filename
+            if maybe_output_path.exists():
+                output_path = maybe_output_path
+                break
+        else:
+            raise FileNotFoundError(f'Could not find expected output file {output_filename} in any of {output_roots}')
 
     # Specifying a different cache dir for each configuration dramatically speeds up subsequent execution
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = f'.mypy_cache/test-{os.path.splitext(config_filename)[0]}'
-    command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
-    if parse_mypy_version(mypy_version) >= (0, 990):
+    command = [
+        full_filename,
+        '--config-file',
+        full_config_filename,
+        '--cache-dir',
+        cache_dir,
+        '--show-error-codes',
+        '--show-traceback',
+    ]
+    if MYPY_VERSION_TUPLE >= (0, 990):
         command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     actual_result = mypy_api.run(command)
@@ -107,7 +182,7 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     expected_out = Path(output_path).read_text().rstrip('\n') if output_path else ''
 
     # fix for compatibility between mypy versions: (this can be dropped once we drop support for mypy<0.930)
-    if actual_out and parse_mypy_version(mypy_version) < (0, 930):
+    if actual_out and MYPY_VERSION_TUPLE < (0, 930):
         actual_out = actual_out.lower()
         expected_out = expected_out.lower()
         actual_out = actual_out.replace('variant:', 'variants:')
@@ -117,7 +192,6 @@ def test_mypy_results(config_filename: str, python_filename: str, output_filenam
     assert actual_out == expected_out, actual_out
 
 
-@pytest.mark.skipif(not mypy_api, reason='mypy is not installed')
 def test_bad_toml_config() -> None:
     full_config_filename = 'tests/mypy/configs/pyproject-plugin-bad-param.toml'
     full_filename = 'tests/mypy/modules/success.py'
@@ -126,7 +200,7 @@ def test_bad_toml_config() -> None:
     # It also prevents cache-invalidation-related bugs in the tests
     cache_dir = '.mypy_cache/test-pyproject-plugin-bad-param'
     command = [full_filename, '--config-file', full_config_filename, '--cache-dir', cache_dir, '--show-error-codes']
-    if parse_mypy_version(mypy_version) >= (0, 990):
+    if MYPY_VERSION_TUPLE >= (0, 990):
         command.append('--disable-recursive-aliases')
     print(f"\nExecuting: mypy {' '.join(command)}")  # makes it easier to debug as necessary
     with pytest.raises(ValueError) as e:
@@ -135,8 +209,8 @@ def test_bad_toml_config() -> None:
     assert str(e.value) == 'Configuration value must be a boolean for key: init_forbid_extra'
 
 
-@pytest.mark.xfail(reason='todo')
-@pytest.mark.parametrize('module', executable_modules)
+@pytest.mark.parametrize('module', sorted(executable_modules))
+@pytest.mark.filterwarnings('ignore:.*is deprecated.*:DeprecationWarning')
 def test_success_cases_run(module: str) -> None:
     """
     Ensure the "success" files can actually be executed
@@ -146,9 +220,9 @@ def test_success_cases_run(module: str) -> None:
 
 def test_explicit_reexports():
     from pydantic import __all__ as root_all
+    from pydantic.deprecated.tools import __all__ as tools
     from pydantic.main import __all__ as main
     from pydantic.networks import __all__ as networks
-    from pydantic.tools import __all__ as tools
     from pydantic.types import __all__ as types
 
     for name, export_all in [('main', main), ('network', networks), ('tools', tools), ('types', types)]:
@@ -163,7 +237,6 @@ def test_explicit_reexports_exist():
         assert hasattr(pydantic, name), f'{name} is in pydantic.__all__ but missing from pydantic'
 
 
-@pytest.mark.skipif(mypy_version is None, reason='mypy is not installed')
 @pytest.mark.parametrize(
     'v_str,v_tuple',
     [

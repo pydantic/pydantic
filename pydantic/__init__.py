@@ -1,15 +1,26 @@
 from pydantic_core import ValidationError
+from pydantic_core.core_schema import (
+    FieldSerializationInfo,
+    FieldValidationInfo,
+    SerializationInfo,
+    SerializerFunctionWrapHandler,
+    ValidationInfo,
+    ValidatorFunctionWrapHandler,
+)
 
 from . import dataclasses
-from .config import BaseConfig, ConfigDict, Extra
-from .decorator import validate_arguments
-from .decorators import root_validator, serializer, validator
+from ._migration import getattr_migration
+from .analyzed_type import AnalyzedType
+from .config import ConfigDict, Extra
+from .decorators import field_serializer, field_validator, model_serializer, root_validator, validator
+from .deprecated.config import BaseConfig
+from .deprecated.tools import *
 from .errors import *
-from .fields import Field, PrivateAttr
+from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .main import *
 from .networks import *
-from .tools import *
 from .types import *
+from .validate_call import validate_call
 from .version import VERSION
 
 __version__ = VERSION
@@ -17,25 +28,38 @@ __version__ = VERSION
 # WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
+    'AnalyzedType',
     # dataclasses
     'dataclasses',
     # decorators
     'root_validator',
     'validator',
-    'serializer',
+    'field_validator',
+    'field_serializer',
+    'model_serializer',
+    'ValidationInfo',
+    'FieldValidationInfo',
+    'SerializationInfo',
+    'FieldSerializationInfo',
+    'ValidatorFunctionWrapHandler',
+    'SerializerFunctionWrapHandler',
     # config
     'BaseConfig',
     'ConfigDict',
     'Extra',
-    # decorator
-    'validate_arguments',
+    # validate_call
+    'validate_call',
     # error_wrappers
     'ValidationError',
     'PydanticUserError',
     'PydanticSchemaGenerationError',
+    'PydanticImportError',
     'PydanticUndefinedAnnotation',
     # fields
+    'AliasPath',
+    'AliasChoices',
     'Field',
+    'computed_field',
     # main
     'BaseModel',
     'create_model',
@@ -59,7 +83,6 @@ __all__ = [
     'MySQLDsn',
     'MariaDBDsn',
     'validate_email',
-    # parse
     # tools
     'parse_obj_as',
     'schema_of',
@@ -92,6 +115,7 @@ __all__ = [
     'UUID5',
     'FilePath',
     'DirectoryPath',
+    'NewPath',
     'Json',
     'SecretField',
     'SecretStr',
@@ -107,6 +131,10 @@ __all__ = [
     'FutureDate',
     'AwareDatetime',
     'NaiveDatetime',
+    'AllowInfNan',
     # version
     'VERSION',
 ]
+
+
+__getattr__ = getattr_migration(__name__)

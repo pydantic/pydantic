@@ -1,0 +1,7 @@
+26: error: Unexpected keyword argument "z" for "Model"  [call-arg]
+39: error: Unexpected keyword argument "z" for "KwargsModel"  [call-arg]
+82: error: Cannot inherit frozen dataclass from a non-frozen one  [misc]
+86: error: Cannot inherit non-frozen dataclass from a frozen one  [misc]
+90: error: Property "x" defined in "KwargsNoMutationModel" is read-only  [misc]
+175: error: Cannot inherit frozen dataclass from a non-frozen one  [misc]
+292: error: Unused "type: ignore" comment

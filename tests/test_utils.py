@@ -6,6 +6,7 @@ from copy import copy, deepcopy
 from typing import Callable, Dict, Generic, List, NewType, Tuple, TypeVar, Union
 
 import pytest
+from dirty_equals import IsList
 from pydantic_core import PydanticCustomError
 from typing_extensions import Annotated, Literal
 
@@ -15,11 +16,9 @@ from pydantic._internal._typing_extra import all_literal_values, get_origin, is_
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
     ClassAttribute,
-    LimitedDict,
     ValueItems,
     all_identical,
     deep_update,
-    get_model,
     lenient_issubclass,
     smart_deepcopy,
     to_lower_camel,
@@ -27,7 +26,6 @@ from pydantic._internal._utils import (
 )
 from pydantic._internal._validators import import_string
 from pydantic.color import Color
-from pydantic.dataclasses import dataclass
 from pydantic.fields import Undefined
 
 try:
@@ -67,6 +65,8 @@ class LoggedVar(Generic[T]):
     [
         (str, 'str'),
         ('foobar', 'str'),
+        ('SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
+        (List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (Union[str, int], 'Union[str, int]'),
         (list, 'list'),
         (List, 'List'),
@@ -89,7 +89,8 @@ def test_display_as_type(value, expected):
     'value_gen,expected',
     [
         (lambda: str, 'str'),
-        (lambda: 'string', 'str'),
+        (lambda: 'SomeForwardRefString', 'str'),  # included to document current behavior; could be changed
+        (lambda: List['SomeForwardRef'], "List[ForwardRef('SomeForwardRef')]"),  # noqa: F821
         (lambda: str | int, 'Union[str, int]'),
         (lambda: list, 'list'),
         (lambda: List, 'List'),
@@ -343,26 +344,6 @@ def test_undefined_copy():
     assert deepcopy(Undefined) is Undefined
 
 
-@pytest.mark.xfail(reason='not implemented')
-def test_get_model():
-    class A(BaseModel):
-        a: str
-
-    assert get_model(A) == A
-
-    @dataclass
-    class B:
-        a: str
-
-    assert get_model(B) == B.__pydantic_model__
-
-    class C:
-        pass
-
-    with pytest.raises(TypeError):
-        get_model(C)
-
-
 def test_class_attribute():
     class Foo:
         attr = ClassAttribute('attr', 'foo')
@@ -379,14 +360,14 @@ def test_class_attribute():
 
 def test_all_literal_values():
     L1 = Literal['1']
-    assert all_literal_values(L1) == ('1',)
+    assert all_literal_values(L1) == ['1']
 
     L2 = Literal['2']
     L12 = Literal[L1, L2]
-    assert sorted(all_literal_values(L12)) == sorted(('1', '2'))
+    assert all_literal_values(L12) == IsList('1', '2', check_order=False)
 
     L312 = Literal['3', Literal[L1, L2]]
-    assert sorted(all_literal_values(L312)) == sorted(('1', '2', '3'))
+    assert all_literal_values(L312) == IsList('3', '1', '2', check_order=False)
 
 
 @pytest.mark.parametrize(
@@ -477,43 +458,3 @@ def test_on_lower_camel_one_length():
 
 def test_on_lower_camel_many_length():
     assert to_lower_camel('i_like_turtles') == 'iLikeTurtles'
-
-
-def test_limited_dict():
-    d = LimitedDict(10)
-    d[1] = '1'
-    d[2] = '2'
-    assert list(d.items()) == [(1, '1'), (2, '2')]
-    for no in '34567890':
-        d[int(no)] = no
-    assert list(d.items()) == [
-        (1, '1'),
-        (2, '2'),
-        (3, '3'),
-        (4, '4'),
-        (5, '5'),
-        (6, '6'),
-        (7, '7'),
-        (8, '8'),
-        (9, '9'),
-        (0, '0'),
-    ]
-    d[11] = '11'
-
-    # reduce size to 9 after setting 11
-    assert len(d) == 9
-    assert list(d.items()) == [
-        (3, '3'),
-        (4, '4'),
-        (5, '5'),
-        (6, '6'),
-        (7, '7'),
-        (8, '8'),
-        (9, '9'),
-        (0, '0'),
-        (11, '11'),
-    ]
-    d[12] = '12'
-    assert len(d) == 10
-    d[13] = '13'
-    assert len(d) == 9

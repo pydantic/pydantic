@@ -5,7 +5,7 @@ from typing import Any, Iterable, Optional, Union
 import pytest
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, ConfigDict, Extra, Field, create_model
+from pydantic import BaseModel, ConfigDict, Field, create_model
 from pydantic._internal._typing_extra import is_annotated
 
 
@@ -38,7 +38,7 @@ def test_custom_init_signature():
         name: str = 'John Doe'
         f__: str = Field(..., alias='foo')
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
         def __init__(self, id: int = 1, bar=2, *, baz: Any, **data):
             super().__init__(id=id, **data)
@@ -63,18 +63,18 @@ def test_custom_init_signature_with_no_var_kw():
         def __init__(self, a: float, b: int):
             super().__init__(a=a, b=b, c=1)
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
 
 
-@pytest.mark.xfail(reason='TODO create_model')
 def test_invalid_identifiers_signature():
     model = create_model(
-        'Model', **{'123 invalid identifier!': Field(123, alias='valid_identifier'), '!': Field(0, alias='yeah')}
+        'Model',
+        **{'123 invalid identifier!': (int, Field(123, alias='valid_identifier')), '!': (int, Field(0, alias='yeah'))},
     )
     assert _equals(str(signature(model)), '(*, valid_identifier: int = 123, yeah: int = 0) -> None')
-    model = create_model('Model', **{'123 invalid identifier!': 123, '!': Field(0, alias='yeah')})
+    model = create_model('Model', **{'123 invalid identifier!': (int, 123), '!': (int, Field(0, alias='yeah'))})
     assert _equals(str(signature(model)), '(*, yeah: int = 0, **extra_data: Any) -> None')
 
 
@@ -100,7 +100,7 @@ def test_extra_allow_no_conflict():
     class Model(BaseModel):
         spam: str
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
 
@@ -109,7 +109,7 @@ def test_extra_allow_conflict():
     class Model(BaseModel):
         extra_data: str
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert _equals(str(signature(Model)), '(*, extra_data: str, **extra_data_: Any) -> None')
 
@@ -119,7 +119,7 @@ def test_extra_allow_conflict_twice():
         extra_data: str
         extra_data_: str
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
 
@@ -131,7 +131,7 @@ def test_extra_allow_conflict_custom_signature():
         def __init__(self, extra_data: int = 1, **foobar: Any):
             super().__init__(extra_data=extra_data, **foobar)
 
-        model_config = ConfigDict(extra=Extra.allow)
+        model_config = ConfigDict(extra='allow')
 
     assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
 
