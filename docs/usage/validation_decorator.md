@@ -242,14 +242,6 @@ defined to return a function with the same signature as the function it decorate
 since we trick mypy into thinking the function returned by the decorator is the same as the function being
 decorated; access to the [raw function](#raw-function) or other attributes will require `type: ignore`.
 
-## Validate without calling the function
-
-**TODO: this no longer exists.**
-
-By default, arguments validation is done by directly calling the decorated function with parameters.
-But what if you wanted to validate them without *actually* calling the function?
-To do that you can call the `validate` method bound to the decorated function.
-
 ## Raw function
 
 The raw function which was decorated is accessible, this is useful if in some scenarios you trust your input
