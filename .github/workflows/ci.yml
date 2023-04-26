@@ -260,6 +260,35 @@ jobs:
     - name: test
       run: make test-fastapi
 
+  test-next:
+    name: Test Pydantic Next
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: install deps
+      run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
+
+    - name: install pydantic next
+      working-directory: pydantic-next
+      run: pip install .
+
+    - name: replace imports on test
+      run: find tests -type f -name '*.py' -exec sed -i '' -E 's/(import|from) pydantic([\. ])/\1 pydantic_next\2/g' {} +
+
+    - run: pip freeze
+
+    - run: 'python -c "import pydantic_next.version; print(pydantic_next.version.version_info())"'
+
+    - name: run tests
+      run: make test
+
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
 
@@ -275,6 +304,7 @@ jobs:
       - test-memray
       - test-mypy
       - test-fastapi
+      - test-next
 
     runs-on: ubuntu-latest
 
@@ -361,3 +391,58 @@ jobs:
 
       - name: Upload package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+      - run: ls -lh dist
+      - run: twine check dist/*
+
+      - name: upload to pypi
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}
+
+      - name: publish docs
+        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
+        uses: cloudflare/wrangler-action@2.0.0
+        with:
+          apiToken: ${{ secrets.cloudflare_api_token }}
+          command: pages publish --project-name=pydantic-docs --branch=main site
+        env:
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
+
+  deploy-next:
+    name: Deploy Pydantic Next
+    needs: [check]
+    # `always()` is required to trigger this task even though test-fastapi is skipped
+    if: "always() && needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')"
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: set up python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: install
+        run: pip install -U twine build packaging
+
+      - name: check GITHUB_REF matches package version
+        id: check-tag
+        uses: samuelcolvin/check-python-version@v3.1
+        with:
+          version_file_path: pydantic/version.py
+
+      - name: build
+        working-directory: pydantic-next
+        run: python -m build
+
+      - run: ls -lh dist
+      - run: twine check dist/*
+
+      - name: upload to pypi
+        run: twine upload dist/*
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.pypi_token }}

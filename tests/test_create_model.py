@@ -1,3 +1,4 @@
+import sys
 from typing import Optional, Tuple
 
 import pytest
@@ -7,6 +8,7 @@ from pydantic.decorators import field_validator, validator
 from pydantic.fields import ModelPrivateAttr
 
 
+@pytest.mark.skipif('pydantic_next' in sys.modules, reason='The test asserts against pydantic package')
 def test_create_model():
     model = create_model('FooModel', foo=(str, ...), bar=(int, 123))
     assert issubclass(model, BaseModel)
