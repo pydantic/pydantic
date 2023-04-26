@@ -1375,6 +1375,26 @@ def test_recursive_model():
     assert m.model_dump() == {'field': {'field': {'field': None}}}
 
 
+def test_recursive_cycle_with_repeated_field():
+    class A(BaseModel):
+        b: 'B'
+
+        model_config = {'undefined_types_warning': False}
+
+    class B(BaseModel):
+        a1: Optional[A] = None
+        a2: Optional[A] = None
+
+    A.model_rebuild()
+
+    assert A.model_validate({'b': {'a1': {'b': {'a1': None}}}}) == A(b=B(a1=A(b=B(a1=None))))
+    with pytest.raises(ValidationError) as exc_info:
+        A.model_validate({'b': {'a1': {'a1': None}}})
+    assert exc_info.value.errors() == [
+        {'input': {'a1': None}, 'loc': ('b', 'a1', 'b'), 'msg': 'Field required', 'type': 'missing'}
+    ]
+
+
 def test_two_defaults():
     with pytest.raises(TypeError, match='^cannot specify both default and default_factory$'):
 
