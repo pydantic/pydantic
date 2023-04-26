@@ -2303,7 +2303,6 @@ def test_schema_for_generic_field():
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    # assert Model.__pydantic_core_schema__ == {}
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
