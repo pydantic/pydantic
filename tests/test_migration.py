@@ -7,7 +7,7 @@ from pydantic._migration import DEPRECATED_MOVED_IN_V2, MOVED_IN_V2, REMOVED_IN_
 from pydantic.errors import PydanticImportError
 
 pytestmark = pytest.mark.skipif(
-    'pydantic_next' in sys.modules, reason='The migration logic doesn't make sense for pydantic_next'
+    'pydantic_next' in sys.modules, reason="The migration logic doesn't make sense for pydantic_next"
 )
 
 
