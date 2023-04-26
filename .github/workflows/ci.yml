@@ -273,7 +273,7 @@ jobs:
         python-version: '3.11'
 
     - name: install deps
-      run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
+      run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt -r requirements/testing-mypy.txt
 
     - name: install pydantic next
       working-directory: pydantic_next
@@ -281,9 +281,7 @@ jobs:
 
     - name: replace imports on test
       run: |
-          find tests -type f -name '*.py' -exec \
-              sed -E 's/(import|from) pydantic([^_]|$)/\1 pydantic_next\2/g' {} > tmpfile && \
-              mv tmpfile {} \;
+           find tests -type f -name '*.py' -exec sed -i -E 's/(import|from) pydantic([^_]|$)/\1 pydantic_next\2/g' {} +
 
     - run: pip freeze
 
