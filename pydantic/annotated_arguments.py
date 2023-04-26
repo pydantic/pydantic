@@ -9,7 +9,7 @@ from ._internal._decorators import inspect_annotated_serializer, inspect_validat
 from ._internal._internal_dataclass import slots_dataclass
 
 
-@slots_dataclass
+@slots_dataclass(frozen=True)
 class AfterValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
@@ -24,7 +24,7 @@ class AfterValidator:
             return core_schema.no_info_after_validator_function(self.func, schema=schema)  # type: ignore
 
 
-@slots_dataclass
+@slots_dataclass(frozen=True)
 class BeforeValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
@@ -39,22 +39,21 @@ class BeforeValidator:
             return core_schema.no_info_before_validator_function(self.func, schema=schema)  # type: ignore
 
 
-@slots_dataclass
+@slots_dataclass(frozen=True)
 class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(
         self, source_type: Any, handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
-        schema = handler(source_type)
         info_arg = inspect_validator(self.func, 'plain')
         if info_arg:
-            return core_schema.general_plain_validator_function(self.func, schema=schema)  # type: ignore
+            return core_schema.general_plain_validator_function(self.func)  # type: ignore
         else:
-            return core_schema.no_info_plain_validator_function(self.func, schema=schema)  # type: ignore
+            return core_schema.no_info_plain_validator_function(self.func)  # type: ignore
 
 
-@slots_dataclass
+@slots_dataclass(frozen=True)
 class WrapValidator:
     func: core_schema.GeneralWrapValidatorFunction | core_schema.FieldWrapValidatorFunction
 
@@ -69,7 +68,7 @@ class WrapValidator:
             return core_schema.no_info_wrap_validator_function(self.func, schema=schema)  # type: ignore
 
 
-@slots_dataclass
+@slots_dataclass(frozen=True)
 class PlainSerializer:
     func: core_schema.SerializerFunction
     json_return_type: core_schema.JsonReturnTypes | None = None
@@ -88,7 +87,7 @@ class PlainSerializer:
         return schema
 
 
-@slots_dataclass
+@slots_dataclass(frozen=True)
 class WrapSerializer:
     func: core_schema.WrapSerializerFunction
     json_return_type: core_schema.JsonReturnTypes | None = None
