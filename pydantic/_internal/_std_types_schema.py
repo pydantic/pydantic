@@ -107,7 +107,6 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
         strict = core_schema.is_instance_schema(enum_type, json_types={'str'}, json_function=enum_type)
     elif issubclass(enum_type, float):
-        # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'numeric'
         lax = core_schema.chain_schema([core_schema.float_schema(), to_enum_validator])
         strict = core_schema.is_instance_schema(enum_type, json_types={'float'}, json_function=enum_type)
