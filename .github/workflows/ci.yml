@@ -280,7 +280,10 @@ jobs:
       run: pip install .
 
     - name: replace imports on test
-      run: find tests -type f -name '*.py' -exec sed -E 's/(import|from) pydantic([^_]|$)/\1 pydantic_next\2/g' {} > tmpfile && mv tmpfile {} \;
+      run: |
+          find tests -type f -name '*.py' -exec \
+              sed -E 's/(import|from) pydantic([^_]|$)/\1 pydantic_next\2/g' {} > tmpfile && \
+              mv tmpfile {} \;
 
     - run: pip freeze
 
