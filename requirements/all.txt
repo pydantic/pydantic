@@ -4,8 +4,12 @@
 #
 #    pip-compile --output-file=requirements/all.txt --resolver=backtracking --strip-extras requirements/all.in
 #
+-e file:///Users/adriangarciabadaracco/GitHub/pydantic-scratch
+    # via -r requirements/all.in
 annotated-types==0.4.0
-    # via -r requirements/linting.in
+    # via
+    #   -r requirements/linting.in
+    #   pydantic
 ansi2html==1.8.0
     # via -r requirements/testing-extra.in
 asttokens==2.2.1
@@ -42,6 +46,10 @@ dirty-equals==0.5.0
     # via -r requirements/testing.in
 distlib==0.3.6
     # via virtualenv
+dnspython==2.3.0
+    # via email-validator
+email-validator==2.0.0.post2
+    # via pydantic
 exceptiongroup==1.1.1
     # via
     #   hypothesis
@@ -63,7 +71,9 @@ hypothesis==6.70.0
 identify==2.5.21
     # via pre-commit
 idna==3.4
-    # via requests
+    # via
+    #   email-validator
+    #   requests
 iniconfig==2.0.0
     # via pytest
 jinja2==3.1.2
@@ -122,7 +132,7 @@ packaging==23.0
     #   black
     #   mkdocs
     #   pytest
-pathspec==0.11.1
+pathspec==0.11.0.26.0
     # via black
 platformdirs==3.1.1
     # via
@@ -132,10 +142,11 @@ pluggy==1.0.0
     # via pytest
 pre-commit==2.21.0
     # via -r requirements/linting.in
-pydantic-core==0.25.0
+pydantic-core==0.26.0
     # via
     #   -r requirements/docs.in
     #   -r requirements/linting.in
+    #   pydantic
 pyflakes==3.0.1
     # via autoflake
 pygments==2.14.0
@@ -204,6 +215,7 @@ tomli==2.0.1
 typing-extensions==4.5.0
     # via
     #   dirty-equals
+    #   pydantic
     #   pydantic-core
 urllib3==1.26.15
     # via requests
