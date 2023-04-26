@@ -275,6 +275,11 @@ jobs:
     - name: install deps
       run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt -r requirements/testing-mypy.txt
 
+    - name: replace pydantic-core version
+      run: |
+        PYDANTIC_CORE_VERSION=$(cat pyproject.toml| grep -Eo 'pydantic-core==[0-9]+(\.[0-9]+)+')
+        sed -i -E "s/pydantic-core==__pydantic_core_version__/$PYDANTIC_CORE_VERSION/g" pydantic_next/pyproject.toml
+
     - name: install pydantic next
       working-directory: pydantic_next
       run: pip install .
@@ -438,14 +443,17 @@ jobs:
           version_file_path: pydantic/version.py
 
       - name: build
-        working-directory: pydantic-next
+        working-directory: pydantic_next
         run: python -m build
 
       - run: ls -lh dist
+        working-directory: pydantic_next
       - run: twine check dist/*
+        working-directory: pydantic_next
 
       - name: upload to pypi
         run: twine upload dist/*
+        working-directory: pydantic_next
         env:
           TWINE_USERNAME: __token__
           TWINE_PASSWORD: ${{ secrets.pypi_token }}
