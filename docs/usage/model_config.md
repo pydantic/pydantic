@@ -261,7 +261,6 @@ class Character(Voice):
 print(Character.model_json_schema(by_alias=True))
 """
 {
-    'title': 'Character',
     'type': 'object',
     'properties': {
         'ActorName': {'type': 'string', 'default': None, 'title': 'Actorname'},
@@ -269,6 +268,7 @@ print(Character.model_json_schema(by_alias=True))
         'Mood': {'type': 'string', 'default': None, 'title': 'Mood'},
         'Act': {'type': 'integer', 'default': 1, 'title': 'Act'},
     },
+    'title': 'Character',
 }
 """
 ```

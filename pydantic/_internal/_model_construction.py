@@ -4,6 +4,7 @@ Private logic for creating models.
 from __future__ import annotations as _annotations
 
 import typing
+from functools import partial
 from types import FunctionType
 from typing import Any, Callable
 
@@ -176,7 +177,9 @@ def complete_model_class(
         typevars_map,
     )
     try:
-        schema = cls.__get_pydantic_core_schema__(cls, gen_schema.generate_schema)
+        schema = cls.__get_pydantic_core_schema__(
+            cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False)
+        )
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise

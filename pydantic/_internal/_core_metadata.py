@@ -8,10 +8,13 @@ from pydantic_core import CoreSchema, core_schema
 
 if typing.TYPE_CHECKING:
     from ..json_schema import JsonSchemaValue
-
-CoreSchemaOrField = typing.Union[CoreSchema, core_schema.DataclassField, core_schema.TypedDictField]
-GetJsonSchemaHandler = typing.Callable[[CoreSchemaOrField], 'JsonSchemaValue']
-GetJsonSchemaFunction = typing.Callable[[CoreSchemaOrField, GetJsonSchemaHandler], 'JsonSchemaValue']
+    from ._json_schema_shared import (
+        CoreSchemaOrField as CoreSchemaOrField,
+    )
+    from ._json_schema_shared import (
+        GetJsonSchemaFunction,
+        GetJsonSchemaHandler,
+    )
 
 
 class CoreMetadata(typing_extensions.TypedDict, total=False):

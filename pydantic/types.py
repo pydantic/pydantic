@@ -75,7 +75,8 @@ __all__ = [
     'AllowInfNan',
 ]
 
-from ._internal._core_metadata import GetJsonSchemaHandler, build_metadata_dict
+from ._internal._core_metadata import build_metadata_dict
+from ._internal._json_schema_shared import GetJsonSchemaHandler
 from ._internal._utils import update_not_none
 from .json_schema import JsonSchemaValue
 
@@ -297,7 +298,7 @@ def condecimal(
 class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
-    def __pydantic_modify_json_schema__(
+    def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
@@ -333,7 +334,7 @@ UUID5 = Annotated[UUID, UuidVersion(5)]
 class PathType:
     path_type: Literal['file', 'dir', 'new']
 
-    def __pydantic_modify_json_schema__(
+    def __get_pydantic_json_schema__(
         self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
@@ -437,20 +438,23 @@ class SecretField(abc.ABC, Generic[SecretType]):
         cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
         validator = SecretFieldValidator(cls)
+        js_modify_functions: list[Any] = []
         if issubclass(cls, SecretStr):
             # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
-            def js_cs_override(_c, h):
+            def js_cs_override1(_c: Any, h: Any) -> Any:
                 return h(core_schema.str_schema(min_length=validator.min_length, max_length=validator.max_length))
+
+            js_modify_functions.append(js_cs_override1)
 
         elif issubclass(cls, SecretBytes):
 
-            def js_cs_override(_c, h):
+            def js_cs_override2(_c: Any, h: Any) -> Any:
                 return h(core_schema.bytes_schema(min_length=validator.min_length, max_length=validator.max_length))
 
-        else:
-            js_cs_override = None
+            js_modify_functions.append(js_cs_override2)
+
         metadata = build_metadata_dict(
-            cs_update_function=validator.__pydantic_update_schema__, js_function=js_cs_override
+            cs_update_function=validator.__pydantic_update_schema__, js_functions=js_modify_functions
         )
         return core_schema.general_after_validator_function(
             validator,
@@ -482,7 +486,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         ...
 
     @classmethod
-    def __pydantic_modify_json_schema__(
+    def __get_pydantic_json_schema__(
         cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
