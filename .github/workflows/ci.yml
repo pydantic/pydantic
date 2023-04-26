@@ -276,7 +276,7 @@ jobs:
       run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
 
     - name: install pydantic next
-      working-directory: pydantic-next
+      working-directory: pydantic_next
       run: pip install .
 
     - name: replace imports on test
