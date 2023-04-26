@@ -113,6 +113,14 @@ with pytest.raises(TypeError):
 
 This applies to all validators.
 
+### Validate without calling the function
+
+Previously, arguments validation was done by directly calling the decorated function with parameters.
+When validating them without *actually* calling the function, you could call the `validate` method bound to the
+decorated function.
+
+This functionality no longer exists.
+
 ### `each_item` is deprecated
 
 For `@validator` the argument is still present and functions.
