@@ -2486,6 +2486,17 @@ def test_uuid_error():
         Model(v=None)
 
 
+def test_uuid_json():
+    class Model(BaseModel):
+        v: UUID
+        v1: UUID1
+        v3: UUID3
+        v4: UUID4
+
+    m = Model(v=uuid.uuid4(), v1=uuid.uuid1(), v3=uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org'), v4=uuid.uuid4())
+    assert m.model_dump_json() == f'{{"v":"{m.v}","v1":"{m.v1}","v3":"{m.v3}","v4":"{m.v4}"}}'
+
+
 @pytest.mark.xfail(sys.platform.startswith('win'), reason='https://github.com/PyO3/pyo3/issues/2913', strict=False)
 def test_uuid_validation():
     class UUIDModel(BaseModel):
