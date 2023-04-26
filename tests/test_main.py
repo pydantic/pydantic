@@ -2198,3 +2198,19 @@ def test_pydantic_init_subclass() -> None:
         ('MySubModel', '__init_subclass__', {'a': 1}),
         ('MySubModel', '__pydantic_init_subclass__', {'a': 1}),
     ]
+
+
+def test_model_validate_with_context():
+    class InnerModel(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def validate(cls, value, info):
+            return value * info.context.get('multiplier', 1)
+
+    class OuterModel(BaseModel):
+        inner: InnerModel
+
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 1}).inner.x == 2
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 2}).inner.x == 4
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 3}).inner.x == 6
