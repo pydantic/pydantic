@@ -262,7 +262,7 @@ It has the following arguments:
 * `allow_mutation`: a boolean which defaults to `True`. When False, the field raises a `TypeError` if the field is
   assigned on an instance.  The model config must set `validate_assignment` to `True` for this check to be performed.
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
-  annotation of `pattern` to the JSON Schema
+  annotation of `pattern` to the JSON Schema &mdash; see note below for details
 * `repr`: a boolean which defaults to `True`. When False, the field shall be hidden from the object representation.
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
