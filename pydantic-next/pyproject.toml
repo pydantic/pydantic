@@ -59,6 +59,16 @@ dependencies = [
 optional-dependencies = { email = ['email-validator>=1.3.0'] }
 dynamic = ['version', 'readme']
 
+[tool.pdm.dev-dependencies]
+testing = [
+    "coverage[toml]",
+    "dirty-equals",
+    "pytest",
+    "pytest-mock",
+    "pytest-pretty",
+    "pytest-examples",
+]
+
 entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
 
 [project.urls]

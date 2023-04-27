@@ -295,16 +295,16 @@ jobs:
 
     - name: install pydantic next
       working-directory: pydantic-next
-      run: pdm install
+      run: pdm install --no-editable
 
-    - run: pdm run pip freeze
+    - run: pdm list
 
     - run: 'pdm run python -c "import pydantic_next.version; print(pydantic_next.version.version_info())"'
       working-directory: pydantic-next
 
     - name: run tests
       working-directory: pydantic-next
-      run: pdm run coverage run -m pytest --durations=10
+      run: 'pdm run pytest --durations=10'
 
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
