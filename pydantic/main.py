@@ -214,6 +214,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
+        # `model_fields` and `__pydantic_decorators__` must be set for
+        # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
         model_fields = {}
         __pydantic_decorators__ = _decorators.DecoratorInfos()
         __pydantic_validator__ = _model_construction.MockValidator(
