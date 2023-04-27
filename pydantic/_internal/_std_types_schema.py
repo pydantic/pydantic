@@ -215,17 +215,13 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PathLike]) ->
         except TypeError as e:
             raise PydanticCustomError('path_type', 'Input is not a valid path') from e
 
-    instance_schema = core_schema.is_instance_schema(
-        path_type, json_types={'str'}, json_function=path_validator, metadata=metadata
-    )
+    instance_schema = core_schema.is_instance_schema(path_type, json_types={'str'}, json_function=path_validator)
 
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.union_schema(
             [
                 instance_schema,
-                core_schema.no_info_after_validator_function(
-                    path_validator, core_schema.str_schema(), metadata=metadata
-                ),
+                core_schema.no_info_after_validator_function(path_validator, core_schema.str_schema()),
             ],
             custom_error_type='path_type',
             custom_error_message='Input is not a valid path',
@@ -233,7 +229,7 @@ def path_schema(_schema_generator: GenerateSchema, path_type: type[PathLike]) ->
         ),
         strict_schema=instance_schema,
         serialization=core_schema.to_string_ser_schema(),
-        metadata=build_metadata_dict(js_override={'type': 'string', 'format': 'path'}),
+        metadata=metadata,
     )
 
 

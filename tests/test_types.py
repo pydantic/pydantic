@@ -2925,6 +2925,13 @@ def test_path_like():
     assert Model(foo='/foo/bar').foo == Path('/foo/bar')
     assert Model(foo=Path('/foo/bar')).foo == Path('/foo/bar')
     assert Model.model_validate_json('{"foo": "abc"}').foo == Path('abc')
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'type': 'object',
+        'properties': {'foo': {'type': 'string', 'format': 'path', 'title': 'Foo'}},
+        'required': ['foo'],
+        'title': 'Model',
+    }
 
 
 def test_path_like_strict():
@@ -2937,6 +2944,13 @@ def test_path_like_strict():
         Model(foo='/foo/bar')
     assert Model(foo=Path('/foo/bar')).foo == Path('/foo/bar')
     assert Model.model_validate_json('{"foo": "abc"}').foo == Path('abc')
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'type': 'object',
+        'properties': {'foo': {'type': 'string', 'format': 'path', 'title': 'Foo'}},
+        'required': ['foo'],
+        'title': 'Model',
+    }
 
 
 def test_path_validation_fails():
