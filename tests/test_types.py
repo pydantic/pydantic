@@ -1,4 +1,5 @@
 import itertools
+import json
 import math
 import os
 import re
@@ -2914,6 +2915,42 @@ def test_path_validation_success(value, result):
         foo: Path
 
     assert Model(foo=value).foo == result
+    assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
+
+
+def test_path_like():
+    class Model(BaseModel):
+        foo: os.PathLike
+
+    assert Model(foo='/foo/bar').foo == Path('/foo/bar')
+    assert Model(foo=Path('/foo/bar')).foo == Path('/foo/bar')
+    assert Model.model_validate_json('{"foo": "abc"}').foo == Path('abc')
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'type': 'object',
+        'properties': {'foo': {'type': 'string', 'format': 'path', 'title': 'Foo'}},
+        'required': ['foo'],
+        'title': 'Model',
+    }
+
+
+def test_path_like_strict():
+    class Model(BaseModel):
+        model_config = dict(strict=True)
+
+        foo: os.PathLike
+
+    with pytest.raises(ValidationError, match='Input should be an instance of PathLike'):
+        Model(foo='/foo/bar')
+    assert Model(foo=Path('/foo/bar')).foo == Path('/foo/bar')
+    assert Model.model_validate_json('{"foo": "abc"}').foo == Path('abc')
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'type': 'object',
+        'properties': {'foo': {'type': 'string', 'format': 'path', 'title': 'Foo'}},
+        'required': ['foo'],
+        'title': 'Model',
+    }
 
 
 def test_path_validation_fails():
