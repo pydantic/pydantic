@@ -15,7 +15,7 @@ def version_info() -> str:
     for p in 'devtools', 'email-validator', 'typing-extensions':
         try:
             import_module(p.replace('-', '_'))
-        except ImportError:
+        except ImportError:  # pragma: no cover
             continue
         optional_deps.append(p)
 
