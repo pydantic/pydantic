@@ -185,10 +185,6 @@ Model(x=1)
 * While it does not raise an error at runtime yet, subclass checks for parametrized generics should no longer be used.
   These will result in `TypeError`s and we can't promise they will work forever. However, it will be okay to do subclass checks against _non-parametrized_ generic models
 
-### Other changes
-
-* `GetterDict` has been removed, as it was just an implementation detail for `orm_mode`, which has been removed.
-
 ### AnalyzedType
 
 Pydantic V1 didn't have good support for validation or serializing non-`BaseModel`.
@@ -207,3 +203,35 @@ print(validator.json_schema())
 ```
 
 Note that this API is provisional and may change before the final release of Pydantic V2.
+
+### Required, Optional, and Nullable fields
+
+Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2 these concepts are more clearly defined.
+
+Pydantic V2 will move to match `dataclasses`, thus you may explicitly specify a field as `required` or `optional` and whether the field accepts `None` or not.
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Foo(BaseModel):
+    f1: str  # required, cannot be None
+    f2: str | None  # required, can be None - same as Optional[str] / Union[str, None]
+    f3: str | None = None  # not required, can be None
+    f4: str = 'Foobar'  # not required, but cannot be None
+
+
+try:
+    Foo(f1=None, f2=None, f4='b')
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Foo
+    f1
+      Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]
+    """
+```
+
+## Other changes
+
+* `GetterDict` has been removed, as it was just an implementation detail for `orm_mode`, which has been removed.
