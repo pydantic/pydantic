@@ -1,6 +1,7 @@
 from __future__ import annotations as _annotations
 
 import abc
+import base64
 import dataclasses as _dataclasses
 import re
 from datetime import date, datetime
@@ -10,6 +11,7 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
+    Callable,
     ClassVar,
     FrozenSet,
     Generic,
@@ -23,9 +25,9 @@ from uuid import UUID
 
 import annotated_types
 from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, Protocol
 
-from ._internal import _fields, _validators
+from ._internal import _fields, _internal_dataclass, _validators
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
 from .errors import PydanticUserError
@@ -74,6 +76,12 @@ __all__ = [
     'AwareDatetime',
     'NaiveDatetime',
     'AllowInfNan',
+    'EncoderProtocol',
+    'EncodedBytes',
+    'EncodedStr',
+    'Base64Encoder',
+    'Base64Bytes',
+    'Base64Str',
 ]
 
 from ._internal._core_metadata import build_metadata_dict
@@ -318,7 +326,7 @@ def condecimal(
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ UUID TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
-@_dataclasses.dataclass(frozen=True)  # Add frozen=True to make it hashable
+@_internal_dataclass.slots_dataclass
 class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
@@ -341,6 +349,9 @@ class UuidVersion:
                 'uuid_version', 'uuid version {required_version} expected', {'required_version': self.uuid_version}
             )
         return value
+
+    def __hash__(self) -> int:
+        return hash(type(self.uuid_version))
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
@@ -881,5 +892,90 @@ else:
         def __repr__(self) -> str:
             return 'NaiveDatetime'
 
+
+# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Encoded TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+class EncoderProtocol(Protocol):
+    @classmethod
+    def decode(cls, data: bytes) -> bytes:
+        """Can throw `PydanticCustomError`"""
+        ...
+
+    @classmethod
+    def encode(cls, value: bytes) -> bytes:
+        ...
+
+    @classmethod
+    def get_json_format(cls) -> str:
+        ...
+
+
+class Base64Encoder(EncoderProtocol):
+    @classmethod
+    def decode(cls, data: bytes) -> bytes:
+        try:
+            return base64.decodebytes(data)
+        except ValueError as e:
+            raise PydanticCustomError('base64_decode', "Base64 decoding error: '{error}'", {'error': str(e)})
+
+    @classmethod
+    def encode(cls, value: bytes) -> bytes:
+        return base64.encodebytes(value)
+
+    @classmethod
+    def get_json_format(cls) -> str:
+        return 'base64'
+
+
+@_internal_dataclass.slots_dataclass
+class EncodedBytes:
+    encoder: type[EncoderProtocol]
+
+    def __get_pydantic_json_schema__(
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = handler(core_schema)
+        field_schema.update(type='string', format=self.encoder.get_json_format())
+        return field_schema
+
+    def __get_pydantic_core_schema__(
+        self, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        return core_schema.general_after_validator_function(
+            function=self.decode,
+            schema=core_schema.bytes_schema(),
+            serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode),
+        )
+
+    def decode(self, data: bytes, _: core_schema.ValidationInfo) -> bytes:
+        return self.encoder.decode(data)
+
+    def encode(self, value: bytes) -> bytes:
+        return self.encoder.encode(value)
+
+    def __hash__(self) -> int:
+        return hash(self.encoder)
+
+
+class EncodedStr(EncodedBytes):
+    def __get_pydantic_core_schema__(
+        self, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+    ) -> core_schema.CoreSchema:
+        return core_schema.general_after_validator_function(
+            function=self.decode_str,
+            schema=super().__get_pydantic_core_schema__(source=source, handler=handler),
+            serialization=core_schema.plain_serializer_function_ser_schema(function=self.encode_str),
+        )
+
+    def decode_str(self, data: bytes, _: core_schema.ValidationInfo) -> str:
+        return data.decode()
+
+    def encode_str(self, value: str) -> str:
+        return super().encode(value=value.encode()).decode()
+
+
+Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
+Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 
 __getattr__ = getattr_migration(__name__)
