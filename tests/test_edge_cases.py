@@ -2366,3 +2366,18 @@ def test_generic_wrapped_forwardref():
     assert exc_info.value.errors() == [
         {'input': 1, 'loc': ('callbacks', 0), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
+
+
+def test_plain_basemodel_field():
+    class Model(BaseModel):
+        x: BaseModel
+
+    class Model2(BaseModel):
+        pass
+
+    assert Model(x=Model2()).x == Model2()
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=1)
+    assert exc_info.value.errors() == [
+        {'input': 1, 'loc': ('x',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+    ]
