@@ -60,10 +60,57 @@ dependencies = [
     'pydantic-core==0.27.0',
     'annotated-types>=0.4.0',
 ]
-optional-dependencies = { email = ['email-validator>=1.3.0'] }
 dynamic = ['version', 'readme']
 
 entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
+
+[project.optional-dependencies]
+email = ['email-validator>=2.0.0']
+
+[tool.pdm.dev-dependencies]
+docs = [
+    "autoflake",
+    "mkdocs",
+    "mkdocs-exclude",
+    "mkdocs-material",
+    "mkdocs-redirects",
+    "mkdocs-simple-hooks",
+    "mkdocstrings-python",
+    "tomli",
+    "pyupgrade",
+]
+linting = [
+    "black",
+    "hypothesis",
+    "ruff",
+    "mypy~=1.1.1",
+]
+testing-extra = [
+    # used when generate devtools docs example
+    "ansi2html",
+    "devtools",
+    "hypothesis",
+    # used in docs tests
+    "sqlalchemy==1.4.0",
+]
+testing = [
+    "coverage[toml]",
+    "dirty-equals",
+    "pytest",
+    "pytest-mock",
+    "pytest-pretty",
+    "pytest-examples",
+]
+mypy = [
+    "mypy",
+]
+memray = [
+    "pytest-memray",
+]
+
+[tool.pdm.resolution.overrides]
+# requires Python > 3.8, we only test with 3.8 in CI but because of it it won't lock properly
+pytest-memray = "1.4.0"
 
 [project.urls]
 Homepage = 'https://github.com/pydantic/pydantic'

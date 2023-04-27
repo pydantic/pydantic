@@ -1607,10 +1607,10 @@ def test_string_fails():
             'loc': ('str_email',),
             'msg': (
                 'value is not a valid email address: The email address contains invalid '
-                'characters before the @-sign: LESS-THAN SIGN.'
+                "characters before the @-sign: '<'."
             ),
             'input': 'foobar<@example.com',
-            'ctx': {'reason': 'The email address contains invalid characters before the @-sign: LESS-THAN SIGN.'},
+            'ctx': {'reason': "The email address contains invalid characters before the @-sign: '<'."},
         },
         {
             'type': 'value_error',

@@ -2423,11 +2423,11 @@ def test_invalid_forward_ref_model():
     class A(BaseModel):
         model_config = {'undefined_types_warning': False}
 
-        B: ForwardRef('__types["B"]') = Field()  # noqa F821
+        B: ForwardRef('__types["B"]') = Field()  # F821
 
-    assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # noqa F821
+    assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # F821
     A.model_rebuild(raise_errors=False)
-    assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # noqa F821
+    assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # F821
 
     class B(BaseModel):
         pass
