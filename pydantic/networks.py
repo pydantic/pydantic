@@ -325,7 +325,10 @@ def validate_email(value: str) -> tuple[str, str]:
             'value_error', 'value is not a valid email address: {reason}', {'reason': str(e.args[0])}
         ) from e
 
-    return name or parts['local'], parts['email']
+    email = parts.normalized
+    assert email is not None
+    name = name or parts.local_part
+    return name, email
 
 
 __getattr__ = getattr_migration(__name__)

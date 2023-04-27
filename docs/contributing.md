@@ -40,29 +40,27 @@ You'll need to have a version between **Python 3.7 and 3.11**, **virtualenv**, *
 git clone git@github.com:<your username>/pydantic.git
 cd pydantic
 
-# 2. Set up a virtualenv for running tests
-virtualenv -p `which python3.8` env
-source env/bin/activate
-# Building docs requires 3.8. If you don't need to build docs you can use
-# whichever version; 3.7 will work too.
+# 2. Install PDM and pre-commit
+# We use pipx here, for other options see:
+# https://pdm.fming.dev/latest/#installation
+# https://pre-commit.com/#install
+# To get pipx itself:
+# https://pypa.github.io/pipx/
+pipx install pdm pre-commit
 
 # 3. Install pydantic, dependencies, test dependencies and doc dependencies
 make install
 
-# 4. Install pre-commit hooks
-pip install pre-commit
-pre-commit install
-
-# 5. Checkout a new branch and make your changes
+# 4. Checkout a new branch and make your changes
 git checkout -b my-new-feature-branch
 # make your changes...
 
-# 6. Fix formatting and imports
+# 5. Run automated code formatting and linting
 make format
-# Pydantic uses black to enforce formatting and isort to fix imports
-# (https://github.com/ambv/black, https://github.com/timothycrosley/isort)
+# Pydantic uses black and ruff
+# (https://github.com/ambv/black, https://github.com/charliermarsh/ruff)
 
-# 7. Run tests and linting
+# 6. Run tests and linting
 make
 # there are a few sub-commands in Makefile like `test`, `testcov` and `lint`
 # which you might want to use, but generally just `make` should be all you need

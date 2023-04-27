@@ -1,9 +1,0 @@
-annotated-types
-black
-hypothesis
-# pydantic-core is required for mypy
-pydantic-core
-pyupgrade
-# pre-commit 3.0.0 dropped 3.7 support
-pre-commit>=2.21.0,<3
-ruff
