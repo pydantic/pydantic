@@ -2,6 +2,12 @@
 description: Support for iterable types.
 ---
 
+`typing.Sequence`
+: see [Typing Iterables](#typing-iterables) below for more detail on parsing and validation
+
+`typing.Iterable`
+: this is reserved for iterables that shouldn't be consumed. See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation
+
 *pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
 
 ```py

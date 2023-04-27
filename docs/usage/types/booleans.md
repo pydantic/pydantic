@@ -2,6 +2,9 @@
 description: Support for Boolean types.
 ---
 
+`bool`
+: see below for details on how bools are validated and what values are permitted
+
 !!! warning
     The logic for parsing `bool` fields has changed as of version **v1.0**.
 

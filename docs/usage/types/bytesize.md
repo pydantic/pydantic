@@ -1,4 +1,29 @@
+# Bytes and ByteSize
 
+`bytes`
+: `bytes` are accepted as-is, `bytearray` is converted using `bytes(v)`, `str` are converted using `v.encode()`,
+  and `int`, `float`, and `Decimal` are coerced using `str(v).encode()`
+
+`SecretBytes`
+: bytes where the value is kept partially secret; see [Secrets](secrets.md)
+
+`conbytes`
+: type method for constraining bytes
+
+`ByteSize`
+: converts a bytes string with units to bytes
+
+### Arguments to `conbytes`
+The following arguments are available when using the `conbytes` type function
+
+- `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_upper: bool = False`: turns all characters to uppercase
+- `to_lower: bool = False`: turns all characters to lowercase
+- `min_length: int = None`: minimum length of the byte string
+- `max_length: int = None`: maximum length of the byte string
+- `strict: bool = False`: controls type coercion
+
+## Using ByteSize
 
 You can use the `ByteSize` data type to convert byte string representation to
 raw bytes and print out human readable versions of the bytes as well.
