@@ -67,7 +67,7 @@ print(Model(deque=[1, 2, 3]).deque)
 ### Strings aren't Sequences
 
 
-Please be advised that *pydantic* doesn't treat strings, i.e. `str` and `bytes` subclasses, as iterables:
+*pydantic* doesn't treat strings, i.e. `str` and `bytes` subclasses, as iterables:
 
 ```py
 from typing import Optional, Sequence
