@@ -15,7 +15,7 @@ from typing import Any, Callable, Optional, Tuple, Type, Union, cast
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
 
 from ._internal import _repr, _utils
-from ._internal._json_schema_shared import GetJsonSchemaHandler
+from ._internal._schema_generation_shared import GetJsonSchemaHandler
 from .json_schema import JsonSchemaValue
 
 ColorTuple = Union[Tuple[int, int, int], Tuple[int, int, int, float]]

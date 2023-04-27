@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     FrozenSet,
     Generic,
@@ -28,6 +27,7 @@ from typing_extensions import Annotated, Literal
 
 from ._internal import _fields, _validators
 from ._migration import getattr_migration
+from .annotated import GetCoreSchemaHandler
 
 __all__ = [
     'Strict',
@@ -76,7 +76,7 @@ __all__ = [
 ]
 
 from ._internal._core_metadata import build_metadata_dict
-from ._internal._json_schema_shared import GetJsonSchemaHandler
+from ._internal._schema_generation_shared import GetJsonSchemaHandler
 from ._internal._utils import update_not_none
 from .json_schema import JsonSchemaValue
 
@@ -252,7 +252,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
@@ -306,9 +306,7 @@ class UuidVersion:
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             cast(core_schema.GeneralValidatorFunction, self.validate), handler(source)
         )
@@ -342,9 +340,7 @@ class PathType:
         field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         function_lookup = {
             'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
             'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
@@ -401,9 +397,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             if cls is source:
                 return core_schema.json_schema(None)
             else:
@@ -434,9 +428,7 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         validator = SecretFieldValidator(cls)
         js_modify_functions: list[Any] = []
         if issubclass(cls, SecretStr):
@@ -609,9 +601,7 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             cls.validate,
             core_schema.str_schema(
@@ -713,9 +703,7 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         # TODO better schema
         return core_schema.general_plain_validator_function(cls.validate)
 
@@ -781,7 +769,7 @@ else:
     class PastDate:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -798,7 +786,7 @@ else:
     class FutureDate:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -838,7 +826,7 @@ else:
     class AwareDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -855,7 +843,7 @@ else:
     class NaiveDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
