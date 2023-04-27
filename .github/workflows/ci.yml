@@ -272,8 +272,12 @@ jobs:
       with:
         python-version: '3.11'
 
+    - uses: pdm-project/setup-pdm@v3
+      with:
+        cache: true
+
     - name: install deps
-      run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt -r requirements/testing-mypy.txt
+      run: pdm install -G :all
 
     - name: replace pydantic-core version
       run: |
@@ -282,17 +286,14 @@ jobs:
 
     - name: install pydantic next
       working-directory: pydantic_next
-      run: pip install .
-
-    - name: install pydantic
-      run: pip install .
+      run: pdm install
 
     - name: replace imports on test
       run: find tests -type f -name '*.py' -exec sed -i -E 's/(import|from) pydantic([^_]|$)/\1 pydantic_next\2/g' {} +
 
-    - run: pip freeze
+    - run: pdm run pip freeze
 
-    - run: 'python -c "import pydantic_next.version; print(pydantic_next.version.version_info())"'
+    - run: 'pdm run python -c "import pydantic_next.version; print(pydantic_next.version.version_info())"'
 
     - name: run tests
       run: make test
