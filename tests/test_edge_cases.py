@@ -2404,7 +2404,16 @@ def test_invalid_forward_ref_model():
     can cause problems, and to demonstrate a way to work around this.
     """
     # The problem:
-    with pytest.raises(RecursionError):
+    if sys.version_info >= (3, 11):
+        error = RecursionError
+        kwargs = {}
+    else:
+        error = TypeError
+        kwargs = {
+            'match': r'Forward references must evaluate to types\.'
+            r' Got FieldInfo\(annotation=NoneType, required=False\)\.'
+        }
+    with pytest.raises(error, **kwargs):
 
         class M(BaseModel):
             model_config = {'undefined_types_warning': False}
