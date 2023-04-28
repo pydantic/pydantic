@@ -478,13 +478,14 @@ jobs:
         run: |
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-#          git config --global pull.rebase true
+
+      - run: make docs
 
       - run: mike deploy -b docs-site dev-v1 --push
 #        if: github.ref == 'refs/heads/1.10.X-fixes'
 
       - name: check version
-        if: "startsWith(github.ref, 'refs/tags/')"
+#        if: "startsWith(github.ref, 'refs/tags/')"
         id: check-version
         uses: samuelcolvin/check-python-version@v3.2
         with:
@@ -492,7 +493,7 @@ jobs:
 
       # need to remove "latest" once V2 is released!
       - run: mike deploy -b docs-site ${{ steps.check-version.outputs.VERSION_MAJOR_MINOR }} latest --update-aliases --push
-        if: "startsWith(github.ref, 'refs/tags/') && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
+#        if: "startsWith(github.ref, 'refs/tags/') && !fromJSON(steps.check-version.outputs.IS_PRERELEASE)"
 
   release:
     needs: [check]
