@@ -10,8 +10,6 @@ from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, overload
 
 from typing_extensions import Literal, dataclass_transform
 
-from pydantic._internal import _typing_extra
-
 from ._internal import _config, _decorators
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._internal._dataclasses import is_builtin_dataclass
@@ -196,10 +194,11 @@ def dataclass(
         )
 
         cls.__pydantic_decorators__ = decorators  # type: ignore
-        _pydantic_dataclasses.set_dataclass_fields(cls)
-        types_namespace = _typing_extra.get_cls_types_namespace(original_cls)
-        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper, types_namespace=types_namespace)
         cls.__doc__ = original_doc
+        cls.__module__ = original_cls.__module__
+        cls.__qualname__ = original_cls.__qualname__
+        _pydantic_dataclasses.set_dataclass_fields(cls)
+        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper)
         return cls
 
     if _cls is None:
