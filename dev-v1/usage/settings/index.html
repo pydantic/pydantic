@@ -923,6 +923,141 @@ will still be used if the matching environment variable is not set.)</p>
 <li>Manually override specific settings in the initialiser where desired (e.g. in unit tests)</li>
 </ul>
 <p>For example:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Set</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PyObject</span><span class="p">,</span>
+    <span class="n">RedisDsn</span><span class="p">,</span>
+    <span class="n">PostgresDsn</span><span class="p">,</span>
+    <span class="n">AmqpDsn</span><span class="p">,</span>
+    <span class="n">Field</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+    <span class="n">apple</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">auth_key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="s1">&#39;my_api_key&#39;</span><span class="p">)</span>
+
+    <span class="n">redis_dsn</span><span class="p">:</span> <span class="n">RedisDsn</span> <span class="o">=</span> <span class="s1">&#39;redis://user:pass@localhost:6379/1&#39;</span>
+    <span class="n">pg_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span> <span class="o">=</span> <span class="s1">&#39;postgres://user:pass@localhost:5432/foobar&#39;</span>
+    <span class="n">amqp_dsn</span><span class="p">:</span> <span class="n">AmqpDsn</span> <span class="o">=</span> <span class="s1">&#39;amqp://user:pass@localhost:5672/&#39;</span>
+
+    <span class="n">special_function</span><span class="p">:</span> <span class="n">PyObject</span> <span class="o">=</span> <span class="s1">&#39;math.cos&#39;</span>
+
+    <span class="c1"># to override domains:</span>
+    <span class="c1"># export my_prefix_domains=&#39;[&quot;foo.com&quot;, &quot;bar.com&quot;]&#39;</span>
+    <span class="n">domains</span><span class="p">:</span> <span class="n">Set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="c1"># to override more_settings:</span>
+    <span class="c1"># export my_prefix_more_settings=&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;apple&quot;: 1}&#39;</span>
+    <span class="n">more_settings</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">env_prefix</span> <span class="o">=</span> <span class="s1">&#39;my_prefix_&#39;</span>  <span class="c1"># defaults to no prefix, i.e. &quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;auth_key&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="s1">&#39;my_auth_key&#39;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;redis_dsn&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;service_redis_dsn&#39;</span><span class="p">,</span> <span class="s1">&#39;redis_url&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;auth_key&#39;: &#39;xxx&#39;,</span>
+<span class="sd">    &#39;api_key&#39;: &#39;xxx&#39;,</span>
+<span class="sd">    &#39;redis_dsn&#39;: RedisDsn(&#39;redis://user:pass@localhost:6379/1&#39;, ),</span>
+<span class="sd">    &#39;pg_dsn&#39;: PostgresDsn(&#39;postgres://user:pass@localhost:5432/foobar&#39;, ),</span>
+<span class="sd">    &#39;amqp_dsn&#39;: AmqpDsn(&#39;amqp://user:pass@localhost:5672/&#39;, scheme=&#39;amqp&#39;,</span>
+<span class="sd">user=&#39;user&#39;, password=&#39;pass&#39;, host=&#39;localhost&#39;, host_type=&#39;int_domain&#39;,</span>
+<span class="sd">port=&#39;5672&#39;, path=&#39;/&#39;),</span>
+<span class="sd">    &#39;special_function&#39;: &lt;built-in function cos&gt;,</span>
+<span class="sd">    &#39;domains&#39;: set(),</span>
+<span class="sd">    &#39;more_settings&#39;: {&#39;foo&#39;: &#39;bar&#39;, &#39;apple&#39;: 1},</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">PyObject</span><span class="p">,</span>
+    <span class="n">RedisDsn</span><span class="p">,</span>
+    <span class="n">PostgresDsn</span><span class="p">,</span>
+    <span class="n">AmqpDsn</span><span class="p">,</span>
+    <span class="n">Field</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+    <span class="n">apple</span> <span class="o">=</span> <span class="mi">1</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">auth_key</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">api_key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">env</span><span class="o">=</span><span class="s1">&#39;my_api_key&#39;</span><span class="p">)</span>
+
+    <span class="n">redis_dsn</span><span class="p">:</span> <span class="n">RedisDsn</span> <span class="o">=</span> <span class="s1">&#39;redis://user:pass@localhost:6379/1&#39;</span>
+    <span class="n">pg_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span> <span class="o">=</span> <span class="s1">&#39;postgres://user:pass@localhost:5432/foobar&#39;</span>
+    <span class="n">amqp_dsn</span><span class="p">:</span> <span class="n">AmqpDsn</span> <span class="o">=</span> <span class="s1">&#39;amqp://user:pass@localhost:5672/&#39;</span>
+
+    <span class="n">special_function</span><span class="p">:</span> <span class="n">PyObject</span> <span class="o">=</span> <span class="s1">&#39;math.cos&#39;</span>
+
+    <span class="c1"># to override domains:</span>
+    <span class="c1"># export my_prefix_domains=&#39;[&quot;foo.com&quot;, &quot;bar.com&quot;]&#39;</span>
+    <span class="n">domains</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+
+    <span class="c1"># to override more_settings:</span>
+    <span class="c1"># export my_prefix_more_settings=&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;apple&quot;: 1}&#39;</span>
+    <span class="n">more_settings</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">env_prefix</span> <span class="o">=</span> <span class="s1">&#39;my_prefix_&#39;</span>  <span class="c1"># defaults to no prefix, i.e. &quot;&quot;</span>
+        <span class="n">fields</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;auth_key&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="s1">&#39;my_auth_key&#39;</span><span class="p">,</span>
+            <span class="p">},</span>
+            <span class="s1">&#39;redis_dsn&#39;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">&#39;env&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;service_redis_dsn&#39;</span><span class="p">,</span> <span class="s1">&#39;redis_url&#39;</span><span class="p">]</span>
+            <span class="p">}</span>
+        <span class="p">}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;auth_key&#39;: &#39;xxx&#39;,</span>
+<span class="sd">    &#39;api_key&#39;: &#39;xxx&#39;,</span>
+<span class="sd">    &#39;redis_dsn&#39;: RedisDsn(&#39;redis://user:pass@localhost:6379/1&#39;, ),</span>
+<span class="sd">    &#39;pg_dsn&#39;: PostgresDsn(&#39;postgres://user:pass@localhost:5432/foobar&#39;, ),</span>
+<span class="sd">    &#39;amqp_dsn&#39;: AmqpDsn(&#39;amqp://user:pass@localhost:5672/&#39;, scheme=&#39;amqp&#39;,</span>
+<span class="sd">user=&#39;user&#39;, password=&#39;pass&#39;, host=&#39;localhost&#39;, host_type=&#39;int_domain&#39;,</span>
+<span class="sd">port=&#39;5672&#39;, path=&#39;/&#39;),</span>
+<span class="sd">    &#39;special_function&#39;: &lt;built-in function cos&gt;,</span>
+<span class="sd">    &#39;domains&#39;: set(),</span>
+<span class="sd">    &#39;more_settings&#39;: {&#39;foo&#39;: &#39;bar&#39;, &#39;apple&#39;: 1},</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><em>(This script is complete, it should run "as is")</em></p>
 <h2 id="environment-variable-names">Environment variable names<a class="headerlink" href="#environment-variable-names" title="Permanent link">&para;</a></h2>
 <p>The following rules are used to determine which environment variable(s) are read for a given field:</p>
 <ul>
@@ -960,6 +1095,22 @@ without a custom env var name. If you really mean to use aliases, either ignore 
 suppress it.</p>
 </div>
 <p>Case-sensitivity can be turned on through the <code>Config</code>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:1"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">redis_host</span> <span class="o">=</span> <span class="s1">&#39;localhost&#39;</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">case_sensitive</span> <span class="o">=</span> <span class="kc">True</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><em>(This script is complete, it should run "as is")</em></p>
 <p>When <code>case_sensitive</code> is <code>True</code>, the environment variable names must match field names (optionally with a prefix),
 so in this example
 <code>redis_host</code> could only be modified via <code>export redis_host</code>. If you want to name environment variables
@@ -993,6 +1144,48 @@ If you have multiple variables with the same structure they will be merged.</p>
 <span class="nb">export</span><span class="w"> </span><span class="nv">SUB_MODEL__DEEP__V4</span><span class="o">=</span>v4
 </code></pre></div></p>
 <p>You could load a settings module thus:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:1"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">DeepSubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">v4</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">SubModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">v1</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">v2</span><span class="p">:</span> <span class="nb">bytes</span>
+    <span class="n">v3</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">deep</span><span class="p">:</span> <span class="n">DeepSubModel</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">v0</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">sub_model</span><span class="p">:</span> <span class="n">SubModel</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">env_nested_delimiter</span> <span class="o">=</span> <span class="s1">&#39;__&#39;</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;v0&#39;: &#39;0&#39;,</span>
+<span class="sd">    &#39;sub_model&#39;: {</span>
+<span class="sd">        &#39;v1&#39;: &#39;json-1&#39;,</span>
+<span class="sd">        &#39;v2&#39;: b&#39;nested-2&#39;,</span>
+<span class="sd">        &#39;v3&#39;: 3,</span>
+<span class="sd">        &#39;deep&#39;: {&#39;v4&#39;: &#39;v4&#39;},</span>
+<span class="sd">    },</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><em>(This script is complete, it should run "as is")</em></p>
 <p><code>env_nested_delimiter</code> can be configured via the <code>Config</code> class as shown above, or via the
 <code>_env_nested_delimiter</code> keyword argument on instantiation.</p>
 <p>JSON is only parsed in top-level fields, if you need to parse JSON in sub-models, you will need to implement
@@ -1001,6 +1194,57 @@ validators on those models.</p>
 (e.g. in the example above, <code>SUB_MODEL__V2</code> trumps <code>SUB_MODEL</code>).</p>
 <p>You may also populate a complex type by providing your own parsing function to
 the <code>parse_env_var</code> classmethod in the Config object.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">numbers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">parse_env_var</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">raw_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s1">&#39;numbers&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">raw_val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">json_loads</span><span class="p">(</span><span class="n">raw_val</span><span class="p">)</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;numbers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1,2,3&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;numbers&#39;: [1, 2, 3]}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">numbers</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">parse_env_var</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">raw_val</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s1">&#39;numbers&#39;</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">raw_val</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
+            <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">json_loads</span><span class="p">(</span><span class="n">raw_val</span><span class="p">)</span>
+
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;numbers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;1,2,3&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">dict</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;numbers&#39;: [1, 2, 3]}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><em>(This script is complete, it should run "as is")</em></p>
 <h2 id="dotenv-env-support">Dotenv (.env) support<a class="headerlink" href="#dotenv-env-support" title="Permanent link">&para;</a></h2>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -1127,12 +1371,214 @@ callables are called to build the inputs to the fields of the settings class.</p
 <p>Each callable should take an instance of the settings class as its sole argument and return a <code>dict</code>.</p>
 <h3 id="changing-priority">Changing Priority<a class="headerlink" href="#changing-priority" title="Permanent link">&para;</a></h3>
 <p>The order of the returned callables decides the priority of inputs; first item is the highest priority.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PostgresDsn</span>
+<span class="kn">from</span> <span class="nn">pydantic.env_settings</span> <span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">database_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">init_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SettingsSourceCallable</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">env_settings</span><span class="p">,</span> <span class="n">init_settings</span><span class="p">,</span> <span class="n">file_secret_settings</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">database_dsn</span><span class="o">=</span><span class="s1">&#39;postgres://postgres@localhost:5432/kwargs_db&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; database_dsn=PostgresDsn(&#39;postgres://postgres@localhost:5432/env_db&#39;, )</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PostgresDsn</span>
+<span class="kn">from</span> <span class="nn">pydantic.env_settings</span> <span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">database_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">init_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">SettingsSourceCallable</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="n">env_settings</span><span class="p">,</span> <span class="n">init_settings</span><span class="p">,</span> <span class="n">file_secret_settings</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">database_dsn</span><span class="o">=</span><span class="s1">&#39;postgres://postgres@localhost:5432/kwargs_db&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; database_dsn=PostgresDsn(&#39;postgres://postgres@localhost:5432/env_db&#39;, )</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><em>(This script is complete, it should run "as is")</em></p>
 <p>By flipping <code>env_settings</code> and <code>init_settings</code>, environment variables now have precedence over <code>__init__</code> kwargs.</p>
 <h3 id="adding-sources">Adding sources<a class="headerlink" href="#adding-sources" title="Permanent link">&para;</a></h3>
 <p>As explained earlier, <em>pydantic</em> ships with multiples built-in settings sources. However, you may occasionally
 need to add your own custom sources, <code>customise_sources</code> makes this very easy:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">def</span> <span class="nf">json_config_settings_source</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">BaseSettings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A simple settings source that loads variables from a JSON file</span>
+<span class="sd">    at the project&#39;s root.</span>
+
+<span class="sd">    Here we happen to choose to use the `env_file_encoding` from Config</span>
+<span class="sd">    when reading `config.json`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">encoding</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">__config__</span><span class="o">.</span><span class="n">env_file_encoding</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;config.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">foobar</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">env_file_encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">init_settings</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">init_settings</span><span class="p">,</span>
+                <span class="n">json_config_settings_source</span><span class="p">,</span>
+                <span class="n">env_settings</span><span class="p">,</span>
+                <span class="n">file_secret_settings</span><span class="p">,</span>
+            <span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">())</span>
+<span class="c1">#&gt; foobar=&#39;spam&#39;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
+
+<span class="k">def</span> <span class="nf">json_config_settings_source</span><span class="p">(</span><span class="n">settings</span><span class="p">:</span> <span class="n">BaseSettings</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A simple settings source that loads variables from a JSON file</span>
+<span class="sd">    at the project&#39;s root.</span>
+
+<span class="sd">    Here we happen to choose to use the `env_file_encoding` from Config</span>
+<span class="sd">    when reading `config.json`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">encoding</span> <span class="o">=</span> <span class="n">settings</span><span class="o">.</span><span class="n">__config__</span><span class="o">.</span><span class="n">env_file_encoding</span>
+    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;config.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="p">))</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">foobar</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="n">env_file_encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span>
+
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">init_settings</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">,</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">init_settings</span><span class="p">,</span>
+                <span class="n">json_config_settings_source</span><span class="p">,</span>
+                <span class="n">env_settings</span><span class="p">,</span>
+                <span class="n">file_secret_settings</span><span class="p">,</span>
+            <span class="p">)</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">())</span>
+<span class="c1">#&gt; foobar=&#39;spam&#39;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><em>(This script is complete, it should run "as is")</em></p>
 <h3 id="removing-sources">Removing sources<a class="headerlink" href="#removing-sources" title="Permanent link">&para;</a></h3>
 <p>You might also want to disable a source:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span> <span class="nn">pydantic.env_settings</span> <span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">my_api_key</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">init_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">SettingsSourceCallable</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+            <span class="c1"># here we choose to ignore arguments from init_settings</span>
+            <span class="k">return</span> <span class="n">env_settings</span><span class="p">,</span> <span class="n">file_secret_settings</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">my_api_key</span><span class="o">=</span><span class="s1">&#39;this is ignored&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; my_api_key=&#39;xxx&#39;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<span class="kn">from</span> <span class="nn">pydantic.env_settings</span> <span class="kn">import</span> <span class="n">SettingsSourceCallable</span>
+
+
+<span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
+    <span class="n">my_api_key</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">customise_sources</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span>
+            <span class="n">init_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+            <span class="n">env_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+            <span class="n">file_secret_settings</span><span class="p">:</span> <span class="n">SettingsSourceCallable</span><span class="p">,</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">SettingsSourceCallable</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
+            <span class="c1"># here we choose to ignore arguments from init_settings</span>
+            <span class="k">return</span> <span class="n">env_settings</span><span class="p">,</span> <span class="n">file_secret_settings</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">my_api_key</span><span class="o">=</span><span class="s1">&#39;this is ignored&#39;</span><span class="p">))</span>
+<span class="c1">#&gt; my_api_key=&#39;xxx&#39;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p><em>(This script requires <code>MY_API_KEY</code> env variable to be set, e.g. <code>export MY_API_KEY=xxx</code>)</em></p>
 
 
 
