@@ -20,15 +20,15 @@ print(user)
 ```
 
 !!! note
-    Keep in mind that `pydantic.dataclasses.dataclass` is a drop-in replacement for `dataclasses.dataclass`
-    with validation, **not** a replacement for `pydantic.BaseModel` (with a small difference in how [initialization hooks](#initialize-hooks) work). There are cases where subclassing
-    `pydantic.BaseModel` is the better choice.
+    Keep in mind that `pydantic.dataclasses.dataclass` is **not** a replacement for `pydantic.BaseModel` (with a small
+    difference in how [initialization hooks](#initialize-hooks) work). `pydantic.dataclasses.dataclass` provides a
+    similar functionality to `dataclasses.dataclass` with the addition of Pydantic validation. There are cases where
+    subclassing `pydantic.BaseModel` is the better choice.
 
     For more information and discussion see
     [pydantic/pydantic#710](https://github.com/pydantic/pydantic/issues/710).
 
-You can use all the standard _pydantic_ field types, and the resulting dataclass will be identical to the one
-created by the standard library `dataclass` decorator.
+You can use all the standard _pydantic_ field types. Note, however, that arguments passed to constructor will be copied in order to perform validation and, where necessary coercion.
 
 The underlying model and its schema can be accessed through `__pydantic_model__`.
 Also, fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
@@ -344,7 +344,7 @@ Note that the `dataclasses.dataclass` from Python stdlib implements only the `__
 
 When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.dataclass`, it is recommended to move the code executed in the `__post_init__` method to the `__post_init_post_parse__` method, and only leave behind part of code which needs to be executed before validation.
 
-## JSON Dumping
+## JSON dumping
 
 _Pydantic_ dataclasses do not feature a `.json()` function. To dump them as JSON, you will need to make use of the `pydantic_encoder` as follows:
 
@@ -376,4 +376,35 @@ print(pydantic_core.to_json(user, indent=4).decode())
     ]
 }
 """
+```
+## Attribute copies
+
+As described earlier, when constructing classes with data attributes, Pydantic copies the the attribute in order to efficiently iterate over its elements for validation.
+
+In this example, note that the ID of the list changes after the class is constructed because it has been copied for validation.
+
+```py
+from typing import List
+
+from pydantic import BaseModel
+
+
+class C1:
+    arr = []
+
+    def __init__(self, in_arr):
+        self.arr = in_arr
+
+
+class C2(BaseModel):
+    arr: List[int]
+
+
+arr_orig = [1, 9, 10, 3]
+
+
+c1 = C1(arr_orig)
+c2 = C2(arr=arr_orig)
+print('id(c1.arr) == id(c2.arr)  ', id(c1.arr) == id(c2.arr))
+#> id(c1.arr) == id(c2.arr)   False
 ```
