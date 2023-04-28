@@ -208,4 +208,3 @@ def dataclass(
 
 
 __getattr__ = getattr_migration(__name__)
-__getattr__ = getattr_migration(__name__)
