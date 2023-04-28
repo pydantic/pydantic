@@ -486,8 +486,13 @@ class GenerateSchema:
 
             return ordered_dict_schema(self, obj)
         elif issubclass(origin, typing.Sequence):
-            # Because typing.Sequence does not have a specified `__init__` signature, we don't validate into subclasses
-            return self._sequence_schema(obj)
+            if origin in {typing.Sequence, collections.abc.Sequence}:
+                return self._sequence_schema(obj)
+            # TODO: similarly handle other generic subclasses (like Iterable, etc.) where there's no standard __init__
+            raise PydanticSchemaGenerationError(
+                'Unable to generate pydantic-core schema for custom subclasses of Sequence.'
+                ' Please define `__get_pydantic_core_schema__`. TODO: Add docs link.'
+            )
         elif issubclass(origin, typing.MutableSet):
             raise PydanticSchemaGenerationError('Unable to generate pydantic-core schema MutableSet TODO.')
         elif issubclass(origin, (typing.Iterable, collections.abc.Iterable)):

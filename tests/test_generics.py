@@ -38,6 +38,7 @@ from pydantic import (
     Field,
     Json,
     PositiveInt,
+    PydanticSchemaGenerationError,
     PydanticUserError,
     ValidationError,
     ValidationInfo,
@@ -1130,9 +1131,6 @@ def test_replace_types_with_user_defined_generic_type_field():
     class CustomOrderedDict(OrderedDict[KT, VT]):
         pass
 
-    class CustomSequence(Sequence[T]):
-        pass
-
     class CustomSet(Set[T]):
         pass
 
@@ -1149,7 +1147,6 @@ def test_replace_types_with_user_defined_generic_type_field():
         list_field: CustomList[T]
         mapping_field: CustomMapping[KT, VT]
         ordered_dict_field: CustomOrderedDict[KT, VT]
-        sequence_field: CustomSequence[T]
         set_field: CustomSet[T]
         tuple_field: CustomTuple[T]
 
@@ -1167,7 +1164,6 @@ def test_replace_types_with_user_defined_generic_type_field():
         list_field=[True, False],
         mapping_field={'a': 2},
         ordered_dict_field=OrderedDict([('a', 1)]),
-        sequence_field=[True, False],
         set_field={True, False},
         tuple_field=(True,),
     )
@@ -1183,7 +1179,6 @@ def test_replace_types_with_user_defined_generic_type_field():
     assert type(m.list_field) is CustomList
     assert type(m.mapping_field) is dict
     assert type(m.ordered_dict_field) is OrderedDict.__origin__
-    assert type(m.sequence_field) is list
     assert type(m.set_field) is CustomSet
     assert type(m.tuple_field) is tuple
 
@@ -1200,10 +1195,27 @@ def test_replace_types_with_user_defined_generic_type_field():
         'list_field': [True, False],
         'mapping_field': {'a': 2},
         'ordered_dict_field': {'a': 1},
-        'sequence_field': [True, False],
         'set_field': {False, True},
         'tuple_field': (True,),
     }
+
+
+def test_custom_sequence_behavior():
+    T = TypeVar('T')
+
+    class CustomSequence(Sequence[T]):
+        pass
+
+    with pytest.raises(
+        PydanticSchemaGenerationError,
+        match=(
+            'Unable to generate pydantic-core schema for custom subclasses of Sequence.'
+            ' Please define `__get_pydantic_core_schema__`.'
+        ),
+    ):
+
+        class Model(BaseModel, Generic[T]):
+            x: CustomSequence[T]
 
 
 def test_replace_types_identity_on_unchanged():
