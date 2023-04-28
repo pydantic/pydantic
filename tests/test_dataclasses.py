@@ -1825,3 +1825,31 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
         with pytest.raises(ValidationError) as exc_info:
             validator.validate_python({'x': input_value})
         assert exc_info.value.errors() == output_value
+
+
+def test_recursive_dataclasses_gh_4509(create_module):
+    @create_module
+    def module():
+        import dataclasses
+
+        import pydantic
+
+        @dataclasses.dataclass
+        class Recipe:
+            author: 'Cook'
+
+        @dataclasses.dataclass
+        class Cook:
+            recipes: list[Recipe]
+
+        @pydantic.dataclasses.dataclass
+        class Foo(Cook):
+            pass
+
+    gordon = module.Cook([])
+
+    burger = module.Recipe(author=gordon)
+
+    me = module.Foo([burger])
+
+    assert me.recipes == [burger]
