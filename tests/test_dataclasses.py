@@ -1835,8 +1835,6 @@ def test_pydantic_dataclass_preserves_metadata(dataclass_decorator: Callable[[An
     class FooStd:
         """Docstring"""
 
-        pass
-
     FooPydantic = pydantic.dataclasses.dataclass(FooStd)
 
     assert FooPydantic.__module__ == FooStd.__module__
