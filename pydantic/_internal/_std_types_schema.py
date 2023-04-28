@@ -24,7 +24,7 @@ from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _serializers, _validators
 from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
-from ._json_schema_shared import GetJsonSchemaHandler
+from ._schema_generation_shared import GetJsonSchemaHandler
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema

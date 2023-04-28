@@ -58,8 +58,10 @@ from ._fields import (
 )
 from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, recursively_defined_type_refs, replace_types
-from ._json_schema_shared import (
+from ._schema_generation_shared import (
+    CallbackGetCoreSchemaHandler,
     CoreSchemaOrField,
+    GetCoreSchemaHandler,
     GetJsonSchemaFunction,
     GetJsonSchemaHandler,
     JsonSchemaValue,
@@ -84,7 +86,7 @@ AnyFieldDecorator = Union[
     Decorator[FieldSerializerDecoratorInfo],
 ]
 
-ModifyCoreSchemaWrapHandler = Callable[[Any], core_schema.CoreSchema]
+ModifyCoreSchemaWrapHandler = GetCoreSchemaHandler
 GetCoreSchemaFunction = Callable[[Any, ModifyCoreSchemaWrapHandler], core_schema.CoreSchema]
 
 
@@ -557,7 +559,9 @@ class GenerateSchema:
                 schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator, self.definitions)
             return schema
 
-        schema = apply_annotations(generate_schema, field_info.metadata, self.definitions)(field_info.annotation)
+        schema = apply_annotations(
+            CallbackGetCoreSchemaHandler(generate_schema), field_info.metadata, self.definitions
+        )(field_info.annotation)
 
         # TODO: remove this V1 compatibility shim once it's deprecated
         # push down any `each_item=True` validators
@@ -632,7 +636,9 @@ class GenerateSchema:
         Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
         """
         first_arg, *other_args = get_args(annotated_type)
-        return apply_annotations(self.generate_schema, other_args, self.definitions)(first_arg)
+        return apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), other_args, self.definitions)(
+            first_arg
+        )
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -739,7 +745,9 @@ class GenerateSchema:
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-        schema = apply_annotations(self.generate_schema, field.metadata, self.definitions)(annotation)
+        schema = apply_annotations(
+            CallbackGetCoreSchemaHandler(self.generate_schema), field.metadata, self.definitions
+        )(annotation)
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -1244,10 +1252,10 @@ def apply_model_validators(
 
 
 def apply_annotations(
-    get_inner_schema: ModifyCoreSchemaWrapHandler,
+    get_inner_schema: GetCoreSchemaHandler,
     annotations: typing.Iterable[Any],
     definitions: dict[str, core_schema.CoreSchema],
-) -> ModifyCoreSchemaWrapHandler:
+) -> GetCoreSchemaHandler:
     """
     Apply arguments from `Annotated` or from `FieldInfo` to a schema.
     """
@@ -1260,13 +1268,13 @@ def apply_annotations(
 
 
 def get_wrapped_inner_schema(
-    get_inner_schema: ModifyCoreSchemaWrapHandler, annotation: Any, definitions: dict[str, core_schema.CoreSchema]
-) -> Callable[[Any], core_schema.CoreSchema]:
+    get_inner_schema: GetCoreSchemaHandler, annotation: Any, definitions: dict[str, core_schema.CoreSchema]
+) -> CallbackGetCoreSchemaHandler:
     metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
         lambda source, handler: handler(source)
     )
 
-    def _new_inner_schema_handler(source: Any) -> core_schema.CoreSchema:
+    def new_handler(source: Any) -> core_schema.CoreSchema:
         schema = metadata_get_schema(source, get_inner_schema)
         schema = apply_single_annotation(schema, annotation, definitions)
 
@@ -1277,7 +1285,7 @@ def get_wrapped_inner_schema(
             metadata['pydantic_js_functions'].append(metadata_js_function)
         return schema
 
-    return _new_inner_schema_handler
+    return CallbackGetCoreSchemaHandler(new_handler)
 
 
 def apply_single_annotation(

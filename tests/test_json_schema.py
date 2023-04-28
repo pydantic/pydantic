@@ -40,6 +40,7 @@ from pydantic import (
 )
 from pydantic._internal._core_metadata import build_metadata_dict
 from pydantic.analyzed_type import AnalyzedType
+from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -2430,7 +2431,7 @@ def test_advanced_generic_schema():  # noqa: C901
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema], **_kwargs: Any
+            cls, source: Any, handler: GetCoreSchemaHandler, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
                 # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
