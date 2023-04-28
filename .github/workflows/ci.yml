@@ -459,6 +459,10 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+        with:
+          ref: docs-site
+
+      - uses: actions/checkout@v3
 
       - name: set up python
         uses: actions/setup-python@v4
@@ -473,7 +477,7 @@ jobs:
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
           git config --global pull.rebase true
-          git pull fetch docs-site
+#          git pull fetch docs-site
 
       - run: pdm run mike deploy -b docs-site dev-v1 --push
 #        if: github.ref == 'refs/heads/1.10.X-fixes'
