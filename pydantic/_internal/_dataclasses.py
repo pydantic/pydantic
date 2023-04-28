@@ -76,7 +76,7 @@ def complete_dataclass(
     if get_core_schema:
         schema = get_core_schema(cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False))
     else:
-        schema = gen_schema.generate_schema(cls, False)
+        schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
 
     core_config = config_wrapper.core_config(cls)
 
