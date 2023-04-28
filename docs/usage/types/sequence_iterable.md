@@ -67,7 +67,7 @@ print(Model(deque=[1, 2, 3]).deque)
 ### Strings aren't Sequences
 
 
-*pydantic* doesn't treat strings, i.e. `str` and `bytes` subclasses, as iterables:
+*pydantic* doesn't treat strings, i.e. `str` and `bytes` subclasses, as sequences:
 
 ```py
 from typing import Optional, Sequence
@@ -97,7 +97,7 @@ except ValidationError as e:
     """
     1 validation error for Model
     sequence_of_strs
-      `str` instances are not allowed as a Sequence value [type=sequence_str_str_type, input_value='abc', input_type=str]
+      'str' instances are not allowed as a Sequence value [type=sequence_str_str_type, input_value='abc', input_type=str]
     """
 try:
     Model(sequence_of_bytes=b'abc')
@@ -106,7 +106,7 @@ except ValidationError as e:
     """
     1 validation error for Model
     sequence_of_bytes
-      `bytes` instances are not allowed as a Sequence value [type=sequence_str_str_type, input_value=b'abc', input_type=bytes]
+      'bytes' instances are not allowed as a Sequence value [type=sequence_str_str_type, input_value=b'abc', input_type=bytes]
     """
 ```
 
