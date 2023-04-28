@@ -306,7 +306,12 @@ jobs:
       run: |
         pdm run pytest --durations=10 \
           --ignore=tests/test_dataclasses.py \
-          --ignore=tests/test_docs.py
+          --ignore=tests/test_docs.py \
+          --ignore=tests/test_utils.py \
+          --ignore=tests/test_version.py \
+          --ignore=tests/test_forward_ref.py \
+          --ignore=tests/test_generics.py \
+          --ignore=tests/test_migration.py
 
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection

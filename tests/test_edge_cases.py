@@ -1713,9 +1713,7 @@ def test_exclude_none_with_extra():
 
 
 def test_str_method_inheritance():
-    import pydantic
-
-    class Foo(pydantic.BaseModel):
+    class Foo(BaseModel):
         x: int = 3
         y: int = 4
 
@@ -1730,9 +1728,7 @@ def test_str_method_inheritance():
 
 
 def test_repr_method_inheritance():
-    import pydantic
-
-    class Foo(pydantic.BaseModel):
+    class Foo(BaseModel):
         x: int = 3
         y: int = 4
 
