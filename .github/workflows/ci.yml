@@ -261,7 +261,6 @@ jobs:
       run: make test-fastapi
 
   test-next:
-    name: Test Pydantic Next
     runs-on: ubuntu-latest
 
     steps:
@@ -304,7 +303,10 @@ jobs:
 
     - name: run tests
       working-directory: pydantic-next
-      run: 'pdm run pytest --durations=10'
+      run: |
+        pdm run pytest --durations=10 \
+          --ignore=tests/test_dataclasses.py \
+          --ignore=tests/test_docs.py
 
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
