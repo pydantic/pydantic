@@ -78,6 +78,7 @@ docs = [
     "mkdocstrings-python",
     "tomli",
     "pyupgrade",
+    "mike @ git+https://github.com/jimporter/mike.git",
 ]
 linting = [
     "black",
