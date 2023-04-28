@@ -704,7 +704,7 @@ class IPvAnyNetwork(_BaseNetwork):  # type: ignore
 pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')
 
 
-def validate_email(value: str) -> Tuple[str, str]:
+def validate_email(value: Union[str]) -> Tuple[str, str]:
     """
     Email address validation using https://pypi.org/project/email-validator/
     Notes:
@@ -727,4 +727,4 @@ def validate_email(value: str) -> Tuple[str, str]:
     email = parts.normalized
     assert email is not None
     name = name or parts.local_part
-    return str(name), str(email)
+    return name, email
