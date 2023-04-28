@@ -458,11 +458,13 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v3
+      - name: checkout docs-site
+        uses: actions/checkout@v3
         with:
           ref: docs-site
 
-      - uses: actions/checkout@v3
+      - name: checkout current branch
+        uses: actions/checkout@v3
 
       - name: set up python
         uses: actions/setup-python@v4
@@ -476,10 +478,9 @@ jobs:
         run: |
           git config --global user.name "${{ github.actor }}"
           git config --global user.email "${{ github.actor }}@users.noreply.github.com"
-          git config --global pull.rebase true
-#          git pull fetch docs-site
+#          git config --global pull.rebase true
 
-      - run: pdm run mike deploy -b docs-site dev-v1 --push
+      - run: mike deploy -b docs-site dev-v1 --push
 #        if: github.ref == 'refs/heads/1.10.X-fixes'
 
       - name: check version
