@@ -133,7 +133,7 @@ setup(
         'typing-extensions>=4.2.0'
     ],
     extras_require={
-        'email': ['email-validator>=1.0.3'],
+        'email': ['email-validator>=2.0.0.post2'],
         'dotenv': ['python-dotenv>=0.10.4'],
     },
     ext_modules=ext_modules,
