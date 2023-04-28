@@ -12,3 +12,5 @@ pyupgrade==2.37.3
 sqlalchemy
 orjson
 ujson
+# waiting for https://github.com/jimporter/mike/issues/154
+git+https://github.com/jimporter/mike.git
