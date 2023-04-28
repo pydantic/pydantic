@@ -595,7 +595,7 @@ class EmailStr(str):
 
     @classmethod
     def validate(cls, value: Union[str]) -> str:
-        return validate_email(value)[1]
+        return EmailStr(validate_email(value)[1])
 
 
 class NameEmail(Representation):
