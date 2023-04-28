@@ -727,4 +727,4 @@ def validate_email(value: str) -> Tuple[str, str]:
     email = parts.normalized
     assert email is not None
     name = name or parts.local_part
-    return name, email
+    return str(name), str(email)
