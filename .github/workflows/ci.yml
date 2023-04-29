@@ -453,8 +453,8 @@ jobs:
          python -m zipfile --list `ls dist/*cp310-manylinux*x86_64.whl | head -n 1`
 
   publish_docs:
-#    needs: [check]
-#    if: "success() && (github.ref == 'refs/heads/1.10.X-fixes' || startsWith(github.ref, 'refs/tags/'))"
+    needs: [check]
+    if: "success() && (github.ref == 'refs/heads/1.10.X-fixes' || startsWith(github.ref, 'refs/tags/'))"
     runs-on: ubuntu-latest
 
     steps:
@@ -482,10 +482,7 @@ jobs:
       - run: make docs
 
       - run: mike deploy -b docs-site dev-v1 --push
-#        if: github.ref == 'refs/heads/1.10.X-fixes'
-
-      # temporary!
-      - run: mike deploy -b docs-site 1.10 latest --update-aliases --push
+        if: github.ref == 'refs/heads/1.10.X-fixes'
 
       - name: check version
         if: "startsWith(github.ref, 'refs/tags/')"
