@@ -10,6 +10,8 @@ python3 -V
 
 python3 -m pip install pdm
 
+export PATH=/opt/buildhome/.local/bin:$PATH
+
 pdm install -G docs
 
 pdm run python -c 'import docs.plugins.main'

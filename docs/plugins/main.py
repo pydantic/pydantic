@@ -1,3 +1,5 @@
+from __future__ import annotations as _annotations
+
 import json
 import logging
 import os
