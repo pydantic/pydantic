@@ -2050,12 +2050,39 @@ In Pydantic V2 this is <em>a lot</em> easier: the <code>AnalyzedType</code> clas
 <h3 id="required-optional-and-nullable-fields">Required, Optional, and Nullable fields<a class="headerlink" href="#required-optional-and-nullable-fields" title="Permanent link">&para;</a></h3>
 <p>Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2 these concepts are more clearly defined.</p>
 <p>Pydantic V2 will move to match <code>dataclasses</code>, thus you may explicitly specify a field as <code>required</code> or <code>optional</code> and whether the field accepts <code>None</code> or not.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">f1</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># required, cannot be None</span>
+    <span class="n">f2</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>  <span class="c1"># required, can be None - same as Union[str, None] / str | None</span>
+    <span class="n">f3</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># not required, can be None</span>
+    <span class="n">f4</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Foobar&#39;</span>  <span class="c1"># not required, but cannot be None</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Foo</span><span class="p">(</span><span class="n">f1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f4</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Foo</span>
+<span class="sd">    f1</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">f1</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># required, cannot be None</span>
-    <span class="n">f2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># required, can be None - same as Optional[str] / Union[str, None]</span>
+    <span class="n">f2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># required, can be None - same as Union[str, None] / str | None</span>
     <span class="n">f3</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># not required, can be None</span>
     <span class="n">f4</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Foobar&#39;</span>  <span class="c1"># not required, but cannot be None</span>
 
@@ -2070,6 +2097,9 @@ In Pydantic V2 this is <em>a lot</em> easier: the <code>AnalyzedType</code> clas
 <span class="sd">      Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="other-changes">Other changes<a class="headerlink" href="#other-changes" title="Permanent link">&para;</a></h2>
 <ul>
 <li><code>GetterDict</code> has been removed, as it was just an implementation detail for <code>orm_mode</code>, which has been removed.</li>
