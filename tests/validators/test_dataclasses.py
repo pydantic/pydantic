@@ -1,6 +1,6 @@
 import dataclasses
 import re
-from typing import Any, Dict, Union
+from typing import Any, Dict, List, Union
 
 import pytest
 from dirty_equals import IsListOrTuple, IsStr
@@ -1039,3 +1039,99 @@ def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schem
 
     v.validate_assignment(m, 'not_f', '123')
     assert getattr(m, 'not_f') == '123'
+
+
+def test_function_validator_wrapping_args_schema_after() -> None:
+    calls: List[Any] = []
+
+    def func(*args: Any) -> Any:
+        calls.append(args)
+        return args[0]
+
+    @dataclasses.dataclass
+    class Model:
+        number: int = 1
+
+    cs = core_schema.dataclass_schema(
+        Model,
+        core_schema.no_info_after_validator_function(
+            func,
+            core_schema.dataclass_args_schema(
+                'Model', [core_schema.dataclass_field('number', core_schema.int_schema())]
+            ),
+        ),
+    )
+
+    v = SchemaValidator(cs)
+
+    instance: Model = v.validate_python({'number': 1})
+    assert instance.number == 1
+    assert calls == [(({'number': 1}, None),)]
+    v.validate_assignment(instance, 'number', 2)
+    assert instance.number == 2
+    assert calls == [(({'number': 1}, None),), (({'number': 2}, None),)]
+
+
+def test_function_validator_wrapping_args_schema_before() -> None:
+    calls: List[Any] = []
+
+    def func(*args: Any) -> Any:
+        calls.append(args)
+        return args[0]
+
+    @dataclasses.dataclass
+    class Model:
+        number: int = 1
+
+    cs = core_schema.dataclass_schema(
+        Model,
+        core_schema.no_info_before_validator_function(
+            func,
+            core_schema.dataclass_args_schema(
+                'Model', [core_schema.dataclass_field('number', core_schema.int_schema())]
+            ),
+        ),
+    )
+
+    v = SchemaValidator(cs)
+
+    instance: Model = v.validate_python({'number': 1})
+    assert instance.number == 1
+    assert calls == [({'number': 1},)]
+    v.validate_assignment(instance, 'number', 2)
+    assert instance.number == 2
+    assert calls == [({'number': 1},), ({'number': 2},)]
+
+
+def test_function_validator_wrapping_args_schema_wrap() -> None:
+    calls: List[Any] = []
+
+    def func(*args: Any) -> Any:
+        assert len(args) == 2
+        input, handler = args
+        output = handler(input)
+        calls.append((input, output))
+        return output
+
+    @dataclasses.dataclass
+    class Model:
+        number: int = 1
+
+    cs = core_schema.dataclass_schema(
+        Model,
+        core_schema.no_info_wrap_validator_function(
+            func,
+            core_schema.dataclass_args_schema(
+                'Model', [core_schema.dataclass_field('number', core_schema.int_schema())]
+            ),
+        ),
+    )
+
+    v = SchemaValidator(cs)
+
+    instance: Model = v.validate_python({'number': 1})
+    assert instance.number == 1
+    assert calls == [({'number': 1}, ({'number': 1}, None))]
+    v.validate_assignment(instance, 'number', 2)
+    assert instance.number == 2
+    assert calls == [({'number': 1}, ({'number': 1}, None)), ({'number': 2}, ({'number': 2}, None))]
