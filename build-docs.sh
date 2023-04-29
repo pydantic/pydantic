@@ -11,4 +11,4 @@ ls -lh
 
 mkdir -p site
 
-mv !(site) site
+mv * site
