@@ -60,12 +60,6 @@ jobs:
     - run: pdm run python -c 'import docs.plugins.main'
     - run: pdm run mkdocs build --verbose
 
-    - name: Store docs site
-      uses: actions/upload-artifact@v3
-      with:
-        name: docs
-        path: site
-
   test-memray:
     name: test memray
     runs-on: ubuntu-latest
