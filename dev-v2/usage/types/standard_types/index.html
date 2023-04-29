@@ -1,0 +1,2519 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Support for common types from the Python standard library.">
+      
+      
+      
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/usage/types/standard_types/">
+      
+      
+        <link rel="prev" href="../types/">
+      
+      
+        <link rel="next" href="../booleans/">
+      
+      <link rel="icon" href="../../../favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.8">
+    
+    
+      
+        <title>Standard Library Types - pydantic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.ded33207.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../../../extra/terminal.css">
+    
+      <link rel="stylesheet" href="../../../extra/tweaks.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#literal-type" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+              </button>
+            
+            
+  <!-- the following line is displayed in the announce bar -->
+<!-- keep length under 164 characters (less HTML tags) to fit on 1280px desktop window -->
+We started the <strong>Pydantic Company</strong> based on the principles that I believe have led to Pydantic's success. Read the <a href="https://pydantic.dev/announcement/">Company Announcement</a> for details.
+
+          </div>
+          
+            <script>var content,el=document.querySelector("[data-md-component=announce]");el&&(content=el.querySelector(".md-typeset"),__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0))</script>
+          
+        </aside>
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="pydantic" class="md-header__button md-logo" aria-label="pydantic" data-md-component="logo">
+      
+  <img src="../../../logo-white.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pydantic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Standard Library Types
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+          
+            
+            
+            
+            <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+            
+              <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
+              </label>
+            
+          
+            
+            
+            
+            <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+            
+              <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
+              </label>
+            
+          
+        </form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pydantic/pydantic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pydantic/pydantic
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../.." class="md-tabs__link">
+        Get Started
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../models/" class="md-tabs__link md-tabs__link--active">
+        Usage
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../integrations/mypy/" class="md-tabs__link">
+        Integrations
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../../../contributing/" class="md-tabs__link">
+      Contribute
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../blog/pydantic-v2/" class="md-tabs__link">
+        Blog
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../../../api/analyzed_type/" class="md-tabs__link">
+        API
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="pydantic" class="md-nav__button md-logo" aria-label="pydantic" data-md-component="logo">
+      
+  <img src="../../../logo-white.svg" alt="logo">
+
+    </a>
+    pydantic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pydantic/pydantic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pydantic/pydantic
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+          Get Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Get Started
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        Welcome to pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../install/" class="md-nav__link">
+        Installation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../migration/" class="md-nav__link">
+        Migration Guide
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../changelog/" class="md-nav__link">
+        Changelog
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Usage
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Usage
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../models/" class="md-nav__link">
+        Models
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+          Field Types
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Field Types
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../types/" class="md-nav__link">
+        Types Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Standard Library Types
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Standard Library Types
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#literal-type" class="md-nav__link">
+    Literal Type
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#strict-types" class="md-nav__link">
+    Strict types
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained types
+  </a>
+  
+    <nav class="md-nav" aria-label="Constrained types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conlist" class="md-nav__link">
+    Arguments to conlist
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conset" class="md-nav__link">
+    Arguments to conset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-confrozenset" class="md-nav__link">
+    Arguments to confrozenset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conint" class="md-nav__link">
+    Arguments to conint
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-confloat" class="md-nav__link">
+    Arguments to confloat
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-condecimal" class="md-nav__link">
+    Arguments to condecimal
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-constr" class="md-nav__link">
+    Arguments to constr
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conbytes" class="md-nav__link">
+    Arguments to conbytes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-condate" class="md-nav__link">
+    Arguments to condate
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../booleans/" class="md-nav__link">
+        Booleans
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../bytesize/" class="md-nav__link">
+        ByteSize
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../callables/" class="md-nav__link">
+        Callables
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../color_types/" class="md-nav__link">
+        Color Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../datetime/" class="md-nav__link">
+        Datetimes
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../dicts_mapping/" class="md-nav__link">
+        Dicts and Mapping
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../enums/" class="md-nav__link">
+        Enums and Choices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../file_types/" class="md-nav__link">
+        File Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json/" class="md-nav__link">
+        JSON
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../list_types/" class="md-nav__link">
+        Lists and Tuples
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../number_types/" class="md-nav__link">
+        Number Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../payment_cards/" class="md-nav__link">
+        Payment Card Numbers
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../secrets/" class="md-nav__link">
+        Secret Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../sequence_iterable/" class="md-nav__link">
+        Sequence, Iterable, & Iterator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../set_types/" class="md-nav__link">
+        Sets and frozenset
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../string_types/" class="md-nav__link">
+        String Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../typevars/" class="md-nav__link">
+        Type and TypeVar
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../types_fields/" class="md-nav__link">
+        Types with Fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../unions/" class="md-nav__link">
+        Unions
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../urls/" class="md-nav__link">
+        URLs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../uuids/" class="md-nav__link">
+        UUIDs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../custom/" class="md-nav__link">
+        Custom Data Types
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validators/" class="md-nav__link">
+        Validators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../model_config/" class="md-nav__link">
+        Model Config
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../schema/" class="md-nav__link">
+        Schema
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../exporting_models/" class="md-nav__link">
+        Exporting models
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../computed_fields/" class="md-nav__link">
+        Computed fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../dataclasses/" class="md-nav__link">
+        Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validation_decorator/" class="md-nav__link">
+        Validation decorator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../postponed_annotations/" class="md-nav__link">
+        Postponed annotations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+          Errors
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_11">
+          <span class="md-nav__icon md-icon"></span>
+          Errors
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../errors/" class="md-nav__link">
+        Usage Errors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../validation_errors/" class="md-nav__link">
+        Validation Errors
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../conversion_table/" class="md-nav__link">
+        Conversion table
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Integrations
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Integrations
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integrations/mypy/" class="md-nav__link">
+        Mypy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integrations/pycharm/" class="md-nav__link">
+        PyCharm
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integrations/hypothesis/" class="md-nav__link">
+        Hypothesis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integrations/visual_studio_code/" class="md-nav__link">
+        Visual Studio Code
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integrations/datamodel_code_generator/" class="md-nav__link">
+        datamodel-code-generator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integrations/devtools/" class="md-nav__link">
+        devtools
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../integrations/rich/" class="md-nav__link">
+        Rich
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../contributing/" class="md-nav__link">
+        Contribute
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Blog
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Blog
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../blog/pydantic-v2/" class="md-nav__link">
+        Pydantic V2 Plan
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/analyzed_type/" class="md-nav__link">
+        pydantic.analyzed_type
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/color/" class="md-nav__link">
+        pydantic.color
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/config/" class="md-nav__link">
+        pydantic.config
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/dataclasses/" class="md-nav__link">
+        pydantic.dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/validate_call/" class="md-nav__link">
+        pydantic.validate_call
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/decorators/" class="md-nav__link">
+        pydantic.decorators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/errors/" class="md-nav__link">
+        pydantic.errors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/fields/" class="md-nav__link">
+        pydantic.fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/json_schema/" class="md-nav__link">
+        pydantic.json_schema
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/main/" class="md-nav__link">
+        pydantic.main
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/mypy/" class="md-nav__link">
+        pydantic.mypy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/networks/" class="md-nav__link">
+        pydantic.networks
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/types/" class="md-nav__link">
+        pydantic.types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../api/version/" class="md-nav__link">
+        pydantic.version
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#literal-type" class="md-nav__link">
+    Literal Type
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#strict-types" class="md-nav__link">
+    Strict types
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained types
+  </a>
+  
+    <nav class="md-nav" aria-label="Constrained types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conlist" class="md-nav__link">
+    Arguments to conlist
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conset" class="md-nav__link">
+    Arguments to conset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-confrozenset" class="md-nav__link">
+    Arguments to confrozenset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conint" class="md-nav__link">
+    Arguments to conint
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-confloat" class="md-nav__link">
+    Arguments to confloat
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-condecimal" class="md-nav__link">
+    Arguments to condecimal
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-constr" class="md-nav__link">
+    Arguments to constr
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conbytes" class="md-nav__link">
+    Arguments to conbytes
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-condate" class="md-nav__link">
+    Arguments to condate
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+  
+                  
+
+  
+  
+
+
+  <h1>Standard Library Types</h1>
+
+<p>Pydantic supports many common types from the Python standard library. If you need stricter processing see
+<a href="/usage/strict/">Strict Types</a>. If you need to constrain the values allowed (e.g. to require a positive <code>int</code>) see
+<a href="/usage/constrained/">Constrained Types</a>.</p>
+<table>
+<thead>
+<tr>
+<th>Type</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>None</code>, <code>type(None)</code>, or <code>Literal[None]</code></td>
+<td>Equivalent according to <a href="https://www.python.org/dev/peps/pep-0484/#using-none">PEP 484</a>. Allows only <code>None</code> value.</td>
+</tr>
+<tr>
+<td><code>bool</code></td>
+<td>See <a href="/usage/booleans/">Booleans</a> for details on how bools are validated and what values are permitted.</td>
+</tr>
+<tr>
+<td><code>int</code></td>
+<td>Pydantic uses <code>int(v)</code> to coerce types to an <code>int</code>. See the <a href="/usage/models/#data-conversion">Data Conversion</a> warning on loss of information during data conversion.</td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td><code>float(v)</code> is used to coerce values to floats.</td>
+</tr>
+<tr>
+<td><code>str</code></td>
+<td>Strings are accepted as-is. <code>int</code> <code>float</code> and <code>Decimal</code> are coerced using <code>str(v)</code>. <code>bytes</code> and <code>bytearray</code> are converted using <code>v.decode()</code>. <code>Enum</code>s inheriting from <code>str</code> are converted using <code>v.value</code>. All other types cause an error.</td>
+</tr>
+<tr>
+<td><code>bytes</code></td>
+<td><code>bytes</code> are accepted as-is. <code>bytearray</code> is converted using <code>bytes(v)</code>. <code>str</code> are converted using <code>v.encode()</code>. <code>int</code>, <code>float</code>, and <code>Decimal</code> are coerced using <code>str(v).encode()</code>.</td>
+</tr>
+<tr>
+<td><code>list</code></td>
+<td>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a list. See <code>typing.List</code> for sub-type constraints.</td>
+</tr>
+<tr>
+<td><code>tuple</code></td>
+<td>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a tuple. See <code>typing.Tuple</code> for sub-type constraints.</td>
+</tr>
+<tr>
+<td><code>dict</code></td>
+<td><code>dict(v)</code> is used to attempt to convert a dictionary. See <code>typing.Dict</code> for sub-type constraints.</td>
+</tr>
+<tr>
+<td><code>set</code></td>
+<td>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a set. See <code>typing.Set</code> below for sub-type constraints.</td>
+</tr>
+<tr>
+<td><code>frozenset</code></td>
+<td>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a frozen set. See <code>typing.FrozenSet</code> below for sub-type constraints.</td>
+</tr>
+<tr>
+<td><code>deque</code></td>
+<td>Allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a deque. See <code>typing.Deque</code> below for sub-type constraints.</td>
+</tr>
+<tr>
+<td><code>datetime.date</code></td>
+<td>See <a href="/usage/datetime/">Datetime Types</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>datetime.time</code></td>
+<td>See <a href="/usage/datetime/">Datetime Types</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>datetime.datetime</code></td>
+<td>See <a href="/usage/datetime/">Datetime Types</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>datetime.timedelta</code></td>
+<td>See <a href="/usage/datetime/">Datetime Types</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Any</code></td>
+<td>Allows any value including <code>None</code>, thus an <code>Any</code> field is optional.</td>
+</tr>
+<tr>
+<td><code>typing.Annotated</code></td>
+<td>Allows wrapping another type with arbitrary metadata, as per <a href="https://www.python.org/dev/peps/pep-0593/">PEP-593</a>. The <code>Annotated</code> hint may contain a single call to the <a href="/usage/schema/#typingannotated-fields"><code>Field</code> function</a>, but otherwise the additional metadata is ignored and the root type is used.</td>
+</tr>
+<tr>
+<td><code>typing.TypeVar</code></td>
+<td>Constrains the values allowed based on <code>constraints</code> or <code>bound</code>, see <a href="/usage/typevars/">TypeVar</a>.</td>
+</tr>
+<tr>
+<td><code>typing.Union</code></td>
+<td>See <a href="/usage/unions/">Unions</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Optional</code></td>
+<td><code>Optional[x]</code> is simply short hand for <code>Union[x, None]</code>. See <a href="/usage/unions/">Unions</a> below for more detail on parsing and validation and <a href="/usage/models/#required-fields">Required Fields</a> for details about required fields that can receive <code>None</code> as a value.</td>
+</tr>
+<tr>
+<td><code>typing.List</code></td>
+<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Tuple</code></td>
+<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td>Subclass of <code>typing.NamedTuple</code></td>
+<td>Same as <code>tuple</code>, but instantiates with the given namedtuple and validates fields since they are annotated. See <a href="/usage/annotated_types/">Annotated Types</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td>Subclass of <code>collections.namedtuple</code></td>
+<td>Same as subclass of <code>typing.NamedTuple</code>, but all fields will have type <code>Any</code> since they are not annotated.</td>
+</tr>
+<tr>
+<td><code>typing.Dict</code></td>
+<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td>Subclass of <code>typing.TypedDict</code></td>
+<td>Same as <code>dict</code>, but Pydantic will validate the dictionary since keys are annotated. See <a href="/usage/annotated_types/">Annotated Types</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Set</code></td>
+<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.FrozenSet</code></td>
+<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Deque</code></td>
+<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Sequence</code></td>
+<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Iterable</code></td>
+<td>This is reserved for iterables that shouldn't be consumed. See <a href="/usage/typing_iterables/#infinite-generators">Infinite Generators</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Type</code></td>
+<td>See <a href="/usage/typevars/#type">Type</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Callable</code></td>
+<td>See <a href="/usage/callables/">Callables</a> below for more detail on parsing and validation.</td>
+</tr>
+<tr>
+<td><code>typing.Pattern</code></td>
+<td>Will cause the input value to be passed to <code>re.compile(v)</code> to create a regex pattern.</td>
+</tr>
+<tr>
+<td><code>ipaddress.IPv4Address</code></td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+</tr>
+<tr>
+<td><nobr><code>ipaddress.IPv4Interface</code></nobr></td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+</tr>
+<tr>
+<td><code>ipaddress.IPv4Network</code></td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv4Network(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+</tr>
+<tr>
+<td><code>ipaddress.IPv6Address</code></td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv6Address(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+</tr>
+<tr>
+<td><code>ipaddress.IPv6Interface</code></td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv6Interface(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+</tr>
+<tr>
+<td><code>ipaddress.IPv6Network</code></td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv6Network(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+</tr>
+<tr>
+<td><code>enum.Enum</code></td>
+<td>Checks that the value is a valid <code>Enum</code> instance.</td>
+</tr>
+<tr>
+<td>Subclass of <code>enum.Enum</code></td>
+<td>Checks that the value is a valid member of the <code>enum</code>. See <a href="/usage/enums/">Enums and Choices</a> for more details.</td>
+</tr>
+<tr>
+<td><code>enum.IntEnum</code></td>
+<td>Checks that the value is a valid <code>IntEnum</code> instance.</td>
+</tr>
+<tr>
+<td>Subclass of <code>enum.IntEnum</code></td>
+<td>Checks that the value is a valid member of the integer <code>enum</code>. See <a href="/usage/enums/">Enums and Choices</a> for more details.</td>
+</tr>
+<tr>
+<td><code>decimal.Decimal</code></td>
+<td>Pydantic attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code>.</td>
+</tr>
+<tr>
+<td><code>pathlib.Path</code></td>
+<td>Simply uses the type itself for validation by passing the value to <code>Path(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other more strict path types.</td>
+</tr>
+<tr>
+<td><code>uuid.UUID</code></td>
+<td>Strings and bytes (converted to strings) are passed to <code>UUID(v)</code>, with a fallback to <code>UUID(bytes=v)</code> for <code>bytes</code> and <code>bytearray</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other stricter UUID types.</td>
+</tr>
+<tr>
+<td><code>ByteSize</code></td>
+<td>Converts a bytes string with units to bytes.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="literal-type">Literal Type<a class="headerlink" href="#literal-type" title="Permanent link">&para;</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a new feature of the Python standard library as of Python 3.8;
+prior to Python 3.8, it requires the <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> package.</p>
+</div>
+<p><em>pydantic</em> supports the use of <code>typing.Literal</code> (or <code>typing_extensions.Literal</code> prior to Python 3.8)
+as a lightweight way to specify that a field may accept only specific literal values:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">flavor</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;apple&#39;</span><span class="p">,</span> <span class="s1">&#39;pumpkin&#39;</span><span class="p">]</span>
+
+
+<span class="n">Pie</span><span class="p">(</span><span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;apple&#39;</span><span class="p">)</span>
+<span class="n">Pie</span><span class="p">(</span><span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Pie</span><span class="p">(</span><span class="n">flavor</span><span class="o">=</span><span class="s1">&#39;cherry&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Pie</span>
+<span class="sd">    flavor</span>
+<span class="sd">      Input should be &#39;apple&#39; or &#39;pumpkin&#39; [type=literal_error, input_value=&#39;cherry&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>One benefit of this field type is that it can be used to check for equality with one or more specific values
+without needing to declare custom validators:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.8 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Cake</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cake&#39;</span><span class="p">]</span>
+    <span class="n">required_utensils</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fork&#39;</span><span class="p">,</span> <span class="s1">&#39;knife&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">IceCream</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;icecream&#39;</span><span class="p">]</span>
+    <span class="n">required_utensils</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;spoon&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Meal</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dessert</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cake</span><span class="p">,</span> <span class="n">IceCream</span><span class="p">]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;cake&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; Cake</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;icecream&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; IceCream</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Meal</span>
+<span class="sd">    dessert.Cake.kind</span>
+<span class="sd">      Input should be &#39;cake&#39; [type=literal_error, input_value=&#39;pie&#39;, input_type=str]</span>
+<span class="sd">    dessert.IceCream.kind</span>
+<span class="sd">      Input should be &#39;icecream&#39; [type=literal_error, input_value=&#39;pie&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Cake</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cake&#39;</span><span class="p">]</span>
+    <span class="n">required_utensils</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fork&#39;</span><span class="p">,</span> <span class="s1">&#39;knife&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">IceCream</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;icecream&#39;</span><span class="p">]</span>
+    <span class="n">required_utensils</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;spoon&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Meal</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dessert</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cake</span><span class="p">,</span> <span class="n">IceCream</span><span class="p">]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;cake&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; Cake</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;icecream&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; IceCream</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Meal</span>
+<span class="sd">    dessert.Cake.kind</span>
+<span class="sd">      Input should be &#39;cake&#39; [type=literal_error, input_value=&#39;pie&#39;, input_type=str]</span>
+<span class="sd">    dessert.IceCream.kind</span>
+<span class="sd">      Input should be &#39;icecream&#39; [type=literal_error, input_value=&#39;pie&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Cake</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cake&#39;</span><span class="p">]</span>
+    <span class="n">required_utensils</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;fork&#39;</span><span class="p">,</span> <span class="s1">&#39;knife&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">IceCream</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;icecream&#39;</span><span class="p">]</span>
+    <span class="n">required_utensils</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;spoon&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Meal</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dessert</span><span class="p">:</span> <span class="n">Cake</span> <span class="o">|</span> <span class="n">IceCream</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;cake&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; Cake</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;icecream&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; IceCream</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">})</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Meal</span>
+<span class="sd">    dessert.Cake.kind</span>
+<span class="sd">      Input should be &#39;cake&#39; [type=literal_error, input_value=&#39;pie&#39;, input_type=str]</span>
+<span class="sd">    dessert.IceCream.kind</span>
+<span class="sd">      Input should be &#39;icecream&#39; [type=literal_error, input_value=&#39;pie&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>With proper ordering in an annotated <code>Union</code>, you can use this to parse types of decreasing specificity:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.8 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Dessert</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">Dessert</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;pie&#39;</span><span class="p">]</span>
+    <span class="n">flavor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">ApplePie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
+    <span class="n">flavor</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;apple&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">PumpkinPie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
+    <span class="n">flavor</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Meal</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dessert</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">ApplePie</span><span class="p">,</span> <span class="n">PumpkinPie</span><span class="p">,</span> <span class="n">Pie</span><span class="p">,</span> <span class="n">Dessert</span><span class="p">]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">,</span> <span class="s1">&#39;flavor&#39;</span><span class="p">:</span> <span class="s1">&#39;apple&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; ApplePie</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">,</span> <span class="s1">&#39;flavor&#39;</span><span class="p">:</span> <span class="s1">&#39;pumpkin&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; PumpkinPie</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; Dessert</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;cake&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; Dessert</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Dessert</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Pie</span><span class="p">(</span><span class="n">Dessert</span><span class="p">):</span>
+    <span class="n">kind</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;pie&#39;</span><span class="p">]</span>
+    <span class="n">flavor</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">ApplePie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
+    <span class="n">flavor</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;apple&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">PumpkinPie</span><span class="p">(</span><span class="n">Pie</span><span class="p">):</span>
+    <span class="n">flavor</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;pumpkin&#39;</span><span class="p">]</span>
+
+
+<span class="k">class</span> <span class="nc">Meal</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">dessert</span><span class="p">:</span> <span class="n">ApplePie</span> <span class="o">|</span> <span class="n">PumpkinPie</span> <span class="o">|</span> <span class="n">Pie</span> <span class="o">|</span> <span class="n">Dessert</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">,</span> <span class="s1">&#39;flavor&#39;</span><span class="p">:</span> <span class="s1">&#39;apple&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; ApplePie</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">,</span> <span class="s1">&#39;flavor&#39;</span><span class="p">:</span> <span class="s1">&#39;pumpkin&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; PumpkinPie</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;pie&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; Dessert</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">Meal</span><span class="p">(</span><span class="n">dessert</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;kind&#39;</span><span class="p">:</span> <span class="s1">&#39;cake&#39;</span><span class="p">})</span><span class="o">.</span><span class="n">dessert</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
+<span class="c1">#&gt; Dessert</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="strict-types">Strict types<a class="headerlink" href="#strict-types" title="Permanent link">&para;</a></h2>
+<p>You can use the <code>StrictStr</code>, <code>StrictBytes</code>, <code>StrictInt</code>, <code>StrictFloat</code>, and <code>StrictBool</code> types
+to prevent coercion from compatible types.
+These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
+This behavior is also exposed via the <code>strict</code> field of the <code>ConstrainedStr</code>, <code>ConstrainedBytes</code>,
+<code>ConstrainedFloat</code> and <code>ConstrainedInt</code> classes and can be combined with a multitude of complex validation rules.</p>
+<p>The following caveats apply:</p>
+<ul>
+<li><code>StrictBytes</code> (and the <code>strict</code> option of <code>ConstrainedBytes</code>) will accept both <code>bytes</code>,
+   and <code>bytearray</code> types.</li>
+<li><code>StrictInt</code> (and the <code>strict</code> option of <code>ConstrainedInt</code>) will not accept <code>bool</code> types,
+    even though <code>bool</code> is a subclass of <code>int</code> in Python. Other subclasses will work.</li>
+<li><code>StrictFloat</code> (and the <code>strict</code> option of <code>ConstrainedFloat</code>) will not accept <code>int</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">StrictBool</span><span class="p">,</span>
+    <span class="n">StrictBytes</span><span class="p">,</span>
+    <span class="n">StrictInt</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+    <span class="n">confloat</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">StrictBytesModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">strict_bytes</span><span class="p">:</span> <span class="n">StrictBytes</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">StrictBytesModel</span><span class="p">(</span><span class="n">strict_bytes</span><span class="o">=</span><span class="s1">&#39;hello world&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for StrictBytesModel</span>
+<span class="sd">    strict_bytes</span>
+<span class="sd">      Input should be a valid bytes [type=bytes_type, input_value=&#39;hello world&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">StrictIntModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">strict_int</span><span class="p">:</span> <span class="n">StrictInt</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">StrictIntModel</span><span class="p">(</span><span class="n">strict_int</span><span class="o">=</span><span class="mf">3.14159</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for StrictIntModel</span>
+<span class="sd">    strict_int</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=3.14159, input_type=float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">ConstrainedFloatModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">constrained_float</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ge</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ConstrainedFloatModel</span><span class="p">(</span><span class="n">constrained_float</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">ConstrainedFloatModel</span><span class="p">(</span><span class="n">constrained_float</span><span class="o">=-</span><span class="mf">1.23</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for ConstrainedFloatModel</span>
+<span class="sd">    constrained_float</span>
+<span class="sd">      Input should be greater than or equal to 0 [type=greater_than_equal, input_value=-1.23, input_type=float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+
+<span class="k">class</span> <span class="nc">StrictBoolModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">strict_bool</span><span class="p">:</span> <span class="n">StrictBool</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">StrictBoolModel</span><span class="p">(</span><span class="n">strict_bool</span><span class="o">=</span><span class="s1">&#39;False&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">e</span><span class="p">))</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for StrictBoolModel</span>
+<span class="sd">    strict_bool</span>
+<span class="sd">      Input should be a valid boolean [type=bool_type, input_value=&#39;False&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h2 id="constrained-types">Constrained types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
+<dl>
+<dt><code>NegativeFloat</code></dt>
+<dd>allows a float which is negative; uses standard <code>float</code> parsing then checks the value is less than 0;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>NegativeInt</code></dt>
+<dd>allows an int which is negative; uses standard <code>int</code> parsing then checks the value is less than 0;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>PositiveFloat</code></dt>
+<dd>allows a float which is positive; uses standard <code>float</code> parsing then checks the value is greater than 0;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>PositiveInt</code></dt>
+<dd>allows an int which is positive; uses standard <code>int</code> parsing then checks the value is greater than 0;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>conbytes</code></dt>
+<dd>type method for constraining bytes;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>condecimal</code></dt>
+<dd>type method for constraining Decimals;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>confloat</code></dt>
+<dd>type method for constraining floats;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>conint</code></dt>
+<dd>type method for constraining ints;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>condate</code></dt>
+<dd>type method for constraining dates;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>conlist</code></dt>
+<dd>type method for constraining lists;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>conset</code></dt>
+<dd>type method for constraining sets;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>confrozenset</code></dt>
+<dd>type method for constraining frozen sets;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>constr</code></dt>
+<dd>type method for constraining strs;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+</dl>
+<p>The value of numerous common types can be restricted using <code>con*</code> type functions:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">Field</span><span class="p">,</span>
+    <span class="n">NegativeFloat</span><span class="p">,</span>
+    <span class="n">NegativeInt</span><span class="p">,</span>
+    <span class="n">NonNegativeFloat</span><span class="p">,</span>
+    <span class="n">NonNegativeInt</span><span class="p">,</span>
+    <span class="n">NonPositiveFloat</span><span class="p">,</span>
+    <span class="n">NonPositiveInt</span><span class="p">,</span>
+    <span class="n">PositiveFloat</span><span class="p">,</span>
+    <span class="n">PositiveInt</span><span class="p">,</span>
+    <span class="n">conbytes</span><span class="p">,</span>
+    <span class="n">condecimal</span><span class="p">,</span>
+    <span class="n">confloat</span><span class="p">,</span>
+    <span class="n">conint</span><span class="p">,</span>
+    <span class="n">conlist</span><span class="p">,</span>
+    <span class="n">conset</span><span class="p">,</span>
+    <span class="n">constr</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">short_bytes</span><span class="p">:</span> <span class="n">conbytes</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">strict_bytes</span><span class="p">:</span> <span class="n">conbytes</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">upper_str</span><span class="p">:</span> <span class="n">constr</span><span class="p">(</span><span class="n">to_upper</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">lower_str</span><span class="p">:</span> <span class="n">constr</span><span class="p">(</span><span class="n">to_lower</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">short_str</span><span class="p">:</span> <span class="n">constr</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+    <span class="n">regex_str</span><span class="p">:</span> <span class="n">constr</span><span class="p">(</span><span class="n">pattern</span><span class="o">=</span><span class="sa">r</span><span class="s1">&#39;^apple (pie|tart|sandwich)$&#39;</span><span class="p">)</span>
+    <span class="n">strip_str</span><span class="p">:</span> <span class="n">constr</span><span class="p">(</span><span class="n">strip_whitespace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">big_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="n">mod_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">multiple_of</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">pos_int</span><span class="p">:</span> <span class="n">PositiveInt</span>
+    <span class="n">neg_int</span><span class="p">:</span> <span class="n">NegativeInt</span>
+    <span class="n">non_neg_int</span><span class="p">:</span> <span class="n">NonNegativeInt</span>
+    <span class="n">non_pos_int</span><span class="p">:</span> <span class="n">NonPositiveInt</span>
+
+    <span class="n">big_float</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="n">unit_interval</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">mod_float</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">multiple_of</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">pos_float</span><span class="p">:</span> <span class="n">PositiveFloat</span>
+    <span class="n">neg_float</span><span class="p">:</span> <span class="n">NegativeFloat</span>
+    <span class="n">non_neg_float</span><span class="p">:</span> <span class="n">NonNegativeFloat</span>
+    <span class="n">non_pos_float</span><span class="p">:</span> <span class="n">NonPositiveFloat</span>
+
+    <span class="n">short_list</span><span class="p">:</span> <span class="n">conlist</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">short_set</span><span class="p">:</span> <span class="n">conset</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+
+    <span class="n">decimal_positive</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">decimal_negative</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">lt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">decimal_max_digits_and_places</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">max_digits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">decimal_places</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">mod_decimal</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">multiple_of</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;0.25&#39;</span><span class="p">))</span>
+
+    <span class="n">bigger_int</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">gt</span><span class="o">=</span><span class="mi">10000</span><span class="p">)</span>
+</code></pre></div>
+<p>Where <code>Field</code> refers to the <a href="../../schema/#field-customization">field function</a>.</p>
+<h3 id="arguments-to-conlist">Arguments to <code>conlist</code><a class="headerlink" href="#arguments-to-conlist" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>conlist</code> type function</p>
+<ul>
+<li><code>item_type: Type[T]</code>: type of the list items</li>
+<li><code>min_items: int = None</code>: minimum number of items in the list</li>
+<li><code>max_items: int = None</code>: maximum number of items in the list</li>
+<li><code>unique_items: bool = None</code>: enforces list elements to be unique</li>
+</ul>
+<h3 id="arguments-to-conset">Arguments to <code>conset</code><a class="headerlink" href="#arguments-to-conset" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>conset</code> type function</p>
+<ul>
+<li><code>item_type: Type[T]</code>: type of the set items</li>
+<li><code>min_items: int = None</code>: minimum number of items in the set</li>
+<li><code>max_items: int = None</code>: maximum number of items in the set</li>
+</ul>
+<h3 id="arguments-to-confrozenset">Arguments to <code>confrozenset</code><a class="headerlink" href="#arguments-to-confrozenset" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>confrozenset</code> type function</p>
+<ul>
+<li><code>item_type: Type[T]</code>: type of the frozenset items</li>
+<li><code>min_items: int = None</code>: minimum number of items in the frozenset</li>
+<li><code>max_items: int = None</code>: maximum number of items in the frozenset</li>
+</ul>
+<h3 id="arguments-to-conint">Arguments to <code>conint</code><a class="headerlink" href="#arguments-to-conint" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>conint</code> type function</p>
+<ul>
+<li><code>strict: bool = False</code>: controls type coercion</li>
+<li><code>gt: int = None</code>: enforces integer to be greater than the set value</li>
+<li><code>ge: int = None</code>: enforces integer to be greater than or equal to the set value</li>
+<li><code>lt: int = None</code>: enforces integer to be less than the set value</li>
+<li><code>le: int = None</code>: enforces integer to be less than or equal to the set value</li>
+<li><code>multiple_of: int = None</code>: enforces integer to be a multiple of the set value</li>
+</ul>
+<h3 id="arguments-to-confloat">Arguments to <code>confloat</code><a class="headerlink" href="#arguments-to-confloat" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>confloat</code> type function</p>
+<ul>
+<li><code>strict: bool = False</code>: controls type coercion</li>
+<li><code>gt: float = None</code>: enforces float to be greater than the set value</li>
+<li><code>ge: float = None</code>: enforces float to be greater than or equal to the set value</li>
+<li><code>lt: float = None</code>: enforces float to be less than the set value</li>
+<li><code>le: float = None</code>: enforces float to be less than or equal to the set value</li>
+<li><code>multiple_of: float = None</code>: enforces float to be a multiple of the set value</li>
+<li><code>allow_inf_nan: bool = True</code>: whether to allows infinity (<code>+inf</code> an <code>-inf</code>) and NaN values, defaults to <code>True</code>,
+  set to <code>False</code> for compatibility with <code>JSON</code>,
+  see <a href="https://github.com/pydantic/pydantic/pull/3994">#3994</a> for more details, added in <strong>V1.10</strong></li>
+</ul>
+<h3 id="arguments-to-condecimal">Arguments to <code>condecimal</code><a class="headerlink" href="#arguments-to-condecimal" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>condecimal</code> type function</p>
+<ul>
+<li><code>gt: Decimal = None</code>: enforces decimal to be greater than the set value</li>
+<li><code>ge: Decimal = None</code>: enforces decimal to be greater than or equal to the set value</li>
+<li><code>lt: Decimal = None</code>: enforces decimal to be less than the set value</li>
+<li><code>le: Decimal = None</code>: enforces decimal to be less than or equal to the set value</li>
+<li><code>max_digits: int = None</code>: maximum number of digits within the decimal. it does not include a zero before the decimal point or trailing decimal zeroes</li>
+<li><code>decimal_places: int = None</code>: max number of decimal places allowed. it does not include trailing decimal zeroes</li>
+<li><code>multiple_of: Decimal = None</code>: enforces decimal to be a multiple of the set value</li>
+</ul>
+<h3 id="arguments-to-constr">Arguments to <code>constr</code><a class="headerlink" href="#arguments-to-constr" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>constr</code> type function</p>
+<ul>
+<li><code>strip_whitespace: bool = False</code>: removes leading and trailing whitespace</li>
+<li><code>to_upper: bool = False</code>: turns all characters to uppercase</li>
+<li><code>to_lower: bool = False</code>: turns all characters to lowercase</li>
+<li><code>strict: bool = False</code>: controls type coercion</li>
+<li><code>min_length: int = None</code>: minimum length of the string</li>
+<li><code>max_length: int = None</code>: maximum length of the string</li>
+<li><code>curtail_length: int = None</code>: shrinks the string length to the set value when it is longer than the set value</li>
+<li><code>regex: str = None</code>: regex to validate the string against</li>
+</ul>
+<h3 id="arguments-to-conbytes">Arguments to <code>conbytes</code><a class="headerlink" href="#arguments-to-conbytes" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>conbytes</code> type function</p>
+<ul>
+<li><code>strip_whitespace: bool = False</code>: removes leading and trailing whitespace</li>
+<li><code>to_upper: bool = False</code>: turns all characters to uppercase</li>
+<li><code>to_lower: bool = False</code>: turns all characters to lowercase</li>
+<li><code>min_length: int = None</code>: minimum length of the byte string</li>
+<li><code>max_length: int = None</code>: maximum length of the byte string</li>
+<li><code>strict: bool = False</code>: controls type coercion</li>
+</ul>
+<h3 id="arguments-to-condate">Arguments to <code>condate</code><a class="headerlink" href="#arguments-to-condate" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>condate</code> type function</p>
+<ul>
+<li><code>gt: date = None</code>: enforces date to be greater than the set value</li>
+<li><code>ge: date = None</code>: enforces date to be greater than or equal to the set value</li>
+<li><code>lt: date = None</code>: enforces date to be less than the set value</li>
+<li><code>le: date = None</code>: enforces date to be less than or equal to the set value</li>
+</ul>
+
+
+
+
+
+                
+  <script src="/flarelytics/client.js"></script>
+
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["content.tabs.link", "announce.dismiss", "navigation.tabs"], "search": "../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.51198bba.min.js"></script>
+      
+        <script src="../../../extra/redirects.js"></script>
+      
+    
+  </body>
+</html>

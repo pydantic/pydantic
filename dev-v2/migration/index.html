@@ -1,0 +1,2113 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="Migrating from Pydantic V1.">
+      
+      
+      
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/migration/">
+      
+      
+        <link rel="prev" href="../install/">
+      
+      
+        <link rel="next" href="../changelog/">
+      
+      <link rel="icon" href="../favicon.png">
+      <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.8">
+    
+    
+      
+        <title>Migration Guide - pydantic</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.ded33207.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.a0c5b2b5.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="../extra/terminal.css">
+    
+      <link rel="stylesheet" href="../extra/tweaks.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+      
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink">
+  
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&"object"==typeof palette.color)for(var key of Object.keys(palette.color))document.body.setAttribute("data-md-color-"+key,palette.color[key])</script>
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#install-pydantic-v2-alpha" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+        <aside class="md-banner">
+          <div class="md-banner__inner md-grid md-typeset">
+            
+              <button class="md-banner__button md-icon" aria-label="Don't show this again">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+              </button>
+            
+            
+  <!-- the following line is displayed in the announce bar -->
+<!-- keep length under 164 characters (less HTML tags) to fit on 1280px desktop window -->
+We started the <strong>Pydantic Company</strong> based on the principles that I believe have led to Pydantic's success. Read the <a href="https://pydantic.dev/announcement/">Company Announcement</a> for details.
+
+          </div>
+          
+            <script>var content,el=document.querySelector("[data-md-component=announce]");el&&(content=el.querySelector(".md-typeset"),__md_hash(content.innerHTML)===__md_get("__announce")&&(el.hidden=!0))</script>
+          
+        </aside>
+      
+    </div>
+    
+      <div data-md-color-scheme="default" data-md-component="outdated" hidden>
+        
+      </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pydantic" class="md-header__button md-logo" aria-label="pydantic" data-md-component="logo">
+      
+  <img src="../logo-white.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pydantic
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Migration Guide
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+        <form class="md-header__option" data-md-component="palette">
+          
+            
+            
+            
+            <input class="md-option" data-md-color-media="(prefers-color-scheme: light)" data-md-color-scheme="default" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to dark mode"  type="radio" name="__palette" id="__palette_1">
+            
+              <label class="md-header__button md-icon" title="Switch to dark mode" for="__palette_2" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 1 7 7c0 2.38-1.19 4.47-3 5.74V17a1 1 0 0 1-1 1H9a1 1 0 0 1-1-1v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 0 1 7-7M9 21v-1h6v1a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1m3-17a5 5 0 0 0-5 5c0 2.05 1.23 3.81 3 4.58V16h4v-2.42c1.77-.77 3-2.53 3-4.58a5 5 0 0 0-5-5Z"/></svg>
+              </label>
+            
+          
+            
+            
+            
+            <input class="md-option" data-md-color-media="(prefers-color-scheme: dark)" data-md-color-scheme="slate" data-md-color-primary="pink" data-md-color-accent="pink"  aria-label="Switch to light mode"  type="radio" name="__palette" id="__palette_2">
+            
+              <label class="md-header__button md-icon" title="Switch to light mode" for="__palette_1" hidden>
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 2a7 7 0 0 0-7 7c0 2.38 1.19 4.47 3 5.74V17a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1v-2.26c1.81-1.27 3-3.36 3-5.74a7 7 0 0 0-7-7M9 21a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-1H9v1Z"/></svg>
+              </label>
+            
+          
+        </form>
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pydantic/pydantic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pydantic/pydantic
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+    
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href=".." class="md-tabs__link md-tabs__link--active">
+        Get Started
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../usage/models/" class="md-tabs__link">
+        Usage
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../integrations/mypy/" class="md-tabs__link">
+        Integrations
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../contributing/" class="md-tabs__link">
+      Contribute
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../blog/pydantic-v2/" class="md-tabs__link">
+        Blog
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../api/analyzed_type/" class="md-tabs__link">
+        API
+      </a>
+    </li>
+  
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+<nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pydantic" class="md-nav__button md-logo" aria-label="pydantic" data-md-component="logo">
+      
+  <img src="../logo-white.svg" alt="logo">
+
+    </a>
+    pydantic
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pydantic/pydantic" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    pydantic/pydantic
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_1" checked>
+      
+      
+      
+        <label class="md-nav__link" for="__nav_1" id="__nav_1_label" tabindex="0">
+          Get Started
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_1_label" aria-expanded="true">
+        <label class="md-nav__title" for="__nav_1">
+          <span class="md-nav__icon md-icon"></span>
+          Get Started
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Welcome to pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../install/" class="md-nav__link">
+        Installation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Migration Guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Migration Guide
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install-pydantic-v2-alpha" class="md-nav__link">
+    Install Pydantic V2 alpha
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-notes" class="md-nav__link">
+    Migration notes
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-basemodel" class="md-nav__link">
+    Changes to BaseModel
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-pydantic-dataclasses" class="md-nav__link">
+    Changes to Pydantic Dataclasses
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-config" class="md-nav__link">
+    Changes to Config
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-validators" class="md-nav__link">
+    Changes to Validators
+  </a>
+  
+    <nav class="md-nav" aria-label="Changes to Validators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typeerror-no-longer-gets-converted-into-a-validationerror" class="md-nav__link">
+    TypeError no longer gets converted into a ValidationError
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate-without-calling-the-function" class="md-nav__link">
+    Validate without calling the function
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#each_item-is-deprecated" class="md-nav__link">
+    each_item is deprecated
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#root_validatorskip_on_failurefalse-is-no-longer-allowed" class="md-nav__link">
+    @root_validator(skip_on_failure=False) is no longer allowed
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#allow_reuse-is-deprecated" class="md-nav__link">
+    allow_reuse is deprecated
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-validators-allowed-signatures" class="md-nav__link">
+    Changes to @validator's allowed signatures
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removed-validator-types" class="md-nav__link">
+    Removed validator types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-validation-of-specific-types" class="md-nav__link">
+    Changes to Validation of specific types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-generic-models" class="md-nav__link">
+    Changes to Generic models
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyzedtype" class="md-nav__link">
+    AnalyzedType
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#required-optional-and-nullable-fields" class="md-nav__link">
+    Required, Optional, and Nullable fields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-changes" class="md-nav__link">
+    Other changes
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../changelog/" class="md-nav__link">
+        Changelog
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          Usage
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Usage
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/models/" class="md-nav__link">
+        Models
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2" id="__nav_2_2_label" tabindex="0">
+          Field Types
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_2">
+          <span class="md-nav__icon md-icon"></span>
+          Field Types
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/types/" class="md-nav__link">
+        Types Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/standard_types/" class="md-nav__link">
+        Standard Library Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/booleans/" class="md-nav__link">
+        Booleans
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/bytesize/" class="md-nav__link">
+        ByteSize
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/callables/" class="md-nav__link">
+        Callables
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/color_types/" class="md-nav__link">
+        Color Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/datetime/" class="md-nav__link">
+        Datetimes
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/dicts_mapping/" class="md-nav__link">
+        Dicts and Mapping
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/enums/" class="md-nav__link">
+        Enums and Choices
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/file_types/" class="md-nav__link">
+        File Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/json/" class="md-nav__link">
+        JSON
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/list_types/" class="md-nav__link">
+        Lists and Tuples
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/number_types/" class="md-nav__link">
+        Number Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/payment_cards/" class="md-nav__link">
+        Payment Card Numbers
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/secrets/" class="md-nav__link">
+        Secret Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/sequence_iterable/" class="md-nav__link">
+        Sequence, Iterable, & Iterator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/set_types/" class="md-nav__link">
+        Sets and frozenset
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/string_types/" class="md-nav__link">
+        String Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/typevars/" class="md-nav__link">
+        Type and TypeVar
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/types_fields/" class="md-nav__link">
+        Types with Fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/unions/" class="md-nav__link">
+        Unions
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/urls/" class="md-nav__link">
+        URLs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/uuids/" class="md-nav__link">
+        UUIDs
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/types/custom/" class="md-nav__link">
+        Custom Data Types
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/validators/" class="md-nav__link">
+        Validators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/model_config/" class="md-nav__link">
+        Model Config
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/schema/" class="md-nav__link">
+        Schema
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/exporting_models/" class="md-nav__link">
+        Exporting models
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/computed_fields/" class="md-nav__link">
+        Computed fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/dataclasses/" class="md-nav__link">
+        Dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/validation_decorator/" class="md-nav__link">
+        Validation decorator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/postponed_annotations/" class="md-nav__link">
+        Postponed annotations
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_11" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_11" id="__nav_2_11_label" tabindex="0">
+          Errors
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_11_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_11">
+          <span class="md-nav__icon md-icon"></span>
+          Errors
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/errors/" class="md-nav__link">
+        Usage Errors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/validation_errors/" class="md-nav__link">
+        Validation Errors
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/conversion_table/" class="md-nav__link">
+        Conversion table
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3" id="__nav_3_label" tabindex="0">
+          Integrations
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Integrations
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/mypy/" class="md-nav__link">
+        Mypy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/pycharm/" class="md-nav__link">
+        PyCharm
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/hypothesis/" class="md-nav__link">
+        Hypothesis
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/visual_studio_code/" class="md-nav__link">
+        Visual Studio Code
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/datamodel_code_generator/" class="md-nav__link">
+        datamodel-code-generator
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/devtools/" class="md-nav__link">
+        devtools
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../integrations/rich/" class="md-nav__link">
+        Rich
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../contributing/" class="md-nav__link">
+        Contribute
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_5" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_5" id="__nav_5_label" tabindex="0">
+          Blog
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_5_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_5">
+          <span class="md-nav__icon md-icon"></span>
+          Blog
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../blog/pydantic-v2/" class="md-nav__link">
+        Pydantic V2 Plan
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_6" id="__nav_6_label" tabindex="0">
+          API
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_6">
+          <span class="md-nav__icon md-icon"></span>
+          API
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/analyzed_type/" class="md-nav__link">
+        pydantic.analyzed_type
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/color/" class="md-nav__link">
+        pydantic.color
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/config/" class="md-nav__link">
+        pydantic.config
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/dataclasses/" class="md-nav__link">
+        pydantic.dataclasses
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/validate_call/" class="md-nav__link">
+        pydantic.validate_call
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/decorators/" class="md-nav__link">
+        pydantic.decorators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/errors/" class="md-nav__link">
+        pydantic.errors
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/fields/" class="md-nav__link">
+        pydantic.fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/json_schema/" class="md-nav__link">
+        pydantic.json_schema
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/main/" class="md-nav__link">
+        pydantic.main
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/mypy/" class="md-nav__link">
+        pydantic.mypy
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/networks/" class="md-nav__link">
+        pydantic.networks
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/types/" class="md-nav__link">
+        pydantic.types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../api/version/" class="md-nav__link">
+        pydantic.version
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#install-pydantic-v2-alpha" class="md-nav__link">
+    Install Pydantic V2 alpha
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#migration-notes" class="md-nav__link">
+    Migration notes
+  </a>
+  
+    <nav class="md-nav" aria-label="Migration notes">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-basemodel" class="md-nav__link">
+    Changes to BaseModel
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-pydantic-dataclasses" class="md-nav__link">
+    Changes to Pydantic Dataclasses
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-config" class="md-nav__link">
+    Changes to Config
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-validators" class="md-nav__link">
+    Changes to Validators
+  </a>
+  
+    <nav class="md-nav" aria-label="Changes to Validators">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#typeerror-no-longer-gets-converted-into-a-validationerror" class="md-nav__link">
+    TypeError no longer gets converted into a ValidationError
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#validate-without-calling-the-function" class="md-nav__link">
+    Validate without calling the function
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#each_item-is-deprecated" class="md-nav__link">
+    each_item is deprecated
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#root_validatorskip_on_failurefalse-is-no-longer-allowed" class="md-nav__link">
+    @root_validator(skip_on_failure=False) is no longer allowed
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#allow_reuse-is-deprecated" class="md-nav__link">
+    allow_reuse is deprecated
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-validators-allowed-signatures" class="md-nav__link">
+    Changes to @validator's allowed signatures
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#removed-validator-types" class="md-nav__link">
+    Removed validator types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-validation-of-specific-types" class="md-nav__link">
+    Changes to Validation of specific types
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#changes-to-generic-models" class="md-nav__link">
+    Changes to Generic models
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#analyzedtype" class="md-nav__link">
+    AnalyzedType
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#required-optional-and-nullable-fields" class="md-nav__link">
+    Required, Optional, and Nullable fields
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#other-changes" class="md-nav__link">
+    Other changes
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+  
+                  
+
+  
+  
+
+
+  <h1>Migration Guide</h1>
+
+<h2 id="install-pydantic-v2-alpha">Install Pydantic V2 alpha<a class="headerlink" href="#install-pydantic-v2-alpha" title="Permanent link">&para;</a></h2>
+<p>Your feedback will be a critical part of ensuring that we have made the right tradeoffs with the API changes in V2.</p>
+<p>To get started with the Pydantic V2 alpha, install it from PyPI.
+We recommend using a virtual environment to isolate your testing environment:</p>
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>--pre<span class="w"> </span>-U<span class="w"> </span><span class="s2">&quot;pydantic&gt;=2.0a1&quot;</span>
+</code></pre></div>
+<div class="admonition warning">
+<p class="admonition-title">Alpha release!</p>
+<p>Note that there are still some rough edges and incomplete features, and while trying out the Pydantic V2 alpha releases you may experience errors.</p>
+<p>We encourage you to try out the alpha releases in a test environment and not in production.
+Some features are still in development, and we will continue to make changes to the API.</p>
+</div>
+<p>If you do encounter any issues, please <a href="https://github.com/pydantic/pydantic/issues">create an issue in GitHub</a> using the <code>bug V2</code> label.
+This will help us to actively monitor and track errors, and to continue to improve the library’s performance.</p>
+<h2 id="migration-notes">Migration notes<a class="headerlink" href="#migration-notes" title="Permanent link">&para;</a></h2>
+<p><strong>Please note:</strong> this is just the beginning of a migration guide. We'll work hard up to the final release to prepare
+a full migration guide, but for now the following pointers should be some help while experimenting with V2.</p>
+<h3 id="changes-to-basemodel">Changes to BaseModel<a class="headerlink" href="#changes-to-basemodel" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Various method names have been changed; <code>BaseModel</code> methods all start with <code>model_</code> now.
+  Where possible, we have retained the old method names to help ease migration, but calling them will result in <code>DeprecationWarning</code>s.</li>
+<li>Some of the built-in data loading functionality has been slated for removal.
+    In particular, <code>parse_raw</code> and <code>parse_file</code> are now deprecated. You should load the data and then pass it to <code>model_validate</code>.</li>
+<li>The <code>from_orm</code> method has been removed; you can now just use <code>model_validate</code> (equivalent to <code>parse_obj</code> from Pydantic V1) to achieve something similar,
+  as long as you've set <code>from_attributes=True</code> in the model config.</li>
+<li>The <code>__eq__</code> method has changed for models; models are no longer considered equal to the dicts.</li>
+<li>Custom <code>__init__</code> overrides won't be called. This should be replaced with a <code>@root_validator</code>.</li>
+<li>Due to inconsistency with the rest of the library, we have removed the special behavior of models
+  using the <code>__root__</code> field, and have disallowed the use of an attribute with this name to prevent confusion.
+  However, you can achieve equivalent behavior with a "standard" field name through the use of <code>@root_validator</code>,
+  <code>@model_serializer</code>, and <code>__get_pydantic_json_schema__</code>. You can see an example of this
+  <a href="https://github.com/pydantic/pydantic/blob/2b9459f20d094a46fa3093b43c34444240f03646/tests/test_parse.py#L95-L113">here</a>.</li>
+</ul>
+<h3 id="changes-to-pydantic-dataclasses">Changes to Pydantic Dataclasses<a class="headerlink" href="#changes-to-pydantic-dataclasses" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The <code>__post_init__</code> in Pydantic dataclasses will now be called after validation, rather than before.</li>
+<li>We no longer support <code>extra='allow'</code> for Pydantic dataclasses, where extra attributes passed to the initializer would be
+  stored as extra fields on the dataclass. <code>extra='ignore'</code> is still supported for the purposes of allowing extra fields while parsing data; they just aren't stored.</li>
+<li><code>__post_init_post_parse__</code> has been removed.</li>
+<li>Nested dataclasses no longer accept tuples as input, only dict.</li>
+</ul>
+<h3 id="changes-to-config">Changes to Config<a class="headerlink" href="#changes-to-config" title="Permanent link">&para;</a></h3>
+<ul>
+<li>To specify config on a model, it is now deprecated to create a class called <code>Config</code> in the namespace of the parent <code>BaseModel</code> subclass.
+  Instead, you just need to set a class attribute called <code>model_config</code> to be a dict with the key/value pairs you want to be used as the config.</li>
+</ul>
+<p>The following config settings have been removed:</p>
+<ul>
+<li><code>allow_mutation</code>.</li>
+<li><code>error_msg_templates</code>.</li>
+<li><code>fields</code> — this was the source of various bugs, so has been removed. You should be able to use <code>Annotated</code> on fields to modify them as desired.</li>
+<li><code>getter_dict</code> — <code>orm_mode</code> has been removed, and this implementation detail is no longer necessary.</li>
+<li><code>schema_extra</code> — you should now use the <code>json_schema_extra</code> keyword argument to <code>pydantic.Field</code>.</li>
+<li><code>smart_union</code>.</li>
+<li><code>underscore_attrs_are_private</code> — the Pydantic V2 behavior is now the same as if this was always set to <code>True</code> in Pydantic V1.</li>
+</ul>
+<p>The following config settings have been renamed:</p>
+<ul>
+<li><code>allow_population_by_field_name</code> → <code>populate_by_name</code></li>
+<li><code>anystr_lower</code> → <code>str_to_lower</code></li>
+<li><code>anystr_strip_whitespace</code> → <code>str_strip_whitespace</code></li>
+<li><code>anystr_upper</code> → <code>str_to_upper</code></li>
+<li><code>keep_untouched</code> → <code>ignored_types</code></li>
+<li><code>max_anystr_length</code> → <code>str_max_length</code></li>
+<li><code>min_anystr_length</code> → <code>str_min_length</code></li>
+<li><code>orm_mode</code> → <code>from_attributes</code></li>
+<li><code>validate_all</code> → <code>validate_default</code></li>
+</ul>
+<h3 id="changes-to-validators">Changes to Validators<a class="headerlink" href="#changes-to-validators" title="Permanent link">&para;</a></h3>
+<p>Pydantic V2 introduces many new features and improvements to validators.
+Most of these features are only available by using a new set of decorators:</p>
+<ul>
+<li><code>@field_validator</code>, which replaces <code>@validator</code></li>
+<li><code>@model_validator</code>, which replaces <code>@root_validator</code></li>
+</ul>
+<p>The following sections list some general changes and some changes specific to individual decorators.</p>
+<h4 id="typeerror-no-longer-gets-converted-into-a-validationerror"><code>TypeError</code> no longer gets converted into a <code>ValidationError</code><a class="headerlink" href="#typeerror-no-longer-gets-converted-into-a-validationerror" title="Permanent link">&para;</a></h4>
+<p>Previously raising <code>TypeError</code> within a validator function wrapped that error into a <code>ValidationError</code> and, in the case of use facing errors like in FastAPI, would display those errors to users.
+This lead to a variety of bugs, for example calling a function with the wrong signature:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">pytest</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>  <span class="c1"># or validator</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">val_x</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">str</span><span class="o">.</span><span class="n">lower</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>  <span class="c1"># raises a TypeError</span>
+
+
+<span class="k">with</span> <span class="n">pytest</span><span class="o">.</span><span class="n">raises</span><span class="p">(</span><span class="ne">TypeError</span><span class="p">):</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<p>This applies to all validators.</p>
+<h3 id="validate-without-calling-the-function">Validate without calling the function<a class="headerlink" href="#validate-without-calling-the-function" title="Permanent link">&para;</a></h3>
+<p>Previously, arguments validation was done by directly calling the decorated function with parameters.
+When validating them without <em>actually</em> calling the function, you could call the <code>validate</code> method bound to the
+decorated function.</p>
+<p>This functionality no longer exists.</p>
+<h3 id="each_item-is-deprecated"><code>each_item</code> is deprecated<a class="headerlink" href="#each_item-is-deprecated" title="Permanent link">&para;</a></h3>
+<p>For <code>@validator</code> the argument is still present and functions.
+For <code>@field_validator</code> it is not present at all.
+As you migrate from <code>@validator</code> to <code>@field_validator</code> you will have to replace <code>each_item=True</code> with <a href="../usage/validators/#generic-validated-collections">validators in Annotated metadata</a>.</p>
+<h3 id="root_validatorskip_on_failurefalse-is-no-longer-allowed"><code>@root_validator(skip_on_failure=False)</code> is no longer allowed<a class="headerlink" href="#root_validatorskip_on_failurefalse-is-no-longer-allowed" title="Permanent link">&para;</a></h3>
+<p>Since this was the default value in V1 you will need to explicitly pass <code>skip_on_failure=False</code> for <code>pre=False</code> (the default) validators.</p>
+<h3 id="allow_reuse-is-deprecated"><code>allow_reuse</code> is deprecated<a class="headerlink" href="#allow_reuse-is-deprecated" title="Permanent link">&para;</a></h3>
+<p>Previously Pydantic tracked re-used functions in decorators to help you avoid some common mistakes.
+We did this by comparing the function's fully qualified name (module name + function name).
+That system has been replaced with a system that tracks things at a per-class level, reducing false positives and bringing the behavior more in line with the errors that type checkers and linters give for overriding a method with another in a class definition.</p>
+<p>It is highly likely that if you were using <code>allow_reuse=True</code> you can simply delete the parameter and things will work as expected.</p>
+<p>For <code>@validator</code> this argument is still present but does nothing and emits a deprecation warning.
+It is not present on <code>@field_validator</code>.</p>
+<h3 id="changes-to-validators-allowed-signatures">Changes to <code>@validator</code>'s allowed signatures<a class="headerlink" href="#changes-to-validators-allowed-signatures" title="Permanent link">&para;</a></h3>
+<p>In V1 functions wrapped by <code>@validator</code> could receive keyword arguments with metadata about what was being validated.
+Some of these arguments have been removed:</p>
+<ul>
+<li><code>config</code>: Pydantic V2's config is now a dictionary instead of a class, which means this argument is no longer backwards compatible. If you need to access the configuration you should migrate to <code>@field_validator</code> and use <code>info.config</code>.</li>
+<li><code>field</code>: this argument used to be a <code>ModelField</code> object, which was a quasi-internal class that no longer exists in Pydantic V2. Most of this information can still be accessed by using the field name from <code>info.field_name</code> to index into <code>cls.model_fields</code></li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FieldValidationInfo</span><span class="p">,</span> <span class="n">field_validator</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+
+    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">val_x</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">info</span><span class="p">:</span> <span class="n">FieldValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <span class="k">assert</span> <span class="n">info</span><span class="o">.</span><span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">info</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">))</span>
+        <span class="c1">#&gt; Model</span>
+        <span class="nb">print</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">model_fields</span><span class="p">[</span><span class="n">info</span><span class="o">.</span><span class="n">field_name</span><span class="p">]</span><span class="o">.</span><span class="n">is_required</span><span class="p">())</span>
+        <span class="c1">#&gt; True</span>
+        <span class="k">return</span> <span class="n">v</span>
+
+
+<span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</code></pre></div>
+<h3 id="removed-validator-types">Removed validator types<a class="headerlink" href="#removed-validator-types" title="Permanent link">&para;</a></h3>
+<ul>
+<li>The <code>stricturl</code> type has been removed.</li>
+</ul>
+<h3 id="changes-to-validation-of-specific-types">Changes to Validation of specific types<a class="headerlink" href="#changes-to-validation-of-specific-types" title="Permanent link">&para;</a></h3>
+<ul>
+<li>Integers outside the valid range of 64 bit integers will cause <code>ValidationError</code>s during parsing.
+  To work around this, use an <code>IsInstance</code> validator (more details to come).</li>
+<li>Subclasses of built-ins won't validate into their subclass types; you'll need to use an <code>IsInstance</code> validator to validate these types.</li>
+</ul>
+<h3 id="changes-to-generic-models">Changes to Generic models<a class="headerlink" href="#changes-to-generic-models" title="Permanent link">&para;</a></h3>
+<ul>
+<li>While it does not raise an error at runtime yet, subclass checks for parametrized generics should no longer be used.
+  These will result in <code>TypeError</code>s and we can't promise they will work forever. However, it will be okay to do subclass checks against <em>non-parametrized</em> generic models</li>
+</ul>
+<h3 id="analyzedtype">AnalyzedType<a class="headerlink" href="#analyzedtype" title="Permanent link">&para;</a></h3>
+<p>Pydantic V1 didn't have good support for validation or serializing non-<code>BaseModel</code>.
+To work with them you had to create a "root" model or use the utility functions in <code>pydantic.tools</code> (<code>parse_obj_as</code> and <code>schema_of</code>).
+In Pydantic V2 this is <em>a lot</em> easier: the <code>AnalyzedType</code> class lets you build an object that behaves almost like a <code>BaseModel</code> class which you can use for a lot of the use cases of root models and as a complete replacement for <code>parse_obj_as</code> and <code>schema_of</code>.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnalyzedType</span>
+
+<span class="n">validator</span> <span class="o">=</span> <span class="n">AnalyzedType</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;type&#39;: &#39;array&#39;, &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnalyzedType</span>
+
+<span class="n">validator</span> <span class="o">=</span> <span class="n">AnalyzedType</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+<span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;type&#39;: &#39;array&#39;, &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<p>Note that this API is provisional and may change before the final release of Pydantic V2.</p>
+<h3 id="required-optional-and-nullable-fields">Required, Optional, and Nullable fields<a class="headerlink" href="#required-optional-and-nullable-fields" title="Permanent link">&para;</a></h3>
+<p>Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2 these concepts are more clearly defined.</p>
+<p>Pydantic V2 will move to match <code>dataclasses</code>, thus you may explicitly specify a field as <code>required</code> or <code>optional</code> and whether the field accepts <code>None</code> or not.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">f1</span><span class="p">:</span> <span class="nb">str</span>  <span class="c1"># required, cannot be None</span>
+    <span class="n">f2</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>  <span class="c1"># required, can be None - same as Optional[str] / Union[str, None]</span>
+    <span class="n">f3</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># not required, can be None</span>
+    <span class="n">f4</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Foobar&#39;</span>  <span class="c1"># not required, but cannot be None</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Foo</span><span class="p">(</span><span class="n">f1</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f2</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">f4</span><span class="o">=</span><span class="s1">&#39;b&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Foo</span>
+<span class="sd">    f1</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value=None, input_type=NoneType]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<h2 id="other-changes">Other changes<a class="headerlink" href="#other-changes" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>GetterDict</code> has been removed, as it was just an implementation detail for <code>orm_mode</code>, which has been removed.</li>
+</ul>
+
+
+
+
+
+                
+  <script src="/flarelytics/client.js"></script>
+
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["content.tabs.link", "announce.dismiss", "navigation.tabs"], "search": "../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.51198bba.min.js"></script>
+      
+        <script src="../extra/redirects.js"></script>
+      
+    
+  </body>
+</html>
