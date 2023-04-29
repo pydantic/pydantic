@@ -312,9 +312,8 @@ jobs:
           jobs: ${{ toJSON(needs) }}
 
   publish_docs:
-    needs: [check]
+#    needs: [check]
     # `always()` is required to trigger this task even though test-fastapi is skipped
-    if: "always() && needs.check.outputs.result == 'success'"
 #    if: "always() && needs.check.outputs.result == 'success' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))"
     runs-on: ubuntu-latest
 
@@ -325,6 +324,10 @@ jobs:
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
+
+      - uses: pdm-project/setup-pdm@v3
+        with:
+          cache: true
 
       - name: install
         run: pdm install -G docs
