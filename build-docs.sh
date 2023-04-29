@@ -11,4 +11,5 @@ ls -lh
 
 mkdir -p site
 
-mv * site
+shopt -s extglob
+mv !(site) site
