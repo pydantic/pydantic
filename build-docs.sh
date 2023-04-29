@@ -7,11 +7,11 @@
 set -e
 set -x
 
-ls -lh
+ls -lha
 
 mkdir -p site
 
 shopt -s extglob
 mv !(site|build-docs.sh) site
 
-ls -lh site
+ls -lha site
