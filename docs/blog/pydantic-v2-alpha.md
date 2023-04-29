@@ -1,7 +1,7 @@
 # Pydantic V2 Pre Release
 
 <aside class="blog" markdown>
-![Terrence Dorsey](/img/terrencedorsey.jpg)
+![Terrence Dorsey](../img/terrencedorsey.jpg)
 <div markdown>
   **Terrence Dorsey & Samuel Colvin** &bull;&nbsp;
   [:material-github:](https://github.com/pydantic) &bull;&nbsp;

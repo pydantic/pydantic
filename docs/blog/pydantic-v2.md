@@ -1,7 +1,7 @@
 # Pydantic V2 Plan
 
 <aside class="blog" markdown>
-![Samuel Colvin](/img/samuelcolvin.jpg)
+![Samuel Colvin](../img/samuelcolvin.jpg)
 <div markdown>
   **Samuel Colvin** &bull;&nbsp;
   [:material-github:](https://github.com/samuelcolvin) &bull;&nbsp;

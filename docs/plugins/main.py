@@ -243,7 +243,7 @@ def build_conversion_table(markdown: str, page: Page) -> str | None:
 
 
 def devtools_example(markdown: str, page: Page) -> str | None:
-    if page.file.src_uri != 'usage/devtools.md':
+    if page.file.src_uri != 'integrations/devtools.md':
         return None
 
     html = (THIS_DIR / 'devtools_output.html').read_text().strip('\n')
