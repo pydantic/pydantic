@@ -6,8 +6,7 @@
 set -e
 set -x
 
-curl -sSL https://bootstrap.pypa.io/get-pip.py | python3 -
-export PATH=/opt/buildhome/.local/bin:$PATH
+python3 -V
 
 python3 -m pip install pdm
 
