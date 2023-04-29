@@ -211,13 +211,15 @@ Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields.
 Pydantic V2 will move to match `dataclasses`, thus you may explicitly specify a field as `required` or `optional` and whether the field accepts `None` or not.
 
 ```py
+from typing import Optional
+
 from pydantic import BaseModel, ValidationError
 
 
 class Foo(BaseModel):
     f1: str  # required, cannot be None
-    f2: str | None  # required, can be None - same as Optional[str] / Union[str, None]
-    f3: str | None = None  # not required, can be None
+    f2: Optional[str]  # required, can be None - same as Union[str, None] / str | None
+    f3: Optional[str] = None  # not required, can be None
     f4: str = 'Foobar'  # not required, but cannot be None
 
 
