@@ -7,14 +7,15 @@ from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from pathlib import Path
-from typing import Generator, Optional, Pattern
+from typing import Any, Generator, Optional, Pattern
 from uuid import UUID
 
 import pytest
-from pydantic_core import SchemaSerializer
+from pydantic_core import SchemaSerializer, core_schema
 
 from pydantic import BaseModel, ConfigDict, NameEmail, field_serializer
 from pydantic._internal._generate_schema import GenerateSchema
+from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.deprecated.json import pydantic_encoder, timedelta_isoformat
@@ -122,7 +123,11 @@ def test_model_encoding():
 
 def test_subclass_encoding():
     class SubDate(datetime):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return handler(datetime)
 
     class Model(BaseModel):
         a: datetime

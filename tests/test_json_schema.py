@@ -2103,6 +2103,12 @@ def test_schema_attributes():
 def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return handler(Path)
+
+        @classmethod
         def __get_pydantic_json_schema__(
             cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
         ) -> JsonSchemaValue:

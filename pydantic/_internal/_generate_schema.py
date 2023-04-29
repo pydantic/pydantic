@@ -211,7 +211,7 @@ class GenerateSchema:
         metadata_js_function = _extract_get_pydantic_json_schema(obj)
         if metadata_js_function is None:
             # Need to do this to handle custom generics:
-            if hasattr(obj, '__origin__'):
+            if hasattr(obj, '__origin__') and not isinstance(obj, type(Annotated[int, 123])):
                 metadata_js_function = _extract_get_pydantic_json_schema(obj.__origin__)
         if metadata_js_function is not None:
             metadata = CoreMetadataHandler(schema).metadata
@@ -418,10 +418,6 @@ class GenerateSchema:
         elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
             return self._callable_schema(obj)
 
-        # TODO: _std_types_schema iterates over the __mro__ looking for an expected schema.
-        #   This will catch subclasses of typing.Deque, preventing us from properly supporting user-defined
-        #   generic subclasses. (In principle this would also catch typing.OrderedDict, but that is currently
-        #   already getting caught in the `issubclass(obj, dict):` check above.
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:
             return std_schema
@@ -454,12 +450,6 @@ class GenerateSchema:
             return self._union_schema(obj)
         elif issubclass(origin, Annotated):  # type: ignore[arg-type]
             return self._annotated_schema(obj)
-        elif issubclass(origin, typing.List):
-            return self._generic_collection_schema(list, obj, origin)
-        elif issubclass(origin, typing.Set):
-            return self._generic_collection_schema(set, obj, origin)
-        elif issubclass(origin, typing.FrozenSet):
-            return self._generic_collection_schema(frozenset, obj, origin)
         elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
             # TODO: To support generic subclasses of typing.Tuple, we need to better-introspect the args to origin
             return self._tuple_schema(obj)
@@ -478,15 +468,6 @@ class GenerateSchema:
             return self._mapping_schema(obj)
         elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
             return self._subclass_schema(obj)
-        elif issubclass(origin, typing.Deque):
-            from ._std_types_schema import deque_schema
-
-            return deque_schema(self, obj)
-        elif issubclass(origin, typing.OrderedDict):
-            # Subclasses of typing.OrderedDict may be handled as subclasses of dict; see note above
-            from ._std_types_schema import ordered_dict_schema
-
-            return ordered_dict_schema(self, obj)
         elif issubclass(origin, typing.Sequence):
             # Because typing.Sequence does not have a specified `__init__` signature, we don't validate into subclasses
             return self._sequence_schema(obj)
@@ -560,7 +541,10 @@ class GenerateSchema:
             return schema
 
         schema = apply_annotations(
-            CallbackGetCoreSchemaHandler(generate_schema), field_info.metadata, self.definitions
+            CallbackGetCoreSchemaHandler(generate_schema, self.generate_schema),
+            field_info.metadata,
+            self.definitions,
+            self,
         )(field_info.annotation)
 
         # TODO: remove this V1 compatibility shim once it's deprecated
@@ -636,9 +620,9 @@ class GenerateSchema:
         Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
         """
         first_arg, *other_args = get_args(annotated_type)
-        return apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), other_args, self.definitions)(
-            first_arg
-        )
+        return apply_annotations(
+            CallbackGetCoreSchemaHandler(self.generate_schema, self.generate_schema), other_args, self.definitions, self
+        )(first_arg)
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -746,7 +730,10 @@ class GenerateSchema:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         schema = apply_annotations(
-            CallbackGetCoreSchemaHandler(self.generate_schema), field.metadata, self.definitions
+            CallbackGetCoreSchemaHandler(self.generate_schema, self.generate_schema),
+            field.metadata,
+            self.definitions,
+            self,
         )(annotation)
 
         if not field.is_required():
@@ -762,32 +749,6 @@ class GenerateSchema:
             if alias_generator:
                 parameter_schema['alias'] = alias_generator(name)
         return parameter_schema
-
-    def _generic_collection_schema(
-        self, parent_type: type[Any], type_: type[Any], origin: type[Any]
-    ) -> core_schema.CoreSchema:
-        """
-        Generate schema for List, Set, and FrozenSet, possibly parameterized.
-
-        :param parent_type: Either `list`, `set` or `frozenset` - the builtin type
-        :param type_: The type of the collection, e.g. `List[int]` or `List`, or a subclass of one of them
-        :param origin: The origin type
-        """
-        schema: core_schema.CoreSchema = {  # type: ignore[misc,assignment]
-            'type': parent_type.__name__.lower(),
-            'items_schema': self.generate_schema(get_first_arg(type_)),
-        }
-
-        if origin == parent_type:
-            return schema
-        else:
-            # Ensure the validated value is converted back to the specific subclass type
-            # NOTE: we might have better performance by using a tuple or list validator for the schema here,
-            # but if you care about performance, you can define your own schema.
-            # We should optimize for compatibility, not performance in this case
-            return core_schema.general_after_validator_function(
-                lambda __input_value, __info: type_(__input_value), schema
-            )
 
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
         """
@@ -980,22 +941,13 @@ class GenerateSchema:
         """
         Generate schema for types in the standard library.
         """
-        if not isinstance(obj, type):
-            return None
-
         # Import here to avoid the extra import time earlier since _std_validators imports lots of things globally
-        from ._std_types_schema import SCHEMA_LOOKUP
+        from ._std_types_schema import get_schema_generator_for_known_type
 
-        # instead of iterating over a list and calling is_instance, this should be somewhat faster,
-        # especially as it should catch most types on the first iteration
-        # (same as we do/used to do in json encoding)
-        for base in obj.__mro__[:-1]:
-            try:
-                encoder = SCHEMA_LOOKUP[base]
-            except KeyError:
-                continue
-            return encoder(self, obj)
-        return None
+        try:
+            return self.generate_schema(Annotated[obj, get_schema_generator_for_known_type(obj)])
+        except LookupError:
+            return None
 
     def _dataclass_schema(
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
@@ -1255,6 +1207,7 @@ def apply_annotations(
     get_inner_schema: GetCoreSchemaHandler,
     annotations: typing.Iterable[Any],
     definitions: dict[str, core_schema.CoreSchema],
+    generate_schema: GenerateSchema,
 ) -> GetCoreSchemaHandler:
     """
     Apply arguments from `Annotated` or from `FieldInfo` to a schema.
@@ -1262,13 +1215,16 @@ def apply_annotations(
     for annotation in annotations:
         if annotation is None:
             continue
-        get_inner_schema = get_wrapped_inner_schema(get_inner_schema, annotation, definitions)
+        get_inner_schema = get_wrapped_inner_schema(get_inner_schema, annotation, definitions, generate_schema)
 
     return get_inner_schema
 
 
 def get_wrapped_inner_schema(
-    get_inner_schema: GetCoreSchemaHandler, annotation: Any, definitions: dict[str, core_schema.CoreSchema]
+    get_inner_schema: GetCoreSchemaHandler,
+    annotation: Any,
+    definitions: dict[str, core_schema.CoreSchema],
+    generate_schema: GenerateSchema,
 ) -> CallbackGetCoreSchemaHandler:
     metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
         lambda source, handler: handler(source)
@@ -1285,7 +1241,7 @@ def get_wrapped_inner_schema(
             metadata['pydantic_js_functions'].append(metadata_js_function)
         return schema
 
-    return CallbackGetCoreSchemaHandler(new_handler)
+    return CallbackGetCoreSchemaHandler(new_handler, generate_schema.generate_schema)
 
 
 def apply_single_annotation(

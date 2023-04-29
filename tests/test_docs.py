@@ -67,6 +67,8 @@ group_globals = GroupModuleGlobals()
 
 
 class MockedDatetime(datetime):
+    __class__ = datetime
+
     @classmethod
     def now(cls, *args, **kwargs):
         return datetime(2032, 1, 2, 3, 4, 5, 6)

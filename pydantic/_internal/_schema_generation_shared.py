@@ -160,6 +160,25 @@ class GetCoreSchemaHandler:
         """
         raise NotImplementedError
 
+    def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
+        """
+        Skip all other metadata and call directly into Pydantic's schema generation
+        machinery.
+
+        You would use this if e.g. you are handling a collection
+        and want to directly generate a schema for the items / keys / values.
+        Calling `handler(items_type)` does not necessarily do what you may think it would
+        since `handler` may be specialized to process the current level of schema generation,
+        not the items/keys/values level.
+
+        Args:
+            __source_type (Any): The input type.
+
+        Returns:
+            CoreSchema: the `pydantic-core` CoreSchema generated.
+        """
+        raise NotImplementedError
+
 
 class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
     """
@@ -169,8 +188,14 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
     See `GetCoreSchemaHandler` for the handler API.
     """
 
-    def __init__(self, handler: Callable[[Any], core_schema.CoreSchema]) -> None:
+    def __init__(
+        self, handler: Callable[[Any], core_schema.CoreSchema], generate_schema: Callable[[Any], core_schema.CoreSchema]
+    ) -> None:
         self._handler = handler
+        self.generate_schema = generate_schema
 
     def __call__(self, __source_type: Any) -> core_schema.CoreSchema:
         return self._handler(__source_type)
+
+    def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
+        return self.generate_schema(__source_type)

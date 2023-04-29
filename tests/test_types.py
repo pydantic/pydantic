@@ -1434,7 +1434,7 @@ def test_enum_type():
 
     with pytest.raises(
         PydanticInvalidForJsonSchema,
-        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'Enum'>)"),
+        match=re.escape("The enum <enum 'Enum'> cannot generate a JSON schema because it has no cases"),
     ):
         Model.model_json_schema()
 
@@ -1468,7 +1468,7 @@ def test_int_enum_type():
 
     with pytest.raises(
         PydanticInvalidForJsonSchema,
-        match=re.escape("Cannot generate a JsonSchema for core_schema.IsInstanceSchema (<enum 'IntEnum'>)"),
+        match=re.escape("The enum <enum 'IntEnum'> cannot generate a JSON schema because it has no cases"),
     ):
         Model.model_json_schema()
 
