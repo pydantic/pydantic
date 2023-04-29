@@ -9,3 +9,5 @@ pytest-mock==3.10.0
 pytest-sugar==0.9.6
 # pin typing-extensions to minimum requirement - see #4885
 typing-extensions==4.2.0
+# for fastapi tests
+Flask==2.2.3

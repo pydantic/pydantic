@@ -724,7 +724,16 @@ def validate_email(value: Union[str]) -> Tuple[str, str]:
     except email_validator.EmailNotValidError as e:
         raise errors.EmailError from e
 
-    email = parts.normalized
-    assert email is not None
-    name = name or parts.local_part
-    return name, email
+    if hasattr(parts, 'normalized'):
+        # email-validator >= 2
+        email = parts.normalized
+        assert email is not None
+        name = name or parts.local_part
+        return name, email
+    else:
+        # email-validator >1, <2
+        at_index = email.index('@')
+        local_part = email[:at_index]  # RFC 5321, local part must be case-sensitive.
+        global_part = email[at_index:].lower()
+
+        return name or local_part, local_part + global_part
