@@ -81,7 +81,14 @@ markdown_extensions:
 - pymdownx.tabbed:
     alternate_style: true 
 
+extra:
+  version:
+    provider: mike
+
 plugins:
+- mike:
+    alias_type: symlink
+    canonical_version: latest
 - search
 - exclude:
     glob:
