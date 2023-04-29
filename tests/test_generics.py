@@ -2283,7 +2283,13 @@ def test_generic_intenum_bound():
     with pytest.raises(ValidationError) as exc_info:
         Model[MyEnum](x=OtherEnum.b)
     assert exc_info.value.errors() == [
-        {'ctx': {'expected': '1'}, 'input': 2, 'loc': ('x',), 'msg': 'Input should be 1', 'type': 'enum'}
+        {
+            'ctx': {'expected': '1'},
+            'input': 2,
+            'loc': ('x',),
+            'msg': 'Input should be 1',
+            'type': 'enum',
+        }
     ]
 
     assert Model[MyEnum].model_json_schema() == {

@@ -8,10 +8,10 @@ from pydantic_core import CoreSchema, core_schema
 
 if typing.TYPE_CHECKING:
     from ..json_schema import JsonSchemaValue
-    from ._json_schema_shared import (
+    from ._schema_generation_shared import (
         CoreSchemaOrField as CoreSchemaOrField,
     )
-    from ._json_schema_shared import (
+    from ._schema_generation_shared import (
         GetJsonSchemaFunction,
         GetJsonSchemaHandler,
     )

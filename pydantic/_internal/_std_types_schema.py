@@ -12,8 +12,9 @@ from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
+from os import PathLike
 from pathlib import PurePath
-from typing import Any, Callable, NoReturn
+from typing import Any, Callable
 from uuid import UUID
 
 from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, Url, core_schema
@@ -23,7 +24,7 @@ from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _serializers, _validators
 from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
-from ._json_schema_shared import GetJsonSchemaHandler
+from ._schema_generation_shared import GetJsonSchemaHandler
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -79,7 +80,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     else:
         expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
 
-    def to_enum(__input_value: Any, _: core_schema.ValidationInfo) -> Enum:
+    def to_enum(__input_value: Any, info: core_schema.ValidationInfo | None = None) -> Enum:
         try:
             return enum_type(__input_value)
         except ValueError:
@@ -105,26 +106,23 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         updates['type'] = 'integer'
         lax = core_schema.chain_schema([core_schema.int_schema(), to_enum_validator])
-        strict = core_schema.is_instance_schema(enum_type, json_types={'int'}, json_function=enum_type)
+        # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
+        # Disallow float from JSON due to strict mode
+        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str'}, json_function=to_enum)
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'string'
         lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
-        strict = core_schema.is_instance_schema(enum_type, json_types={'str'}, json_function=enum_type)
+        # Allow all types from JSON to get better error messages (numeric types will still fail validation in to_enum)
+        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str', 'float'}, json_function=to_enum)
     elif issubclass(enum_type, float):
         updates['type'] = 'numeric'
         lax = core_schema.chain_schema([core_schema.float_schema(), to_enum_validator])
-        strict = core_schema.is_instance_schema(enum_type, json_types={'float'}, json_function=enum_type)
+        # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
+        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str', 'float'}, json_function=to_enum)
     else:
-
-        def unable_to_parse_from_json(_: Any) -> NoReturn:
-            raise ValueError('Could not parse input, it cannot be converted to the target type')
-
         lax = to_enum_validator
-        # allow inputs to pass thorough and hit our unable_to_parse_from_json function
-        strict = core_schema.is_instance_schema(
-            enum_type, json_types={'float', 'int', 'str'}, json_function=unable_to_parse_from_json
-        )
+        strict = core_schema.is_instance_schema(enum_type, json_types={'float', 'int', 'str'}, json_function=to_enum)
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=strict,
@@ -201,35 +199,37 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
             ],
             metadata=metadata,
         ),
+        serialization=core_schema.to_string_ser_schema(),
     )
 
 
 @schema_function(PurePath)
-def path_schema(_schema_generator: GenerateSchema, path_type: type[PurePath]) -> core_schema.LaxOrStrictSchema:
+@schema_function(PathLike)
+def path_schema(_schema_generator: GenerateSchema, path_type: type[PathLike]) -> core_schema.LaxOrStrictSchema:
+    construct_path = PurePath if path_type is PathLike else path_type
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'path'}])
-    # TODO, is this actually faster than `function_after(...)` as above?
-    lax = core_schema.union_schema(
-        [
-            core_schema.is_instance_schema(path_type, json_types={'str'}, metadata=metadata),
-            core_schema.general_after_validator_function(
-                _validators.path_validator,
-                core_schema.str_schema(),
-                metadata=metadata,
-            ),
-        ],
-        custom_error_type='path_type',
-        custom_error_message='Input is not a valid path',
-        strict=True,
-    )
+
+    def path_validator(__input_value: str) -> PathLike:
+        try:
+            return construct_path(__input_value)  # type: ignore
+        except TypeError as e:
+            raise PydanticCustomError('path_type', 'Input is not a valid path') from e
+
+    instance_schema = core_schema.is_instance_schema(path_type, json_types={'str'}, json_function=path_validator)
 
     return core_schema.lax_or_strict_schema(
-        lax_schema=lax,
-        strict_schema=core_schema.general_after_validator_function(
-            lambda x, _: path_type(x),
-            core_schema.is_instance_schema(path_type, json_types={'str'}),
-            serialization=core_schema.to_string_ser_schema(),
-            metadata=metadata,
+        lax_schema=core_schema.union_schema(
+            [
+                instance_schema,
+                core_schema.no_info_after_validator_function(path_validator, core_schema.str_schema()),
+            ],
+            custom_error_type='path_type',
+            custom_error_message='Input is not a valid path',
+            strict=True,
         ),
+        strict_schema=instance_schema,
+        serialization=core_schema.to_string_ser_schema(),
+        metadata=metadata,
     )
 
 

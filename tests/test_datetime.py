@@ -3,6 +3,7 @@ from datetime import date, datetime, time, timedelta, timezone
 
 import pytest
 from dirty_equals import HasRepr
+from typing_extensions import Annotated
 
 from pydantic import AwareDatetime, BaseModel, FutureDate, NaiveDatetime, PastDate, ValidationError, condate
 
@@ -11,6 +12,26 @@ from .conftest import Err
 
 def create_tz(minutes):
     return timezone(timedelta(minutes=minutes))
+
+
+@pytest.fixture(scope='module', params=[FutureDate, Annotated[date, FutureDate()]])
+def future_date_type(request):
+    return request.param
+
+
+@pytest.fixture(scope='module', params=[PastDate, Annotated[date, PastDate()]])
+def past_date_type(request):
+    return request.param
+
+
+@pytest.fixture(scope='module', params=[AwareDatetime, Annotated[datetime, AwareDatetime()]])
+def aware_datetime_type(request):
+    return request.param
+
+
+@pytest.fixture(scope='module', params=[NaiveDatetime, Annotated[datetime, NaiveDatetime()]])
+def naive_datetime_type(request):
+    return request.param
 
 
 @pytest.fixture(scope='module', name='DateModel')
@@ -160,18 +181,18 @@ def test_datetime_parsing(DatetimeModel, value, result):
         assert DatetimeModel(dt=value).dt == result
 
 
-def test_aware_datetime_validation_success():
+def test_aware_datetime_validation_success(aware_datetime_type):
     class Model(BaseModel):
-        foo: AwareDatetime
+        foo: aware_datetime_type
 
     value = datetime.now(tz=timezone.utc)
 
     assert Model(foo=value).foo == value
 
 
-def test_aware_datetime_validation_fails():
+def test_aware_datetime_validation_fails(aware_datetime_type):
     class Model(BaseModel):
-        foo: AwareDatetime
+        foo: aware_datetime_type
 
     value = datetime.now()
 
@@ -188,18 +209,18 @@ def test_aware_datetime_validation_fails():
     ]
 
 
-def test_naive_datetime_validation_success():
+def test_naive_datetime_validation_success(naive_datetime_type):
     class Model(BaseModel):
-        foo: NaiveDatetime
+        foo: naive_datetime_type
 
     value = datetime.now()
 
     assert Model(foo=value).foo == value
 
 
-def test_naive_datetime_validation_fails():
+def test_naive_datetime_validation_fails(naive_datetime_type):
     class Model(BaseModel):
-        foo: NaiveDatetime
+        foo: naive_datetime_type
 
     value = datetime.now(tz=timezone.utc)
 
@@ -396,9 +417,9 @@ def test_date_constraints(constraint, msg, ok_value, error_value):
         (date(1996, 1, 22), date(1996, 1, 22)),
     ),
 )
-def test_past_date_validation_success(value, result):
+def test_past_date_validation_success(value, result, past_date_type):
     class Model(BaseModel):
-        foo: PastDate
+        foo: past_date_type
 
     assert Model(foo=value).foo == result
 
@@ -411,9 +432,9 @@ def test_past_date_validation_success(value, result):
         '2064-06-01',
     ),
 )
-def test_past_date_validation_fails(value):
+def test_past_date_validation_fails(value, past_date_type):
     class Model(BaseModel):
-        foo: PastDate
+        foo: past_date_type
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
@@ -435,9 +456,9 @@ def test_past_date_validation_fails(value):
         ('2064-06-01', date(2064, 6, 1)),
     ),
 )
-def test_future_date_validation_success(value, result):
+def test_future_date_validation_success(value, result, future_date_type):
     class Model(BaseModel):
-        foo: FutureDate
+        foo: future_date_type
 
     assert Model(foo=value).foo == result
 
@@ -450,9 +471,9 @@ def test_future_date_validation_success(value, result):
         '1996-01-22',
     ),
 )
-def test_future_date_validation_fails(value):
+def test_future_date_validation_fails(value, future_date_type):
     class Model(BaseModel):
-        foo: FutureDate
+        foo: future_date_type
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)

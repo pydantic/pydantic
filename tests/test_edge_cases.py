@@ -5,7 +5,21 @@ from abc import ABC, abstractmethod
 from collections.abc import Hashable
 from decimal import Decimal
 from enum import Enum
-from typing import Any, Callable, Dict, FrozenSet, Generic, List, Optional, Sequence, Set, Tuple, Type, TypeVar, Union
+from typing import (
+    Any,
+    Dict,
+    ForwardRef,
+    FrozenSet,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 import pytest
 from dirty_equals import HasRepr, IsStr
@@ -1870,7 +1884,10 @@ def test_custom_generic_validators():
             self.t2 = t2
 
         @classmethod
-        def __get_pydantic_core_schema__(cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]):
+        def __get_pydantic_core_schema__(
+            cls,
+            source: Any,
+        ):
             schema = core_schema.is_instance_schema(cls)
 
             args = get_args(source)
@@ -2365,4 +2382,69 @@ def test_generic_wrapped_forwardref():
         Operation.model_validate({'callbacks': [1]})
     assert exc_info.value.errors() == [
         {'input': 1, 'loc': ('callbacks', 0), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+    ]
+
+
+def test_plain_basemodel_field():
+    class Model(BaseModel):
+        x: BaseModel
+
+    class Model2(BaseModel):
+        pass
+
+    assert Model(x=Model2()).x == Model2()
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=1)
+    assert exc_info.value.errors() == [
+        {'input': 1, 'loc': ('x',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
+    ]
+
+
+def test_invalid_forward_ref_model():
+    """
+    This test is to document the fact that forward refs to a type with the same name as that of a field
+    can cause problems, and to demonstrate a way to work around this.
+    """
+    # The problem:
+    if sys.version_info >= (3, 11):
+        error = RecursionError
+        kwargs = {}
+    else:
+        error = TypeError
+        kwargs = {
+            'match': r'Forward references must evaluate to types\.'
+            r' Got FieldInfo\(annotation=NoneType, required=False\)\.'
+        }
+    with pytest.raises(error, **kwargs):
+
+        class M(BaseModel):
+            model_config = {'undefined_types_warning': False}
+            B: ForwardRef('B') = Field(default=None)
+
+    # The solution:
+    class A(BaseModel):
+        model_config = {'undefined_types_warning': False}
+
+        B: ForwardRef('__types["B"]') = Field()  # F821
+
+    assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # F821
+    A.model_rebuild(raise_errors=False)
+    assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # F821
+
+    class B(BaseModel):
+        pass
+
+    class C(BaseModel):
+        pass
+
+    assert not A.__pydantic_model_complete__
+    types = {'B': B}
+    A.model_rebuild(_types_namespace={'__types': types})
+    assert A.__pydantic_model_complete__
+
+    assert A(B=B()).B == B()
+    with pytest.raises(ValidationError) as exc_info:
+        A(B=C())
+    assert exc_info.value.errors() == [
+        {'input': C(), 'loc': ('B',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]

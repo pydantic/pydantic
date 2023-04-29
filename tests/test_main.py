@@ -325,6 +325,22 @@ def test_extra_ignored():
         model.c = 1
 
 
+def test_field_order_is_preserved_with_extra():
+    """This test covers https://github.com/pydantic/pydantic/issues/1234."""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        a: int
+        b: str
+        c: float
+
+    model = Model(a=1, b='2', c=3.0, d=4)
+    assert repr(model) == "Model(a=1, b='2', c=3.0, d=4)"
+    assert str(model.model_dump()) == "{'a': 1, 'b': '2', 'c': 3.0, 'd': 4}"
+    assert str(model.model_dump_json()) == '{"a":1,"b":"2","c":3.0,"d":4}'
+
+
 def test_set_attr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert m.model_dump() == {'a': 10.2, 'b': 10}
@@ -1375,6 +1391,26 @@ def test_recursive_model():
     assert m.model_dump() == {'field': {'field': {'field': None}}}
 
 
+def test_recursive_cycle_with_repeated_field():
+    class A(BaseModel):
+        b: 'B'
+
+        model_config = {'undefined_types_warning': False}
+
+    class B(BaseModel):
+        a1: Optional[A] = None
+        a2: Optional[A] = None
+
+    A.model_rebuild()
+
+    assert A.model_validate({'b': {'a1': {'b': {'a1': None}}}}) == A(b=B(a1=A(b=B(a1=None))))
+    with pytest.raises(ValidationError) as exc_info:
+        A.model_validate({'b': {'a1': {'a1': None}}})
+    assert exc_info.value.errors() == [
+        {'input': {'a1': None}, 'loc': ('b', 'a1', 'b'), 'msg': 'Field required', 'type': 'missing'}
+    ]
+
+
 def test_two_defaults():
     with pytest.raises(TypeError, match='^cannot specify both default and default_factory$'):
 
@@ -2178,3 +2214,19 @@ def test_pydantic_init_subclass() -> None:
         ('MySubModel', '__init_subclass__', {'a': 1}),
         ('MySubModel', '__pydantic_init_subclass__', {'a': 1}),
     ]
+
+
+def test_model_validate_with_context():
+    class InnerModel(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def validate(cls, value, info):
+            return value * info.context.get('multiplier', 1)
+
+    class OuterModel(BaseModel):
+        inner: InnerModel
+
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 1}).inner.x == 2
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 2}).inner.x == 4
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 3}).inner.x == 6

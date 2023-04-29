@@ -12,7 +12,7 @@ from . import dataclasses
 from ._migration import getattr_migration
 from .analyzed_type import AnalyzedType
 from .config import ConfigDict, Extra
-from .decorators import field_serializer, field_validator, model_serializer, root_validator, validator
+from .decorators import field_serializer, field_validator, model_serializer, model_validator, root_validator, validator
 from .deprecated.config import BaseConfig
 from .deprecated.tools import *
 from .errors import *
@@ -32,9 +32,10 @@ __all__ = [
     # dataclasses
     'dataclasses',
     # decorators
+    'field_validator',
+    'model_validator',
     'root_validator',
     'validator',
-    'field_validator',
     'field_serializer',
     'model_serializer',
     'ValidationInfo',

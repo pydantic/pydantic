@@ -158,6 +158,8 @@ def dataclass(
             TypeError: If a non-class value is provided.
         """
 
+        original_cls = cls
+
         config_wrapper = _config.ConfigWrapper(config)
         decorators = _decorators.DecoratorInfos.build(cls)
 
@@ -192,9 +194,11 @@ def dataclass(
         )
 
         cls.__pydantic_decorators__ = decorators  # type: ignore
+        cls.__doc__ = original_doc
+        cls.__module__ = original_cls.__module__
+        cls.__qualname__ = original_cls.__qualname__
         _pydantic_dataclasses.set_dataclass_fields(cls)
         _pydantic_dataclasses.complete_dataclass(cls, config_wrapper)
-        cls.__doc__ = original_doc
         return cls
 
     if _cls is None:

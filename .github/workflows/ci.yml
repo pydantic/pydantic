@@ -27,25 +27,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
+      - uses: pdm-project/setup-pdm@v3
+        with:
+          cache: true
+
       - name: install
-        if: steps.cache.outputs.cache-hit != 'true'
-        run: pip install -r requirements/linting.txt -r requirements/pyproject-all.txt
+        run: pdm install -G linting -G email
 
       - uses: pre-commit/action@v3.0.0
         with:
           extra_args: --all-files --verbose
 
       - name: make history
-        run: python3 ./changes/make_history.py
-
-      - name: install node for pyright
-        uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-
-      - run: npm install -g pyright
-
-      - run: make test-pyright
+        run: pdm run python3 ./changes/make_history.py
 
   docs-build:
     runs-on: ubuntu-latest
@@ -56,11 +50,15 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: install
-      run: pip install -r requirements/docs.txt
+    - uses: pdm-project/setup-pdm@v3
+      with:
+        cache: true
 
-    - run: python -c 'import docs.plugins.main'
-    - run: mkdocs build --verbose
+    - name: install
+      run: pdm install -G docs
+
+    - run: pdm run python -c 'import docs.plugins.main'
+    - run: pdm run mkdocs build --verbose
 
     - name: Store docs site
       uses: actions/upload-artifact@v3
@@ -79,29 +77,17 @@ jobs:
         with:
           python-version: '3.10'
 
-      - uses: actions/cache@v3
-        id: cache
+      - uses: pdm-project/setup-pdm@v3
         with:
-          path: ${{ env.pythonLocation }}
-          key: >
-            test-memray
-            ${{ runner.os }}
-            ${{ env.pythonLocation }}
-            ${{ hashFiles('setup.py') }}
-            ${{ hashFiles('requirements.txt') }}
-            ${{ hashFiles('tests/requirements-testing.txt') }}
+          cache: true
 
       - name: install deps
         run: |
-          pip install -r requirements/pyproject-min.txt -r requirements/testing.txt
-          pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
-          pip install pytest-memray==1.4.0
-
-      - name: install pydantic
-        run: pip install .
+          pdm install -G testing -G testing-extra -G email -G memray
+          pdm add pytest-memray
 
       - name: test
-        run: pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
+        run: pdm run pytest --ignore=tests/mypy/ --ignore=tests/test_docs.py --memray
 
   test:
     name: test ${{ matrix.os }} / ${{ matrix.python-version }}
@@ -136,15 +122,17 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - name: install min deps
-      run: pip install -r requirements/pyproject-min.txt -r requirements/testing.txt
+    - uses: pdm-project/setup-pdm@v3
+      with:
+        cache: true
 
-    - name: install pydantic
-      run: pip install .
+    - name: install deps
+      run: |
+        pdm install -G testing -G email
 
-    - run: pip freeze
+    - run: pdm list
 
-    - run: 'python -c "import pydantic.version; print(pydantic.version.version_info())"'
+    - run: ' pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
     - run: mkdir coverage
 
@@ -157,7 +145,8 @@ jobs:
         CONTEXT: ${{ runner.os }}-py${{ matrix.python-version }}-without-deps
 
     - name: install extra deps
-      run: pip install -r requirements/pyproject-all.txt -r requirements/testing-extra.txt
+      run: |
+        pdm install -G testing-extra
 
     - name: test with deps
       run: make test
@@ -199,36 +188,44 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - uses: actions/cache@v3
-      id: cache
-      with:
-        path: ${{ env.pythonLocation }}
-        key: >
-          test-mypy
-          ${{ runner.os }}
-          ${{ env.pythonLocation }}
-          ${{ hashFiles('pyproject.toml') }}
-          ${{ hashFiles('requirements/*') }}
-          ${{ matrix.mypy-version }}
 
-    - name: install
-      if: steps.cache.outputs.cache-hit != 'true'
-      run: pip install -r requirements/pyproject-min.txt -r requirements/testing-mypy.txt
+    - uses: pdm-project/setup-pdm@v3
+      with:
+        cache: true
+
+    - name: install deps
+      run: |
+        pdm install -G testing -G mypy
 
     - name: install mypy
       if: steps.cache.outputs.cache-hit != 'true'
       run: |
         if [ ${{ matrix.mypy-version }} != 'lockfile' ]; then
-          pip install mypy==${{ matrix.mypy-version }}
+          pdm remove mypy && pdm add mypy==${{ matrix.mypy-version }}
         fi
+        pdm list
 
     - run: mkdir coverage
 
-    - name: run tests
-      run: coverage run -m pytest tests/mypy --test-mypy
+    - name: run mypy tests
+      run: pdm run coverage run -m pytest tests/mypy --test-mypy
       env:
         COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
         CONTEXT: linux-py${{ matrix.python-version }}-mypy${{ matrix.mypy-version }}
+
+    - name: install node for pyright
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: install pyright
+      run: npm install -g pyright@1.1.302  # try to keep this in sync with .pre-commit-config.yaml
+
+    - name: run pyright tests
+      run: make test-pyright
+      env:
+        COVERAGE_FILE: coverage/.coverage.linux-py${{ matrix.python-version }}-pyright
+        CONTEXT: linux-py${{ matrix.python-version }}-pyright
 
     - name: store coverage files
       uses: actions/upload-artifact@v3
@@ -283,8 +280,7 @@ jobs:
 
     - name: install
       run: |
-        pip install -r requirements/pyproject-all.txt
-        pip install .
+        pdm install -G :all
 
     - name: test
       run: make test-fastapi

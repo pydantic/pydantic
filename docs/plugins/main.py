@@ -149,7 +149,9 @@ def remove_code_fence_attributes(markdown: str) -> str:
     """
 
     def remove_attrs(match: re.Match[str]) -> str:
-        suffix = re.sub(r' (?:test|lint|upgrade|group|requires|output)=".+?"', '', match.group(2), flags=re.M)
+        suffix = re.sub(
+            r' (?:test|lint|upgrade|group|requires|output|rewrite_assert)=".+?"', '', match.group(2), flags=re.M
+        )
         return f'{match.group(1)}{suffix}'
 
     return re.sub(r'^( *``` *py)(.*)', remove_attrs, markdown, flags=re.M)

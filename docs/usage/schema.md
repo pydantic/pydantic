@@ -276,26 +276,25 @@ It has the following arguments:
 * `allow_mutation`: a boolean which defaults to `True`. When False, the field raises a `TypeError` if the field is
   assigned on an instance.  The model config must set `validate_assignment` to `True` for this check to be performed.
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
-  annotation of `pattern` to the JSON Schema
-
-  !!! note
-      *pydantic* validates strings using `re.match`,
-      which treats regular expressions as implicitly anchored at the beginning.
-      On the contrary,
-      JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
-      more like what `re.search` does.
-
-      For interoperability, depending on your desired behavior,
-      either explicitly anchor your regular expressions with `^`
-      (e.g. `^foo` to match any string starting with `foo`),
-      or explicitly allow an arbitrary prefix with `.*?`
-      (e.g. `.*?foo` to match any string containing the substring `foo`).
-
-      See [#1631](https://github.com/pydantic/pydantic/issues/1631)
-      for a discussion of possible changes to *pydantic* behavior in **v2**.
-
+  annotation of `pattern` to the JSON Schema &mdash; see note below for details
 * `repr`: a boolean which defaults to `True`. When False, the field shall be hidden from the object representation.
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
+
+!!! note
+    *pydantic* validates strings using `re.match`,
+    which treats regular expressions as implicitly anchored at the beginning.
+    On the contrary,
+    JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
+    more like what `re.search` does.
+
+    For interoperability, depending on your desired behavior,
+    either explicitly anchor your regular expressions with `^`
+    (e.g. `^foo` to match any string starting with `foo`),
+    or explicitly allow an arbitrary prefix with `.*?`
+    (e.g. `.*?foo` to match any string containing the substring `foo`).
+
+    See [#1631](https://github.com/pydantic/pydantic/issues/1631)
+    for a discussion of possible changes to *pydantic* behavior in **v2**.
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
 to set all of the arguments above except `default`.
@@ -389,7 +388,7 @@ from typing import Any, Dict, List, Type
 from pydantic_core import core_schema
 
 from pydantic import BaseModel
-from pydantic.json_schema import GetJsonSchemaHandler
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 @dataclass
@@ -402,7 +401,7 @@ class CompressedString:
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Type[Any], handler: GetJsonSchemaHandler
+        cls, source: Type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         assert source is CompressedString
         return core_schema.no_info_after_validator_function(
@@ -454,12 +453,13 @@ The process for Annotated metadata is much the same except that you can generall
 
 ```py
 from dataclasses import dataclass
-from typing import Any, Callable, Sequence, Type
+from typing import Any, Sequence, Type
 
 from pydantic_core import core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, ValidationError
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 @dataclass
@@ -467,7 +467,7 @@ class RestrictCharacters:
     alphabet: Sequence[str]
 
     def __get_pydantic_core_schema__(
-        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self, source: Type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         if not self.alphabet:
             raise ValueError('Alphabet may not be empty')
@@ -516,17 +516,20 @@ So far we have been wrapping the schema, but if you just want to *modify* it or 
 To modify the schema first call the handler and then mutate the result:
 
 ```py
-from typing import Any, Callable, Type
+from typing import Any, Type
 
 from pydantic_core import ValidationError, core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 class SmallString:
     def __get_pydantic_core_schema__(
-        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self,
+        source: Type[Any],
+        handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         schema = handler(source)
         assert schema['type'] == 'str'
@@ -552,17 +555,18 @@ except ValidationError as e:
 To override the schema completely do not call the handler and return your own `CoreSchema`:
 
 ```py
-from typing import Any, Callable, Type
+from typing import Any, Type
 
 from pydantic_core import ValidationError, core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 class AllowAnySubclass:
     def __get_pydantic_core_schema__(
-        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self, source: Type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         # we can't call handler since it will fail for arbitrary types
         def validate(value: Any) -> Any:

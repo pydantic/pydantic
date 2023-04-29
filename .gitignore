@@ -14,10 +14,6 @@ dist/
 /build/
 _build/
 
-# Pip and Pipenv files
-Pipfile
-*.lock
-
 # Python bytecode and cache files
 *.py[cod]
 .cache/
@@ -51,3 +47,4 @@ pydantic/*.so
 .auto-format
 /sandbox/
 /worktrees/
+.pdm-python

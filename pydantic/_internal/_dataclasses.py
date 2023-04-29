@@ -12,13 +12,11 @@ from typing import Any, Callable, ClassVar
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
 from typing_extensions import TypeGuard
 
-from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
 from . import _decorators, _typing_extra
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
-from ._model_construction import MockValidator
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
@@ -55,25 +53,18 @@ def set_dataclass_fields(cls: type[StandardDataclass], types_namespace: dict[str
 def complete_dataclass(
     cls: type[Any],
     config_wrapper: ConfigWrapper,
-    *,
-    raise_errors: bool = True,
-    types_namespace: dict[str, Any] | None = None,
-) -> bool:
+) -> None:
     """
     Prepare a raw class to become a pydantic dataclass.
 
-    Returns `True` if the validation construction is successfully completed, else `False`.
-
     This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
     """
-    cls_name = cls.__name__
-
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
-    types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
+    types_namespace = _typing_extra.get_cls_types_namespace(cls)
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
@@ -81,31 +72,11 @@ def complete_dataclass(
         typevars_map,
     )
 
-    try:
-        get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
-        if get_core_schema:
-            schema = get_core_schema(cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False))
-        else:
-            schema = gen_schema.generate_schema(cls, False)
-    except PydanticUndefinedAnnotation as e:
-        if raise_errors:
-            raise
-        if config_wrapper.undefined_types_warning:
-            config_warning_string = (
-                f'`{cls_name}` has an undefined annotation: `{e.name}`. '
-                f'It may be possible to resolve this by setting '
-                f'undefined_types_warning=False in the config for `{cls_name}`.'
-            )
-            # FIXME UserWarning should not be raised here, but rather warned!
-            raise UserWarning(config_warning_string)
-        usage_warning_string = (
-            f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call'
-            f' TODO! `methods.rebuild({cls_name})` before the first `{cls_name}` instance is created.'  # <--- TODO
-        )
-        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            usage_warning_string, code='dataclass-not-fully-defined'
-        )
-        return False
+    get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
+    if get_core_schema:
+        schema = get_core_schema(cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False))
+    else:
+        schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
 
     core_config = config_wrapper.core_config(cls)
 
@@ -136,8 +107,6 @@ def complete_dataclass(
 
     __init__.__qualname__ = f'{cls.__qualname__}.__init__'
     cls.__init__ = __init__  # type: ignore
-
-    return True
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
