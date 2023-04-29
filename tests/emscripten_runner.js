@@ -102,6 +102,7 @@ await micropip.install([
     'pytest-speed',
     'pytest-mock',
     'file:${wheel_path}',
+    'typing-extensions',
 ])
 importlib.invalidate_caches()
 
