@@ -97,6 +97,7 @@ nav:
   - 'Rich': integrations/rich.md
 - Contribute: contributing.md
 - Blog:
+  - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
 - API:
   - 'pydantic.analyzed_type': api/analyzed_type.md
