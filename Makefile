@@ -1,7 +1,7 @@
 .DEFAULT_GOAL := all
 sources = pydantic tests docs/plugins
 
-.PHONY: .pdm  ## Check that PDM is isntallced
+.PHONY: .pdm  ## Check that PDM is installed
 .pdm:
 	@pdm -V || echo 'Please install PDM: https://pdm.fming.dev/latest/\#installation'
 
@@ -56,12 +56,6 @@ test: .pdm
 testcov: test
 	@echo "building coverage html"
 	@pdm run coverage html
-
-# It looks like this is no longer used; can it be removed?
-#.PHONY: testcov-compile
-#testcov-compile: .pdm build-trace test
-#	@echo "building coverage html"
-#	@pdm run coverage html
 
 .PHONY: test-examples  ## Run only the tests from the documentation
 test-examples: .pdm
