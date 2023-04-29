@@ -6,6 +6,3 @@ email-validator==2.0.0.post2
 dataclasses==0.6; python_version < '3.7'
 typing-extensions==4.3.0
 python-dotenv==0.20.0
-# used in FastAPI tests, pin to avoid warnings in newer version
-# that FastAPI needs to fix
-Flask==2.2.3
