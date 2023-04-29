@@ -22,13 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: ${{ matrix.python-version }}
-
       - uses: pdm-project/setup-pdm@v3
         with:
+          python-version: ${{ matrix.python-version }}
           cache: true
 
       - name: install
@@ -46,13 +42,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v4
+    - uses: pdm-project/setup-pdm@v3
       with:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
-
-    - uses: pdm-project/setup-pdm@v3
-      with:
         cache: true
 
     - name: install
@@ -67,13 +60,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
       - uses: pdm-project/setup-pdm@v3
         with:
+          python-version: '3.10'
           cache: true
 
       - name: install deps
@@ -112,20 +101,16 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
     - uses: pdm-project/setup-pdm@v3
       with:
+        python-version: ${{ matrix.python-version }}
         cache: true
 
     - name: install deps
       run: |
         pdm install -G testing -G email
 
-    - run: pdm list
+    - run: pdm info && pdm list
 
     - run: ' pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
@@ -178,14 +163,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: ${{ matrix.python-version }}
-
-
     - uses: pdm-project/setup-pdm@v3
       with:
+        python-version: ${{ matrix.python-version }}
         cache: true
 
     - name: install deps
@@ -321,13 +301,9 @@ jobs:
       - name: checkout current branch
         uses: actions/checkout@v3
 
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
       - uses: pdm-project/setup-pdm@v3
         with:
+          python-version: '3.10'
           cache: true
 
       - name: install
