@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+
+# This script is used to build the documentation on CloudFlare Pages,
+# here on the `docs-site` branch we just move files in to place.
+# A different script with the same name exists on the `main` branch to build docs previews.
+
+set -e
+set -x
+
+ls -lh
+
+mkdir -p site
+
+mv !(site) site
