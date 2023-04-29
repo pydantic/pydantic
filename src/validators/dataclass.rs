@@ -323,7 +323,11 @@ impl Validator for DataclassArgsValidator {
 
         let ok = |output: PyObject| {
             dict.set_item(field_name, output)?;
-            Ok(dict.to_object(py))
+            // The second return value represents `init_only_args`
+            // which doesn't make much sense in this context but we need to put something there
+            // so that function validators that sit between DataclassValidator and DataclassArgsValidator
+            // always get called the same shape of data.
+            Ok(PyTuple::new(py, vec![dict.to_object(py), py.None()]).into_py(py))
         };
 
         if let Some(field) = self.fields.iter().find(|f| f.name == field_name) {
@@ -511,9 +515,13 @@ impl Validator for DataclassValidator {
         let new_dict = dict.copy()?;
         new_dict.set_item(field_name, field_value)?;
 
-        let dc_dict =
+        // Discard the second return value, which is `init_only_args` but is always
+        // None anyway for validate_assignment; see validate_assignment in DataclassArgsValidator
+        let val_assignment_result =
             self.validator
                 .validate_assignment(py, new_dict, field_name, field_value, extra, slots, recursion_guard)?;
+
+        let (dc_dict, _): (&PyDict, PyObject) = val_assignment_result.extract(py)?;
 
         force_setattr(py, obj, dict_py_str, dc_dict)?;
 
