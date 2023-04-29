@@ -12,4 +12,6 @@ ls -lh
 mkdir -p site
 
 shopt -s extglob
-mv !(site) site
+mv !(site|build-docs.sh) site
+
+ls -lh site
