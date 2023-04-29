@@ -9,7 +9,7 @@ set -x
 curl -sSL https://bootstrap.pypa.io/get-pip.py | python3 -
 export PATH=/opt/buildhome/.local/bin:$PATH
 
-curl -sSL https://raw.githubusercontent.com/pdm-project/pdm/main/install-pdm.py | python3 -
+python3 -m pip install pdm
 
 pdm install -G docs
 
