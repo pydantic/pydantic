@@ -379,7 +379,7 @@ print(pydantic_core.to_json(user, indent=4).decode())
 ```
 ## Attribute copies
 
-As described earlier, when constructing classes with data attributes, Pydantic copies the the attribute in order to efficiently iterate over its elements for validation.
+As described earlier, when constructing classes with data attributes, Pydantic copies the attributes in order to efficiently iterate over its elements for validation.
 
 In this example, note that the ID of the list changes after the class is constructed because it has been copied for validation.
 
