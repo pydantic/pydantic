@@ -262,13 +262,8 @@ def test_to_jsonable_python_schema_serializer():
     instance = Foobar(my_foo=1, my_bar='a')
     assert to_jsonable_python(instance) == {'myFoo': 1, 'myBar': 'a'}
     assert to_jsonable_python(instance, by_alias=False) == {'my_foo': 1, 'my_bar': 'a'}
-
-    # Just including this to document the behavior. Note that trying to get `to_json` to respect aliases
-    # by putting the by_alias field into the `extra` in `to_json` won't work because it always uses an
-    # AnySchema for serialization. If you want any python-introspection to happen during the json serialization
-    # process for the purpose of respecting objects' own serialization schemas, you need to call
-    # to_jsonable_python and serialize the result yourself.
-    assert to_json(instance) == b'{"my_foo":1,"my_bar":"a"}'
+    assert to_json(instance) == b'{"myFoo":1,"myBar":"a"}'
+    assert to_json(instance, by_alias=False) == b'{"my_foo":1,"my_bar":"a"}'
 
 
 def test_cycle_same():
