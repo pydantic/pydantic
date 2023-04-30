@@ -8,7 +8,6 @@ use crate::errors::{
     ErrorType, LocItem, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
 use crate::input::Input;
-use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::generator::InternalValidator;
@@ -109,10 +108,6 @@ macro_rules! impl_validator {
 
             fn get_name(&self) -> &str {
                 &self.name
-            }
-
-            fn ask(&self, question: &Question) -> bool {
-                self.validator.ask(question)
             }
 
             fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
@@ -339,10 +334,6 @@ impl Validator for FunctionWrapValidator {
 
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        self.validator.ask(question)
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {

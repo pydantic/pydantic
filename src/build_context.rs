@@ -5,7 +5,6 @@ use pyo3::types::{PyDict, PyList};
 use ahash::{AHashMap, AHashSet};
 
 use crate::build_tools::{py_err, py_error_type, SchemaDict};
-use crate::questions::Answers;
 use crate::serializers::CombinedSerializer;
 use crate::validators::{CombinedValidator, Validator};
 
@@ -13,7 +12,6 @@ use crate::validators::{CombinedValidator, Validator};
 struct Slot<T> {
     slot_ref: String,
     op_val_ser: Option<T>,
-    answers: Option<Answers>,
 }
 
 pub enum ThingOrId<T> {
@@ -83,12 +81,11 @@ impl<T: Clone + std::fmt::Debug> BuildContext<T> {
     /// First of two part process to add a new validator/serializer slot, we add the `slot_ref` to the array,
     /// but not the actual `validator`/`serializer`, we can't add that until it's build.
     /// But we need the `id` to build it, hence this two-step process.
-    pub fn prepare_slot(&mut self, slot_ref: String, answers: Option<Answers>) -> PyResult<usize> {
+    pub fn prepare_slot(&mut self, slot_ref: String) -> PyResult<usize> {
         let id = self.slots.len();
         let slot = Slot {
             slot_ref,
             op_val_ser: None,
-            answers,
         };
         self.slots.push(slot);
         Ok(id)
@@ -101,7 +98,6 @@ impl<T: Clone + std::fmt::Debug> BuildContext<T> {
                 self.slots[slot_id] = Slot {
                     slot_ref: slot.slot_ref.clone(),
                     op_val_ser: Some(val_ser),
-                    answers: slot.answers.clone(),
                 };
                 Ok(())
             }
@@ -120,14 +116,6 @@ impl<T: Clone + std::fmt::Debug> BuildContext<T> {
                 None => return py_err!("Slots Error: ref '{}' not found", ref_),
             };
             Ok(ThingOrId::Id(id))
-        }
-    }
-
-    /// get a slot answer by `id`
-    pub fn get_slot_answer(&self, slot_id: usize) -> PyResult<Option<Answers>> {
-        match self.slots.get(slot_id) {
-            Some(slot) => Ok(slot.answers.clone()),
-            None => py_err!("Slots Error: slot {} not found", slot_id),
         }
     }
 

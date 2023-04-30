@@ -5,7 +5,6 @@ use pyo3::types::PyDict;
 use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
 use crate::errors::{LocItem, ValError, ValResult};
 use crate::input::Input;
-use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -155,10 +154,6 @@ impl Validator for WithDefaultValidator {
 
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        self.validator.ask(question)
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {

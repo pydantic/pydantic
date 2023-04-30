@@ -1,11 +1,10 @@
-import re
 from decimal import Decimal
 
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
-from ..conftest import PyAndJson, plain_repr
+from ..conftest import PyAndJson
 
 
 def test_chain():
@@ -148,7 +147,6 @@ def test_ask():
             },
         }
     )
-    assert re.search('expect_fields_set:(true|false)', plain_repr(v)).group(1) == 'true'
     m = v.validate_python({'field_a': 'abc'})
     assert isinstance(m, MyModel)
     assert m.field_a == 'abc'

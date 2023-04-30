@@ -13,7 +13,6 @@ use crate::build_tools::{is_strict, py_err, schema_or_config, SchemaDict};
 use crate::errors::{ErrorType, LocItem, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
-use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::custom_error::CustomError;
@@ -176,10 +175,6 @@ impl Validator for UnionValidator {
 
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        self.choices.iter().all(|v| v.ask(question))
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
@@ -435,10 +430,6 @@ impl Validator for TaggedUnionValidator {
 
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        self.choices.values().all(|v| v.ask(question))
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {

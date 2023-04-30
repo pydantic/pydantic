@@ -6,8 +6,6 @@ import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
-from ..conftest import plain_repr
-
 
 def test_model_class():
     class MyModel:
@@ -30,7 +28,6 @@ def test_model_class():
             },
         }
     )
-    assert 'expect_fields_set:true' in plain_repr(v)
     assert repr(v).startswith('SchemaValidator(title="MyModel", validator=Model(\n')
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
@@ -206,15 +203,14 @@ def test_model_class_root_validator_after():
 
 
 @pytest.mark.parametrize('mode', ['before', 'after', 'wrap'])
-@pytest.mark.parametrize('return_fields_set', [True, False])
-def test_function_ask(mode, return_fields_set):
+def test_function_ask(mode):
     class MyModel:
         __slots__ = '__dict__', '__pydantic_fields_set__'
 
     def f(input_value, info):
         return input_value
 
-    v = SchemaValidator(
+    SchemaValidator(
         {
             'type': 'model',
             'cls': MyModel,
@@ -223,22 +219,20 @@ def test_function_ask(mode, return_fields_set):
                 'function': {'type': 'general', 'function': f},
                 'schema': {
                     'type': 'typed-dict',
-                    'return_fields_set': return_fields_set,
+                    'return_fields_set': True,
                     'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
                 },
             },
         }
     )
-    expect_fields_set = re.search('expect_fields_set:(true|false)', plain_repr(v)).group(1)
-    assert expect_fields_set == str(return_fields_set).lower()
 
 
 def test_function_plain_ask():
     class MyModel:
-        pass
+        __slots__ = '__dict__', '__pydantic_fields_set__'
 
     def f(input_value, info):
-        return input_value
+        return input_value, {'field_a'}
 
     v = SchemaValidator(
         {
@@ -247,11 +241,10 @@ def test_function_plain_ask():
             'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f}},
         }
     )
-    assert 'expect_fields_set:false' in plain_repr(v)
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test'}
-    assert not hasattr(m, '__pydantic_fields_set__')
+    assert m.__pydantic_fields_set__ == {'field_a'}
 
 
 def test_union_sub_schema():
@@ -279,7 +272,6 @@ def test_union_sub_schema():
             },
         }
     )
-    assert 'expect_fields_set:true' in plain_repr(v)
     m = v.validate_python({'foo': '123'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'foo': 123}
@@ -304,6 +296,7 @@ def test_tagged_union_sub_schema():
                 'choices': {
                     'apple': {
                         'type': 'typed-dict',
+                        'return_fields_set': True,
                         'fields': {
                             'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                             'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
@@ -324,15 +317,14 @@ def test_tagged_union_sub_schema():
             },
         }
     )
-    assert 'expect_fields_set:false' in plain_repr(v)  # because only one choice has return_fields_set=True!
     m = v.validate_python({'foo': 'apple', 'bar': '123'})
     assert isinstance(m, MyModel)
-    assert m.__dict__ == {'foo': 'apple', 'bar': 123}
-    assert not hasattr(m, '__pydantic_fields_set__')
-    # error because banana has return_fields_set=True
-    # "__dict__ must be set to a dictionary, not a 'tuple'" on cpython, different on pypy
-    with pytest.raises(TypeError):
-        v.validate_python({'foo': 'banana', 'spam': [1, 2, 3]})
+    assert m.__dict__ == {'foo': 'apple', 'bar': 123, '__pydantic_fields_set__': {'foo', 'bar'}}
+
+    m = v.validate_python({'foo': 'banana', 'spam': [1, 2, 3]})
+    assert isinstance(m, MyModel)
+    # insert_assert(m.__dict__)
+    assert m.__dict__ == {'foo': 'banana', 'spam': [1, 2, 3], '__pydantic_fields_set__': {'spam', 'foo'}}
 
 
 def test_bad_sub_schema():
@@ -340,7 +332,6 @@ def test_bad_sub_schema():
         pass
 
     v = SchemaValidator({'type': 'model', 'cls': MyModel, 'schema': {'type': 'int'}})
-    assert 'expect_fields_set:false' in plain_repr(v)
     with pytest.raises(TypeError):
         v.validate_python(123)
 
@@ -387,28 +378,6 @@ def test_model_class_not_type():
                 },
             }
         )
-
-
-def test_not_return_fields_set():
-    class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
-
-    v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'typed-dict',
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-            },
-        }
-    )
-    assert 'expect_fields_set:false' in plain_repr(v)
-
-    m = v.validate_python({'field_a': 'test'})
-    assert isinstance(m, MyModel)
-    assert m.__dict__ == {'field_a': 'test'}
-    assert not hasattr(m, '__pydantic_fields_set__')
 
 
 def test_model_class_instance_direct():
@@ -1090,12 +1059,14 @@ def test_validate_assignment_no_fields_set():
 
 def test_frozen():
     class MyModel:
-        __slots__ = {'__dict__'}
+        __slots__ = {'__dict__', '__pydantic_fields_set__'}
 
     v = SchemaValidator(
         core_schema.model_schema(
             MyModel,
-            core_schema.typed_dict_schema({'f': core_schema.typed_dict_field(core_schema.str_schema())}),
+            core_schema.typed_dict_schema(
+                {'f': core_schema.typed_dict_field(core_schema.str_schema())}, return_fields_set=True
+            ),
             frozen=True,
         )
     )

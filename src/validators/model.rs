@@ -10,7 +10,6 @@ use pyo3::{ffi, intern};
 use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{py_error_on_minusone, Input};
-use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::function::convert_err;
@@ -51,7 +50,6 @@ pub struct ModelValidator {
     class: Py<PyType>,
     post_init: Option<Py<PyString>>,
     name: String,
-    expect_fields_set: bool,
     frozen: bool,
 }
 
@@ -71,8 +69,6 @@ impl BuildValidator for ModelValidator {
         let sub_schema: &PyAny = schema.get_as_req(intern!(py, "schema"))?;
         let validator = build_validator(sub_schema, config, build_context)?;
 
-        let expect_fields_set = validator.ask(&Question::ReturnFieldsSet);
-
         Ok(Self {
             // we don't use is_strict here since we don't want validation to be strict in this case if
             // `config.strict` is set, only if this specific field is strict
@@ -90,7 +86,6 @@ impl BuildValidator for ModelValidator {
             // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
-            expect_fields_set,
             frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
         }
         .into())
@@ -132,13 +127,11 @@ impl Validator for ModelValidator {
                 // get dict here so from_attributes logic doesn't apply
                 let dict = input.input_get_attr(intern!(py, "__dict__")).unwrap()?;
                 let output = self.validator.validate(py, dict, extra, slots, recursion_guard)?;
-                let instance = if self.expect_fields_set {
-                    let (model_dict, validation_fields_set): (&PyAny, &PyAny) = output.extract(py)?;
-                    let fields_set = fields_set.unwrap_or(validation_fields_set);
-                    self.create_class(model_dict, Some(fields_set))?
-                } else {
-                    self.create_class(output.as_ref(py), fields_set)?
-                };
+
+                let (model_dict, validation_fields_set): (&PyAny, &PyAny) = output.extract(py)?;
+                let fields_set = fields_set.unwrap_or(validation_fields_set);
+                let instance = self.create_class(model_dict, fields_set)?;
+
                 self.call_post_init(py, instance, input, extra)
             } else {
                 Ok(input.to_object(py))
@@ -152,34 +145,10 @@ impl Validator for ModelValidator {
             ))
         } else {
             let output = self.validator.validate(py, input, extra, slots, recursion_guard)?;
-            let instance = if self.expect_fields_set {
-                let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
-                self.create_class(model_dict, Some(fields_set))?
-            } else {
-                self.create_class(output.as_ref(py), None)?
-            };
+            let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
+            let instance = self.create_class(model_dict, fields_set)?;
             self.call_post_init(py, instance, input, extra)
         }
-    }
-
-    fn different_strict_behavior(
-        &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
-        ultra_strict: bool,
-    ) -> bool {
-        if ultra_strict {
-            self.validator.different_strict_behavior(build_context, ultra_strict)
-        } else {
-            true
-        }
-    }
-
-    fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        self.validator.complete(build_context)
     }
 
     fn validate_assignment<'s, 'data: 's>(
@@ -204,20 +173,39 @@ impl Validator for ModelValidator {
         let output =
             self.validator
                 .validate_assignment(py, new_dict, field_name, field_value, extra, slots, recursion_guard)?;
-        let output = if self.expect_fields_set {
-            let (output, updated_fields_set): (&PyDict, &PySet) = output.extract(py)?;
-            if let Ok(fields_set) = model.input_get_attr(intern!(py, "__pydantic_fields_set__")).unwrap() {
-                let fields_set: &PySet = fields_set.downcast()?;
-                for field_name in updated_fields_set {
-                    fields_set.add(field_name)?;
-                }
+
+        let (output, updated_fields_set): (&PyDict, &PySet) = output.extract(py)?;
+
+        if let Ok(fields_set) = model.input_get_attr(intern!(py, "__pydantic_fields_set__")).unwrap() {
+            let fields_set: &PySet = fields_set.downcast()?;
+            for field_name in updated_fields_set {
+                fields_set.add(field_name)?;
             }
-            output.to_object(py)
-        } else {
-            output
-        };
+        }
+        let output = output.to_object(py);
+
         force_setattr(py, model, dict_py_str, output)?;
         Ok(model.into_py(py))
+    }
+
+    fn different_strict_behavior(
+        &self,
+        build_context: Option<&BuildContext<CombinedValidator>>,
+        ultra_strict: bool,
+    ) -> bool {
+        if ultra_strict {
+            self.validator.different_strict_behavior(build_context, ultra_strict)
+        } else {
+            true
+        }
+    }
+
+    fn get_name(&self) -> &str {
+        &self.name
+    }
+
+    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+        self.validator.complete(build_context)
     }
 }
 
@@ -232,19 +220,16 @@ impl ModelValidator {
         slots: &'data [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        // we need to set `self_instance` to None for nested validators as we don't want to operate on the self_instance
-        // instance anymore
+        // we need to set `self_instance` to None for nested validators as we don't want to operate on self_instance
+        // anymore
         let new_extra = Extra {
             self_instance: None,
             ..*extra
         };
+
         let output = self.validator.validate(py, input, &new_extra, slots, recursion_guard)?;
-        if self.expect_fields_set {
-            let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
-            set_model_attrs(self_instance, model_dict, Some(fields_set))?;
-        } else {
-            set_model_attrs(self_instance, output.as_ref(py), None)?;
-        };
+        let (model_dict, fields_set): (&PyAny, &PyAny) = output.extract(py)?;
+        set_model_attrs(self_instance, model_dict, fields_set)?;
         self.call_post_init(py, self_instance.into_py(py), input, extra)
     }
 
@@ -263,9 +248,10 @@ impl ModelValidator {
         Ok(instance)
     }
 
-    fn create_class(&self, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<PyObject> {
-        let instance = create_class(self.class.as_ref(model_dict.py()))?;
-        set_model_attrs(instance.as_ref(model_dict.py()), model_dict, fields_set)?;
+    fn create_class(&self, model_dict: &PyAny, fields_set: &PyAny) -> PyResult<PyObject> {
+        let py = model_dict.py();
+        let instance = create_class(self.class.as_ref(py))?;
+        set_model_attrs(instance.as_ref(py), model_dict, fields_set)?;
         Ok(instance)
     }
 }
@@ -291,12 +277,10 @@ pub(super) fn create_class(class: &PyType) -> PyResult<PyObject> {
     }
 }
 
-fn set_model_attrs(instance: &PyAny, model_dict: &PyAny, fields_set: Option<&PyAny>) -> PyResult<()> {
+fn set_model_attrs(instance: &PyAny, model_dict: &PyAny, fields_set: &PyAny) -> PyResult<()> {
     let py = instance.py();
     force_setattr(py, instance, intern!(py, "__dict__"), model_dict)?;
-    if let Some(fields_set) = fields_set {
-        force_setattr(py, instance, intern!(py, "__pydantic_fields_set__"), fields_set)?;
-    }
+    force_setattr(py, instance, intern!(py, "__pydantic_fields_set__"), fields_set)?;
     Ok(())
 }
 

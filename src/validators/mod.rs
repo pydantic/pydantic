@@ -12,7 +12,6 @@ use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
 use crate::errors::{ErrorMode, LocItem, ValError, ValResult, ValidationError};
 use crate::input::Input;
-use crate::questions::{Answers, Question};
 use crate::recursion_guard::RecursionGuard;
 
 mod any;
@@ -328,12 +327,11 @@ fn build_specific_validator<'a, T: BuildValidator>(
             return if build_context.ref_used_within(schema_dict, &schema_ref)? {
                 // the ref is used within itself, so we have to store the validator in slots
                 // and return a DefinitionRefValidator
-                let answers = Answers::new(schema_dict)?;
-                let slot_id = build_context.prepare_slot(schema_ref, Some(answers.clone()))?;
+                let slot_id = build_context.prepare_slot(schema_ref)?;
                 let inner_val = T::build(schema_dict, config, build_context)?;
                 let name = inner_val.get_name().to_string();
                 build_context.complete_slot(slot_id, inner_val)?;
-                Ok(definitions::DefinitionRefValidator::from_id(slot_id, name, answers))
+                Ok(definitions::DefinitionRefValidator::from_id(slot_id, name))
             } else {
                 // ref is used, but only out side itself, we want to clone it everywhere it's used
                 let validator = T::build(schema_dict, config, build_context)?;
@@ -639,14 +637,6 @@ pub trait Validator: Send + Sync + Clone + Debug {
     /// `get_name` generally returns `Self::EXPECTED_TYPE` or some other clear identifier of the validator
     /// this is used in the error location in unions, and in the top level message in `ValidationError`
     fn get_name(&self) -> &str;
-
-    /// allows validators to ask specific questions of sub-validators in a general way, could be extended
-    /// to do more, validators which don't know the question and have sub-validators
-    /// should return the result them in an `...iter().all(|v| v.ask(question))` way, ONLY
-    /// if they return the value of the sub-validator, e.g. functions, unions
-    fn ask(&self, _question: &Question) -> bool {
-        false
-    }
 
     /// this method must be implemented for any validator which holds references to other validators,
     /// it is used by `DefinitionRefValidator` to set its name
