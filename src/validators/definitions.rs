@@ -6,7 +6,6 @@ use crate::build_context::{BuildContext, ThingOrId};
 use crate::build_tools::SchemaDict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
-use crate::questions::{Answers, Question};
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Extra, Validator};
@@ -41,15 +40,13 @@ pub struct DefinitionRefValidator {
     validator_id: usize,
     inner_name: String,
     // we have to record the answers to `Question`s as we can't access the validator when `ask()` is called
-    answers: Answers,
 }
 
 impl DefinitionRefValidator {
-    pub fn from_id(validator_id: usize, inner_name: String, answers: Answers) -> CombinedValidator {
+    pub fn from_id(validator_id: usize, inner_name: String) -> CombinedValidator {
         Self {
             validator_id,
             inner_name,
-            answers,
         }
         .into()
     }
@@ -67,15 +64,11 @@ impl BuildValidator for DefinitionRefValidator {
 
         match build_context.find(&schema_ref)? {
             ThingOrId::Thing(validator) => Ok(validator),
-            ThingOrId::Id(validator_id) => {
-                let answers = build_context.get_slot_answer(validator_id)?;
-                Ok(Self {
-                    validator_id,
-                    inner_name: "...".to_string(),
-                    answers: answers.unwrap(),
-                }
-                .into())
+            ThingOrId::Id(validator_id) => Ok(Self {
+                validator_id,
+                inner_name: "...".to_string(),
             }
+            .into()),
         }
     }
 }
@@ -123,10 +116,6 @@ impl Validator for DefinitionRefValidator {
 
     fn get_name(&self) -> &str {
         &self.inner_name
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        self.answers.ask(question)
     }
 
     /// don't need to call complete on the inner validator here, complete_validators takes care of that.

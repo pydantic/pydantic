@@ -2775,6 +2775,7 @@ def model_schema(
         config=CoreConfig(str_max_length=5),
         schema=core_schema.typed_dict_schema(
             fields={'a': core_schema.typed_dict_field(core_schema.str_schema())},
+            return_fields_set=True,
         ),
     )
     v = SchemaValidator(schema)
@@ -3239,7 +3240,8 @@ def json_schema(
         {
             'field_a': core_schema.typed_dict_field(core_schema.str_schema()),
             'field_b': core_schema.typed_dict_field(core_schema.bool_schema()),
-        }
+        },
+        return_fields_set=True,
     )
 
     class MyModel:

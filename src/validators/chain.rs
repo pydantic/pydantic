@@ -5,7 +5,6 @@ use pyo3::types::{PyDict, PyList};
 use crate::build_tools::{py_err, SchemaDict};
 use crate::errors::ValResult;
 use crate::input::Input;
-use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -97,12 +96,6 @@ impl Validator for ChainValidator {
 
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        // any makes more sense since at the moment we only use ask for "return_fields_set", might need
-        // more complex logic in future
-        self.steps.iter().any(|v| v.ask(question))
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {

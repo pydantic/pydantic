@@ -367,7 +367,8 @@ def test_advanced_exclude_nested_lists(exclude, expected):
             dict(
                 i=core_schema.typed_dict_field(core_schema.int_schema(), required=True),
                 j=core_schema.typed_dict_field(core_schema.int_schema(), required=True),
-            )
+            ),
+            return_fields_set=True,
         ),
     )
 
@@ -381,7 +382,8 @@ def test_advanced_exclude_nested_lists(exclude, expected):
             dict(
                 k=core_schema.typed_dict_field(core_schema.int_schema(), required=True),
                 subsubs=core_schema.typed_dict_field(core_schema.list_schema(sub_sub_model_schema), required=True),
-            )
+            ),
+            return_fields_set=True,
         ),
     )
 
@@ -391,7 +393,8 @@ def test_advanced_exclude_nested_lists(exclude, expected):
     model_schema = core_schema.model_schema(
         BasicModel,
         core_schema.typed_dict_schema(
-            dict(subs=core_schema.typed_dict_field(core_schema.list_schema(sub_model_schema), required=True))
+            dict(subs=core_schema.typed_dict_field(core_schema.list_schema(sub_model_schema), required=True)),
+            return_fields_set=True,
         ),
     )
     v = SchemaValidator(model_schema)

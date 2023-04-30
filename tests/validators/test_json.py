@@ -166,7 +166,6 @@ def test_ask():
             },
         }
     )
-    assert 'expect_fields_set:true' in plain_repr(v)
     m = v.validate_python('{"field_a": "test", "field_b": 12}')
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
