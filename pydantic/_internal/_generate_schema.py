@@ -210,8 +210,9 @@ class GenerateSchema:
 
         metadata_js_function = _extract_get_pydantic_json_schema(obj)
         if metadata_js_function is None:
-            # Need to do this to handle custom generics:
-            if hasattr(obj, '__origin__'):
+            # Need to do this to handle custom generics
+            # Skip Annotated because Annotated.__origin__ will be analyzed in the next recursion
+            if hasattr(obj, '__origin__') and not isinstance(obj, type(Annotated[int, 123])):
                 metadata_js_function = _extract_get_pydantic_json_schema(obj.__origin__)
         if metadata_js_function is not None:
             metadata = CoreMetadataHandler(schema).metadata
@@ -297,24 +298,14 @@ class GenerateSchema:
         decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
         """
         get_schema = getattr(obj, '__get_pydantic_core_schema__', None)
-        if get_schema is not None:
+        if get_schema is None:
+            return None
+
+        if len(inspect.signature(get_schema).parameters) == 1:
             # (source) -> CoreSchema
-            if len(inspect.signature(get_schema).parameters) == 1:
-                return get_schema(source)
+            return get_schema(source)
 
-            # Can return None to tell pydantic not to override
-            return get_schema(source, partial(self.generate_schema, from_dunder_get_core_schema=False))
-
-        if _typing_extra.is_dataclass(obj):
-            # For dataclasses, only use the __pydantic_core_schema__ if it is defined on this exact class, not a parent
-            schema_property = obj.__dict__.get('__pydantic_core_schema__')
-        else:
-            schema_property = getattr(obj, '__pydantic_core_schema__', None)
-
-        if schema_property is not None:
-            return schema_property
-
-        return None
+        return get_schema(source, partial(self.generate_schema, from_dunder_get_core_schema=False))
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
         """

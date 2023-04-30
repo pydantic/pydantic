@@ -3613,3 +3613,24 @@ def test_get_pydantic_core_schema_calls() -> None:
     ]
 
     calls.clear()
+
+
+def test_annotated_get_json_schema() -> None:
+    calls: List[int] = []
+
+    class CustomType(str):
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return handler(str)
+
+        @classmethod
+        def __get_pydantic_json_schema__(cls, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            calls.append(1)
+            json_schema = handler(schema)
+            return json_schema
+
+    AnalyzedType(Annotated[CustomType, 123]).json_schema()
+
+    assert sum(calls) == 1
