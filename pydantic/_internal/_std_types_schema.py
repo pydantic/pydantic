@@ -558,10 +558,6 @@ class OrderedDictSchemaGenerator(SchemaGeneratorBase):
     inner_schema: core_schema.CoreSchema = core_schema.any_schema()
 
     def __get_pydantic_core_schema__(self, obj: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        if obj == collections.OrderedDict:
-            # bare `ordered_dict` type used as annotation
-            return _ordered_dict_any_schema()
-
         try:
             keys_arg, values_arg = get_args(obj)
         except ValueError:
@@ -572,18 +568,18 @@ class OrderedDictSchemaGenerator(SchemaGeneratorBase):
             # `OrderedDict[Any, Any]`
             return _ordered_dict_any_schema()
         else:
-            self.inner_schema = inner_schema = core_schema.dict_schema(handler(keys_arg), handler(values_arg))
+            self.inner_schema = inner_schema = core_schema.dict_schema(handler.generate_schema(keys_arg), handler.generate_schema(values_arg))
             return core_schema.lax_or_strict_schema(
-                lax_schema=core_schema.general_after_validator_function(
-                    _validators.ordered_dict_typed_validator,
-                    core_schema.dict_schema(handler.generate_schema(keys_arg), handler.generate_schema(values_arg)),
+                lax_schema=core_schema.no_info_after_validator_function(
+                    collections.OrderedDict,
+                    inner_schema,
                 ),
-                strict_schema=core_schema.general_after_validator_function(
-                    lambda x, _: collections.OrderedDict(x),
+                strict_schema=core_schema.no_info_after_validator_function(
+                    collections.OrderedDict,
                     core_schema.chain_schema(
                         [
                             core_schema.is_instance_schema(collections.OrderedDict, json_types={'dict'}),
-                            core_schema.dict_schema(inner_schema),
+                            inner_schema,
                         ],
                     ),
                 ),
