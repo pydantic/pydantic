@@ -28,6 +28,7 @@ from typing_extensions import Annotated, Literal
 from ._internal import _fields, _validators
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
+from .errors import PydanticUserError
 
 __all__ = [
     'Strict',
@@ -230,8 +231,31 @@ AnyItemType = TypeVar('AnyItemType')
 
 
 def conlist(
-    item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
+    item_type: type[AnyItemType],
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    unique_items: bool | None = None,
 ) -> type[list[AnyItemType]]:
+    """A wrapper around typing.List that adds validation.
+
+    Args:
+        item_type (type[AnyItemType]): The type of the items in the list.
+        min_length (int | None, optional): The minimum length of the list. Defaults to None.
+        max_length (int | None, optional): The maximum length of the list. Defaults to None.
+        unique_items (bool | None, optional): Whether the items in the list must be unique. Defaults to None.
+
+    Returns:
+        type[list[AnyItemType]]: The wrapped list type.
+    """
+    if unique_items is not None:
+        raise PydanticUserError(
+            (
+                '`unique_items` is removed, use `Set` instead'
+                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
+            ),
+            code='deprecated_kwargs',
+        )
     return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
