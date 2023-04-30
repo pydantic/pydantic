@@ -11,9 +11,9 @@ else:
     from typing import TypedDict
 
 if sys.version_info < (3, 11):
-    from typing_extensions import Literal, NotRequired, TypeAlias
+    from typing_extensions import Literal, LiteralString, NotRequired, TypeAlias
 else:
-    from typing import Literal, NotRequired, TypeAlias
+    from typing import Literal, LiteralString, NotRequired, TypeAlias
 
 from _typeshed import SupportsAllComparisons
 
@@ -189,7 +189,9 @@ class ValidationError(ValueError):
     def json(self, indent: 'int | None' = None, include_context: bool = False) -> str: ...
 
 class PydanticCustomError(ValueError):
-    def __init__(self, error_type: str, message_template: str, context: 'dict[str, Any] | None' = None) -> None: ...
+    def __init__(
+        self, error_type: LiteralString, message_template: LiteralString, context: 'dict[str, Any] | None' = None
+    ) -> None: ...
     @property
     def type(self) -> str: ...
     @property
