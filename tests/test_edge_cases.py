@@ -1313,7 +1313,6 @@ def test_self_recursive():
     assert m.model_dump() == {'sm': {'self': 123}}
 
 
-@pytest.mark.xfail(reason='need to detect and error if you override __init__; need to suggest a migration path')
 def test_nested_init():
     class NestedModel(BaseModel):
         self: str
@@ -1337,6 +1336,30 @@ def test_nested_init():
     assert m.self == 'Top Model'
     assert m.nest.self == 'Nested Model'
     assert m.nest.modified_number == 1
+
+
+def test_init_model_validate():
+    calls = []
+
+    class MyModel(BaseModel):
+        number: int = 1
+
+        def __init__(self, **kwargs):
+            super().__init__(**kwargs)
+            self.number += 1
+            calls.append(str(kwargs))
+
+    m = MyModel(number=1)
+    assert m.number == 2
+    assert calls == ["{'number': 1}"]
+
+    m = MyModel.model_validate(dict(number=1))
+    assert m.number == 2
+    # insert_assert(calls)
+    assert calls == [
+        "{'number': 1}",
+        "{'validated_data': ValidatedData(model_dict={'number': 2}, fields_set={'number'})}",
+    ]
 
 
 def test_init_inspection():
