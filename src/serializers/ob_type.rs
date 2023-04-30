@@ -126,7 +126,7 @@ impl ObTypeLookup {
             ObType::Url => self.url == ob_type,
             ObType::MultiHostUrl => self.multi_host_url == ob_type,
             ObType::Dataclass => is_dataclass(op_value),
-            ObType::Model => is_pydantic_model(op_value),
+            ObType::PydanticSerializable => is_pydantic_serializable(op_value),
             ObType::Enum => self.enum_type == ob_type,
             ObType::Generator => self.generator == ob_type,
             ObType::Path => self.path == ob_type,
@@ -208,10 +208,10 @@ impl ObTypeLookup {
             ObType::Url
         } else if ob_type == self.multi_host_url {
             ObType::MultiHostUrl
+        } else if is_pydantic_serializable(op_value) {
+            ObType::PydanticSerializable
         } else if is_dataclass(op_value) {
             ObType::Dataclass
-        } else if is_pydantic_model(op_value) {
-            ObType::Model
         } else if self.is_enum(op_value, type_ptr) {
             ObType::Enum
         } else if ob_type == self.generator || is_generator(op_value) {
@@ -256,10 +256,10 @@ fn is_dataclass(op_value: Option<&PyAny>) -> bool {
     }
 }
 
-fn is_pydantic_model(op_value: Option<&PyAny>) -> bool {
+fn is_pydantic_serializable(op_value: Option<&PyAny>) -> bool {
     if let Some(value) = op_value {
         value
-            .hasattr(intern!(value.py(), "__pydantic_validator__"))
+            .hasattr(intern!(value.py(), "__pydantic_serializer__"))
             .unwrap_or(false)
     } else {
         false
@@ -305,9 +305,10 @@ pub enum ObType {
     // types from this package
     Url,
     MultiHostUrl,
-    // dataclasses and pydantic models
+    // anything with __pydantic_serializer__, including BaseModel and pydantic dataclasses
+    PydanticSerializable,
+    // vanilla dataclasses
     Dataclass,
-    Model,
     // enum type
     Enum,
     // generator type

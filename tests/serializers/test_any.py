@@ -11,9 +11,10 @@ from typing import ClassVar
 import pytest
 from dirty_equals import HasRepr, IsList
 
-from pydantic_core import PydanticSerializationError, SchemaSerializer, core_schema, to_json
+from pydantic_core import PydanticSerializationError, SchemaSerializer, SchemaValidator, core_schema, to_json
 
 from ..conftest import plain_repr
+from .test_dataclasses import IsStrictDict, on_pypy
 from .test_list_tuple import as_list, as_tuple
 
 
@@ -35,7 +36,7 @@ class MyDataclass:
 
 
 class MyModel:
-    __pydantic_validator__ = 42
+    __pydantic_serializer__ = 42
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -242,7 +243,7 @@ def test_include_dict(any_serializer):
 
 
 class FieldsSetModel:
-    __pydantic_validator__ = 42
+    __pydantic_serializer__ = 42
     __slots__ = '__dict__', '__pydantic_fields_set__'
 
     def __init__(self, **kwargs):
@@ -412,3 +413,63 @@ def test_encoding(any_serializer, gen_input, kwargs, expected_json):
     assert to_json(gen_input(), **kwargs) == expected_json
     if not kwargs:
         assert any_serializer.to_python(gen_input(), mode='json') == json.loads(expected_json)
+
+
+def test_any_dataclass():
+    @dataclasses.dataclass
+    class Foo:
+        a: str
+        b: bytes
+
+    # Build a schema that does not include the field 'b', to test that it is not serialized
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo', [core_schema.dataclass_field(name='a', schema=core_schema.str_schema())]
+        ),
+    )
+    Foo.__pydantic_serializer__ = SchemaSerializer(schema)
+
+    s = SchemaSerializer(core_schema.any_schema())
+    assert s.to_python(Foo(a='hello', b=b'more')) == IsStrictDict(a='hello')
+    assert s.to_python(Foo(a='hello', b=b'more'), mode='json') == IsStrictDict(a='hello')
+    j = s.to_json(Foo(a='hello', b=b'more'))
+
+    if on_pypy:
+        assert json.loads(j) == {'a': 'hello'}
+    else:
+        assert j == b'{"a":"hello"}'
+
+    assert s.to_python(Foo(a='hello', b=b'more'), exclude={'a'}) == IsStrictDict()
+
+
+def test_any_model():
+    class Foo:
+        a: str
+        b: bytes
+
+        def __init__(self, a: str, b: bytes):
+            self.a = a
+            self.b = b
+
+    # Build a schema that does not include the field 'b', to test that it is not serialized
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo', [core_schema.dataclass_field(name='a', schema=core_schema.str_schema())]
+        ),
+    )
+    Foo.__pydantic_validator__ = SchemaValidator(schema)
+    Foo.__pydantic_serializer__ = SchemaSerializer(schema)
+
+    s = SchemaSerializer(core_schema.any_schema())
+    assert s.to_python(Foo(a='hello', b=b'more')) == IsStrictDict(a='hello')
+    assert s.to_python(Foo(a='hello', b=b'more'), mode='json') == IsStrictDict(a='hello')
+    j = s.to_json(Foo(a='hello', b=b'more'))
+
+    if on_pypy:
+        assert json.loads(j) == {'a': 'hello'}
+    else:
+        assert j == b'{"a":"hello"}'
+
+    assert s.to_python(Foo(a='hello', b=b'more'), exclude={'a'}) == IsStrictDict()
