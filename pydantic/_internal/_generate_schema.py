@@ -834,7 +834,7 @@ class GenerateSchema:
         from ._validators import mapping_validator
 
         # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(dict_subclass), ...` in strict mode
-        return core_schema.general_wrap_validator_function(
+        return core_schema.no_info_wrap_validator_function(
             mapping_validator,
             core_schema.dict_schema(
                 keys_schema=self.generate_schema(arg0),
@@ -851,7 +851,7 @@ class GenerateSchema:
         from ._validators import construct_counter
 
         # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(Counter), ...` in strict mode
-        return core_schema.general_after_validator_function(
+        return core_schema.no_info_after_validator_function(
             construct_counter,
             core_schema.dict_schema(
                 keys_schema=self.generate_schema(arg),
@@ -870,7 +870,7 @@ class GenerateSchema:
         else:
             from ._validators import mapping_validator
 
-            return core_schema.general_wrap_validator_function(
+            return core_schema.no_info_wrap_validator_function(
                 mapping_validator,
                 core_schema.dict_schema(
                     keys_schema=self.generate_schema(arg0),
@@ -918,7 +918,7 @@ class GenerateSchema:
             return core_schema.chain_schema(
                 [
                     core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence'),
-                    core_schema.general_wrap_validator_function(
+                    core_schema.no_info_wrap_validator_function(
                         sequence_validator,
                         core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True),
                     ),
@@ -944,17 +944,17 @@ class GenerateSchema:
         )
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
-            return core_schema.general_plain_validator_function(
+            return core_schema.no_info_plain_validator_function(
                 _validators.pattern_either_validator, serialization=ser, metadata=metadata
             )
 
         param = get_args(pattern_type)[0]
         if param == str:
-            return core_schema.general_plain_validator_function(
+            return core_schema.no_info_plain_validator_function(
                 _validators.pattern_str_validator, serialization=ser, metadata=metadata
             )
         elif param == bytes:
-            return core_schema.general_plain_validator_function(
+            return core_schema.no_info_plain_validator_function(
                 _validators.pattern_bytes_validator, serialization=ser, metadata=metadata
             )
         else:
