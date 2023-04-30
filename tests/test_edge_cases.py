@@ -1353,12 +1353,21 @@ def test_init_model_validate():
     assert m.number == 2
     assert calls == ["{'number': 1}"]
 
-    m = MyModel.model_validate(dict(number=1))
-    assert m.number == 2
+    m = MyModel.model_validate(dict(number=2))
+    assert m.number == 3
     # insert_assert(calls)
     assert calls == [
         "{'number': 1}",
-        "{'validated_data': ValidatedData(model_dict={'number': 2}, fields_set={'number'})}",
+        # NOTE! model_dict has been modified in-place
+        "{'validated_data': ValidatedData(model_dict={'number': 3}, fields_set={'number'})}",
+    ]
+
+    m = MyModel.model_validate_json('{"number": 3}')
+    assert m.number == 4
+    assert calls == [
+        "{'number': 1}",
+        "{'validated_data': ValidatedData(model_dict={'number': 3}, fields_set={'number'})}",
+        "{'validated_data': ValidatedData(model_dict={'number': 4}, fields_set={'number'})}",
     ]
 
 
