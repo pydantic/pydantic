@@ -13,6 +13,7 @@ use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 use crate::build_tools::{py_err, safe_repr};
 use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
+use crate::serializers::shared::PydanticSerializer;
 use crate::serializers::{shared::TypeSerializer, SchemaSerializer};
 use crate::url::{PyMultiHostUrl, PyUrl};
 
@@ -98,8 +99,8 @@ pub(crate) fn infer_to_python_known(
                 return serializer.serializer.to_python(value, include, exclude, extra);
             }
         }
-        // Fallback to dict serialization if `__pydantic_serializer__` is not set.else
-        // This is currently only relevant to non-pydantic dataclasses.
+        // Fallback to dict serialization if `__pydantic_serializer__` is not set.
+        // This currently only affects non-pydantic dataclasses.
         let dict = object_to_dict(value, is_model, extra)?;
         serialize_dict(dict)
     };
@@ -173,8 +174,8 @@ pub(crate) fn infer_to_python_known(
                 let py_url: PyMultiHostUrl = value.extract()?;
                 py_url.__str__().into_py(py)
             }
+            ObType::PydanticSerializable => serialize_with_serializer(value, true)?,
             ObType::Dataclass => serialize_with_serializer(value, false)?,
-            ObType::Model => serialize_with_serializer(value, true)?,
             ObType::Enum => {
                 let v = value.getattr(intern!(py, "value"))?;
                 infer_to_python(v, include, exclude, extra)?.into_py(py)
@@ -239,8 +240,8 @@ pub(crate) fn infer_to_python_known(
                 }
                 new_dict.into_py(py)
             }
-            ObType::Dataclass => serialize_dict(object_to_dict(value, false, extra)?)?,
-            ObType::Model => serialize_dict(object_to_dict(value, true, extra)?)?,
+            ObType::PydanticSerializable => serialize_with_serializer(value, true)?,
+            ObType::Dataclass => serialize_with_serializer(value, false)?,
             ObType::Generator => {
                 let iter = super::type_serializers::generator::SerializationIterator::new(
                     value.downcast()?,
@@ -388,6 +389,22 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         }};
     }
 
+    macro_rules! serialize_with_serializer {
+        ($py_serializable:expr, $is_model:expr) => {{
+            if let Ok(py_serializer) = value.getattr(intern!($py_serializable.py(), "__pydantic_serializer__")) {
+                if let Ok(extracted_serializer) = py_serializer.extract::<SchemaSerializer>() {
+                    let pydantic_serializer =
+                        PydanticSerializer::new(value, &extracted_serializer.serializer, include, exclude, extra);
+                    return pydantic_serializer.serialize(serializer);
+                }
+            }
+            // Fallback to dict serialization if `__pydantic_serializer__` is not set.
+            // This currently only affects non-pydantic dataclasses.
+            let dict = object_to_dict(value, $is_model, extra).map_err(py_err_se_err)?;
+            serialize_dict!(dict)
+        }};
+    }
+
     let ser_result = match ob_type {
         ObType::None => serializer.serialize_none(),
         ObType::Int | ObType::IntSubclass => serialize!(i64),
@@ -442,8 +459,8 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             let py_url: PyMultiHostUrl = value.extract().map_err(py_err_se_err)?;
             serializer.serialize_str(&py_url.__str__())
         }
-        ObType::Dataclass => serialize_dict!(object_to_dict(value, false, extra).map_err(py_err_se_err)?),
-        ObType::Model => serialize_dict!(object_to_dict(value, true, extra).map_err(py_err_se_err)?),
+        ObType::Dataclass => serialize_with_serializer!(value, false),
+        ObType::PydanticSerializable => serialize_with_serializer!(value, true),
         ObType::Enum => {
             let v = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;
             infer_serialize(v, serializer, include, exclude, extra)
@@ -565,7 +582,7 @@ pub(crate) fn infer_json_key_known<'py>(ob_type: &ObType, key: &'py PyAny, extra
         ObType::List | ObType::Set | ObType::Frozenset | ObType::Dict | ObType::Generator => {
             py_err!(PyTypeError; "`{}` not valid as object key", ob_type)
         }
-        ObType::Dataclass | ObType::Model => {
+        ObType::Dataclass | ObType::PydanticSerializable => {
             // check that the instance is hashable
             key.hash()?;
             let key = key.str()?.to_string();

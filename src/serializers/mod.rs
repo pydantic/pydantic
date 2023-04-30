@@ -170,14 +170,16 @@ impl SchemaSerializer {
 
 #[allow(clippy::too_many_arguments)]
 #[pyfunction]
-#[pyo3(signature = (value, *, indent = None, include = None, exclude = None, exclude_none = false, round_trip = false,
-    timedelta_mode = None, bytes_mode = None, serialize_unknown = false, fallback = None))]
+#[pyo3(signature = (value, *, indent = None, include = None, exclude = None, by_alias = true,
+    exclude_none = false, round_trip = false, timedelta_mode = None, bytes_mode = None,
+    serialize_unknown = false, fallback = None))]
 pub fn to_json(
     py: Python,
     value: &PyAny,
     indent: Option<usize>,
     include: Option<&PyAny>,
     exclude: Option<&PyAny>,
+    by_alias: bool,
     exclude_none: bool,
     round_trip: bool,
     timedelta_mode: Option<&str>,
@@ -189,7 +191,7 @@ pub fn to_json(
     let extra = state.extra(
         py,
         &SerMode::Json,
-        true,
+        by_alias,
         exclude_none,
         round_trip,
         serialize_unknown,

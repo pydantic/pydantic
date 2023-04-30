@@ -223,8 +223,8 @@ JsonReturnTypes = Literal[
     'timedelta',
     'url',
     'multi_host_url',
+    'pydantic_serializable',
     'dataclass',
-    'model',
     'enum',
     'path',
 ]
