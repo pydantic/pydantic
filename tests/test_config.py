@@ -255,6 +255,7 @@ def test_allow_inf_nan(config: CoreConfig, float_field_schema, input_value, expe
             'schema': {
                 'type': 'typed-dict',
                 'fields': {'x': {'type': 'typed-dict-field', 'schema': float_field_schema}},
+                'return_fields_set': True,
             },
             'config': config,
         }

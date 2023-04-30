@@ -534,9 +534,6 @@ def test_model_field_before_validator() -> None:
     class Model:
         x: str
 
-        def __init__(self, **kwargs: Any) -> None:
-            self.__dict__.update(kwargs)
-
     def f(input_value: Any, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
         assert info.data == {}
@@ -553,7 +550,8 @@ def test_model_field_before_validator() -> None:
                     'x': core_schema.typed_dict_field(
                         core_schema.field_before_validator_function(f, core_schema.str_schema())
                     )
-                }
+                },
+                return_fields_set=True,
             ),
         )
     )
@@ -564,9 +562,6 @@ def test_model_field_before_validator() -> None:
 def test_model_field_after_validator() -> None:
     class Model:
         x: str
-
-        def __init__(self, **kwargs: Any) -> None:
-            self.__dict__.update(kwargs)
 
     def f(input_value: str, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
@@ -582,7 +577,8 @@ def test_model_field_after_validator() -> None:
                     'x': core_schema.typed_dict_field(
                         core_schema.field_after_validator_function(f, core_schema.str_schema())
                     )
-                }
+                },
+                return_fields_set=True,
             ),
         )
     )
@@ -594,9 +590,6 @@ def test_model_field_plain_validator() -> None:
     class Model:
         x: str
 
-        def __init__(self, **kwargs: Any) -> None:
-            self.__dict__.update(kwargs)
-
     def f(input_value: Any, info: core_schema.FieldValidationInfo) -> Any:
         assert info.field_name == 'x'
         assert info.data == {}
@@ -607,7 +600,8 @@ def test_model_field_plain_validator() -> None:
         core_schema.model_schema(
             Model,
             core_schema.typed_dict_schema(
-                {'x': core_schema.typed_dict_field(core_schema.field_plain_validator_function(f))}
+                {'x': core_schema.typed_dict_field(core_schema.field_plain_validator_function(f))},
+                return_fields_set=True,
             ),
         )
     )
@@ -618,9 +612,6 @@ def test_model_field_plain_validator() -> None:
 def test_model_field_wrap_validator() -> None:
     class Model:
         x: str
-
-        def __init__(self, **kwargs: Any) -> None:
-            self.__dict__.update(kwargs)
 
     def f(
         input_value: Any, val: core_schema.ValidatorFunctionWrapHandler, info: core_schema.FieldValidationInfo
@@ -638,7 +629,8 @@ def test_model_field_wrap_validator() -> None:
                     'x': core_schema.typed_dict_field(
                         core_schema.field_wrap_validator_function(f, core_schema.str_schema())
                     )
-                }
+                },
+                return_fields_set=True,
             ),
         )
     )
@@ -659,9 +651,6 @@ def test_non_model_field_before_validator_tries_to_access_field_info() -> None:
     class Model:
         x: str
 
-        def __init__(self, **kwargs: Any) -> None:
-            self.__dict__.update(kwargs)
-
     def f(input_value: Any, info: core_schema.ValidationInfo) -> Any:
         check_that_info_has_no_model_data(info)
         assert isinstance(input_value, bytes)
@@ -675,7 +664,8 @@ def test_non_model_field_before_validator_tries_to_access_field_info() -> None:
                     'x': core_schema.typed_dict_field(
                         core_schema.general_before_validator_function(f, core_schema.str_schema())
                     )
-                }
+                },
+                return_fields_set=True,
             ),
         )
     )
@@ -686,9 +676,6 @@ def test_non_model_field_before_validator_tries_to_access_field_info() -> None:
 def test_non_model_field_after_validator_tries_to_access_field_info() -> None:
     class Model:
         x: str
-
-        def __init__(self, **kwargs: Any) -> None:
-            self.__dict__.update(kwargs)
 
     def f(input_value: Any, info: core_schema.ValidationInfo) -> Any:
         check_that_info_has_no_model_data(info)
@@ -702,7 +689,8 @@ def test_non_model_field_after_validator_tries_to_access_field_info() -> None:
                     'x': core_schema.typed_dict_field(
                         core_schema.general_after_validator_function(f, core_schema.str_schema())
                     )
-                }
+                },
+                return_fields_set=True,
             ),
         )
     )
@@ -714,9 +702,6 @@ def test_non_model_field_plain_validator_tries_to_access_field_info() -> None:
     class Model:
         x: str
 
-        def __init__(self, **kwargs: Any) -> None:
-            self.__dict__.update(kwargs)
-
     def f(input_value: Any, info: core_schema.ValidationInfo) -> Any:
         check_that_info_has_no_model_data(info)
         assert isinstance(input_value, bytes)
@@ -726,7 +711,8 @@ def test_non_model_field_plain_validator_tries_to_access_field_info() -> None:
         core_schema.model_schema(
             Model,
             core_schema.typed_dict_schema(
-                {'x': core_schema.typed_dict_field(core_schema.general_plain_validator_function(f))}
+                {'x': core_schema.typed_dict_field(core_schema.general_plain_validator_function(f))},
+                return_fields_set=True,
             ),
         )
     )
@@ -736,10 +722,8 @@ def test_non_model_field_plain_validator_tries_to_access_field_info() -> None:
 
 def test_non_model_field_wrap_validator_tries_to_access_field_info() -> None:
     class Model:
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         x: str
-
-        def __init__(self, **kwargs: Any) -> None:
-            self.__dict__.update(kwargs)
 
     def f(input_value: Any, val: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo) -> Any:
         check_that_info_has_no_model_data(info)
@@ -753,7 +737,8 @@ def test_non_model_field_wrap_validator_tries_to_access_field_info() -> None:
                     'x': core_schema.typed_dict_field(
                         core_schema.general_wrap_validator_function(f, core_schema.str_schema())
                     )
-                }
+                },
+                return_fields_set=True,
             ),
         )
     )
@@ -811,7 +796,7 @@ def test_typed_dict_data() -> None:
     'mode,calls1,calls2',
     [
         ('before', {'value': {'x': b'input', 'y': '123'}}, {'value': {'x': 'different', 'y': 123}}),
-        ('after', {'value': {'x': 'input', 'y': 123}}, {'value': {'x': 'different', 'y': 123}}),
+        ('after', {'value': ({'x': 'input', 'y': 123}, {'y', 'x'})}, {'value': ({'x': 'different', 'y': 123}, {'x'})}),
         ('wrap', {'value': {'x': b'input', 'y': '123'}}, {'value': {'x': 'different', 'y': 123}}),
     ],
 )
@@ -819,6 +804,7 @@ def test_model_root_function_assignment(mode: str, calls1: Any, calls2: Any):
     calls: list[Any] = []
 
     class Model:
+        __slots__ = '__dict__', '__pydantic_fields_set__'
         x: str
         y: int
 
@@ -844,7 +830,8 @@ def test_model_root_function_assignment(mode: str, calls1: Any, calls2: Any):
                     {
                         'x': core_schema.typed_dict_field(core_schema.str_schema()),
                         'y': core_schema.typed_dict_field(core_schema.int_schema()),
-                    }
+                    },
+                    return_fields_set=True,
                 ),
             },
         )

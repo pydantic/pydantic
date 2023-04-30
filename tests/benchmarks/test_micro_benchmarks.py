@@ -69,37 +69,6 @@ class TestBenchmarkSimpleModel:
             }
         )
 
-    @pytest.fixture(scope='class')
-    def core_validator_not_fs(self):
-        class CoreModel:
-            __slots__ = '__dict__', '__pydantic_fields_set__'
-
-        return SchemaValidator(
-            {
-                'type': 'model',
-                'cls': CoreModel,
-                'schema': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                        'friends': {
-                            'type': 'typed-dict-field',
-                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
-                        },
-                        'settings': {
-                            'type': 'typed-dict-field',
-                            'schema': {
-                                'type': 'dict',
-                                'keys_schema': {'type': 'str'},
-                                'values_schema': {'type': 'float'},
-                            },
-                        },
-                    },
-                },
-            }
-        )
-
     data = {'name': 'John', 'age': 42, 'friends': list(range(200)), 'settings': {f'v_{i}': i / 2.0 for i in range(50)}}
 
     @skip_pydantic
@@ -115,14 +84,6 @@ class TestBenchmarkSimpleModel:
         assert m.__pydantic_fields_set__ == {'name', 'age', 'friends', 'settings'}
         benchmark(core_validator_fs.validate_python, self.data)
 
-    @pytest.mark.benchmark(group='simple model - python')
-    def test_core_python_not_fs(self, core_validator_not_fs, benchmark):
-        m = core_validator_not_fs.validate_python(self.data)
-        assert m.name == 'John'
-        assert m.__dict__.keys() == {'name', 'age', 'friends', 'settings'}
-        assert not hasattr(m, '__pydantic_fields_set__')
-        benchmark(core_validator_not_fs.validate_python, self.data)
-
     @skip_pydantic
     @pytest.mark.benchmark(group='simple model - JSON')
     def test_pyd_json(self, pydantic_model, benchmark):
@@ -137,11 +98,6 @@ class TestBenchmarkSimpleModel:
     def test_core_json_fs(self, core_validator_fs, benchmark):
         json_data = json.dumps(self.data)
         benchmark(core_validator_fs.validate_json, json_data)
-
-    @pytest.mark.benchmark(group='simple model - JSON')
-    def test_core_json_not_fs(self, core_validator_not_fs, benchmark):
-        json_data = json.dumps(self.data)
-        benchmark(core_validator_not_fs.validate_json, json_data)
 
 
 class TestModelLarge:
@@ -1245,7 +1201,8 @@ def test_model_instance(benchmark):
                 {
                     'foo': core_schema.typed_dict_field(core_schema.int_schema()),
                     'bar': core_schema.typed_dict_field(core_schema.int_schema()),
-                }
+                },
+                return_fields_set=True,
             ),
             revalidate_instances='always',
         )
@@ -1285,7 +1242,8 @@ def test_model_instance_abc(benchmark):
                 {
                     'foo': core_schema.typed_dict_field(core_schema.int_schema()),
                     'bar': core_schema.typed_dict_field(core_schema.int_schema()),
-                }
+                },
+                return_fields_set=True,
             ),
             revalidate_instances='always',
         )

@@ -6,7 +6,6 @@ use pyo3::types::PyDict;
 use crate::build_tools::SchemaDict;
 use crate::errors::{ErrorMode, ErrorType, LocItem, ValError, ValResult};
 use crate::input::{GenericIterator, Input};
-use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 use crate::ValidationError;
 
@@ -82,13 +81,6 @@ impl Validator for GeneratorValidator {
 
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        match self.item_validator {
-            Some(ref v) => v.ask(question),
-            None => false,
-        }
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {

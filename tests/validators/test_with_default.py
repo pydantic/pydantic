@@ -4,7 +4,7 @@ import pytest
 
 from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, ValidationError, core_schema
 
-from ..conftest import PyAndJson, plain_repr
+from ..conftest import PyAndJson
 
 
 def test_typed_dict_default():
@@ -299,7 +299,6 @@ def test_model_class():
             },
         }
     )
-    assert 'expect_fields_set:true' in plain_repr(v)
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'

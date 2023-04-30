@@ -214,7 +214,7 @@ impl BuildSerializer for CombinedSerializer {
                 return if build_context.ref_used_within(schema, &schema_ref)? {
                     // the ref is used within itself, so we have to store the serializer in slots
                     // and return a DefinitionRefSerializer
-                    let slot_id = build_context.prepare_slot(schema_ref, None)?;
+                    let slot_id = build_context.prepare_slot(schema_ref)?;
                     let inner_ser = Self::_build(schema, config, build_context)?;
                     build_context.complete_slot(slot_id, inner_ser)?;
                     Ok(super::type_serializers::definitions::DefinitionRefSerializer::from_id(

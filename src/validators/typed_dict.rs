@@ -13,7 +13,6 @@ use crate::input::{
     MappingGenericIterator,
 };
 use crate::lookup_key::LookupKey;
-use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -398,12 +397,6 @@ impl Validator for TypedDictValidator {
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        match question {
-            Question::ReturnFieldsSet => self.return_fields_set,
-        }
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {

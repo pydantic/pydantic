@@ -5,7 +5,6 @@ use pyo3::types::PyDict;
 use crate::build_tools::SchemaDict;
 use crate::errors::ValResult;
 use crate::input::Input;
-use crate::questions::Question;
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
@@ -76,10 +75,6 @@ impl Validator for JsonValidator {
 
     fn get_name(&self) -> &str {
         &self.name
-    }
-
-    fn ask(&self, question: &Question) -> bool {
-        self.validator.as_ref().map(|v| v.ask(question)).unwrap_or(false)
     }
 
     fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
