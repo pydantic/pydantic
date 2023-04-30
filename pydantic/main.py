@@ -14,6 +14,7 @@ from typing import Any, Callable, Generic, Mapping, Tuple, cast
 
 import pydantic_core
 import typing_extensions
+from typing_extensions import deprecated
 
 from ._internal import (
     _config,
@@ -702,12 +703,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     # ##### Deprecated methods from v1 #####
     @property
+    @deprecated('The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.')
     def __fields_set__(self) -> set[str]:
         warnings.warn(
             'The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.', DeprecationWarning
         )
         return self.__pydantic_fields_set__
 
+    @deprecated('The `dict` method is deprecated; use `model_dump` instead.')
     def dict(
         self,
         *,
@@ -728,6 +731,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             exclude_none=exclude_none,
         )
 
+    @deprecated('The `json` method is deprecated; use `model_dump_json` instead.')
     def json(
         self,
         *,
@@ -760,11 +764,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     @classmethod
+    @deprecated('The `parse_obj` method is deprecated; use `model_validate` instead.')
     def parse_obj(cls: type[Model], obj: Any) -> Model:
         warnings.warn('The `parse_obj` method is deprecated; use `model_validate` instead.', DeprecationWarning)
         return cls.model_validate(obj)
 
     @classmethod
+    @deprecated(
+        'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
+        'otherwise load the data then use `model_validate` instead.'
+    )
     def parse_raw(
         cls: type[Model],
         b: str | bytes,
@@ -775,7 +784,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         allow_pickle: bool = False,
     ) -> Model:
         warnings.warn(
-            'The `parse_raw` method is deprecated; if your data is JSON use `model_json_validate`, '
+            'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
             'otherwise load the data then use `model_validate` instead.',
             DeprecationWarning,
         )
@@ -810,6 +819,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return cls.model_validate(obj)
 
     @classmethod
+    @deprecated(
+        'The `parse_file` method is deprecated; load the data from file, then if your data is JSON '
+        'use `model_json_validate` otherwise `model_validate` instead.'
+    )
     def parse_file(
         cls: type[Model],
         path: str | Path,
@@ -834,6 +847,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return cls.parse_obj(obj)
 
     @classmethod
+    @deprecated(
+        "The `from_orm` method is deprecated; set "
+        "`model_config['from_attributes']=True` and use `model_validate` instead."
+    )
     def from_orm(cls: type[Model], obj: Any) -> Model:
         warnings.warn(
             'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
@@ -847,10 +864,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return cls.model_validate(obj)
 
     @classmethod
+    @deprecated('The `construct` method is deprecated; use `model_construct` instead.')
     def construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
         warnings.warn('The `construct` method is deprecated; use `model_construct` instead.', DeprecationWarning)
         return cls.model_construct(_fields_set=_fields_set, **values)
 
+    @deprecated('The copy method is deprecated; use `model_copy` instead.')
     def copy(
         self: Model,
         *,
@@ -892,6 +911,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, deep=deep)  # type: ignore
 
     @classmethod
+    @deprecated('The `schema` method is deprecated; use `model_json_schema` instead.')
     def schema(
         cls, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE
     ) -> typing.Dict[str, Any]:  # noqa UP006
@@ -899,6 +919,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return cls.model_json_schema(by_alias=by_alias, ref_template=ref_template)
 
     @classmethod
+    @deprecated('The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.')
     def schema_json(
         cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
     ) -> str:
@@ -917,11 +938,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     @classmethod
+    @deprecated('The `validate` method is deprecated; use `model_validate` instead.')
     def validate(cls: type[Model], value: Any) -> Model:
         warnings.warn('The `validate` method is deprecated; use `model_validate` instead.', DeprecationWarning)
         return cls.model_validate(value)
 
     @classmethod
+    @deprecated('The `update_forward_refs` method is deprecated; use `model_rebuild` instead.')
     def update_forward_refs(cls, **localns: Any) -> None:
         warnings.warn(
             'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.', DeprecationWarning
@@ -930,10 +953,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             raise TypeError('`localns` arguments are not longer accepted.')
         cls.model_rebuild(force=True)
 
+    @deprecated('The private method `_iter` will be removed and should no longer be used.')
     def _iter(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
         return _deprecated_copy_internals._iter(self, *args, **kwargs)  # type: ignore
 
+    @deprecated('The private method `_calculate_keys` will be removed and should no longer be used.')
     def _copy_and_set_values(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
@@ -942,12 +967,14 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return _deprecated_copy_internals._copy_and_set_values(self, *args, **kwargs)  # type: ignore
 
     @classmethod
+    @deprecated('The private method `_get_value` will be removed and should no longer be used.')
     def _get_value(cls, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method  `_get_value` will be removed and should no longer be used.', DeprecationWarning
         )
         return _deprecated_copy_internals._get_value(cls, *args, **kwargs)  # type: ignore
 
+    @deprecated('The private method `_calculate_keys` will be removed and should no longer be used.')
     def _calculate_keys(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
