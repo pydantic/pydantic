@@ -1,6 +1,6 @@
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyTime, PyTzInfo};
+use pyo3::types::{PyDate, PyDateTime, PyDelta, PyDeltaAccess, PyDict, PyTime, PyTzInfo};
 use speedate::{Date, DateTime, Duration, ParseError, Time};
 use std::borrow::Cow;
 use strum::EnumMessage;
@@ -454,5 +454,9 @@ impl TzInfo {
             let mins = self.seconds / 60;
             format!("{:+03}:{:02}", mins / 60, (mins % 60).abs())
         }
+    }
+
+    fn __deepcopy__(&self, py: Python, _memo: &PyDict) -> PyResult<Py<Self>> {
+        Py::new(py, self.clone())
     }
 }

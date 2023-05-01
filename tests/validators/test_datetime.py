@@ -1,3 +1,4 @@
+import copy
 import json
 import platform
 import re
@@ -183,6 +184,22 @@ def test_tz_comparison():
     # but not gt
     with pytest.raises(ValidationError, match=r'Input should be greater than 2022-01-01T15:00:00Z \[type=greater_than'):
         SchemaValidator({'type': 'datetime', 'gt': uk_3pm}).validate_python('2022-01-01T16:00:00+01:00')
+
+
+def test_tz_info_deepcopy():
+    output = SchemaValidator({'type': 'datetime'}).validate_python('2023-02-15T16:23:44.037Z')
+    c = copy.deepcopy(output)
+    assert repr(output.tzinfo) == 'TzInfo(UTC)'
+    assert repr(c.tzinfo) == 'TzInfo(UTC)'
+    assert c == output
+
+
+def test_tz_info_copy():
+    output = SchemaValidator({'type': 'datetime'}).validate_python('2023-02-15T16:23:44.037Z')
+    c = copy.copy(output)
+    assert repr(output.tzinfo) == 'TzInfo(UTC)'
+    assert repr(c.tzinfo) == 'TzInfo(UTC)'
+    assert c == output
 
 
 def test_custom_tz():
