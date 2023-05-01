@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated, Any, Callable, TypeVar
+from typing import TYPE_CHECKING, Any, Callable, TypeVar
 
 from pydantic_core import core_schema
-from typing_extensions import Literal
+from typing_extensions import Annotated, Literal
 
 from ._internal._core_metadata import build_metadata_dict
 from ._internal._decorators import inspect_annotated_serializer, inspect_validator
@@ -104,13 +104,15 @@ else:
     class SkipValidation:
         """
         If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be skipped.
-        `SkipValidation[int]` is equivalent to `Annotated[int, SkipValidation]`.
 
         This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
         and know that it is safe to skip validation for one or more of the fields.
 
-        This will preserve the JSON schema of its input, but any subsequent transformations to the JSON schema will
-        not be applied. Therefore, this annotation should always be the final annotation applied to a type.
+        Because this converts the validation schema to `any_schema`, subsequent annotation-applied transformations
+        may not have the expected effects. Therefore, when used, this annotation should generally be the final
+        annotation applied to a type.
+
+        You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
         """
 
         def __class_getitem__(cls, item: Any) -> Any:
