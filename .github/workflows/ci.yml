@@ -292,6 +292,9 @@ jobs:
       working-directory: pydantic-next
       run: pdm install --no-editable
 
+    - name: install pydantic
+      run: pdm install --no-editable
+
     - run: pdm list
 
     - run: 'pdm run python -c "import pydantic_next.version; print(pydantic_next.version.version_info())"'
