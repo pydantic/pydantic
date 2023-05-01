@@ -2,6 +2,9 @@
 description: Support for callable types.
 ---
 
+`typing.Callable`
+: see below for more detail on parsing and validation
+
 Fields can also be of type `Callable`:
 
 ```py

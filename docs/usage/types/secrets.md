@@ -1,4 +1,8 @@
+`SecretBytes`
+: bytes where the value is kept partially secret
 
+`SecretStr`
+: string where the value is kept partially secret
 
 You can use the `SecretStr` and the `SecretBytes` data types for storing sensitive information
 that you do not want to be visible in logging or tracebacks.

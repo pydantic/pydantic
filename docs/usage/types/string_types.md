@@ -2,6 +2,30 @@
 description: Useful types provided by Pydantic.
 ---
 
+`str`
+: strings are accepted as-is, `int` `float` and `Decimal` are coerced using `str(v)`, `bytes` and `bytearray` are
+  converted using `v.decode()`, enums inheriting from `str` are converted using `v.value`,
+  and all other types cause an error
+
+`EmailStr`
+: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
+  the input string must be a valid email address, and the output is a simple string
+
+`NameEmail`
+: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
+  the input string must be either a valid email address or in the format `Fred Bloggs <fred.bloggs@example.com>`,
+  and the output is a `NameEmail` object which has two properties: `name` and `email`.
+  For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
+  for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
+
+`PyObject`
+: expects a string and loads the Python object importable at that dotted path;
+  e.g. if `'math.cos'` was provided, the resulting field value would be the function `cos`
+
+`constr`
+: type method for constraining strs;
+  see [Constrained Types](#constrained-types)
+
 ## EmailStr
 
 `EmailStr` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
@@ -123,3 +147,19 @@ class WithCustomEncodersGood(BaseModel):
 m = WithCustomEncodersGood(obj='math.cos')
 print(m.json())
 ```
+
+## Constrained Types
+
+The value of numerous common types can be restricted using `con*` type functions.
+
+### Arguments to `constr`
+The following arguments are available when using the `constr` type function
+
+- `strip_whitespace: bool = False`: removes leading and trailing whitespace
+- `to_upper: bool = False`: turns all characters to uppercase
+- `to_lower: bool = False`: turns all characters to lowercase
+- `strict: bool = False`: controls type coercion
+- `min_length: int = None`: minimum length of the string
+- `max_length: int = None`: maximum length of the string
+- `curtail_length: int = None`: shrinks the string length to the set value when it is longer than the set value
+- `regex: str = None`: regex to validate the string against
