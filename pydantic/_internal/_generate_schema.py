@@ -95,7 +95,6 @@ def check_validator_fields_against_field_name(
     field: str,
 ) -> bool:
     if isinstance(info, (ValidatorDecoratorInfo, FieldValidatorDecoratorInfo)):
-        # V1 compat: accept `'*'` as a wildcard that matches all fields
         if info.fields == ('*',):
             return True
     for v_field_name in info.fields:
@@ -108,7 +107,6 @@ def check_decorator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields
     fields = set(fields)
     for dec in decorators:
         if isinstance(dec.info, (ValidatorDecoratorInfo, FieldValidatorDecoratorInfo)) and dec.info.fields == ('*',):
-            # V1 compat: accept `'*'` as a wildcard that matches all fields
             continue
         if dec.info.check_fields is False:
             continue
