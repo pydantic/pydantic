@@ -712,8 +712,19 @@ def test_wildcard_validators(decorator, pytest_warns):
                 calls.append(('check_all', v))
                 return v
 
+            @decorator('*', 'a')
+            def check_all_a(cls, v: Any) -> Any:
+                calls.append(('check_all_a', v))
+                return v
+
     assert Model(a='abc', b='123').model_dump() == dict(a='abc', b=123)
-    assert calls == [('check_a', 'abc'), ('check_all', 'abc'), ('check_all', 123)]
+    assert calls == [
+        ('check_a', 'abc'),
+        ('check_all', 'abc'),
+        ('check_all_a', 'abc'),
+        ('check_all', 123),
+        ('check_all_a', 123),
+    ]
 
 
 @pytest.mark.parametrize(
