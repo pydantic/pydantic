@@ -1,16 +1,16 @@
 import pytest
 
-import pydantic
+from pydantic import BaseModel as V1BaseModel
 
 try:
-    import pydantic_next
+    from pydantic_next import BaseModel as V2BaseModel
 except ModuleNotFoundError:
     pytestmark = pytest.mark.skip(reason='pydantic_next not installed')
 
 
 def test_both_packages():
-    class NextModel(pydantic_next.BaseModel):
+    class NextModel(V2BaseModel):
         a: str
 
-    class Model(pydantic.BaseModel):
+    class Model(V1BaseModel):
         a: str

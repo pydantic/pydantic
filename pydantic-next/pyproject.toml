@@ -63,6 +63,7 @@ dynamic = ['version', 'readme']
 testing = [
     "coverage[toml]",
     "dirty-equals",
+    "pydantic",
     "pytest",
     "pytest-mock",
     "pytest-pretty",
