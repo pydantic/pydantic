@@ -11,7 +11,6 @@ import typing
 from collections import OrderedDict, defaultdict, deque
 from decimal import Decimal, DecimalException
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from pathlib import Path
 from typing import Any
 from uuid import UUID
 
@@ -23,7 +22,6 @@ from . import _fields
 def mapping_validator(
     __input_value: typing.Mapping[Any, Any],
     validator: core_schema.ValidatorFunctionWrapHandler,
-    info: core_schema.ValidationInfo,
 ) -> typing.Mapping[Any, Any]:
     """
     Validator for `Mapping` types, if required `isinstance(v, Mapping)` has already been called.
@@ -42,7 +40,7 @@ def mapping_validator(
         return value_type(v_dict)  # type: ignore[call-arg]
 
 
-def construct_counter(__input_value: typing.Mapping[Any, Any], _: core_schema.ValidationInfo) -> typing.Counter[Any]:
+def construct_counter(__input_value: typing.Mapping[Any, Any]) -> typing.Counter[Any]:
     """
     Validator for `Counter` types, if required `isinstance(v, Counter)` has already been called.
     """
@@ -52,7 +50,6 @@ def construct_counter(__input_value: typing.Mapping[Any, Any], _: core_schema.Va
 def sequence_validator(
     __input_value: typing.Sequence[Any],
     validator: core_schema.ValidatorFunctionWrapHandler,
-    _: core_schema.ValidationInfo,
 ) -> typing.Sequence[Any]:
     """
     Validator for `Sequence` types, isinstance(v, Sequence) has already been called.
@@ -163,9 +160,7 @@ class DecimalValidator(_fields.CustomValidator):
         if self.check_digits and self.allow_inf_nan:
             raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
 
-    def __call__(  # noqa: C901 (ignore complexity)
-        self, __input_value: int | float | str, _: core_schema.ValidationInfo
-    ) -> Decimal:
+    def __call__(self, __input_value: int | float | str) -> Decimal:  # noqa: C901 (ignore complexity)
         if isinstance(__input_value, Decimal):
             value = __input_value
         else:
@@ -257,7 +252,7 @@ class DecimalValidator(_fields.CustomValidator):
         return f'DecimalValidator({s})'
 
 
-def uuid_validator(__input_value: str | bytes, _: core_schema.ValidationInfo) -> UUID:
+def uuid_validator(__input_value: str | bytes) -> UUID:
     try:
         if isinstance(__input_value, str):
             return UUID(__input_value)
@@ -272,14 +267,7 @@ def uuid_validator(__input_value: str | bytes, _: core_schema.ValidationInfo) ->
         raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
 
 
-def path_validator(__input_value: str, _: core_schema.ValidationInfo) -> Path:
-    try:
-        return Path(__input_value)
-    except TypeError:
-        raise PydanticCustomError('path_type', 'Input is not a valid path')
-
-
-def pattern_either_validator(__input_value: Any, _: core_schema.ValidationInfo) -> typing.Pattern[Any]:
+def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:
     if isinstance(__input_value, typing.Pattern):
         return __input_value  # type: ignore
     elif isinstance(__input_value, (str, bytes)):
@@ -289,7 +277,7 @@ def pattern_either_validator(__input_value: Any, _: core_schema.ValidationInfo) 
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_str_validator(__input_value: Any, _: core_schema.ValidationInfo) -> typing.Pattern[str]:
+def pattern_str_validator(__input_value: Any) -> typing.Pattern[str]:
     if isinstance(__input_value, typing.Pattern):
         if isinstance(__input_value.pattern, str):  # type: ignore
             return __input_value  # type: ignore
@@ -303,7 +291,7 @@ def pattern_str_validator(__input_value: Any, _: core_schema.ValidationInfo) -> 
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_bytes_validator(__input_value: Any, _: core_schema.ValidationInfo) -> Any:
+def pattern_bytes_validator(__input_value: Any) -> Any:
     if isinstance(__input_value, typing.Pattern):
         if isinstance(__input_value.pattern, bytes):
             return __input_value
@@ -327,18 +315,14 @@ def compile_pattern(pattern: PatternType) -> typing.Pattern[PatternType]:
         raise PydanticCustomError('pattern_regex', 'Input should be a valid regular expression')
 
 
-def deque_any_validator(
-    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler, _: core_schema.ValidationInfo
-) -> deque[Any]:
+def deque_any_validator(__input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler) -> deque[Any]:
     if isinstance(__input_value, deque):
         return __input_value
     else:
         return deque(validator(__input_value))
 
 
-def deque_typed_validator(
-    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler, _: core_schema.ValidationInfo
-) -> deque[Any]:
+def deque_typed_validator(__input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler) -> deque[Any]:
     if isinstance(__input_value, deque):
         return deque(validator(__input_value), maxlen=__input_value.maxlen)
     else:
@@ -346,7 +330,7 @@ def deque_typed_validator(
 
 
 def ordered_dict_any_validator(
-    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler, _: core_schema.ValidationInfo
+    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler
 ) -> OrderedDict[Any, Any]:
     if isinstance(__input_value, OrderedDict):
         return __input_value
@@ -354,11 +338,11 @@ def ordered_dict_any_validator(
         return OrderedDict(validator(__input_value))
 
 
-def ordered_dict_typed_validator(__input_value: list[Any], _: core_schema.ValidationInfo) -> OrderedDict[Any, Any]:
+def ordered_dict_typed_validator(__input_value: list[Any]) -> OrderedDict[Any, Any]:
     return OrderedDict(__input_value)
 
 
-def ip_v4_address_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv4Address:
+def ip_v4_address_validator(__input_value: Any) -> IPv4Address:
     if isinstance(__input_value, IPv4Address):
         return __input_value
 
@@ -368,7 +352,7 @@ def ip_v4_address_validator(__input_value: Any, _: core_schema.ValidationInfo) -
         raise PydanticCustomError('ip_v4_address', 'Input is not a valid IPv4 address')
 
 
-def ip_v6_address_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv6Address:
+def ip_v6_address_validator(__input_value: Any) -> IPv6Address:
     if isinstance(__input_value, IPv6Address):
         return __input_value
 
@@ -378,7 +362,7 @@ def ip_v6_address_validator(__input_value: Any, _: core_schema.ValidationInfo) -
         raise PydanticCustomError('ip_v6_address', 'Input is not a valid IPv6 address')
 
 
-def ip_v4_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv4Network:
+def ip_v4_network_validator(__input_value: Any) -> IPv4Network:
     """
     Assume IPv4Network initialised with a default `strict` argument
 
@@ -394,7 +378,7 @@ def ip_v4_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -
         raise PydanticCustomError('ip_v4_network', 'Input is not a valid IPv4 network')
 
 
-def ip_v6_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv6Network:
+def ip_v6_network_validator(__input_value: Any) -> IPv6Network:
     """
     Assume IPv6Network initialised with a default `strict` argument
 
@@ -410,7 +394,7 @@ def ip_v6_network_validator(__input_value: Any, _: core_schema.ValidationInfo) -
         raise PydanticCustomError('ip_v6_network', 'Input is not a valid IPv6 network')
 
 
-def ip_v4_interface_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv4Interface:
+def ip_v4_interface_validator(__input_value: Any) -> IPv4Interface:
     if isinstance(__input_value, IPv4Interface):
         return __input_value
 
@@ -420,7 +404,7 @@ def ip_v4_interface_validator(__input_value: Any, _: core_schema.ValidationInfo)
         raise PydanticCustomError('ip_v4_interface', 'Input is not a valid IPv4 interface')
 
 
-def ip_v6_interface_validator(__input_value: Any, _: core_schema.ValidationInfo) -> IPv6Interface:
+def ip_v6_interface_validator(__input_value: Any) -> IPv6Interface:
     if isinstance(__input_value, IPv6Interface):
         return __input_value
 

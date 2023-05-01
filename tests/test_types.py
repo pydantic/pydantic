@@ -1,4 +1,5 @@
 import itertools
+import json
 import math
 import os
 import re
@@ -84,7 +85,7 @@ from pydantic import (
     constr,
 )
 from pydantic.decorators import field_validator
-from pydantic.types import ImportString, SecretField, Strict
+from pydantic.types import AllowInfNan, ImportString, SecretField, Strict
 
 try:
     import email_validator
@@ -863,6 +864,27 @@ def test_decimal():
     assert m.model_dump() == {'v': Decimal('1.234')}
 
 
+def test_decimal_allow_inf():
+    class MyModel(BaseModel):
+        value: Annotated[Decimal, AllowInfNan(True)]
+
+    m = MyModel(value='inf')
+    assert m.value == Decimal('inf')
+
+    m = MyModel(value=Decimal('inf'))
+    assert m.value == Decimal('inf')
+
+
+def test_decimal_dont_allow_inf():
+    class MyModel(BaseModel):
+        value: Decimal
+
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        MyModel(value='inf')
+    with pytest.raises(ValidationError, match=r'Input should be a finite number \[type=finite_number'):
+        MyModel(value=Decimal('inf'))
+
+
 def test_decimal_strict():
     class Model(BaseModel):
         v: Decimal
@@ -1327,11 +1349,11 @@ def test_enum_fails(cooking_model):
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
         {
-            'type': 'enum',
+            'ctx': {'expected': '1 or 2'},
+            'input': 3,
             'loc': ('tool',),
             'msg': 'Input should be 1 or 2',
-            'input': 3,
-            'ctx': {'expected': '1 or 2'},
+            'type': 'enum',
         }
     ]
 
@@ -1364,6 +1386,14 @@ def test_plain_enum_validate():
             'msg': IsStr(regex='Input should be an instance of test_plain_enum_validate.<locals>.MyEnum'),
             'type': 'is_instance_of',
         }
+    ]
+
+    assert AnalyzedType(MyEnum).validate_json('1') is MyEnum.a
+    AnalyzedType(MyEnum).validate_json('1', strict=True)
+    with pytest.raises(ValidationError) as exc_info:
+        AnalyzedType(MyEnum).validate_json('"1"', strict=True)
+    assert exc_info.value.errors() == [
+        {'ctx': {'expected': '1'}, 'input': '1', 'loc': (), 'msg': 'Input should be 1', 'type': 'enum'}
     ]
 
 
@@ -1443,11 +1473,11 @@ def test_int_enum_type():
         Model.model_json_schema()
 
 
-@pytest.mark.parametrize('enum_base', [Enum, IntEnum])
-@pytest.mark.parametrize('strict', [True, False])
+@pytest.mark.parametrize('enum_base,strict', [(Enum, False), (IntEnum, False), (IntEnum, True)])
 def test_enum_from_json(enum_base, strict):
     class MyEnum(enum_base):
         a = 1
+        b = 3
 
     class Model(BaseModel):
         my_enum: MyEnum
@@ -1458,25 +1488,25 @@ def test_enum_from_json(enum_base, strict):
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate_json('{"my_enum":2}', strict=strict)
 
-    my_enum_label = MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
+    MyEnum.__name__ if sys.version_info[:2] <= (3, 8) else MyEnum.__qualname__
 
     if strict:
         assert exc_info.value.errors() == [
             {
-                'ctx': {'error': f'2 is not a valid {my_enum_label}'},
+                'ctx': {'expected': '1 or 3'},
                 'input': 2,
                 'loc': ('my_enum',),
-                'msg': f'Value error, 2 is not a valid {my_enum_label}',
-                'type': 'value_error',
+                'msg': 'Input should be 1 or 3',
+                'type': 'enum',
             }
         ]
     else:
         assert exc_info.value.errors() == [
             {
-                'ctx': {'expected': '1'},
+                'ctx': {'expected': '1 or 3'},
                 'input': 2,
                 'loc': ('my_enum',),
-                'msg': 'Input should be 1',
+                'msg': 'Input should be 1 or 3',
                 'type': 'enum',
             }
         ]
@@ -1577,10 +1607,10 @@ def test_string_fails():
             'loc': ('str_email',),
             'msg': (
                 'value is not a valid email address: The email address contains invalid '
-                'characters before the @-sign: LESS-THAN SIGN.'
+                "characters before the @-sign: '<'."
             ),
             'input': 'foobar<@example.com',
-            'ctx': {'reason': 'The email address contains invalid characters before the @-sign: LESS-THAN SIGN.'},
+            'ctx': {'reason': "The email address contains invalid characters before the @-sign: '<'."},
         },
         {
             'type': 'value_error',
@@ -2453,6 +2483,17 @@ def test_uuid_error():
         Model(v=None)
 
 
+def test_uuid_json():
+    class Model(BaseModel):
+        v: UUID
+        v1: UUID1
+        v3: UUID3
+        v4: UUID4
+
+    m = Model(v=uuid.uuid4(), v1=uuid.uuid1(), v3=uuid.uuid3(uuid.NAMESPACE_DNS, 'python.org'), v4=uuid.uuid4())
+    assert m.model_dump_json() == f'{{"v":"{m.v}","v1":"{m.v1}","v3":"{m.v3}","v4":"{m.v4}"}}'
+
+
 @pytest.mark.xfail(sys.platform.startswith('win'), reason='https://github.com/PyO3/pyo3/issues/2913', strict=False)
 def test_uuid_validation():
     class UUIDModel(BaseModel):
@@ -2874,6 +2915,42 @@ def test_path_validation_success(value, result):
         foo: Path
 
     assert Model(foo=value).foo == result
+    assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
+
+
+def test_path_like():
+    class Model(BaseModel):
+        foo: os.PathLike
+
+    assert Model(foo='/foo/bar').foo == Path('/foo/bar')
+    assert Model(foo=Path('/foo/bar')).foo == Path('/foo/bar')
+    assert Model.model_validate_json('{"foo": "abc"}').foo == Path('abc')
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'type': 'object',
+        'properties': {'foo': {'type': 'string', 'format': 'path', 'title': 'Foo'}},
+        'required': ['foo'],
+        'title': 'Model',
+    }
+
+
+def test_path_like_strict():
+    class Model(BaseModel):
+        model_config = dict(strict=True)
+
+        foo: os.PathLike
+
+    with pytest.raises(ValidationError, match='Input should be an instance of PathLike'):
+        Model(foo='/foo/bar')
+    assert Model(foo=Path('/foo/bar')).foo == Path('/foo/bar')
+    assert Model.model_validate_json('{"foo": "abc"}').foo == Path('abc')
+    # insert_assert(Model.model_json_schema())
+    assert Model.model_json_schema() == {
+        'type': 'object',
+        'properties': {'foo': {'type': 'string', 'format': 'path', 'title': 'Foo'}},
+        'required': ['foo'],
+        'title': 'Model',
+    }
 
 
 def test_path_validation_fails():

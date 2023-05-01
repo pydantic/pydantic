@@ -1747,7 +1747,7 @@ def test_dataclass_config_validate_default():
     ]
 
 
-def dataclass_decorators():
+def dataclass_decorators(identity: bool = False):
     def combined(cls):
         """
         Should be equivalent to:
@@ -1756,12 +1756,14 @@ def dataclass_decorators():
         """
         return pydantic.dataclasses.dataclass(dataclasses.dataclass(cls))
 
+    def identity_decorator(cls):
+        return cls
+
     decorators = [pydantic.dataclasses.dataclass, dataclasses.dataclass, combined]
     ids = ['pydantic', 'stdlib', 'combined']
-    # decorators = [pydantic.dataclasses.dataclass]
-    # ids = ['pydantic']
-    # decorators = [dataclasses.dataclass]
-    # ids = ['stdlib']
+    if identity:
+        decorators.append(identity_decorator)
+        ids.append('identity')
     return {'argvalues': decorators, 'ids': ids}
 
 
@@ -1825,3 +1827,45 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
         with pytest.raises(ValidationError) as exc_info:
             validator.validate_python({'x': input_value})
         assert exc_info.value.errors() == output_value
+
+
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(identity=True))
+def test_pydantic_dataclass_preserves_metadata(dataclass_decorator: Callable[[Any], Any]) -> None:
+    @dataclass_decorator
+    class FooStd:
+        """Docstring"""
+
+    FooPydantic = pydantic.dataclasses.dataclass(FooStd)
+
+    assert FooPydantic.__module__ == FooStd.__module__
+    assert FooPydantic.__name__ == FooStd.__name__
+    assert FooPydantic.__qualname__ == FooStd.__qualname__
+
+
+def test_recursive_dataclasses_gh_4509(create_module) -> None:
+    @create_module
+    def module():
+        import dataclasses
+        from typing import List
+
+        import pydantic
+
+        @dataclasses.dataclass
+        class Recipe:
+            author: 'Cook'
+
+        @dataclasses.dataclass
+        class Cook:
+            recipes: List[Recipe]
+
+        @pydantic.dataclasses.dataclass
+        class Foo(Cook):
+            pass
+
+    gordon = module.Cook([])
+
+    burger = module.Recipe(author=gordon)
+
+    me = module.Foo([burger])
+
+    assert me.recipes == [burger]

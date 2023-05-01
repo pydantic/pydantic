@@ -10,7 +10,6 @@ from pathlib import Path
 from typing import (
     TYPE_CHECKING,
     Any,
-    Callable,
     ClassVar,
     FrozenSet,
     Generic,
@@ -28,6 +27,8 @@ from typing_extensions import Annotated, Literal
 
 from ._internal import _fields, _validators
 from ._migration import getattr_migration
+from .annotated import GetCoreSchemaHandler
+from .errors import PydanticUserError
 
 __all__ = [
     'Strict',
@@ -72,10 +73,13 @@ __all__ = [
     'condate',
     'AwareDatetime',
     'NaiveDatetime',
+    'AllowInfNan',
 ]
 
 from ._internal._core_metadata import build_metadata_dict
+from ._internal._schema_generation_shared import GetJsonSchemaHandler
 from ._internal._utils import update_not_none
+from .json_schema import JsonSchemaValue
 
 
 @_dataclasses.dataclass
@@ -227,8 +231,31 @@ AnyItemType = TypeVar('AnyItemType')
 
 
 def conlist(
-    item_type: type[AnyItemType], *, min_length: int | None = None, max_length: int | None = None
+    item_type: type[AnyItemType],
+    *,
+    min_length: int | None = None,
+    max_length: int | None = None,
+    unique_items: bool | None = None,
 ) -> type[list[AnyItemType]]:
+    """A wrapper around typing.List that adds validation.
+
+    Args:
+        item_type (type[AnyItemType]): The type of the items in the list.
+        min_length (int | None, optional): The minimum length of the list. Defaults to None.
+        max_length (int | None, optional): The maximum length of the list. Defaults to None.
+        unique_items (bool | None, optional): Whether the items in the list must be unique. Defaults to None.
+
+    Returns:
+        type[list[AnyItemType]]: The wrapped list type.
+    """
+    if unique_items is not None:
+        raise PydanticUserError(
+            (
+                '`unique_items` is removed, use `Set` instead'
+                '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
+            ),
+            code='deprecated_kwargs',
+        )
     return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
@@ -249,7 +276,7 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
@@ -295,14 +322,15 @@ def condecimal(
 class UuidVersion:
     uuid_version: Literal[1, 3, 4, 5]
 
-    def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> dict[str, Any]:
+    def __get_pydantic_json_schema__(
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = handler(core_schema)
         field_schema.pop('anyOf', None)  # remove the bytes/str union
         field_schema.update(type='string', format=f'uuid{self.uuid_version}')
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             cast(core_schema.GeneralValidatorFunction, self.validate), handler(source)
         )
@@ -328,14 +356,15 @@ UUID5 = Annotated[UUID, UuidVersion(5)]
 class PathType:
     path_type: Literal['file', 'dir', 'new']
 
-    def __pydantic_modify_json_schema__(self, field_schema: dict[str, Any]) -> dict[str, Any]:
+    def __get_pydantic_json_schema__(
+        self, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = handler(core_schema)
         format_conversion = {'file': 'file-path', 'dir': 'directory-path'}
         field_schema.update(format=format_conversion.get(self.path_type, 'path'), type='string')
         return field_schema
 
-    def __get_pydantic_core_schema__(
-        self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         function_lookup = {
             'file': cast(core_schema.GeneralValidatorFunction, self.validate_file),
             'dir': cast(core_schema.GeneralValidatorFunction, self.validate_directory),
@@ -392,9 +421,7 @@ else:
             return Annotated[item, cls()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             if cls is source:
                 return core_schema.json_schema(None)
             else:
@@ -425,25 +452,25 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         validator = SecretFieldValidator(cls)
+        js_modify_functions: list[Any] = []
         if issubclass(cls, SecretStr):
             # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
-            js_cs_override = lambda: core_schema.str_schema(  # noqa E731
-                min_length=validator.min_length,
-                max_length=validator.max_length,
-            )
+            def js_cs_override1(_c: Any, h: Any) -> Any:
+                return h(core_schema.str_schema(min_length=validator.min_length, max_length=validator.max_length))
+
+            js_modify_functions.append(js_cs_override1)
+
         elif issubclass(cls, SecretBytes):
-            js_cs_override = lambda: core_schema.bytes_schema(  # noqa E731
-                min_length=validator.min_length,
-                max_length=validator.max_length,
-            )
-        else:
-            js_cs_override = None
+
+            def js_cs_override2(_c: Any, h: Any) -> Any:
+                return h(core_schema.bytes_schema(min_length=validator.min_length, max_length=validator.max_length))
+
+            js_modify_functions.append(js_cs_override2)
+
         metadata = build_metadata_dict(
-            cs_update_function=validator.__pydantic_update_schema__, js_cs_override=js_cs_override
+            cs_update_function=validator.__pydantic_update_schema__, js_functions=js_modify_functions
         )
         return core_schema.general_after_validator_function(
             validator,
@@ -475,7 +502,10 @@ class SecretField(abc.ABC, Generic[SecretType]):
         ...
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, field_schema: dict[str, Any]) -> dict[str, Any]:
+    def __get_pydantic_json_schema__(
+        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        field_schema = handler(core_schema)
         update_not_none(
             field_schema,
             type='string',
@@ -595,9 +625,7 @@ class PaymentCardNumber(str):
         self.brand = self.validate_brand(card_number)
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         return core_schema.general_after_validator_function(
             cls.validate,
             core_schema.str_schema(
@@ -699,9 +727,7 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 class ByteSize(int):
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
-    ) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         # TODO better schema
         return core_schema.general_plain_validator_function(cls.validate)
 
@@ -767,7 +793,7 @@ else:
     class PastDate:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -784,7 +810,7 @@ else:
     class FutureDate:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -824,7 +850,7 @@ else:
     class AwareDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type
@@ -841,7 +867,7 @@ else:
     class NaiveDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+            cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # used directly as a type

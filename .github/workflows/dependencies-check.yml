@@ -41,12 +41,10 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
 
-    - run: pip install -r requirements/testing.txt
+    - run: pip install pdm && pdm install --no-isolation
 
-    - run: pip install .
+    - run: pdm run pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
 
-    - run: pip install ${{ matrix.PYTHON_DEPENDENCY_CASE }}
-
-    - run: pip freeze
+    - run: pdm run pip freeze
 
     - run: make test

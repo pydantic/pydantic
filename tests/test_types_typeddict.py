@@ -12,6 +12,7 @@ from annotated_types import Lt
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import BaseModel, Field, PositiveInt, PydanticUserError, ValidationError
+from pydantic.analyzed_type import AnalyzedType
 
 from .conftest import Err
 
@@ -168,19 +169,18 @@ def test_partial_new_typeddict(TypedDict):
     assert Model(user={'id': 1}).user == {'id': 1}
 
 
-def test_typeddict_extra(TypedDict):
+def test_typeddict_extra_default(TypedDict):
     class User(TypedDict):
         name: str
         age: int
 
-    class Model(BaseModel, extra='forbid'):
-        u: User
+    val = AnalyzedType(User)
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(u={'name': 'pika', 'age': 7, 'rank': 1})
+        val.validate_python({'name': 'pika', 'age': 7, 'rank': 1})
     # insert_assert(exc_info.value.errors())
     assert exc_info.value.errors() == [
-        {'type': 'extra_forbidden', 'loc': ('u', 'rank'), 'msg': 'Extra inputs are not permitted', 'input': 1}
+        {'type': 'extra_forbidden', 'loc': ('rank',), 'msg': 'Extra inputs are not permitted', 'input': 1}
     ]
 
 

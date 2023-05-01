@@ -28,7 +28,7 @@ from typing import (
 from uuid import UUID
 
 import pytest
-from pydantic_core import core_schema
+from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Literal
 
 from pydantic import (
@@ -39,6 +39,8 @@ from pydantic import (
     field_validator,
 )
 from pydantic._internal._core_metadata import build_metadata_dict
+from pydantic.analyzed_type import AnalyzedType
+from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass
@@ -46,6 +48,8 @@ from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
+    GetJsonSchemaHandler,
+    JsonSchemaValue,
     PydanticJsonSchemaWarning,
     model_json_schema,
     models_json_schema,
@@ -264,7 +268,10 @@ def test_enum_modify_schema():
         bar = 'b'
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema):
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            field_schema = handler(core_schema)
             existing_comment = field_schema.get('$comment', '')
             field_schema['$comment'] = existing_comment + 'comment'  # make sure this function is only called once
 
@@ -2096,7 +2103,10 @@ def test_schema_attributes():
 def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
-        def __pydantic_modify_json_schema__(cls, schema):
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            schema = handler(core_schema)
             schema.update(foobar=123)
             return schema
 
@@ -2282,7 +2292,7 @@ def test_schema_for_generic_field():
         ) -> core_schema.PlainValidatorFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
-            metadata = build_metadata_dict(js_cs_override=handler(param))
+            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(param))])
             return core_schema.general_plain_validator_function(
                 GenModel,
                 metadata=metadata,
@@ -2294,7 +2304,6 @@ def test_schema_for_generic_field():
 
         model_config = dict(arbitrary_types_allowed=True)
 
-    # assert Model.__pydantic_core_schema__ == {}
     assert Model.model_json_schema() == {
         'title': 'Model',
         'type': 'object',
@@ -2309,7 +2318,10 @@ def test_schema_for_generic_field():
 
     class GenModelModified(GenModel, Generic[T]):
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema):
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            field_schema = handler(core_schema)
             type = field_schema.pop('type', 'other')
             field_schema.update(anyOf=[{'type': type}, {'type': 'array', 'items': {'type': type}}])
             return field_schema
@@ -2357,7 +2369,7 @@ def test_namedtuple_default():
     }
 
 
-def test_advanced_generic_schema():
+def test_advanced_generic_schema():  # noqa: C901
     T = TypeVar('T')
     K = TypeVar('K')
 
@@ -2378,15 +2390,28 @@ def test_advanced_generic_schema():
             cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
-                param = source.__args__[0]
-                metadata = build_metadata_dict(js_cs_override=handler(Optional[param]))
+                arg = source.__args__[0]
+
+                def js_func(s, h):
+                    # ignore the schema we were given and get a new CoreSchema
+                    s = handler(Optional[arg])
+                    return h(s)
+
                 return core_schema.general_plain_validator_function(
                     Gen,
-                    metadata=metadata,
+                    metadata={'pydantic_js_functions': [js_func]},
                 )
+            else:
+                return handler(source)
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            try:
+                field_schema = handler(core_schema)
+            except PydanticInvalidForJsonSchema:
+                field_schema = {}
             the_type = field_schema.pop('anyOf', [{'type': 'string'}])[0]
             field_schema.update(title='Gen title', anyOf=[the_type, {'type': 'array', 'items': the_type}])
             return field_schema
@@ -2406,10 +2431,11 @@ def test_advanced_generic_schema():
 
         @classmethod
         def __get_pydantic_core_schema__(
-            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema], **_kwargs: Any
+            cls, source: Any, handler: GetCoreSchemaHandler, **_kwargs: Any
         ) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
-                metadata = build_metadata_dict(js_cs_override=handler(Tuple[source.__args__]))
+                # the js_function ignores the schema we were given and gets a new Tuple CoreSchema
+                metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(Tuple[source.__args__]))])
                 return core_schema.general_plain_validator_function(
                     GenTwoParams,
                     metadata=metadata,
@@ -2417,7 +2443,10 @@ def test_advanced_generic_schema():
             return handler(source)
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            field_schema = handler(core_schema)
             field_schema.pop('minItems')
             field_schema.pop('maxItems')
             field_schema.update(examples='examples')
@@ -2428,9 +2457,12 @@ def test_advanced_generic_schema():
         B = 'b'
 
         @classmethod
-        def __pydantic_modify_json_schema__(cls, field_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-            field_schema.update(title='CustomType title', type='string')
-            return field_schema
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> core_schema.CoreSchema:
+            json_schema = handler(core_schema)
+            json_schema.update(title='CustomType title', type='string')
+            return json_schema
 
     class Model(BaseModel):
         data0: Gen
@@ -2606,9 +2638,10 @@ def test_complex_nested_generic():
 def test_modify_schema_dict_keys() -> None:
     class MyType:
         @classmethod
-        def __pydantic_modify_json_schema__(cls, schema):
-            schema['test'] = 'passed'
-            return schema
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return {'test': 'passed'}
 
     class MyModel(BaseModel):
         my_field: Dict[str, MyType]
@@ -3459,3 +3492,145 @@ def test_nested_default_json_schema():
         'title': 'OuterModel',
         'type': 'object',
     }
+
+
+@pytest.mark.xfail(
+    reason=(
+        'We are calling __get_pydantic_json_schema__ too many times.'
+        ' The second time we analyze a model we get the CoreSchema from __pydantic_core_schema__.'
+        ' But then we proceed to append to the metadata json schema functions.'
+    )
+)
+def test_get_pydantic_core_schema_calls() -> None:
+    """Verify when/how many times `__get_pydantic_core_schema__` gets called"""
+
+    calls: List[str] = []
+
+    class Model(BaseModel):
+        @classmethod
+        def __get_pydantic_json_schema__(cls, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            calls.append('Model::before')
+            json_schema = handler(schema)
+            calls.append('Model::after')
+            return json_schema
+
+    schema = Model.model_json_schema()
+    expected: JsonSchemaValue = {'type': 'object', 'properties': {}, 'title': 'Model'}
+
+    assert schema == expected
+    assert calls == ['Model::before', 'Model::after']
+
+    calls.clear()
+
+    class CustomAnnotation(NamedTuple):
+        name: str
+
+        def __get_pydantic_json_schema__(self, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            calls.append(f'CustomAnnotation({self.name})::before')
+            json_schema = handler(schema)
+            calls.append(f'CustomAnnotation({self.name})::after')
+            return json_schema
+
+    AnnotatedType = Annotated[str, CustomAnnotation('foo'), CustomAnnotation('bar')]
+
+    schema = AnalyzedType(AnnotatedType).json_schema()
+    expected: JsonSchemaValue = {'type': 'string'}
+
+    assert schema == expected
+    assert calls == [
+        'CustomAnnotation(bar)::before',
+        'CustomAnnotation(foo)::before',
+        'CustomAnnotation(foo)::after',
+        'CustomAnnotation(bar)::after',
+    ]
+
+    calls.clear()
+
+    class OuterModel(BaseModel):
+        x: Model
+
+        @classmethod
+        def __get_pydantic_json_schema__(cls, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            calls.append('OuterModel::before')
+            json_schema = handler(schema)
+            calls.append('OuterModel::after')
+            return json_schema
+
+    schema = OuterModel.model_json_schema()
+    expected: JsonSchemaValue = {
+        'type': 'object',
+        'properties': {'x': {'$ref': '#/$defs/Model'}},
+        'required': ['x'],
+        'title': 'OuterModel',
+        '$defs': {'Model': {'type': 'object', 'properties': {}, 'title': 'Model'}},
+    }
+
+    assert schema == expected
+    assert calls == [
+        'OuterModel::before',
+        'Model::before',
+        'Model::after',
+        'OuterModel::after',
+    ]
+
+    calls.clear()
+
+    AnnotatedModel = Annotated[Model, CustomAnnotation('foo')]
+
+    schema = AnalyzedType(AnnotatedModel).json_schema()
+    expected: JsonSchemaValue = {}
+
+    assert schema == expected
+    assert calls == [
+        'CustomAnnotation(foo)::before',
+        'Model::before',
+        'Model::after',
+        'CustomAnnotation(foo)::after',
+    ]
+
+    calls.clear()
+
+    class OuterModelWithAnnotatedField(BaseModel):
+        x: AnnotatedModel
+
+    schema = OuterModelWithAnnotatedField.model_json_schema()
+    expected: JsonSchemaValue = {
+        'type': 'object',
+        'properties': {'x': {'$ref': '#/$defs/Model'}},
+        'required': ['x'],
+        'title': 'OuterModel',
+        '$defs': {'Model': {'type': 'object', 'properties': {}, 'title': 'Model'}},
+    }
+
+    assert schema == expected
+    assert calls == [
+        'OuterModel::before',
+        'CustomAnnotation(foo)::before',
+        'Model::before',
+        'Model::after',
+        'CustomAnnotation(foo)::after',
+        'OuterModel::after',
+    ]
+
+    calls.clear()
+
+
+def test_annotated_get_json_schema() -> None:
+    calls: List[int] = []
+
+    class CustomType(str):
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return handler(str)
+
+        @classmethod
+        def __get_pydantic_json_schema__(cls, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+            calls.append(1)
+            json_schema = handler(schema)
+            return json_schema
+
+    AnalyzedType(Annotated[CustomType, 123]).json_schema()
+
+    assert sum(calls) == 1

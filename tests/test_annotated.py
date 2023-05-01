@@ -1,5 +1,5 @@
 import sys
-from typing import Any, Callable, Generic, Iterator, List, Set, TypeVar
+from typing import Any, Generic, Iterator, List, Set, TypeVar
 
 import pytest
 from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
@@ -7,6 +7,7 @@ from pydantic_core import core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
+from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import Undefined
 
@@ -206,9 +207,7 @@ def test_modify_get_schema_annotated() -> None:
 
     class CustomType:
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             calls.append('CustomType:before')
             with pytest.raises(PydanticSchemaGenerationError):
                 handler(source)
@@ -217,9 +216,7 @@ def test_modify_get_schema_annotated() -> None:
             return schema
 
     class PydanticMetadata:
-        def __get_pydantic_core_schema__(
-            self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             calls.append('PydanticMetadata:before')
             schema = handler(source)
             calls.append('PydanticMetadata:after')
@@ -263,9 +260,7 @@ def test_get_pydantic_core_schema_source_type() -> None:
     types: Set[Any] = set()
 
     class PydanticMarker:
-        def __get_pydantic_core_schema__(
-            self, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(self, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             types.add(source)
             return handler(source)
 

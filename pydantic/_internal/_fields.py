@@ -204,7 +204,7 @@ def collect_model_fields(  # noqa: C901
 
 
 def _is_finalvar_with_default_val(type_: type[Any], val: Any) -> bool:
-    from pydantic.fields import FieldInfo
+    from ..fields import FieldInfo
 
     if not is_finalvar(type_):
         return False

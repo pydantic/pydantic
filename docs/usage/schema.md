@@ -3,13 +3,17 @@
 ```py output="json"
 import json
 from enum import Enum
+from typing import Union
+
+from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
+from pydantic.config import ConfigDict
 
 
 class FooBar(BaseModel):
     count: int
-    size: float = None
+    size: Union[float, None] = None
 
 
 class Gender(str, Enum):
@@ -24,10 +28,10 @@ class MainModel(BaseModel):
     This is the description of the main model
     """
 
-    model_config = dict(title='Main')
+    model_config = ConfigDict(title='Main')
 
-    foo_bar: FooBar = Field(...)
-    gender: Gender = Field(None, alias='Gender')
+    foo_bar: FooBar
+    gender: Annotated[Union[Gender, None], Field(alias='Gender')] = None
     snap: int = Field(
         42,
         title='The Snap',
@@ -40,17 +44,18 @@ class MainModel(BaseModel):
 print(json.dumps(MainModel.model_json_schema(), indent=2))
 """
 {
-  "title": "Main",
-  "description": "This is the description of the main model",
   "type": "object",
   "properties": {
     "foo_bar": {
       "$ref": "#/$defs/FooBar"
     },
     "Gender": {
-      "allOf": [
+      "anyOf": [
         {
           "$ref": "#/$defs/Gender"
+        },
+        {
+          "type": "null"
         }
       ],
       "default": null
@@ -67,9 +72,10 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
   "required": [
     "foo_bar"
   ],
+  "title": "Main",
+  "description": "\n    This is the description of the main model\n    ",
   "$defs": {
     "FooBar": {
-      "title": "FooBar",
       "type": "object",
       "properties": {
         "count": {
@@ -77,14 +83,22 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
           "title": "Count"
         },
         "size": {
-          "type": "number",
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
           "default": null,
           "title": "Size"
         }
       },
       "required": [
         "count"
-      ]
+      ],
+      "title": "FooBar"
     },
     "Gender": {
       "enum": [
@@ -175,7 +189,6 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
   },
   "$defs": {
     "Cat": {
-      "title": "Cat",
       "type": "object",
       "properties": {
         "pet_type": {
@@ -190,10 +203,10 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
       "required": [
         "pet_type",
         "cat_name"
-      ]
+      ],
+      "title": "Cat"
     },
     "Dog": {
-      "title": "Dog",
       "type": "object",
       "properties": {
         "pet_type": {
@@ -208,7 +221,8 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
       "required": [
         "pet_type",
         "dog_name"
-      ]
+      ],
+      "title": "Dog"
     }
   },
   "title": "The Pet Schema"
@@ -262,26 +276,25 @@ It has the following arguments:
 * `allow_mutation`: a boolean which defaults to `True`. When False, the field raises a `TypeError` if the field is
   assigned on an instance.  The model config must set `validate_assignment` to `True` for this check to be performed.
 * `regex`: for string values, this adds a Regular Expression validation generated from the passed string and an
-  annotation of `pattern` to the JSON Schema
-
-  !!! note
-      *pydantic* validates strings using `re.match`,
-      which treats regular expressions as implicitly anchored at the beginning.
-      On the contrary,
-      JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
-      more like what `re.search` does.
-
-      For interoperability, depending on your desired behavior,
-      either explicitly anchor your regular expressions with `^`
-      (e.g. `^foo` to match any string starting with `foo`),
-      or explicitly allow an arbitrary prefix with `.*?`
-      (e.g. `.*?foo` to match any string containing the substring `foo`).
-
-      See [#1631](https://github.com/pydantic/pydantic/issues/1631)
-      for a discussion of possible changes to *pydantic* behavior in **v2**.
-
+  annotation of `pattern` to the JSON Schema &mdash; see note below for details
 * `repr`: a boolean which defaults to `True`. When False, the field shall be hidden from the object representation.
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
+
+!!! note
+    *pydantic* validates strings using `re.match`,
+    which treats regular expressions as implicitly anchored at the beginning.
+    On the contrary,
+    JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
+    more like what `re.search` does.
+
+    For interoperability, depending on your desired behavior,
+    either explicitly anchor your regular expressions with `^`
+    (e.g. `^foo` to match any string starting with `foo`),
+    or explicitly allow an arbitrary prefix with `.*?`
+    (e.g. `.*?foo` to match any string containing the substring `foo`).
+
+    See [#1631](https://github.com/pydantic/pydantic/issues/1631)
+    for a discussion of possible changes to *pydantic* behavior in **v2**.
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
 to set all of the arguments above except `default`.
@@ -317,7 +330,6 @@ class ModelB(BaseModel):
 print(ModelB.model_json_schema())
 """
 {
-    'title': 'ModelB',
     'type': 'object',
     'properties': {
         'foo': {
@@ -328,6 +340,7 @@ print(ModelB.model_json_schema())
         }
     },
     'required': ['foo'],
+    'title': 'ModelB',
 }
 """
 ```
@@ -370,11 +383,12 @@ Here is an example of a custom type that *overrides* the generated core schema:
 
 ```py
 from dataclasses import dataclass
-from typing import Any, Callable, Dict, List, Type
+from typing import Any, Dict, List, Type
 
 from pydantic_core import core_schema
 
 from pydantic import BaseModel
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 @dataclass
@@ -387,7 +401,7 @@ class CompressedString:
 
     @classmethod
     def __get_pydantic_core_schema__(
-        cls, source: Type[Any], handler: Callable[[Type[Any]], core_schema.CoreSchema]
+        cls, source: Type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         assert source is CompressedString
         return core_schema.no_info_after_validator_function(
@@ -420,10 +434,10 @@ class MyModel(BaseModel):
 print(MyModel.model_json_schema())
 """
 {
-    'title': 'MyModel',
     'type': 'object',
     'properties': {'value': {'type': 'string', 'title': 'Value'}},
     'required': ['value'],
+    'title': 'MyModel',
 }
 """
 print(MyModel(value='fox fox fox dog fox'))
@@ -439,12 +453,13 @@ The process for Annotated metadata is much the same except that you can generall
 
 ```py
 from dataclasses import dataclass
-from typing import Any, Callable, Sequence, Type
+from typing import Any, Sequence, Type
 
 from pydantic_core import core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, ValidationError
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 @dataclass
@@ -452,7 +467,7 @@ class RestrictCharacters:
     alphabet: Sequence[str]
 
     def __get_pydantic_core_schema__(
-        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self, source: Type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         if not self.alphabet:
             raise ValueError('Alphabet may not be empty')
@@ -477,10 +492,10 @@ class MyModel(BaseModel):
 print(MyModel.model_json_schema())
 """
 {
-    'title': 'MyModel',
     'type': 'object',
     'properties': {'value': {'type': 'string', 'title': 'Value'}},
     'required': ['value'],
+    'title': 'MyModel',
 }
 """
 print(MyModel(value='CBA'))
@@ -501,17 +516,20 @@ So far we have been wrapping the schema, but if you just want to *modify* it or 
 To modify the schema first call the handler and then mutate the result:
 
 ```py
-from typing import Any, Callable, Type
+from typing import Any, Type
 
 from pydantic_core import ValidationError, core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 class SmallString:
     def __get_pydantic_core_schema__(
-        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self,
+        source: Type[Any],
+        handler: GetCoreSchemaHandler,
     ) -> core_schema.CoreSchema:
         schema = handler(source)
         assert schema['type'] == 'str'
@@ -537,17 +555,18 @@ except ValidationError as e:
 To override the schema completely do not call the handler and return your own `CoreSchema`:
 
 ```py
-from typing import Any, Callable, Type
+from typing import Any, Type
 
 from pydantic_core import ValidationError, core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 class AllowAnySubclass:
     def __get_pydantic_core_schema__(
-        self, source: Type[Any], handler: Callable[[Any], core_schema.CoreSchema]
+        self, source: Type[Any], handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
         # we can't call handler since it will fail for arbitrary types
         def validate(value: Any) -> Any:
@@ -630,7 +649,6 @@ print(json.dumps(top_level_schema, indent=2))
 {
   "$defs": {
     "Foo": {
-      "title": "Foo",
       "type": "object",
       "properties": {
         "a": {
@@ -638,10 +656,10 @@ print(json.dumps(top_level_schema, indent=2))
           "default": null,
           "title": "A"
         }
-      }
+      },
+      "title": "Foo"
     },
     "Model": {
-      "title": "Model",
       "type": "object",
       "properties": {
         "b": {
@@ -650,10 +668,10 @@ print(json.dumps(top_level_schema, indent=2))
       },
       "required": [
         "b"
-      ]
+      ],
+      "title": "Model"
     },
     "Bar": {
-      "title": "Bar",
       "type": "object",
       "properties": {
         "c": {
@@ -663,7 +681,8 @@ print(json.dumps(top_level_schema, indent=2))
       },
       "required": [
         "c"
-      ]
+      ],
+      "title": "Bar"
     }
   },
   "title": "My Schema"
@@ -703,7 +722,6 @@ print(json.dumps(top_level_schema, indent=2))
 {
   "$defs": {
     "Foo": {
-      "title": "Foo",
       "type": "object",
       "properties": {
         "a": {
@@ -713,10 +731,10 @@ print(json.dumps(top_level_schema, indent=2))
       },
       "required": [
         "a"
-      ]
+      ],
+      "title": "Foo"
     },
     "Model": {
-      "title": "Model",
       "type": "object",
       "properties": {
         "a": {
@@ -725,7 +743,8 @@ print(json.dumps(top_level_schema, indent=2))
       },
       "required": [
         "a"
-      ]
+      ],
+      "title": "Model"
     }
   }
 }
@@ -734,15 +753,17 @@ print(json.dumps(top_level_schema, indent=2))
 
 It's also possible to extend/override the generated JSON schema in a model.
 
-To do it, implement `__pydantic_modify_json_schema__` on your model:
+To do it, implement `__get_pydantic_json_schema__` on your model:
 
 For example, you could add `examples` to the JSON Schema:
 
 ```py output="json"
 import json
-from typing import Any, Dict
+
+from pydantic_core import CoreSchema
 
 from pydantic import BaseModel
+from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 
 
 class Person(BaseModel):
@@ -750,20 +771,22 @@ class Person(BaseModel):
     age: int
 
     @classmethod
-    def __pydantic_modify_json_schema__(cls, schema: Dict[str, Any]) -> Dict[str, Any]:
-        schema['examples'] = [
+    def __get_pydantic_json_schema__(
+        cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(core_schema)
+        json_schema['examples'] = [
             {
                 'name': 'John Doe',
                 'age': 25,
             }
         ]
-        return schema
+        return json_schema
 
 
 print(json.dumps(Person.model_json_schema(), indent=2))
 """
 {
-  "title": "Person",
   "type": "object",
   "properties": {
     "name": {
@@ -779,6 +802,7 @@ print(json.dumps(Person.model_json_schema(), indent=2))
     "name",
     "age"
   ],
+  "title": "Person",
   "examples": [
     {
       "name": "John Doe",

@@ -550,3 +550,18 @@ def test_validator_init():
     assert Foo(1, '2').v == 3
     with pytest.raises(ValidationError, match="type=int_parsing, input_value='x', input_type=str"):
         Foo(1, 'x')
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
+def test_positional_and_keyword_with_same_name(create_module):
+    module = create_module(
+        # language=Python
+        """
+from pydantic import validate_call
+
+@validate_call
+def f(a: int, /, **kwargs):
+    return a, kwargs
+"""
+    )
+    assert module.f(1, a=2) == (1, {'a': 2})

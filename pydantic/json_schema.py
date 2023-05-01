@@ -27,7 +27,9 @@ from weakref import WeakKeyDictionary
 import pydantic_core
 from typing_extensions import Literal
 
-from ._internal import _core_metadata, _core_utils, _typing_extra
+from pydantic._internal._schema_generation_shared import GenerateJsonSchemaHandler
+
+from ._internal import _core_metadata, _core_utils, _schema_generation_shared, _typing_extra
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
@@ -37,7 +39,10 @@ if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
     from .main import BaseModel
 
-JsonSchemaValue = Dict[str, Any]
+
+JsonSchemaValue = _schema_generation_shared.JsonSchemaValue
+# re export GetJsonSchemaHandler
+GetJsonSchemaHandler = _schema_generation_shared.GetJsonSchemaHandler
 
 
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:
@@ -185,9 +190,7 @@ class GenerateJsonSchema:
         self._used = True
         return json_schema
 
-    def generate_inner(
-        self, schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField
-    ) -> JsonSchemaValue:
+    def generate_inner(self, schema: _core_metadata.CoreSchemaOrField) -> JsonSchemaValue:
         # If a schema with the same CoreRef has been handled, just return a reference to it
         # Note that this assumes that it will _never_ be the case that the same CoreRef is used
         # on types that should have different JSON schemas
@@ -198,51 +201,40 @@ class GenerateJsonSchema:
 
         # Generate the JSON schema, accounting for the json_schema_override and core_schema_override
         metadata_handler = _core_metadata.CoreMetadataHandler(schema)
-        js_override = metadata_handler.get_js_override()
-        js_cs_override = metadata_handler.get_js_cs_override()
 
-        if js_override is not None:
-            json_schema = js_override
-        elif js_cs_override is not None:
-            # If there is a core schema override, use it to generate the JSON schema
-            json_schema = self.generate_inner(js_cs_override)
-        else:
+        def handler_func(schema_or_field: _core_metadata.CoreSchemaOrField) -> JsonSchemaValue:
             # Generate the core-schema-type-specific bits of the schema generation:
-            if _core_utils.is_typed_dict_field(schema):
-                json_schema = self.typed_dict_field_schema(schema)
-            elif _core_utils.is_dataclass_field(schema):
-                json_schema = self.dataclass_field_schema(schema)
-            elif _core_utils.is_core_schema(schema):  # Ideally we wouldn't need this redundant typeguard..
-                generate_for_schema_type = self._schema_type_to_method[schema['type']]
-                json_schema = generate_for_schema_type(schema)
+            if _core_utils.is_typed_dict_field(schema_or_field):
+                json_schema = self.typed_dict_field_schema(schema_or_field)
+            elif _core_utils.is_dataclass_field(schema_or_field):
+                json_schema = self.dataclass_field_schema(schema_or_field)
+            elif _core_utils.is_core_schema(schema_or_field):  # Ideally we wouldn't need this redundant typeguard..
+                generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
+                json_schema = generate_for_schema_type(schema_or_field)
             else:
-                raise TypeError(f'Unexpected schema type: schema={schema}')
+                raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
+            # Populate the definitions
+            if 'ref' in schema:
+                core_ref = CoreRef(schema['ref'])  # type: ignore[typeddict-item]
+                defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+                self.definitions[defs_ref] = json_schema
+                json_schema = ref_json_schema
+            return json_schema
 
-        # Apply the modify_js function, if present
-        schema_to_update: JsonSchemaValue | None = None
-        if '$ref' in json_schema and schema.get('type') == 'model':
-            # If we have a schema with a $ref, we actually need to update the _referenced_ schema
-            schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref']))
-        if schema_to_update is not None:
-            # Do an in-place update to schema_to_update, regardless of whether the js_modify_function
-            # returns a new dict or modifies the old one
-            updated = metadata_handler.apply_js_modify_function(schema_to_update).copy()
-            schema_to_update.clear()
-            schema_to_update.update(updated)
-        else:
-            json_schema = metadata_handler.apply_js_modify_function(json_schema)
+        current_handler = GenerateJsonSchemaHandler(self, handler_func)
 
-        # Resolve issues caused by sibling keys next to a top-level $ref (see `handle_ref_overrides` for details)
-        json_schema = self.handle_ref_overrides(json_schema)
+        for js_modify_function in metadata_handler.metadata.get('pydantic_js_functions', ()):
 
-        # Populate the definitions
-        if 'ref' in schema:
-            core_ref = CoreRef(schema['ref'])  # type: ignore[typeddict-item]
-            defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
-            self.definitions[defs_ref] = json_schema
-            json_schema = ref_json_schema
+            def new_handler_func(
+                schema_or_field: _core_metadata.CoreSchemaOrField,
+                current_handler: _core_metadata.GetJsonSchemaHandler = current_handler,
+                js_modify_function: _core_metadata.GetJsonSchemaFunction = js_modify_function,
+            ) -> JsonSchemaValue:
+                return js_modify_function(schema_or_field, current_handler)
 
-        return json_schema
+            current_handler = GenerateJsonSchemaHandler(self, new_handler_func)
+
+        return current_handler(schema)
 
     # ### Schema generation methods
     def any_schema(self, schema: core_schema.AnySchema) -> JsonSchemaValue:
@@ -584,14 +576,10 @@ class GenerateJsonSchema:
         return json_schema
 
     def typed_dict_field_schema(self, schema: core_schema.TypedDictField) -> JsonSchemaValue:
-        json_schema = self.generate_inner(schema['schema'])
-
-        return json_schema
+        return self.generate_inner(schema['schema'])
 
     def dataclass_field_schema(self, schema: core_schema.DataclassField) -> JsonSchemaValue:
-        json_schema = self.generate_inner(schema['schema'])
-
-        return json_schema
+        return self.generate_inner(schema['schema'])
 
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
         # We do not use schema['model'].model_json_schema() because it could lead to inconsistent refs handling, etc.
@@ -807,11 +795,6 @@ class GenerateJsonSchema:
         elif _core_utils.is_core_schema(schema):
             if schema.get('ref'):  # things with refs, such as models and enums, should not have titles set
                 return False
-
-            js_cs_override = _core_metadata.CoreMetadataHandler(schema).get_js_cs_override()
-            if js_cs_override:
-                return self.field_title_should_be_set(js_cs_override)
-
             if schema['type'] in {'default', 'nullable', 'definitions'}:
                 return self.field_title_should_be_set(schema['schema'])  # type: ignore[typeddict-item]
             if _core_utils.is_function_with_inner_schema(schema):

@@ -116,6 +116,22 @@ def test_serializer_annotated_wrap_json():
     assert MyModel(x=1234).model_dump_json() == '{"x":"1,235"}'
 
 
+@pytest.mark.parametrize(
+    'serializer, func',
+    [
+        (PlainSerializer, lambda v: f'{v + 1:,}'),
+        (WrapSerializer, lambda v, nxt: f'{nxt(v + 1):,}'),
+    ],
+)
+def test_serializer_annotated_typing_cache(serializer, func):
+    FancyInt = Annotated[int, serializer(func)]
+
+    class FancyIntModel(BaseModel):
+        x: Optional[FancyInt]
+
+    assert FancyIntModel(x=1234).model_dump() == {'x': '1,235'}
+
+
 def test_serialize_decorator_always():
     class MyModel(BaseModel):
         x: Optional[int]

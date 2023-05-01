@@ -22,7 +22,7 @@ from pydantic import (
     errors,
     validator,
 )
-from pydantic.annotated_arguments import AfterValidator, BeforeValidator, WrapValidator
+from pydantic.annotated_arguments import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
 from pydantic.decorators import field_validator, root_validator
 
 
@@ -48,6 +48,17 @@ def test_annotated_validator_before() -> None:
     assert Model(x='zero').x == 0.0
     assert Model(x=1.0).x == 1.0
     assert Model(x='1.0').x == 1.0
+
+
+def test_annotated_validator_plain() -> None:
+    MyInt = Annotated[int, PlainValidator(lambda x: x if x != -1 else 0)]
+
+    class Model(BaseModel):
+        x: MyInt
+
+    assert Model(x=0).x == 0
+    assert Model(x=-1).x == 0
+    assert Model(x=-2).x == -2
 
 
 def test_annotated_validator_wrap() -> None:
@@ -120,6 +131,26 @@ def test_annotated_validator_runs_before_field_validators() -> None:
             return v
 
     assert Model(x=-1).x == 0
+
+
+@pytest.mark.parametrize(
+    'validator, func',
+    [
+        (PlainValidator, lambda x: x if x != -1 else 0),
+        (WrapValidator, lambda x, nxt: x if x != -1 else 0),
+        (BeforeValidator, lambda x: x if x != -1 else 0),
+        (AfterValidator, lambda x: x if x != -1 else 0),
+    ],
+)
+def test_annotated_validator_typing_cache(validator, func):
+    FancyInt = Annotated[int, validator(func)]
+
+    class FancyIntModel(BaseModel):
+        x: Optional[FancyInt]
+
+    assert FancyIntModel(x=1234).x == 1234
+    assert FancyIntModel(x=-1).x == 0
+    assert FancyIntModel(x=0).x == 0
 
 
 def test_simple():

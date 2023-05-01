@@ -325,6 +325,22 @@ def test_extra_ignored():
         model.c = 1
 
 
+def test_field_order_is_preserved_with_extra():
+    """This test covers https://github.com/pydantic/pydantic/issues/1234."""
+
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+
+        a: int
+        b: str
+        c: float
+
+    model = Model(a=1, b='2', c=3.0, d=4)
+    assert repr(model) == "Model(a=1, b='2', c=3.0, d=4)"
+    assert str(model.model_dump()) == "{'a': 1, 'b': '2', 'c': 3.0, 'd': 4}"
+    assert str(model.model_dump_json()) == '{"a":1,"b":"2","c":3.0,"d":4}'
+
+
 def test_set_attr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert m.model_dump() == {'a': 10.2, 'b': 10}
@@ -1128,36 +1144,9 @@ def test_revalidate_instances_always():
     assert not hasattr(t.user, 'sins')
 
 
-@pytest.mark.skip(reason='not implemented')
-@pytest.mark.parametrize('comv_value', [True, False])
-def test_copy_on_model_validation_warning(comv_value):
-    class User(BaseModel):
-        # True interpreted as 'shallow', False interpreted as 'none'
-        model_config = ConfigDict(copy_on_model_validation=comv_value)
-
-        hobbies: List[str]
-
-    my_user = User(hobbies=['scuba diving'])
-
-    class Transaction(BaseModel):
-        user: User
-
-    with pytest.warns(DeprecationWarning, match="`copy_on_model_validation` should be a string: 'deep', 'shallow' or"):
-        t = Transaction(user=my_user)
-
-    if comv_value:
-        assert t.user is not my_user
-    else:
-        assert t.user is my_user
-    assert t.user.hobbies is my_user.hobbies
-
-
-@pytest.mark.skip(reason='not implemented')
-def test_validation_deep_copy():
-    """By default, Config.copy_on_model_validation should do a deep copy"""
-
+def test_revalidate_instances_always_list_of_model_instance():
     class A(BaseModel):
-        model_config = ConfigDict(copy_on_model_validation='deep')
+        model_config = ConfigDict(revalidate_instances='always')
         name: str
 
     class B(BaseModel):
@@ -1375,8 +1364,28 @@ def test_recursive_model():
     assert m.model_dump() == {'field': {'field': {'field': None}}}
 
 
+def test_recursive_cycle_with_repeated_field():
+    class A(BaseModel):
+        b: 'B'
+
+        model_config = {'undefined_types_warning': False}
+
+    class B(BaseModel):
+        a1: Optional[A] = None
+        a2: Optional[A] = None
+
+    A.model_rebuild()
+
+    assert A.model_validate({'b': {'a1': {'b': {'a1': None}}}}) == A(b=B(a1=A(b=B(a1=None))))
+    with pytest.raises(ValidationError) as exc_info:
+        A.model_validate({'b': {'a1': {'a1': None}}})
+    assert exc_info.value.errors() == [
+        {'input': {'a1': None}, 'loc': ('b', 'a1', 'b'), 'msg': 'Field required', 'type': 'missing'}
+    ]
+
+
 def test_two_defaults():
-    with pytest.raises(ValueError, match='^cannot specify both default and default_factory$'):
+    with pytest.raises(TypeError, match='^cannot specify both default and default_factory$'):
 
         class Model(BaseModel):
             a: int = Field(default=3, default_factory=lambda: 3)
@@ -2178,3 +2187,19 @@ def test_pydantic_init_subclass() -> None:
         ('MySubModel', '__init_subclass__', {'a': 1}),
         ('MySubModel', '__pydantic_init_subclass__', {'a': 1}),
     ]
+
+
+def test_model_validate_with_context():
+    class InnerModel(BaseModel):
+        x: int
+
+        @field_validator('x')
+        def validate(cls, value, info):
+            return value * info.context.get('multiplier', 1)
+
+    class OuterModel(BaseModel):
+        inner: InnerModel
+
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 1}).inner.x == 2
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 2}).inner.x == 4
+    assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 3}).inner.x == 6

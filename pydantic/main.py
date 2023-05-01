@@ -32,7 +32,13 @@ from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import ComputedFieldInfo, Field, FieldInfo, ModelPrivateAttr
-from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaValue, model_json_schema
+from .json_schema import (
+    DEFAULT_REF_TEMPLATE,
+    GenerateJsonSchema,
+    GetJsonSchemaHandler,
+    JsonSchemaValue,
+    model_json_schema,
+)
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -208,6 +214,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
+        # `model_fields` and `__pydantic_decorators__` must be set for
+        # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
+        model_fields = {}
+        __pydantic_decorators__ = _decorators.DecoratorInfos()
         __pydantic_validator__ = _model_construction.MockValidator(
             'Pydantic models should inherit from BaseModel, BaseModel cannot be instantiated directly',
             code='base-model-instantiated',
@@ -234,6 +244,17 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     def __get_pydantic_core_schema__(
         cls, __source: type[BaseModel], __handler: Callable[[Any], CoreSchema]
     ) -> CoreSchema:
+        """Hook into generating the model's CoreSchema.
+
+        Args:
+            __source (type[BaseModel]): The class we are generating a schema for.
+                This will generally be the same as the `cls` argument if this is a classmethod.
+            __handler (GetJsonSchemaHandler): Call into Pydantic's internal JSON schema generation.
+                A callable that calls into Pydantic's internal CoreSchema generation logic.
+
+        Returns:
+            CoreSchema: A `pydantic-core` `CoreSchema`.
+        """
         # Only use the cached value from this _exact_ class; we don't want one from a parent class
         # This is why we check `cls.__dict__` and don't use `cls.__pydantic_core_schema__` or similar.
         if '__pydantic_core_schema__' in cls.__dict__:
@@ -244,6 +265,31 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 return cls.__pydantic_core_schema__
 
         return __handler(__source)
+
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls,
+        __core_schema: CoreSchema,
+        __handler: GetJsonSchemaHandler,
+    ) -> JsonSchemaValue:
+        """Hook into generating the model's JSON schema.
+
+        Args:
+            __core_schema (CoreSchema): A `pydantic-core` CoreSchema.
+                You can ignore this argument and call the handler with a new CoreSchema,
+                wrap this CoreSchema (`{'type': 'nullable', 'schema': current_schema}`),
+                or just call the handler with the original schema.
+            __handler (GetJsonSchemaHandler): Call into Pydantic's internal JSON schema generation.
+                This will raise a `pydantic.errors.PydanticInvalidForJsonSchema` if JSON schema
+                generation fails.
+                Since this gets called by `BaseModel.model_json_schema` you can override the
+                `schema_generator` argument to that function to change JSON schema generation globally
+                for a type.
+
+        Returns:
+            JsonSchemaValue: A JSON schema, as a Python object.
+        """
+        return __handler(__core_schema)
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
