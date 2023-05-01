@@ -1,10 +1,11 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import TYPE_CHECKING, Annotated, Any, Callable, TypeVar
 
 from pydantic_core import core_schema
 from typing_extensions import Literal
 
+from ._internal._core_metadata import build_metadata_dict
 from ._internal._decorators import inspect_annotated_serializer, inspect_validator
 from ._internal._internal_dataclass import slots_dataclass
 from .annotated import GetCoreSchemaHandler
@@ -93,3 +94,32 @@ class WrapSerializer:
             when_used=self.when_used,
         )
         return schema
+
+
+AnyType = TypeVar('AnyType')
+if TYPE_CHECKING:
+    SkipValidation = Annotated[AnyType, ...]  # SkipValidation[list[str]] will be treated by type checkers as list[str]
+else:
+
+    class SkipValidation:
+        """
+        If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be skipped.
+        `SkipValidation[int]` is equivalent to `Annotated[int, SkipValidation]`.
+
+        This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
+        and know that it is safe to skip validation for one or more of the fields.
+
+        This will preserve the JSON schema of its input, but any subsequent transformations to the JSON schema will
+        not be applied. Therefore, this annotation should always be the final annotation applied to a type.
+        """
+
+        def __class_getitem__(cls, item: Any) -> Any:
+            return Annotated[item, SkipValidation]
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, _source: Any, _handler: Callable[[Any], core_schema.CoreSchema]
+        ) -> core_schema.CoreSchema:
+            original_schema = _handler(_source)
+            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
+            return core_schema.any_schema(metadata=metadata, serialization=original_schema.get('serialization'))
