@@ -593,7 +593,7 @@ def Field(  # noqa C901
         warn('`max_items` is deprecated and will be removed. use `max_length` instead', DeprecationWarning)
         if max_length is None:
             max_length = max_items
-    if unique_items:
+    if unique_items is not None:
         raise PydanticUserError(
             (
                 '`unique_items` is removed, use `Set` instead'
