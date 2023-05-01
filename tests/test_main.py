@@ -1144,36 +1144,9 @@ def test_revalidate_instances_always():
     assert not hasattr(t.user, 'sins')
 
 
-@pytest.mark.skip(reason='not implemented')
-@pytest.mark.parametrize('comv_value', [True, False])
-def test_copy_on_model_validation_warning(comv_value):
-    class User(BaseModel):
-        # True interpreted as 'shallow', False interpreted as 'none'
-        model_config = ConfigDict(copy_on_model_validation=comv_value)
-
-        hobbies: List[str]
-
-    my_user = User(hobbies=['scuba diving'])
-
-    class Transaction(BaseModel):
-        user: User
-
-    with pytest.warns(DeprecationWarning, match="`copy_on_model_validation` should be a string: 'deep', 'shallow' or"):
-        t = Transaction(user=my_user)
-
-    if comv_value:
-        assert t.user is not my_user
-    else:
-        assert t.user is my_user
-    assert t.user.hobbies is my_user.hobbies
-
-
-@pytest.mark.skip(reason='not implemented')
-def test_validation_deep_copy():
-    """By default, Config.copy_on_model_validation should do a deep copy"""
-
+def test_revalidate_instances_always_list_of_model_instance():
     class A(BaseModel):
-        model_config = ConfigDict(copy_on_model_validation='deep')
+        model_config = ConfigDict(revalidate_instances='always')
         name: str
 
     class B(BaseModel):
