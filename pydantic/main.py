@@ -847,10 +847,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return cls.parse_obj(obj)
 
     @classmethod
-    @deprecated(
-        "The `from_orm` method is deprecated; set "
-        "`model_config['from_attributes']=True` and use `model_validate` instead."
-    )
+    # @deprecated(
+    #     "The `from_orm` method is deprecated; set "
+    #     "`model_config['from_attributes']=True` and use `model_validate` instead."
+    # )
     def from_orm(cls: type[Model], obj: Any) -> Model:
         warnings.warn(
             'The `from_orm` method is deprecated; set `model_config["from_attributes"]=True` '
