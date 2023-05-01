@@ -80,6 +80,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#dicts-and-mapping-types" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -637,10 +642,45 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Dicts and Mapping
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         Dicts and Mapping
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#typeddict" class="md-nav__link">
+    TypedDict
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1533,6 +1573,23 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#typeddict" class="md-nav__link">
+    TypedDict
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1551,9 +1608,25 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>Dicts and Mapping</h1>
-
-
+<h1 id="dicts-and-mapping-types">Dicts and Mapping Types<a class="headerlink" href="#dicts-and-mapping-types" title="Permanent link">&para;</a></h1>
+<dl>
+<dt><code>dict</code></dt>
+<dd><code>dict(v)</code> is used to attempt to convert a dictionary;
+  see <code>typing.Dict</code> below for sub-type constraints</dd>
+<dt><code>typing.Dict</code></dt>
+<dd>see <a href="#typing-iterables">Typing Iterables</a> below for more detail on parsing and validation</dd>
+<dt><code>subclass of typing.TypedDict</code></dt>
+<dd>Same as <code>dict</code> but <em>pydantic</em> will validate the dictionary since keys are annotated.
+  See <a href="#annotated-types">Annotated Types</a> below for more detail on parsing and validation</dd>
+</dl>
+<h3 id="typeddict">TypedDict<a class="headerlink" href="#typeddict" title="Permanent link">&para;</a></h3>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This is a new feature of the Python standard library as of Python 3.8.
+Prior to Python 3.8, it requires the <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> package.
+But required and optional fields are properly differentiated only since Python 3.9.
+We therefore recommend using <a href="https://pypi.org/project/typing-extensions/">typing-extensions</a> with Python 3.8 as well.</p>
+</div>
 
 
 

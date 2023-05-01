@@ -1553,6 +1553,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>JSON</h1>
 
+<dl>
+<dt><code>Json</code></dt>
+<dd>a special type wrapper which loads JSON before parsing</dd>
+</dl>
 <p>You can use <code>Json</code> data type to make <em>pydantic</em> first load a raw JSON string.
 It can also optionally be used to parse the loaded object into another type base on
 the type <code>Json</code> is parameterised with:</p>

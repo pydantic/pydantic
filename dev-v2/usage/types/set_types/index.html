@@ -80,6 +80,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#constrained-types" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -764,9 +769,60 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Sets and frozenset
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Sets and frozenset
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Constrained Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conset" class="md-nav__link">
+    Arguments to conset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-confrozenset" class="md-nav__link">
+    Arguments to confrozenset
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1534,6 +1590,41 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Constrained Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conset" class="md-nav__link">
+    Arguments to conset
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-confrozenset" class="md-nav__link">
+    Arguments to confrozenset
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1553,7 +1644,47 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Sets and frozenset</h1>
 
-
+<dl>
+<dt><code>set</code></dt>
+<dd>allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a set;
+  see <code>typing.Set</code> below for sub-type constraints</dd>
+<dt><code>frozenset</code></dt>
+<dd>allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a frozen set;
+  see <code>typing.FrozenSet</code> below for sub-type constraints</dd>
+<dt><code>deque</code></dt>
+<dd>allows <code>list</code>, <code>tuple</code>, <code>set</code>, <code>frozenset</code>, <code>deque</code>, or generators and casts to a deque;
+  see <code>typing.Deque</code> below for sub-type constraints</dd>
+<dt><code>typing.Set</code></dt>
+<dd>see <a href="#typing-iterables">Typing Iterables</a> below for more detail on parsing and validation</dd>
+<dt><code>typing.FrozenSet</code></dt>
+<dd>see <a href="#typing-iterables">Typing Iterables</a> below for more detail on parsing and validation</dd>
+<dt><code>typing.Deque</code></dt>
+<dd>see <a href="#typing-iterables">Typing Iterables</a> below for more detail on parsing and validation</dd>
+</dl>
+<h2 id="constrained-types">Constrained Types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
+<p>The value of numerous common types can be restricted using <code>con*</code> type functions:</p>
+<dl>
+<dt><code>conset</code></dt>
+<dd>type method for constraining sets;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>confrozenset</code></dt>
+<dd>type method for constraining frozen sets;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+</dl>
+<h3 id="arguments-to-conset">Arguments to <code>conset</code><a class="headerlink" href="#arguments-to-conset" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>conset</code> type function</p>
+<ul>
+<li><code>item_type: Type[T]</code>: type of the set items</li>
+<li><code>min_items: int = None</code>: minimum number of items in the set</li>
+<li><code>max_items: int = None</code>: maximum number of items in the set</li>
+</ul>
+<h3 id="arguments-to-confrozenset">Arguments to <code>confrozenset</code><a class="headerlink" href="#arguments-to-confrozenset" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>confrozenset</code> type function</p>
+<ul>
+<li><code>item_type: Type[T]</code>: type of the frozenset items</li>
+<li><code>min_items: int = None</code>: minimum number of items in the frozenset</li>
+<li><code>max_items: int = None</code>: maximum number of items in the frozenset</li>
+</ul>
 
 
 

@@ -80,6 +80,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#bytes-and-bytesize" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -581,10 +586,52 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
       
       
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          ByteSize
+          <span class="md-nav__icon md-icon"></span>
+        </label>
       
       <a href="./" class="md-nav__link md-nav__link--active">
         ByteSize
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#arguments-to-conbytes" class="md-nav__link">
+    Arguments to conbytes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-bytesize" class="md-nav__link">
+    Using ByteSize
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1533,6 +1580,30 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
   
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#arguments-to-conbytes" class="md-nav__link">
+    Arguments to conbytes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#using-bytesize" class="md-nav__link">
+    Using ByteSize
+  </a>
+  
+</li>
+      
+    </ul>
   
 </nav>
                   </div>
@@ -1551,8 +1622,29 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>ByteSize</h1>
-
+<h1 id="bytes-and-bytesize">Bytes and ByteSize<a class="headerlink" href="#bytes-and-bytesize" title="Permanent link">&para;</a></h1>
+<dl>
+<dt><code>bytes</code></dt>
+<dd><code>bytes</code> are accepted as-is, <code>bytearray</code> is converted using <code>bytes(v)</code>, <code>str</code> are converted using <code>v.encode()</code>,
+  and <code>int</code>, <code>float</code>, and <code>Decimal</code> are coerced using <code>str(v).encode()</code></dd>
+<dt><code>SecretBytes</code></dt>
+<dd>bytes where the value is kept partially secret; see <a href="../secrets/">Secrets</a></dd>
+<dt><code>conbytes</code></dt>
+<dd>type method for constraining bytes</dd>
+<dt><code>ByteSize</code></dt>
+<dd>converts a bytes string with units to bytes</dd>
+</dl>
+<h3 id="arguments-to-conbytes">Arguments to <code>conbytes</code><a class="headerlink" href="#arguments-to-conbytes" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>conbytes</code> type function</p>
+<ul>
+<li><code>strip_whitespace: bool = False</code>: removes leading and trailing whitespace</li>
+<li><code>to_upper: bool = False</code>: turns all characters to uppercase</li>
+<li><code>to_lower: bool = False</code>: turns all characters to lowercase</li>
+<li><code>min_length: int = None</code>: minimum length of the byte string</li>
+<li><code>max_length: int = None</code>: maximum length of the byte string</li>
+<li><code>strict: bool = False</code>: controls type coercion</li>
+</ul>
+<h2 id="using-bytesize">Using ByteSize<a class="headerlink" href="#using-bytesize" title="Permanent link">&para;</a></h2>
 <p>You can use the <code>ByteSize</code> data type to convert byte string representation to
 raw bytes and print out human readable versions of the bytes as well.</p>
 <div class="admonition info">

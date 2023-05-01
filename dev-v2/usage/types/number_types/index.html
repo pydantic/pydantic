@@ -80,6 +80,11 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
+        
+        <a href="#constrained-types" class="md-skip">
+          Skip to content
+        </a>
+      
     </div>
     <div data-md-component="announce">
       
@@ -708,9 +713,74 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
       
       
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Number Types
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
       <a href="./" class="md-nav__link md-nav__link--active">
         Number Types
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Constrained Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conint" class="md-nav__link">
+    Arguments to conint
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-confloat" class="md-nav__link">
+    Arguments to confloat
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-condecimal" class="md-nav__link">
+    Arguments to condecimal
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#strict-types" class="md-nav__link">
+    Strict Types
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
       
     </li>
   
@@ -1534,6 +1604,55 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
   
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Constrained Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-conint" class="md-nav__link">
+    Arguments to conint
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-confloat" class="md-nav__link">
+    Arguments to confloat
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-condecimal" class="md-nav__link">
+    Arguments to condecimal
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#strict-types" class="md-nav__link">
+    Strict Types
+  </a>
+  
+</li>
+      
+    </ul>
+  
 </nav>
                   </div>
                 </div>
@@ -1553,7 +1672,125 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Number Types</h1>
 
+<dl>
+<dt><code>int</code></dt>
+<dd><em>pydantic</em> uses <code>int(v)</code> to coerce types to an <code>int</code>;
+  see <a href="../../models/#data-conversion">this</a> warning on loss of information during data conversion</dd>
+<dt><code>float</code></dt>
+<dd>similarly, <code>float(v)</code> is used to coerce values to floats</dd>
+<dt><code>enum.IntEnum</code></dt>
+<dd>checks that the value is a valid IntEnum instance</dd>
+<dt><code>subclass of enum.IntEnum</code></dt>
+<dd>checks that the value is a valid member of the integer enum;
+  see <a href="#enums-and-choices">Enums and Choices</a> for more details</dd>
+<dt><code>decimal.Decimal</code></dt>
+<dd><em>pydantic</em> attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code></dd>
+<dt><code>NegativeFloat</code></dt>
+<dd>allows a float which is negative; uses standard <code>float</code> parsing then checks the value is less than 0;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>NegativeInt</code></dt>
+<dd>allows an int which is negative; uses standard <code>int</code> parsing then checks the value is less than 0;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>PositiveFloat</code></dt>
+<dd>allows a float which is positive; uses standard <code>float</code> parsing then checks the value is greater than 0;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>PositiveInt</code></dt>
+<dd>allows an int which is positive; uses standard <code>int</code> parsing then checks the value is greater than 0;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>condecimal</code></dt>
+<dd>type method for constraining Decimals;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>confloat</code></dt>
+<dd>type method for constraining floats;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+<dt><code>conint</code></dt>
+<dd>type method for constraining ints;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+</dl>
+<h2 id="constrained-types">Constrained Types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
+<p>The value of numerous common types can be restricted using <code>con*</code> type functions:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">decimal</span> <span class="kn">import</span> <span class="n">Decimal</span>
 
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">condecimal</span><span class="p">,</span> <span class="n">confloat</span><span class="p">,</span> <span class="n">conint</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">big_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="n">mod_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">multiple_of</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">big_float</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">lt</span><span class="o">=</span><span class="mi">1024</span><span class="p">)</span>
+    <span class="n">unit_interval</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">ge</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">le</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">mod_float</span><span class="p">:</span> <span class="n">confloat</span><span class="p">(</span><span class="n">multiple_of</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">decimal_positive</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">decimal_negative</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">lt</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">decimal_max_digits_and_places</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">max_digits</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">decimal_places</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">mod_decimal</span><span class="p">:</span> <span class="n">condecimal</span><span class="p">(</span><span class="n">multiple_of</span><span class="o">=</span><span class="n">Decimal</span><span class="p">(</span><span class="s1">&#39;0.25&#39;</span><span class="p">))</span>
+</code></pre></div>
+<p>Where <code>Field</code> refers to the <a href="../../schema/#field-customisation">field function</a>.</p>
+<h3 id="arguments-to-conint">Arguments to <code>conint</code><a class="headerlink" href="#arguments-to-conint" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>conint</code> type function</p>
+<ul>
+<li><code>strict: bool = False</code>: controls type coercion</li>
+<li><code>gt: int = None</code>: enforces integer to be greater than the set value</li>
+<li><code>ge: int = None</code>: enforces integer to be greater than or equal to the set value</li>
+<li><code>lt: int = None</code>: enforces integer to be less than the set value</li>
+<li><code>le: int = None</code>: enforces integer to be less than or equal to the set value</li>
+<li><code>multiple_of: int = None</code>: enforces integer to be a multiple of the set value</li>
+</ul>
+<h3 id="arguments-to-confloat">Arguments to <code>confloat</code><a class="headerlink" href="#arguments-to-confloat" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>confloat</code> type function</p>
+<ul>
+<li><code>strict: bool = False</code>: controls type coercion</li>
+<li><code>gt: float = None</code>: enforces float to be greater than the set value</li>
+<li><code>ge: float = None</code>: enforces float to be greater than or equal to the set value</li>
+<li><code>lt: float = None</code>: enforces float to be less than the set value</li>
+<li><code>le: float = None</code>: enforces float to be less than or equal to the set value</li>
+<li><code>multiple_of: float = None</code>: enforces float to be a multiple of the set value</li>
+<li><code>allow_inf_nan: bool = True</code>: whether to allows infinity (<code>+inf</code> an <code>-inf</code>) and NaN values, defaults to <code>True</code>,
+  set to <code>False</code> for compatibility with <code>JSON</code>,
+  see <a href="https://github.com/pydantic/pydantic/pull/3994">#3994</a> for more details, added in <strong>V1.10</strong></li>
+</ul>
+<h3 id="arguments-to-condecimal">Arguments to <code>condecimal</code><a class="headerlink" href="#arguments-to-condecimal" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>condecimal</code> type function</p>
+<ul>
+<li><code>gt: Decimal = None</code>: enforces decimal to be greater than the set value</li>
+<li><code>ge: Decimal = None</code>: enforces decimal to be greater than or equal to the set value</li>
+<li><code>lt: Decimal = None</code>: enforces decimal to be less than the set value</li>
+<li><code>le: Decimal = None</code>: enforces decimal to be less than or equal to the set value</li>
+<li><code>max_digits: int = None</code>: maximum number of digits within the decimal. it does not include a zero before the decimal point or trailing decimal zeroes</li>
+<li><code>decimal_places: int = None</code>: max number of decimal places allowed. it does not include trailing decimal zeroes</li>
+<li><code>multiple_of: Decimal = None</code>: enforces decimal to be a multiple of the set value</li>
+</ul>
+<h2 id="strict-types">Strict Types<a class="headerlink" href="#strict-types" title="Permanent link">&para;</a></h2>
+<p>You can use the <code>StrictStr</code>, <code>StrictBytes</code>, <code>StrictInt</code>, <code>StrictFloat</code>, and <code>StrictBool</code> types
+to prevent coercion from compatible types.
+These types will only pass validation when the validated value is of the respective type or is a subtype of that type.
+This behavior is also exposed via the <code>strict</code> field of the <code>ConstrainedStr</code>, <code>ConstrainedBytes</code>,
+<code>ConstrainedFloat</code> and <code>ConstrainedInt</code> classes and can be combined with a multitude of complex validation rules.</p>
+<p>The following caveats apply:</p>
+<ul>
+<li><code>StrictBytes</code> (and the <code>strict</code> option of <code>ConstrainedBytes</code>) will accept both <code>bytes</code>,
+   and <code>bytearray</code> types.</li>
+<li><code>StrictInt</code> (and the <code>strict</code> option of <code>ConstrainedInt</code>) will not accept <code>bool</code> types,
+    even though <code>bool</code> is a subclass of <code>int</code> in Python. Other subclasses will work.</li>
+<li><code>StrictFloat</code> (and the <code>strict</code> option of <code>ConstrainedFloat</code>) will not accept <code>int</code>.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">StrictInt</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">StrictIntModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">strict_int</span><span class="p">:</span> <span class="n">StrictInt</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">StrictIntModel</span><span class="p">(</span><span class="n">strict_int</span><span class="o">=</span><span class="mf">3.14159</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for StrictIntModel</span>
+<span class="sd">    strict_int</span>
+<span class="sd">      Input should be a valid integer [type=int_type, input_value=3.14159, input_type=float]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
 
 
 

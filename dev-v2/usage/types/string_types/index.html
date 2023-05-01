@@ -828,6 +828,26 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Constrained Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-constr" class="md-nav__link">
+    Arguments to constr
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1611,6 +1631,26 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#constrained-types" class="md-nav__link">
+    Constrained Types
+  </a>
+  
+    <nav class="md-nav" aria-label="Constrained Types">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arguments-to-constr" class="md-nav__link">
+    Arguments to constr
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1632,6 +1672,27 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>String Types</h1>
 
+<dl>
+<dt><code>str</code></dt>
+<dd>strings are accepted as-is, <code>int</code> <code>float</code> and <code>Decimal</code> are coerced using <code>str(v)</code>, <code>bytes</code> and <code>bytearray</code> are
+  converted using <code>v.decode()</code>, enums inheriting from <code>str</code> are converted using <code>v.value</code>,
+  and all other types cause an error</dd>
+<dt><code>EmailStr</code></dt>
+<dd>requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed;
+  the input string must be a valid email address, and the output is a simple string</dd>
+<dt><code>NameEmail</code></dt>
+<dd>requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed;
+  the input string must be either a valid email address or in the format <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code>,
+  and the output is a <code>NameEmail</code> object which has two properties: <code>name</code> and <code>email</code>.
+  For <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code> the name would be <code>"Fred Bloggs"</code>;
+  for <code>fred.bloggs@example.com</code> it would be <code>"fred.bloggs"</code>.</dd>
+<dt><code>PyObject</code></dt>
+<dd>expects a string and loads the Python object importable at that dotted path;
+  e.g. if <code>'math.cos'</code> was provided, the resulting field value would be the function <code>cos</code></dd>
+<dt><code>constr</code></dt>
+<dd>type method for constraining strs;
+  see <a href="#constrained-types">Constrained Types</a></dd>
+</dl>
 <h2 id="emailstr">EmailStr<a class="headerlink" href="#emailstr" title="Permanent link">&para;</a></h2>
 <p><code>EmailStr</code> requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed;
   the input string must be a valid email address, and the output is a simple string</p>
@@ -1743,6 +1804,20 @@ the evaluated object:</strong>
 <span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncodersGood</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math.cos&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
 </code></pre></div></p>
+<h2 id="constrained-types">Constrained Types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
+<p>The value of numerous common types can be restricted using <code>con*</code> type functions.</p>
+<h3 id="arguments-to-constr">Arguments to <code>constr</code><a class="headerlink" href="#arguments-to-constr" title="Permanent link">&para;</a></h3>
+<p>The following arguments are available when using the <code>constr</code> type function</p>
+<ul>
+<li><code>strip_whitespace: bool = False</code>: removes leading and trailing whitespace</li>
+<li><code>to_upper: bool = False</code>: turns all characters to uppercase</li>
+<li><code>to_lower: bool = False</code>: turns all characters to lowercase</li>
+<li><code>strict: bool = False</code>: controls type coercion</li>
+<li><code>min_length: int = None</code>: minimum length of the string</li>
+<li><code>max_length: int = None</code>: maximum length of the string</li>
+<li><code>curtail_length: int = None</code>: shrinks the string length to the set value when it is longer than the set value</li>
+<li><code>regex: str = None</code>: regex to validate the string against</li>
+</ul>
 
 
 

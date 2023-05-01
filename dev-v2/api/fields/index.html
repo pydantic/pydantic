@@ -4732,7 +4732,7 @@ such as <code>True</code> or <code>None</code>.</p></td>
         <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;`max_items` is deprecated and will be removed. use `max_length` instead&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">max_length</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">max_length</span> <span class="o">=</span> <span class="n">max_items</span>
-    <span class="k">if</span> <span class="n">unique_items</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">unique_items</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
             <span class="p">(</span>
                 <span class="s1">&#39;`unique_items` is removed, use `Set` instead&#39;</span>

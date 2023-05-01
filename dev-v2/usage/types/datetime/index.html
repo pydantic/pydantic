@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pydantic-date-types" class="md-skip">
+        <a href="#datetime-types" class="md-skip">
           Skip to content
         </a>
       
@@ -652,6 +652,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#datetime-types" class="md-nav__link">
+    Datetime types
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#pydantic-date-types" class="md-nav__link">
@@ -1577,6 +1584,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#datetime-types" class="md-nav__link">
+    Datetime types
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic-date-types" class="md-nav__link">
     Pydantic date types
   </a>
@@ -1606,6 +1620,21 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 <p><em>Pydantic</em> supports the following <a href="https://docs.python.org/library/datetime.html#available-types">datetime</a>
 types:</p>
+<dl>
+<dt><code>datetime.date</code></dt>
+<dd>see <a href="#datetime-types">Datetime Types</a> below for more detail on parsing and validation</dd>
+<dt><code>datetime.time</code></dt>
+<dd>see <a href="#datetime-types">Datetime Types</a> below for more detail on parsing and validation</dd>
+<dt><code>datetime.datetime</code></dt>
+<dd>see <a href="#datetime-types">Datetime Types</a> below for more detail on parsing and validation</dd>
+<dt><code>datetime.timedelta</code></dt>
+<dd>see <a href="#datetime-types">Datetime Types</a> below for more detail on parsing and validation</dd>
+<dt><code>PastDate</code></dt>
+<dd>like <code>date</code>, but the date should be in the past</dd>
+<dt><code>FutureDate</code></dt>
+<dd>like <code>date</code>, but the date should be in the future</dd>
+</dl>
+<h2 id="datetime-types">Datetime types<a class="headerlink" href="#datetime-types" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
 <p><code>datetime</code> fields can be:</p>

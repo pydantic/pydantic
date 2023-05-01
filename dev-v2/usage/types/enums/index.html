@@ -1554,6 +1554,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   <h1>Enums and Choices</h1>
 
 <p><em>pydantic</em> uses Python's standard <code>enum</code> classes to define choices.</p>
+<dl>
+<dt><code>enum.Enum</code></dt>
+<dd>checks that the value is a valid Enum instance</dd>
+<dt><code>subclass of enum.Enum</code></dt>
+<dd>checks that the value is a valid member of the enum</dd>
+<dt><code>enum.IntEnum</code></dt>
+<dd>checks that the value is a valid IntEnum instance</dd>
+<dt><code>subclass of enum.IntEnum</code></dt>
+<dd>checks that the value is a valid member of the integer enum</dd>
+</dl>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">enum</span> <span class="kn">import</span> <span class="n">Enum</span><span class="p">,</span> <span class="n">IntEnum</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>

@@ -1553,36 +1553,36 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Types Overview</h1>
 
-<p>Where possible <em>pydantic</em> uses <a href="/usage/standard_types/">standard library types</a> to define fields, thus smoothing
+<p>Where possible Pydantic uses <a href="../standard_types/">standard library types</a> to define fields, thus smoothing
 the learning curve. For many useful applications, however, no standard library type exists,
-so <em>pydantic</em> implements <a href="/usage/pydantic_types/#pydantic-types">many commonly used types</a>.</p>
-<p>If no existing type suits your purpose you can also implement your <a href="/usage/custom/#custom-data-types">own pydantic-compatible types</a> with custom properties and validation.</p>
+so Pydantic implements many commonly used types.</p>
+<p>If no existing type suits your purpose you can also implement your <a href="../custom/#custom-data-types">own Pydantic-compatible types</a> with custom properties and validation.</p>
 <p>The following sections describe the types supported by Pydantic.</p>
 <ul>
-<li><a href="/usage/standard_types/">Standard Library Types</a> &mdash; types from the Python standard library.</li>
-<li><a href="usage/booleans/">Booleans</a> &mdash; <code>bool</code> types.</li>
-<li><a href="usage/bytesize/">ByteSize</a> &mdash; a type that allows handling byte string representations in your model.</li>
-<li><a href="usage/callables/">Callables</a> &mdash; <code>Callable</code> types.</li>
-<li><a href="usage/color_types/">Color Types</a> &mdash; color validation types.</li>
-<li><a href="usage/datetime/">Datetimes</a> &mdash; <code>datetime</code>, <code>date</code>, <code>time</code>, and <code>timedelta</code> types.</li>
-<li><a href="usage/dicts_mapping/">Dicts and Mapping</a> &mdash;</li>
-<li><a href="usage/enums/">Enums and Choices</a> &mdash; uses Python's standard <code>enum</code> classes to define choices.</li>
-<li><a href="usage/filetypes/">File Types</a> &mdash; types for handling files and paths.</li>
-<li><a href="usage/json/">JSON</a> &mdash; a type that allows you to store JSON data in your model.</li>
-<li><a href="usage/list_types/">Lists and Tuples</a> &mdash;</li>
-<li><a href="usage/number_types/">Number Types</a> &mdash;</li>
-<li><a href="usage/payment_cards/">Payment Card Numbers</a> &mdash; a type that allows you to store payment card numbers in your model.</li>
-<li><a href="usage/secrets/">Secret Types</a> &mdash; types for storing sensitive information that you do not want to be visible in logging or tracebacks.</li>
-<li><a href="usage/sequence_iterable/">Sequence, Iterable, &amp; Iterator</a> &mdash; iterable types including <code>Sequence</code>, <code>Iterable</code>, and <code>Iterator</code>.</li>
-<li><a href="usage/set_types/">Sets and frozenset</a> &mdash;</li>
-<li><a href="usage/string_types/">String Types</a> &mdash;</li>
-<li><a href="usage/typevars/">Type and TypeVar</a> &mdash; <code>Type</code> and <code>TypeVar</code> types.</li>
-<li><a href="usage/types_fields/">Types with Fields</a> &mdash;</li>
-<li><a href="usage/unions/">Unions</a> &mdash; allows a model attribute to accept different types.</li>
-<li><a href="usage/urls/">URLs</a> &mdash; URI/URL validation types.</li>
-<li><a href="usage/uuids/">UUIDs</a> &mdash; types that allow you to store UUIDs in your model.</li>
-<li><a href="usage/custom/">Custom Data Types</a> &mdash;</li>
-<li>Field Type Conversions &mdash; strict and lax conversion between different field types.</li>
+<li><a href="../standard_types/">Standard Library Types</a> &mdash; types from the Python standard library.</li>
+<li><a href="../booleans/">Booleans</a> &mdash; <code>bool</code> types.</li>
+<li><a href="../bytesize/">ByteSize</a> &mdash; a type that allows handling byte string representations in your model.</li>
+<li><a href="../callables/">Callables</a> &mdash; <code>Callable</code> types.</li>
+<li><a href="../color_types/">Color Types</a> &mdash; color validation types.</li>
+<li><a href="../datetime/">Datetimes</a> &mdash; <code>datetime</code>, <code>date</code>, <code>time</code>, and <code>timedelta</code> types.</li>
+<li><a href="../dicts_mapping/">Dicts and Mapping Types</a> &mdash; <code>dict</code> types and mapping types.</li>
+<li><a href="../enums/">Enums and Choices</a> &mdash; uses Python's standard <code>enum</code> classes to define choices.</li>
+<li><a href="../file_types/">File Types</a> &mdash; types for handling files and paths.</li>
+<li><a href="../json/">JSON</a> &mdash; a type that allows you to store JSON data in your model.</li>
+<li><a href="../list_types/">Lists and Tuples</a> &mdash; <code>list</code> and <code>tuple</code> types.</li>
+<li><a href="../number_types/">Number Types</a> &mdash; <code>int</code>, <code>float</code>, <code>Decimal</code>, and other number types.</li>
+<li><a href="../payment_cards/">Payment Card Numbers</a> &mdash; a type that allows you to store payment card numbers in your model.</li>
+<li><a href="../secrets/">Secret Types</a> &mdash; types for storing sensitive information that you do not want to be visible in logging or tracebacks.</li>
+<li><a href="../sequence_iterable/">Sequence, Iterable, &amp; Iterator</a> &mdash; iterable types including <code>Sequence</code>, <code>Iterable</code>, and <code>Iterator</code>.</li>
+<li><a href="../set_types/">Sets and frozenset</a> &mdash; <code>set</code> and <code>frozenset</code> types.</li>
+<li><a href="../string_types/">String Types</a> &mdash; <code>str</code> types.</li>
+<li><a href="../typevars/">Type and TypeVar</a> &mdash; <code>Type</code> and <code>TypeVar</code> types.</li>
+<li><a href="../types_fields/">Types with Fields</a> &mdash; types that allow you to define fields.</li>
+<li><a href="../unions/">Unions</a> &mdash; allows a model attribute to accept different types.</li>
+<li><a href="../urls/">URLs</a> &mdash; URI/URL validation types.</li>
+<li><a href="../uuids/">UUIDs</a> &mdash; types that allow you to store UUIDs in your model.</li>
+<li><a href="../custom/">Custom Data Types</a> &mdash; create your own custom data types.</li>
+<li><a href="../../conversion_table/">Field Type Conversions</a> &mdash; strict and lax conversion between different field types.</li>
 </ul>
 
 

@@ -1554,14 +1554,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   <h1>UUIDs</h1>
 
 <dl>
+<dt><code>uuid.UUID</code></dt>
+<dd>strings and bytes (converted to strings) are passed to <code>UUID(v)</code>, with a fallback to <code>UUID(bytes=v)</code> for <code>bytes</code> and <code>bytearray</code></dd>
 <dt><code>UUID1</code></dt>
-<dd>requires a valid UUID of type 1; see <code>UUID</code> <a href="#standard-library-types">above</a></dd>
+<dd>requires a valid UUID of type 1; see <code>UUID</code> above</dd>
 <dt><code>UUID3</code></dt>
-<dd>requires a valid UUID of type 3; see <code>UUID</code> <a href="#standard-library-types">above</a></dd>
+<dd>requires a valid UUID of type 3; see <code>UUID</code> above</dd>
 <dt><code>UUID4</code></dt>
-<dd>requires a valid UUID of type 4; see <code>UUID</code> <a href="#standard-library-types">above</a></dd>
+<dd>requires a valid UUID of type 4; see <code>UUID</code> above</dd>
 <dt><code>UUID5</code></dt>
-<dd>requires a valid UUID of type 5; see <code>UUID</code> <a href="#standard-library-types">above</a></dd>
+<dd>requires a valid UUID of type 5; see <code>UUID</code> above</dd>
 </dl>
 
 
