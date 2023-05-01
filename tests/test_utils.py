@@ -24,7 +24,7 @@ from pydantic._internal._utils import (
     unique_list,
 )
 from pydantic._internal._validators import import_string
-from pydantic.alias_generators import to_camel, to_lower_camel, to_snake
+from pydantic.alias_generators import to_camel, to_pascal, to_snake
 from pydantic.color import Color
 from pydantic.fields import Undefined
 
@@ -449,15 +449,15 @@ def test_undefined_pickle():
 
 
 def test_on_lower_camel_zero_length():
-    assert to_lower_camel('') == ''
+    assert to_camel('') == ''
 
 
 def test_on_lower_camel_one_length():
-    assert to_lower_camel('a') == 'a'
+    assert to_camel('a') == 'a'
 
 
 def test_on_lower_camel_many_length():
-    assert to_lower_camel('i_like_turtles') == 'iLikeTurtles'
+    assert to_camel('i_like_turtles') == 'iLikeTurtles'
 
 
 @pytest.mark.parametrize(
@@ -475,7 +475,7 @@ def test_on_lower_camel_many_length():
     ],
 )
 def test_snake2camel_start_lower(value: str, result: str) -> None:
-    assert to_lower_camel(value) == result
+    assert to_camel(value) == result
 
 
 @pytest.mark.parametrize(
@@ -493,7 +493,7 @@ def test_snake2camel_start_lower(value: str, result: str) -> None:
     ],
 )
 def test_snake2camel(value: str, result: str) -> None:
-    assert to_camel(value) == result
+    assert to_pascal(value) == result
 
 
 @pytest.mark.parametrize(

@@ -1,7 +1,9 @@
 import re
 
+__all__ = ('to_pascal', 'to_camel', 'to_snake')
 
-def to_camel(snake: str) -> str:
+
+def to_pascal(snake: str) -> str:
     """
     Converts a snake_case string to PascalCase.
     """
@@ -9,11 +11,11 @@ def to_camel(snake: str) -> str:
     return re.sub('([0-9A-Za-z])_(?=[0-9A-Z])', lambda m: m.group(1), camel)
 
 
-def to_lower_camel(snake: str) -> str:
+def to_camel(snake: str) -> str:
     """
     Converts a snake_case string to camelCase.
     """
-    camel = to_camel(snake)
+    camel = to_pascal(snake)
     return re.sub('(^_*[A-Z])', lambda m: m.group(1).lower(), camel)
 
 
