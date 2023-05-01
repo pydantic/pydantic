@@ -266,13 +266,9 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.11'
-
     - uses: pdm-project/setup-pdm@v3
       with:
+        python-version: '3.11'
         cache: true
 
     - name: install deps
