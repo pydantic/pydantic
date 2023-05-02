@@ -37,8 +37,8 @@ def test_model_class():
     with pytest.raises(ValidationError, match='Input should be an instance of MyModel') as exc_info:
         v.validate_python({'field_a': 'test', 'field_b': 12}, strict=True)
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'model_class_type',
             'loc': (),
@@ -138,7 +138,7 @@ def test_model_class_root_validator_wrap():
     with pytest.raises(ValidationError) as e:
         v.validate_python({'field_a': 456})
 
-    assert e.value.errors() == [
+    assert e.value.errors(include_url=False) == [
         {
             'type': 'assertion_error',
             'loc': (),
@@ -172,7 +172,7 @@ def test_model_class_root_validator_before():
     with pytest.raises(ValidationError) as e:
         v.validate_python({'field_a': 456})
 
-    assert e.value.errors() == [
+    assert e.value.errors(include_url=False) == [
         {
             'type': 'assertion_error',
             'loc': (),
@@ -207,7 +207,7 @@ def test_model_class_root_validator_after():
     with pytest.raises(ValidationError) as e:
         v.validate_python({'field_a': 456})
 
-    assert e.value.errors() == [
+    assert e.value.errors(include_url=False) == [
         {
             'type': 'assertion_error',
             'loc': (),
@@ -556,7 +556,7 @@ def test_model_class_strict():
     assert m.field_b == 'init_b'
     with pytest.raises(ValidationError, match='^1 validation error for MyModel\n') as exc_info:
         v.validate_python({'field_a': 'test', 'field_b': 12})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'model_class_type',
             'loc': (),
@@ -668,7 +668,7 @@ def test_revalidate_always():
     m4 = MyModel('x', 'not int', {'field_a'})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(m4)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('field_b',),
@@ -885,7 +885,7 @@ def test_post_init_validation_error():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': 'test'}, strict=None, context={'error': 1})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': (),
@@ -1081,8 +1081,8 @@ def test_frozen():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment(m, 'f', 'y')
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_instance', 'loc': (), 'msg': 'Instance is frozen', 'input': 'y'}
     ]
 

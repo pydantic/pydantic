@@ -34,7 +34,7 @@ def test_lax_bytes_validator():
     # https://github.com/PyO3/pyo3/blob/6503128442b8f3e767c663a6a8d96376d7fb603d/src/types/string.rs#L477
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('🐈 Hello \ud800World')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_unicode',
             'loc': (),
@@ -99,7 +99,7 @@ def test_length_ctx():
     v = SchemaValidator({'type': 'bytes', 'min_length': 2, 'max_length': 3})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(b'1')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'bytes_too_short',
             'loc': (),
@@ -112,7 +112,7 @@ def test_length_ctx():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(b'1234')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'bytes_too_long',
             'loc': (),

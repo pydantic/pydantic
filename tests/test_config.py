@@ -174,7 +174,7 @@ def test_sub_model_merge():
     assert output == IsInstance(MyModel) & HasAttributes(f='test', sub_model=HasAttributes(f='TESTS'))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'f': 'tests', 'sub_model': {'f': ''}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_too_long',
             'loc': ('f',),

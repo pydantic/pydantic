@@ -15,8 +15,8 @@ def test_lax_or_strict():
         v.validate_python('123', strict=True)
 
     # location is not changed
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': (), 'msg': 'Input should be a valid integer', 'input': '123'}
     ]
 

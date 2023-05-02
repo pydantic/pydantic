@@ -122,7 +122,7 @@ def test_nullable_error():
     )
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'width': 123, 'sub_branch': {'width': 'wrong'}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'none_required',
             'loc': ('sub_branch', 'none'),
@@ -366,7 +366,7 @@ def test_recursion_branch():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python(b)
     assert exc_info.value.title == 'typed-dict'
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': ('branch',),
@@ -413,7 +413,7 @@ def test_recursion_branch_from_attributes():
     data.branch = data
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(data)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': ('branch',),
@@ -436,7 +436,7 @@ def test_definition_list():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python(data)
     assert exc_info.value.title == 'list[...]'
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': (0,),
@@ -512,7 +512,7 @@ def test_multiple_tuple_recursion(multiple_tuple_schema: SchemaValidator):
     with pytest.raises(ValidationError) as exc_info:
         multiple_tuple_schema.validate_python({'f1': data, 'f2': data})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': ('f1', 1),
@@ -534,7 +534,7 @@ def test_multiple_tuple_recursion_once(multiple_tuple_schema: SchemaValidator):
     with pytest.raises(ValidationError) as exc_info:
         multiple_tuple_schema.validate_python({'f1': data, 'f2': data})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': ('f1', 1),
@@ -574,7 +574,7 @@ def test_definition_wrap():
     t.append(t)
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(t)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': (1,),
@@ -606,7 +606,7 @@ def test_union_ref_strictness():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'a': 1, 'b': []})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('b', 'int'), 'msg': 'Input should be a valid integer', 'input': []},
         {'type': 'string_type', 'loc': ('b', 'str'), 'msg': 'Input should be a valid string', 'input': []},
     ]
@@ -631,7 +631,7 @@ def test_union_container_strictness():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'a': 1, 'b': []})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('b', 'int'), 'msg': 'Input should be a valid integer', 'input': []},
         {'type': 'string_type', 'loc': ('b', 'str'), 'msg': 'Input should be a valid string', 'input': []},
     ]
@@ -667,7 +667,7 @@ def test_union_cycle(strict: bool):
 
     with pytest.raises(ValidationError) as exc_info:
         s.validate_python(data)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': ('typed-dict', 'foobar', 0),
@@ -701,7 +701,7 @@ def test_function_name():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('input value')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': ('function-after[f(), ...]',),
@@ -742,7 +742,7 @@ def test_function_change_id(strict: bool):
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('start-0')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'recursion_loop',
             'loc': IsTuple(length=(1, 255)),

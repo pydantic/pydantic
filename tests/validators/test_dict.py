@@ -51,7 +51,7 @@ def test_dict_value_error(py_and_json: PyAndJson):
     assert v.validate_test({'a': 2, 'b': '4'}) == {'a': 2, 'b': 4}
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_test({'a': 2, 'b': 'wrong'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('b',),
@@ -65,8 +65,8 @@ def test_dict_error_key_int():
     v = SchemaValidator({'type': 'dict', 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_python({1: 2, 3: 'wrong', -4: 'wrong2'})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (3,),
@@ -86,7 +86,7 @@ def test_dict_error_key_other():
     v = SchemaValidator({'type': 'dict', 'values_schema': {'type': 'int'}})
     with pytest.raises(ValidationError, match='Input should be a valid integer') as exc_info:
         v.validate_python({1: 2, (1, 2): 'wrong'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('(1, 2)',),
@@ -130,7 +130,7 @@ def test_key_error():
     assert v.validate_python({'1': True}) == {1: 1}
     with pytest.raises(ValidationError, match=re.escape('x.[key]\n  Input should be a valid integer')) as exc_info:
         v.validate_python({'x': 1})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('x', '[key]'),
@@ -155,7 +155,7 @@ def test_mapping_error():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(BadMapping())
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'mapping_type',
             'loc': (),
@@ -185,7 +185,7 @@ def test_mapping_error_yield_1(mapping_items):
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(BadMapping())
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'mapping_type',
             'loc': (),

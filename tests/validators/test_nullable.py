@@ -10,7 +10,7 @@ def test_nullable():
     assert v.validate_python('123') == 123
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('hello')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (),

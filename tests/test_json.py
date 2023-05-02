@@ -142,7 +142,7 @@ def test_error_loc():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('{"field_a": [1, 2, "wrong"]}')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('field_a', 2),
@@ -171,7 +171,7 @@ def test_json_invalid():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('"foobar')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'json_invalid',
             'loc': (),
@@ -182,7 +182,7 @@ def test_json_invalid():
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('[1,\n2,\n3,]')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'json_invalid',
             'loc': (),

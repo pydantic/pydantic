@@ -35,7 +35,7 @@ def test_list_strict():
     assert v.validate_python([1, 2, '33']) == [1, 2, 33]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python((1, 2, '33'))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': (1, 2, '33')}
     ]
 
@@ -80,8 +80,8 @@ def test_list_json():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('1')
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid array', 'input': 1}
     ]
 
@@ -122,7 +122,7 @@ def test_list_error(input_value, index):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(input_value)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (index,),
@@ -189,8 +189,8 @@ def test_length_ctx():
     v = SchemaValidator({'type': 'list', 'min_length': 2, 'max_length': 3})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1])
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'too_short',
             'loc': (),
@@ -203,8 +203,8 @@ def test_length_ctx():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1, 2, 3, 4])
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'too_long',
             'loc': (),
@@ -236,7 +236,7 @@ def test_list_function_val_error():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1, 2])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'value_error', 'loc': (0,), 'msg': 'Value error, error 1', 'input': 1, 'ctx': {'error': 'error 1'}},
         {'type': 'value_error', 'loc': (1,), 'msg': 'Value error, error 2', 'input': 2, 'ctx': {'error': 'error 2'}},
     ]
@@ -267,7 +267,7 @@ def test_generator_error():
     assert v.validate_python(gen(False)) == [1, 2, 3]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(gen(True))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'iteration_error',
             'loc': (2,),
@@ -326,8 +326,8 @@ def test_sequence(MySequence):
     v = SchemaValidator({'type': 'list', 'items_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(MySequence())
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'list_type', 'loc': (), 'msg': 'Input should be a valid list', 'input': IsInstance(MySequence)}
     ]
 
@@ -355,7 +355,7 @@ def test_allow_any_iter(input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
-        assert exc_info.value.errors() == expected.errors
+        assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 
@@ -391,8 +391,8 @@ def test_bad_iter(items_schema):
     assert v.validate_python(BadIter(True)) == [1]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(BadIter(False))
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'iteration_error',
             'loc': (1,),

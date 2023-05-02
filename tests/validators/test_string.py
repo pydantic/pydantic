@@ -124,7 +124,7 @@ def test_unicode_error():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('🐈 Hello \ud800World')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_unicode',
             'loc': (),
@@ -172,7 +172,7 @@ def test_regex_error():
     v = SchemaValidator({'type': 'str', 'pattern': '11'})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('12')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_pattern_mismatch',
             'loc': (),
@@ -207,8 +207,8 @@ def test_strict_subclass(FruitEnum, kwargs):
         v.validate_python(b'foobar')
     with pytest.raises(ValidationError, match='type=string_sub_type,') as exc_info:
         v.validate_python(FruitEnum.pear)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_sub_type',
             'loc': (),

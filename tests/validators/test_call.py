@@ -44,9 +44,9 @@ def test_function_call_arguments(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 
@@ -113,7 +113,7 @@ def test_in_union():
     assert v.validate_python((1,)) == 1
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python((1, 2))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'unexpected_positional_argument',
             'loc': ('call[my_function]', 1),

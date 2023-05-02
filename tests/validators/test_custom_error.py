@@ -13,8 +13,10 @@ def test_custom_error(py_and_json: PyAndJson):
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('foobar')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [{'type': 'foobar', 'loc': (), 'msg': 'Hello there', 'input': 'foobar'}]
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'foobar', 'loc': (), 'msg': 'Hello there', 'input': 'foobar'}
+    ]
 
 
 def test_custom_error_type(py_and_json: PyAndJson):
@@ -23,8 +25,8 @@ def test_custom_error_type(py_and_json: PyAndJson):
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('X')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'recursion_loop', 'loc': (), 'msg': 'Recursion error - cyclic reference detected', 'input': 'X'}
     ]
 

@@ -32,7 +32,7 @@ pub use serializers::{
 pub use validators::SchemaValidator;
 
 pub fn get_version() -> String {
-    let version = env!("CARGO_PKG_VERSION").to_string();
+    let version = env!("CARGO_PKG_VERSION");
     // cargo uses "1.0-alpha1" etc. while python uses "1.0.0a1", this is not full compatibility,
     // but it's good enough for now
     // see https://docs.rs/semver/1.0.9/semver/struct.Version.html#method.parse for rust spec
