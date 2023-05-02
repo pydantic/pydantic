@@ -266,48 +266,15 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: pdm-project/setup-pdm@v3
-      with:
-        python-version: '3.10'
-        cache: true
-
-    - name: install deps
-      run: pdm install -G :all
-
-    - name: replace pydantic-core version
+    - name: check absolute imports
       run: |
-        PYDANTIC_CORE_VERSION=$(cat pyproject.toml| grep -Eo 'pydantic-core==[0-9]+(\.[0-9]+)+')
-        sed -i -E "s/pydantic-core==__pydantic_core_version__/$PYDANTIC_CORE_VERSION/g" pydantic-next/pyproject.toml
+        ! ((find pydantic -name "*.py" -print0 \
+          | xargs -0 grep -nE "^\s*(import pydantic($|\.))|^\s*(from pydantic( |\.))") \
+          | tee /dev/stderr \
+          | grep -q . )&& echo "No absolute imports detected" || (echo "Absolute imports detected" && exit 1)
 
-    - name: create package
-      run: |
-        cp -R pydantic pydantic-next/pydantic_next
-        cp -R tests pydantic-next/tests
-
-    - name: replace imports on test
-      working-directory: pydantic-next
-      run: find tests -type f -name '*.py' -exec sed -i -E 's/(import|from) pydantic([^_]|$)/\1 pydantic_next\2/g' {} +
-
-    - name: install pydantic next
-      working-directory: pydantic-next
-      run: pdm install --no-editable
-
-    - run: pdm list
-
-    - run: 'pdm run python -c "import pydantic_next.version; print(pydantic_next.version.version_info())"'
-      working-directory: pydantic-next
-
-    - name: run tests
-      working-directory: pydantic-next
-      run: |
-        pdm run pytest --durations=10 \
-          --ignore=tests/test_dataclasses.py \
-          --ignore=tests/test_docs.py \
-          --ignore=tests/test_utils.py \
-          --ignore=tests/test_version.py \
-          --ignore=tests/test_forward_ref.py \
-          --ignore=tests/test_generics.py \
-          --ignore=tests/test_migration.py
+    - name: check toml matches
+      run: ls
 
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
@@ -429,43 +396,3 @@ jobs:
           command: pages publish --project-name=pydantic-docs --branch=main site
         env:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
-
-  deploy-next:
-    name: Deploy Pydantic Next
-    needs: [check]
-    # `always()` is required to trigger this task even though test-fastapi is skipped
-    if: "always() && needs.check.outputs.result == 'success' && startsWith(github.ref, 'refs/tags/')"
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-
-      - name: set up python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: install
-        run: pip install -U twine build packaging
-
-      - name: check GITHUB_REF matches package version
-        id: check-tag
-        uses: samuelcolvin/check-python-version@v3.1
-        with:
-          version_file_path: pydantic/version.py
-
-      - name: build
-        working-directory: pydantic-next
-        run: python -m build
-
-      - run: ls -lh dist
-        working-directory: pydantic-next
-      - run: twine check dist/*
-        working-directory: pydantic-next
-
-      - name: upload to pypi
-        run: twine upload dist/*
-        working-directory: pydantic-next
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_token }}

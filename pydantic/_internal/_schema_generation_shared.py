@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING, Any, Callable, Dict, Union
 from pydantic_core import core_schema
 
 if TYPE_CHECKING:
-    from pydantic.json_schema import GenerateJsonSchema
+    from ..json_schema import GenerateJsonSchema
 
 
 JsonSchemaValue = Dict[str, Any]
