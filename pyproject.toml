@@ -57,8 +57,8 @@ classifiers = [
 requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.5.0',
-    'pydantic-core==0.27.0',
     'annotated-types>=0.4.0',
+    "pydantic-core @ git+https://github.com/pydantic/pydantic-core.git@9381862e408e7d2289ebfc25a32f4631e125aa80",
 ]
 dynamic = ['version', 'readme']
 
@@ -200,3 +200,6 @@ exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']
 skip = '.git,env*'
 # `ser` - abbreviation for "ser"ialisation
 ignore-words-list = 'gir,ser'
+
+[tool.hatch.metadata]
+allow-direct-references = true
