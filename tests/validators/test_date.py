@@ -156,7 +156,7 @@ def test_date_strict_json_ctx():
     v = SchemaValidator({'type': 'date', 'strict': True})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('"foobar"')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'date_parsing',
             'loc': (),

@@ -52,7 +52,7 @@ def test_function_before_raise():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python('input value') == 'input value Changed'
     # debug(str(exc_info.value))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': (),
@@ -78,7 +78,7 @@ def test_function_before_error():
     assert v.validate_python('1234') == '1234x'
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('12345')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_too_long',
             'loc': (),
@@ -110,7 +110,7 @@ def test_function_before_error_model():
     assert v.validate_python({'my_field': '1234'}) == {'my_field': '1234x'}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'my_field': '12345'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_too_long',
             'loc': ('my_field',),
@@ -214,7 +214,7 @@ def test_wrap_error():
     assert v.validate_python('42') == 84
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('wrong')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (),
@@ -235,8 +235,8 @@ def test_function_wrap_location():
     assert v.validate_python(4) == 6
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('wrong')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('foo',),
@@ -291,7 +291,7 @@ def test_function_after_raise():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python('input value') == 'input value Changed'
     # debug(str(exc_info.value))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': (),
@@ -461,7 +461,7 @@ def test_class_with_validator():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(True)
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'string_type', 'loc': (), 'msg': 'Input should be a valid string', 'input': True}
     ]
 
@@ -477,7 +477,7 @@ def test_raise_assertion_error():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('input value')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'assertion_error',
             'loc': (),
@@ -499,7 +499,7 @@ def test_raise_assertion_error_plain():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('input value')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'assertion_error',
             'loc': (),

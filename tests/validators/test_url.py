@@ -71,7 +71,7 @@ def url_test_case_helper(
             else:  # validator_mode == MULTI_URL_CLASS_MODE:
                 MultiHostUrl(url)
         assert exc_info.value.error_count() == 1
-        error = exc_info.value.errors()[0]
+        error = exc_info.value.errors(include_url=False)[0]
         assert error['type'] == 'url_parsing'
         assert error['ctx']['error'] == expected.message
     else:
@@ -392,7 +392,7 @@ def test_url_error(strict_url_validator, url, expected):
         with pytest.raises(ValidationError) as exc_info:
             strict_url_validator.validate_python(url)
         assert exc_info.value.error_count() == 1
-        error = exc_info.value.errors()[0]
+        error = exc_info.value.errors(include_url=False)[0]
         assert error['ctx']['error'] == expected.message
         assert error['type'] == expected.errors
     else:
@@ -426,8 +426,8 @@ def test_max_length():
     assert str(v.validate_python('https://example.com')) == 'https://example.com/'
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('https://example.com/foo/bar')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'url_too_long',
             'loc': (),
@@ -451,8 +451,8 @@ def test_allowed_schemes_error():
     v = SchemaValidator(core_schema.url_schema(allowed_schemes=['http', 'https']))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('unix:/run/foo.socket')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'url_scheme',
             'loc': (),
@@ -467,8 +467,8 @@ def test_allowed_schemes_errors():
     v = SchemaValidator(core_schema.url_schema(allowed_schemes=['a', 'b', 'c']))
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('unix:/run/foo.socket')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'url_scheme',
             'loc': (),
@@ -520,8 +520,8 @@ def test_url_to_constraint():
 
     with pytest.raises(ValidationError) as exc_info:
         v2.validate_python(url)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'url_too_long',
             'loc': (),
@@ -535,7 +535,7 @@ def test_url_to_constraint():
 
     with pytest.raises(ValidationError) as exc_info:
         v3.validate_python(url)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'url_scheme',
             'loc': (),
@@ -889,7 +889,7 @@ def test_multi_url_cases(multi_host_url_validator, url, expected):
         with pytest.raises(ValidationError) as exc_info:
             multi_host_url_validator.validate_python(url)
         assert exc_info.value.error_count() == 1
-        error = exc_info.value.errors()[0]
+        error = exc_info.value.errors(include_url=False)[0]
         assert error['type'] == 'url_parsing'
         assert error['ctx']['error'] == expected.message
     else:
@@ -945,7 +945,7 @@ def test_multi_url_cases_strict(strict_multi_host_url_validator, url, expected):
         with pytest.raises(ValidationError) as exc_info:
             strict_multi_host_url_validator.validate_python(url)
         assert exc_info.value.error_count() == 1
-        error = exc_info.value.errors()[0]
+        error = exc_info.value.errors(include_url=False)[0]
         assert error['type'] == expected.errors
         assert error['ctx']['error'] == expected.message
     else:

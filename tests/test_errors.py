@@ -1,9 +1,8 @@
-import json
 import re
 from decimal import Decimal
 
 import pytest
-from dirty_equals import HasRepr, IsInstance, IsStr
+from dirty_equals import HasRepr, IsInstance, IsJson, IsStr
 
 from pydantic_core import (
     PydanticCustomError,
@@ -11,6 +10,7 @@ from pydantic_core import (
     PydanticOmit,
     SchemaValidator,
     ValidationError,
+    __version__,
     core_schema,
 )
 from pydantic_core._pydantic_core import list_all_errors
@@ -51,7 +51,7 @@ def test_pydantic_value_error_usage():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(42)
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'my_error',
             'loc': (),
@@ -74,10 +74,11 @@ def test_pydantic_value_error_invalid_dict():
     assert str(exc_info.value) == (
         '1 validation error for function-plain[my_function()]\n'
         "  (error rendering message: TypeError: 'tuple' object cannot be converted to 'PyString') "
-        '[type=my_error, input_value=42, input_type=int]'
+        '[type=my_error, input_value=42, input_type=int]\n'
+        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/my_error'
     )
     with pytest.raises(TypeError, match="'tuple' object cannot be converted to 'PyString'"):
-        exc_info.value.errors()
+        exc_info.value.errors(include_url=False)
 
 
 def test_pydantic_value_error_invalid_type():
@@ -153,8 +154,8 @@ def test_pydantic_error_type_raise_no_ctx():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(4)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': 4}
     ]
 
@@ -169,8 +170,8 @@ def test_pydantic_error_type_raise_ctx():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(4)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'greater_than', 'loc': (), 'msg': 'Input should be greater than 42', 'input': 4, 'ctx': {'gt': 42.0}}
     ]
 
@@ -418,19 +419,22 @@ def test_error_on_repr():
     assert str(exc_info.value) == (
         '1 validation error for int\n'
         '  Input should be a valid integer '
-        '[type=int_type, input_value=<unprintable BadRepr object>, input_type=BadRepr]'
+        '[type=int_type, input_value=<unprintable BadRepr object>, input_type=BadRepr]\n'
+        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/int_type'
     )
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': (), 'msg': 'Input should be a valid integer', 'input': IsInstance(BadRepr)}
     ]
-    assert json.loads(exc_info.value.json()) == [
-        {
-            'type': 'int_type',
-            'loc': [],
-            'msg': 'Input should be a valid integer',
-            'input': '<Unserializable BadRepr object>',
-        }
-    ]
+    assert exc_info.value.json(include_url=False) == IsJson(
+        [
+            {
+                'type': 'int_type',
+                'loc': [],
+                'msg': 'Input should be a valid integer',
+                'input': '<Unserializable BadRepr object>',
+            }
+        ]
+    )
 
 
 def test_error_json():
@@ -438,8 +442,8 @@ def test_error_json():
     with pytest.raises(ValidationError) as exc_info:
         s.validate_python('12')
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_too_short',
             'loc': (),
@@ -448,18 +452,21 @@ def test_error_json():
             'ctx': {'min_length': 3},
         }
     ]
-    assert json.loads(exc_info.value.json()) == [
-        {
-            'type': 'string_too_short',
-            'loc': [],
-            'msg': 'String should have at least 3 characters',
-            'input': '12',
-            'ctx': {'min_length': 3},
-        }
-    ]
-    assert json.loads(exc_info.value.json(include_context=False)) == [
-        {'type': 'string_too_short', 'loc': [], 'msg': 'String should have at least 3 characters', 'input': '12'}
-    ]
+    assert exc_info.value.json() == IsJson(
+        [
+            {
+                'type': 'string_too_short',
+                'loc': [],
+                'msg': 'String should have at least 3 characters',
+                'input': '12',
+                'ctx': {'min_length': 3},
+                'url': f'https://errors.pydantic.dev/{__version__}/v/string_too_short',
+            }
+        ]
+    )
+    assert exc_info.value.json(include_url=False, include_context=False) == IsJson(
+        [{'type': 'string_too_short', 'loc': [], 'msg': 'String should have at least 3 characters', 'input': '12'}]
+    )
     assert exc_info.value.json().startswith('[{"type":"string_too_short",')
     assert exc_info.value.json(indent=2).startswith('[\n  {\n    "type": "string_too_short",')
 
@@ -472,9 +479,9 @@ def test_error_json_cycle():
     with pytest.raises(ValidationError, match=re.escape(msg)) as exc_info:
         s.validate_python(cycle)
 
-    assert json.loads(exc_info.value.json()) == [
-        {'type': 'string_type', 'loc': [], 'msg': 'Input should be a valid string', 'input': ['...']}
-    ]
+    assert exc_info.value.json(include_url=False) == IsJson(
+        [{'type': 'string_type', 'loc': [], 'msg': 'Input should be a valid string', 'input': ['...']}]
+    )
 
 
 class Foobar:
@@ -491,8 +498,8 @@ def test_error_json_unknown():
     with pytest.raises(ValidationError) as exc_info:
         s.validate_python(Foobar())
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_type',
             'loc': (),
@@ -500,21 +507,23 @@ def test_error_json_unknown():
             'input': HasRepr(IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I)),
         }
     ]
-    # insert_assert(json.loads(exc_info.value.json()))
-    assert json.loads(exc_info.value.json()) == [
-        {
-            'type': 'string_type',
-            'loc': [],
-            'msg': 'Input should be a valid string',
-            'input': IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I),
-        }
-    ]
+    # insert_assert(exc_info.value.json(include_url=False))
+    assert exc_info.value.json(include_url=False) == IsJson(
+        [
+            {
+                'type': 'string_type',
+                'loc': [],
+                'msg': 'Input should be a valid string',
+                'input': IsStr(regex='<.+.test_errors.Foobar object at 0x[a-f0-9]{5,}>', regex_flags=re.I),
+            }
+        ]
+    )
     with pytest.raises(ValidationError) as exc_info:
         s.validate_python(CustomStr())
-    # insert_assert(json.loads(exc_info.value.json()))
-    assert json.loads(exc_info.value.json()) == [
-        {'type': 'string_type', 'loc': [], 'msg': 'Input should be a valid string', 'input': 'custom str'}
-    ]
+    # insert_assert(json.loads(exc_info.value.json(include_url=False)))
+    assert exc_info.value.json(include_url=False) == IsJson(
+        [{'type': 'string_type', 'loc': [], 'msg': 'Input should be a valid string', 'input': 'custom str'}]
+    )
 
 
 def test_error_json_loc():
@@ -524,29 +533,31 @@ def test_error_json_loc():
     with pytest.raises(ValidationError) as exc_info:
         s.validate_python({'a': [0, 1, 'x'], 'b': [0, 'y']})
 
-    # insert_assert(json.loads(exc_info.value.json()))
-    assert json.loads(exc_info.value.json()) == [
-        {
-            'type': 'int_parsing',
-            'loc': ['a', 2],
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'x',
-        },
-        {
-            'type': 'int_parsing',
-            'loc': ['b', 1],
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'y',
-        },
-    ]
+    # insert_assert(exc_info.value.json())
+    assert exc_info.value.json(include_url=False) == IsJson(
+        [
+            {
+                'type': 'int_parsing',
+                'loc': ['a', 2],
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'x',
+            },
+            {
+                'type': 'int_parsing',
+                'loc': ['b', 1],
+                'msg': 'Input should be a valid integer, unable to parse string as an integer',
+                'input': 'y',
+            },
+        ]
+    )
 
 
 def test_raise_validation_error():
     with pytest.raises(ValidationError, match='1 validation error for Foobar\n') as exc_info:
         raise ValidationError('Foobar', [{'type': 'greater_than', 'loc': ('a', 2), 'input': 4, 'ctx': {'gt': 5}}])
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'greater_than', 'loc': (2, 'a'), 'msg': 'Input should be greater than 5', 'input': 4, 'ctx': {'gt': 5}}
     ]
     with pytest.raises(TypeError, match='GreaterThan requires context: {gt: Number}'):
@@ -557,16 +568,16 @@ def test_raise_validation_error_json():
     with pytest.raises(ValidationError) as exc_info:
         raise ValidationError('Foobar', [{'type': 'none_required', 'loc': [-42], 'input': 'x'}])
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'none_required', 'loc': (-42,), 'msg': 'Input should be None', 'input': 'x'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         raise ValidationError('Foobar', [{'type': 'none_required', 'loc': (), 'input': 'x'}], 'json')
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'none_required', 'loc': (), 'msg': 'Input should be null', 'input': 'x'}
     ]
 
@@ -578,8 +589,8 @@ def test_raise_validation_error_custom():
     with pytest.raises(ValidationError) as exc_info:
         raise ValidationError('Foobar', [{'type': custom_error, 'input': 'x'}])
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'my_error',
             'loc': (),
@@ -604,8 +615,8 @@ def test_loc_with_dots():
     assert v.validate_python({'foo.bar': (41, 42)}) == {'a': (41, 42)}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'foo.bar': ('x', 42)})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('foo.bar', 0),
@@ -618,7 +629,8 @@ def test_loc_with_dots():
         "1 validation error for typed-dict\n"
         "`foo.bar`.0\n"
         "  Input should be a valid integer, unable to parse string as an integer "
-        "[type=int_parsing, input_value='x', input_type=str]"
+        "[type=int_parsing, input_value='x', input_type=str]\n"
+        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/int_parsing'
     )
 
 

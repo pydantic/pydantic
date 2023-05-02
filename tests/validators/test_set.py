@@ -92,7 +92,7 @@ def test_set_multiple_errors():
     v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(['a', (1, 2), []])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (0,),
@@ -214,7 +214,7 @@ def test_union_set_int_set_str(input_value, expected):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 

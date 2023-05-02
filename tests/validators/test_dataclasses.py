@@ -54,9 +54,9 @@ def test_dataclass_args(py_and_json: PyAndJson, input_value, expected):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
 
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -120,9 +120,9 @@ def test_dataclass_args_init_only(py_and_json: PyAndJson, input_value, expected)
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
 
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -159,9 +159,9 @@ def test_dataclass_args_init_only_no_fields(py_and_json: PyAndJson, input_value,
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_test(input_value)
 
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -214,8 +214,8 @@ def test_dataclass():
     with pytest.raises(ValidationError, match='Input should be an instance of FooDataclass') as exc_info:
         v.validate_python({'a': 'hello', 'b': True}, strict=True)
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'model_class_type',
             'loc': (),
@@ -286,9 +286,9 @@ def test_dataclass_subclass(revalidate_instances, input_value, expected):
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             print(v.validate_python(input_value))
 
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         dc = v.validate_python(input_value)
         assert dataclasses.is_dataclass(dc)
@@ -689,8 +689,8 @@ def test_dataclass_self_init_alias():
     with pytest.raises(ValidationError) as exc_info:
         Foo(aAlias=b'hello', bAlias=['wrong'])
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'bool_parsing',
             'loc': ('bAlias', 0),
@@ -729,8 +729,8 @@ def test_dataclass_self_init_alias_field_name():
     with pytest.raises(ValidationError) as exc_info:
         Foo(aAlias=b'hello', bAlias=['wrong'])
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'bool_parsing',
             'loc': ('b',),
@@ -797,14 +797,14 @@ def test_dataclass_validate_assignment():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment(foo, 'a', 123)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'string_type', 'loc': ('a',), 'msg': 'Input should be a valid string', 'input': 123}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment(foo, 'c', '123')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'no_such_attribute',
             'loc': ('c',),
@@ -883,8 +883,8 @@ def test_frozen():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment(m, 'f', 'y')
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_instance', 'loc': (), 'msg': 'Instance is frozen', 'input': 'y'}
     ]
 
@@ -909,8 +909,10 @@ def test_frozen_field():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment(m, 'f', 'y')
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [{'type': 'frozen_field', 'loc': ('f',), 'msg': 'Field is frozen', 'input': 'y'}]
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_field', 'loc': ('f',), 'msg': 'Field is frozen', 'input': 'y'}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -948,7 +950,7 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment(m, 'not_f', 'xyz')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'no_such_attribute',
             'loc': ('not_f',),
@@ -993,7 +995,7 @@ def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], sche
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_assignment(m, 'not_f', 'xyz')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'no_such_attribute',
             'loc': ('not_f',),

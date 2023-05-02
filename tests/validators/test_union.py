@@ -1,7 +1,7 @@
 import pytest
 from dirty_equals import IsFloat, IsInt
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, core_schema
 
 from ..conftest import plain_repr
 
@@ -107,7 +107,7 @@ class TestModelClass:
     def test_error(self, schema_validator: SchemaValidator):
         with pytest.raises(ValidationError) as exc_info:
             schema_validator.validate_python({'a': 2})
-        assert exc_info.value.errors() == [
+        assert exc_info.value.errors(include_url=False) == [
             {'type': 'missing', 'loc': ('ModelA', 'b'), 'msg': 'Field required', 'input': {'a': 2}},
             {'type': 'missing', 'loc': ('ModelB', 'c'), 'msg': 'Field required', 'input': {'a': 2}},
             {'type': 'missing', 'loc': ('ModelB', 'd'), 'msg': 'Field required', 'input': {'a': 2}},
@@ -190,7 +190,7 @@ def test_nullable_via_union():
     assert v.validate_python(1) == 1
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('hello')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'none_required', 'loc': ('none',), 'msg': 'Input should be None', 'input': 'hello'},
         {
             'type': 'int_parsing',
@@ -216,7 +216,7 @@ def test_union_list_bool_int():
     assert v.validate_python(['1', '0']) == [1, 0]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([3, 'true'])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'bool_parsing',
             'loc': ('list[bool]', 0),
@@ -239,7 +239,8 @@ def test_no_choices():
     assert str(exc_info.value) == (
         'Invalid Schema:\n'
         'union.choices\n'
-        "  Field required [type=missing, input_value={'type': 'union'}, input_type=dict]"
+        "  Field required [type=missing, input_value={'type': 'union'}, input_type=dict]\n"
+        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/missing'
     )
     assert exc_info.value.error_count() == 1
     assert exc_info.value.errors() == [
@@ -267,7 +268,7 @@ def test_strict_union():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('123')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'bool_type', 'loc': ('bool',), 'msg': 'Input should be a valid boolean', 'input': '123'},
         {'type': 'int_type', 'loc': ('int',), 'msg': 'Input should be a valid integer', 'input': '123'},
     ]
@@ -286,8 +287,8 @@ def test_custom_error():
     assert v.validate_python(b'hello') == b'hello'
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(123)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'my_error', 'loc': (), 'msg': 'Input should be a string or bytes', 'input': 123}
     ]
 
@@ -300,8 +301,8 @@ def test_custom_error_type():
     assert v.validate_python(b'hello') == b'hello'
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(123)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'string_type', 'loc': (), 'msg': 'Input should be a valid string', 'input': 123}
     ]
 
@@ -319,8 +320,8 @@ def test_custom_error_type_context():
     assert v.validate_python(b'hello') == b'hello'
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(123)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'less_than', 'loc': (), 'msg': 'Input should be less than 42', 'input': 123, 'ctx': {'lt': 42.0}}
     ]
 

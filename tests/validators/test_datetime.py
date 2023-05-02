@@ -240,7 +240,7 @@ def test_custom_invalid_tz():
     else:
         error_message = 'NotImplementedError: a tzinfo subclass must implement utcoffset()'
 
-    assert excinfo.value.errors() == [
+    assert excinfo.value.errors(include_url=False) == [
         {
             'type': 'datetime_object_invalid',
             'loc': (),

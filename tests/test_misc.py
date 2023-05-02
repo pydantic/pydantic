@@ -36,8 +36,8 @@ def test_validation_error():
     assert exc_info.value.title == 'int'
     assert exc_info.value.error_count() == 1
     assert (
-        exc_info.value.errors()
-        == exc_info.value.errors(include_context=False)
+        exc_info.value.errors(include_url=False)
+        == exc_info.value.errors(include_url=False, include_context=False)
         == [
             {
                 'type': 'int_from_float',
@@ -47,6 +47,16 @@ def test_validation_error():
             }
         ]
     )
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors() == [
+        {
+            'type': 'int_from_float',
+            'loc': (),
+            'msg': 'Input should be a valid integer, got a number with a fractional part',
+            'input': 1.5,
+            'url': f'https://errors.pydantic.dev/{__version__}/v/int_from_float',
+        }
+    ]
 
 
 def test_validation_error_include_context():
@@ -56,8 +66,8 @@ def test_validation_error_include_context():
 
     assert exc_info.value.title == 'list[any]'
     assert exc_info.value.error_count() == 1
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'too_long',
             'loc': (),
@@ -66,8 +76,8 @@ def test_validation_error_include_context():
             'ctx': {'field_type': 'List', 'max_length': 2, 'actual_length': 3},
         }
     ]
-    # insert_assert(exc_info.value.errors(include_context=False))
-    assert exc_info.value.errors(include_context=False) == [
+    # insert_assert(exc_info.value.errors(include_url=False, include_context=False))
+    assert exc_info.value.errors(include_url=False, include_context=False) == [
         {
             'type': 'too_long',
             'loc': (),
@@ -110,7 +120,7 @@ def test_validation_error_multiple():
 
     assert exc_info.value.title == 'MyModel'
     assert exc_info.value.error_count() == 2
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'float_parsing',
             'loc': ('x',),
@@ -129,9 +139,11 @@ def test_validation_error_multiple():
         'x\n'
         '  Input should be a valid number, unable to parse string as an number '
         "[type=float_parsing, input_value='xxxxxxxxxxxxxxxxxxxxxxxx...xxxxxxxxxxxxxxxxxxxxxxx', input_type=str]\n"
+        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/float_parsing\n'
         'y\n'
         '  Input should be a valid integer, unable to parse string as an integer '
-        "[type=int_parsing, input_value='y', input_type=str]"
+        "[type=int_parsing, input_value='y', input_type=str]\n"
+        f'    For further information visit https://errors.pydantic.dev/{__version__}/v/int_parsing'
     )
 
 

@@ -6,7 +6,7 @@ from typing import Any, get_type_hints
 
 import pytest
 
-from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, ValidationError, __version__, core_schema
 
 from ..conftest import Err, PyAndJson, plain_repr
 
@@ -173,9 +173,9 @@ def test_positional_args(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -279,9 +279,9 @@ def test_keyword_args(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -364,9 +364,9 @@ def test_positional_or_keyword(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -388,9 +388,9 @@ def test_positional_optional(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -421,9 +421,9 @@ def test_p_or_k_optional(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -444,9 +444,9 @@ def test_var_args_only(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -507,9 +507,9 @@ def test_args_var_args_only(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -559,7 +559,7 @@ def test_both(py_and_json: PyAndJson, input_value, expected):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -599,9 +599,9 @@ def test_no_args(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
+        # debug(exc_info.value.errors(include_url=False))
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -855,7 +855,7 @@ def test_function_types():
     with pytest.raises(ValidationError) as exc_info:
         foobar(1, 'b')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (1,),
@@ -873,7 +873,7 @@ def test_function_types():
     with pytest.raises(ValidationError) as exc_info:
         foobar(1, 'b', c='c')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (1,),
@@ -906,7 +906,7 @@ def create_function(validate):
     assert foobar('1', 2, c=3) == (1, 2, 3)
     with pytest.raises(ValidationError) as exc_info:
         foobar('1', b=2, c=3)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'missing_positional_only_argument',
             'loc': (1,),
@@ -998,8 +998,8 @@ def test_error_display():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(ArgsKwargs((), {'a': 1}))
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'missing_argument',
             'loc': ('b',),
@@ -1012,10 +1012,11 @@ def test_error_display():
         "1 validation error for arguments\n"
         "b\n"
         "  Missing required argument [type=missing_argument, "
-        "input_value=ArgsKwargs((), {'a': 1}), input_type=ArgsKwargs]"
+        "input_value=ArgsKwargs((), {'a': 1}), input_type=ArgsKwargs]\n"
+        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/missing_argument"
     )
-    # insert_assert(exc_info.value.json())
-    assert exc_info.value.json() == (
+    # insert_assert(exc_info.value.json(include_url=False))
+    assert exc_info.value.json(include_url=False) == (
         '[{"type":"missing_argument","loc":["b"],"msg":"Missing required argument",'
         '"input":"ArgsKwargs((), {\'a\': 1})"}]'
     )

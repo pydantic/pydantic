@@ -108,8 +108,8 @@ def test_literal_py_and_json(py_and_json: PyAndJson, kwarg_expected, input_value
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_test(input_value)
         if expected.errors is not None:
-            # debug(exc_info.value.errors())
-            assert exc_info.value.errors() == expected.errors
+            # debug(exc_info.value.errors(include_url=False))
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -152,8 +152,8 @@ def test_literal_not_json(kwarg_expected, input_value, expected):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
             if expected.errors is not None:
-                # debug(exc_info.value.errors())
-                assert exc_info.value.errors() == expected.errors
+                # debug(exc_info.value.errors(include_url=False))
+                assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 
@@ -179,8 +179,8 @@ def test_union():
     assert v.validate_python(4) == 4
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('c')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': ("literal['a','b']",),
@@ -206,8 +206,8 @@ def test_enum_value():
     assert v.validate_python(FooEnum.foo) == FooEnum.foo
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('foo_value')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': (),
@@ -218,8 +218,8 @@ def test_enum_value():
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('unknown')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': (),
@@ -231,7 +231,7 @@ def test_enum_value():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('"foo_value"')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': (),
@@ -255,7 +255,7 @@ def test_str_enum_values():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('unknown')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': (),
@@ -279,7 +279,7 @@ def test_int_enum_values():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(4)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': (),
@@ -333,7 +333,7 @@ def test_mix_int_enum_with_int(reverse: Callable[[List[Any]], List[Any]], err: A
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(2)
-    assert exc_info.value.errors() == err
+    assert exc_info.value.errors(include_url=False) == err
 
 
 @pytest.mark.parametrize(
@@ -379,4 +379,4 @@ def test_mix_str_enum_with_str(reverse: Callable[[List[Any]], List[Any]], err: A
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('bar_val')
-    assert exc_info.value.errors() == err
+    assert exc_info.value.errors(include_url=False) == err

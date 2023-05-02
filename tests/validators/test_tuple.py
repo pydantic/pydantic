@@ -68,8 +68,8 @@ def test_empty_positional_tuple():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python((1,))
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'too_long',
             'loc': (),
@@ -88,7 +88,7 @@ def test_tuple_strict_fails_without_tuple(wrong_coll_type: Type[Any], mode, item
     v = SchemaValidator({'type': f'tuple-{mode}', 'items_schema': items, 'strict': True})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(wrong_coll_type([1, 2, '33']))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'tuple_type',
             'loc': (),
@@ -183,7 +183,7 @@ def test_tuple_var_len_errors(input_value, index):
     v = SchemaValidator({'type': 'tuple-variable', 'items_schema': {'type': 'int'}})
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python(input_value)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (index,),
@@ -211,7 +211,7 @@ def test_tuple_fix_len_errors(input_value, items, index):
     v = SchemaValidator({'type': 'tuple-positional', 'items_schema': items})
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python(input_value)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (index,),
@@ -231,14 +231,16 @@ def test_multiple_missing(py_and_json: PyAndJson):
     assert v.validate_test([1, 2, 3, 4]) == (1, 2, 3, 4)
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test([1])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'missing', 'loc': (1,), 'msg': 'Field required', 'input': [1]},
         {'type': 'missing', 'loc': (2,), 'msg': 'Field required', 'input': [1]},
         {'type': 'missing', 'loc': (3,), 'msg': 'Field required', 'input': [1]},
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test([1, 2, 3])
-    assert exc_info.value.errors() == [{'type': 'missing', 'loc': (3,), 'msg': 'Field required', 'input': [1, 2, 3]}]
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': (3,), 'msg': 'Field required', 'input': [1, 2, 3]}
+    ]
 
 
 def test_extra_arguments(py_and_json: PyAndJson):
@@ -246,8 +248,8 @@ def test_extra_arguments(py_and_json: PyAndJson):
     assert v.validate_test([1, 2]) == (1, 2)
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test([1, 2, 3, 4])
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'too_long',
             'loc': (),
@@ -325,7 +327,7 @@ def test_union_tuple_var_len(input_value, expected):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 
@@ -380,7 +382,7 @@ def test_union_tuple_fix_len(input_value, expected):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
         if expected.errors is not None:
-            assert exc_info.value.errors() == expected.errors
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 
@@ -390,7 +392,9 @@ def test_tuple_fix_error():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([1])
 
-    assert exc_info.value.errors() == [{'type': 'missing', 'loc': (1,), 'msg': 'Field required', 'input': [1]}]
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': (1,), 'msg': 'Field required', 'input': [1]}
+    ]
 
 
 @pytest.mark.parametrize(
@@ -416,7 +420,7 @@ def test_tuple_fix_extra(input_value, expected, cache):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
-        assert exc_info.value.errors() == expected.errors
+        assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_python(input_value) == expected
 
@@ -431,7 +435,9 @@ def test_tuple_fix_extra_any():
     assert v.validate_python([b'1', 2, b'3']) == ('1', 2, b'3')
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python([])
-    assert exc_info.value.errors() == [{'type': 'missing', 'loc': (0,), 'msg': 'Field required', 'input': []}]
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': (0,), 'msg': 'Field required', 'input': []}
+    ]
 
 
 def test_generator_error():

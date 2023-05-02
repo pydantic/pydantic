@@ -39,8 +39,8 @@ def test_any(py_and_json: PyAndJson, input_value, expected):
             v.validate_test(input_value)
 
         if expected.errors is not None:
-            # debug(exc_info.value.errors())
-            assert exc_info.value.errors() == expected.errors
+            # debug(exc_info.value.errors(include_url=False))
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -113,8 +113,8 @@ def test_list_int(py_and_json: PyAndJson, input_value, expected):
             v.validate_test(input_value)
 
         if expected.errors is not None:
-            # debug(exc_info.value.errors())
-            assert exc_info.value.errors() == expected.errors
+            # debug(exc_info.value.errors(include_url=False))
+            assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -129,8 +129,8 @@ def test_dict_key(py_and_json: PyAndJson):
     assert v.validate_test({'[1]': 4}) == {(1,): 4}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({'x': 4})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'json_invalid',
             'loc': ('x', '[key]'),

@@ -25,7 +25,7 @@ def test_callable():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(42)
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'callable_type', 'loc': (), 'msg': 'Input should be callable', 'input': 42}
     ]
 
