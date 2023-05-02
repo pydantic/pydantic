@@ -43,12 +43,11 @@ def model_serializer() -> SchemaSerializer:
                     'type': 'model',
                     'cls': ModelA,
                     'schema': {
-                        'type': 'typed-dict',
-                        'return_fields_set': True,
+                        'type': 'model-fields',
                         'fields': {
-                            'a': {'type': 'typed-dict-field', 'schema': {'type': 'bytes'}},
+                            'a': {'type': 'model-field', 'schema': {'type': 'bytes'}},
                             'b': {
-                                'type': 'typed-dict-field',
+                                'type': 'model-field',
                                 'schema': {
                                     'type': 'float',
                                     'serialization': {
@@ -65,12 +64,11 @@ def model_serializer() -> SchemaSerializer:
                     'type': 'model',
                     'cls': ModelB,
                     'schema': {
-                        'type': 'typed-dict',
-                        'return_fields_set': True,
+                        'type': 'model-fields',
                         'fields': {
-                            'c': {'type': 'typed-dict-field', 'schema': {'type': 'bytes'}},
+                            'c': {'type': 'model-field', 'schema': {'type': 'bytes'}},
                             'd': {
-                                'type': 'typed-dict-field',
+                                'type': 'model-field',
                                 'schema': {
                                     'type': 'float',
                                     'serialization': {

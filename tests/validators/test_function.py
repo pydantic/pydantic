@@ -384,24 +384,33 @@ def test_plain_with_schema():
 
 
 def test_validate_assignment():
-    def f(input_value, info):
-        input_value['more'] = 'foobar'
+    def f(input_value):
+        input_value.more = 'foobar'
         return input_value
 
-    v = SchemaValidator(
-        {
-            'type': 'function-after',
-            'function': {'type': 'general', 'function': f},
-            'schema': {
-                'type': 'typed-dict',
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-            },
-        }
-    )
+    class Model:
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        field_a: str
 
-    m = {'field_a': 'test', 'more': 'foobar'}
-    assert v.validate_python({'field_a': 'test'}) == m
-    assert v.validate_assignment(m, 'field_a', b'abc') == {'field_a': 'abc', 'more': 'foobar'}
+    v = SchemaValidator(
+        core_schema.no_info_after_validator_function(
+            f,
+            core_schema.model_schema(
+                Model, core_schema.model_fields_schema({'field_a': core_schema.model_field(core_schema.str_schema())})
+            ),
+        )
+    )
+    m = v.validate_python({'field_a': 'test'})
+    assert isinstance(m, Model)
+    assert m.field_a == 'test'
+    assert m.__pydantic_fields_set__ == {'field_a'}
+    assert m.__dict__ == {'field_a': 'test', 'more': 'foobar'}
+
+    m2 = Model()
+    m2.field_a = 'test'
+    assert v.validate_assignment(m2, 'field_a', b'abc') is m2
+    assert m2.__dict__ == {'field_a': 'abc', 'more': 'foobar'}
+    assert not hasattr(m2, '__pydantic_fields_set__')
 
 
 def test_function_wrong_sig():
@@ -545,13 +554,8 @@ def test_model_field_before_validator() -> None:
     v = SchemaValidator(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {
-                    'x': core_schema.typed_dict_field(
-                        core_schema.field_before_validator_function(f, core_schema.str_schema())
-                    )
-                },
-                return_fields_set=True,
+            core_schema.model_fields_schema(
+                {'x': core_schema.model_field(core_schema.field_before_validator_function(f, core_schema.str_schema()))}
             ),
         )
     )
@@ -572,13 +576,8 @@ def test_model_field_after_validator() -> None:
     v = SchemaValidator(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {
-                    'x': core_schema.typed_dict_field(
-                        core_schema.field_after_validator_function(f, core_schema.str_schema())
-                    )
-                },
-                return_fields_set=True,
+            core_schema.model_fields_schema(
+                {'x': core_schema.model_field(core_schema.field_after_validator_function(f, core_schema.str_schema()))}
             ),
         )
     )
@@ -599,9 +598,8 @@ def test_model_field_plain_validator() -> None:
     v = SchemaValidator(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {'x': core_schema.typed_dict_field(core_schema.field_plain_validator_function(f))},
-                return_fields_set=True,
+            core_schema.model_fields_schema(
+                {'x': core_schema.model_field(core_schema.field_plain_validator_function(f))}
             ),
         )
     )
@@ -624,13 +622,8 @@ def test_model_field_wrap_validator() -> None:
     v = SchemaValidator(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {
-                    'x': core_schema.typed_dict_field(
-                        core_schema.field_wrap_validator_function(f, core_schema.str_schema())
-                    )
-                },
-                return_fields_set=True,
+            core_schema.model_fields_schema(
+                {'x': core_schema.model_field(core_schema.field_wrap_validator_function(f, core_schema.str_schema()))}
             ),
         )
     )
@@ -659,13 +652,12 @@ def test_non_model_field_before_validator_tries_to_access_field_info() -> None:
     v = SchemaValidator(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'x': core_schema.typed_dict_field(
+                    'x': core_schema.model_field(
                         core_schema.general_before_validator_function(f, core_schema.str_schema())
                     )
-                },
-                return_fields_set=True,
+                }
             ),
         )
     )
@@ -684,13 +676,12 @@ def test_non_model_field_after_validator_tries_to_access_field_info() -> None:
     v = SchemaValidator(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'x': core_schema.typed_dict_field(
+                    'x': core_schema.model_field(
                         core_schema.general_after_validator_function(f, core_schema.str_schema())
                     )
-                },
-                return_fields_set=True,
+                }
             ),
         )
     )
@@ -710,9 +701,8 @@ def test_non_model_field_plain_validator_tries_to_access_field_info() -> None:
     v = SchemaValidator(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {'x': core_schema.typed_dict_field(core_schema.general_plain_validator_function(f))},
-                return_fields_set=True,
+            core_schema.model_fields_schema(
+                {'x': core_schema.model_field(core_schema.general_plain_validator_function(f))}
             ),
         )
     )
@@ -722,7 +712,7 @@ def test_non_model_field_plain_validator_tries_to_access_field_info() -> None:
 
 def test_non_model_field_wrap_validator_tries_to_access_field_info() -> None:
     class Model:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         x: str
 
     def f(input_value: Any, val: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo) -> Any:
@@ -732,13 +722,8 @@ def test_non_model_field_wrap_validator_tries_to_access_field_info() -> None:
     v = SchemaValidator(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {
-                    'x': core_schema.typed_dict_field(
-                        core_schema.general_wrap_validator_function(f, core_schema.str_schema())
-                    )
-                },
-                return_fields_set=True,
+            core_schema.model_fields_schema(
+                {'x': core_schema.model_field(core_schema.general_wrap_validator_function(f, core_schema.str_schema()))}
             ),
         )
     )
@@ -796,15 +781,20 @@ def test_typed_dict_data() -> None:
     'mode,calls1,calls2',
     [
         ('before', {'value': {'x': b'input', 'y': '123'}}, {'value': {'x': 'different', 'y': 123}}),
-        ('after', {'value': ({'x': 'input', 'y': 123}, {'y', 'x'})}, {'value': ({'x': 'different', 'y': 123}, {'x'})}),
+        (
+            'after',
+            {'value': ({'x': 'input', 'y': 123}, None, {'y', 'x'})},
+            {'value': ({'x': 'different', 'y': 123}, None, {'x'})},
+        ),
         ('wrap', {'value': {'x': b'input', 'y': '123'}}, {'value': {'x': 'different', 'y': 123}}),
     ],
+    ids=('before', 'after', 'wrap'),
 )
 def test_model_root_function_assignment(mode: str, calls1: Any, calls2: Any):
     calls: list[Any] = []
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         x: str
         y: int
 
@@ -826,12 +816,11 @@ def test_model_root_function_assignment(mode: str, calls1: Any, calls2: Any):
             {
                 'type': f'function-{mode}',
                 'function': {'type': 'general', 'function': f},
-                'schema': core_schema.typed_dict_schema(
+                'schema': core_schema.model_fields_schema(
                     {
-                        'x': core_schema.typed_dict_field(core_schema.str_schema()),
-                        'y': core_schema.typed_dict_field(core_schema.int_schema()),
-                    },
-                    return_fields_set=True,
+                        'x': core_schema.model_field(core_schema.str_schema()),
+                        'y': core_schema.model_field(core_schema.int_schema()),
+                    }
                 ),
             },
         )

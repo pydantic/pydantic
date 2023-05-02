@@ -437,27 +437,35 @@ def test_from_attributes():
             'discriminator': 'foobar',
             'choices': {
                 'apple': {
-                    'type': 'typed-dict',
+                    'type': 'model-fields',
                     'fields': {
-                        'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                        'b': {'type': 'model-field', 'schema': {'type': 'int'}},
                     },
                 },
                 'banana': {
-                    'type': 'typed-dict',
+                    'type': 'model-fields',
                     'fields': {
-                        'c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'd': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'c': {'type': 'model-field', 'schema': {'type': 'str'}},
+                        'd': {'type': 'model-field', 'schema': {'type': 'int'}},
                     },
                 },
             },
         },
         {'from_attributes': True},
     )
-    assert v.validate_python({'foobar': 'apple', 'a': 'apple', 'b': '13'}) == {'a': 'apple', 'b': 13}
-    assert v.validate_python(Cls(foobar='apple', a='apple', b='13')) == {'a': 'apple', 'b': 13}
-    assert v.validate_python({'foobar': 'banana', 'c': 'banana', 'd': '31'}) == {'c': 'banana', 'd': 31}
-    assert v.validate_python(Cls(foobar='banana', c='banana', d='31')) == {'c': 'banana', 'd': 31}
+    assert v.validate_python({'foobar': 'apple', 'a': 'apple', 'b': '13'}) == (
+        {'a': 'apple', 'b': 13},
+        None,
+        {'a', 'b'},
+    )
+    assert v.validate_python(Cls(foobar='apple', a='apple', b='13')) == ({'a': 'apple', 'b': 13}, None, {'a', 'b'})
+    assert v.validate_python({'foobar': 'banana', 'c': 'banana', 'd': '31'}) == (
+        {'c': 'banana', 'd': 31},
+        None,
+        {'c', 'd'},
+    )
+    assert v.validate_python(Cls(foobar='banana', c='banana', d='31')) == ({'c': 'banana', 'd': 31}, None, {'c', 'd'})
 
 
 def test_use_ref():

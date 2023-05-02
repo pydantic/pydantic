@@ -2609,7 +2609,6 @@ class TypedDictField(TypedDict, total=False):
     validation_alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
     serialization_alias: str
     serialization_exclude: bool  # default: False
-    frozen: bool
     metadata: Any
 
 
@@ -2620,7 +2619,6 @@ def typed_dict_field(
     validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
     serialization_alias: str | None = None,
     serialization_exclude: bool | None = None,
-    frozen: bool | None = None,
     metadata: Any = None,
 ) -> TypedDictField:
     """
@@ -2638,7 +2636,6 @@ def typed_dict_field(
         validation_alias: The alias(es) to use to find the field in the validation data
         serialization_alias: The alias to use as a key when serializing
         serialization_exclude: Whether to exclude the field when serializing
-        frozen: Whether the field is frozen
         metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return dict_not_none(
@@ -2648,7 +2645,6 @@ def typed_dict_field(
         validation_alias=validation_alias,
         serialization_alias=serialization_alias,
         serialization_exclude=serialization_exclude,
-        frozen=frozen,
         metadata=metadata,
     )
 
@@ -2659,12 +2655,10 @@ class TypedDictSchema(TypedDict, total=False):
     computed_fields: List[ComputedField]
     strict: bool
     extra_validator: CoreSchema
-    return_fields_set: bool
     # all these values can be set via config, equivalent fields have `typed_dict_` prefix
     extra_behavior: ExtraBehavior
     total: bool  # default: True
     populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
-    from_attributes: bool
     ref: str
     metadata: Any
     serialization: SerSchema
@@ -2676,11 +2670,9 @@ def typed_dict_schema(
     computed_fields: list[ComputedField] | None = None,
     strict: bool | None = None,
     extra_validator: CoreSchema | None = None,
-    return_fields_set: bool | None = None,
     extra_behavior: ExtraBehavior | None = None,
     total: bool | None = None,
     populate_by_name: bool | None = None,
-    from_attributes: bool | None = None,
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
@@ -2703,13 +2695,11 @@ def typed_dict_schema(
         computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
         strict: Whether the typed dict is strict
         extra_validator: The extra validator to use for the typed dict
-        return_fields_set: Whether the typed dict should return a fields set
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         extra_behavior: The extra behavior to use for the typed dict
         total: Whether the typed dict is total
         populate_by_name: Whether the typed dict should populate by name
-        from_attributes: Whether the typed dict should be populated from attributes
         serialization: Custom serialization schema
     """
     return dict_not_none(
@@ -2718,9 +2708,123 @@ def typed_dict_schema(
         computed_fields=computed_fields,
         strict=strict,
         extra_validator=extra_validator,
-        return_fields_set=return_fields_set,
         extra_behavior=extra_behavior,
         total=total,
+        populate_by_name=populate_by_name,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
+class ModelField(TypedDict, total=False):
+    type: Required[Literal['model-field']]
+    schema: Required[CoreSchema]
+    validation_alias: Union[str, List[Union[str, int]], List[List[Union[str, int]]]]
+    serialization_alias: str
+    serialization_exclude: bool  # default: False
+    frozen: bool
+    metadata: Any
+
+
+def model_field(
+    schema: CoreSchema,
+    *,
+    validation_alias: str | list[str | int] | list[list[str | int]] | None = None,
+    serialization_alias: str | None = None,
+    serialization_exclude: bool | None = None,
+    frozen: bool | None = None,
+    metadata: Any = None,
+) -> ModelField:
+    """
+    Returns a schema for a model field, e.g.:
+
+    ```py
+    from pydantic_core import core_schema
+
+    field = core_schema.model_field(schema=core_schema.int_schema())
+    ```
+
+    Args:
+        schema: The schema to use for the field
+        validation_alias: The alias(es) to use to find the field in the validation data
+        serialization_alias: The alias to use as a key when serializing
+        serialization_exclude: Whether to exclude the field when serializing
+        frozen: Whether the field is frozen
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+    """
+    return dict_not_none(
+        type='model-field',
+        schema=schema,
+        validation_alias=validation_alias,
+        serialization_alias=serialization_alias,
+        serialization_exclude=serialization_exclude,
+        frozen=frozen,
+        metadata=metadata,
+    )
+
+
+class ModelFieldsSchema(TypedDict, total=False):
+    type: Required[Literal['model-fields']]
+    fields: Required[Dict[str, ModelField]]
+    computed_fields: List[ComputedField]
+    strict: bool
+    extra_validator: CoreSchema
+    # all these values can be set via config, equivalent fields have `typed_dict_` prefix
+    extra_behavior: ExtraBehavior
+    populate_by_name: bool  # replaces `allow_population_by_field_name` in pydantic v1
+    from_attributes: bool
+    ref: str
+    metadata: Any
+    serialization: SerSchema
+
+
+def model_fields_schema(
+    fields: Dict[str, ModelField],
+    *,
+    computed_fields: list[ComputedField] | None = None,
+    strict: bool | None = None,
+    extra_validator: CoreSchema | None = None,
+    extra_behavior: ExtraBehavior | None = None,
+    populate_by_name: bool | None = None,
+    from_attributes: bool | None = None,
+    ref: str | None = None,
+    metadata: Any = None,
+    serialization: SerSchema | None = None,
+) -> ModelFieldsSchema:
+    """
+    Returns a schema that matches a typed dict, e.g.:
+
+    ```py
+    from pydantic_core import SchemaValidator, core_schema
+
+    wrapper_schema = core_schema.model_fields_schema(
+        {'a': core_schema.model_field(core_schema.str_schema())}
+    )
+    v = SchemaValidator(wrapper_schema)
+    print(v.validate_python({'a': 'hello'}))
+    #> ({'a': 'hello'}, None, {'a'})
+    ```
+
+    Args:
+        fields: The fields to use for the typed dict
+        computed_fields: Computed fields to use when serializing the model, only applies when directly inside a model
+        strict: Whether the typed dict is strict
+        extra_validator: The extra validator to use for the typed dict
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        extra_behavior: The extra behavior to use for the typed dict
+        populate_by_name: Whether the typed dict should populate by name
+        from_attributes: Whether the typed dict should be populated from attributes
+        serialization: Custom serialization schema
+    """
+    return dict_not_none(
+        type='model-fields',
+        fields=fields,
+        computed_fields=computed_fields,
+        strict=strict,
+        extra_validator=extra_validator,
+        extra_behavior=extra_behavior,
         populate_by_name=populate_by_name,
         from_attributes=from_attributes,
         ref=ref,
@@ -2768,14 +2872,13 @@ def model_schema(
     from pydantic_core import CoreConfig, SchemaValidator, core_schema
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     schema = core_schema.model_schema(
         cls=MyModel,
         config=CoreConfig(str_max_length=5),
-        schema=core_schema.typed_dict_schema(
-            fields={'a': core_schema.typed_dict_field(core_schema.str_schema())},
-            return_fields_set=True,
+        schema=core_schema.model_fields_schema(
+            fields={'a': core_schema.model_field(core_schema.str_schema())},
         ),
     )
     v = SchemaValidator(schema)
@@ -3236,16 +3339,15 @@ def json_schema(
     ```py
     from pydantic_core import SchemaValidator, core_schema
 
-    dict_schema = core_schema.typed_dict_schema(
+    dict_schema = core_schema.model_fields_schema(
         {
-            'field_a': core_schema.typed_dict_field(core_schema.str_schema()),
-            'field_b': core_schema.typed_dict_field(core_schema.bool_schema()),
+            'field_a': core_schema.model_field(core_schema.str_schema()),
+            'field_b': core_schema.model_field(core_schema.bool_schema()),
         },
-        return_fields_set=True,
     )
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
         field_b: bool
 
@@ -3497,6 +3599,7 @@ if not MYPY:
         ChainSchema,
         LaxOrStrictSchema,
         TypedDictSchema,
+        ModelFieldsSchema,
         ModelSchema,
         DataclassArgsSchema,
         DataclassSchema,
@@ -3548,6 +3651,7 @@ CoreSchemaType = Literal[
     'chain',
     'lax-or-strict',
     'typed-dict',
+    'model-fields',
     'model',
     'dataclass-args',
     'dataclass',

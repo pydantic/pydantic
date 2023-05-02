@@ -10,29 +10,27 @@ from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_sc
 def test_model_class():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
     v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
-                'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                },
-            },
-        }
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(core_schema.int_schema()),
+                }
+            ),
+        )
     )
     assert repr(v).startswith('SchemaValidator(title="MyModel", validator=Model(\n')
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
     assert m.field_b == 12
+    assert m.__pydantic_extra__ is None
     assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
 
@@ -49,6 +47,34 @@ def test_model_class():
             'ctx': {'class_name': 'MyModel'},
         }
     ]
+
+
+def test_model_class_extra():
+    class MyModel:
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        field_a: str
+        field_b: int
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            MyModel,
+            core_schema.model_fields_schema(
+                {
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(core_schema.int_schema()),
+                },
+                extra_behavior='allow',
+            ),
+        )
+    )
+    m = v.validate_python({'field_a': 'test', 'field_b': 12, 'field_c': 'extra'})
+    assert isinstance(m, MyModel)
+    assert m.field_a == 'test'
+    assert m.field_b == 12
+    assert m.__pydantic_extra__ == {'field_c': 'extra'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'field_c'}
+    assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
 
 
 def test_model_class_setattr():
@@ -72,9 +98,8 @@ def test_model_class_setattr():
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                'type': 'model-fields',
+                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
             },
         }
     )
@@ -102,10 +127,7 @@ def test_model_class_root_validator_wrap():
     schema = core_schema.model_schema(
         MyModel,
         core_schema.general_wrap_validator_function(
-            f,
-            core_schema.typed_dict_schema(
-                {'field_a': core_schema.typed_dict_field(core_schema.int_schema())}, return_fields_set=True
-            ),
+            f, core_schema.model_fields_schema({'field_a': core_schema.model_field(core_schema.int_schema())})
         ),
     )
 
@@ -139,10 +161,7 @@ def test_model_class_root_validator_before():
     schema = core_schema.model_schema(
         MyModel,
         core_schema.general_before_validator_function(
-            f,
-            core_schema.typed_dict_schema(
-                {'field_a': core_schema.typed_dict_field(core_schema.int_schema())}, return_fields_set=True
-            ),
+            f, core_schema.model_fields_schema({'field_a': core_schema.model_field(core_schema.int_schema())})
         ),
     )
 
@@ -169,18 +188,15 @@ def test_model_class_root_validator_after():
         def __init__(self, **kwargs: Any) -> None:
             self.__dict__.update(kwargs)
 
-    def f(input_value_and_fields_set: Tuple[Dict[str, Any], Set[str]], info: core_schema.ValidationInfo):
-        input_value, _ = input_value_and_fields_set
+    def f(input_value_and_fields_set: Tuple[Dict[str, Any], Set[str]]):
+        input_value, _, _ = input_value_and_fields_set
         assert input_value['field_a'] == 123
         return input_value_and_fields_set
 
     schema = core_schema.model_schema(
         MyModel,
-        core_schema.general_after_validator_function(
-            f,
-            core_schema.typed_dict_schema(
-                {'field_a': core_schema.typed_dict_field(core_schema.int_schema())}, return_fields_set=True
-            ),
+        core_schema.no_info_after_validator_function(
+            f, core_schema.model_fields_schema({'field_a': core_schema.model_field(core_schema.int_schema())})
         ),
     )
 
@@ -205,7 +221,7 @@ def test_model_class_root_validator_after():
 @pytest.mark.parametrize('mode', ['before', 'after', 'wrap'])
 def test_function_ask(mode):
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     def f(input_value, info):
         return input_value
@@ -218,9 +234,8 @@ def test_function_ask(mode):
                 'type': f'function-{mode}',
                 'function': {'type': 'general', 'function': f},
                 'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
-                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                    'type': 'model-fields',
+                    'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
                 },
             },
         }
@@ -229,27 +244,28 @@ def test_function_ask(mode):
 
 def test_function_plain_ask():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
-    def f(input_value, info):
-        return input_value, {'field_a'}
+    def f(input_value):
+        return input_value, {1: 2}, {'field_a'}
 
     v = SchemaValidator(
         {
             'type': 'model',
             'cls': MyModel,
-            'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f}},
+            'schema': {'type': 'function-plain', 'function': {'type': 'no-info', 'function': f}},
         }
     )
     m = v.validate_python({'field_a': 'test'})
     assert isinstance(m, MyModel)
     assert m.__dict__ == {'field_a': 'test'}
+    assert m.__pydantic_extra__ == {1: 2}
     assert m.__pydantic_fields_set__ == {'field_a'}
 
 
 def test_union_sub_schema():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     v = SchemaValidator(
         {
@@ -258,16 +274,8 @@ def test_union_sub_schema():
             'schema': {
                 'type': 'union',
                 'choices': [
-                    {
-                        'type': 'typed-dict',
-                        'return_fields_set': True,
-                        'fields': {'foo': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
-                    },
-                    {
-                        'type': 'typed-dict',
-                        'return_fields_set': True,
-                        'fields': {'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
-                    },
+                    {'type': 'model-fields', 'fields': {'foo': {'type': 'model-field', 'schema': {'type': 'int'}}}},
+                    {'type': 'model-fields', 'fields': {'bar': {'type': 'model-field', 'schema': {'type': 'int'}}}},
                 ],
             },
         }
@@ -295,20 +303,18 @@ def test_tagged_union_sub_schema():
                 'discriminator': 'foo',
                 'choices': {
                     'apple': {
-                        'type': 'typed-dict',
-                        'return_fields_set': True,
+                        'type': 'model-fields',
                         'fields': {
-                            'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                            'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                            'foo': {'type': 'model-field', 'schema': {'type': 'str'}},
+                            'bar': {'type': 'model-field', 'schema': {'type': 'int'}},
                         },
                     },
                     'banana': {
-                        'type': 'typed-dict',
-                        'return_fields_set': True,
+                        'type': 'model-fields',
                         'fields': {
-                            'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                            'foo': {'type': 'model-field', 'schema': {'type': 'str'}},
                             'spam': {
-                                'type': 'typed-dict-field',
+                                'type': 'model-field',
                                 'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
                             },
                         },
@@ -319,12 +325,22 @@ def test_tagged_union_sub_schema():
     )
     m = v.validate_python({'foo': 'apple', 'bar': '123'})
     assert isinstance(m, MyModel)
-    assert m.__dict__ == {'foo': 'apple', 'bar': 123, '__pydantic_fields_set__': {'foo', 'bar'}}
+    assert m.__dict__ == {
+        'foo': 'apple',
+        'bar': 123,
+        '__pydantic_fields_set__': {'foo', 'bar'},
+        '__pydantic_extra__': None,
+    }
 
     m = v.validate_python({'foo': 'banana', 'spam': [1, 2, 3]})
     assert isinstance(m, MyModel)
     # insert_assert(m.__dict__)
-    assert m.__dict__ == {'foo': 'banana', 'spam': [1, 2, 3], '__pydantic_fields_set__': {'spam', 'foo'}}
+    assert m.__dict__ == {
+        'foo': 'banana',
+        'spam': [1, 2, 3],
+        '__pydantic_fields_set__': {'spam', 'foo'},
+        '__pydantic_extra__': None,
+    }
 
 
 def test_bad_sub_schema():
@@ -338,7 +354,7 @@ def test_bad_sub_schema():
 
 def test_model_class_function_after():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     def f(input_value, info):
         input_value[0]['x'] = 'y'
@@ -352,9 +368,8 @@ def test_model_class_function_after():
                 'type': 'function-after',
                 'function': {'type': 'general', 'function': f},
                 'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
-                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                    'type': 'model-fields',
+                    'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
                 },
             },
         }
@@ -372,9 +387,8 @@ def test_model_class_not_type():
                 'type': 'model',
                 'cls': 123,
                 'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
-                    'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                    'type': 'model-fields',
+                    'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
                 },
             }
         )
@@ -382,7 +396,7 @@ def test_model_class_not_type():
 
 def test_model_class_instance_direct():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
 
         def __init__(self):
@@ -393,9 +407,8 @@ def test_model_class_instance_direct():
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                'type': 'model-fields',
+                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
             },
         }
     )
@@ -414,7 +427,7 @@ def test_model_class_instance_subclass():
     post_init_calls = []
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
 
         def __init__(self):
@@ -435,9 +448,8 @@ def test_model_class_instance_subclass():
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                'type': 'model-fields',
+                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
             },
             'post_init': 'model_post_init',
         }
@@ -462,7 +474,7 @@ def test_model_class_instance_subclass_revalidate():
     post_init_calls = []
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
 
         def __init__(self):
@@ -473,6 +485,8 @@ def test_model_class_instance_subclass_revalidate():
 
     class MySubModel(MyModel):
         field_b: str
+        __pydantic_fields_set__ = set()
+        __pydantic_extra__ = None
 
         def __init__(self):
             super().__init__()
@@ -483,9 +497,8 @@ def test_model_class_instance_subclass_revalidate():
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                'type': 'model-fields',
+                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
             },
             'post_init': 'model_post_init',
             'revalidate_instances': 'always',
@@ -494,6 +507,8 @@ def test_model_class_instance_subclass_revalidate():
 
     m2 = MySubModel()
     assert m2.field_a
+    m2.__pydantic_extra__ = {}
+    m2.__pydantic_fields_set__ = set()
     m3 = v.validate_python(m2, context='call1')
     assert m2 is not m3
     assert m3.field_a == 'init_a'
@@ -501,6 +516,7 @@ def test_model_class_instance_subclass_revalidate():
     assert post_init_calls == ['call1']
 
     m4 = MySubModel()
+    m4.__pydantic_extra__ = {}
     m4.__pydantic_fields_set__ = {'fruit_loop'}
     m5 = v.validate_python(m4, context='call2')
     assert m4 is not m5
@@ -522,11 +538,10 @@ def test_model_class_strict():
             'strict': True,
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
         }
@@ -567,7 +582,7 @@ def test_model_class_strict():
 
 def test_model_class_strict_json():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
         field_c: int
@@ -578,13 +593,12 @@ def test_model_class_strict_json():
             'strict': True,
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                     'field_c': {
-                        'type': 'typed-dict-field',
+                        'type': 'model-field',
                         'schema': {'type': 'default', 'default': 42, 'schema': {'type': 'int'}},
                     },
                 },
@@ -604,11 +618,7 @@ def test_internal_error():
         {
             'type': 'model',
             'cls': int,
-            'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
-                'fields': {'f': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
-            },
+            'schema': {'type': 'model-fields', 'fields': {'f': {'type': 'model-field', 'schema': {'type': 'int'}}}},
         }
     )
     with pytest.raises(AttributeError, match=re.escape("'int' object has no attribute '__dict__'")):
@@ -617,11 +627,12 @@ def test_internal_error():
 
 def test_revalidate_always():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
         def __init__(self, a, b, fields_set):
             self.field_a = a
             self.field_b = b
+            self.__pydantic_extra__ = {}
             if fields_set is not None:
                 self.__pydantic_fields_set__ = fields_set
 
@@ -631,12 +642,11 @@ def test_revalidate_always():
             'cls': MyModel,
             'revalidate_instances': 'always',
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'from_attributes': True,
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
         }
@@ -668,16 +678,13 @@ def test_revalidate_always():
     ]
 
     m5 = MyModel('x', 5, None)
-    m6 = v.validate_python(m5)
-    assert isinstance(m6, MyModel)
-    assert m6 is not m5
-    assert m6.__dict__ == {'field_a': 'x', 'field_b': 5}
-    assert m6.__pydantic_fields_set__ == {'field_a', 'field_b'}
+    with pytest.raises(AttributeError, match='__pydantic_fields_set__'):
+        v.validate_python(m5)
 
 
 def test_revalidate_subclass_instances():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
         def __init__(self):
             self.field_a = 'init_a'
@@ -694,12 +701,11 @@ def test_revalidate_subclass_instances():
             'cls': MyModel,
             'revalidate_instances': 'subclass-instances',
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'from_attributes': True,
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
         }
@@ -710,6 +716,8 @@ def test_revalidate_subclass_instances():
     assert m2 is m1
 
     m3 = MySubModel()
+    m3.__pydantic_extra__ = {}
+    m3.__pydantic_fields_set__ = set()
     assert hasattr(m3, 'field_c')
     m4 = v.validate_python(m3)
     assert m4 is not m3
@@ -717,6 +725,8 @@ def test_revalidate_subclass_instances():
     assert not hasattr(m4, 'field_c')
 
     m5 = MySubModel()
+    m5.__pydantic_extra__ = {}
+    m5.__pydantic_fields_set__ = set()
     m5.field_b = 'not an int'
     with pytest.raises(ValidationError, match="type=int_parsing, input_value='not an int', input_type=str"):
         v.validate_python(m5)
@@ -724,7 +734,7 @@ def test_revalidate_subclass_instances():
 
 def test_revalidate_extra():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
@@ -734,13 +744,12 @@ def test_revalidate_extra():
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'from_attributes': True,
                 'extra_behavior': 'allow',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
             'config': {'revalidate_instances': 'always'},
@@ -749,14 +758,18 @@ def test_revalidate_extra():
 
     m = v.validate_python({'field_a': 'test', 'field_b': 12, 'more': (1, 2, 3)})
     assert isinstance(m, MyModel)
-    assert m.__dict__ == {'field_a': 'test', 'field_b': 12, 'more': (1, 2, 3)}
+    assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
+    assert m.__pydantic_extra__ == {'more': (1, 2, 3)}
     assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'more'}
 
-    m2 = MyModel(field_a='x', field_b=42, another=42.5)
+    m2 = MyModel(field_a='x', field_b=42)
+    m2.__pydantic_extra__ = {'another': 42.5}
+    m2.__pydantic_fields_set__ = {'field_a', 'field_b', 'another'}
     m3 = v.validate_python(m2)
     assert isinstance(m3, MyModel)
     assert m3 is not m2
-    assert m3.__dict__ == {'field_a': 'x', 'field_b': 42, 'another': 42.5}
+    assert m3.__dict__ == {'field_a': 'x', 'field_b': 42}
+    assert m3.__pydantic_extra__ == {'another': 42.5}
     assert m3.__pydantic_fields_set__ == {'field_a', 'field_b', 'another'}
 
 
@@ -764,7 +777,7 @@ def test_post_init():
     call_count = 0
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
@@ -784,11 +797,10 @@ def test_post_init():
             'cls': MyModel,
             'post_init': 'call_me_maybe',
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
         }
@@ -802,7 +814,7 @@ def test_revalidate_post_init():
     call_count = 0
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
         def call_me_maybe(self, context):
             nonlocal call_count
@@ -815,12 +827,11 @@ def test_revalidate_post_init():
             'cls': MyModel,
             'post_init': 'call_me_maybe',
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'from_attributes': True,
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
             'config': {'revalidate_instances': 'always'},
@@ -837,6 +848,7 @@ def test_revalidate_post_init():
     m2 = MyModel()
     m2.field_a = 'x'
     m2.field_b = 42
+    m2.__pydantic_extra__ = {}
     m2.__pydantic_fields_set__ = {'field_a'}
 
     m3 = v.validate_python(m2)
@@ -849,7 +861,7 @@ def test_revalidate_post_init():
 
 def test_post_init_validation_error():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
 
         def call_me_maybe(self, context, **kwargs):
@@ -862,9 +874,8 @@ def test_post_init_validation_error():
             'cls': MyModel,
             'post_init': 'call_me_maybe',
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                'type': 'model-fields',
+                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
             },
         }
     )
@@ -887,7 +898,7 @@ def test_post_init_validation_error():
 
 def test_post_init_internal_error():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
 
         def wrong_signature(self):
@@ -899,9 +910,8 @@ def test_post_init_internal_error():
             'cls': MyModel,
             'post_init': 'wrong_signature',
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
-                'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+                'type': 'model-fields',
+                'fields': {'field_a': {'type': 'model-field', 'schema': {'type': 'str'}}},
             },
         }
     )
@@ -911,7 +921,7 @@ def test_post_init_internal_error():
 
 def test_post_init_mutate():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
@@ -925,11 +935,10 @@ def test_post_init_mutate():
             'cls': MyModel,
             'post_init': 'call_me_maybe',
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
         }
@@ -945,7 +954,7 @@ def test_post_init_mutate():
 def test_validate_assignment():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
 
@@ -954,11 +963,10 @@ def test_validate_assignment():
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
         }
@@ -979,7 +987,7 @@ def test_validate_assignment():
 def test_validate_assignment_function():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
         field_a: str
         field_b: int
         field_c: int
@@ -993,15 +1001,14 @@ def test_validate_assignment_function():
     v = SchemaValidator(
         core_schema.model_schema(
             MyModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'field_a': core_schema.typed_dict_field(core_schema.str_schema()),
-                    'field_b': core_schema.typed_dict_field(
+                    'field_a': core_schema.model_field(core_schema.str_schema()),
+                    'field_b': core_schema.model_field(
                         core_schema.field_after_validator_function(func, core_schema.int_schema())
                     ),
-                    'field_c': core_schema.typed_dict_field(core_schema.int_schema()),
-                },
-                return_fields_set=True,
+                    'field_c': core_schema.model_field(core_schema.int_schema()),
+                }
             ),
         )
     )
@@ -1031,11 +1038,10 @@ def test_validate_assignment_no_fields_set():
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
         }
@@ -1059,14 +1065,12 @@ def test_validate_assignment_no_fields_set():
 
 def test_frozen():
     class MyModel:
-        __slots__ = {'__dict__', '__pydantic_fields_set__'}
+        __slots__ = {'__dict__', '__pydantic_extra__', '__pydantic_fields_set__'}
 
     v = SchemaValidator(
         core_schema.model_schema(
             MyModel,
-            core_schema.typed_dict_schema(
-                {'f': core_schema.typed_dict_field(core_schema.str_schema())}, return_fields_set=True
-            ),
+            core_schema.model_fields_schema({'f': core_schema.model_field(core_schema.str_schema())}),
             frozen=True,
         )
     )
@@ -1088,8 +1092,8 @@ def test_frozen():
     [
         (
             core_schema.general_after_validator_function,
-            (({'a': 1, 'b': 2}, {'b'}), 'ValidationInfo(config=None, context=None)'),
-            (({'a': 10, 'b': 2}, {'a'}), 'ValidationInfo(config=None, context=None)'),
+            (({'a': 1, 'b': 2}, None, {'b'}), 'ValidationInfo(config=None, context=None)'),
+            (({'a': 10, 'b': 2}, None, {'a'}), 'ValidationInfo(config=None, context=None)'),
         ),
         (
             core_schema.general_before_validator_function,
@@ -1117,7 +1121,7 @@ def test_validate_assignment_model_validator_function(function_schema: Any, call
     """
 
     class Model:
-        __slots__ = ('__dict__', '__pydantic_fields_set__')
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     calls: List[Any] = []
 
@@ -1137,14 +1141,13 @@ def test_validate_assignment_model_validator_function(function_schema: Any, call
             Model,
             function_schema(
                 f,
-                core_schema.typed_dict_schema(
+                core_schema.model_fields_schema(
                     {
-                        'a': core_schema.typed_dict_field(
+                        'a': core_schema.model_field(
                             core_schema.with_default_schema(core_schema.int_schema(), default=1)
                         ),
-                        'b': core_schema.typed_dict_field(core_schema.int_schema()),
-                    },
-                    return_fields_set=True,
+                        'b': core_schema.model_field(core_schema.int_schema()),
+                    }
                 ),
             ),
         )

@@ -1,12 +1,9 @@
 import math
 import re
-import sys
-from dataclasses import dataclass
-from datetime import datetime
-from typing import Any, Dict, List, Mapping, Union
+from typing import Any, Dict, Mapping, Union
 
 import pytest
-from dirty_equals import FunctionCheck, HasRepr, IsStr
+from dirty_equals import FunctionCheck
 
 from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
 
@@ -79,7 +76,6 @@ def test_with_default():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'fields': {
                 'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'field_b': {
@@ -90,11 +86,8 @@ def test_with_default():
         }
     )
 
-    assert v.validate_python({'field_a': b'abc'}) == ({'field_a': 'abc', 'field_b': 666}, {'field_a'})
-    assert v.validate_python({'field_a': b'abc', 'field_b': 1}) == (
-        {'field_a': 'abc', 'field_b': 1},
-        {'field_b', 'field_a'},
-    )
+    assert v.validate_python({'field_a': b'abc'}) == {'field_a': 'abc', 'field_b': 666}
+    assert v.validate_python({'field_a': b'abc', 'field_b': 1}) == {'field_a': 'abc', 'field_b': 1}
 
 
 def test_missing_error():
@@ -162,7 +155,6 @@ def test_ignore_extra():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'fields': {
                 'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
@@ -170,17 +162,13 @@ def test_ignore_extra():
         }
     )
 
-    assert v.validate_python({'field_a': b'123', 'field_b': 1, 'field_c': 123}) == (
-        {'field_a': '123', 'field_b': 1},
-        {'field_b', 'field_a'},
-    )
+    assert v.validate_python({'field_a': b'123', 'field_b': 1, 'field_c': 123}) == {'field_a': '123', 'field_b': 1}
 
 
 def test_forbid_extra():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
             'extra_behavior': 'forbid',
         }
@@ -215,180 +203,6 @@ def test_str_config():
 
     with pytest.raises(ValidationError, match='String should have at most 5 characters'):
         v.validate_python({'field_a': 'test long'})
-
-
-def test_validate_assignment():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-        }
-    )
-
-    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
-
-    data = {'field_a': 'test'}
-    assert v.validate_assignment(data, 'field_a', b'abc') == ({'field_a': 'abc'}, {'field_a'})
-    assert data == {'field_a': 'abc'}
-
-
-def test_validate_assignment_strict_field():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str', 'strict': True}}},
-        }
-    )
-
-    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment({'field_a': 'test'}, 'field_a', b'abc')
-    assert exc_info.value.errors() == [
-        {'input': b'abc', 'type': 'string_type', 'loc': ('field_a',), 'msg': 'Input should be a valid string'}
-    ]
-
-
-def test_validate_assignment_functions():
-    calls: list[Any] = []
-
-    def func_a(input_value, info):
-        calls.append(('func_a', input_value))
-        return input_value * 2
-
-    def func_b(input_value, info):
-        calls.append(('func_b', input_value))
-        return input_value / 2
-
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {
-                'field_a': {
-                    'type': 'typed-dict-field',
-                    'schema': {
-                        'type': 'function-after',
-                        'function': {'type': 'general', 'function': func_a},
-                        'schema': {'type': 'str'},
-                    },
-                },
-                'field_b': {
-                    'type': 'typed-dict-field',
-                    'schema': {
-                        'type': 'function-after',
-                        'function': {'type': 'general', 'function': func_b},
-                        'schema': {'type': 'int'},
-                    },
-                },
-            },
-        }
-    )
-
-    assert v.validate_python({'field_a': 'test', 'field_b': 12.0}) == (
-        {'field_a': 'testtest', 'field_b': 6},
-        {'field_a', 'field_b'},
-    )
-
-    assert calls == [('func_a', 'test'), ('func_b', 12)]
-    calls.clear()
-
-    assert v.validate_assignment({'field_a': 'testtest', 'field_b': 6}, 'field_a', 'new-val') == (
-        {'field_a': 'new-valnew-val', 'field_b': 6},
-        {'field_a'},
-    )
-    assert calls == [('func_a', 'new-val')]
-
-
-def test_validate_assignment_ignore_extra():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-        }
-    )
-
-    assert v.validate_python({'field_a': 'test'}) == ({'field_a': 'test'}, {'field_a'})
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment({'field_a': 'test'}, 'other_field', 456)
-
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
-        {
-            'type': 'no_such_attribute',
-            'loc': ('other_field',),
-            'msg': "Object has no attribute 'other_field'",
-            'input': 456,
-            'ctx': {'attribute': 'other_field'},
-        }
-    ]
-
-
-def test_validate_assignment_allow_extra():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-            'extra_behavior': 'allow',
-        }
-    )
-
-    assert v.validate_python({'field_a': 'test'}) == {'field_a': 'test'}
-
-    assert v.validate_assignment({'field_a': 'test'}, 'other_field', 456) == {'field_a': 'test', 'other_field': 456}
-
-
-def test_validate_assignment_allow_extra_validate():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-            'extra_validator': {'type': 'int'},
-            'extra_behavior': 'allow',
-        }
-    )
-
-    assert v.validate_assignment({'field_a': 'test'}, 'other_field', '456') == {'field_a': 'test', 'other_field': 456}
-
-    with pytest.raises(ValidationError) as exc_info:
-        assert v.validate_assignment({'field_a': 'test'}, 'other_field', 'xyz')
-    assert exc_info.value.errors() == [
-        {
-            'type': 'int_parsing',
-            'loc': ('other_field',),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'xyz',
-        }
-    ]
-
-
-def test_validate_assignment_with_strict():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'x': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                'y': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-            },
-        }
-    )
-
-    r = v.validate_python({'x': 'a', 'y': '123'})
-    assert r == {'x': 'a', 'y': 123}
-
-    v.validate_assignment(r, 'y', '124')
-    assert r == {'x': 'a', 'y': 124}
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment(r, 'y', '124', strict=True)
-
-    assert exc_info.value.errors() == [
-        {'type': 'int_type', 'loc': ('y',), 'msg': 'Input should be a valid integer', 'input': '124'}
-    ]
 
 
 def test_json_error():
@@ -444,7 +258,6 @@ def test_fields_required_by_default_with_optional():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'fields': {
                 'x': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'y': {'type': 'typed-dict-field', 'schema': {'type': 'str'}, 'required': False},
@@ -452,15 +265,14 @@ def test_fields_required_by_default_with_optional():
         }
     )
 
-    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
-    assert v.validate_python({'x': 'pika'}) == ({'x': 'pika'}, {'x'})
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == {'x': 'pika', 'y': 'chu'}
+    assert v.validate_python({'x': 'pika'}) == {'x': 'pika'}
 
 
 def test_fields_required_by_default_with_default():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'fields': {
                 'x': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'y': {
@@ -471,8 +283,8 @@ def test_fields_required_by_default_with_default():
         }
     )
 
-    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
-    assert v.validate_python({'x': 'pika'}) == ({'x': 'pika', 'y': 'bulbi'}, {'x'})
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == {'x': 'pika', 'y': 'chu'}
+    assert v.validate_python({'x': 'pika'}) == {'x': 'pika', 'y': 'bulbi'}
 
 
 def test_all_optional_fields():
@@ -481,7 +293,6 @@ def test_all_optional_fields():
         {
             'type': 'typed-dict',
             'total': False,
-            'return_fields_set': True,
             'fields': {
                 'x': {'type': 'typed-dict-field', 'schema': {'type': 'str', 'strict': True}},
                 'y': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
@@ -489,9 +300,9 @@ def test_all_optional_fields():
         }
     )
 
-    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
-    assert v.validate_python({'x': 'pika'}) == ({'x': 'pika'}, {'x'})
-    assert v.validate_python({'y': 'chu'}) == ({'y': 'chu'}, {'y'})
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == {'x': 'pika', 'y': 'chu'}
+    assert v.validate_python({'x': 'pika'}) == {'x': 'pika'}
+    assert v.validate_python({'y': 'chu'}) == {'y': 'chu'}
 
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'x': 123})
@@ -506,7 +317,6 @@ def test_all_optional_fields_with_required_fields():
         {
             'type': 'typed-dict',
             'total': False,
-            'return_fields_set': True,
             'fields': {
                 'x': {'type': 'typed-dict-field', 'schema': {'type': 'str', 'strict': True}, 'required': True},
                 'y': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
@@ -514,8 +324,8 @@ def test_all_optional_fields_with_required_fields():
         }
     )
 
-    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == ({'x': 'pika', 'y': 'chu'}, {'x', 'y'})
-    assert v.validate_python({'x': 'pika'}) == ({'x': 'pika'}, {'x'})
+    assert v.validate_python({'x': 'pika', 'y': 'chu'}) == {'x': 'pika', 'y': 'chu'}
+    assert v.validate_python({'x': 'pika'}) == {'x': 'pika'}
 
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'y': 'chu'}) == ({'y': 'chu'}, {'y'})
@@ -587,16 +397,15 @@ def test_alias_allow_pop(py_and_json: PyAndJson):
     v = py_and_json(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'populate_by_name': True,
             'fields': {
                 'field_a': {'validation_alias': 'FieldA', 'type': 'typed-dict-field', 'schema': {'type': 'int'}}
             },
         }
     )
-    assert v.validate_test({'FieldA': '123'}) == ({'field_a': 123}, {'field_a'})
-    assert v.validate_test({'field_a': '123'}) == ({'field_a': 123}, {'field_a'})
-    assert v.validate_test({'FieldA': '1', 'field_a': '2'}) == ({'field_a': 1}, {'field_a'})
+    assert v.validate_test({'FieldA': '123'}) == {'field_a': 123}
+    assert v.validate_test({'field_a': '123'}) == {'field_a': 123}
+    assert v.validate_test({'FieldA': '1', 'field_a': '2'}) == {'field_a': 1}
     with pytest.raises(ValidationError, match=r'FieldA\n +Field required \[type=missing,'):
         assert v.validate_test({'foobar': '123'})
 
@@ -632,11 +441,11 @@ def test_alias_path(py_and_json: PyAndJson, input_value, expected):
 @pytest.mark.parametrize(
     'input_value,expected',
     [
-        ({'foo': {'bar': {'bat': '123'}}}, ({'field_a': 123}, {'field_a'})),
-        ({'foo': [1, 2, 3, 4]}, ({'field_a': 4}, {'field_a'})),
-        ({'foo': (1, 2, 3, 4)}, ({'field_a': 4}, {'field_a'})),
-        ({'spam': 5}, ({'field_a': 5}, {'field_a'})),
-        ({'spam': 1, 'foo': {'bar': {'bat': 2}}}, ({'field_a': 2}, {'field_a'})),
+        ({'foo': {'bar': {'bat': '123'}}}, {'field_a': 123}),
+        ({'foo': [1, 2, 3, 4]}, {'field_a': 4}),
+        ({'foo': (1, 2, 3, 4)}, {'field_a': 4}),
+        ({'spam': 5}, {'field_a': 5}),
+        ({'spam': 1, 'foo': {'bar': {'bat': 2}}}, {'field_a': 2}),
         ({'foo': {'x': 2}}, Err(r'field_a\n +Field required \[type=missing,')),
         ({'x': '123'}, Err(r'field_a\n +Field required \[type=missing,')),
         ({'x': {2: 33}}, Err(r'field_a\n +Field required \[type=missing,')),
@@ -649,7 +458,6 @@ def test_aliases_path_multiple(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'fields': {
                 'field_a': {
                     'validation_alias': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']],
@@ -912,8 +720,8 @@ def test_alias_error_loc_field_names(py_and_json: PyAndJson):
 
 
 def test_empty_model():
-    v = SchemaValidator({'type': 'typed-dict', 'fields': {}, 'return_fields_set': True})
-    assert v.validate_python({}) == ({}, set())
+    v = SchemaValidator({'type': 'typed-dict', 'fields': {}})
+    assert v.validate_python({}) == {}
     with pytest.raises(ValidationError, match=re.escape('Input should be a valid dictionary [type=dict_type,')):
         v.validate_python('x')
 
@@ -922,21 +730,18 @@ def test_model_deep():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'fields': {
                 'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'field_b': {
                     'type': 'typed-dict-field',
                     'schema': {
                         'type': 'typed-dict',
-                        'return_fields_set': True,
                         'fields': {
                             'field_c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                             'field_d': {
                                 'type': 'typed-dict-field',
                                 'schema': {
                                     'type': 'typed-dict',
-                                    'return_fields_set': True,
                                     'fields': {
                                         'field_e': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                                         'field_f': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
@@ -949,17 +754,8 @@ def test_model_deep():
             },
         }
     )
-    output, fields_set = v.validate_python(
-        {'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 4}}}
-    )
-    assert output == {
-        'field_a': '1',
-        'field_b': (
-            {'field_c': '2', 'field_d': ({'field_e': '4', 'field_f': 4}, {'field_f', 'field_e'})},
-            {'field_d', 'field_c'},
-        ),
-    }
-    assert fields_set == {'field_a', 'field_b'}
+    output = v.validate_python({'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 4}}})
+    assert output == {'field_a': '1', 'field_b': ({'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 4}})}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 'xx'}}})
 
@@ -969,426 +765,6 @@ def test_model_deep():
             'loc': ('field_b', 'field_d', 'field_f'),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'xx',
-        }
-    ]
-
-
-class ClassWithAttributes:
-    def __init__(self):
-        self.a = 1
-        self.b = 2
-
-    @property
-    def c(self):
-        return 'ham'
-
-
-@dataclass
-class MyDataclass:
-    a: int = 1
-    b: int = 2
-    c: str = 'ham'
-
-
-@pytest.mark.parametrize(
-    'input_value,expected',
-    [
-        (ClassWithAttributes(), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
-        (MyDataclass(), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
-        (Cls(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
-        (dict(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
-        (Map(a=1, b=2, c='ham'), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
-        ((Cls(a=1, b=2), dict(c='ham')), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
-        ((Cls(a=1, b=2), dict(c='bacon')), ({'a': 1, 'b': 2, 'c': 'bacon'}, {'a', 'b', 'c'})),
-        ((Cls(a=1, b=2, c='ham'), dict(c='bacon')), ({'a': 1, 'b': 2, 'c': 'bacon'}, {'a', 'b', 'c'})),
-        ((Cls(a=1, b=2, c='ham'), dict(d='bacon')), ({'a': 1, 'b': 2, 'c': 'ham'}, {'a', 'b', 'c'})),
-        # using type gives `__module__ == 'builtins'`
-        (type('Testing', (), {}), Err('[type=dict_attributes_type,')),
-        (
-            '123',
-            Err('Input should be a valid dictionary or instance to extract fields from [type=dict_attributes_type,'),
-        ),
-        ([(1, 2)], Err('type=dict_attributes_type,')),
-        (((1, 2),), Err('type=dict_attributes_type,')),
-    ],
-    ids=repr,
-)
-def test_from_attributes(input_value, expected):
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {
-                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                'c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-            },
-            'from_attributes': True,
-        }
-    )
-    if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            val = v.validate_python(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
-    else:
-        output = v.validate_python(input_value)
-        assert output == expected
-
-
-def test_from_attributes_type_error():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                'c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-            },
-            'from_attributes': True,
-        }
-    )
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python('123')
-
-    assert exc_info.value.errors() == [
-        {
-            'type': 'dict_attributes_type',
-            'loc': (),
-            'msg': 'Input should be a valid dictionary or instance to extract fields from',
-            'input': '123',
-        }
-    ]
-
-
-def test_from_attributes_by_name():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}, 'validation_alias': 'a_alias'}},
-            'from_attributes': True,
-            'populate_by_name': True,
-        }
-    )
-    assert v.validate_python(Cls(a_alias=1)) == ({'a': 1}, {'a'})
-    assert v.validate_python(Cls(a=1)) == ({'a': 1}, {'a'})
-
-
-def test_from_attributes_missing():
-    class Foobar:
-        def __init__(self):
-            self.a = 1
-            self.b = 2
-
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                'c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-            },
-            'from_attributes': True,
-        }
-    )
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(Foobar())
-
-    assert exc_info.value.errors() == [
-        {
-            'type': 'missing',
-            'loc': ('c',),
-            'msg': 'Field required',
-            'input': HasRepr(IsStr(regex='.+Foobar object at.+')),
-        }
-    ]
-
-
-def test_from_attributes_error():
-    class Foobar:
-        def __init__(self):
-            self.a = 1
-
-        @property
-        def b(self):
-            raise RuntimeError('intentional error')
-
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-            },
-            'from_attributes': True,
-        }
-    )
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(Foobar())
-
-    assert exc_info.value.errors() == [
-        {
-            'type': 'get_attribute_error',
-            'loc': ('b',),
-            'msg': 'Error extracting attribute: RuntimeError: intentional error',
-            'input': HasRepr(IsStr(regex='.+Foobar object at.+')),
-            'ctx': {'error': 'RuntimeError: intentional error'},
-        }
-    ]
-
-
-def test_from_attributes_extra():
-    def another_function(x):
-        return x
-
-    class Foobar:
-        def __init__(self):
-            self.a = 1
-            self.b = 2
-            self._private_attribute = 4
-
-        @property
-        def c(self):
-            return 'ham'
-
-        @property
-        def _private_property(self):
-            return 'wrong'
-
-        @property
-        def property_error(self):
-            raise RuntimeError('xxx')
-
-        def bound_method(self):
-            return f'wrong {self.a}'
-
-        @staticmethod
-        def static_method():
-            return 'wrong'
-
-        # this is omitted along with the static method by the !PyFunction::is_type_of(attr) check in typed_dict.rs
-        function_attribute = another_function
-
-        @classmethod
-        def class_method(cls):
-            return 'wrong'
-
-    @dataclass
-    class MyDataclass:
-        a: int = 1
-        b: int = 2
-        c: str = 'ham'
-        _d: int = 4
-
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-            'extra_behavior': 'allow',
-        }
-    )
-
-    assert v.validate_python(Foobar()) == ({'a': 1}, {'a'})
-    assert v.validate_python(MyDataclass()) == ({'a': 1}, {'a'})
-    assert v.validate_python(Cls(a=1, b=2, c='ham')) == ({'a': 1}, {'a'})
-    assert v.validate_python(Cls(a=1, b=datetime(2000, 1, 1))) == ({'a': 1}, {'a'})
-    assert v.validate_python(Cls(a=1, b=datetime.now, c=lambda: 42)) == ({'a': 1}, {'a'})
-
-
-def test_from_attributes_extra_ignore_no_attributes_accessed() -> None:
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-            'extra_behavior': 'ignore',
-        }
-    )
-
-    accessed: List[str] = []
-
-    class Source:
-        a = 1
-        b = 2
-
-        def __getattribute__(self, __name: str) -> Any:
-            accessed.append(__name)
-            return super().__getattribute__(__name)
-
-    assert v.validate_python(Source()) == {'a': 1}
-    assert 'a' in accessed and 'b' not in accessed
-
-
-def test_from_attributes_extra_forbid() -> None:
-    class Source:
-        a = 1
-        b = 2
-
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-            'extra_behavior': 'forbid',
-        }
-    )
-
-    assert v.validate_python(Source()) == ({'a': 1}, {'a'})
-
-
-def foobar():
-    pass
-
-
-@pytest.mark.parametrize(
-    'input_value,expected',
-    [
-        (Cls(a=1), {'a': 1}),
-        (Cls(a=datetime.now), {'a': datetime.now}),
-        (Cls(a=lambda: 42), {'a': HasRepr(IsStr(regex='.+<lambda>.+'))}),
-        (Cls(a=sys.path), {'a': sys.path}),
-        (Cls(a=foobar), {'a': foobar}),
-    ],
-    ids=repr,
-)
-def test_from_attributes_function(input_value, expected):
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {'a': {'type': 'typed-dict-field', 'schema': {'type': 'any'}}},
-            'from_attributes': True,
-        }
-    )
-
-    assert v.validate_python(input_value) == expected
-
-
-def test_from_attributes_error_error():
-    class BadError(Exception):
-        def __str__(self):
-            raise RuntimeError('intentional error inside error')
-
-    class Foobar:
-        @property
-        def x(self):
-            raise BadError('intentional error')
-
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {'x': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}},
-            'from_attributes': True,
-        }
-    )
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(Foobar())
-
-    assert exc_info.value.errors() == [
-        {
-            'type': 'get_attribute_error',
-            'loc': ('x',),
-            'msg': IsStr(regex=r'Error extracting attribute: \S+\.<locals>\.BadError: <exception str\(\) failed>'),
-            'input': HasRepr(IsStr(regex='.+Foobar object at.+')),
-            'ctx': {'error': IsStr(regex=r'\S+\.<locals>\.BadError: <exception str\(\) failed>')},
-        }
-    ]
-
-    class UnInitError:
-        @property
-        def x(self):
-            raise RuntimeError
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(UnInitError())
-
-    assert exc_info.value.errors() == [
-        {
-            'type': 'get_attribute_error',
-            'loc': ('x',),
-            'msg': 'Error extracting attribute: RuntimeError',
-            'input': HasRepr(IsStr(regex='.+UnInitError object at.+')),
-            'ctx': {'error': 'RuntimeError'},
-        }
-    ]
-
-
-@pytest.mark.parametrize(
-    'input_value,expected',
-    [
-        ({'foo': {'bar': {'bat': '123'}}}, {'my_field': 123}),
-        (Cls(foo=Cls(bar=Cls(bat='123'))), {'my_field': 123}),
-        (Cls(foo={'bar': {'bat': '123'}}), {'my_field': 123}),
-        (Cls(foo=[1, 2, 3, 4]), {'my_field': 4}),
-        (Cls(foo=(1, 2, 3, 4)), {'my_field': 4}),
-        (Cls(spam=5), {'my_field': 5}),
-        (Cls(spam=1, foo=Cls(bar=Cls(bat=2))), {'my_field': 2}),
-        (Cls(x='123'), Err(r'my_field\n +Field required \[type=missing,')),
-        (Cls(x={2: 33}), Err(r'my_field\n +Field required \[type=missing,')),
-        (Cls(foo='01234'), Err(r'my_field\n +Field required \[type=missing,')),
-        (Cls(foo=[1]), Err(r'my_field\n +Field required \[type=missing,')),
-        (Cls, Err(r'Input should be a valid dictionary')),
-    ],
-    ids=repr,
-)
-def test_from_attributes_path(input_value, expected):
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'my_field': {
-                    'validation_alias': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']],
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'int'},
-                }
-            },
-            'from_attributes': True,
-        },
-        {'loc_by_alias': False},
-    )
-    if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=expected.message):
-            val = v.validate_python(input_value)
-            print(f'UNEXPECTED OUTPUT: {val!r}')
-    else:
-        output = v.validate_python(input_value)
-        assert output == expected
-
-
-def test_from_attributes_path_error():
-    class PropertyError:
-        @property
-        def foo(self):
-            raise RuntimeError('intentional error')
-
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'my_field': {
-                    'validation_alias': [['foo', 'bar', 'bat'], ['foo', 3], ['spam']],
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'int'},
-                }
-            },
-            'from_attributes': True,
-        }
-    )
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(PropertyError())
-
-    assert exc_info.value.errors() == [
-        {
-            'type': 'get_attribute_error',
-            'loc': ('my_field',),
-            'msg': 'Error extracting attribute: RuntimeError: intentional error',
-            'input': HasRepr(IsStr(regex='.+PropertyError object at.+')),
-            'ctx': {'error': 'RuntimeError: intentional error'},
         }
     ]
 
@@ -1425,33 +801,11 @@ def test_alias_extra(py_and_json: PyAndJson):
     ]
 
 
-def test_alias_extra_from_attributes():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'extra_behavior': 'allow',
-            'from_attributes': True,
-            'fields': {
-                'field_a': {
-                    'validation_alias': [['FieldA'], ['foo', 2]],
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'int'},
-                }
-            },
-        }
-    )
-    assert v.validate_python({'FieldA': 1}) == {'field_a': 1}
-    assert v.validate_python(Cls(FieldA=1)) == {'field_a': 1}
-    assert v.validate_python(Cls(foo=[1, 2, 3])) == {'field_a': 3}
-    assert v.validate_python({'foo': [1, 2, 3]}) == {'field_a': 3}
-
-
 def test_alias_extra_by_name(py_and_json: PyAndJson):
     v = py_and_json(
         {
             'type': 'typed-dict',
             'extra_behavior': 'allow',
-            'from_attributes': True,
             'populate_by_name': True,
             'fields': {
                 'field_a': {'validation_alias': 'FieldA', 'type': 'typed-dict-field', 'schema': {'type': 'int'}}
@@ -1460,8 +814,6 @@ def test_alias_extra_by_name(py_and_json: PyAndJson):
     )
     assert v.validate_test({'FieldA': 1}) == {'field_a': 1}
     assert v.validate_test({'field_a': 1}) == {'field_a': 1}
-    assert v.validate_python(Cls(FieldA=1)) == {'field_a': 1}
-    assert v.validate_python(Cls(field_a=1)) == {'field_a': 1}
 
 
 def test_alias_extra_forbid(py_and_json: PyAndJson):
@@ -1716,32 +1068,6 @@ class TestOnError:
         assert v.validate_test({'x': {'a': 'b'}}) == {'x': "{'a': 'b'}"}
 
 
-def test_frozen_field():
-    v = SchemaValidator(
-        {
-            'type': 'typed-dict',
-            'fields': {
-                'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                'is_developer': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'default', 'schema': {'type': 'bool'}, 'default': True},
-                    'frozen': True,
-                },
-            },
-        }
-    )
-    r1 = v.validate_python({'name': 'Samuel', 'age': '36'})
-    assert r1 == {'name': 'Samuel', 'age': 36, 'is_developer': True}
-    v.validate_assignment(r1, 'age', '35')
-    assert r1 == {'name': 'Samuel', 'age': 35, 'is_developer': True}
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment(r1, 'is_developer', False)
-    assert exc_info.value.errors() == [
-        {'type': 'frozen_field', 'loc': ('is_developer',), 'msg': 'Field is frozen', 'input': False}
-    ]
-
-
 @pytest.mark.parametrize(
     'config,schema_extra_behavior_kw',
     [
@@ -1775,12 +1101,6 @@ def test_extra_behavior_allow(
     m: Dict[str, Any] = v.validate_python({'f': 'x', 'extra_field': '123'})
     assert m == {'f': 'x', 'extra_field': expected_extra_value}
 
-    v.validate_assignment(m, 'f', 'y')
-    assert m['f'] == 'y'
-
-    v.validate_assignment(m, 'not_f', '123')
-    assert m['not_f'] == expected_extra_value
-
 
 @pytest.mark.parametrize(
     'config,schema_extra_behavior_kw',
@@ -1809,22 +1129,6 @@ def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], sche
         {'type': 'extra_forbidden', 'loc': ('extra_field',), 'msg': 'Extra inputs are not permitted', 'input': 123}
     ]
 
-    v.validate_assignment(m, 'f', 'y')
-    assert m['f'] == 'y'
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment(m, 'not_f', 'xyz')
-    assert exc_info.value.errors() == [
-        {
-            'type': 'no_such_attribute',
-            'loc': ('not_f',),
-            'msg': "Object has no attribute 'not_f'",
-            'input': 'xyz',
-            'ctx': {'attribute': 'not_f'},
-        }
-    ]
-    assert 'not_f' not in m
-
 
 @pytest.mark.parametrize(
     'config,schema_extra_behavior_kw',
@@ -1848,23 +1152,3 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
 
     m: Dict[str, Any] = v.validate_python({'f': 'x', 'extra_field': 123})
     assert m == {'f': 'x'}
-
-    v.validate_assignment(m, 'f', 'y')
-    assert m['f'] == 'y'
-
-    # even if we ignore extra attributes during initialization / validation
-    # we never ignore them during assignment
-    # instead if extra='ignore' was set (or nothing was set since that's the default)
-    # we treat it as if it were extra='forbid'
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_assignment(m, 'not_f', 'xyz')
-    assert exc_info.value.errors() == [
-        {
-            'type': 'no_such_attribute',
-            'loc': ('not_f',),
-            'msg': "Object has no attribute 'not_f'",
-            'input': 'xyz',
-            'ctx': {'attribute': 'not_f'},
-        }
-    ]
-    assert 'not_f' not in m
