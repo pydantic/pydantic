@@ -354,7 +354,7 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn validate_typed_dict(&'a self, strict: bool, from_attributes: bool) -> ValResult<GenericMapping<'a>> {
+    fn validate_model_fields(&'a self, strict: bool, from_attributes: bool) -> ValResult<GenericMapping<'a>> {
         if from_attributes {
             // if from_attributes, first try a dict, then mapping then from_attributes
             if let Ok(dict) = self.downcast::<PyDict>() {
@@ -378,7 +378,7 @@ impl<'a> Input<'a> for PyAny {
                 Err(ValError::new(ErrorType::DictAttributesType, self))
             }
         } else {
-            // otherwise we just call back to lax_dict if from_mapping is allowed, not there error in this
+            // otherwise we just call back to validate_dict if from_mapping is allowed, note that errors in this
             // case (correctly) won't hint about from_attributes
             self.validate_dict(strict)
         }

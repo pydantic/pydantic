@@ -116,22 +116,26 @@ def test_validate_assignment_with_context():
 
     v = SchemaValidator(
         {
-            'type': 'typed-dict',
+            'type': 'model-fields',
             'fields': {
                 'f1': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f1}},
                 },
                 'f2': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'function-plain', 'function': {'type': 'general', 'function': f2}},
                 },
             },
         }
     )
 
-    m1 = v.validate_python({'f1': '1', 'f2': '2'}, strict=None, context={'x': 'y'})
+    m1, model_extra, fields_set = v.validate_python({'f1': '1', 'f2': '2'}, strict=None, context={'x': 'y'})
     assert m1 == {'f1': "1| context: {'x': 'y', 'f1': '1'}", 'f2': "2| context: {'x': 'y', 'f1': '1', 'f2': '2'}"}
+    assert model_extra is None
+    assert fields_set == {'f1', 'f2'}
 
-    m2 = v.validate_assignment(m1, 'f1', '3', context={'x': 'y'})
+    m2, model_extra, fields_set = v.validate_assignment(m1, 'f1', '3', context={'x': 'y'})
     assert m2 == {'f1': "3| context: {'x': 'y', 'f1': '3'}", 'f2': "2| context: {'x': 'y', 'f1': '1', 'f2': '2'}"}
+    assert model_extra is None
+    assert fields_set == {'f1'}

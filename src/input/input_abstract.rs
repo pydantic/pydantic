@@ -162,7 +162,7 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.strict_dict()
     }
 
-    fn validate_typed_dict(&'a self, strict: bool, _from_attributes: bool) -> ValResult<GenericMapping<'a>> {
+    fn validate_model_fields(&'a self, strict: bool, _from_attributes: bool) -> ValResult<GenericMapping<'a>> {
         self.validate_dict(strict)
     }
 

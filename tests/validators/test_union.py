@@ -63,11 +63,10 @@ class TestModelClass:
                         'type': 'model',
                         'cls': self.ModelA,
                         'schema': {
-                            'type': 'typed-dict',
-                            'return_fields_set': True,
+                            'type': 'model-fields',
                             'fields': {
-                                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                                'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
+                                'b': {'type': 'model-field', 'schema': {'type': 'str'}},
                             },
                         },
                     },
@@ -75,11 +74,10 @@ class TestModelClass:
                         'type': 'model',
                         'cls': self.ModelB,
                         'schema': {
-                            'type': 'typed-dict',
-                            'return_fields_set': True,
+                            'type': 'model-fields',
                             'fields': {
-                                'c': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                                'd': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                                'c': {'type': 'model-field', 'schema': {'type': 'int'}},
+                                'd': {'type': 'model-field', 'schema': {'type': 'str'}},
                             },
                         },
                     },
@@ -133,11 +131,10 @@ class TestModelClassSimilar:
                         'type': 'model',
                         'cls': self.ModelA,
                         'schema': {
-                            'type': 'typed-dict',
-                            'return_fields_set': True,
+                            'type': 'model-fields',
                             'fields': {
-                                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                                'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
+                                'b': {'type': 'model-field', 'schema': {'type': 'str'}},
                             },
                         },
                     },
@@ -145,13 +142,12 @@ class TestModelClassSimilar:
                         'type': 'model',
                         'cls': self.ModelB,
                         'schema': {
-                            'type': 'typed-dict',
-                            'return_fields_set': True,
+                            'type': 'model-fields',
                             'fields': {
-                                'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                                'b': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                                'a': {'type': 'model-field', 'schema': {'type': 'int'}},
+                                'b': {'type': 'model-field', 'schema': {'type': 'str'}},
                                 'c': {
-                                    'type': 'typed-dict-field',
+                                    'type': 'model-field',
                                     'schema': {'type': 'default', 'schema': {'type': 'float'}, 'default': 1.0},
                                 },
                             },

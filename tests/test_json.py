@@ -130,7 +130,6 @@ def test_error_loc():
     v = SchemaValidator(
         {
             'type': 'typed-dict',
-            'return_fields_set': True,
             'fields': {
                 'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'list', 'items_schema': {'type': 'int'}}}
             },

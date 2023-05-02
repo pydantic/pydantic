@@ -23,23 +23,19 @@ class TestBenchmarkSimpleModel:
     @pytest.fixture(scope='class')
     def core_schema(self):
         class CoreModel:
-            __slots__ = '__dict__', '__pydantic_fields_set__'
+            __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
         return {
             'type': 'model',
             'cls': CoreModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'name': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'age': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                    'friends': {
-                        'type': 'typed-dict-field',
-                        'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
-                    },
+                    'name': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'age': {'type': 'model-field', 'schema': {'type': 'int'}},
+                    'friends': {'type': 'model-field', 'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
                     'settings': {
-                        'type': 'typed-dict-field',
+                        'type': 'model-field',
                         'schema': {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'float'}},
                     },
                 },
@@ -292,7 +288,7 @@ def test_core_model_json(benchmark, basic_model_serializer):
 
 
 class FieldsSetModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():

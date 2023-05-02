@@ -39,6 +39,7 @@ mod lax_or_strict;
 mod list;
 mod literal;
 mod model;
+mod model_fields;
 mod none;
 mod nullable;
 mod set;
@@ -378,6 +379,7 @@ pub fn build_validator<'a>(
         nullable::NullableValidator,
         // model classes
         model::ModelValidator,
+        model_fields::ModelFieldsValidator,
         // dataclasses
         dataclass::DataclassArgsValidator,
         dataclass::DataclassValidator,
@@ -505,6 +507,7 @@ pub enum CombinedValidator {
     Nullable(nullable::NullableValidator),
     // create new model classes
     Model(model::ModelValidator),
+    ModelFields(model_fields::ModelFieldsValidator),
     // dataclasses
     DataclassArgs(dataclass::DataclassArgsValidator),
     Dataclass(dataclass::DataclassValidator),
