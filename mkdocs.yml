@@ -105,7 +105,6 @@ nav:
   - 'pydantic.color': api/color.md
   - 'pydantic.config': api/config.md
   - 'pydantic.dataclasses': api/dataclasses.md
-  - 'pydantic.validate_call': api/validate_call.md
   - 'pydantic.decorators': api/decorators.md
   - 'pydantic.errors': api/errors.md
   - 'pydantic.fields': api/fields.md
@@ -114,6 +113,7 @@ nav:
   - 'pydantic.mypy': api/mypy.md
   - 'pydantic.networks': api/networks.md
   - 'pydantic.types': api/types.md
+  - 'pydantic.validate_call': api/validate_call.md
   - 'pydantic.version': api/version.md
 
 
