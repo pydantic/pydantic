@@ -3,7 +3,7 @@ from pydantic_core import SchemaValidator
 
 class MyModel:
     # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-    __slots__ = '__dict__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
     field_a: str
     field_b: int
 
@@ -14,11 +14,10 @@ def test_model_init():
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                    'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                    'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 },
             },
         }
@@ -40,28 +39,26 @@ def test_model_init():
 def test_model_init_nested():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     v = SchemaValidator(
         {
             'type': 'model',
             'cls': MyModel,
             'schema': {
-                'type': 'typed-dict',
-                'return_fields_set': True,
+                'type': 'model-fields',
                 'fields': {
-                    'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                    'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
                     'field_b': {
-                        'type': 'typed-dict-field',
+                        'type': 'model-field',
                         'schema': {
                             'type': 'model',
                             'cls': MyModel,
                             'schema': {
-                                'type': 'typed-dict',
-                                'return_fields_set': True,
+                                'type': 'model-fields',
                                 'fields': {
-                                    'x_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                                    'x_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                                    'x_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                                    'x_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                                 },
                             },
                         },
@@ -101,11 +98,10 @@ def test_function_before():
                 'type': 'model',
                 'cls': MyModel,
                 'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
+                    'type': 'model-fields',
                     'fields': {
-                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                     },
                 },
             },
@@ -138,11 +134,10 @@ def test_function_after():
                 'type': 'model',
                 'cls': MyModel,
                 'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
+                    'type': 'model-fields',
                     'fields': {
-                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                     },
                 },
             },
@@ -177,11 +172,10 @@ def test_function_wrap():
                 'type': 'model',
                 'cls': MyModel,
                 'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
+                    'type': 'model-fields',
                     'fields': {
-                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                        'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                     },
                 },
             },

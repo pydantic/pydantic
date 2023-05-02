@@ -2,18 +2,71 @@ use std::borrow::Cow;
 
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyType};
+use pyo3::types::{PyDict, PyString, PyType};
+
+use ahash::AHashMap;
 
 use crate::build_context::BuildContext;
-use crate::build_tools::SchemaDict;
+use crate::build_tools::{py_error_type, ExtraBehavior, SchemaDict};
+use crate::serializers::computed_fields::ComputedFields;
 use crate::serializers::extra::SerCheck;
+use crate::serializers::filter::SchemaFilter;
 use crate::serializers::infer::{infer_serialize, infer_to_python};
 use crate::serializers::ob_type::ObType;
+use crate::serializers::type_serializers::typed_dict::{TypedDictField, TypedDictSerializer};
 
 use super::{
     infer_json_key, infer_json_key_known, object_to_dict, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
     TypeSerializer,
 };
+
+pub struct ModelFieldsBuilder;
+
+impl BuildSerializer for ModelFieldsBuilder {
+    const EXPECTED_TYPE: &'static str = "model-fields";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        build_context: &mut BuildContext<CombinedSerializer>,
+    ) -> PyResult<CombinedSerializer> {
+        let py = schema.py();
+
+        let include_extra = matches!(
+            ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?,
+            ExtraBehavior::Allow
+        );
+
+        let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
+        let mut fields: AHashMap<String, TypedDictField> = AHashMap::with_capacity(fields_dict.len());
+        let mut exclude: Vec<Py<PyString>> = Vec::with_capacity(fields_dict.len());
+
+        for (key, value) in fields_dict.iter() {
+            let key_py: &PyString = key.downcast()?;
+            let key: String = key_py.extract()?;
+            let field_info: &PyDict = value.downcast()?;
+
+            let key_py: Py<PyString> = key_py.into_py(py);
+
+            if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
+                exclude.push(key_py.clone_ref(py));
+            } else {
+                let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
+
+                let schema = field_info.get_as_req(intern!(py, "schema"))?;
+                let serializer = CombinedSerializer::build(schema, config, build_context)
+                    .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
+
+                fields.insert(key, TypedDictField::new(py, key_py, alias, serializer, true));
+            }
+        }
+
+        let filter = SchemaFilter::from_vec_hash(py, exclude)?;
+        let computed_fields = ComputedFields::new(schema)?;
+
+        Ok(TypedDictSerializer::new(fields, include_extra, filter, computed_fields).into())
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct ModelSerializer {

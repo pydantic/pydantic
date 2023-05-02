@@ -118,38 +118,3 @@ def test_chain_one():
     )
     assert validator.validate_python('input') == 'input-1'
     assert validator.title == 'function-plain[<lambda>()]'
-
-
-def test_ask():
-    class MyModel:
-        __slots__ = '__dict__', '__pydantic_fields_set__'
-
-    calls = []
-
-    def f(input_value, info):
-        calls.append(input_value)
-        return input_value
-
-    v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'chain',
-                'steps': [
-                    {
-                        'type': 'typed-dict',
-                        'return_fields_set': True,
-                        'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-                    },
-                    {'type': 'function-plain', 'function': {'type': 'general', 'function': f}},
-                ],
-            },
-        }
-    )
-    m = v.validate_python({'field_a': 'abc'})
-    assert isinstance(m, MyModel)
-    assert m.field_a == 'abc'
-    assert m.__pydantic_fields_set__ == {'field_a'}
-    # insert_assert(calls)
-    assert calls == [({'field_a': 'abc'}, {'field_a'})]

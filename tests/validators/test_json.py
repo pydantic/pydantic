@@ -141,46 +141,6 @@ def test_dict_key(py_and_json: PyAndJson):
     ]
 
 
-def test_ask():
-    class MyModel:
-        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_fields_set__'
-        field_a: str
-        field_b: int
-
-    v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'json',
-                'schema': {
-                    'type': 'typed-dict',
-                    'return_fields_set': True,
-                    'extra_behavior': 'forbid',
-                    'fields': {
-                        'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                    },
-                },
-            },
-        }
-    )
-    m = v.validate_python('{"field_a": "test", "field_b": 12}')
-    assert isinstance(m, MyModel)
-    assert m.field_a == 'test'
-    assert m.field_b == 12
-    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python('{"field_c": "wrong"}')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
-        {'type': 'missing', 'loc': ('field_a',), 'msg': 'Field required', 'input': {'field_c': 'wrong'}},
-        {'type': 'missing', 'loc': ('field_b',), 'msg': 'Field required', 'input': {'field_c': 'wrong'}},
-        {'type': 'extra_forbidden', 'loc': ('field_c',), 'msg': 'Extra inputs are not permitted', 'input': 'wrong'},
-    ]
-
-
 def test_any_schema_no_schema():
     v = SchemaValidator(core_schema.json_schema())
     assert 'validator:None' in plain_repr(v)

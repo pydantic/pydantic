@@ -1,7 +1,7 @@
 def schema(*, strict: bool = False) -> dict:
     class MyModel:
         # __slots__ is not required, but it avoids __pydantic_fields_set__ falling into __dict__
-        __slots__ = '__dict__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     def append_func(input_value, info):
         return f'{input_value} Changed'
@@ -14,70 +14,63 @@ def schema(*, strict: bool = False) -> dict:
         'cls': MyModel,
         'config': {'strict': strict},
         'schema': {
-            'type': 'typed-dict',
-            'return_fields_set': True,
+            'type': 'model-fields',
             'fields': {
-                'field_str': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
+                'field_str': {'type': 'model-field', 'schema': {'type': 'str'}},
                 'field_str_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'str', 'min_length': 3, 'max_length': 5, 'pattern': '^[a-z]+$'},
                 },
-                'field_int': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                'field_int': {'type': 'model-field', 'schema': {'type': 'int'}},
                 'field_int_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'int', 'gt': 1, 'lt': 10, 'multiple_of': 2},
                 },
-                'field_float': {'type': 'typed-dict-field', 'schema': {'type': 'float'}},
+                'field_float': {'type': 'model-field', 'schema': {'type': 'float'}},
                 'field_float_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'float', 'ge': 1.0, 'le': 10.0, 'multiple_of': 0.5},
                 },
-                'field_bool': {'type': 'typed-dict-field', 'schema': {'type': 'bool'}},
-                'field_bytes': {'type': 'typed-dict-field', 'schema': {'type': 'bytes'}},
+                'field_bool': {'type': 'model-field', 'schema': {'type': 'bool'}},
+                'field_bytes': {'type': 'model-field', 'schema': {'type': 'bytes'}},
                 'field_bytes_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'bytes', 'min_length': 6, 'max_length': 1000},
                 },
-                'field_date': {'type': 'typed-dict-field', 'schema': {'type': 'date'}},
+                'field_date': {'type': 'model-field', 'schema': {'type': 'date'}},
                 'field_date_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'date', 'ge': '2020-01-01', 'lt': '2020-01-02'},
                 },
-                'field_time': {'type': 'typed-dict-field', 'schema': {'type': 'time'}},
+                'field_time': {'type': 'model-field', 'schema': {'type': 'time'}},
                 'field_time_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'time', 'ge': '06:00:00', 'lt': '12:13:14'},
                 },
-                'field_datetime': {'type': 'typed-dict-field', 'schema': {'type': 'datetime'}},
+                'field_datetime': {'type': 'model-field', 'schema': {'type': 'datetime'}},
                 'field_datetime_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'datetime', 'ge': '2000-01-01T06:00:00', 'lt': '2020-01-02T12:13:14'},
                 },
-                'field_list_any': {'type': 'typed-dict-field', 'schema': {'type': 'list'}},
-                'field_list_str': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'list', 'items_schema': {'type': 'str'}},
-                },
+                'field_list_any': {'type': 'model-field', 'schema': {'type': 'list'}},
+                'field_list_str': {'type': 'model-field', 'schema': {'type': 'list', 'items_schema': {'type': 'str'}}},
                 'field_list_str_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'list', 'items_schema': {'type': 'str'}, 'min_length': 3, 'max_length': 42},
                 },
-                'field_set_any': {'type': 'typed-dict-field', 'schema': {'type': 'set'}},
-                'field_set_int': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'set', 'items_schema': {'type': 'int'}},
-                },
+                'field_set_any': {'type': 'model-field', 'schema': {'type': 'set'}},
+                'field_set_int': {'type': 'model-field', 'schema': {'type': 'set', 'items_schema': {'type': 'int'}}},
                 'field_set_int_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'set', 'items_schema': {'type': 'int'}, 'min_length': 3, 'max_length': 42},
                 },
-                'field_frozenset_any': {'type': 'typed-dict-field', 'schema': {'type': 'frozenset'}},
+                'field_frozenset_any': {'type': 'model-field', 'schema': {'type': 'frozenset'}},
                 'field_frozenset_bytes': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'frozenset', 'items_schema': {'type': 'bytes'}},
                 },
                 'field_frozenset_bytes_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {
                         'type': 'frozenset',
                         'items_schema': {'type': 'bytes'},
@@ -85,13 +78,13 @@ def schema(*, strict: bool = False) -> dict:
                         'max_length': 42,
                     },
                 },
-                'field_tuple_var_len_any': {'type': 'typed-dict-field', 'schema': {'type': 'tuple-variable'}},
+                'field_tuple_var_len_any': {'type': 'model-field', 'schema': {'type': 'tuple-variable'}},
                 'field_tuple_var_len_float': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'tuple-variable', 'items_schema': {'type': 'float'}},
                 },
                 'field_tuple_var_len_float_con': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {
                         'type': 'tuple-variable',
                         'items_schema': {'type': 'float'},
@@ -100,40 +93,34 @@ def schema(*, strict: bool = False) -> dict:
                     },
                 },
                 'field_tuple_fix_len': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {
                         'type': 'tuple-positional',
                         'items_schema': [{'type': 'str'}, {'type': 'int'}, {'type': 'float'}, {'type': 'bool'}],
                     },
                 },
-                'field_dict_any': {'type': 'typed-dict-field', 'schema': {'type': 'dict'}},
+                'field_dict_any': {'type': 'model-field', 'schema': {'type': 'dict'}},
                 'field_dict_str_float': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'float'}},
                 },
-                'field_literal_1_int': {'type': 'typed-dict-field', 'schema': {'type': 'literal', 'expected': [1]}},
-                'field_literal_1_str': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'literal', 'expected': ['foobar']},
-                },
-                'field_literal_mult_int': {
-                    'type': 'typed-dict-field',
-                    'schema': {'type': 'literal', 'expected': [1, 2, 3]},
-                },
+                'field_literal_1_int': {'type': 'model-field', 'schema': {'type': 'literal', 'expected': [1]}},
+                'field_literal_1_str': {'type': 'model-field', 'schema': {'type': 'literal', 'expected': ['foobar']}},
+                'field_literal_mult_int': {'type': 'model-field', 'schema': {'type': 'literal', 'expected': [1, 2, 3]}},
                 'field_literal_mult_str': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'literal', 'expected': ['foo', 'bar', 'baz']},
                 },
                 'field_literal_assorted': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'literal', 'expected': [1, 'foo', True]},
                 },
                 'field_list_nullable_int': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {'type': 'list', 'items_schema': {'type': 'nullable', 'schema': {'type': 'int'}}},
                 },
                 'field_union': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {
                         'type': 'union',
                         'choices': [
@@ -158,7 +145,7 @@ def schema(*, strict: bool = False) -> dict:
                     },
                 },
                 'field_functions_model': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {
                         'type': 'typed-dict',
                         'fields': {
@@ -197,7 +184,7 @@ def schema(*, strict: bool = False) -> dict:
                     },
                 },
                 'field_recursive': {
-                    'type': 'typed-dict-field',
+                    'type': 'model-field',
                     'schema': {
                         'ref': 'Branch',
                         'type': 'typed-dict',

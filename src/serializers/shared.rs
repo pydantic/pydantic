@@ -98,6 +98,7 @@ combined_serializer! {
         super::type_serializers::function::FunctionAfterSerializerBuilder;
         super::type_serializers::function::FunctionPlainSerializerBuilder;
         super::type_serializers::function::FunctionWrapSerializerBuilder;
+        super::type_serializers::model::ModelFieldsBuilder;
     }
     // `both` means the struct is added to both the `CombinedSerializer` enum and the match statement in
     // `find_serializer` so they can be used via a `type` str.

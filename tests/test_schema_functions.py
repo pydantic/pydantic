@@ -16,7 +16,7 @@ def make_5():
 
 
 class MyModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
 
 def ids_function(val):
@@ -165,6 +165,16 @@ all_schema_functions = [
         {'type': 'typed-dict', 'fields': {'foo': {'type': 'typed-dict-field', 'schema': {'type': 'int'}}}},
     ),
     (
+        core_schema.model_field,
+        args({'type': 'int'}, validation_alias='foobar'),
+        {'type': 'model-field', 'schema': {'type': 'int'}, 'validation_alias': 'foobar'},
+    ),
+    (
+        core_schema.model_fields_schema,
+        args({'foo': core_schema.model_field({'type': 'int'})}),
+        {'type': 'model-fields', 'fields': {'foo': {'type': 'model-field', 'schema': {'type': 'int'}}}},
+    ),
+    (
         core_schema.model_schema,
         args(MyModel, {'type': 'int'}),
         {'type': 'model', 'cls': MyModel, 'schema': {'type': 'int'}},
@@ -245,7 +255,7 @@ def test_schema_functions(function, args_kwargs, expected_schema):
     args, kwargs = args_kwargs
     schema = function(*args, **kwargs)
     assert schema == expected_schema
-    if schema.get('type') in {None, 'definition-ref', 'typed-dict-field'}:
+    if schema.get('type') in {None, 'definition-ref', 'typed-dict-field', 'model-field'}:
         return
 
     v = SchemaValidator(schema)
@@ -267,6 +277,7 @@ def test_all_schema_functions_used():
 
     # isn't a CoreSchema type
     types_used.remove('typed-dict-field')
+    types_used.remove('model-field')
 
     assert all_types == types_used
 

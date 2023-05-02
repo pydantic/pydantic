@@ -44,8 +44,7 @@ schema = {
     "schema": {
         "computed_fields": [{"property_name": "b", "type": "computed-field"}],
         "fields": {},
-        "return_fields_set": True,
-        "type": "typed-dict",
+        "type": "model-fields",
     },
     "type": "model",
 }

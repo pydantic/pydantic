@@ -241,7 +241,7 @@ def test_exclude_none():
 
 
 class FieldsSetModel:
-    __slots__ = '__dict__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -363,12 +363,10 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 
     sub_sub_model_schema = core_schema.model_schema(
         type('SubSubModel', (), {}),
-        core_schema.typed_dict_schema(
+        core_schema.model_fields_schema(
             dict(
-                i=core_schema.typed_dict_field(core_schema.int_schema(), required=True),
-                j=core_schema.typed_dict_field(core_schema.int_schema(), required=True),
-            ),
-            return_fields_set=True,
+                i=core_schema.model_field(core_schema.int_schema()), j=core_schema.model_field(core_schema.int_schema())
+            )
         ),
     )
 
@@ -378,12 +376,11 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 
     sub_model_schema = core_schema.model_schema(
         type('SubModel', (), {}),
-        core_schema.typed_dict_schema(
+        core_schema.model_fields_schema(
             dict(
-                k=core_schema.typed_dict_field(core_schema.int_schema(), required=True),
-                subsubs=core_schema.typed_dict_field(core_schema.list_schema(sub_sub_model_schema), required=True),
-            ),
-            return_fields_set=True,
+                k=core_schema.model_field(core_schema.int_schema()),
+                subsubs=core_schema.model_field(core_schema.list_schema(sub_sub_model_schema)),
+            )
         ),
     )
 
@@ -392,10 +389,7 @@ def test_advanced_exclude_nested_lists(exclude, expected):
 
     model_schema = core_schema.model_schema(
         BasicModel,
-        core_schema.typed_dict_schema(
-            dict(subs=core_schema.typed_dict_field(core_schema.list_schema(sub_model_schema), required=True)),
-            return_fields_set=True,
-        ),
+        core_schema.model_fields_schema(dict(subs=core_schema.model_field(core_schema.list_schema(sub_model_schema)))),
     )
     v = SchemaValidator(model_schema)
 

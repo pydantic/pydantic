@@ -82,13 +82,14 @@ def test_schema_typing() -> None:
     schema: CoreSchema = {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': {'type': 'any'}}
     SchemaValidator(schema)
     schema: CoreSchema = {
+        'type': 'typed-dict',
+        'fields': {'bar': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+    }
+    SchemaValidator(schema)
+    schema: CoreSchema = {
         'type': 'model',
         'cls': Foo,
-        'schema': {
-            'type': 'typed-dict',
-            'return_fields_set': True,
-            'fields': {'bar': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
-        },
+        'schema': {'type': 'model-fields', 'fields': {'bar': {'type': 'model-field', 'schema': {'type': 'str'}}}},
     }
     SchemaValidator(schema)
     schema: CoreSchema = {
