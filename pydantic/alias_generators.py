@@ -1,27 +1,43 @@
+"""Generators for converting between different naming conventions."""
 import re
 
 __all__ = ('to_pascal', 'to_camel', 'to_snake')
 
 
 def to_pascal(snake: str) -> str:
-    """
-    Converts a snake_case string to PascalCase.
+    """Convert a snake_case string to PascalCase.
+
+    Args:
+        snake (str): The snake_case string to convert.
+
+    Returns:
+        str: The PascalCase string.
     """
     camel = snake.title()
     return re.sub('([0-9A-Za-z])_(?=[0-9A-Z])', lambda m: m.group(1), camel)
 
 
 def to_camel(snake: str) -> str:
-    """
-    Converts a snake_case string to camelCase.
+    """Convert a snake_case string to camelCase.
+
+    Args:
+        snake (str): The snake_case string to convert.
+
+    Returns:
+        str: The converted camelCase string.
     """
     camel = to_pascal(snake)
     return re.sub('(^_*[A-Z])', lambda m: m.group(1).lower(), camel)
 
 
 def to_snake(camel: str) -> str:
-    """
-    Converts a PascalCase or camelCase string to snake_case.
+    """Convert a PascalCase or camelCase string to snake_case.
+
+    Args:
+        camel (str): The string to convert.
+
+    Returns:
+        str: The converted string in snake_case.
     """
     snake = re.sub(r'([a-zA-Z])([0-9])', lambda m: f'{m.group(1)}_{m.group(2)}', camel)
     snake = re.sub(r'([a-z0-9])([A-Z])', lambda m: f'{m.group(1)}_{m.group(2)}', snake)
