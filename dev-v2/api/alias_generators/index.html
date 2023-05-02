@@ -10,20 +10,20 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/visual_studio_code/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/alias_generators/">
       
       
-        <link rel="prev" href="../hypothesis/">
+        <link rel="prev" href="../../blog/pydantic-v2/">
       
       
-        <link rel="next" href="../datamodel_code_generator/">
+        <link rel="next" href="../analyzed_type/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.8">
     
     
       
-        <title>Visual Studio Code - pydantic</title>
+        <title>pydantic.alias_generators - pydantic</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#configure-vs-code" class="md-skip">
+        <a href="#pydantic.alias_generators" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +135,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Visual Studio Code
+              pydantic.alias_generators
             
           </span>
         </div>
@@ -265,15 +265,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
   
   
-    
-  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../mypy/" class="md-tabs__link md-tabs__link--active">
+      <a href="../../integrations/mypy/" class="md-tabs__link">
         Integrations
       </a>
     </li>
@@ -311,13 +309,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
   
   
+    
+  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../../api/alias_generators/" class="md-tabs__link">
+      <a href="./" class="md-tabs__link md-tabs__link--active">
         API
       </a>
     </li>
@@ -1071,16 +1071,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" >
       
       
       
@@ -1089,7 +1087,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_3">
           <span class="md-nav__icon md-icon"></span>
           Integrations
@@ -1102,7 +1100,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../mypy/" class="md-nav__link">
+      <a href="../../integrations/mypy/" class="md-nav__link">
         Mypy
       </a>
     </li>
@@ -1116,7 +1114,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../pycharm/" class="md-nav__link">
+      <a href="../../integrations/pycharm/" class="md-nav__link">
         PyCharm
       </a>
     </li>
@@ -1130,7 +1128,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../hypothesis/" class="md-nav__link">
+      <a href="../../integrations/hypothesis/" class="md-nav__link">
         Hypothesis
       </a>
     </li>
@@ -1142,152 +1140,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Visual Studio Code
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../integrations/visual_studio_code/" class="md-nav__link">
         Visual Studio Code
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#configure-vs-code" class="md-nav__link">
-    Configure VS Code
-  </a>
-  
-    <nav class="md-nav" aria-label="Configure VS Code">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#install-pylance" class="md-nav__link">
-    Install Pylance
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-your-environment" class="md-nav__link">
-    Configure your environment
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-pylance" class="md-nav__link">
-    Configure Pylance
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-mypy" class="md-nav__link">
-    Configure mypy
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tips-and-tricks" class="md-nav__link">
-    Tips and tricks
-  </a>
-  
-    <nav class="md-nav" aria-label="Tips and tricks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#strict-errors" class="md-nav__link">
-    Strict errors
-  </a>
-  
-    <nav class="md-nav" aria-label="Strict errors">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#disable-type-checks-in-a-line" class="md-nav__link">
-    Disable type checks in a line
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#override-the-type-of-a-variable" class="md-nav__link">
-    Override the type of a variable
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#override-the-type-of-a-value-with-cast" class="md-nav__link">
-    Override the type of a value with cast
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config-in-class-arguments" class="md-nav__link">
-    Config in class arguments
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#adding-a-default-with-field" class="md-nav__link">
-    Adding a default with Field
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#technical-details" class="md-nav__link">
-    Technical Details
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1299,7 +1156,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../datamodel_code_generator/" class="md-nav__link">
+      <a href="../../integrations/datamodel_code_generator/" class="md-nav__link">
         datamodel-code-generator
       </a>
     </li>
@@ -1313,7 +1170,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../devtools/" class="md-nav__link">
+      <a href="../../integrations/devtools/" class="md-nav__link">
         devtools
       </a>
     </li>
@@ -1327,7 +1184,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../rich/" class="md-nav__link">
+      <a href="../../integrations/rich/" class="md-nav__link">
         Rich
       </a>
     </li>
@@ -1425,14 +1282,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" checked>
       
       
       
@@ -1441,7 +1300,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_6">
           <span class="md-nav__icon md-icon"></span>
           API
@@ -1452,11 +1311,71 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../api/alias_generators/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic.alias_generators
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         pydantic.alias_generators
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.alias_generators" class="md-nav__link">
+    pydantic.alias_generators
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.alias_generators.to_camel" class="md-nav__link">
+    to_camel()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.alias_generators.to_pascal" class="md-nav__link">
+    to_pascal()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.alias_generators.to_snake" class="md-nav__link">
+    to_snake()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1468,7 +1387,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/analyzed_type/" class="md-nav__link">
+      <a href="../analyzed_type/" class="md-nav__link">
         pydantic.analyzed_type
       </a>
     </li>
@@ -1482,7 +1401,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/color/" class="md-nav__link">
+      <a href="../color/" class="md-nav__link">
         pydantic.color
       </a>
     </li>
@@ -1496,7 +1415,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         pydantic.config
       </a>
     </li>
@@ -1510,7 +1429,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/dataclasses/" class="md-nav__link">
+      <a href="../dataclasses/" class="md-nav__link">
         pydantic.dataclasses
       </a>
     </li>
@@ -1524,7 +1443,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/validate_call/" class="md-nav__link">
+      <a href="../validate_call/" class="md-nav__link">
         pydantic.validate_call
       </a>
     </li>
@@ -1538,7 +1457,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/decorators/" class="md-nav__link">
+      <a href="../decorators/" class="md-nav__link">
         pydantic.decorators
       </a>
     </li>
@@ -1552,7 +1471,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         pydantic.errors
       </a>
     </li>
@@ -1566,7 +1485,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/fields/" class="md-nav__link">
+      <a href="../fields/" class="md-nav__link">
         pydantic.fields
       </a>
     </li>
@@ -1580,7 +1499,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/json_schema/" class="md-nav__link">
+      <a href="../json_schema/" class="md-nav__link">
         pydantic.json_schema
       </a>
     </li>
@@ -1594,7 +1513,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/main/" class="md-nav__link">
+      <a href="../main/" class="md-nav__link">
         pydantic.main
       </a>
     </li>
@@ -1608,7 +1527,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/mypy/" class="md-nav__link">
+      <a href="../mypy/" class="md-nav__link">
         pydantic.mypy
       </a>
     </li>
@@ -1622,7 +1541,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/networks/" class="md-nav__link">
+      <a href="../networks/" class="md-nav__link">
         pydantic.networks
       </a>
     </li>
@@ -1636,7 +1555,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/types/" class="md-nav__link">
+      <a href="../types/" class="md-nav__link">
         pydantic.types
       </a>
     </li>
@@ -1650,7 +1569,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/version/" class="md-nav__link">
+      <a href="../version/" class="md-nav__link">
         pydantic.version
       </a>
     </li>
@@ -1691,110 +1610,29 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#configure-vs-code" class="md-nav__link">
-    Configure VS Code
-  </a>
-  
-    <nav class="md-nav" aria-label="Configure VS Code">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#install-pylance" class="md-nav__link">
-    Install Pylance
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-your-environment" class="md-nav__link">
-    Configure your environment
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-pylance" class="md-nav__link">
-    Configure Pylance
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#configure-mypy" class="md-nav__link">
-    Configure mypy
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#tips-and-tricks" class="md-nav__link">
-    Tips and tricks
-  </a>
-  
-    <nav class="md-nav" aria-label="Tips and tricks">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#strict-errors" class="md-nav__link">
-    Strict errors
-  </a>
-  
-    <nav class="md-nav" aria-label="Strict errors">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#disable-type-checks-in-a-line" class="md-nav__link">
-    Disable type checks in a line
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#override-the-type-of-a-variable" class="md-nav__link">
-    Override the type of a variable
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#override-the-type-of-a-value-with-cast" class="md-nav__link">
-    Override the type of a value with cast
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#config-in-class-arguments" class="md-nav__link">
-    Config in class arguments
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#adding-a-default-with-field" class="md-nav__link">
-    Adding a default with Field
+  <a href="#pydantic.alias_generators" class="md-nav__link">
+    pydantic.alias_generators
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#technical-details" class="md-nav__link">
-    Technical Details
+  <a href="#pydantic.alias_generators.to_camel" class="md-nav__link">
+    to_camel()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.alias_generators.to_pascal" class="md-nav__link">
+    to_pascal()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.alias_generators.to_snake" class="md-nav__link">
+    to_snake()
   </a>
   
 </li>
@@ -1818,206 +1656,134 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>Visual Studio Code</h1>
+  <h1>pydantic.alias_generators</h1>
 
-<p><em>pydantic</em> works well with any editor or IDE out of the box because it's made on top of standard Python type annotations.</p>
-<p>When using <a href="https://code.visualstudio.com/">Visual Studio Code (VS Code)</a>, there are some <strong>additional editor features</strong> supported, comparable to the ones provided by the <a href="/integrations/pycharm_plugin/">PyCharm plugin</a>.</p>
-<p>This means that you will have <strong>autocompletion</strong> (or "IntelliSense") and <strong>error checks</strong> for types and required arguments even while creating new <em>pydantic</em> model instances.</p>
-<p><img alt="pydantic autocompletion in VS Code" src="../../img/vs_code_01.png" /></p>
-<h2 id="configure-vs-code">Configure VS Code<a class="headerlink" href="#configure-vs-code" title="Permanent link">&para;</a></h2>
-<p>To take advantage of these features, you need to make sure you configure VS Code correctly, using the recommended settings.</p>
-<p>In case you have a different configuration, here's a short overview of the steps.</p>
-<h3 id="install-pylance">Install Pylance<a class="headerlink" href="#install-pylance" title="Permanent link">&para;</a></h3>
-<p>You should use the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.vscode-pylance">Pylance</a> extension for VS Code. It is the recommended, next-generation, official VS Code plug-in for Python.</p>
-<p>Pylance is installed as part of the <a href="https://marketplace.visualstudio.com/items?itemName=ms-python.python">Python Extension for VS Code</a> by default, so it should probably just work. Otherwise, you can double check it's installed and enabled in your editor.</p>
-<h3 id="configure-your-environment">Configure your environment<a class="headerlink" href="#configure-your-environment" title="Permanent link">&para;</a></h3>
-<p>Then you need to make sure your editor knows the <a href="https://code.visualstudio.com/docs/python/python-tutorial#_install-and-use-packages">Python environment</a> (probably a virtual environment) for your Python project.</p>
-<p>This would be the environment in where you installed <em>pydantic</em>.</p>
-<h3 id="configure-pylance">Configure Pylance<a class="headerlink" href="#configure-pylance" title="Permanent link">&para;</a></h3>
-<p>With the default configurations, you will get support for autocompletion, but Pylance might not check for type errors.</p>
-<p>You can enable type error checks from Pylance with these steps:</p>
-<ul>
-<li>Open the "User Settings"</li>
-<li>Search for <code>Type Checking Mode</code></li>
-<li>You will find an option under <code>Python › Analysis: Type Checking Mode</code></li>
-<li>Set it to <code>basic</code> or <code>strict</code> (by default it's <code>off</code>)</li>
-</ul>
-<p><img alt="Type Checking Mode set to strict in VS Code" src="../../img/vs_code_02.png" /></p>
-<p>Now you will not only get autocompletion when creating new <em>pydantic</em> model instances but also error checks for <strong>required arguments</strong>.</p>
-<p><img alt="Required arguments error checks in VS Code" src="../../img/vs_code_03.png" /></p>
-<p>And you will also get error checks for <strong>invalid data types</strong>.</p>
-<p><img alt="Invalid data types error checks in VS Code" src="../../img/vs_code_04.png" /></p>
-<div class="admonition note">
-<p class="admonition-title">Technical Details</p>
-<p>Pylance is the VS Code extension, it's closed source, but free to use. Underneath, Pylance uses an open source tool (also from Microsoft) called <a href="https://github.com/microsoft/pyright">Pyright</a> that does all the heavy lifting.</p>
-<p>You can read more about it in the <a href="https://github.com/microsoft/pylance-release/blob/main/FAQ.md#what-is-the-relationship-between-pylance-pyright-and-the-python-extension">Pylance Frequently Asked Questions</a>.</p>
+<div class="doc doc-object doc-module">
+
+
+<a id="pydantic.alias_generators"></a>
+  <div class="doc doc-contents first">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="pydantic.alias_generators.to_camel" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">to_camel</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span></code>
+
+<a href="#pydantic.alias_generators.to_camel" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Converts a snake_case string to camelCase.</p>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/alias_generators.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_camel</span><span class="p">(</span><span class="n">snake</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a snake_case string to camelCase.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">camel</span> <span class="o">=</span> <span class="n">to_pascal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;(^_*[A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">(),</span> <span class="n">camel</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
 </div>
-<h3 id="configure-mypy">Configure mypy<a class="headerlink" href="#configure-mypy" title="Permanent link">&para;</a></h3>
-<p>You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pylance).</p>
-<p>This would include the errors detected by the <a href="/integrations/mypy/"><em>pydantic</em> mypy plugin</a>, if you configured it.</p>
-<p>To enable mypy in VS Code, do the following:</p>
-<ul>
-<li>Open the "User Settings"</li>
-<li>Search for <code>Mypy Enabled</code></li>
-<li>You will find an option under <code>Python › Linting: Mypy Enabled</code></li>
-<li>Check the box (by default it's unchecked)</li>
-</ul>
-<p><img alt="mypy enabled in VS Code" src="../../img/vs_code_05.png" /></p>
-<h2 id="tips-and-tricks">Tips and tricks<a class="headerlink" href="#tips-and-tricks" title="Permanent link">&para;</a></h2>
-<p>Here are some additional tips and tricks to improve your developer experience when using VS Code with <em>pydantic</em>.</p>
-<h3 id="strict-errors">Strict errors<a class="headerlink" href="#strict-errors" title="Permanent link">&para;</a></h3>
-<p>The way this additional editor support works is that Pylance will treat your <em>pydantic</em> models as if they were Python's pure <code>dataclasses</code>.</p>
-<p>And it will show <strong>strict type error checks</strong> about the data types passed in arguments when creating a new <em>pydantic</em> model instance.</p>
-<p>In this example you can see that it shows that a <code>str</code> of <code>'23'</code> is not a valid <code>int</code> for the argument <code>age</code>.</p>
-<p><img alt="VS Code strict type errors" src="../../img/vs_code_06.png" /></p>
-<p>It would expect <code>age=23</code> instead of <code>age='23'</code>.</p>
-<p>Nevertheless, the design, and one of the main features of <em>pydantic</em>, is that it is very <strong>lenient with data types</strong>.</p>
-<p>It will actually accept the <code>str</code> with value <code>'23'</code> and will convert it to an <code>int</code> with value <code>23</code>.</p>
-<p>These strict error checks are <strong>very useful</strong> most of the time and can help you <strong>detect many bugs early</strong>. But there are cases, like with <code>age='23'</code>, where they could be inconvenient by reporting a "false positive" error.</p>
-<hr />
-<p>This example above with <code>age='23'</code> is intentionally simple, to show the error and the differences in types.</p>
-<p>But more common cases where these strict errors would be inconvenient would be when using more sophisticated data types, like <code>int</code> values for <code>datetime</code> fields, or <code>dict</code> values for <em>pydantic</em> sub-models.</p>
-<p>For example, this is valid for <em>pydantic</em>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<div class="doc doc-object doc-function">
 
 
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
+
+<h2 id="pydantic.alias_generators.to_pascal" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">to_pascal</span><span class="p">(</span><span class="n">snake</span><span class="p">)</span></code>
+
+<a href="#pydantic.alias_generators.to_pascal" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
-<span class="k">class</span> <span class="nc">Quest</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-<span class="hll">    <span class="n">knight</span><span class="p">:</span> <span class="n">Knight</span>
-</span>
+  <div class="doc doc-contents ">
+  
+      <p>Converts a snake_case string to PascalCase.</p>
 
-<span class="n">quest</span> <span class="o">=</span> <span class="n">Quest</span><span class="p">(</span>
-    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;To seek the Holy Grail&#39;</span><span class="p">,</span> <span class="n">knight</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="s1">&#39;age&#39;</span><span class="p">:</span> <span class="mi">23</span><span class="p">}</span>
-<span class="hll"><span class="p">)</span>
-</span></code></pre></div>
-<p>The type of the field <code>knight</code> is declared with the class <code>Knight</code> (a <em>pydantic</em> model) and the code is passing a literal <code>dict</code> instead. This is still valid for <em>pydantic</em>, and the <code>dict</code> would be automatically converted to a <code>Knight</code> instance.</p>
-<p>Nevertheless, it would be detected as a type error:</p>
-<p><img alt="VS Code strict type errors with model" src="../../img/vs_code_07.png" /></p>
-<p>In those cases, there are several ways to disable or ignore strict errors in very specific places, while still preserving them in the rest of the code.</p>
-<p>Below are several techniques to achieve it.</p>
-<h4 id="disable-type-checks-in-a-line">Disable type checks in a line<a class="headerlink" href="#disable-type-checks-in-a-line" title="Permanent link">&para;</a></h4>
-<p>You can disable the errors for a specific line using a comment of:</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># type: ignore</span>
-</code></pre></div>
-<p>or (to be specific to pylance/pyright):</p>
-<div class="highlight"><pre><span></span><code><span class="c1"># pyright: ignore</span>
-</code></pre></div>
-<p>(<a href="https://github.com/microsoft/pyright">pyright</a> is the language server used by Pylance.).</p>
-<p>coming back to the example with <code>age='23'</code>, it would be:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+      <details class="quote">
+        <summary>Source code in <code>pydantic/alias_generators.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_pascal</span><span class="p">(</span><span class="n">snake</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a snake_case string to PascalCase.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">camel</span> <span class="o">=</span> <span class="n">snake</span><span class="o">.</span><span class="n">title</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="s1">&#39;([0-9A-Za-z])_(?=[0-9A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">camel</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
 
-
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-
-
-<span class="hll"><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="s1">&#39;23&#39;</span><span class="p">)</span>  <span class="c1"># pyright: ignore</span>
-</span></code></pre></div>
-<p>that way Pylance and mypy will ignore errors in that line.</p>
-<p><strong>Pros</strong>: it's a simple change in that line to remove errors there.</p>
-<p><strong>Cons</strong>: any other error in that line will also be omitted, including type checks, misspelled arguments, required arguments not provided, etc.</p>
-<h4 id="override-the-type-of-a-variable">Override the type of a variable<a class="headerlink" href="#override-the-type-of-a-variable" title="Permanent link">&para;</a></h4>
-<p>You can also create a variable with the value you want to use and declare it's type explicitly with <code>Any</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
-</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-
-<span class="hll">
-</span><span class="hll"><span class="n">age_str</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="s1">&#39;23&#39;</span>
-</span><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">age_str</span><span class="p">)</span>
-</code></pre></div>
-<p>that way Pylance and mypy will interpret the variable <code>age_str</code> as if they didn't know its type, instead of knowing it has a type of <code>str</code> when an <code>int</code> was expected (and then showing the corresponding error).</p>
-<p><strong>Pros</strong>: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments.</p>
-<p><strong>Cons</strong>: it requires importing <code>Any</code> and a new variable in a new line for each argument that needs ignoring errors.</p>
-<h4 id="override-the-type-of-a-value-with-cast">Override the type of a value with <code>cast</code><a class="headerlink" href="#override-the-type-of-a-value-with-cast" title="Permanent link">&para;</a></h4>
-<p>The same idea from the previous example can be put on the same line with the help of <code>cast()</code>.</p>
-<p>This way, the type declaration of the value is overridden inline, without requiring another variable.</p>
-<div class="highlight"><pre><span></span><code><span class="hll"><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">cast</span>
-</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-
-<span class="hll">
-</span><span class="n">lancelot</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="n">cast</span><span class="p">(</span><span class="n">Any</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">))</span>
-</code></pre></div>
-<p><code>cast(Any, '23')</code> doesn't affect the value, it's still just <code>'23'</code>, but now Pylance and mypy will assume it is of type <code>Any</code>, which means, they will act as if they didn't know the type of the value.</p>
-<p>So, this is the equivalent of the previous example, without the additional variable.</p>
-<p><strong>Pros</strong>: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments. There's no need for additional variables.</p>
-<p><strong>Cons</strong>: it requires importing <code>Any</code> and <code>cast</code>, and if you are not used to using <code>cast()</code>, it could seem strange at first.</p>
-<h3 id="config-in-class-arguments">Config in class arguments<a class="headerlink" href="#config-in-class-arguments" title="Permanent link">&para;</a></h3>
-<p><em>pydantic</em> has a rich set of <a href="/usage/model_config/">Model Configurations</a> available.</p>
-<p>These configurations can be set in an internal <code>class Config</code> on each model:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-</code></pre></div>
-<p>or passed as keyword arguments when defining the model class:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="hll"><span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
-</span>    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;blue&#39;</span>
-</code></pre></div>
-<p>The specific configuration <strong><code>frozen</code></strong> (in beta) has a special meaning.</p>
-<p>It prevents other code from changing a model instance once it's created, keeping it <strong>"frozen"</strong>.</p>
-<p>When using the second version to declare <code>frozen=True</code> (with <strong>keyword arguments</strong> in the class definition),
-Pylance can use it to help you check in your code and <strong>detect errors</strong> when something is trying to set values
-in a model that is "frozen".</p>
-<p><img alt="VS Code strict type errors with model" src="../../img/vs_code_08.png" /></p>
-<h2 id="adding-a-default-with-field">Adding a default with <code>Field</code><a class="headerlink" href="#adding-a-default-with-field" title="Permanent link">&para;</a></h2>
-<p>Pylance/pyright requires <code>default</code> to be a keyword argument to <code>Field</code> in order to infer that the field is optional.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-
-<span class="k">class</span> <span class="nc">Knight</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s1">&#39;Sir Lancelot&#39;</span><span class="p">)</span>  <span class="c1"># this is okay</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
-        <span class="mi">23</span>
-    <span class="p">)</span>  <span class="c1"># this works fine at runtime but will case an error for pyright</span>
-
-
-<span class="n">lance</span> <span class="o">=</span> <span class="n">Knight</span><span class="p">()</span>  <span class="c1"># error: Argument missing for parameter &quot;age&quot;</span>
-</code></pre></div>
-<p>This is a limitation of dataclass transforms and cannot be fixed in pydantic.</p>
-<h2 id="technical-details">Technical Details<a class="headerlink" href="#technical-details" title="Permanent link">&para;</a></h2>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>As a <em>pydantic</em> user, you don't need the details below. Feel free to skip the rest of this section.</p>
-<p>These details are only useful for other library authors, etc.</p>
 </div>
-<p>This additional editor support works by implementing the proposed draft standard for <a href="https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md">Dataclass Transform</a>.</p>
-<p>The proposed draft standard is written by Eric Traut, from the Microsoft team, the same author of the open source package Pyright (used by Pylance to provide Python support in VS Code).</p>
-<p>The intention of the standard is to provide a way for libraries like <em>pydantic</em> and others to tell editors and tools that they (the editors) should treat these libraries (e.g. <em>pydantic</em>) as if they were <code>dataclasses</code>, providing autocompletion, type checks, etc.</p>
-<p>The draft standard also includes an <a href="https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md#alternate-form">Alternate Form</a> for early adopters, like <em>pydantic</em>, to add support for it right away, even before the new draft standard is finished and approved.</p>
-<p>This new draft standard, with the Alternate Form, is already supported by Pyright, so it can be used via Pylance in VS Code.</p>
-<p>As it is being proposed as an official standard for Python, other editors can also easily add support for it.</p>
-<p>And authors of other libraries similar to <em>pydantic</em> can also easily adopt the standard right away (using the "Alternate Form") and get the benefits of these additional editor features.</p>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="pydantic.alias_generators.to_snake" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">to_snake</span><span class="p">(</span><span class="n">camel</span><span class="p">)</span></code>
+
+<a href="#pydantic.alias_generators.to_snake" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+  
+      <p>Converts a PascalCase or camelCase string to snake_case.</p>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/alias_generators.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">to_snake</span><span class="p">(</span><span class="n">camel</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Converts a PascalCase or camelCase string to snake_case.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-zA-Z])([0-9])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">camel</span><span class="p">)</span>
+    <span class="n">snake</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([a-z0-9])([A-Z])&#39;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">m</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">m</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">snake</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">snake</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 
 
