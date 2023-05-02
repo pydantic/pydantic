@@ -1,3 +1,5 @@
+from __future__ import annotations as _annotations
+
 from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal

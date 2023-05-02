@@ -97,8 +97,10 @@ nav:
   - 'Rich': integrations/rich.md
 - Contribute: contributing.md
 - Blog:
+  - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
 - API:
+  - 'pydantic.alias_generators': api/alias_generators.md
   - 'pydantic.analyzed_type': api/analyzed_type.md
   - 'pydantic.color': api/color.md
   - 'pydantic.config': api/config.md
@@ -132,7 +134,14 @@ markdown_extensions:
 watch:
 - pydantic
 
+extra:
+  version:
+    provider: mike
+
 plugins:
+- mike:
+    alias_type: symlink
+    canonical_version: latest
 - search
 - exclude:
     glob:

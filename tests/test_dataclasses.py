@@ -1846,6 +1846,7 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
     @create_module
     def module():
         import dataclasses
+        from typing import List
 
         import pydantic
 
@@ -1855,7 +1856,7 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
 
         @dataclasses.dataclass
         class Cook:
-            recipes: list[Recipe]
+            recipes: List[Recipe]
 
         @pydantic.dataclasses.dataclass
         class Foo(Cook):

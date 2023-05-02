@@ -1,4 +1,5 @@
-
+`PaymentCardNumber`
+: for parsing and validating payment cards
 
 The `PaymentCardNumber` type validates [payment cards](https://en.wikipedia.org/wiki/Payment_card)
 (such as a debit or credit card).

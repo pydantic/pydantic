@@ -132,17 +132,6 @@ def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) 
     return abs(value_1 - value_2) <= delta
 
 
-def to_camel(string: str) -> str:
-    return ''.join(word.capitalize() for word in string.split('_'))
-
-
-def to_lower_camel(string: str) -> str:
-    if len(string) >= 1:
-        pascal_string = to_camel(string)
-        return pascal_string[0].lower() + pascal_string[1:]
-    return string.lower()
-
-
 T = TypeVar('T')
 
 

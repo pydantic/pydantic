@@ -6,6 +6,8 @@ from ._internal._validators import import_string
 MOVED_IN_V2 = {
     'pydantic.utils.version_info': 'pydantic.version.version_info',
     'pydantic.error_wrappers.ValidationError': 'pydantic.ValidationError',
+    'pydantic.utils.to_camel': 'pydantic.alias_generators.to_pascal',
+    'pydantic.utils.to_lower_camel': 'pydantic.alias_generators.to_camel',
 }
 
 DEPRECATED_MOVED_IN_V2 = {
@@ -227,7 +229,6 @@ REMOVED_IN_V2 = {
     'pydantic.utils.path_type',
     'pydantic.utils.sequence_like',
     'pydantic.utils.smart_deepcopy',
-    'pydantic.utils.to_camel',
     'pydantic.utils.update_not_none',
     'pydantic.utils.validate_field_name',
     'pydantic.validate_model',

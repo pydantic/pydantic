@@ -8,6 +8,7 @@ import re
 from typing_extensions import Literal
 
 from ._migration import getattr_migration
+from .version import VERSION
 
 __all__ = (
     'PydanticUserError',
@@ -21,8 +22,7 @@ __all__ = (
 # We use this URL to allow for future flexibility about how we host the docs, while allowing for Pydantic
 # code in the while with "old" URLs to still work.
 # 'u' refers to "user errors" - e.g. errors caused by developers using pydantic, as opposed to validation errors.
-# DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{VERSION}/u/'
-DEV_ERROR_DOCS_URL = '<TODO: Set up the errors URLs>/'
+DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{VERSION}/u/'
 PydanticErrorCodes = Literal[
     'decorator-missing-field',
     'dataclass-not-fully-defined',

@@ -24,7 +24,7 @@ from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _serializers, _validators
 from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
-from ._json_schema_shared import GetJsonSchemaHandler
+from ._schema_generation_shared import GetJsonSchemaHandler
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -139,7 +139,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
         # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
         js_functions=[lambda _c, h: h(decimal_validator.json_schema_override_schema())],
     )
-    lax = core_schema.general_after_validator_function(
+    lax = core_schema.no_info_after_validator_function(
         decimal_validator,
         core_schema.union_schema(
             [
@@ -152,7 +152,7 @@ def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decima
         ),
     )
     strict = core_schema.custom_error_schema(
-        core_schema.general_after_validator_function(
+        core_schema.no_info_after_validator_function(
             decimal_validator,
             core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
         ),
@@ -169,7 +169,7 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
     lax = core_schema.union_schema(
         [
             core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-            core_schema.general_after_validator_function(
+            core_schema.no_info_after_validator_function(
                 _validators.uuid_validator,
                 core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()]),
             ),
@@ -191,7 +191,7 @@ def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> cor
                         core_schema.chain_schema(
                             [
                                 core_schema.str_schema(),
-                                core_schema.general_plain_validator_function(_validators.uuid_validator),
+                                core_schema.no_info_plain_validator_function(_validators.uuid_validator),
                             ]
                         ),
                     ]
@@ -244,7 +244,7 @@ def _deque_ser_schema(
 def _deque_any_schema() -> core_schema.LaxOrStrictSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, h: h(core_schema.list_schema(core_schema.any_schema()))])
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.general_wrap_validator_function(
+        lax_schema=core_schema.no_info_wrap_validator_function(
             _validators.deque_any_validator,
             core_schema.list_schema(),
         ),
@@ -277,7 +277,7 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
         inner_schema = schema_generator.generate_schema(arg)
         # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
         metadata = build_metadata_dict(js_functions=[lambda _c, h: h(core_schema.list_schema(inner_schema))])
-        lax_schema = core_schema.general_wrap_validator_function(
+        lax_schema = core_schema.no_info_wrap_validator_function(
             _validators.deque_typed_validator,
             core_schema.list_schema(inner_schema, strict=False),
         )
@@ -294,7 +294,7 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
 
 def _ordered_dict_any_schema() -> core_schema.LaxOrStrictSchema:
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.general_wrap_validator_function(
+        lax_schema=core_schema.no_info_wrap_validator_function(
             _validators.ordered_dict_any_validator, core_schema.dict_schema()
         ),
         strict_schema=core_schema.general_after_validator_function(
@@ -324,7 +324,7 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
             schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
         )
         return core_schema.lax_or_strict_schema(
-            lax_schema=core_schema.general_after_validator_function(
+            lax_schema=core_schema.no_info_after_validator_function(
                 _validators.ordered_dict_typed_validator,
                 core_schema.dict_schema(
                     schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
@@ -354,7 +354,7 @@ def make_strict_ip_schema(tp: type[Any], metadata: Any) -> CoreSchema:
 def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv4'}])
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.general_plain_validator_function(_validators.ip_v4_address_validator, metadata=metadata),
+        lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_address_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv4Address, metadata=metadata),
         serialization=core_schema.to_string_ser_schema(),
     )
@@ -364,7 +364,7 @@ def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv4interface'}])
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.general_plain_validator_function(
+        lax_schema=core_schema.no_info_plain_validator_function(
             _validators.ip_v4_interface_validator, metadata=metadata
         ),
         strict_schema=make_strict_ip_schema(IPv4Interface, metadata=metadata),
@@ -376,7 +376,7 @@ def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv4network'}])
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.general_plain_validator_function(_validators.ip_v4_network_validator, metadata=metadata),
+        lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_network_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv4Network, metadata=metadata),
         serialization=core_schema.to_string_ser_schema(),
     )
@@ -386,7 +386,7 @@ def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv6'}])
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.general_plain_validator_function(_validators.ip_v6_address_validator, metadata=metadata),
+        lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_address_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv6Address, metadata=metadata),
         serialization=core_schema.to_string_ser_schema(),
     )
@@ -396,7 +396,7 @@ def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_s
 def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv6interface'}])
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.general_plain_validator_function(
+        lax_schema=core_schema.no_info_plain_validator_function(
             _validators.ip_v6_interface_validator, metadata=metadata
         ),
         strict_schema=make_strict_ip_schema(IPv6Interface, metadata=metadata),
@@ -408,7 +408,7 @@ def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core
 def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv6network'}])
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.general_plain_validator_function(_validators.ip_v6_network_validator, metadata=metadata),
+        lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_network_validator, metadata=metadata),
         strict_schema=make_strict_ip_schema(IPv6Network, metadata=metadata),
         serialization=core_schema.to_string_ser_schema(),
     )

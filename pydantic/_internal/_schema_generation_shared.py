@@ -63,6 +63,9 @@ class UnpackedRefJsonSchemaHandler(GetJsonSchemaHandler):
 
     This is used for custom types and models that implement `__get_pydantic_core_schema__`
     so they they always get a `non-$ref` schema.
+
+    Used internally by Pydantic, please do not rely on this implementation.
+    See `GetJsonSchemaHandler` for the handler API.
     """
 
     original_schema: JsonSchemaValue | None = None
@@ -111,6 +114,9 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
 
     This is used for any Annotated metadata so that we don't end up with conflicting
     modifications to the definition schema.
+
+    Used internally by Pydantic, please do not rely on this implementation.
+    See `GetJsonSchemaHandler` for the handler API.
     """
 
     def __init__(self, generate_json_schema: GenerateJsonSchema, handler_override: HandlerOverride | None) -> None:
@@ -131,3 +137,40 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
                 ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
             )
         return json_schema
+
+
+class GetCoreSchemaHandler:
+    """
+    Handler to call into the next CoreSchema schema generation function
+    """
+
+    def __call__(self, __source_type: Any) -> core_schema.CoreSchema:
+        """
+        Call the inner handler and get the CoreSchema it returns.
+        This will call the next CoreSchema modifying function up until it calls
+        into Pydantic's internal schema generation machinery, which will raise a
+        `pydantic.errors.PydanticSchemaGenerationError` error if it cannot generate
+        a CoreSchema for the given source type.
+
+        Args:
+            __source_type (Any): The input type.
+
+        Returns:
+            CoreSchema: the `pydantic-core` CoreSchema generated.
+        """
+        raise NotImplementedError
+
+
+class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
+    """
+    Wrapper to use an arbitrary function as a `GetCoreSchemaHandler`.
+
+    Used internally by Pydantic, please do not rely on this implementation.
+    See `GetCoreSchemaHandler` for the handler API.
+    """
+
+    def __init__(self, handler: Callable[[Any], core_schema.CoreSchema]) -> None:
+        self._handler = handler
+
+    def __call__(self, __source_type: Any) -> core_schema.CoreSchema:
+        return self._handler(__source_type)

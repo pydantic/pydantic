@@ -1,3 +1,5 @@
+from __future__ import annotations as _annotations
+
 import json
 import logging
 import os
@@ -162,9 +164,14 @@ def add_version(markdown: str, page: Page) -> str | None:
         return None
 
     version_ref = os.getenv('GITHUB_REF')
-    if version_ref:
+    if version_ref and version_ref.startswith('refs/tags/'):
         version = re.sub('^refs/tags/', '', version_ref.lower())
-        version_str = f'Documentation for version: **{version}**'
+        url = f'https://github.com/pydantic/pydantic/releases/tag/{version}'
+        version_str = f'Documentation for version: [{version}]({url})'
+    elif sha := os.getenv('GITHUB_SHA'):
+        url = f'https://github.com/pydantic/pydantic/commit/{sha}'
+        sha = sha[:7]
+        version_str = f'Documentation for development version: [{sha}]({url})'
     else:
         version_str = 'Documentation for development version'
     markdown = re.sub(r'{{ *version *}}', version_str, markdown)
@@ -236,7 +243,7 @@ def build_conversion_table(markdown: str, page: Page) -> str | None:
 
 
 def devtools_example(markdown: str, page: Page) -> str | None:
-    if page.file.src_uri != 'usage/devtools.md':
+    if page.file.src_uri != 'integrations/devtools.md':
         return None
 
     html = (THIS_DIR / 'devtools_output.html').read_text().strip('\n')

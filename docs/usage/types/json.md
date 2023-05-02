@@ -1,4 +1,5 @@
-
+`Json`
+: a special type wrapper which loads JSON before parsing
 
 You can use `Json` data type to make *pydantic* first load a raw JSON string.
 It can also optionally be used to parse the loaded object into another type base on

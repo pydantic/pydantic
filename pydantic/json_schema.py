@@ -27,9 +27,9 @@ from weakref import WeakKeyDictionary
 import pydantic_core
 from typing_extensions import Literal
 
-from pydantic._internal._json_schema_shared import GenerateJsonSchemaHandler
+from pydantic._internal._schema_generation_shared import GenerateJsonSchemaHandler
 
-from ._internal import _core_metadata, _core_utils, _json_schema_shared, _typing_extra
+from ._internal import _core_metadata, _core_utils, _schema_generation_shared, _typing_extra
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
@@ -40,9 +40,9 @@ if TYPE_CHECKING:
     from .main import BaseModel
 
 
-JsonSchemaValue = _json_schema_shared.JsonSchemaValue
+JsonSchemaValue = _schema_generation_shared.JsonSchemaValue
 # re export GetJsonSchemaHandler
-GetJsonSchemaHandler = _json_schema_shared.GetJsonSchemaHandler
+GetJsonSchemaHandler = _schema_generation_shared.GetJsonSchemaHandler
 
 
 def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> JsonSchemaValue:

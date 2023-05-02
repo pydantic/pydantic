@@ -5,6 +5,26 @@ description: Support for datetime types.
 *Pydantic* supports the following [datetime](https://docs.python.org/library/datetime.html#available-types)
 types:
 
+`datetime.date`
+: see [Datetime Types](#datetime-types) below for more detail on parsing and validation
+
+`datetime.time`
+: see [Datetime Types](#datetime-types) below for more detail on parsing and validation
+
+`datetime.datetime`
+: see [Datetime Types](#datetime-types) below for more detail on parsing and validation
+
+`datetime.timedelta`
+: see [Datetime Types](#datetime-types) below for more detail on parsing and validation
+
+`PastDate`
+: like `date`, but the date should be in the past
+
+`FutureDate`
+: like `date`, but the date should be in the future
+
+## Datetime types
+
 * `datetime` fields can be:
 
   * `datetime`, existing `datetime` object

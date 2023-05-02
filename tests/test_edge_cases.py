@@ -7,7 +7,6 @@ from decimal import Decimal
 from enum import Enum
 from typing import (
     Any,
-    Callable,
     Dict,
     ForwardRef,
     FrozenSet,
@@ -1885,7 +1884,10 @@ def test_custom_generic_validators():
             self.t2 = t2
 
         @classmethod
-        def __get_pydantic_core_schema__(cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]):
+        def __get_pydantic_core_schema__(
+            cls,
+            source: Any,
+        ):
             schema = core_schema.is_instance_schema(cls)
 
             args = get_args(source)
