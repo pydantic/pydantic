@@ -44,7 +44,7 @@ def test_datetime_binary(datetime_schema, data):
     try:
         datetime_schema.validate_python(data)
     except ValidationError as exc:
-        assert exc.errors() == [
+        assert exc.errors(include_url=False) == [
             {
                 'type': 'datetime_parsing',
                 'loc': (),
@@ -110,7 +110,7 @@ def test_definition_cycles(definition_schema, data):
     try:
         assert definition_schema.validate_python(data) == data
     except ValidationError as exc:
-        assert exc.errors() == [
+        assert exc.errors(include_url=False) == [
             {
                 'type': 'recursion_loop',
                 'loc': IsTuple(length=(1, None)),
@@ -149,7 +149,7 @@ def test_urls_text(url_validator, text):
         url_validator.validate_python(text)
     except ValidationError as exc:
         assert exc.error_count() == 1
-        error = exc.errors()[0]
+        error = exc.errors(include_url=False)[0]
         assert error['type'] == 'url_parsing'
         assert error['ctx']['error'] == 'relative URL without a base'
 

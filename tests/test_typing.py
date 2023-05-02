@@ -260,5 +260,5 @@ def test_error_details() -> None:
     try:
         v.validate_python('not an int')
     except ValidationError as err:
-        for details in err.errors():
+        for details in err.errors(include_url=False):
             act_on_error_details(details)

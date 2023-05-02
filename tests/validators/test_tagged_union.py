@@ -108,8 +108,8 @@ def test_simple_tagged_union(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
-        assert exc_info.value.errors() == expected.errors
+        # debug(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -184,8 +184,8 @@ def test_int_choice_keys(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
-        assert exc_info.value.errors() == expected.errors
+        # debug(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -228,7 +228,7 @@ def test_enum_keys():
     assert v.validate_python({'foo': BarEnum.ONE, 'bar': '123'}) == {'foo': 1, 'bar': 123}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'foo': FooEnum.APPLE, 'spam': [1, 2, '3']})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'union_tag_invalid',
             'loc': (),
@@ -266,7 +266,7 @@ def test_discriminator_path(py_and_json: PyAndJson):
     assert v.validate_test({'menu': ['x', 'banana'], 'c': 'C', 'd': [1, '2']}) == {'c': 'C', 'd': [1, 2]}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'union_tag_not_found',
             'loc': (),
@@ -358,8 +358,8 @@ def test_discriminator_function(py_and_json: PyAndJson, input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_python(input_value)
-        # debug(exc_info.value.errors())
-        assert exc_info.value.errors() == expected.errors
+        # debug(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -424,8 +424,8 @@ def test_int_discriminator_function(py_and_json: PyAndJson, input_value, expecte
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_python(input_value)
-        # debug(exc_info.value.errors())
-        assert exc_info.value.errors() == expected.errors
+        # debug(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == expected.errors
     else:
         assert v.validate_test(input_value) == expected
 
@@ -497,7 +497,7 @@ def test_downcast_error():
     v = SchemaValidator({'type': 'tagged-union', 'discriminator': lambda x: 123, 'choices': {'str': {'type': 'str'}}})
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('x')
-        assert exc_info.value.errors() == [
+        assert exc_info.value.errors(include_url=False) == [
             {
                 'type': 'union_tag_invalid',
                 'loc': (),
@@ -538,13 +538,13 @@ def test_custom_error():
     assert v.validate_python({'foo': 'apple', 'bar': '123'}) == {'foo': 'apple', 'bar': 123}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'spam': 'apple', 'bar': 'Bar'})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'snap', 'loc': (), 'msg': 'Input should be a foo or bar', 'input': {'spam': 'apple', 'bar': 'Bar'}}
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'foo': 'other', 'bar': 'Bar'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'snap', 'loc': (), 'msg': 'Input should be a foo or bar', 'input': {'foo': 'other', 'bar': 'Bar'}}
     ]
 
@@ -579,8 +579,8 @@ def test_custom_error_type():
     assert v.validate_python({'foo': 'apple', 'bar': '123'}) == {'foo': 'apple', 'bar': 123}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'spam': 'apple', 'bar': 'Bar'})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'finite_number',
             'loc': (),
@@ -590,7 +590,7 @@ def test_custom_error_type():
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'foo': 'other', 'bar': 'Bar'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'finite_number',
             'loc': (),
@@ -667,11 +667,11 @@ def test_tag_repeated(py_and_json: PyAndJson, input_value, expected):
         }
     )
     if isinstance(expected, Err):
-        # insert_assert(exc_info.value.errors())
+        # insert_assert(exc_info.value.errors(include_url=False))
         with pytest.raises(ValidationError, match=expected.message) as exc_info:
             v.validate_test(input_value)
-        # debug(exc_info.value.errors())
-        assert exc_info.value.errors() == expected.errors
+        # debug(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == expected.errors
 
     else:
         assert v.validate_test(input_value) == expected

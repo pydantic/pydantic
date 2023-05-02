@@ -148,7 +148,7 @@ def test_time_kwargs(kwargs: Dict[str, Any], input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)) as exc_info:
             v.validate_python(input_value)
-        errors = exc_info.value.errors()
+        errors = exc_info.value.errors(include_url=False)
         assert len(errors) == 1
         if len(kwargs) == 1:
             key = list(kwargs.keys())[0]
@@ -163,7 +163,7 @@ def test_time_bound_ctx():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python('12:13')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'greater_than',
             'loc': (),

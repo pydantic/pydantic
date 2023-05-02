@@ -10,6 +10,7 @@ from enum import Enum
 from typing import Any, Dict, FrozenSet, List, Optional, Set, Union
 
 import pytest
+from dirty_equals import IsStr
 
 from pydantic_core import ArgsKwargs, PydanticCustomError, SchemaValidator, ValidationError, core_schema
 from pydantic_core import ValidationError as CoreValidationError
@@ -261,6 +262,21 @@ def test_core_string_strict_wrong(benchmark):
             validator.validate_python(123)
         except ValidationError:
             pass
+
+
+@pytest.mark.benchmark(group='string')
+def test_core_string_strict_wrong_str_e(benchmark):
+    validator = SchemaValidator(core_schema.str_schema(strict=True))
+
+    with pytest.raises(ValidationError, match='Input should be a valid string'):
+        validator.validate_python(123)
+
+    @benchmark
+    def t():
+        try:
+            validator.validate_python(123)
+        except ValidationError as e:
+            str(e)
 
 
 @pytest.mark.benchmark(group='isinstance-string')
@@ -1141,6 +1157,7 @@ def test_int_error(benchmark):
                 'loc': (),
                 'msg': 'Input should be a valid integer, unable to parse string as an integer',
                 'input': 'bar',
+                'url': IsStr(regex=r'https://errors.pydantic.dev/.*?/v/int_parsing'),
             }
         ]
     else:

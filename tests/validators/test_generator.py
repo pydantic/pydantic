@@ -65,10 +65,10 @@ def test_error_index(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         next(gen)
     assert gen.index == 1
-    # insert_assert(exc_info.value.errors())
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.title == 'ValidatorIterator'
     assert str(exc_info.value).startswith('1 validation error for ValidatorIterator\n')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (0,),
@@ -87,7 +87,7 @@ def test_error_index(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         next(gen)
     assert gen.index == 4
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (3,),
@@ -105,8 +105,8 @@ def test_too_long(py_and_json: PyAndJson):
     assert list(v.validate_test([1, 2])) == [1, 2]
     with pytest.raises(ValidationError) as exc_info:
         list(v.validate_test([1, 2, 3]))
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'too_long',
             'loc': (),
@@ -123,8 +123,8 @@ def test_too_short(py_and_json: PyAndJson):
     assert list(v.validate_test([1, 2])) == [1, 2]
     with pytest.raises(ValidationError) as exc_info:
         list(v.validate_test([1]))
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'too_short',
             'loc': (),
@@ -152,7 +152,7 @@ def test_generator_too_long():
     with pytest.raises(ValidationError) as exc_info:
         next(validating_iterator)
 
-    errors = exc_info.value.errors()
+    errors = exc_info.value.errors(include_url=False)
     # insert_assert(errors)
     assert errors == [
         {
@@ -177,7 +177,7 @@ def test_generator_too_short():
     with pytest.raises(ValidationError) as exc_info:
         next(validating_iterator)
 
-    errors = exc_info.value.errors()
+    errors = exc_info.value.errors(include_url=False)
     # insert_assert(errors)
     assert errors == [
         {

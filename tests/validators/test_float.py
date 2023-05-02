@@ -139,7 +139,7 @@ def test_union_float(py_and_json: PyAndJson):
     assert v.validate_test(5) == 5
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('5')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'float_type', 'loc': ('float',), 'msg': 'Input should be a valid number', 'input': '5'},
         {
             'type': 'multiple_of',
@@ -157,7 +157,7 @@ def test_union_float_simple(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test('xxx')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'float_parsing',
             'loc': ('float',),

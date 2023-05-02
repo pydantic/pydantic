@@ -91,7 +91,7 @@ def test_complete_invalid():
     lax_validator = SchemaValidator(lax_schema)
     with pytest.raises(ValidationError) as exc_info:
         lax_validator.validate_python(input_data_wrong())
-    assert len(exc_info.value.errors()) == 738
+    assert len(exc_info.value.errors(include_url=False)) == 738
 
     model = pydantic_model()
     if model is None:

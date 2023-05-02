@@ -46,8 +46,8 @@ def test_chain_error():
 
     with pytest.raises(ValidationError) as exc_info:
         validator.validate_python('abc')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (),

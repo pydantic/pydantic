@@ -5,7 +5,7 @@ from typing import Any, Dict, Mapping, Union
 import pytest
 from dirty_equals import FunctionCheck
 
-from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import CoreConfig, SchemaError, SchemaValidator, ValidationError, __version__, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -66,7 +66,7 @@ def test_strict():
 
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'field_a': 123, 'field_b': '123'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'string_type', 'loc': ('field_a',), 'msg': 'Input should be a valid string', 'input': 123},
         {'type': 'int_type', 'loc': ('field_b',), 'msg': 'Input should be a valid integer', 'input': '123'},
     ]
@@ -102,12 +102,12 @@ def test_missing_error():
     )
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': b'abc'})
-    assert (
-        str(exc_info.value)
-        == """\
-1 validation error for typed-dict
-field_b
-  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]"""
+    # insert_assert(str(exc_info.value))
+    assert str(exc_info.value) == (
+        "1 validation error for typed-dict\n"
+        "field_b\n"
+        "  Field required [type=missing, input_value={'field_a': b'abc'}, input_type=dict]\n"
+        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/missing"
     )
 
 
@@ -177,7 +177,7 @@ def test_forbid_extra():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': 'abc', 'field_b': 1})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'extra_forbidden', 'loc': ('field_b',), 'msg': 'Extra inputs are not permitted', 'input': 1}
     ]
 
@@ -217,7 +217,7 @@ def test_json_error():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('{"field_a": [123, "wrong"]}')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('field_a', 1),
@@ -249,7 +249,7 @@ def test_fields_required_by_default():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'x': 'pika'})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'missing', 'loc': ('y',), 'msg': 'Field required', 'input': {'x': 'pika'}}
     ]
 
@@ -307,7 +307,7 @@ def test_all_optional_fields():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'x': 123})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'string_type', 'loc': ('x',), 'msg': 'Input should be a valid string', 'input': 123}
     ]
 
@@ -330,7 +330,7 @@ def test_all_optional_fields_with_required_fields():
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_python({'y': 'chu'}) == ({'y': 'chu'}, {'y'})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'missing', 'loc': ('x',), 'msg': 'Field required', 'input': {'y': 'chu'}}
     ]
 
@@ -649,8 +649,8 @@ def test_alias_error_loc_alias(py_and_json: PyAndJson):
     assert v.validate_test({'bar': ['x', [1, 2, 42]]}) == {'field_a': 42}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({'foo': {'x': 'not_int'}})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('foo', 'x'),
@@ -660,8 +660,8 @@ def test_alias_error_loc_alias(py_and_json: PyAndJson):
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({'bar': ['x', [1, 2, 'not_int']]})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('bar', 1, -1),
@@ -671,8 +671,10 @@ def test_alias_error_loc_alias(py_and_json: PyAndJson):
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [{'type': 'missing', 'loc': ('foo', 'x'), 'msg': 'Field required', 'input': {}}]
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('foo', 'x'), 'msg': 'Field required', 'input': {}}
+    ]
 
 
 def test_alias_error_loc_field_names(py_and_json: PyAndJson):
@@ -693,8 +695,8 @@ def test_alias_error_loc_field_names(py_and_json: PyAndJson):
     assert v.validate_test({'bar': ['x', [1, 2, 42]]}) == {'field_a': 42}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({'foo': 'not_int'})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('field_a',),
@@ -704,8 +706,8 @@ def test_alias_error_loc_field_names(py_and_json: PyAndJson):
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({'bar': ['x', [1, 2, 'not_int']]})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('field_a',),
@@ -715,8 +717,10 @@ def test_alias_error_loc_field_names(py_and_json: PyAndJson):
     ]
     with pytest.raises(ValidationError) as exc_info:
         v.validate_test({})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [{'type': 'missing', 'loc': ('field_a',), 'msg': 'Field required', 'input': {}}]
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('field_a',), 'msg': 'Field required', 'input': {}}
+    ]
 
 
 def test_empty_model():
@@ -759,7 +763,7 @@ def test_model_deep():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'field_a': '1', 'field_b': {'field_c': '2', 'field_d': {'field_e': '4', 'field_f': 'xx'}}})
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('field_b', 'field_d', 'field_f'),
@@ -791,7 +795,7 @@ def test_alias_extra(py_and_json: PyAndJson):
     with pytest.raises(ValidationError) as exc_info:
         assert v.validate_test({'FieldA': '...'}) == {'field_a': 1}
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('field_a',),
@@ -936,7 +940,7 @@ class TestOnError:
         assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
         with pytest.raises(ValidationError) as exc_info:
             v.validate_test({'x': ['foo']})
-        assert exc_info.value.errors() == [
+        assert exc_info.value.errors(include_url=False) == [
             {'input': ['foo'], 'type': 'string_type', 'loc': ('x',), 'msg': 'Input should be a valid string'}
         ]
 
@@ -955,7 +959,7 @@ class TestOnError:
         assert v.validate_test({'x': 'foo'}) == {'x': 'foo'}
         with pytest.raises(ValidationError) as exc_info:
             v.validate_test({'x': ['foo']})
-        assert exc_info.value.errors() == [
+        assert exc_info.value.errors(include_url=False) == [
             {'input': ['foo'], 'type': 'string_type', 'loc': ('x',), 'msg': 'Input should be a valid string'}
         ]
 
@@ -1125,7 +1129,7 @@ def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], sche
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'f': 'x', 'extra_field': 123})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'extra_forbidden', 'loc': ('extra_field',), 'msg': 'Extra inputs are not permitted', 'input': 123}
     ]
 

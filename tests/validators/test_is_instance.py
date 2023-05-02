@@ -32,7 +32,7 @@ def test_is_instance():
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(s)
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'is_instance_of',
             'loc': (),

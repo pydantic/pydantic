@@ -345,8 +345,8 @@ def test_validate_default_error_tuple():
     with pytest.raises(ValidationError, match='Input should be a valid integer,') as exc_info:
         v.validate_python(())
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (0,),
@@ -370,8 +370,8 @@ def test_validate_default_error_typed_dict():
     with pytest.raises(ValidationError, match='Input should be a valid integer,') as exc_info:
         v.validate_python({})
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('x',),

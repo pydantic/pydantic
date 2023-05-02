@@ -20,8 +20,8 @@ def test_is_subclass_basic():
     assert v.validate_python(Foo) == Foo
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(Bar)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'is_subclass_of',
             'loc': (),
@@ -67,8 +67,8 @@ def test_custom_repr():
     assert v.validate_python(Foo) == Foo
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(Bar)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'is_subclass_of',
             'loc': (),
