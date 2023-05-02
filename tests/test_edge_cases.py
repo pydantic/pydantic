@@ -2197,7 +2197,6 @@ def test_bytes_subclass():
     assert m.my_bytes.__class__ == BytesSubclass
 
 
-@pytest.mark.xfail(reason='subclass not preserved for field of type int')
 def test_int_subclass():
     class MyModel(BaseModel):
         my_int: int
@@ -2208,10 +2207,11 @@ def test_int_subclass():
             return self
 
     m = MyModel(my_int=IntSubclass(123))
-    # TODO: Is this still the behavior we want in v2? (Currently m.my_int.__class__ is int)
-    #   "yes, because in pydantic-core we cast the value to a rust i64, so the sub-type information is lost."
-    #   (more detail about how to handle this in: https://github.com/pydantic/pydantic/pull/5151#discussion_r1130691036)
-    assert m.my_int.__class__ == IntSubclass
+    # This is expected behavior in `V2` because in pydantic-core we cast the value to a rust i64,
+    # so the sub-type information is lost."
+    # (more detail about how to handle this in: https://github.com/pydantic/pydantic/pull/5151#discussion_r1130691036)
+    assert m.my_int.__class__ != IntSubclass
+    assert isinstance(m.my_int, int)
 
 
 def test_model_issubclass():
