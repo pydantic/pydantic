@@ -30,3 +30,10 @@ repos:
     language: node
     pass_filenames: false
     additional_dependencies: ["pyright@1.1.302"]
+
+- repo: https://github.com/Kludex/only-relative-import
+  rev: 0.1.0
+  hooks:
+    - id: only-relative-import
+      exclude: ^tests/
+      args: [--package-name, pydantic]

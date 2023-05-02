@@ -265,16 +265,30 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
 
-    - name: check absolute imports
+    - name: check dependencies match
+      shell: python
       run: |
-        ! ((find pydantic -name "*.py" -print0 \
-          | xargs -0 grep -nE "^\s*(import pydantic($|\.))|^\s*(from pydantic( |\.))") \
-          | tee /dev/stderr \
-          | grep -q . )&& echo "No absolute imports detected" || (echo "Absolute imports detected" && exit 1)
+        import tomllib
 
-    - name: check toml matches
-      run: ls
+        with open("pyproject.toml", "rb") as f:
+            data = tomllib.load(f)
+
+        with open("pydantic-next/pyproject.toml", "rb") as f:
+            data2 = tomllib.load(f)
+
+        if data["project"]["dependencies"] == data2["project"]["dependencies"]:
+            print("Dependencies are matching!")
+        else:
+            print("Dependencies are not matching!")
+            print("data:", data["project"]["dependencies"])
+            print("data2:", data2["project"]["dependencies"])
+
+            exit(1)
 
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
