@@ -60,7 +60,7 @@ def sequence_validator(
     # Relevant issue: https://github.com/pydantic/pydantic/issues/5595
     if issubclass(value_type, (str, bytes)):
         raise PydanticCustomError(
-            'sequence_str_str_type',
+            'sequence_str',
             "'{type_name}' instances are not allowed as a Sequence value",
             {'type_name': value_type.__name__},
         )
