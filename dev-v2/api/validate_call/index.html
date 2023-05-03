@@ -13,10 +13,10 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/api/validate_call/">
       
       
-        <link rel="prev" href="../dataclasses/">
+        <link rel="prev" href="../types/">
       
       
-        <link rel="next" href="../decorators/">
+        <link rel="next" href="../version/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.8">
@@ -1381,66 +1381,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-    
-  
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          pydantic.validate_call
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
-        pydantic.validate_call
-      </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.validate_call" class="md-nav__link">
-    pydantic.validate_call
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.validate_call.validate_call" class="md-nav__link">
-    validate_call()
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
   
     <li class="md-nav__item">
       <a href="../decorators/" class="md-nav__link">
@@ -1553,6 +1493,66 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic.validate_call
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        pydantic.validate_call
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.validate_call" class="md-nav__link">
+    pydantic.validate_call
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.validate_call.validate_call" class="md-nav__link">
+    validate_call()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
   
     <li class="md-nav__item">
       <a href="../version/" class="md-nav__link">
@@ -1635,6 +1635,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 <a id="pydantic.validate_call"></a>
   <div class="doc doc-contents first">
+  
+      <p>Decorators for validating function calls.</p>
 
   
 
@@ -1660,12 +1662,73 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <div class="doc doc-contents ">
   
-      <p>Decorator to validate the arguments passed to a function, and optionally the return value.</p>
+      <p>Decorator to validate the arguments passed to a function and, optionally, the return value.</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>__func</code></td>
+          <td>
+                <code><span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span></code>
+          </td>
+          <td><p>The function to be decorated.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>config</code></td>
+          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a></code>
+          </td>
+          <td><p>The configuration dictionary.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>validate_return</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td><p>Whether to validate the return value.</p></td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>Callable</code></td>          <td>
+                <code><span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span> | <span title="typing.Callable">Callable</span>[[<span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span>], <span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span>]</code>
+          </td>
+          <td><p>The decorated function.</p></td>
+        </tr>
+    </tbody>
+  </table>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/validate_call.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
-<span class="normal">28</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">28</span>
 <span class="normal">29</span>
 <span class="normal">30</span>
 <span class="normal">31</span>
@@ -1680,14 +1743,31 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">40</span>
 <span class="normal">41</span>
 <span class="normal">42</span>
-<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_call</span><span class="p">(</span>
     <span class="n">__func</span><span class="p">:</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">validate_return</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallableT</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">AnyCallableT</span><span class="p">],</span> <span class="n">AnyCallableT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decorator to validate the arguments passed to a function, and optionally the return value.</span>
+<span class="sd">    Decorator to validate the arguments passed to a function and, optionally, the return value.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        __func (AnyCallableT): The function to be decorated.</span>
+<span class="sd">        config (ConfigDict): The configuration dictionary.</span>
+<span class="sd">        validate_return (bool): Whether to validate the return value.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Callable: The decorated function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">AnyCallableT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallableT</span><span class="p">:</span>
