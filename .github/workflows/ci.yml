@@ -340,6 +340,9 @@ jobs:
     permissions:
       id-token: write
 
+    outputs:
+      pydantic-version: ${{ steps.check-tag.outputs.VERSION }}
+
     steps:
       - uses: actions/checkout@v3
 
@@ -362,3 +365,39 @@ jobs:
 
       - name: Upload package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
+
+  send-tweet:
+    name: Send tweet
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: ${{ needs.deploy.status == 'OK' }}
+
+    steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+      - name: Install dependencies
+        run: pip install tweepy==4.14.0
+      - name: Send tweet
+        shell: python
+        run: |
+          import os
+          import tweepy
+
+          client = tweepy.Client(
+              access_token=os.getenv("TWITTER_ACCESS_TOKEN"),
+              access_token_secret=os.getenv("TWITTER_ACCESS_TOKEN_SECRET"),
+              consumer_key=os.getenv("TWITTER_CONSUMER_KEY"),
+              consumer_secret=os.getenv("TWITTER_CONSUMER_SECRET"),
+          )
+          tweet = os.getenv("TWEET")
+          client.create_tweet(text=tweet)
+        env:
+          TWEET: |
+            Pydantic version ${{needs.deploy.outputs.pydantic-version}} is out! 🎉
+
+            https://github.com/pydantic/pydantic-settings/releases/tag/v${{needs.deploy.outputs.pydantic-version}}
+          TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
+          TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
