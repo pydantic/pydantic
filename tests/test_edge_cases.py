@@ -2454,7 +2454,7 @@ def test_invalid_forward_ref_model():
 @pytest.mark.parametrize(
     ('sequence_type', 'input_data', 'expected_error_type', 'expected_error_msg', 'expected_error_ctx'),
     [
-        pytest.param(list[str], '1bc', 'list_type', 'Input should be a valid list', None, id='list[str]'),
+        pytest.param(List[str], '1bc', 'list_type', 'Input should be a valid list', None, id='list[str]'),
         pytest.param(
             Sequence[str],
             '1bc',
