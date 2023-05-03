@@ -22,14 +22,14 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - uses: pdm-project/setup-pdm@v3
         with:
           python-version: ${{ matrix.python-version }}
+          cache: true
 
-      - name: Setup PDM
-        run: |
-          pip install -U pdm pip wheel
-          pip install -U requests 'urllib3<2'
+      - name: Downgrade urrlib3
+        # https://github.com/pdm-project/pdm/issues/1880
+        run: pip install -U 'urllib3<2'
 
       - name: install
         run: pdm install -G linting -G email
