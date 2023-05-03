@@ -263,7 +263,7 @@ print(Character.model_json_schema(by_alias=True))
 {
     'type': 'object',
     'properties': {
-        'ActorName': {'type': 'string', 'default': None, 'title': 'Actorname'},
+        'Name': {'type': 'string', 'default': None, 'title': 'Name'},
         'LanguageCode': {'type': 'string', 'default': None, 'title': 'Languagecode'},
         'Mood': {'type': 'string', 'default': None, 'title': 'Mood'},
         'Act': {'type': 'integer', 'default': 1, 'title': 'Act'},

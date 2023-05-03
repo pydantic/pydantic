@@ -9,6 +9,7 @@ from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Opti
 
 import pytest
 from dirty_equals import HasRepr
+from pydantic_core import ArgsKwargs
 from typing_extensions import Literal
 
 import pydantic
@@ -1869,3 +1870,34 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
     me = module.Foo([burger])
 
     assert me.recipes == [burger]
+
+
+def test_dataclass_alias_generator():
+    def alias_generator(name: str) -> str:
+        return 'alias_' + name
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(alias_generator=alias_generator))
+    class User:
+        name: str
+        score: int
+
+    user = User(**{'alias_name': 'test name', 'alias_score': 2})
+    assert user.name == 'test name'
+    assert user.score == 2
+
+    with pytest.raises(ValidationError) as exc_info:
+        User(name='test name', score=2)
+    assert exc_info.value.errors() == [
+        {
+            'type': 'missing',
+            'loc': ('alias_name',),
+            'msg': 'Field required',
+            'input': ArgsKwargs((), {'name': 'test name', 'score': 2}),
+        },
+        {
+            'type': 'missing',
+            'loc': ('alias_score',),
+            'msg': 'Field required',
+            'input': ArgsKwargs((), {'name': 'test name', 'score': 2}),
+        },
+    ]
