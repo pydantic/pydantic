@@ -413,28 +413,28 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
     def get_ref(s: core_schema.CoreSchema) -> None | str:
         return s.get('ref', None)
 
-    def collect_refs(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def collect_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if s['type'] == 'definitions':
             for definition in s['definitions']:
                 ref = get_ref(definition)
                 assert ref is not None
-                all_defs[ref] = next(definition, collect_refs).copy()
-            return next(s['schema'], collect_refs)
+                all_defs[ref] = recurse(definition, collect_refs).copy()
+            return recurse(s['schema'], collect_refs)
         ref = get_ref(s)
         if ref is not None:
             all_defs[ref] = s
-        return next(s, collect_refs)
+        return recurse(s, collect_refs)
 
     schema = walk_core_schema(schema, collect_refs)
 
-    def flatten_refs(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def flatten_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if is_definitions_schema(s):
             # iterate ourselves, we don't want to flatten the actual defs!
-            s['schema'] = next(s['schema'], flatten_refs)
+            s['schema'] = recurse(s['schema'], flatten_refs)
             for definition in s['definitions']:
-                next(definition, flatten_refs)  # don't re-assign here!
+                recurse(definition, flatten_refs)  # don't re-assign here!
             return s
-        s = next(s, flatten_refs)
+        s = recurse(s, flatten_refs)
         ref = get_ref(s)
         if ref and ref in all_defs and ref:
             all_defs[ref] = s
@@ -447,9 +447,9 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
     involved_in_recursion: dict[str, bool] = {}
     current_recursion_ref_count: dict[str, int] = defaultdict(int)
 
-    def count_refs(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def count_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if not is_definition_ref_schema(s):
-            return next(s, count_refs)
+            return recurse(s, count_refs)
         ref = s['schema_ref']
         ref_counts[ref] += 1
         if current_recursion_ref_count[ref] != 0:
@@ -457,7 +457,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
             return s
 
         current_recursion_ref_count[ref] += 1
-        next(all_defs[ref], count_refs)
+        recurse(all_defs[ref], count_refs)
         current_recursion_ref_count[ref] -= 1
         return s
 
@@ -465,7 +465,7 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
 
     assert all(c == 0 for c in current_recursion_ref_count.values()), 'this is a bug! please report it'
 
-    def inline_refs(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def inline_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if s['type'] == 'definition-ref':
             ref = s['schema_ref']
             # Check if the reference is only used once and not involved in recursion
@@ -474,12 +474,12 @@ def simplify_schema_references(schema: core_schema.CoreSchema) -> core_schema.Co
                 new = all_defs.pop(ref)
                 ref_counts[ref] -= 1  # because we just replaced it!
                 new.pop('ref')  # type: ignore
-                s = next(new, inline_refs)
+                s = recurse(new, inline_refs)
                 return s
             else:
-                return next(s, inline_refs)
+                return recurse(s, inline_refs)
         else:
-            return next(s, inline_refs)
+            return recurse(s, inline_refs)
 
     schema = walk_core_schema(schema, inline_refs)
 
