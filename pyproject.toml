@@ -3,7 +3,7 @@ requires = ['hatchling', 'hatch-fancy-pypi-readme>=22.5.0']
 build-backend = 'hatchling.build'
 
 [tool.hatch.version]
-path = 'pydantic/version.py'
+path = 'pydantic_next/version.py'
 
 [tool.hatch.build.targets.sdist]
 # limit which files are included in the sdist (.tar.gz) asset,
@@ -12,13 +12,13 @@ include = [
     '/README.md',
     '/HISTORY.md',
     '/Makefile',
-    '/pydantic',
+    '/pydantic_next',
     '/tests',
     '/requirements',
 ]
 
 [project]
-name = 'pydantic'
+name = 'pydantic_next'
 description = 'Data validation using Python type hints'
 authors = [
     {name = 'Samuel Colvin', email = 's@muelcolvin.com'},
@@ -154,7 +154,7 @@ line-length = 120
 extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
-isort = { known-first-party = ['pydantic', 'tests'] }
+isort = { known-first-party = ['pydantic_next', 'tests'] }
 target-version = "py37"
 
 [tool.ruff.per-file-ignores]
@@ -162,7 +162,7 @@ target-version = "py37"
 'tests/test_forward_ref.py' = ['F821']
 
 [tool.coverage.run]
-source = ['pydantic']
+source = ['pydantic_next']
 omit = ['pydantic/deprecated/*']
 branch = true
 context = '${CONTEXT}'
@@ -193,7 +193,7 @@ target-version = ['py310']
 skip-string-normalization = true
 
 [tool.pyright]
-include = ['pydantic']
+include = ['pydantic_next']
 exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']
 
 [tool.codespell]

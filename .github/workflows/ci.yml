@@ -260,36 +260,6 @@ jobs:
     - name: test
       run: make test-fastapi
 
-  test-next:
-    runs-on: ubuntu-latest
-
-    steps:
-    - uses: actions/checkout@v3
-    - name: set up python
-      uses: actions/setup-python@v4
-      with:
-        python-version: '3.10'
-
-    - name: check dependencies match
-      shell: python
-      run: |
-        import tomllib
-
-        with open("pyproject.toml", "rb") as f:
-            data = tomllib.load(f)
-
-        with open("pydantic-next/pyproject.toml", "rb") as f:
-            data2 = tomllib.load(f)
-
-        if data["project"]["dependencies"] == data2["project"]["dependencies"]:
-            print("Dependencies are matching!")
-        else:
-            print("Dependencies are not matching!")
-            print("data:", data["project"]["dependencies"])
-            print("data2:", data2["project"]["dependencies"])
-
-            exit(1)
-
   # https://github.com/marketplace/actions/alls-green
   check:  # This job does nothing and is only used for the branch protection
 
@@ -305,7 +275,6 @@ jobs:
       - test-memray
       - test-mypy
       - test-fastapi
-      - test-next
 
     runs-on: ubuntu-latest
 
@@ -316,6 +285,48 @@ jobs:
         with:
           allowed-skips: test-fastapi  # TODO: drop once re-enabled
           jobs: ${{ toJSON(needs) }}
+
+  publish_next:
+    needs: [check]
+    if: "always() && needs.check.outputs.result == 'success' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))"
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: checkout pydantic-next
+      uses: actions/checkout@v3
+      with:
+        ref: pydantic-next
+
+    - name: checkout current branch
+      uses: actions/checkout@v3
+
+    - name: set up python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: create pyproject.toml
+      shell: python
+      run: |
+        with open("pyproject.toml", "r") as f:
+            text = f.read()
+
+        text = text.replace("'pydantic/version.py'", "'pydantic_next/version.py'")
+        text = text.replace("'/pydantic'", "'/pydantic_next'")
+        text = text.replace("'pydantic'", "'pydantic_next'")
+
+        with open("pyproject.toml", "w") as f:
+            f.write(text)
+
+    - name: create pydantic-next
+      run: |
+        cp -r pydantic pydantic-copy
+        git checkout pydantic-next
+        rm -r pydantic-next || true
+        mv pydantic-copy pydantic-next
+        git add pydantic-next
+        git commit -am 'apply commit ${{ commit }}'
+        git push
 
   publish_docs:
     needs: [check]
@@ -392,21 +403,3 @@ jobs:
 
       - name: Upload package to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
-
-      - run: ls -lh dist
-      - run: twine check dist/*
-
-      - name: upload to pypi
-        run: twine upload dist/*
-        env:
-          TWINE_USERNAME: __token__
-          TWINE_PASSWORD: ${{ secrets.pypi_token }}
-
-      - name: publish docs
-        if: '!fromJSON(steps.check-tag.outputs.IS_PRERELEASE)'
-        uses: cloudflare/wrangler-action@2.0.0
-        with:
-          apiToken: ${{ secrets.cloudflare_api_token }}
-          command: pages publish --project-name=pydantic-docs --branch=main site
-        env:
-          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.cloudflare_account_id }}
