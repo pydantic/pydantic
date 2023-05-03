@@ -1,3 +1,4 @@
+"""Decorators for validating function calls."""
 from __future__ import annotations as _annotations
 
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, overload
@@ -31,7 +32,15 @@ def validate_call(
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
     """
-    Decorator to validate the arguments passed to a function, and optionally the return value.
+    Decorator to validate the arguments passed to a function and, optionally, the return value.
+
+    Args:
+        __func (AnyCallableT): The function to be decorated.
+        config (ConfigDict): The configuration dictionary.
+        validate_return (bool): Whether to validate the return value.
+
+    Returns:
+        Callable: The decorated function.
     """
 
     def validate(function: AnyCallableT) -> AnyCallableT:
