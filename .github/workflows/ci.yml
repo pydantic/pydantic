@@ -29,7 +29,7 @@ jobs:
 
       - name: Downgrade urrlib3
         # https://github.com/pdm-project/pdm/issues/1880
-        run: pip install -U 'urllib3<2'
+        run: pip install -U 'urllib3<2' requests
 
       - name: install
         run: pdm install -G linting -G email
