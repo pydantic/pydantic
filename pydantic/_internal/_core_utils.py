@@ -121,15 +121,15 @@ def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
 
     top_ref = schema.get('ref', None)  # type: ignore[assignment]
 
-    def _replace_refs(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def _replace_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         ref: str | None = s.get('ref')  # type: ignore[assignment]
         if ref:
             if ref is top_ref:
-                return next(s, _replace_refs)
+                return recurse(s, _replace_refs)
             if ref in refs:
                 return {'type': 'definition-ref', 'schema_ref': ref}
             refs.add(ref)
-        return next(s, _replace_refs)
+        return recurse(s, _replace_refs)
 
     return walk_core_schema(schema, _replace_refs)
 
@@ -139,14 +139,14 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
     # but allows us to reuse this logic while removing "invalid" definitions
     valid_definitions = dict()
 
-    def _record_valid_refs(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def _record_valid_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         ref: str | None = s.get('ref')  # type: ignore[assignment]
         if ref:
             metadata = s.get('metadata')
             definition_is_invalid = isinstance(metadata, dict) and 'invalid' in metadata
             if not definition_is_invalid:
                 valid_definitions[ref] = s
-        return next(s, _record_valid_refs)
+        return recurse(s, _record_valid_refs)
 
     walk_core_schema(schema, _record_valid_refs)
 
@@ -156,9 +156,9 @@ def collect_definitions(schema: core_schema.CoreSchema) -> dict[str, core_schema
 def remove_unnecessary_invalid_definitions(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
     valid_refs = collect_definitions(schema).keys()
 
-    def _remove_invalid_defs(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def _remove_invalid_defs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if s['type'] != 'definitions':
-            return next(s, _remove_invalid_defs)
+            return recurse(s, _remove_invalid_defs)
 
         new_schema = s.copy()
 
@@ -190,11 +190,11 @@ def define_expected_missing_refs(
         return schema
     refs = set()
 
-    def _record_refs(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def _record_refs(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         ref: str | None = s.get('ref')  # type: ignore[assignment]
         if ref:
             refs.add(ref)
-        return next(s, _record_refs)
+        return recurse(s, _record_refs)
 
     walk_core_schema(schema, _record_refs)
 
@@ -212,10 +212,10 @@ def define_expected_missing_refs(
 def collect_invalid_schemas(schema: core_schema.CoreSchema) -> list[core_schema.CoreSchema]:
     invalid_schemas: list[core_schema.CoreSchema] = []
 
-    def _is_schema_valid(s: core_schema.CoreSchema, next: Recurse) -> core_schema.CoreSchema:
+    def _is_schema_valid(s: core_schema.CoreSchema, recurse: Recurse) -> core_schema.CoreSchema:
         if s.get('metadata', {}).get('invalid'):
             invalid_schemas.append(s)
-        return next(s, _is_schema_valid)
+        return recurse(s, _is_schema_valid)
 
     walk_core_schema(schema, _is_schema_valid)
     return invalid_schemas
