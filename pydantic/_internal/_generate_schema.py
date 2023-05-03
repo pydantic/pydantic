@@ -14,7 +14,7 @@ from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
 from types import FunctionType, LambdaType, MethodType
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, Sequence, TypeVar, Union
 
 from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import CoreSchema, SchemaError, SchemaValidator, core_schema
@@ -197,6 +197,11 @@ class GenerateSchema:
 
     def generate_schema(self, obj: Any, from_dunder_get_core_schema: bool = True) -> core_schema.CoreSchema:
         schema: CoreSchema | None = None
+
+        schema = self._generate_schema_from_prepare_annotations(obj)
+        if schema:
+            return schema
+
         if from_dunder_get_core_schema:
             from_property = self._generate_schema_from_property(obj, obj)
             if from_property is not None:
@@ -286,6 +291,26 @@ class GenerateSchema:
         model_schema = consolidate_refs(model_schema)
         schema = apply_model_serializers(model_schema, decorators.model_serializer.values())
         return apply_model_validators(schema, decorators.model_validator.values())
+
+    def _generate_schema_from_prepare_annotations(
+        self, obj: Any, annotations: Sequence[Any] = ()
+    ) -> core_schema.CoreSchema | None:
+        """
+        Try to generate schema from either the `__get_pydantic_core_schema__` function or
+        `__pydantic_core_schema__` property.
+
+        Note: `__get_pydantic_core_schema__` takes priority so it can
+        decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
+        """
+        prepare = getattr(obj, '__prepare_pydantic_annotations__', None)
+        if prepare is not None:
+            # make annotations a tuple to error if it gets mutated
+            # make the return type a list to support generators or returning a sequence
+            new_annotations = list(prepare(obj, tuple(annotations)))
+            if new_annotations:
+                return self._annotated_args_schema(obj, new_annotations)
+
+        return None
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """
@@ -625,14 +650,23 @@ class GenerateSchema:
             s = core_schema.nullable_schema(s)
         return s
 
+    def _annotated_args_schema(self, source: Any, annotations: list[Any]) -> core_schema.CoreSchema:
+        """
+        Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
+        """
+        return apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), annotations, self.definitions)(
+            source
+        )
+
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """
         Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
         """
         first_arg, *other_args = get_args(annotated_type)
-        return apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), other_args, self.definitions)(
-            first_arg
-        )
+        from_prepare = self._generate_schema_from_prepare_annotations(first_arg, other_args)
+        if from_prepare:
+            return from_prepare
+        return self._annotated_args_schema(first_arg, list(other_args))
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
