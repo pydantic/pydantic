@@ -268,10 +268,6 @@ pub(crate) struct CollectWarnings {
 }
 
 impl CollectWarnings {
-    pub(crate) fn is_active(&self) -> bool {
-        self.active
-    }
-
     pub(crate) fn new(active: bool) -> Self {
         Self {
             active,
