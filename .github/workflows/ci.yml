@@ -10,6 +10,7 @@ on:
 
 env:
   COLUMNS: 150
+  PDM_DEPS: 'urllib3<2'
 
 jobs:
   lint:
@@ -22,14 +23,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - uses: pdm-project/setup-pdm@v3
         with:
           python-version: ${{ matrix.python-version }}
-
-      - name: Setup PDM
-        run: |
-          pip install -U pdm pip wheel
-          pip install -U requests 'urllib3<2'
+          cache: true
 
       - name: install
         run: pdm install -G linting -G email
@@ -46,15 +43,11 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v4
+    - uses: pdm-project/setup-pdm@v3
       with:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
-
-    - name: Setup PDM
-      run: |
-        pip install -U pdm pip wheel
-        pip install -U requests 'urllib3<2'
+        cache: true
 
     - name: install
       run: pdm install -G docs
@@ -68,14 +61,10 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - uses: pdm-project/setup-pdm@v3
         with:
           python-version: '3.10'
-
-      - name: Setup PDM
-        run: |
-          pip install -U pdm pip wheel
-          pip install -U requests 'urllib3<2'
+          cache: true
 
       - name: install deps
         run: |
@@ -113,14 +102,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v4
+    - uses: pdm-project/setup-pdm@v3
       with:
-        python-version: '${{ matrix.python-version }}'
-
-    - name: Setup PDM
-      run: |
-        pip install -U pdm pip wheel
-        pip install -U requests 'urllib3<2'
+        python-version: ${{ matrix.python-version }}
+        cache: true
 
     - name: install deps
       run: |
@@ -179,14 +164,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v4
+    - uses: pdm-project/setup-pdm@v3
       with:
-        python-version: '${{ matrix.python-version }}'
-
-    - name: Setup PDM
-      run: |
-        pip install -U pdm pip wheel
-        pip install -U requests 'urllib3<2'
+        python-version: ${{ matrix.python-version }}
+        cache: true
 
     - name: install deps
       run: |
@@ -268,14 +249,10 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
-    - uses: actions/setup-python@v4
+    - name: set up python
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-
-    - name: Setup PDM
-      run: |
-        pip install -U pdm pip wheel
-        pip install -U requests 'urllib3<2'
 
     - name: install
       run: |
@@ -325,14 +302,10 @@ jobs:
       - name: checkout current branch
         uses: actions/checkout@v3
 
-      - uses: actions/setup-python@v4
+      - uses: pdm-project/setup-pdm@v3
         with:
           python-version: '3.10'
-
-      - name: Setup PDM
-        run: |
-          pip install -U pdm pip wheel
-          pip install -U requests 'urllib3<2'
+          cache: true
 
       - name: install
         run: pdm install -G docs
