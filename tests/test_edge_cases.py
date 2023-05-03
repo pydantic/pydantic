@@ -2448,3 +2448,48 @@ def test_invalid_forward_ref_model():
     assert exc_info.value.errors() == [
         {'input': C(), 'loc': ('B',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 9), reason='cannot parametrize types before 3.9')
+@pytest.mark.parametrize(
+    ('sequence_type', 'input_data', 'expected_error_type', 'expected_error_msg', 'expected_error_ctx'),
+    [
+        pytest.param(List[str], '1bc', 'list_type', 'Input should be a valid list', None, id='list[str]'),
+        pytest.param(
+            Sequence[str],
+            '1bc',
+            'sequence_str',
+            "'str' instances are not allowed as a Sequence value",
+            {'type_name': 'str'},
+            id='Sequence[str]',
+        ),
+        pytest.param(
+            Sequence[bytes],
+            b'1bc',
+            'sequence_str',
+            "'bytes' instances are not allowed as a Sequence value",
+            {'type_name': 'bytes'},
+            id='Sequence[bytes]',
+        ),
+    ],
+)
+def test_sequences_str(sequence_type, input_data, expected_error_type, expected_error_msg, expected_error_ctx):
+    input_sequence = [input_data[:1], input_data[1:]]
+    expected_error = {
+        'type': expected_error_type,
+        'input': input_data,
+        'loc': ('str_sequence',),
+        'msg': expected_error_msg,
+    }
+    if expected_error_ctx is not None:
+        expected_error.update(ctx=expected_error_ctx)
+
+    class Model(BaseModel):
+        str_sequence: sequence_type
+
+    assert Model(str_sequence=input_sequence).str_sequence == input_sequence
+
+    with pytest.raises(ValidationError) as e:
+        Model(str_sequence=input_data)
+
+    assert e.value.errors() == [expected_error]
