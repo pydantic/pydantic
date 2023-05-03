@@ -22,10 +22,12 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - uses: pdm-project/setup-pdm@v3
+      - uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
-          cache: true
+
+      - name: Setup PDM
+        run: pip install -U pdm pip wheel
 
       - name: install
         run: pdm install -G linting -G email
