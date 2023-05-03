@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#infinite-generators" class="md-skip">
+        <a href="#strings-arent-sequences" class="md-skip">
           Skip to content
         </a>
       
@@ -778,6 +778,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#strings-arent-sequences" class="md-nav__link">
+    Strings aren't Sequences
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#infinite-generators" class="md-nav__link">
@@ -1598,6 +1605,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#strings-arent-sequences" class="md-nav__link">
+    Strings aren't Sequences
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#infinite-generators" class="md-nav__link">
     Infinite Generators
   </a>
@@ -1807,13 +1821,143 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </div>
 </div>
 </div>
+<h3 id="strings-arent-sequences">Strings aren't Sequences<a class="headerlink" href="#strings-arent-sequences" title="Permanent link">&para;</a></h3>
+<p><em>pydantic</em> doesn't treat strings, i.e. <code>str</code> and <code>bytes</code> subclasses, as sequences:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label><label for="__tabbed_2_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">sequence_of_strs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">sequence_of_bytes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;bc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sequence_of_strs</span><span class="p">)</span>
+<span class="c1">#&gt; [&#39;a&#39;, &#39;bc&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;bc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">sequence_of_strs</span><span class="p">)</span>
+<span class="c1">#&gt; (&#39;a&#39;, &#39;bc&#39;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="p">[</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;bc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sequence_of_bytes</span><span class="p">)</span>
+<span class="c1">#&gt; [b&#39;a&#39;, b&#39;bc&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;bc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">sequence_of_bytes</span><span class="p">)</span>
+<span class="c1">#&gt; (b&#39;a&#39;, b&#39;bc&#39;)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="s1">&#39;abc&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    sequence_of_strs</span>
+<span class="sd">      &#39;str&#39; instances are not allowed as a Sequence value [type=sequence_str, input_value=&#39;abc&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;abc&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    sequence_of_bytes</span>
+<span class="sd">      &#39;bytes&#39; instances are not allowed as a Sequence value [type=sequence_str, input_value=b&#39;abc&#39;, input_type=bytes]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">sequence_of_strs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">sequence_of_bytes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;bc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sequence_of_strs</span><span class="p">)</span>
+<span class="c1">#&gt; [&#39;a&#39;, &#39;bc&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;bc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">sequence_of_strs</span><span class="p">)</span>
+<span class="c1">#&gt; (&#39;a&#39;, &#39;bc&#39;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="p">[</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;bc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sequence_of_bytes</span><span class="p">)</span>
+<span class="c1">#&gt; [b&#39;a&#39;, b&#39;bc&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;bc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">sequence_of_bytes</span><span class="p">)</span>
+<span class="c1">#&gt; (b&#39;a&#39;, b&#39;bc&#39;)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="s1">&#39;abc&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    sequence_of_strs</span>
+<span class="sd">      &#39;str&#39; instances are not allowed as a Sequence value [type=sequence_str, input_value=&#39;abc&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;abc&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    sequence_of_bytes</span>
+<span class="sd">      &#39;bytes&#39; instances are not allowed as a Sequence value [type=sequence_str, input_value=b&#39;abc&#39;, input_type=bytes]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Sequence</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">sequence_of_strs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">sequence_of_bytes</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bytes</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;bc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sequence_of_strs</span><span class="p">)</span>
+<span class="c1">#&gt; [&#39;a&#39;, &#39;bc&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;bc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">sequence_of_strs</span><span class="p">)</span>
+<span class="c1">#&gt; (&#39;a&#39;, &#39;bc&#39;)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="p">[</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;bc&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">sequence_of_bytes</span><span class="p">)</span>
+<span class="c1">#&gt; [b&#39;a&#39;, b&#39;bc&#39;]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="p">(</span><span class="sa">b</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;bc&#39;</span><span class="p">))</span><span class="o">.</span><span class="n">sequence_of_bytes</span><span class="p">)</span>
+<span class="c1">#&gt; (b&#39;a&#39;, b&#39;bc&#39;)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_strs</span><span class="o">=</span><span class="s1">&#39;abc&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    sequence_of_strs</span>
+<span class="sd">      &#39;str&#39; instances are not allowed as a Sequence value [type=sequence_str, input_value=&#39;abc&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">sequence_of_bytes</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;abc&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    sequence_of_bytes</span>
+<span class="sd">      &#39;bytes&#39; instances are not allowed as a Sequence value [type=sequence_str, input_value=b&#39;abc&#39;, input_type=bytes]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="infinite-generators">Infinite Generators<a class="headerlink" href="#infinite-generators" title="Permanent link">&para;</a></h2>
 <p>If you have a generator you can use <code>Sequence</code> as described above. In that case, the
 generator will be consumed and stored on the model as a list and its values will be
 validated with the sub-type of <code>Sequence</code> (e.g. <code>int</code> in <code>Sequence[int]</code>).</p>
 <p>But if you have a generator that you don't want to be consumed, e.g. an infinite
 generator or a remote data loader, you can define its type with <code>Iterable</code>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Iterable</span>
@@ -1914,7 +2058,7 @@ consuming the infinite generator.</p>
 </div>
 <h2 id="validating-the-first-value">Validating the first value<a class="headerlink" href="#validating-the-first-value" title="Permanent link">&para;</a></h2>
 <p>You can create a <a href="../../validators/">validator</a> to validate the first value in an infinite generator and still not consume it entirely.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">itertools</span>
