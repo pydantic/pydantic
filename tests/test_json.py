@@ -1,5 +1,6 @@
 import json
 import re
+from typing import List
 
 import pytest
 from dirty_equals import IsList
@@ -239,18 +240,24 @@ def test_to_jsonable_python_fallback():
 
 def test_to_jsonable_python_schema_serializer():
     class Foobar:
-        def __init__(self, my_foo: int, my_bar: str):
+        def __init__(self, my_foo: int, my_inners: List['Foobar']):
             self.my_foo = my_foo
-            self.my_bar = my_bar
+            self.my_inners = my_inners
 
+    # force a recursive model to ensure we exercise the transfer of definitions from the loaded
+    # serializer
     c = core_schema.model_schema(
         Foobar,
         core_schema.typed_dict_schema(
             {
                 'my_foo': core_schema.typed_dict_field(core_schema.int_schema(), serialization_alias='myFoo'),
-                'my_bar': core_schema.typed_dict_field(core_schema.str_schema(), serialization_alias='myBar'),
+                'my_inners': core_schema.typed_dict_field(
+                    core_schema.list_schema(core_schema.definition_reference_schema('foobar')),
+                    serialization_alias='myInners',
+                ),
             }
         ),
+        ref='foobar',
     )
     v = SchemaValidator(c)
     s = SchemaSerializer(c)
@@ -258,11 +265,11 @@ def test_to_jsonable_python_schema_serializer():
     Foobar.__pydantic_validator__ = v
     Foobar.__pydantic_serializer__ = s
 
-    instance = Foobar(my_foo=1, my_bar='a')
-    assert to_jsonable_python(instance) == {'myFoo': 1, 'myBar': 'a'}
-    assert to_jsonable_python(instance, by_alias=False) == {'my_foo': 1, 'my_bar': 'a'}
-    assert to_json(instance) == b'{"myFoo":1,"myBar":"a"}'
-    assert to_json(instance, by_alias=False) == b'{"my_foo":1,"my_bar":"a"}'
+    instance = Foobar(my_foo=1, my_inners=[Foobar(my_foo=2, my_inners=[])])
+    assert to_jsonable_python(instance) == {'myFoo': 1, 'myInners': [{'myFoo': 2, 'myInners': []}]}
+    assert to_jsonable_python(instance, by_alias=False) == {'my_foo': 1, 'my_inners': [{'my_foo': 2, 'my_inners': []}]}
+    assert to_json(instance) == b'{"myFoo":1,"myInners":[{"myFoo":2,"myInners":[]}]}'
+    assert to_json(instance, by_alias=False) == b'{"my_foo":1,"my_inners":[{"my_foo":2,"my_inners":[]}]}'
 
 
 def test_cycle_same():

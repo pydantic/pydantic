@@ -13,7 +13,7 @@ use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 use crate::build_tools::{py_err, safe_repr};
 use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
-use crate::serializers::shared::PydanticSerializer;
+use crate::serializers::shared::{PydanticSerializer, TypeSerializer};
 use crate::serializers::SchemaSerializer;
 use crate::url::{PyMultiHostUrl, PyUrl};
 
@@ -100,20 +100,20 @@ pub(crate) fn infer_to_python_known(
     let serialize_with_serializer = |value: &PyAny, is_model: bool| {
         if let Ok(py_serializer) = value.getattr(intern!(py, "__pydantic_serializer__")) {
             if let Ok(serializer) = py_serializer.extract::<SchemaSerializer>() {
-                return serializer.to_python(
+                let extra = serializer.build_extra(
                     py,
-                    value,
-                    extra.mode.to_object(py).extract(py)?,
-                    include,
-                    exclude,
+                    extra.mode,
                     extra.by_alias,
+                    extra.warnings,
                     extra.exclude_unset,
                     extra.exclude_defaults,
                     extra.exclude_none,
                     extra.round_trip,
-                    extra.warnings.is_active(),
+                    extra.rec_guard,
+                    extra.serialize_unknown,
                     extra.fallback,
                 );
+                return serializer.serializer.to_python(value, include, exclude, &extra);
             }
         }
         // Fallback to dict serialization if `__pydantic_serializer__` is not set.
@@ -408,10 +408,24 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
 
     macro_rules! serialize_with_serializer {
         ($py_serializable:expr, $is_model:expr) => {{
-            if let Ok(py_serializer) = value.getattr(intern!($py_serializable.py(), "__pydantic_serializer__")) {
+            let py = $py_serializable.py();
+            if let Ok(py_serializer) = value.getattr(intern!(py, "__pydantic_serializer__")) {
                 if let Ok(extracted_serializer) = py_serializer.extract::<SchemaSerializer>() {
+                    let extra = extracted_serializer.build_extra(
+                        py,
+                        extra.mode,
+                        extra.by_alias,
+                        extra.warnings,
+                        extra.exclude_unset,
+                        extra.exclude_defaults,
+                        extra.exclude_none,
+                        extra.round_trip,
+                        extra.rec_guard,
+                        extra.serialize_unknown,
+                        extra.fallback,
+                    );
                     let pydantic_serializer =
-                        PydanticSerializer::new(value, &extracted_serializer.serializer, include, exclude, extra);
+                        PydanticSerializer::new(value, &extracted_serializer.serializer, include, exclude, &extra);
                     return pydantic_serializer.serialize(serializer);
                 }
             }
