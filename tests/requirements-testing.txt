@@ -1,7 +1,7 @@
 coverage==6.4.4
 hypothesis==6.54.4
 # pin importlib-metadata as upper versions need typing-extensions to work if on Python < 3.8
-importlib-metadata==3.1.0;python_version<"3.8"
+importlib-metadata==3.6.0;python_version<"3.8"
 mypy==0.990
 pytest==7.2.1
 pytest-cov==4.0.0
@@ -9,3 +9,6 @@ pytest-mock==3.10.0
 pytest-sugar==0.9.6
 # pin typing-extensions to minimum requirement - see #4885
 typing-extensions==4.2.0
+# used in FastAPI tests, pin to avoid warnings in newer version
+# that FastAPI needs to fix
+Flask==2.2.3

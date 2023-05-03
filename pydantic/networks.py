@@ -706,32 +706,34 @@ pretty_email_regex = re.compile(r'([\w ]*?) *<(.*)> *')
 
 def validate_email(value: Union[str]) -> Tuple[str, str]:
     """
-    Brutally simple email address validation. Note unlike most email address validation
+    Email address validation using https://pypi.org/project/email-validator/
+    Notes:
     * raw ip address (literal) domain parts are not allowed.
     * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed
-    * the local part check is extremely basic. This raises the possibility of unicode spoofing, but no better
-        solution is really possible.
     * spaces are striped from the beginning and end of addresses but no error is raised
-
-    See RFC 5322 but treat it with suspicion, there seems to exist no universally acknowledged test for a valid email!
     """
     if email_validator is None:
         import_email_validator()
-
     m = pretty_email_regex.fullmatch(value)
-    name: Optional[str] = None
+    name: Union[str, None] = None
     if m:
         name, value = m.groups()
-
     email = value.strip()
-
     try:
-        email_validator.validate_email(email, check_deliverability=False)
+        parts = email_validator.validate_email(email, check_deliverability=False)
     except email_validator.EmailNotValidError as e:
-        raise errors.EmailError() from e
+        raise errors.EmailError from e
 
-    at_index = email.index('@')
-    local_part = email[:at_index]  # RFC 5321, local part must be case-sensitive.
-    global_part = email[at_index:].lower()
+    if hasattr(parts, 'normalized'):
+        # email-validator >= 2
+        email = parts.normalized
+        assert email is not None
+        name = name or parts.local_part
+        return name, email
+    else:
+        # email-validator >1, <2
+        at_index = email.index('@')
+        local_part = email[:at_index]  # RFC 5321, local part must be case-sensitive.
+        global_part = email[at_index:].lower()
 
-    return name or local_part, local_part + global_part
+        return name or local_part, local_part + global_part

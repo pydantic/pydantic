@@ -59,7 +59,7 @@ Thank you for your support, and we look forward to your feedback.
 ## Headlines
 
 Here are some of the most interesting new features in the current Pydantic V2 alpha release. 
-For background on plans behind these features, see the earlier [Pydantic V2 Plan](/blog/pydantic-V2/) blog post.
+For background on plans behind these features, see the earlier [Pydantic V2 Plan](/blog/pydantic-v2/) blog post.
 
 The biggest change to Pydantic V2 is [`pydantic-core`](https://github.com/pydantic/pydantic-core) &mdash;
 all validation logic has been rewritten in Rust and moved to a separate package, `pydantic-core`.
