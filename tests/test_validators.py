@@ -1,3 +1,4 @@
+import contextlib
 import re
 import sys
 from collections import deque
@@ -24,6 +25,8 @@ from pydantic import (
 )
 from pydantic.annotated_arguments import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
 from pydantic.decorators import field_validator, root_validator
+
+V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
 
 
 def test_annotated_validator_after() -> None:
@@ -683,37 +686,62 @@ def test_validate_not_always():
     assert check_calls == 1
 
 
-def test_wildcard_validators():
+@pytest.mark.parametrize(
+    'decorator, pytest_warns',
+    [
+        (validator, pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH)),
+        (field_validator, contextlib.nullcontext()),
+    ],
+)
+def test_wildcard_validators(decorator, pytest_warns):
     calls: list[tuple[str, Any]] = []
 
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+    with pytest_warns:
 
         class Model(BaseModel):
             a: str
             b: int
 
-            @validator('a')
+            @decorator('a')
             def check_a(cls, v: Any) -> Any:
                 calls.append(('check_a', v))
                 return v
 
-            @validator('*')
+            @decorator('*')
             def check_all(cls, v: Any) -> Any:
                 calls.append(('check_all', v))
                 return v
 
+            @decorator('*', 'a')
+            def check_all_a(cls, v: Any) -> Any:
+                calls.append(('check_all_a', v))
+                return v
+
     assert Model(a='abc', b='123').model_dump() == dict(a='abc', b=123)
-    assert calls == [('check_a', 'abc'), ('check_all', 'abc'), ('check_all', 123)]
+    assert calls == [
+        ('check_a', 'abc'),
+        ('check_all', 'abc'),
+        ('check_all_a', 'abc'),
+        ('check_all', 123),
+        ('check_all_a', 123),
+    ]
 
 
-def test_wildcard_validator_error():
-    with pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH):
+@pytest.mark.parametrize(
+    'decorator, pytest_warns',
+    [
+        (validator, pytest.warns(DeprecationWarning, match=V1_VALIDATOR_DEPRECATION_MATCH)),
+        (field_validator, contextlib.nullcontext()),
+    ],
+)
+def test_wildcard_validator_error(decorator, pytest_warns):
+    with pytest_warns:
 
         class Model(BaseModel):
             a: str
             b: str
 
-            @validator('*')
+            @decorator('*')
             def check_all(cls, v: Any) -> Any:
                 if 'foobar' not in v:
                     raise ValueError('"foobar" not found in a')
@@ -1759,9 +1787,6 @@ def test_root_validator_many_values_change():
     assert r.area == 1
     r.height = 5
     assert r.area == 5
-
-
-V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
 
 
 def _get_source_line(filename: str, lineno: int) -> str:
