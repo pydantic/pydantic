@@ -151,7 +151,9 @@ plugins:
 - mkdocstrings:
     handlers:
       python:
-        path: .
+        paths: .
+        options:
+          separate_signature: true
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'
