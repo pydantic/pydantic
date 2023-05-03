@@ -306,9 +306,18 @@ class GenerateSchema:
         if prepare is not None:
             # make annotations a tuple to error if it gets mutated
             # make the return type a list to support generators or returning a sequence
-            new_annotations = list(prepare(obj, tuple(annotations)))
+            res = list(prepare(obj, tuple(annotations)))
+            if not res:
+                raise PydanticSchemaGenerationError(
+                    f'The type {obj} that implements `__prepare_pydantic_annotations__`'
+                    ' returned no new annotations when called.'
+                    ' You must return at least 1 item since the first item is the replacement source type.'
+                )
+            obj, *new_annotations = list(prepare(obj, tuple(annotations)))
             if new_annotations:
                 return self._annotated_args_schema(obj, new_annotations)
+            else:
+                return self.generate_schema(obj)
 
         return None
 

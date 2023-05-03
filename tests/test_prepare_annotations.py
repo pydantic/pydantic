@@ -1,13 +1,15 @@
 from dataclasses import dataclass
-from typing import Annotated, Any, List, Sequence
+from typing import Annotated, Any, Iterator, List, Sequence
 
 import dirty_equals as de
-from annotated_types import Gt
+import pytest
+from annotated_types import Gt, Lt
 from pydantic_core import CoreSchema, core_schema
 
 from pydantic.analyzed_type import AnalyzedType
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.annotated_arguments import AfterValidator
+from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 
 
@@ -37,6 +39,7 @@ class MyDecimal(float):
         inner_schema = core_schema.float_schema(**metadata)
         outer_schema = core_schema.no_info_after_validator_function(MyDecimal, inner_schema)
         new_annotations = [
+            source_type,
             MetadataApplier(inner_core_schema=inner_schema, outer_core_schema=outer_schema),
             *remaining_annotations,
         ]
@@ -79,3 +82,34 @@ def test_decimal_like_outside_of_annotated() -> None:
     )
 
     assert a.core_schema == expected
+
+
+def test_return_no_annotations_in_annotated() -> None:
+    class MyType(int):
+        @classmethod
+        def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> List[Any]:
+            return []
+
+    msg = 'You must return at least 1 item since the first item is the replacement source type'
+
+    with pytest.raises(PydanticSchemaGenerationError, match=msg):
+        AnalyzedType(Annotated[MyType, Gt(0)])
+
+    with pytest.raises(PydanticSchemaGenerationError, match=msg):
+        AnalyzedType(MyType)
+
+
+def test_generator_custom_type() -> None:
+    class MyType(int):
+        @classmethod
+        def __prepare_pydantic_annotations__(self, source_type: Any, annotations: Sequence[Any]) -> Iterator[Any]:
+            assert source_type is MyType
+            yield int
+            yield Gt(123)
+            yield from annotations
+
+    a = AnalyzedType(MyType)
+    assert a.core_schema == de.IsPartialDict(core_schema.int_schema(gt=123))
+
+    a = AnalyzedType(Annotated[MyType, Lt(420)])
+    assert a.core_schema == de.IsPartialDict(core_schema.int_schema(gt=123, lt=420))
