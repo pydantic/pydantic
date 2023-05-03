@@ -1,10 +1,11 @@
 from dataclasses import dataclass
-from typing import Annotated, Any, Iterator, List, Sequence
+from typing import Any, Iterator, List, Sequence
 
 import dirty_equals as de
 import pytest
 from annotated_types import Gt, Lt
 from pydantic_core import CoreSchema, core_schema
+from typing_extensions import Annotated
 
 from pydantic.analyzed_type import AnalyzedType
 from pydantic.annotated import GetCoreSchemaHandler
