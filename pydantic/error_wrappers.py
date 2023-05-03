@@ -1,5 +1,5 @@
 import json
-from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Sequence, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, Generator, List, Optional, Tuple, Type, Union
 
 from .json import pydantic_encoder
 from .utils import Representation
@@ -43,14 +43,14 @@ class ErrorWrapper(Representation):
 
 
 # ErrorList is something like Union[List[Union[List[ErrorWrapper], ErrorWrapper]], ErrorWrapper]
-# but recursive, therefore just use:
-ErrorList = Union[Sequence[Any], ErrorWrapper]
+# but recursive
+ErrorList = Union[List['ErrorList'], ErrorWrapper]
 
 
 class ValidationError(Representation, ValueError):
     __slots__ = 'raw_errors', 'model', '_error_cache'
 
-    def __init__(self, errors: Sequence[ErrorList], model: 'ModelOrDc') -> None:
+    def __init__(self, errors: List[ErrorList], model: 'ModelOrDc') -> None:
         self.raw_errors = errors
         self.model = model
         self._error_cache: Optional[List['ErrorDict']] = None
@@ -97,7 +97,7 @@ def _display_error_type_and_ctx(error: 'ErrorDict') -> str:
 
 
 def flatten_errors(
-    errors: Sequence[Any], config: Type['BaseConfig'], loc: Optional['Loc'] = None
+    errors: List[ErrorList], config: Type['BaseConfig'], loc: Optional['Loc'] = None
 ) -> Generator['ErrorDict', None, None]:
     for error in errors:
         if isinstance(error, ErrorWrapper):

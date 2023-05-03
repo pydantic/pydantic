@@ -74,6 +74,7 @@ if TYPE_CHECKING:
     from inspect import Signature
 
     from .class_validators import ValidatorListDict
+    from .error_wrappers import ErrorList
     from .types import ModelOrDc
     from .typing import (
         AbstractSetIntStr,
@@ -348,8 +349,8 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         object_setattr(__pydantic_self__, '__fields_set__', fields_set)
         __pydantic_self__._init_private_attributes()
 
-    @no_type_check
-    def __setattr__(self, name, value):  # noqa: C901 (ignore complexity)
+    @no_type_check  # noqa: C901 (ignore complexity)
+    def __setattr__(self, name, value):
         if name in self.__private_attributes__ or name in DUNDER_ATTRIBUTES:
             return object_setattr(self, name, value)
 
@@ -1036,7 +1037,7 @@ def validate_model(  # noqa: C901 (ignore complexity)
     validate data against a model.
     """
     values = {}
-    errors = []
+    errors: 'List[ErrorList]' = []
     # input_data names, possibly alias
     names_used = set()
     # field names, never aliases

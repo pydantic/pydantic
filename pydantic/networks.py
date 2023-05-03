@@ -225,7 +225,7 @@ class AnyUrl(str):
         fragment: Optional[str] = None,
         **_kwargs: str,
     ) -> str:
-        parts = Parts(
+        parts = Parts(  # type: ignore[misc]
             scheme=scheme,
             user=user,
             password=password,

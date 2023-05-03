@@ -279,7 +279,7 @@ def make_generic_validator(validator: AnyCallable) -> 'ValidatorCallable':
 
 
 def prep_validators(v_funcs: Iterable[AnyCallable]) -> 'ValidatorsList':
-    return [make_generic_validator(f) for f in v_funcs if f]
+    return [make_generic_validator(f) for f in v_funcs if f]  # type: ignore[truthy-function]
 
 
 all_kwargs = {'values', 'field', 'config'}
