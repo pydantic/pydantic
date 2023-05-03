@@ -10,13 +10,14 @@ use enum_dispatch::enum_dispatch;
 use serde::Serialize;
 use serde_json::ser::PrettyFormatter;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, py_error_type, SchemaDict};
+use crate::definitions::DefinitionsBuilder;
 
 use super::errors::se_err_py_err;
 use super::extra::Extra;
 use super::infer::infer_json_key;
 use super::ob_type::{IsType, ObType};
+use super::type_serializers::definitions::DefinitionRefSerializer;
 
 pub(crate) trait BuildSerializer: Sized {
     const EXPECTED_TYPE: &'static str;
@@ -24,7 +25,7 @@ pub(crate) trait BuildSerializer: Sized {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer>;
 }
 
@@ -47,17 +48,17 @@ macro_rules! combined_serializer {
                 lookup_type: &str,
                 schema: &PyDict,
                 config: Option<&PyDict>,
-                build_context: &mut BuildContext<CombinedSerializer>
+                definitions: &mut DefinitionsBuilder<CombinedSerializer>
             ) -> PyResult<CombinedSerializer> {
                 match lookup_type {
                     $(
-                        <$b_serializer>::EXPECTED_TYPE => match <$b_serializer>::build(schema, config, build_context) {
+                        <$b_serializer>::EXPECTED_TYPE => match <$b_serializer>::build(schema, config, definitions) {
                             Ok(serializer) => Ok(serializer),
                             Err(err) => py_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
                         },
                     )*
                     $(
-                        <$builder>::EXPECTED_TYPE => match <$builder>::build(schema, config, build_context) {
+                        <$builder>::EXPECTED_TYPE => match <$builder>::build(schema, config, definitions) {
                             Ok(serializer) => Ok(serializer),
                             Err(err) => py_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
                         },
@@ -91,7 +92,7 @@ combined_serializer! {
         super::type_serializers::other::IsInstanceBuilder;
         super::type_serializers::other::IsSubclassBuilder;
         super::type_serializers::other::CallableBuilder;
-        super::type_serializers::definitions::DefinitionsBuilder;
+        super::type_serializers::definitions::DefinitionsSerializerBuilder;
         super::type_serializers::dataclass::DataclassArgsBuilder;
         super::type_serializers::dataclass::DataclassBuilder;
         super::type_serializers::function::FunctionBeforeSerializerBuilder;
@@ -140,7 +141,7 @@ impl CombinedSerializer {
     fn _build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let type_key = intern!(py, "type");
@@ -155,7 +156,7 @@ impl CombinedSerializer {
                     return super::type_serializers::function::FunctionPlainSerializer::build(
                         schema,
                         config,
-                        build_context,
+                        definitions,
                     )
                     .map_err(|err| py_error_type!("Error building `function-plain` serializer:\n  {}", err));
                 }
@@ -166,7 +167,7 @@ impl CombinedSerializer {
                     return super::type_serializers::function::FunctionWrapSerializer::build(
                         schema,
                         config,
-                        build_context,
+                        definitions,
                     )
                     .map_err(|err| py_error_type!("Error building `function-wrap` serializer:\n  {}", err));
                 }
@@ -177,7 +178,7 @@ impl CombinedSerializer {
                 Some(ser_type) => {
                     // otherwise if `schema.serialization.type` is defined, use that with `find_serializer`
                     // instead of `schema.type`. In this case it's an error if a serializer isn't found.
-                    return Self::find_serializer(ser_type, ser_schema, config, build_context);
+                    return Self::find_serializer(ser_type, ser_schema, config, definitions);
                 }
                 // if `schema.serialization.type` is None, fall back to `schema.type`
                 None => (),
@@ -185,7 +186,7 @@ impl CombinedSerializer {
         }
 
         let type_: &str = schema.get_as_req(type_key)?;
-        Self::find_serializer(type_, schema, config, build_context)
+        Self::find_serializer(type_, schema, config, definitions)
     }
 }
 
@@ -196,41 +197,16 @@ impl BuildSerializer for CombinedSerializer {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        if let Some(schema_ref) = schema.get_as::<String>(intern!(schema.py(), "ref"))? {
-            // as with validators, if there's a ref,
-            // we **might** want to store the serializer in slots and return a DefinitionRefSerializer:
-            // * if the ref isn't used at all, we just want to return a normal serializer, and ignore the ref completely
-            // * if the ref is used inside itself, we have to store the serializer in slots,
-            //   and return a DefinitionRefSerializer - two step process with `prepare_slot` and `complete_slot`
-            // * if the ref is used elsewhere, we want to clone it each time it's used
-            if build_context.ref_used(&schema_ref) {
-                // the ref is used somewhere
-                // check the ref is unique
-                if build_context.ref_already_used(&schema_ref) {
-                    return py_err!("Duplicate ref: `{}`", schema_ref);
-                }
-
-                return if build_context.ref_used_within(schema, &schema_ref)? {
-                    // the ref is used within itself, so we have to store the serializer in slots
-                    // and return a DefinitionRefSerializer
-                    let slot_id = build_context.prepare_slot(schema_ref)?;
-                    let inner_ser = Self::_build(schema, config, build_context)?;
-                    build_context.complete_slot(slot_id, inner_ser)?;
-                    Ok(super::type_serializers::definitions::DefinitionRefSerializer::from_id(
-                        slot_id,
-                    ))
-                } else {
-                    // the ref is used elsewhere, so we want to clone it each time it's used
-                    let serializer = Self::_build(schema, config, build_context)?;
-                    build_context.store_reusable(schema_ref, serializer.clone());
-                    Ok(serializer)
-                };
-            }
+        let py: Python = schema.py();
+        if let Some(schema_ref) = schema.get_as::<String>(intern!(py, "ref"))? {
+            let inner_ser = Self::_build(schema, config, definitions)?;
+            let ser_id = definitions.add_definition(schema_ref, inner_ser)?;
+            return Ok(DefinitionRefSerializer::from_id(ser_id));
         }
 
-        Self::_build(schema, config, build_context)
+        Self::_build(schema, config, definitions)
     }
 }
 

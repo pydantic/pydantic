@@ -6,8 +6,8 @@ use pyo3::types::{PyDict, PyFrozenSet, PyList, PySet};
 
 use serde::ser::SerializeSeq;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
+use crate::definitions::DefinitionsBuilder;
 
 use super::any::AnySerializer;
 use super::{
@@ -29,12 +29,12 @@ macro_rules! build_serializer {
             fn build(
                 schema: &PyDict,
                 config: Option<&PyDict>,
-                build_context: &mut BuildContext<CombinedSerializer>,
+                definitions: &mut DefinitionsBuilder<CombinedSerializer>,
             ) -> PyResult<CombinedSerializer> {
                 let py = schema.py();
                 let item_serializer = match schema.get_as::<&PyDict>(intern!(py, "items_schema"))? {
-                    Some(items_schema) => CombinedSerializer::build(items_schema, config, build_context)?,
-                    None => AnySerializer::build(schema, config, build_context)?,
+                    Some(items_schema) => CombinedSerializer::build(items_schema, config, definitions)?,
+                    None => AnySerializer::build(schema, config, definitions)?,
                 };
                 let name = format!("{}[{}]", Self::EXPECTED_TYPE, item_serializer.get_name());
                 Ok(Self {

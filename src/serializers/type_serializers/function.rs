@@ -9,8 +9,8 @@ use pyo3::types::PyDict;
 use pyo3::types::PyString;
 use serde::ser::Error;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::{function_name, py_error_type, SchemaDict};
+use crate::definitions::DefinitionsBuilder;
 use crate::serializers::extra::{ExtraOwned, SerMode};
 use crate::serializers::filter::AnyFilter;
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
@@ -31,12 +31,12 @@ impl BuildSerializer for FunctionBeforeSerializerBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         // `before` schemas will obviously have type from `schema` since the validator is called second
         let schema = schema.get_as_req(intern!(py, "schema"))?;
-        CombinedSerializer::build(schema, config, build_context)
+        CombinedSerializer::build(schema, config, definitions)
     }
 }
 
@@ -47,14 +47,14 @@ impl BuildSerializer for FunctionAfterSerializerBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         // while `before` schemas have an obvious type, for
         // `after` schemas it's less, clear but the default will be the same type, and the user/lib can always
         // override the serializer
         let schema = schema.get_as_req(intern!(py, "schema"))?;
-        CombinedSerializer::build(schema, config, build_context)
+        CombinedSerializer::build(schema, config, definitions)
     }
 }
 
@@ -65,9 +65,9 @@ impl BuildSerializer for FunctionPlainSerializerBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        super::any::AnySerializer::build(schema, config, build_context)
+        super::any::AnySerializer::build(schema, config, definitions)
     }
 }
 
@@ -99,7 +99,7 @@ impl BuildSerializer for FunctionPlainSerializer {
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedSerializer>,
+        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
@@ -277,9 +277,9 @@ impl BuildSerializer for FunctionWrapSerializerBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        super::any::AnySerializer::build(schema, config, build_context)
+        super::any::AnySerializer::build(schema, config, definitions)
     }
 }
 
@@ -303,7 +303,7 @@ impl BuildSerializer for FunctionWrapSerializer {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let ser_schema: &PyDict = schema.get_as_req(intern!(py, "serialization"))?;
@@ -320,13 +320,13 @@ impl BuildSerializer for FunctionWrapSerializer {
             // remove the serialization key from the schema so we don't recurse
             schema_copy.del_item(intern!(py, "serialization"))?;
             // remove ref if it exists - the point is that `schema` here has already run through
-            // `CombinedSerializer::build` so "ref" here will have already been added to `BuildContext::used_ref`
+            // `CombinedSerializer::build` so "ref" here will have already been added to `Definitions::used_ref`
             // we don't want to error by "finding" it now
             schema_copy.del_item(intern!(py, "ref")).ok();
             schema_copy
         };
 
-        let serializer = CombinedSerializer::build(inner_schema, config, build_context)?;
+        let serializer = CombinedSerializer::build(inner_schema, config, definitions)?;
 
         let name = format!("wrap_function[{function_name}, {}]", serializer.get_name());
         Ok(Self {

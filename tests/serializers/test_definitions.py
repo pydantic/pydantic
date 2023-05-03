@@ -2,8 +2,6 @@ import pytest
 
 from pydantic_core import SchemaError, SchemaSerializer, core_schema
 
-from ..conftest import plain_repr
-
 
 def test_custom_ser():
     s = SchemaSerializer(
@@ -13,7 +11,6 @@ def test_custom_ser():
         )
     )
     assert s.to_python([1, 2, 3]) == ['1', '2', '3']
-    assert plain_repr(s).endswith('slots=[])')
 
 
 def test_ignored_def():
@@ -24,7 +21,6 @@ def test_ignored_def():
         )
     )
     assert s.to_python([1, 2, 3]) == [1, 2, 3]
-    assert plain_repr(s).endswith('slots=[])')
 
 
 def test_def_error():

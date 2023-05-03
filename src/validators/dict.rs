@@ -11,7 +11,7 @@ use crate::recursion_guard::RecursionGuard;
 
 use super::any::AnyValidator;
 use super::list::length_check;
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct DictValidator {
@@ -29,16 +29,16 @@ impl BuildValidator for DictValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let key_validator = match schema.get_item(intern!(py, "keys_schema")) {
-            Some(schema) => Box::new(build_validator(schema, config, build_context)?),
-            None => Box::new(AnyValidator::build(schema, config, build_context)?),
+            Some(schema) => Box::new(build_validator(schema, config, definitions)?),
+            None => Box::new(AnyValidator::build(schema, config, definitions)?),
         };
         let value_validator = match schema.get_item(intern!(py, "values_schema")) {
-            Some(d) => Box::new(build_validator(d, config, build_context)?),
-            None => Box::new(AnyValidator::build(schema, config, build_context)?),
+            Some(d) => Box::new(build_validator(d, config, definitions)?),
+            None => Box::new(AnyValidator::build(schema, config, definitions)?),
         };
         let name = format!(
             "{}[{},{}]",
@@ -64,30 +64,32 @@ impl Validator for DictValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let dict = input.validate_dict(extra.strict.unwrap_or(self.strict))?;
         match dict {
-            GenericMapping::PyDict(py_dict) => self.validate_dict(py, input, py_dict, extra, slots, recursion_guard),
+            GenericMapping::PyDict(py_dict) => {
+                self.validate_dict(py, input, py_dict, extra, definitions, recursion_guard)
+            }
             GenericMapping::PyMapping(mapping) => {
-                self.validate_mapping(py, input, mapping, extra, slots, recursion_guard)
+                self.validate_mapping(py, input, mapping, extra, definitions, recursion_guard)
             }
             GenericMapping::PyGetAttr(_, _) => unreachable!(),
             GenericMapping::JsonObject(json_object) => {
-                self.validate_json_object(py, input, json_object, extra, slots, recursion_guard)
+                self.validate_json_object(py, input, json_object, extra, definitions, recursion_guard)
             }
         }
     }
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         if ultra_strict {
-            self.key_validator.different_strict_behavior(build_context, true)
-                || self.value_validator.different_strict_behavior(build_context, true)
+            self.key_validator.different_strict_behavior(definitions, true)
+                || self.value_validator.different_strict_behavior(definitions, true)
         } else {
             true
         }
@@ -97,9 +99,9 @@ impl Validator for DictValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        self.key_validator.complete(build_context)?;
-        self.value_validator.complete(build_context)
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+        self.key_validator.complete(definitions)?;
+        self.value_validator.complete(definitions)
     }
 }
 
@@ -111,7 +113,7 @@ macro_rules! build_validate {
             input: &'data impl Input<'data>,
             dict: &'data $dict_type,
             extra: &Extra,
-            slots: &'data [CombinedValidator],
+            definitions: &'data Definitions<CombinedValidator>,
             recursion_guard: &'s mut RecursionGuard,
         ) -> ValResult<'data, PyObject> {
             let output = PyDict::new(py);
@@ -121,7 +123,7 @@ macro_rules! build_validate {
             let value_validator = self.value_validator.as_ref();
             for item_result in <$iter>::new(dict)? {
                 let (key, value) = item_result?;
-                let output_key = match key_validator.validate(py, key, extra, slots, recursion_guard) {
+                let output_key = match key_validator.validate(py, key, extra, definitions, recursion_guard) {
                     Ok(value) => Some(value),
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {
@@ -136,7 +138,7 @@ macro_rules! build_validate {
                     Err(ValError::Omit) => continue,
                     Err(err) => return Err(err),
                 };
-                let output_value = match value_validator.validate(py, value, extra, slots, recursion_guard) {
+                let output_value = match value_validator.validate(py, value, extra, definitions, recursion_guard) {
                     Ok(value) => Some(value),
                     Err(ValError::LineErrors(line_errors)) => {
                         for err in line_errors {

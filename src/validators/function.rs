@@ -11,7 +11,7 @@ use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
 use super::generator::InternalValidator;
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 fn destructure_function_schema(schema: &PyDict) -> PyResult<(bool, bool, &PyAny)> {
     let func_dict: &PyDict = schema.get_as_req(intern!(schema.py(), "function"))?;
@@ -33,10 +33,10 @@ macro_rules! impl_build {
             fn build(
                 schema: &PyDict,
                 config: Option<&PyDict>,
-                build_context: &mut BuildContext<CombinedValidator>,
+                definitions: &mut DefinitionsBuilder<CombinedValidator>,
             ) -> PyResult<CombinedValidator> {
                 let py = schema.py();
-                let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, build_context)?;
+                let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
                 let (is_field_validator, info_arg, function) = destructure_function_schema(schema)?;
                 let name = format!(
                     "{}[{}(), {}]",
@@ -69,11 +69,11 @@ macro_rules! impl_validator {
                 py: Python<'data>,
                 input: &'data impl Input<'data>,
                 extra: &Extra,
-                slots: &'data [CombinedValidator],
+                definitions: &'data Definitions<CombinedValidator>,
                 recursion_guard: &'s mut RecursionGuard,
             ) -> ValResult<'data, PyObject> {
                 let validate =
-                    move |v: &'data PyAny, e: &Extra| self.validator.validate(py, v, e, slots, recursion_guard);
+                    move |v: &'data PyAny, e: &Extra| self.validator.validate(py, v, e, definitions, recursion_guard);
                 self._validate(validate, py, input.to_object(py).into_ref(py), extra)
             }
             fn validate_assignment<'s, 'data: 's>(
@@ -83,24 +83,24 @@ macro_rules! impl_validator {
                 field_name: &'data str,
                 field_value: &'data PyAny,
                 extra: &Extra,
-                slots: &'data [CombinedValidator],
+                definitions: &'data Definitions<CombinedValidator>,
                 recursion_guard: &'s mut RecursionGuard,
             ) -> ValResult<'data, PyObject> {
                 let validate = move |v: &'data PyAny, e: &Extra| {
                     self.validator
-                        .validate_assignment(py, v, field_name, field_value, e, slots, recursion_guard)
+                        .validate_assignment(py, v, field_name, field_value, e, definitions, recursion_guard)
                 };
                 self._validate(validate, py, obj, extra)
             }
 
             fn different_strict_behavior(
                 &self,
-                build_context: Option<&BuildContext<CombinedValidator>>,
+                definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
                 ultra_strict: bool,
             ) -> bool {
                 if ultra_strict {
                     self.validator
-                        .different_strict_behavior(build_context, ultra_strict)
+                        .different_strict_behavior(definitions, ultra_strict)
                 } else {
                     true
                 }
@@ -110,8 +110,8 @@ macro_rules! impl_validator {
                 &self.name
             }
 
-            fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-                self.validator.complete(build_context)
+            fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+                self.validator.complete(definitions)
             }
         }
     };
@@ -198,7 +198,7 @@ impl BuildValidator for FunctionPlainValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedValidator>,
+        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let (is_field_validator, info_arg, function) = destructure_function_schema(schema)?;
@@ -222,7 +222,7 @@ impl Validator for FunctionPlainValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        _slots: &'data [CombinedValidator],
+        _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let r = if self.info_arg {
@@ -236,7 +236,7 @@ impl Validator for FunctionPlainValidator {
 
     fn different_strict_behavior(
         &self,
-        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         // best guess, should we change this?
@@ -247,7 +247,7 @@ impl Validator for FunctionPlainValidator {
         &self.name
     }
 
-    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }
 }
@@ -288,11 +288,18 @@ impl Validator for FunctionWrapValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let handler = ValidatorCallable {
-            validator: InternalValidator::new(py, "ValidatorCallable", &self.validator, slots, extra, recursion_guard),
+            validator: InternalValidator::new(
+                py,
+                "ValidatorCallable",
+                &self.validator,
+                definitions,
+                extra,
+                recursion_guard,
+            ),
         };
         self._validate(
             Py::new(py, handler)?.into_ref(py),
@@ -309,11 +316,18 @@ impl Validator for FunctionWrapValidator {
         field_name: &'data str,
         field_value: &'data PyAny,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let handler = AssignmentValidatorCallable {
-            validator: InternalValidator::new(py, "ValidatorCallable", &self.validator, slots, extra, recursion_guard),
+            validator: InternalValidator::new(
+                py,
+                "ValidatorCallable",
+                &self.validator,
+                definitions,
+                extra,
+                recursion_guard,
+            ),
             updated_field_name: field_name.to_string(),
             updated_field_value: field_value.to_object(py),
         };
@@ -322,11 +336,11 @@ impl Validator for FunctionWrapValidator {
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         if ultra_strict {
-            self.validator.different_strict_behavior(build_context, ultra_strict)
+            self.validator.different_strict_behavior(definitions, ultra_strict)
         } else {
             true
         }
@@ -336,8 +350,8 @@ impl Validator for FunctionWrapValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        self.validator.complete(build_context)
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+        self.validator.complete(definitions)
     }
 }
 

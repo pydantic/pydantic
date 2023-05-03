@@ -8,7 +8,7 @@ use crate::recursion_guard::RecursionGuard;
 
 use super::list::{get_items_schema, length_check};
 use super::set::set_build;
-use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct FrozenSetValidator {
@@ -31,7 +31,7 @@ impl Validator for FrozenSetValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let seq = input.validate_frozenset(extra.strict.unwrap_or(self.strict))?;
@@ -47,7 +47,7 @@ impl Validator for FrozenSetValidator {
                     self.generator_max_length,
                     v,
                     extra,
-                    slots,
+                    definitions,
                     recursion_guard,
                 )?,
             )?,
@@ -62,12 +62,12 @@ impl Validator for FrozenSetValidator {
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         if ultra_strict {
             match self.item_validator {
-                Some(ref v) => v.different_strict_behavior(build_context, true),
+                Some(ref v) => v.different_strict_behavior(definitions, true),
                 None => false,
             }
         } else {
@@ -79,9 +79,9 @@ impl Validator for FrozenSetValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         match self.item_validator {
-            Some(ref mut v) => v.complete(build_context),
+            Some(ref mut v) => v.complete(definitions),
             None => Ok(()),
         }
     }

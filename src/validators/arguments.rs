@@ -10,7 +10,7 @@ use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
 
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 struct Parameter {
@@ -36,7 +36,7 @@ impl BuildValidator for ArgumentsValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
 
@@ -75,7 +75,7 @@ impl BuildValidator for ArgumentsValidator {
 
             let schema: &PyAny = arg.get_as_req(intern!(py, "schema"))?;
 
-            let validator = match build_validator(schema, config, build_context) {
+            let validator = match build_validator(schema, config, definitions) {
                 Ok(v) => v,
                 Err(err) => return py_err!("Parameter '{}':\n  {}", name, err),
             };
@@ -108,11 +108,11 @@ impl BuildValidator for ArgumentsValidator {
             parameters,
             positional_params_count,
             var_args_validator: match schema.get_item(intern!(py, "var_args_schema")) {
-                Some(v) => Some(Box::new(build_validator(v, config, build_context)?)),
+                Some(v) => Some(Box::new(build_validator(v, config, definitions)?)),
                 None => None,
             },
             var_kwargs_validator: match schema.get_item(intern!(py, "var_kwargs_schema")) {
-                Some(v) => Some(Box::new(build_validator(v, config, build_context)?)),
+                Some(v) => Some(Box::new(build_validator(v, config, definitions)?)),
                 None => None,
             },
             loc_by_alias: config.get_as(intern!(py, "loc_by_alias"))?.unwrap_or(true),
@@ -155,7 +155,7 @@ impl Validator for ArgumentsValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let args = input.validate_args()?;
@@ -196,7 +196,7 @@ impl Validator for ArgumentsValidator {
                         (Some(pos_value), None) => {
                             match parameter
                                 .validator
-                                .validate(py, pos_value, extra, slots, recursion_guard)
+                                .validate(py, pos_value, extra, definitions, recursion_guard)
                             {
                                 Ok(value) => output_args.push(value),
                                 Err(ValError::LineErrors(line_errors)) => {
@@ -208,7 +208,7 @@ impl Validator for ArgumentsValidator {
                         (None, Some((lookup_path, kw_value))) => {
                             match parameter
                                 .validator
-                                .validate(py, kw_value, extra, slots, recursion_guard)
+                                .validate(py, kw_value, extra, definitions, recursion_guard)
                             {
                                 Ok(value) => output_kwargs.set_item(parameter.kwarg_key.as_ref().unwrap(), value)?,
                                 Err(ValError::LineErrors(line_errors)) => {
@@ -220,7 +220,7 @@ impl Validator for ArgumentsValidator {
                             }
                         }
                         (None, None) => {
-                            if let Some(value) = parameter.validator.default_value(py, Some(parameter.name.as_str()), extra, slots, recursion_guard)? {
+                            if let Some(value) = parameter.validator.default_value(py, Some(parameter.name.as_str()), extra, definitions, recursion_guard)? {
                                 if let Some(ref kwarg_key) = parameter.kwarg_key {
                                     output_kwargs.set_item(kwarg_key, value)?;
                                 } else {
@@ -250,7 +250,7 @@ impl Validator for ArgumentsValidator {
                     if len > self.positional_params_count {
                         if let Some(ref validator) = self.var_args_validator {
                             for (index, item) in $slice_macro!(args, self.positional_params_count, len).iter().enumerate() {
-                                match validator.validate(py, item, extra, slots, recursion_guard) {
+                                match validator.validate(py, item, extra, definitions, recursion_guard) {
                                     Ok(value) => output_args.push(value),
                                     Err(ValError::LineErrors(line_errors)) => {
                                         errors.extend(
@@ -292,7 +292,7 @@ impl Validator for ArgumentsValidator {
                             };
                             if !used_kwargs.contains(either_str.as_cow()?.as_ref()) {
                                 match self.var_kwargs_validator {
-                                    Some(ref validator) => match validator.validate(py, value, extra, slots, recursion_guard) {
+                                    Some(ref validator) => match validator.validate(py, value, extra, definitions, recursion_guard) {
                                         Ok(value) => output_kwargs.set_item(either_str.as_py_string(py), value)?,
                                         Err(ValError::LineErrors(line_errors)) => {
                                             for err in line_errors {
@@ -328,27 +328,27 @@ impl Validator for ArgumentsValidator {
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         self.parameters
             .iter()
-            .any(|p| p.validator.different_strict_behavior(build_context, ultra_strict))
+            .any(|p| p.validator.different_strict_behavior(definitions, ultra_strict))
     }
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         self.parameters
             .iter_mut()
-            .try_for_each(|parameter| parameter.validator.complete(build_context))?;
+            .try_for_each(|parameter| parameter.validator.complete(definitions))?;
         if let Some(v) = &mut self.var_args_validator {
-            v.complete(build_context)?;
+            v.complete(definitions)?;
         }
         if let Some(v) = &mut self.var_kwargs_validator {
-            v.complete(build_context)?;
+            v.complete(definitions)?;
         };
         Ok(())
     }

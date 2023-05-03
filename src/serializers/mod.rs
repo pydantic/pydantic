@@ -4,7 +4,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyBytes, PyDict};
 use pyo3::{PyTraverseError, PyVisit};
 
-use crate::build_context::BuildContext;
+use crate::definitions::DefinitionsBuilder;
 use crate::validators::SelfValidator;
 
 use config::SerializationConfig;
@@ -28,7 +28,7 @@ mod type_serializers;
 #[derive(Debug, Clone)]
 pub struct SchemaSerializer {
     serializer: CombinedSerializer,
-    slots: Vec<CombinedSerializer>,
+    definitions: Vec<CombinedSerializer>,
     json_size: usize,
     config: SerializationConfig,
 }
@@ -39,12 +39,12 @@ impl SchemaSerializer {
     pub fn py_new(py: Python, schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         let self_validator = SelfValidator::new(py)?;
         let schema = self_validator.validate_schema(py, schema)?;
-        let mut build_context = BuildContext::new(schema)?;
+        let mut definitions_builder = DefinitionsBuilder::new();
 
-        let serializer = CombinedSerializer::build(schema.downcast()?, config, &mut build_context)?;
+        let serializer = CombinedSerializer::build(schema.downcast()?, config, &mut definitions_builder)?;
         Ok(Self {
             serializer,
-            slots: build_context.into_slots_ser()?,
+            definitions: definitions_builder.finish()?,
             json_size: 1024,
             config: SerializationConfig::from_config(config)?,
         })
@@ -75,7 +75,7 @@ impl SchemaSerializer {
         let extra = Extra::new(
             py,
             &mode,
-            &self.slots,
+            &self.definitions,
             by_alias,
             &warnings,
             exclude_unset,
@@ -116,7 +116,7 @@ impl SchemaSerializer {
         let extra = Extra::new(
             py,
             &SerMode::Json,
-            &self.slots,
+            &self.definitions,
             by_alias,
             &warnings,
             exclude_unset,
@@ -147,14 +147,14 @@ impl SchemaSerializer {
 
     pub fn __repr__(&self) -> String {
         format!(
-            "SchemaSerializer(serializer={:#?}, slots={:#?})",
-            self.serializer, self.slots
+            "SchemaSerializer(serializer={:#?}, definitions={:#?})",
+            self.serializer, self.definitions
         )
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.serializer.py_gc_traverse(&visit)?;
-        for slot in self.slots.iter() {
+        for slot in self.definitions.iter() {
             slot.py_gc_traverse(&visit)?;
         }
         Ok(())
@@ -162,7 +162,7 @@ impl SchemaSerializer {
 
     fn __clear__(&mut self) {
         self.serializer.py_gc_clear();
-        for slot in self.slots.iter_mut() {
+        for slot in self.definitions.iter_mut() {
             slot.py_gc_clear();
         }
     }

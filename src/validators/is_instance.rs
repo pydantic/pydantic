@@ -8,7 +8,7 @@ use crate::input::{Input, JsonType};
 use crate::recursion_guard::RecursionGuard;
 
 use super::function::convert_err;
-use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct IsInstanceValidator {
@@ -25,7 +25,7 @@ impl BuildValidator for IsInstanceValidator {
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedValidator>,
+        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let cls_key = intern!(py, "cls");
@@ -67,7 +67,7 @@ impl Validator for IsInstanceValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         _extra: &Extra,
-        _slots: &'data [CombinedValidator],
+        _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         match input.input_is_instance(self.class.as_ref(py), self.json_types)? {
@@ -92,7 +92,7 @@ impl Validator for IsInstanceValidator {
 
     fn different_strict_behavior(
         &self,
-        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         _ultra_strict: bool,
     ) -> bool {
         false
@@ -102,7 +102,7 @@ impl Validator for IsInstanceValidator {
         &self.name
     }
 
-    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }
 }
