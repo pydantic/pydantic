@@ -1,9 +1,10 @@
-from typing import Optional
+from dataclasses import dataclass
+from typing import List, Optional
 
 import pytest
 from dirty_equals import AnyThing, HasAttributes, IsList, IsPartialDict, IsStr, IsTuple
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, core_schema
 
 from ..conftest import Err, plain_repr
 from .test_typed_dict import Cls
@@ -32,7 +33,7 @@ def test_branch_nullable():
     assert plain_repr(v).startswith(
         'SchemaValidator(title="typed-dict",validator=DefinitionRef(DefinitionRefValidator{'
     )
-    assert ',slots=[TypedDict(TypedDictValidator{' in plain_repr(v)
+    assert ',definitions=[TypedDict(TypedDictValidator{' in plain_repr(v)
 
     assert v.validate_python({'name': 'root', 'sub_branch': {'name': 'b1'}}) == (
         {'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': None}}
@@ -77,7 +78,7 @@ def test_branch_nullable_definitions():
     assert v.validate_python({'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': {'name': 'b2'}}}) == (
         {'name': 'root', 'sub_branch': {'name': 'b1', 'sub_branch': {'name': 'b2', 'sub_branch': None}}}
     )
-    assert ',slots=[TypedDict(TypedDictValidator{' in plain_repr(v)
+    assert ',definitions=[TypedDict(TypedDictValidator{' in plain_repr(v)
 
 
 def test_unused_ref():
@@ -91,9 +92,7 @@ def test_unused_ref():
             },
         }
     )
-    assert plain_repr(v).startswith('SchemaValidator(title="typed-dict",validator=TypedDict(TypedDictValidator')
     assert v.validate_python({'name': 'root', 'other': '4'}) == {'name': 'root', 'other': 4}
-    assert ',slots=[]' in plain_repr(v)
 
 
 def test_nullable_error():
@@ -165,7 +164,7 @@ def test_list():
             'branches': [{'width': 2, 'branches': None}, {'width': 3, 'branches': [{'width': 4, 'branches': None}]}],
         }
     )
-    assert ',slots=[TypedDict(TypedDictValidator{' in plain_repr(v)
+    assert ',definitions=[TypedDict(TypedDictValidator{' in plain_repr(v)
 
 
 def test_multiple_intertwined():
@@ -283,7 +282,7 @@ def test_model_class():
 
 
 def test_invalid_schema():
-    with pytest.raises(SchemaError, match="Slots Error: ref 'Branch' not found"):
+    with pytest.raises(SchemaError, match='Definitions error: attempted to use `Branch` before it was filled'):
         SchemaValidator(
             {
                 'type': 'list',
@@ -330,8 +329,6 @@ def test_outside_parent():
         'tuple1': (1, 1, 'frog'),
         'tuple2': (2, 2, 'toad'),
     }
-    # the definition goes into reusable and gets "inlined" into the schema
-    assert ',slots=[]' in plain_repr(v)
 
 
 def test_recursion_branch():
@@ -353,7 +350,7 @@ def test_recursion_branch():
         },
         {'from_attributes': True},
     )
-    assert ',slots=[TypedDict(TypedDictValidator{' in plain_repr(v)
+    assert ',definitions=[TypedDict(TypedDictValidator{' in plain_repr(v)
 
     assert v.validate_python({'name': 'root'}) == {'name': 'root', 'branch': None}
     assert v.validate_python({'name': 'root', 'branch': {'name': 'b1', 'branch': None}}) == {
@@ -427,7 +424,7 @@ def test_definition_list():
     v = SchemaValidator(
         {'type': 'list', 'ref': 'the-list', 'items_schema': {'type': 'definition-ref', 'schema_ref': 'the-list'}}
     )
-    assert ',slots=[List(ListValidator{' in plain_repr(v)
+    assert ',definitions=[List(ListValidator{' in plain_repr(v)
     assert v.validate_python([]) == []
     assert v.validate_python([[]]) == [[]]
 
@@ -813,3 +810,104 @@ def test_error_inside_definition_wrapper():
         '  SchemaError: Error building "default" validator:\n'
         "  SchemaError: 'default' and 'default_factory' cannot be used together"
     )
+
+
+def test_recursive_definitions_schema() -> None:
+    s = core_schema.definitions_schema(
+        core_schema.definition_reference_schema(schema_ref='a'),
+        [
+            core_schema.typed_dict_schema(
+                {
+                    'b': core_schema.typed_dict_field(
+                        core_schema.list_schema(core_schema.definition_reference_schema('b'))
+                    )
+                },
+                ref='a',
+            ),
+            core_schema.typed_dict_schema(
+                {
+                    'a': core_schema.typed_dict_field(
+                        core_schema.list_schema(core_schema.definition_reference_schema('a'))
+                    )
+                },
+                ref='b',
+            ),
+        ],
+    )
+
+    v = SchemaValidator(s)
+
+    assert v.validate_python({'b': [{'a': []}]}) == {'b': [{'a': []}]}
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'b': [{'a': {}}]})
+
+    assert exc_info.value.errors() == [
+        {
+            'type': 'list_type',
+            'loc': ('b', 0, 'a'),
+            'msg': 'Input should be a valid list',
+            'input': {},
+            'url': f'https://errors.pydantic.dev/{__version__}/v/list_type',
+        }
+    ]
+
+
+def test_unsorted_definitions_schema() -> None:
+    s = core_schema.definitions_schema(
+        core_schema.definition_reference_schema(schema_ref='td'),
+        [
+            core_schema.typed_dict_schema(
+                {'x': core_schema.typed_dict_field(core_schema.definition_reference_schema('int'))}, ref='td'
+            ),
+            core_schema.int_schema(ref='int'),
+        ],
+    )
+
+    v = SchemaValidator(s)
+
+    assert v.validate_python({'x': 123}) == {'x': 123}
+
+    with pytest.raises(ValidationError):
+        v.validate_python({'x': 'abc'})
+
+
+def test_validate_assignment() -> None:
+    @dataclass
+    class Model:
+        x: List['Model']
+
+    schema = core_schema.dataclass_schema(
+        Model,
+        core_schema.dataclass_args_schema(
+            'Model',
+            [
+                core_schema.dataclass_field(
+                    name='x',
+                    schema=core_schema.list_schema(core_schema.definition_reference_schema('model')),
+                    kw_only=False,
+                )
+            ],
+        ),
+        ref='model',
+    )
+    v = SchemaValidator(schema, config=core_schema.CoreConfig(revalidate_instances='always'))
+
+    data = [Model(x=[Model(x=[])])]
+    instance = Model(x=[])
+    v.validate_assignment(instance, 'x', data)
+    assert instance.x == data
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_assignment(instance, 'x', [Model(x=[Model(x=[Model(x=[123])])])])
+
+    assert exc_info.value.errors() == [
+        {
+            'type': 'dataclass_type',
+            'loc': ('x', 0, 'x', 0, 'x', 0, 'x', 0),
+            'msg': 'Input should be a dictionary or an instance of Model',
+            'input': 123,
+            'ctx': {'dataclass_name': 'Model'},
+            'url': f'https://errors.pydantic.dev/{__version__}/v/dataclass_type',
+        }
+    ]

@@ -7,7 +7,7 @@ use crate::errors::ValResult;
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct JsonValidator {
@@ -21,11 +21,11 @@ impl BuildValidator for JsonValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let validator = match schema.get_as(intern!(schema.py(), "schema"))? {
             Some(schema) => {
-                let validator = build_validator(schema, config, build_context)?;
+                let validator = build_validator(schema, config, definitions)?;
                 match validator {
                     CombinedValidator::Any(_) => None,
                     _ => Some(Box::new(validator)),
@@ -48,12 +48,12 @@ impl Validator for JsonValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let json_value = input.parse_json()?;
         match self.validator {
-            Some(ref validator) => match validator.validate(py, &json_value, extra, slots, recursion_guard) {
+            Some(ref validator) => match validator.validate(py, &json_value, extra, definitions, recursion_guard) {
                 Ok(v) => Ok(v),
                 Err(err) => Err(err.duplicate(py)),
             },
@@ -63,11 +63,11 @@ impl Validator for JsonValidator {
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         if let Some(ref v) = self.validator {
-            v.different_strict_behavior(build_context, ultra_strict)
+            v.different_strict_behavior(definitions, ultra_strict)
         } else {
             false
         }
@@ -77,9 +77,9 @@ impl Validator for JsonValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         match self.validator {
-            Some(ref mut v) => v.complete(build_context),
+            Some(ref mut v) => v.complete(definitions),
             None => Ok(()),
         }
     }

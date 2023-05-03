@@ -54,13 +54,13 @@ fn validate_iter_to_vec<'a, 's>(
     capacity: usize,
     validator: &'s CombinedValidator,
     extra: &Extra,
-    slots: &'a [CombinedValidator],
+    definitions: &'a [CombinedValidator],
     recursion_guard: &'s mut RecursionGuard,
 ) -> ValResult<'a, Vec<PyObject>> {
     let mut output: Vec<PyObject> = Vec::with_capacity(capacity);
     let mut errors: Vec<ValLineError> = Vec::new();
     for (index, item) in iter.enumerate() {
-        match validator.validate(py, item, extra, slots, recursion_guard) {
+        match validator.validate(py, item, extra, definitions, recursion_guard) {
             Ok(item) => output.push(item),
             Err(ValError::LineErrors(line_errors)) => {
                 errors.extend(line_errors.into_iter().map(|err| err.with_outer_location(index.into())));
@@ -131,7 +131,7 @@ impl<'a> GenericCollection<'a> {
         generator_max_length: Option<usize>,
         validator: &'s CombinedValidator,
         extra: &Extra,
-        slots: &'a [CombinedValidator],
+        definitions: &'a [CombinedValidator],
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'a, Vec<PyObject>> {
         let capacity = self
@@ -144,7 +144,7 @@ impl<'a> GenericCollection<'a> {
                 capacity,
                 validator,
                 extra,
-                slots,
+                definitions,
                 recursion_guard,
             ),
             Self::Tuple(collection) => validate_iter_to_vec(
@@ -153,7 +153,7 @@ impl<'a> GenericCollection<'a> {
                 capacity,
                 validator,
                 extra,
-                slots,
+                definitions,
                 recursion_guard,
             ),
             Self::Set(collection) => validate_iter_to_vec(
@@ -162,7 +162,7 @@ impl<'a> GenericCollection<'a> {
                 capacity,
                 validator,
                 extra,
-                slots,
+                definitions,
                 recursion_guard,
             ),
             Self::FrozenSet(collection) => validate_iter_to_vec(
@@ -171,7 +171,7 @@ impl<'a> GenericCollection<'a> {
                 capacity,
                 validator,
                 extra,
-                slots,
+                definitions,
                 recursion_guard,
             ),
             Self::PyAny(collection) => {
@@ -180,7 +180,7 @@ impl<'a> GenericCollection<'a> {
                 let mut errors: Vec<ValLineError> = Vec::new();
                 for (index, item_result) in iter.enumerate() {
                     let item = item_result.map_err(|e| any_next_error!(collection.py(), e, input, index))?;
-                    match validator.validate(py, item, extra, slots, recursion_guard) {
+                    match validator.validate(py, item, extra, definitions, recursion_guard) {
                         Ok(item) => {
                             generator_too_long!(input, index, generator_max_length, field_type);
                             output.push(item);
@@ -206,7 +206,7 @@ impl<'a> GenericCollection<'a> {
                 capacity,
                 validator,
                 extra,
-                slots,
+                definitions,
                 recursion_guard,
             ),
         }

@@ -7,7 +7,7 @@ use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
-use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 pub struct FloatBuilder;
 
@@ -16,7 +16,7 @@ impl BuildValidator for FloatBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let use_constrained = schema.get_item(intern!(py, "multiple_of")).is_some()
@@ -25,7 +25,7 @@ impl BuildValidator for FloatBuilder {
             || schema.get_item(intern!(py, "ge")).is_some()
             || schema.get_item(intern!(py, "gt")).is_some();
         if use_constrained {
-            ConstrainedFloatValidator::build(schema, config, build_context)
+            ConstrainedFloatValidator::build(schema, config, definitions)
         } else {
             Ok(FloatValidator {
                 strict: is_strict(schema, config)?,
@@ -48,7 +48,7 @@ impl BuildValidator for FloatValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedValidator>,
+        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         Ok(Self {
@@ -65,7 +65,7 @@ impl Validator for FloatValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        _slots: &'data [CombinedValidator],
+        _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let float = input.validate_float(extra.strict.unwrap_or(self.strict), extra.ultra_strict)?;
@@ -77,7 +77,7 @@ impl Validator for FloatValidator {
 
     fn different_strict_behavior(
         &self,
-        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         _ultra_strict: bool,
     ) -> bool {
         true
@@ -87,7 +87,7 @@ impl Validator for FloatValidator {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }
 }
@@ -109,7 +109,7 @@ impl Validator for ConstrainedFloatValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        _slots: &'data [CombinedValidator],
+        _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let float = input.validate_float(extra.strict.unwrap_or(self.strict), extra.ultra_strict)?;
@@ -153,7 +153,7 @@ impl Validator for ConstrainedFloatValidator {
 
     fn different_strict_behavior(
         &self,
-        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         _ultra_strict: bool,
     ) -> bool {
         true
@@ -163,7 +163,7 @@ impl Validator for ConstrainedFloatValidator {
         "constrained-float"
     }
 
-    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }
 }
@@ -173,7 +173,7 @@ impl BuildValidator for ConstrainedFloatValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedValidator>,
+        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         Ok(Self {

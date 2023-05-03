@@ -77,9 +77,9 @@ def test_bool_error():
 
 def test_bool_repr():
     v = SchemaValidator({'type': 'bool'})
-    assert plain_repr(v) == 'SchemaValidator(title="bool",validator=Bool(BoolValidator{strict:false}),slots=[])'
+    assert plain_repr(v) == 'SchemaValidator(title="bool",validator=Bool(BoolValidator{strict:false}),definitions=[])'
     v = SchemaValidator({'type': 'bool', 'strict': True})
-    assert plain_repr(v) == 'SchemaValidator(title="bool",validator=Bool(BoolValidator{strict:true}),slots=[])'
+    assert plain_repr(v) == 'SchemaValidator(title="bool",validator=Bool(BoolValidator{strict:true}),definitions=[])'
 
 
 def test_bool_key(py_and_json: PyAndJson):

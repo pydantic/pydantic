@@ -14,7 +14,7 @@ use crate::input::{
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
 
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 struct Field {
@@ -41,7 +41,7 @@ impl BuildValidator for ModelFieldsValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let strict = is_strict(schema, config)?;
@@ -52,7 +52,7 @@ impl BuildValidator for ModelFieldsValidator {
         let extra_behavior = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
 
         let extra_validator = match (schema.get_item(intern!(py, "extra_validator")), &extra_behavior) {
-            (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, build_context)?)),
+            (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, definitions)?)),
             (Some(_), _) => return py_err!("extra_validator can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
@@ -66,7 +66,7 @@ impl BuildValidator for ModelFieldsValidator {
 
             let schema = field_info.get_as_req(intern!(py, "schema"))?;
 
-            let validator = match build_validator(schema, config, build_context) {
+            let validator = match build_validator(schema, config, definitions) {
                 Ok(v) => v,
                 Err(err) => return py_err!("Field \"{}\":\n  {}", field_name, err),
             };
@@ -106,7 +106,7 @@ impl Validator for ModelFieldsValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let strict = extra.strict.unwrap_or(self.strict);
@@ -154,7 +154,7 @@ impl Validator for ModelFieldsValidator {
                         }
                         match field
                             .validator
-                            .validate(py, value, &extra, slots, recursion_guard)
+                            .validate(py, value, &extra, definitions, recursion_guard)
                         {
                             Ok(value) => {
                                 model_dict.set_item(&field.name_py, value)?;
@@ -169,7 +169,7 @@ impl Validator for ModelFieldsValidator {
                             Err(err) => return Err(err),
                         }
                         continue;
-                    } else if let Some(value) = field.validator.default_value(py, Some(field.name.as_str()), &extra, slots, recursion_guard)? {
+                    } else if let Some(value) = field.validator.default_value(py, Some(field.name.as_str()), &extra, definitions, recursion_guard)? {
                         model_dict.set_item(&field.name_py, value)?;
                     } else {
                         errors.push(field.lookup_key.error(
@@ -215,7 +215,7 @@ impl Validator for ModelFieldsValidator {
                             ExtraBehavior::Allow => {
                             let py_key = either_str.as_py_string(py);
                                 if let Some(ref validator) = self.extra_validator {
-                                    match validator.validate(py, value, &extra, slots, recursion_guard) {
+                                    match validator.validate(py, value, &extra, definitions, recursion_guard) {
                                         Ok(value) => {
                                             model_extra_dict.set_item(py_key, value)?;
                                             fields_set_vec.push(py_key.into_py(py));
@@ -260,7 +260,7 @@ impl Validator for ModelFieldsValidator {
         field_name: &'data str,
         field_value: &'data PyAny,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let dict: &PyDict = obj.downcast()?;
@@ -308,7 +308,7 @@ impl Validator for ModelFieldsValidator {
                 prepare_result(
                     field
                         .validator
-                        .validate(py, field_value, &extra, slots, recursion_guard),
+                        .validate(py, field_value, &extra, definitions, recursion_guard),
                 )
             }
         } else {
@@ -320,7 +320,7 @@ impl Validator for ModelFieldsValidator {
             match self.extra_behavior {
                 ExtraBehavior::Allow => match self.extra_validator {
                     Some(ref validator) => {
-                        prepare_result(validator.validate(py, field_value, &extra, slots, recursion_guard))
+                        prepare_result(validator.validate(py, field_value, &extra, definitions, recursion_guard))
                     }
                     None => ok(field_value.to_object(py)),
                 },
@@ -342,24 +342,24 @@ impl Validator for ModelFieldsValidator {
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         self.fields
             .iter()
-            .any(|f| f.validator.different_strict_behavior(build_context, ultra_strict))
+            .any(|f| f.validator.different_strict_behavior(definitions, ultra_strict))
     }
 
     fn get_name(&self) -> &str {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         self.fields
             .iter_mut()
-            .try_for_each(|f| f.validator.complete(build_context))?;
+            .try_for_each(|f| f.validator.complete(definitions))?;
         match &mut self.extra_validator {
-            Some(v) => v.complete(build_context),
+            Some(v) => v.complete(definitions),
             None => Ok(()),
         }
     }

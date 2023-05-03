@@ -10,8 +10,8 @@ use pyo3::prelude::*;
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod argument_markers;
-mod build_context;
 mod build_tools;
+mod definitions;
 mod errors;
 mod input;
 mod lazy_index_map;

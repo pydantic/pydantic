@@ -3,8 +3,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use std::borrow::Cow;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, SchemaDict};
+use crate::definitions::DefinitionsBuilder;
 use crate::serializers::extra::SerCheck;
 use crate::PydanticSerializationUnexpectedValue;
 
@@ -25,13 +25,13 @@ impl BuildSerializer for UnionSerializer {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let choices: Vec<CombinedSerializer> = schema
             .get_as_req::<&PyList>(intern!(py, "choices"))?
             .iter()
-            .map(|choice| CombinedSerializer::build(choice.downcast()?, config, build_context))
+            .map(|choice| CombinedSerializer::build(choice.downcast()?, config, definitions))
             .collect::<PyResult<Vec<CombinedSerializer>>>()?;
 
         Self::from_choices(choices)
@@ -175,14 +175,14 @@ impl BuildSerializer for TaggedUnionBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let schema_choices: &PyDict = schema.get_as_req(intern!(schema.py(), "choices"))?;
         let mut choices: Vec<CombinedSerializer> = Vec::with_capacity(schema_choices.len());
 
         for (_, value) in schema_choices {
             if let Ok(choice_schema) = value.downcast::<PyDict>() {
-                choices.push(CombinedSerializer::build(choice_schema, config, build_context)?)
+                choices.push(CombinedSerializer::build(choice_schema, config, definitions)?)
             }
         }
         UnionSerializer::from_choices(choices)

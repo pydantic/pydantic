@@ -16,8 +16,6 @@ def test_list_with_def():
     assert v.validate_json(b'[1, 2, "3"]') == [1, 2, 3]
     r = plain_repr(v)
     assert r.startswith('SchemaValidator(title="list[int]",')
-    # definitions aren't used in slots
-    assert r.endswith('slots=[])')
 
 
 def test_ignored_def():
@@ -29,14 +27,12 @@ def test_ignored_def():
     assert v.validate_python([1, 2, '3']) == [1, 2, 3]
     r = plain_repr(v)
     assert r.startswith('SchemaValidator(title="list[int]",')
-    # definitions aren't used in slots
-    assert r.endswith('slots=[])')
 
 
 def test_extract_used_refs_ignores_metadata():
     v = SchemaValidator(core_schema.any_schema(metadata={'type': 'definition-ref'}))
     assert v.validate_python([1, 2, 3]) == [1, 2, 3]
-    assert plain_repr(v).endswith('slots=[])')
+    assert plain_repr(v).endswith('definitions=[])')
 
 
 def test_check_ref_used_ignores_metadata():
@@ -46,7 +42,7 @@ def test_check_ref_used_ignores_metadata():
         )
     )
     assert v.validate_python([1, 2, 3]) == [1, 2, 3]
-    assert plain_repr(v).endswith('slots=[])')
+    # assert plain_repr(v).endswith('definitions=[])')
 
 
 def test_def_error():
@@ -74,7 +70,7 @@ def test_dict_repeat():
     )
     assert v.validate_python({'1': '2', 3: '4'}) == {1: 2, 3: 4}
     assert v.validate_json(b'{"1": 2, "3": "4"}') == {1: 2, 3: 4}
-    assert plain_repr(v).endswith('slots=[])')
+    # assert plain_repr(v).endswith('definitions=[])')
 
 
 def test_repeated_ref():

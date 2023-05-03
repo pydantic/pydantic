@@ -7,8 +7,8 @@ use pyo3::types::{PyDict, PyString};
 use ahash::{AHashMap, AHashSet};
 use serde::ser::SerializeMap;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::{py_error_type, schema_or_config, ExtraBehavior, SchemaDict};
+use crate::definitions::DefinitionsBuilder;
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
@@ -77,7 +77,7 @@ impl BuildSerializer for TypedDictSerializer {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
@@ -106,7 +106,7 @@ impl BuildSerializer for TypedDictSerializer {
                 let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
 
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
-                let serializer = CombinedSerializer::build(schema, config, build_context)
+                let serializer = CombinedSerializer::build(schema, config, definitions)
                     .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
 
                 fields.insert(

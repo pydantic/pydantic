@@ -8,8 +8,8 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
-use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
+use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{ErrorMode, LocItem, ValError, ValResult, ValidationError};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
@@ -54,11 +54,13 @@ mod with_default;
 
 pub use with_default::DefaultType;
 
+use self::definitions::DefinitionRefValidator;
+
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
 pub struct SchemaValidator {
     validator: CombinedValidator,
-    slots: Vec<CombinedValidator>,
+    definitions: Vec<CombinedValidator>,
     schema: PyObject,
     #[pyo3(get)]
     title: PyObject,
@@ -71,11 +73,14 @@ impl SchemaValidator {
         let self_validator = SelfValidator::new(py)?;
         let schema = self_validator.validate_schema(py, schema)?;
 
-        let mut build_context = BuildContext::new(schema)?;
+        let mut definitions_builder = DefinitionsBuilder::new();
 
-        let mut validator = build_validator(schema, config, &mut build_context)?;
-        validator.complete(&build_context)?;
-        let slots = build_context.into_slots_val()?;
+        let mut validator = build_validator(schema, config, &mut definitions_builder)?;
+        validator.complete(&definitions_builder)?;
+        let mut definitions = definitions_builder.clone().finish()?;
+        for val in definitions.iter_mut() {
+            val.complete(&definitions_builder)?;
+        }
         let config_title = match config {
             Some(c) => c.get_item("title"),
             None => None,
@@ -86,7 +91,7 @@ impl SchemaValidator {
         };
         Ok(Self {
             validator,
-            slots,
+            definitions,
             schema: schema.into_py(py),
             title,
         })
@@ -187,23 +192,23 @@ impl SchemaValidator {
 
         let guard = &mut RecursionGuard::default();
         self.validator
-            .validate_assignment(py, obj, field_name, field_value, &extra, &self.slots, guard)
+            .validate_assignment(py, obj, field_name, field_value, &extra, &self.definitions, guard)
             .map_err(|e| self.prepare_validation_err(py, e, ErrorMode::Python))
     }
 
     pub fn __repr__(&self, py: Python) -> String {
         format!(
-            "SchemaValidator(title={:?}, validator={:#?}, slots={:#?})",
+            "SchemaValidator(title={:?}, validator={:#?}, definitions={:#?})",
             self.title.extract::<&str>(py).unwrap(),
             self.validator,
-            self.slots,
+            self.definitions,
         )
     }
 
     fn __traverse__(&self, visit: PyVisit<'_>) -> Result<(), PyTraverseError> {
         self.validator.py_gc_traverse(&visit)?;
         visit.call(&self.schema)?;
-        for slot in self.slots.iter() {
+        for slot in self.definitions.iter() {
             slot.py_gc_traverse(&visit)?;
         }
         Ok(())
@@ -211,7 +216,7 @@ impl SchemaValidator {
 
     fn __clear__(&mut self) {
         self.validator.py_gc_clear();
-        for slot in self.slots.iter_mut() {
+        for slot in self.definitions.iter_mut() {
             slot.py_gc_clear();
         }
     }
@@ -233,7 +238,7 @@ impl SchemaValidator {
             py,
             input,
             &Extra::new(strict, context, self_instance),
-            &self.slots,
+            &self.definitions,
             &mut RecursionGuard::default(),
         )
     }
@@ -245,6 +250,7 @@ impl SchemaValidator {
 
 static SCHEMA_DEFINITION: GILOnceCell<SchemaValidator> = GILOnceCell::new();
 
+#[derive(Debug, Clone)]
 pub struct SelfValidator<'py> {
     validator: &'py SchemaValidator,
 }
@@ -263,7 +269,7 @@ impl<'py> SelfValidator<'py> {
             py,
             schema,
             &Extra::default(),
-            &self.validator.slots,
+            &self.validator.definitions,
             &mut RecursionGuard::default(),
         ) {
             Ok(schema_obj) => Ok(schema_obj.into_ref(py)),
@@ -277,15 +283,20 @@ impl<'py> SelfValidator<'py> {
         py.run(code, None, Some(locals))?;
         let self_schema: &PyDict = locals.get_as_req(intern!(py, "self_schema"))?;
 
-        let mut build_context = BuildContext::for_self_schema();
+        let mut definitions_builder = DefinitionsBuilder::new();
 
-        let validator = match build_validator(self_schema, None, &mut build_context) {
+        let mut validator = match build_validator(self_schema, None, &mut definitions_builder) {
             Ok(v) => v,
             Err(err) => return py_err!("Error building self-schema:\n  {}", err),
         };
+        validator.complete(&definitions_builder)?;
+        let mut definitions = definitions_builder.clone().finish()?;
+        for val in definitions.iter_mut() {
+            val.complete(&definitions_builder)?;
+        }
         Ok(SchemaValidator {
             validator,
-            slots: build_context.into_slots_val()?,
+            definitions,
             schema: py.None(),
             title: "Self Schema".into_py(py),
         })
@@ -300,7 +311,7 @@ pub trait BuildValidator: Sized {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator>;
 }
 
@@ -309,49 +320,25 @@ fn build_specific_validator<'a, T: BuildValidator>(
     val_type: &str,
     schema_dict: &'a PyDict,
     config: Option<&'a PyDict>,
-    build_context: &mut BuildContext<CombinedValidator>,
+    definitions: &mut DefinitionsBuilder<CombinedValidator>,
 ) -> PyResult<CombinedValidator> {
     let py = schema_dict.py();
     if let Some(schema_ref) = schema_dict.get_as::<String>(intern!(py, "ref"))? {
-        // if there's a ref, we **might** want to store the validator in slots and return a DefinitionRefValidator:
-        // * if the ref isn't used at all, we just want to return a normal validator, and ignore the ref completely
-        // * if the ref is used inside itself, we have to store the validator in slots,
-        //   and return a DefinitionRefValidator - two step process with `prepare_slot` and `complete_slot`
-        // * if the ref is used elsewhere, we want to clone it each time it's used
-        if build_context.ref_used(&schema_ref) {
-            // the ref is used somewhere
-            // check the ref is unique
-            if build_context.ref_already_used(&schema_ref) {
-                return py_err!("Duplicate ref: `{}`", schema_ref);
-            }
-
-            return if build_context.ref_used_within(schema_dict, &schema_ref)? {
-                // the ref is used within itself, so we have to store the validator in slots
-                // and return a DefinitionRefValidator
-                let slot_id = build_context.prepare_slot(schema_ref)?;
-                let inner_val = T::build(schema_dict, config, build_context)?;
-                let name = inner_val.get_name().to_string();
-                build_context.complete_slot(slot_id, inner_val)?;
-                Ok(definitions::DefinitionRefValidator::from_id(slot_id, name))
-            } else {
-                // ref is used, but only out side itself, we want to clone it everywhere it's used
-                let validator = T::build(schema_dict, config, build_context)?;
-                build_context.store_reusable(schema_ref, validator.clone());
-                Ok(validator)
-            };
-        }
+        let inner_val = T::build(schema_dict, config, definitions)?;
+        let validator_id = definitions.add_definition(schema_ref, inner_val)?;
+        return Ok(DefinitionRefValidator::new(validator_id).into());
     }
 
-    T::build(schema_dict, config, build_context)
+    T::build(schema_dict, config, definitions)
         .map_err(|err| py_error_type!("Error building \"{}\" validator:\n  {}", val_type, err))
 }
 
 // macro to build the match statement for validator selection
 macro_rules! validator_match {
-    ($type:ident, $dict:ident, $config:ident, $build_context:ident, $($validator:path,)+) => {
+    ($type:ident, $dict:ident, $config:ident, $definitions:ident, $($validator:path,)+) => {
         match $type {
             $(
-                <$validator>::EXPECTED_TYPE => build_specific_validator::<$validator>($type, $dict, $config, $build_context),
+                <$validator>::EXPECTED_TYPE => build_specific_validator::<$validator>($type, $dict, $config, $definitions),
             )+
             _ => return py_err!(r#"Unknown schema type: "{}""#, $type),
         }
@@ -361,7 +348,7 @@ macro_rules! validator_match {
 pub fn build_validator<'a>(
     schema: &'a PyAny,
     config: Option<&'a PyDict>,
-    build_context: &mut BuildContext<CombinedValidator>,
+    definitions: &mut DefinitionsBuilder<CombinedValidator>,
 ) -> PyResult<CombinedValidator> {
     let dict: &PyDict = schema.downcast()?;
     let type_: &str = dict.get_as_req(intern!(schema.py(), "type"))?;
@@ -369,7 +356,7 @@ pub fn build_validator<'a>(
         type_,
         dict,
         config,
-        build_context,
+        definitions,
         // typed dict e.g. heterogeneous dicts or simply a model
         typed_dict::TypedDictValidator,
         // unions
@@ -448,7 +435,7 @@ pub fn build_validator<'a>(
         url::MultiHostUrlValidator,
         // recursive (self-referencing) models
         definitions::DefinitionRefValidator,
-        definitions::DefinitionsBuilder,
+        definitions::DefinitionsValidatorBuilder,
     )
 }
 
@@ -597,7 +584,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject>;
 
@@ -607,7 +594,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
         _py: Python<'data>,
         _outer_loc: Option<impl Into<LocItem>>,
         _extra: &Extra,
-        _slots: &'data [CombinedValidator],
+        _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, Option<PyObject>> {
         Ok(None)
@@ -622,7 +609,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
         _field_name: &'data str,
         _field_value: &'data PyAny,
         _extra: &Extra,
-        _slots: &'data [CombinedValidator],
+        _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let py_err = PyTypeError::new_err(format!("validate_assignment is not supported for {}", self.get_name()));
@@ -633,7 +620,7 @@ pub trait Validator: Send + Sync + Clone + Debug {
     /// implementations should return true if any of their sub-validators return true
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool;
 
@@ -643,5 +630,5 @@ pub trait Validator: Send + Sync + Clone + Debug {
 
     /// this method must be implemented for any validator which holds references to other validators,
     /// it is used by `DefinitionRefValidator` to set its name
-    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()>;
+    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()>;
 }

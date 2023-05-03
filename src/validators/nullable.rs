@@ -7,7 +7,7 @@ use crate::errors::ValResult;
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct NullableValidator {
@@ -21,10 +21,10 @@ impl BuildValidator for NullableValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let schema: &PyAny = schema.get_as_req(intern!(schema.py(), "schema"))?;
-        let validator = Box::new(build_validator(schema, config, build_context)?);
+        let validator = Box::new(build_validator(schema, config, definitions)?);
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
         Ok(Self { validator, name }.into())
     }
@@ -36,28 +36,28 @@ impl Validator for NullableValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         match input.is_none() {
             true => Ok(py.None()),
-            false => self.validator.validate(py, input, extra, slots, recursion_guard),
+            false => self.validator.validate(py, input, extra, definitions, recursion_guard),
         }
     }
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
-        self.validator.different_strict_behavior(build_context, ultra_strict)
+        self.validator.different_strict_behavior(definitions, ultra_strict)
     }
 
     fn get_name(&self) -> &str {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        self.validator.complete(build_context)
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+        self.validator.complete(definitions)
     }
 }

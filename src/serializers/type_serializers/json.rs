@@ -7,8 +7,8 @@ use pyo3::types::PyDict;
 
 use serde::ser::Error;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
+use crate::definitions::DefinitionsBuilder;
 
 use super::any::AnySerializer;
 use super::{
@@ -27,13 +27,13 @@ impl BuildSerializer for JsonSerializer {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
         let serializer = match schema.get_as::<&PyDict>(intern!(py, "schema"))? {
-            Some(items_schema) => CombinedSerializer::build(items_schema, config, build_context)?,
-            None => AnySerializer::build(schema, config, build_context)?,
+            Some(items_schema) => CombinedSerializer::build(items_schema, config, definitions)?,
+            None => AnySerializer::build(schema, config, definitions)?,
         };
         Ok(Self {
             serializer: Box::new(serializer),

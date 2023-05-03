@@ -8,7 +8,7 @@ use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{EitherTime, Input};
 use crate::recursion_guard::RecursionGuard;
 
-use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct TimeValidator {
@@ -30,7 +30,7 @@ impl BuildValidator for TimeValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedValidator>,
+        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let has_constraints = schema.get_item(intern!(py, "le")).is_some()
@@ -60,7 +60,7 @@ impl Validator for TimeValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        _slots: &'data [CombinedValidator],
+        _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let time = input.validate_time(extra.strict.unwrap_or(self.strict))?;
@@ -92,7 +92,7 @@ impl Validator for TimeValidator {
 
     fn different_strict_behavior(
         &self,
-        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         !ultra_strict
@@ -102,7 +102,7 @@ impl Validator for TimeValidator {
         Self::EXPECTED_TYPE
     }
 
-    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }
 }

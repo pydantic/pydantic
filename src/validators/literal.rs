@@ -11,7 +11,7 @@ use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
-use super::{BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct LiteralValidator {
@@ -33,7 +33,7 @@ impl BuildValidator for LiteralValidator {
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedValidator>,
+        _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let expected: &PyList = schema.get_as_req(intern!(schema.py(), "expected"))?;
         if expected.is_empty() {
@@ -72,7 +72,7 @@ impl Validator for LiteralValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         _extra: &Extra,
-        _slots: &'data [CombinedValidator],
+        _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         if let Some(expected_ints) = &self.expected_int {
@@ -105,7 +105,7 @@ impl Validator for LiteralValidator {
 
     fn different_strict_behavior(
         &self,
-        _build_context: Option<&BuildContext<CombinedValidator>>,
+        _definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         !ultra_strict
@@ -115,7 +115,7 @@ impl Validator for LiteralValidator {
         &self.name
     }
 
-    fn complete(&mut self, _build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, _definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         Ok(())
     }
 }

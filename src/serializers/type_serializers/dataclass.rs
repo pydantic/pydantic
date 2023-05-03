@@ -4,8 +4,8 @@ use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashMap;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::{py_error_type, SchemaDict};
+use crate::definitions::DefinitionsBuilder;
 
 use super::model::ModelSerializer;
 use super::typed_dict::{TypedDictField, TypedDictSerializer};
@@ -19,7 +19,7 @@ impl BuildSerializer for DataclassArgsBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
@@ -37,7 +37,7 @@ impl BuildSerializer for DataclassArgsBuilder {
                 exclude.push(key_py.clone_ref(py));
             } else {
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
-                let serializer = CombinedSerializer::build(schema, config, build_context)
+                let serializer = CombinedSerializer::build(schema, config, definitions)
                     .map_err(|e| py_error_type!("Field `{}`:\n  {}", index, e))?;
 
                 let alias = field_info.get_as(intern!(py, "serialization_alias"))?;
@@ -60,8 +60,8 @@ impl BuildSerializer for DataclassBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        ModelSerializer::build(schema, config, build_context)
+        ModelSerializer::build(schema, config, definitions)
     }
 }

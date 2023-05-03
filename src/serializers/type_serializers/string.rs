@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 
-use crate::build_context::BuildContext;
+use crate::definitions::DefinitionsBuilder;
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
@@ -19,7 +19,7 @@ impl BuildSerializer for StrSerializer {
     fn build(
         _schema: &PyDict,
         _config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedSerializer>,
+        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         Ok(Self {}.into())
     }

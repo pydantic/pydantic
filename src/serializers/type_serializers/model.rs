@@ -6,8 +6,8 @@ use pyo3::types::{PyDict, PyString, PyType};
 
 use ahash::AHashMap;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::{py_error_type, ExtraBehavior, SchemaDict};
+use crate::definitions::DefinitionsBuilder;
 use crate::serializers::computed_fields::ComputedFields;
 use crate::serializers::extra::SerCheck;
 use crate::serializers::filter::SchemaFilter;
@@ -28,7 +28,7 @@ impl BuildSerializer for ModelFieldsBuilder {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
@@ -54,7 +54,7 @@ impl BuildSerializer for ModelFieldsBuilder {
                 let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
 
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
-                let serializer = CombinedSerializer::build(schema, config, build_context)
+                let serializer = CombinedSerializer::build(schema, config, definitions)
                     .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
 
                 fields.insert(key, TypedDictField::new(py, key_py, alias, serializer, true));
@@ -81,12 +81,12 @@ impl BuildSerializer for ModelSerializer {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema: &PyDict = schema.get_as_req(intern!(py, "schema"))?;
-        let serializer = Box::new(CombinedSerializer::build(sub_schema, config, build_context)?);
+        let serializer = Box::new(CombinedSerializer::build(sub_schema, config, definitions)?);
 
         Ok(Self {
             class: class.into(),
