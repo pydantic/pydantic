@@ -2458,7 +2458,7 @@ def test_invalid_forward_ref_model():
         pytest.param(
             Sequence[str],
             '1bc',
-            'sequence_str_str_type',
+            'sequence_str',
             "'str' instances are not allowed as a Sequence value",
             {'type_name': 'str'},
             id='Sequence[str]',
@@ -2466,7 +2466,7 @@ def test_invalid_forward_ref_model():
         pytest.param(
             Sequence[bytes],
             b'1bc',
-            'sequence_str_str_type',
+            'sequence_str',
             "'bytes' instances are not allowed as a Sequence value",
             {'type_name': 'bytes'},
             id='Sequence[bytes]',
