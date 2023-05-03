@@ -4,8 +4,8 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::SchemaDict;
+use crate::definitions::DefinitionsBuilder;
 
 use super::{infer_json_key_known, BuildSerializer, CombinedSerializer, Extra, IsType, ObType, TypeSerializer};
 
@@ -20,11 +20,11 @@ impl BuildSerializer for NullableSerializer {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let sub_schema = schema.get_as_req::<&PyDict>(intern!(schema.py(), "schema"))?;
         Ok(Self {
-            serializer: Box::new(CombinedSerializer::build(sub_schema, config, build_context)?),
+            serializer: Box::new(CombinedSerializer::build(sub_schema, config, definitions)?),
         }
         .into())
     }

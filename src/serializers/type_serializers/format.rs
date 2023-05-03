@@ -6,8 +6,8 @@ use pyo3::types::{PyDict, PyString};
 
 use serde::ser::Error;
 
-use crate::build_context::BuildContext;
 use crate::build_tools::{py_err, SchemaDict};
+use crate::definitions::DefinitionsBuilder;
 
 use super::simple::none_json_key;
 use super::string::serialize_py_str;
@@ -65,12 +65,12 @@ impl BuildSerializer for FormatSerializer {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedSerializer>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
         let formatting_string: &str = schema.get_as_req(intern!(py, "formatting_string"))?;
         if formatting_string.is_empty() {
-            ToStringSerializer::build(schema, config, build_context)
+            ToStringSerializer::build(schema, config, definitions)
         } else {
             Ok(Self {
                 format_func: py
@@ -165,7 +165,7 @@ impl BuildSerializer for ToStringSerializer {
     fn build(
         schema: &PyDict,
         _config: Option<&PyDict>,
-        _build_context: &mut BuildContext<CombinedSerializer>,
+        _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         Ok(Self {
             when_used: WhenUsed::new(schema, WhenUsed::JsonUnlessNone)?,

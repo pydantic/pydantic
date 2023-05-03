@@ -3,7 +3,7 @@ use std::borrow::Cow;
 use pyo3::prelude::*;
 use pyo3::types::{PyDate, PyDateTime, PyDict, PyTime};
 
-use crate::build_context::BuildContext;
+use crate::definitions::DefinitionsBuilder;
 use crate::input::{pydate_as_date, pydatetime_as_datetime, pytime_as_time};
 
 use super::{
@@ -37,7 +37,7 @@ macro_rules! build_serializer {
             fn build(
                 _schema: &PyDict,
                 _config: Option<&PyDict>,
-                _build_context: &mut BuildContext<CombinedSerializer>,
+                _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
             ) -> PyResult<CombinedSerializer> {
                 Ok(Self {}.into())
             }

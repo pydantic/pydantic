@@ -7,7 +7,7 @@ use crate::errors::ValResult;
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct LaxOrStrictValidator {
@@ -23,14 +23,14 @@ impl BuildValidator for LaxOrStrictValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         let lax_schema = schema.get_as_req(intern!(py, "lax_schema"))?;
-        let lax_validator = Box::new(build_validator(lax_schema, config, build_context)?);
+        let lax_validator = Box::new(build_validator(lax_schema, config, definitions)?);
 
         let strict_schema = schema.get_as_req(intern!(py, "strict_schema"))?;
-        let strict_validator = Box::new(build_validator(strict_schema, config, build_context)?);
+        let strict_validator = Box::new(build_validator(strict_schema, config, definitions)?);
 
         let name = format!(
             "{}[lax={},strict={}]",
@@ -54,23 +54,25 @@ impl Validator for LaxOrStrictValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         if extra.strict.unwrap_or(self.strict) {
-            self.strict_validator.validate(py, input, extra, slots, recursion_guard)
+            self.strict_validator
+                .validate(py, input, extra, definitions, recursion_guard)
         } else {
-            self.lax_validator.validate(py, input, extra, slots, recursion_guard)
+            self.lax_validator
+                .validate(py, input, extra, definitions, recursion_guard)
         }
     }
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         if ultra_strict {
-            self.strict_validator.different_strict_behavior(build_context, true)
+            self.strict_validator.different_strict_behavior(definitions, true)
         } else {
             true
         }
@@ -80,8 +82,8 @@ impl Validator for LaxOrStrictValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
-        self.lax_validator.complete(build_context)?;
-        self.strict_validator.complete(build_context)
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
+        self.lax_validator.complete(definitions)?;
+        self.strict_validator.complete(definitions)
     }
 }

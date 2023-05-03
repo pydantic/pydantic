@@ -6,7 +6,7 @@ use crate::errors::ValResult;
 use crate::input::{GenericCollection, Input};
 use crate::recursion_guard::RecursionGuard;
 
-use super::{build_validator, BuildContext, BuildValidator, CombinedValidator, Extra, Validator};
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct ListValidator {
@@ -21,11 +21,11 @@ pub struct ListValidator {
 pub fn get_items_schema(
     schema: &PyDict,
     config: Option<&PyDict>,
-    build_context: &mut BuildContext<CombinedValidator>,
+    definitions: &mut DefinitionsBuilder<CombinedValidator>,
 ) -> PyResult<Option<Box<CombinedValidator>>> {
     match schema.get_item(pyo3::intern!(schema.py(), "items_schema")) {
         Some(d) => {
-            let validator = build_validator(d, config, build_context)?;
+            let validator = build_validator(d, config, definitions)?;
             match validator {
                 CombinedValidator::Any(_) => Ok(None),
                 _ => Ok(Some(Box::new(validator))),
@@ -75,10 +75,10 @@ impl BuildValidator for ListValidator {
     fn build(
         schema: &PyDict,
         config: Option<&PyDict>,
-        build_context: &mut BuildContext<CombinedValidator>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
-        let item_validator = get_items_schema(schema, config, build_context)?;
+        let item_validator = get_items_schema(schema, config, definitions)?;
         let inner_name = item_validator.as_ref().map(|v| v.get_name()).unwrap_or("any");
         let name = format!("{}[{inner_name}]", Self::EXPECTED_TYPE);
         Ok(Self {
@@ -99,7 +99,7 @@ impl Validator for ListValidator {
         py: Python<'data>,
         input: &'data impl Input<'data>,
         extra: &Extra,
-        slots: &'data [CombinedValidator],
+        definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let seq = input.validate_list(extra.strict.unwrap_or(self.strict), self.allow_any_iter)?;
@@ -113,7 +113,7 @@ impl Validator for ListValidator {
                 self.max_length,
                 v,
                 extra,
-                slots,
+                definitions,
                 recursion_guard,
             )?,
             None => match seq {
@@ -130,12 +130,12 @@ impl Validator for ListValidator {
 
     fn different_strict_behavior(
         &self,
-        build_context: Option<&BuildContext<CombinedValidator>>,
+        definitions: Option<&DefinitionsBuilder<CombinedValidator>>,
         ultra_strict: bool,
     ) -> bool {
         if ultra_strict {
             match self.item_validator {
-                Some(ref v) => v.different_strict_behavior(build_context, true),
+                Some(ref v) => v.different_strict_behavior(definitions, true),
                 None => false,
             }
         } else {
@@ -147,9 +147,9 @@ impl Validator for ListValidator {
         &self.name
     }
 
-    fn complete(&mut self, build_context: &BuildContext<CombinedValidator>) -> PyResult<()> {
+    fn complete(&mut self, definitions: &DefinitionsBuilder<CombinedValidator>) -> PyResult<()> {
         if let Some(ref mut v) = self.item_validator {
-            v.complete(build_context)?;
+            v.complete(definitions)?;
             let inner_name = v.get_name();
             self.name = format!("{}[{inner_name}]", Self::EXPECTED_TYPE);
         }

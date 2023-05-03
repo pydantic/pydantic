@@ -250,7 +250,7 @@ def test_repr():
         'validator=FrozenSet(FrozenSetValidator{'
         'strict:true,item_validator:None,min_length:Some(42),max_length:None,generator_max_length:None,'
         'name:"frozenset[any]"'
-        '}),slots=[])'
+        '}),definitions=[])'
     )
 
 

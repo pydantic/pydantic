@@ -14,7 +14,7 @@ use crate::build_tools::{py_err, safe_repr};
 use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::PydanticSerializer;
-use crate::serializers::{shared::TypeSerializer, SchemaSerializer};
+use crate::serializers::SchemaSerializer;
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::errors::{py_err_se_err, PydanticSerializationError};
@@ -32,6 +32,10 @@ pub(crate) fn infer_to_python(
     infer_to_python_known(&extra.ob_type_lookup.get_type(value), value, include, exclude, extra)
 }
 
+// arbitrary ids to identify that we recursed through infer_to_{python,json}_known
+// We just need them to be different from definition ref slot ids, which start at 0
+const INFER_DEF_REF_ID: usize = usize::MAX;
+
 pub(crate) fn infer_to_python_known(
     ob_type: &ObType,
     value: &PyAny,
@@ -40,7 +44,7 @@ pub(crate) fn infer_to_python_known(
     extra: &Extra,
 ) -> PyResult<PyObject> {
     let py = value.py();
-    let value_id = match extra.rec_guard.add(value) {
+    let value_id = match extra.rec_guard.add(value, INFER_DEF_REF_ID) {
         Ok(id) => id,
         Err(e) => {
             return match extra.mode {
@@ -96,7 +100,20 @@ pub(crate) fn infer_to_python_known(
     let serialize_with_serializer = |value: &PyAny, is_model: bool| {
         if let Ok(py_serializer) = value.getattr(intern!(py, "__pydantic_serializer__")) {
             if let Ok(serializer) = py_serializer.extract::<SchemaSerializer>() {
-                return serializer.serializer.to_python(value, include, exclude, extra);
+                return serializer.to_python(
+                    py,
+                    value,
+                    extra.mode.to_object(py).extract(py)?,
+                    include,
+                    exclude,
+                    extra.by_alias,
+                    extra.exclude_unset,
+                    extra.exclude_defaults,
+                    extra.exclude_none,
+                    extra.round_trip,
+                    extra.warnings.is_active(),
+                    extra.fallback,
+                );
             }
         }
         // Fallback to dict serialization if `__pydantic_serializer__` is not set.
@@ -199,7 +216,7 @@ pub(crate) fn infer_to_python_known(
                 if let Some(fallback) = extra.fallback {
                     let next_value = fallback.call1((value,))?;
                     let next_result = infer_to_python(next_value, include, exclude, extra);
-                    extra.rec_guard.pop(value_id);
+                    extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
                     return next_result;
                 } else if extra.serialize_unknown {
                     serialize_unknown(value).into_py(py)
@@ -257,7 +274,7 @@ pub(crate) fn infer_to_python_known(
                 if let Some(fallback) = extra.fallback {
                     let next_value = fallback.call1((value,))?;
                     let next_result = infer_to_python(next_value, include, exclude, extra);
-                    extra.rec_guard.pop(value_id);
+                    extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
                     return next_result;
                 } else {
                     value.into_py(py)
@@ -266,7 +283,7 @@ pub(crate) fn infer_to_python_known(
             _ => value.into_py(py),
         },
     };
-    extra.rec_guard.pop(value_id);
+    extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
     Ok(value)
 }
 
@@ -325,7 +342,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
     exclude: Option<&PyAny>,
     extra: &Extra,
 ) -> Result<S::Ok, S::Error> {
-    let value_id = match extra.rec_guard.add(value).map_err(py_err_se_err) {
+    let value_id = match extra.rec_guard.add(value, INFER_DEF_REF_ID).map_err(py_err_se_err) {
         Ok(v) => v,
         Err(e) => {
             return if extra.serialize_unknown {
@@ -487,7 +504,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             if let Some(fallback) = extra.fallback {
                 let next_value = fallback.call1((value,)).map_err(py_err_se_err)?;
                 let next_result = infer_serialize(next_value, serializer, include, exclude, extra);
-                extra.rec_guard.pop(value_id);
+                extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
                 return next_result;
             } else if extra.serialize_unknown {
                 serializer.serialize_str(&serialize_unknown(value))
@@ -501,7 +518,7 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             }
         }
     };
-    extra.rec_guard.pop(value_id);
+    extra.rec_guard.pop(value_id, INFER_DEF_REF_ID);
     ser_result
 }
 
