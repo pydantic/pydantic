@@ -313,7 +313,7 @@ class GenerateSchema:
                     ' returned no new annotations when called.'
                     ' You must return at least 1 item since the first item is the replacement source type.'
                 )
-            obj, *new_annotations = list(prepare(obj, tuple(annotations)))
+            obj, *new_annotations = res
             if new_annotations:
                 return self._annotated_args_schema(obj, new_annotations)
             else:
