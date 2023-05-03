@@ -27,7 +27,9 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Setup PDM
-        run: pip install -U pdm pip wheel
+        run: |
+          pip install -U pdm pip wheel
+          pip install -U requests urllib3
 
       - name: install
         run: pdm install -G linting -G email
