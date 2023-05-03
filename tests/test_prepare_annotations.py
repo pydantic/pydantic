@@ -22,9 +22,10 @@ def test_prepare_annotations_decimal_like() -> None:
         def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
             return handler(self.inner_core_schema)
 
-    class Decimal:
+    class MyDecimal(float):
         @classmethod
         def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> Sequence[Any]:
+            assert source_type is MyDecimal
             metadata: dict[str, Any] = {}
             remaining_annotations: list[Any] = []
             for annotation in annotations:
@@ -33,7 +34,7 @@ def test_prepare_annotations_decimal_like() -> None:
                 else:
                     remaining_annotations.append(annotation)
             inner_schema = core_schema.float_schema(**metadata)
-            outer_schema = core_schema.no_info_after_validator_function(Decimal, inner_schema)
+            outer_schema = core_schema.no_info_after_validator_function(MyDecimal, inner_schema)
             new_annotations = [
                 MetadataApplier(inner_core_schema=inner_schema, outer_core_schema=outer_schema),
                 *remaining_annotations,
@@ -43,10 +44,10 @@ def test_prepare_annotations_decimal_like() -> None:
     def no_op_val(x: Any) -> Any:
         return x
 
-    a = AnalyzedType(List[Annotated[Decimal, Gt(10), AfterValidator(no_op_val)]])
+    a = AnalyzedType(List[Annotated[MyDecimal, Gt(10), AfterValidator(no_op_val)]])
 
     assert a.core_schema == core_schema.list_schema(
         core_schema.no_info_after_validator_function(
-            no_op_val, core_schema.no_info_after_validator_function(Decimal, core_schema.float_schema(gt=10))
+            no_op_val, core_schema.no_info_after_validator_function(MyDecimal, core_schema.float_schema(gt=10))
         )
     )
