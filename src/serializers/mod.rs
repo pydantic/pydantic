@@ -33,6 +33,40 @@ pub struct SchemaSerializer {
     config: SerializationConfig,
 }
 
+impl SchemaSerializer {
+    #[allow(clippy::too_many_arguments)]
+    pub(crate) fn build_extra<'b, 'a: 'b>(
+        &'b self,
+        py: Python<'a>,
+        mode: &'a SerMode,
+        by_alias: bool,
+        warnings: &'a CollectWarnings,
+        exclude_unset: bool,
+        exclude_defaults: bool,
+        exclude_none: bool,
+        round_trip: bool,
+        rec_guard: &'a SerRecursionGuard,
+        serialize_unknown: bool,
+        fallback: Option<&'a PyAny>,
+    ) -> Extra<'b> {
+        Extra::new(
+            py,
+            mode,
+            &self.definitions,
+            by_alias,
+            warnings,
+            exclude_unset,
+            exclude_defaults,
+            exclude_none,
+            round_trip,
+            &self.config,
+            rec_guard,
+            serialize_unknown,
+            fallback,
+        )
+    }
+}
+
 #[pymethods]
 impl SchemaSerializer {
     #[new]
@@ -72,17 +106,15 @@ impl SchemaSerializer {
         let mode: SerMode = mode.into();
         let warnings = CollectWarnings::new(warnings);
         let rec_guard = SerRecursionGuard::default();
-        let extra = Extra::new(
+        let extra = self.build_extra(
             py,
             &mode,
-            &self.definitions,
             by_alias,
             &warnings,
             exclude_unset,
             exclude_defaults,
             exclude_none,
             round_trip,
-            &self.config,
             &rec_guard,
             false,
             fallback,
@@ -113,17 +145,15 @@ impl SchemaSerializer {
     ) -> PyResult<PyObject> {
         let warnings = CollectWarnings::new(warnings);
         let rec_guard = SerRecursionGuard::default();
-        let extra = Extra::new(
+        let extra = self.build_extra(
             py,
             &SerMode::Json,
-            &self.definitions,
             by_alias,
             &warnings,
             exclude_unset,
             exclude_defaults,
             exclude_none,
             round_trip,
-            &self.config,
             &rec_guard,
             false,
             fallback,
