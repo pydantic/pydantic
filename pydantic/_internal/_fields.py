@@ -5,11 +5,8 @@ from __future__ import annotations as _annotations
 
 import dataclasses
 import sys
-from abc import ABC, abstractmethod
 from copy import copy
 from typing import TYPE_CHECKING, Any
-
-from pydantic_core import core_schema
 
 from . import _typing_extra
 from ._forward_ref import PydanticForwardRef
@@ -69,46 +66,6 @@ class PydanticMetadata(Representation):
 class PydanticGeneralMetadata(PydanticMetadata):
     def __init__(self, **metadata: Any):
         self.__dict__ = metadata
-
-
-class SchemaRef(Representation):
-    """
-    Holds a reference to another schema.
-    """
-
-    __slots__ = ('__pydantic_core_schema__',)
-
-    def __init__(self, schema: core_schema.CoreSchema):
-        self.__pydantic_core_schema__ = schema
-
-
-class CustomValidator(ABC):
-    """
-    Used to define functional validators which can be updated with constraints.
-    """
-
-    @abstractmethod
-    def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **constraints: Any) -> None:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def __call__(self, __input_value: Any, __info: core_schema.ValidationInfo) -> Any:
-        raise NotImplementedError()
-
-    def _update_attrs(self, constraints: dict[str, Any], attrs: set[str] | None = None) -> None:
-        """
-        Utility for updating attributes/slots and raising an error if they don't exist, to be used by
-        implementations of `CustomValidator`.
-        """
-        attrs = attrs or set(self.__slots__)  # type: ignore[attr-defined]
-        for k, v in constraints.items():
-            if k not in attrs:
-                raise TypeError(f'{k!r} is not a valid constraint for {self.__class__.__name__}')
-            setattr(self, k, v)
-
-
-# KW_ONLY is only available in Python 3.10+
-DC_KW_ONLY = getattr(dataclasses, 'KW_ONLY', None)
 
 
 def collect_model_fields(  # noqa: C901

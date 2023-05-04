@@ -1235,10 +1235,7 @@ def test_multiple_errors():
             'type': 'decimal_parsing',
             'loc': (
                 'a',
-                (
-                    'lax-or-strict[lax=function-after[validate(), union[is-instance[Decimal],int,float,constrained-str'
-                    ']],strict=custom-error[function-after[validate(), is-instance[Decimal]]]]',
-                ),
+                'lax-or-strict[lax=function-after[validate(), union[is-instance[Decimal],int,float,constrained-str]],strict=custom-error[function-after[validate(), is-instance[Decimal]]]]',  # noqa: E501
             ),
             'msg': 'Input should be a valid decimal',
             'input': 'foobar',

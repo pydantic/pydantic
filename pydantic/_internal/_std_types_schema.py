@@ -8,17 +8,15 @@ from __future__ import annotations as _annotations
 import inspect
 import typing
 from collections import OrderedDict, deque
-from dataclasses import asdict
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal, DecimalException
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from os import PathLike
 from pathlib import PurePath
-from typing import Any, Callable, Iterable, Mapping
+from typing import Any, Callable, Iterable
 from uuid import UUID
 
-import annotated_types
 from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, PydanticKnownError, Url, core_schema
 from typing_extensions import get_args
 
@@ -26,8 +24,8 @@ from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _serializers, _validators
 from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
-from ._fields import PydanticGeneralMetadata, PydanticMetadata
 from ._internal_dataclass import slots_dataclass
+from ._metadata import CORE_SCHEMA_CONSTRAINTS, check_metadata, collect_known_metadata
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if typing.TYPE_CHECKING:
@@ -286,63 +284,12 @@ class DecimalValidator:
         return value
 
 
-FLOAT_CONSTRAINTS = (
-    annotated_types.Gt,
-    annotated_types.Lt,
-    annotated_types.Ge,
-    annotated_types.Le,
-    annotated_types.MultipleOf,
-    annotated_types.Interval,
-)
-
-
-def decimal_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> list[Any]:
-    metadata: dict[str, Any] = {}
-    remaining_annotations: list[Any] = []
-
-    def check_metadata(annotation: Any, new_metadata: Mapping[str, Any]) -> None:
-        for k in new_metadata:
-            if k not in DecimalValidator.__dataclass_fields__:
-                raise TypeError(f'{k!r} is not a valid constraint for DecimalValidator')
-
-    for annotation in annotations:
-        if annotation is None:
-            continue
-        if isinstance(annotation, annotated_types.GroupedMetadata):
-            expanded = list(annotation)
-        else:
-            expanded = [annotation]
-        for annotation in expanded:
-            # Do we really want to consume any `BaseMetadata`?
-            # It does let us give a better error when there is an annotation that doesn't apply
-            # But it seems dangerous!
-            metadata_dict = None
-            if isinstance(annotation, PydanticGeneralMetadata):
-                metadata_dict = annotation.__dict__
-            elif isinstance(annotation, (annotated_types.BaseMetadata, PydanticMetadata)):
-                metadata_dict = asdict(annotation)  # type: ignore[call-overload]
-            elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
-                # also support PydanticMetadata classes being used without initialisation,
-                # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
-                metadata_dict = {k: v for k, v in vars(annotation).items() if not k.startswith('_')}
-
-            if metadata_dict is not None:
-                check_metadata(annotation, metadata_dict)
-                metadata.update(metadata_dict)
-            else:
-                remaining_annotations.append(annotation)
-
-    unknown_annotations = set(metadata.keys() - DecimalValidator.__dataclass_fields__.keys())
-
-    if unknown_annotations:
-        raise TypeError()
-
-    new_annotations = [
-        Decimal,
-        DecimalValidator(**metadata),
-        *remaining_annotations,
-    ]
-    return new_annotations
+def decimal_prepare_pydantic_annotations(_source: Any, annotations: Iterable[Any]) -> Iterable[Any]:
+    metadata, remaining_annotations = collect_known_metadata(annotations)
+    check_metadata(metadata, {*CORE_SCHEMA_CONSTRAINTS['float'], 'max_digits', 'decimal_places'}, Decimal)
+    yield Decimal
+    yield DecimalValidator(**metadata)
+    yield from remaining_annotations
 
 
 @schema_function(UUID)
