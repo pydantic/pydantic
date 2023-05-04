@@ -21,11 +21,10 @@ from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, Pydanti
 from typing_extensions import get_args
 
 from ..json_schema import JsonSchemaValue, update_json_schema
-from . import _serializers, _validators
+from . import _known_annotated_metadata, _serializers, _validators
 from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
-from ._metadata import CORE_SCHEMA_CONSTRAINTS, check_metadata, collect_known_metadata
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if typing.TYPE_CHECKING:
@@ -285,8 +284,10 @@ class DecimalValidator:
 
 
 def decimal_prepare_pydantic_annotations(_source: Any, annotations: Iterable[Any]) -> Iterable[Any]:
-    metadata, remaining_annotations = collect_known_metadata(annotations)
-    check_metadata(metadata, {*CORE_SCHEMA_CONSTRAINTS['float'], 'max_digits', 'decimal_places'}, Decimal)
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+    _known_annotated_metadata.check_metadata(
+        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, Decimal
+    )
     yield Decimal
     yield DecimalValidator(**metadata)
     yield from remaining_annotations

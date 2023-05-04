@@ -20,7 +20,7 @@ from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, ge
 
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo
-from . import _discriminated_union, _metadata, _typing_extra
+from . import _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper
 from ._core_metadata import (
     CoreMetadataHandler,
@@ -1366,7 +1366,7 @@ def apply_single_annotation(
     # PEP 593: "If a library (or tool) encounters a typehint Annotated[T, x] and has no
     # special logic for metadata x, it should ignore it and simply treat the type as T."
     # Allow, but ignore, any unknown metadata.
-    metadata_dict, _ = _metadata.collect_known_metadata([metadata])
+    metadata_dict, _ = _known_annotated_metadata.collect_known_metadata([metadata])
 
     if not metadata_dict:
         return schema

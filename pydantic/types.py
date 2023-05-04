@@ -32,9 +32,8 @@ from ._internal import _fields, _internal_dataclass, _validators
 from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import Annotated, Literal
 
-from ._internal import _fields, _validators
+from ._internal import _fields, _known_annotated_metadata, _validators
 from ._internal._internal_dataclass import slots_dataclass
-from ._internal._metadata import CORE_SCHEMA_CONSTRAINTS, check_metadata, collect_known_metadata
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
 from .errors import PydanticUserError
@@ -468,8 +467,8 @@ class SecretField(Generic[SecretType]):
 
     @classmethod
     def __prepare_pydantic_annotations__(cls, source: type[Any], annotations: Iterator[Any]) -> Iterator[Any]:
-        metadata, remaining_annotations = collect_known_metadata(annotations)
-        check_metadata(metadata, CORE_SCHEMA_CONSTRAINTS['str'], cls)
+        metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+        _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
         yield cls
         yield _SecretFieldValidator(source, **metadata)
         yield from remaining_annotations

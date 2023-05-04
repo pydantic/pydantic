@@ -7,24 +7,34 @@ import annotated_types as at
 
 from ._fields import PydanticGeneralMetadata, PydanticMetadata
 
+STRICT = {'strict'}
 SEQUENCE_CONSTRAINTS = {'min_length', 'max_length'}
-COMPARISON_CONSTRAINTS = {'le', 'ge', 'lt', 'gt'}
-NUMERIC_CONSTRAINTS = {'multiple_of', 'allow_inf_nan', *COMPARISON_CONSTRAINTS}
+INEQUALITY = {'le', 'ge', 'lt', 'gt'}
+NUMERIC_CONSTRAINTS = {'multiple_of', 'allow_inf_nan', *INEQUALITY}
 
-CORE_SCHEMA_CONSTRAINTS = {
-    'float': NUMERIC_CONSTRAINTS,
-    'int': NUMERIC_CONSTRAINTS,
-    'str': {*SEQUENCE_CONSTRAINTS, 'strip_whitespace', 'to_lower', 'to_upper', 'strict'},
-    'list': SEQUENCE_CONSTRAINTS,
-    'bytes': SEQUENCE_CONSTRAINTS,
-    'date': NUMERIC_CONSTRAINTS,
-    'time': NUMERIC_CONSTRAINTS,
-    'datetime': NUMERIC_CONSTRAINTS,
-    'timedelta': NUMERIC_CONSTRAINTS,
-}
+STR_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT, 'strip_whitespace', 'to_lower', 'to_upper'}
+BYTES_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+
+LIST_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+TUPLE_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+SET_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+DICT_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+GENERATOR_CONSTRAINTS = {*SEQUENCE_CONSTRAINTS, *STRICT}
+
+FLOAT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+
+DATE_TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+TIMEDELTA_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 
 
 def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], list[Any]]:
+    """
+    Split `annotations` into known metadata and unknown annotations.
+
+    For example `[Gt(1), Len(42), Unknown()]` -> `({'gt': 1, 'min_length': 42}, [Unknown()])`.
+    """
     from pydantic.fields import FieldInfo  # circular import
 
     res: dict[str, Any] = {}
