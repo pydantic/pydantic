@@ -43,7 +43,7 @@ class ConfigWrapper:
     alias_generator: Callable[[str], str] | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
-    json_schema_extra: dict[str, Any] | JsonSchemaExtraCallable | None
+    json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
 
     # new in V2
     strict: bool

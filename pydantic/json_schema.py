@@ -159,9 +159,8 @@ class GenerateJsonSchema:
         json_ref_counts = self.get_json_ref_counts(json_schema)
 
         # Remove the top-level $ref if present; note that the _generate method already ensures there are no sibling keys
-        ref = json_schema.get('$ref')
+        ref = cast(JsonRef, json_schema.get('$ref'))
         while ref is not None:  # may need to unpack multiple levels
-            ref = JsonRef(ref)
             ref_json_schema = self.get_schema_from_definitions(ref)
             if json_ref_counts[ref] > 1 or ref_json_schema is None:
                 # Keep the ref, but use an allOf to remove the top level $ref
@@ -170,7 +169,7 @@ class GenerateJsonSchema:
                 # "Unpack" the ref since this is the only reference
                 json_schema = ref_json_schema.copy()  # copy to prevent recursive dict reference
                 json_ref_counts[ref] -= 1
-            ref = json_schema.get('$ref')
+            ref = cast(JsonRef, json_schema.get('$ref'))
 
         # Remove any definitions that, thanks to $ref-substitution, are no longer present.
         # I think this should only _possibly_ apply to the root model, though I'm not 100% sure.
