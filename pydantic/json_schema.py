@@ -30,6 +30,7 @@ from typing_extensions import Literal
 from pydantic._internal._schema_generation_shared import GenerateJsonSchemaHandler
 
 from ._internal import _core_metadata, _core_utils, _schema_generation_shared, _typing_extra
+from .config import JsonSchemaExtraCallable
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
@@ -585,15 +586,24 @@ class GenerateJsonSchema:
         # We do not use schema['model'].model_json_schema() because it could lead to inconsistent refs handling, etc.
         json_schema = self.generate_inner(schema['schema'])
 
-        if 'config' in schema:
-            title = schema['config'].get('title')
-            forbid_additional_properties = schema['config'].get('extra_fields_behavior') == 'forbid'
-            json_schema = self._update_class_schema(json_schema, title, forbid_additional_properties)
+        cls = cast(type[BaseModel], schema['cls'])
+        config = cls.model_config
+        title = config.get('title')
+        forbid_additional_properties = config.get('extra') == 'forbid'
+        json_schema_extra = config.get('json_schema_extra')
+        json_schema = self._update_class_schema(
+            json_schema, title, forbid_additional_properties, cls, json_schema_extra
+        )
 
         return json_schema
 
     def _update_class_schema(
-        self, json_schema: JsonSchemaValue, title: str | None, forbid_additional_properties: bool
+        self,
+        json_schema: JsonSchemaValue,
+        title: str | None,
+        forbid_additional_properties: bool,
+        cls: type[Any],
+        json_schema_extra: dict[str, Any] | JsonSchemaExtraCallable | None,
     ) -> JsonSchemaValue:
         if '$ref' in json_schema:
             schema_to_update = self.get_schema_from_definitions(JsonRef(json_schema['$ref'])) or json_schema
@@ -606,6 +616,22 @@ class GenerateJsonSchema:
 
         if forbid_additional_properties:
             schema_to_update['additionalProperties'] = False
+
+        if isinstance(json_schema_extra, (staticmethod, classmethod)):
+            # In older versions of python, this is necessary to ensure staticmethod/classmethods are callable
+            json_schema_extra = json_schema_extra.__get__(cls)
+
+        if isinstance(json_schema_extra, dict):
+            schema_to_update.update(json_schema_extra)
+        elif callable(json_schema_extra):
+            if len(inspect.signature(json_schema_extra).parameters) > 1:
+                json_schema_extra(schema_to_update, cls)
+            else:
+                json_schema_extra(schema_to_update)
+        elif json_schema_extra is not None:
+            raise ValueError(
+                f"model_config['json_schema_extra']={json_schema_extra} should be a dict, callable, or None"
+            )
 
         return json_schema
 
@@ -626,7 +652,10 @@ class GenerateJsonSchema:
 
         title = config.get('title') or cls.__name__
         forbid_additional_properties = config.get('extra') == 'forbid'
-        json_schema = self._update_class_schema(json_schema, title, forbid_additional_properties)
+        json_schema_extra = config.get('json_schema_extra')
+        json_schema = self._update_class_schema(
+            json_schema, title, forbid_additional_properties, cls, json_schema_extra
+        )
 
         # Dataclass-specific handling of description
         if is_dataclass(cls) and not hasattr(cls, '__pydantic_validator__'):

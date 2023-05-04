@@ -3634,3 +3634,111 @@ def test_annotated_get_json_schema() -> None:
     AnalyzedType(Annotated[CustomType, 123]).json_schema()
 
     assert sum(calls) == 1
+
+
+def test_model_with_schema_extra():
+    class Model(BaseModel):
+        a: str
+
+        model_config = dict(json_schema_extra={'examples': [{'a': 'Foo'}]})
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'examples': [{'a': 'Foo'}],
+    }
+
+
+def test_model_with_schema_extra_callable():
+    class Model(BaseModel):
+        name: str = None
+
+        @staticmethod
+        def json_schema_extra(schema, model_class):
+            schema.pop('properties')
+            schema['type'] = 'override'
+            assert model_class is Model
+
+        model_config = dict(json_schema_extra=json_schema_extra)
+
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_model_with_schema_extra_callable_no_model_class():
+    class Model(BaseModel):
+        name: str = None
+
+        @classmethod
+        def json_schema_extra(cls, schema):
+            schema.pop('properties')
+            schema['type'] = 'override'
+
+        model_config = dict(json_schema_extra=json_schema_extra)
+
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_model_with_schema_extra_callable_config_class():
+    with pytest.warns(DeprecationWarning, match='use ConfigDict instead'):
+
+        class Model(BaseModel):
+            name: str = None
+
+            class Config:
+                @staticmethod
+                def json_schema_extra(schema, model_class):
+                    schema.pop('properties')
+                    schema['type'] = 'override'
+                    assert model_class is Model
+
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_model_with_schema_extra_callable_no_model_class_config_class():
+    with pytest.warns(DeprecationWarning):
+
+        class Model(BaseModel):
+            name: str = None
+
+            class Config:
+                @staticmethod
+                def json_schema_extra(schema):
+                    schema.pop('properties')
+                    schema['type'] = 'override'
+
+        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_model_with_schema_extra_callable_classmethod():
+    with pytest.warns(DeprecationWarning):
+
+        class Model(BaseModel):
+            name: str = None
+
+            class Config:
+                type = 'foo'
+
+                @classmethod
+                def json_schema_extra(cls, schema, model_class):
+                    schema.pop('properties')
+                    schema['type'] = cls.type
+                    assert model_class is Model
+
+        assert Model.model_json_schema() == {'title': 'Model', 'type': 'foo'}
+
+
+def test_model_with_schema_extra_callable_instance_method():
+    with pytest.warns(DeprecationWarning):
+
+        class Model(BaseModel):
+            name: str = None
+
+            class Config:
+                def json_schema_extra(schema, model_class):
+                    schema.pop('properties')
+                    schema['type'] = 'override'
+                    assert model_class is Model
+
+        assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}

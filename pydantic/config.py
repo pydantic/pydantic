@@ -12,6 +12,26 @@ from .deprecated.config import BaseConfig
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
 
 
+# if TYPE_CHECKING:
+from typing import overload
+
+from typing_extensions import Protocol
+
+
+class JsonSchemaExtraCallable(Protocol):
+    @overload
+    def __call__(self, schema: dict[str, Any]) -> None:
+        pass
+
+    @overload
+    def __call__(self, schema: dict[str, Any], model_class: type[Any]) -> None:
+        pass
+
+
+# else:
+#     JsonSchemaExtraCallable = Callable[..., None]
+
+
 class _Extra:
     allow: Literal['allow'] = 'allow'
     ignore: Literal['ignore'] = 'ignore'
@@ -82,6 +102,7 @@ class ConfigDict(TypedDict, total=False):
     alias_generator: Callable[[str], str] | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
+    json_schema_extra: dict[str, Any] | JsonSchemaExtraCallable | None
 
     # new in V2
     strict: bool
