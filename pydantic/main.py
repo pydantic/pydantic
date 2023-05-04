@@ -618,15 +618,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return m
 
     def __repr_args__(self) -> _repr.ReprArgs:
-        yield from [
+        yield from (
             (k, v)
             for k, v in self.__dict__.items()
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
-        ]
-        pydantic_extra = self.__pydantic_extra__
+        )
+        pydantic_extra = getattr(self, '__pydantic_extra__', None)
         if pydantic_extra is not None:
-            yield from [(k, v) for k, v in pydantic_extra.items()]
-        yield from [(k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr]
+            yield from ((k, v) for k, v in pydantic_extra.items())
+        yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
