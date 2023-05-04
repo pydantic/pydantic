@@ -249,6 +249,13 @@ impl Validator for ModelFieldsValidator {
             Err(ValError::LineErrors(errors))
         } else {
             let fields_set = PySet::new(py, &fields_set_vec)?;
+
+            // if we have extra=allow, but we didn't create a dict because we were validate attributes, set it now
+            // so __pydantic_extra__ is always a dict if extra=allow
+            if model_extra_dict_op.is_none() && matches!(self.extra_behavior, ExtraBehavior::Allow) {
+                model_extra_dict_op = Some(PyDict::new(py));
+            };
+
             Ok((model_dict, model_extra_dict_op, fields_set).to_object(py))
         }
     }

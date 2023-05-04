@@ -4,10 +4,9 @@ use pyo3::types::{PyDict, PyList};
 
 use crate::build_tools::{py_err, SchemaDict};
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::shared::CombinedSerializer;
 
 use super::any::AnySerializer;
-use super::BuildSerializer;
+use super::{BuildSerializer, CombinedSerializer};
 
 pub struct ChainBuilder;
 
