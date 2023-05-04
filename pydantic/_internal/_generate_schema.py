@@ -299,30 +299,14 @@ class GenerateSchema:
         Note: `__get_pydantic_core_schema__` takes priority so it can
         decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
         """
-        prepare = getattr(obj, '__prepare_pydantic_annotations__', None)
-        if prepare is None:
-            prepare = self._get_prepare_pydantic_annotations_for_known_type(obj)
-        if prepare is None:
-            return None
-
-        # make annotations a tuple to error if it gets mutated
-        # make the return type a list to support generators or returning a sequence
-        res = list(prepare(obj, []))
-        if not res:
-            raise PydanticSchemaGenerationError(
-                f'The type {obj} that implements `__prepare_pydantic_annotations__`'
-                ' returned no annotations when called.'
-                ' Custom types must return at least 1 item since the first item is the replacement source type.'
-            )
-        obj, *new_annotations = res
+        obj, new_annotations = self.prepare_annotations(obj, [])
         if new_annotations:
             return self.apply_annotations(
                 CallbackGetCoreSchemaHandler(partial(self.generate_schema, from_prepare_args=False)),
                 obj,
                 new_annotations,
             )
-        else:
-            return self.generate_schema(obj, from_prepare_args=False)
+        return None
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
         """
@@ -1147,15 +1131,7 @@ class GenerateSchema:
 
         return None
 
-    def apply_annotations(
-        self,
-        get_inner_schema: GetCoreSchemaHandler,
-        source_type: Any,
-        annotations: typing.Iterable[Any],
-    ) -> CoreSchema:
-        """
-        Apply arguments from `Annotated` or from `FieldInfo` to a schema.
-        """
+    def prepare_annotations(self, source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
         annotations = list(annotations)
         if prepare is None:
@@ -1172,6 +1148,18 @@ class GenerateSchema:
                     ' Custom types must return at least 1 item since the first item is the replacement source type.'
                 )
             source_type, *annotations = res
+        return (source_type, annotations)
+
+    def apply_annotations(
+        self,
+        get_inner_schema: GetCoreSchemaHandler,
+        source_type: Any,
+        annotations: typing.Iterable[Any],
+    ) -> CoreSchema:
+        """
+        Apply arguments from `Annotated` or from `FieldInfo` to a schema.
+        """
+        source_type, annotations = self.prepare_annotations(source_type, annotations)
 
         idx = -1
         while True:
