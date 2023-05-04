@@ -1879,9 +1879,9 @@ def test_dataclass_alias_generator():
     @pydantic.dataclasses.dataclass(config=ConfigDict(alias_generator=alias_generator))
     class User:
         name: str
-        score: int
+        score: int = Field(alias='my_score')
 
-    user = User(**{'alias_name': 'test name', 'alias_score': 2})
+    user = User(**{'alias_name': 'test name', 'my_score': 2})
     assert user.name == 'test name'
     assert user.score == 2
 
@@ -1896,7 +1896,7 @@ def test_dataclass_alias_generator():
         },
         {
             'type': 'missing',
-            'loc': ('alias_score',),
+            'loc': ('my_score',),
             'msg': 'Field required',
             'input': ArgsKwargs((), {'name': 'test name', 'score': 2}),
         },

@@ -636,18 +636,22 @@ class GenerateSchema:
 
         metadata = build_metadata_dict(js_functions=[json_schema_update_func])
 
-        validation_alias: str | list[str | int] | list[list[str | int]] | None = field_info.validation_alias
-        serialization_alias: str | None = field_info.serialization_alias
+        # apply alias generator
         alias_generator = self.config_wrapper.alias_generator
-        if alias_generator:
-            validation_alias = alias_generator(name)
-            serialization_alias = alias_generator(name)
+        if alias_generator and (field_info.alias_priority is None or field_info.alias_priority <= 1):
+            alias = alias_generator(name)
+            if not isinstance(alias, str):
+                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+            field_info.alias = alias
+            field_info.validation_alias = alias
+            field_info.serialization_alias = alias
+            field_info.alias_priority = 1
 
         return _common_field(
             schema,
             serialization_exclude=True if field_info.exclude else None,
-            validation_alias=validation_alias,
-            serialization_alias=serialization_alias,
+            validation_alias=field_info.validation_alias,
+            serialization_alias=field_info.serialization_alias,
             frozen=field_info.frozen or field_info.final,
             metadata=metadata,
         )

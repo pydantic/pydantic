@@ -24,7 +24,6 @@ from ._utils import ClassAttribute, is_valid_identifier
 if typing.TYPE_CHECKING:
     from inspect import Signature
 
-    from ..config import ConfigDict
     from ..main import BaseModel
 
 
@@ -150,7 +149,6 @@ def set_model_fields(cls: type[BaseModel], bases: tuple[type[Any], ...], types_n
     typevars_map = get_model_typevars_map(cls)
     fields, class_vars = collect_model_fields(cls, bases, types_namespace, typevars_map=typevars_map)
 
-    apply_alias_generator(cls.model_config, fields)
     cls.model_fields = fields
     cls.__class_vars__.update(class_vars)
 
@@ -307,22 +305,6 @@ class MockValidator:
         # raise an AttributeError if `item` doesn't exist
         getattr(SchemaValidator, item)
         raise PydanticUserError(self._error_message, code=self._code)
-
-
-def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> None:
-    alias_generator = config.get('alias_generator')
-    if alias_generator is None:
-        return
-
-    for name, field_info in fields.items():
-        if field_info.alias_priority is None or field_info.alias_priority <= 1:
-            alias = alias_generator(name)
-            if not isinstance(alias, str):
-                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
-            field_info.alias = alias
-            field_info.validation_alias = alias
-            field_info.serialization_alias = alias
-            field_info.alias_priority = 1
 
 
 def model_extra_getattr(self: BaseModel, item: str) -> Any:
