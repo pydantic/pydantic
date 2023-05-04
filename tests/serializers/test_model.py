@@ -35,10 +35,10 @@ def test_model():
     s = SchemaSerializer(
         core_schema.model_schema(
             BasicModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'foo': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'bar': core_schema.typed_dict_field(core_schema.bytes_schema()),
+                    'foo': core_schema.model_field(core_schema.int_schema()),
+                    'bar': core_schema.model_field(core_schema.bytes_schema()),
                 }
             ),
         )
@@ -81,11 +81,11 @@ def test_dataclass():
         DataClass,
         serialization=core_schema.model_ser_schema(
             DataClass,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'foo': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'bar': core_schema.typed_dict_field(core_schema.str_schema()),
-                    'spam': core_schema.typed_dict_field(core_schema.bytes_schema()),
+                    'foo': core_schema.model_field(core_schema.int_schema()),
+                    'bar': core_schema.model_field(core_schema.str_schema()),
+                    'spam': core_schema.model_field(core_schema.bytes_schema()),
                 }
             ),
         ),
@@ -110,10 +110,10 @@ def test_model_allow_extra():
     s = SchemaSerializer(
         core_schema.model_schema(
             BasicModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'foo': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'bar': core_schema.typed_dict_field(core_schema.bytes_schema()),
+                    'foo': core_schema.model_field(core_schema.int_schema()),
+                    'bar': core_schema.model_field(core_schema.bytes_schema()),
                 },
                 extra_behavior='allow',
             ),
@@ -152,12 +152,12 @@ def test_include_exclude_args(params):
     s = SchemaSerializer(
         core_schema.model_schema(
             BasicModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'a': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'b': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'c': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'd': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'a': core_schema.model_field(core_schema.int_schema()),
+                    'b': core_schema.model_field(core_schema.int_schema()),
+                    'c': core_schema.model_field(core_schema.int_schema()),
+                    'd': core_schema.model_field(core_schema.int_schema()),
                 }
             ),
         )
@@ -175,11 +175,11 @@ def test_alias():
     s = SchemaSerializer(
         core_schema.model_schema(
             BasicModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'cat': core_schema.typed_dict_field(core_schema.int_schema(), serialization_alias='Meow'),
-                    'dog': core_schema.typed_dict_field(core_schema.int_schema(), serialization_alias='Woof'),
-                    'bird': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'cat': core_schema.model_field(core_schema.int_schema(), serialization_alias='Meow'),
+                    'dog': core_schema.model_field(core_schema.int_schema(), serialization_alias='Woof'),
+                    'bird': core_schema.model_field(core_schema.int_schema()),
                 }
             ),
         )
@@ -192,10 +192,10 @@ def test_model_wrong_warn():
     s = SchemaSerializer(
         core_schema.model_schema(
             type('MyModel', (), {}),
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'foo': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'bar': core_schema.typed_dict_field(core_schema.bytes_schema()),
+                    'foo': core_schema.model_field(core_schema.int_schema()),
+                    'bar': core_schema.model_field(core_schema.bytes_schema()),
                 }
             ),
         )
@@ -219,10 +219,10 @@ def test_exclude_none():
     s = SchemaSerializer(
         core_schema.model_schema(
             BasicModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'foo': core_schema.typed_dict_field(core_schema.nullable_schema(core_schema.int_schema())),
-                    'bar': core_schema.typed_dict_field(core_schema.bytes_schema()),
+                    'foo': core_schema.model_field(core_schema.nullable_schema(core_schema.int_schema())),
+                    'bar': core_schema.model_field(core_schema.bytes_schema()),
                 },
                 extra_behavior='ignore',  # this is the default
             ),
@@ -252,11 +252,11 @@ def test_exclude_unset():
     s = SchemaSerializer(
         core_schema.model_schema(
             FieldsSetModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'foo': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'bar': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'spam': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'foo': core_schema.model_field(core_schema.int_schema()),
+                    'bar': core_schema.model_field(core_schema.int_schema()),
+                    'spam': core_schema.model_field(core_schema.int_schema()),
                 },
                 extra_behavior='ignore',  # this is the default
             ),
@@ -414,9 +414,9 @@ def test_function_plain_field_serializer_to_python():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'x': core_schema.typed_dict_field(
+                    'x': core_schema.model_field(
                         core_schema.int_schema(
                             serialization=core_schema.plain_serializer_function_ser_schema(
                                 Model.ser_x, is_field_serializer=True, info_arg=True
@@ -443,9 +443,9 @@ def test_function_wrap_field_serializer_to_python():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'x': core_schema.typed_dict_field(
+                    'x': core_schema.model_field(
                         core_schema.int_schema(
                             serialization=core_schema.wrap_serializer_function_ser_schema(
                                 Model.ser_x, is_field_serializer=True, info_arg=True, schema=core_schema.any_schema()
@@ -471,9 +471,9 @@ def test_function_plain_field_serializer_to_json():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'x': core_schema.typed_dict_field(
+                    'x': core_schema.model_field(
                         core_schema.int_schema(
                             serialization=core_schema.plain_serializer_function_ser_schema(
                                 Model.ser_x, is_field_serializer=True, info_arg=True
@@ -500,9 +500,9 @@ def test_function_wrap_field_serializer_to_json():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'x': core_schema.typed_dict_field(
+                    'x': core_schema.model_field(
                         core_schema.int_schema(
                             serialization=core_schema.wrap_serializer_function_ser_schema(
                                 Model.ser_x, is_field_serializer=True, info_arg=True, schema=core_schema.any_schema()
@@ -531,10 +531,10 @@ def test_property():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'width': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'height': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'width': core_schema.model_field(core_schema.int_schema()),
+                    'height': core_schema.model_field(core_schema.int_schema()),
                 },
                 computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
             ),
@@ -562,10 +562,10 @@ def test_property_alias():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'width': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'height': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'width': core_schema.model_field(core_schema.int_schema()),
+                    'height': core_schema.model_field(core_schema.int_schema()),
                 },
                 computed_fields=[
                     core_schema.computed_field('area', alias='Area'),
@@ -593,10 +593,10 @@ def test_cached_property_alias():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'width': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'height': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'width': core_schema.model_field(core_schema.int_schema()),
+                    'height': core_schema.model_field(core_schema.int_schema()),
                 },
                 computed_fields=[core_schema.computed_field('area')],
             ),
@@ -615,8 +615,8 @@ def test_property_attribute_error():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {'width': core_schema.typed_dict_field(core_schema.int_schema())},
+            core_schema.model_fields_schema(
+                {'width': core_schema.model_field(core_schema.int_schema())},
                 computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
             ),
         )
@@ -643,8 +643,8 @@ def test_property_other_error():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {'width': core_schema.typed_dict_field(core_schema.int_schema())},
+            core_schema.model_fields_schema(
+                {'width': core_schema.model_field(core_schema.int_schema())},
                 computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
             ),
         )
@@ -672,8 +672,8 @@ def test_property_include_exclude():
     s = SchemaSerializer(
         core_schema.model_schema(
             Model,
-            core_schema.typed_dict_schema(
-                {'a': core_schema.typed_dict_field(core_schema.int_schema())},
+            core_schema.model_fields_schema(
+                {'a': core_schema.model_field(core_schema.int_schema())},
                 computed_fields=[core_schema.computed_field('b')],
             ),
         )
@@ -721,8 +721,8 @@ def test_property_setter():
     s = SchemaSerializer(
         core_schema.model_schema(
             Square,
-            core_schema.typed_dict_schema(
-                {'side': core_schema.typed_dict_field(core_schema.float_schema())},
+            core_schema.model_fields_schema(
+                {'side': core_schema.model_field(core_schema.float_schema())},
                 computed_fields=[
                     core_schema.computed_field('area', json_return_type='float'),
                     core_schema.computed_field('random_n', alias='The random number', json_return_type='int'),
