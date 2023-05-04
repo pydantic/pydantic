@@ -1,6 +1,5 @@
 from __future__ import annotations as _annotations
 
-import abc
 import base64
 import dataclasses as _dataclasses
 import re
@@ -25,14 +24,10 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import Annotated, Literal, Protocol
 
-from ._internal import _fields, _internal_dataclass, _validators
-from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
-from typing_extensions import Annotated, Literal
-
-from ._internal import _fields, _known_annotated_metadata, _validators
+from ._internal import _fields, _internal_dataclass, _known_annotated_metadata, _validators
 from ._internal._internal_dataclass import slots_dataclass
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
