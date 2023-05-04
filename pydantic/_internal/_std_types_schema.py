@@ -8,23 +8,27 @@ from __future__ import annotations as _annotations
 import inspect
 import typing
 from collections import OrderedDict, deque
+from dataclasses import asdict
 from datetime import date, datetime, time, timedelta
-from decimal import Decimal
+from decimal import Decimal, DecimalException
 from enum import Enum
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from os import PathLike
 from pathlib import PurePath
-from typing import Any, Callable
+from typing import Any, Callable, Iterable, Mapping
 from uuid import UUID
 
-from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, Url, core_schema
+import annotated_types
+from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, PydanticKnownError, Url, core_schema
 from typing_extensions import get_args
 
 from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _serializers, _validators
 from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
-from ._schema_generation_shared import GetJsonSchemaHandler
+from ._fields import PydanticGeneralMetadata, PydanticMetadata
+from ._internal_dataclass import slots_dataclass
+from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if typing.TYPE_CHECKING:
     from ._generate_schema import GenerateSchema
@@ -131,35 +135,214 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     )
 
 
-@schema_function(Decimal)
-def decimal_schema(_schema_generator: GenerateSchema, _decimal_type: type[Decimal]) -> core_schema.LaxOrStrictSchema:
-    decimal_validator = _validators.DecimalValidator()
-    metadata = build_metadata_dict(
-        cs_update_function=decimal_validator.__pydantic_update_schema__,
-        # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
-        js_functions=[lambda _c, h: h(decimal_validator.json_schema_override_schema())],
-    )
-    lax = core_schema.no_info_after_validator_function(
-        decimal_validator,
-        core_schema.union_schema(
-            [
+@slots_dataclass
+class MetadataApplier:
+    inner_core_schema: CoreSchema
+    outer_core_schema: CoreSchema
+
+    def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
+        return self.outer_core_schema
+
+    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        return handler(self.inner_core_schema)
+
+
+@slots_dataclass
+class DecimalValidator:
+    gt: int | Decimal | None = None
+    ge: int | Decimal | None = None
+    lt: int | Decimal | None = None
+    le: int | Decimal | None = None
+    max_digits: int | None = None
+    decimal_places: int | None = None
+    multiple_of: int | Decimal | None = None
+    allow_inf_nan: bool = False
+    check_digits: bool = False
+    strict: bool = False
+
+    def __post_init__(self) -> None:
+        self.check_digits = self.max_digits is not None or self.decimal_places is not None
+        if self.check_digits and self.allow_inf_nan:
+            raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
+
+    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        json_schema = core_schema.float_schema(
+            allow_inf_nan=self.allow_inf_nan,
+            multiple_of=None if self.multiple_of is None else float(self.multiple_of),
+            le=None if self.le is None else float(self.le),
+            ge=None if self.ge is None else float(self.ge),
+            lt=None if self.lt is None else float(self.lt),
+            gt=None if self.gt is None else float(self.gt),
+        )
+        return handler(json_schema)
+
+    def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
+        lax = core_schema.no_info_after_validator_function(
+            self.validate,
+            core_schema.union_schema(
+                [
+                    core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
+                    core_schema.int_schema(),
+                    core_schema.float_schema(),
+                    core_schema.str_schema(strip_whitespace=True),
+                ],
+                strict=True,
+            ),
+        )
+        strict = core_schema.custom_error_schema(
+            core_schema.no_info_after_validator_function(
+                self.validate,
                 core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
-                core_schema.int_schema(),
-                core_schema.float_schema(),
-                core_schema.str_schema(strip_whitespace=True),
-            ],
-            strict=True,
-        ),
-    )
-    strict = core_schema.custom_error_schema(
-        core_schema.no_info_after_validator_function(
-            decimal_validator,
-            core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
-        ),
-        custom_error_type='decimal_type',
-        custom_error_message='Input should be a valid Decimal instance or decimal string in JSON',
-    )
-    return core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict, metadata=metadata)
+            ),
+            custom_error_type='decimal_type',
+            custom_error_message='Input should be a valid Decimal instance or decimal string in JSON',
+        )
+        return core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
+
+    def validate(self, __input_value: int | float | str) -> Decimal:  # noqa: C901 (ignore complexity)
+        if isinstance(__input_value, Decimal):
+            value = __input_value
+        else:
+            try:
+                value = Decimal(str(__input_value))
+            except DecimalException:
+                raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
+
+        if not self.allow_inf_nan or self.check_digits:
+            _1, digit_tuple, exponent = value.as_tuple()
+            if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
+                raise PydanticKnownError('finite_number')
+
+            if self.check_digits:
+                if isinstance(exponent, str):
+                    raise PydanticKnownError('finite_number')
+                elif exponent >= 0:
+                    # A positive exponent adds that many trailing zeros.
+                    digits = len(digit_tuple) + exponent
+                    decimals = 0
+                else:
+                    # If the absolute value of the negative exponent is larger than the
+                    # number of digits, then it's the same as the number of digits,
+                    # because it'll consume all the digits in digit_tuple and then
+                    # add abs(exponent) - len(digit_tuple) leading zeros after the
+                    # decimal point.
+                    if abs(exponent) > len(digit_tuple):
+                        digits = decimals = abs(exponent)
+                    else:
+                        digits = len(digit_tuple)
+                        decimals = abs(exponent)
+
+                if self.max_digits is not None and digits > self.max_digits:
+                    raise PydanticCustomError(
+                        'decimal_max_digits',
+                        'ensure that there are no more than {max_digits} digits in total',
+                        {'max_digits': self.max_digits},
+                    )
+
+                if self.decimal_places is not None and decimals > self.decimal_places:
+                    raise PydanticCustomError(
+                        'decimal_max_places',
+                        'ensure that there are no more than {decimal_places} decimal places',
+                        {'decimal_places': self.decimal_places},
+                    )
+
+                if self.max_digits is not None and self.decimal_places is not None:
+                    whole_digits = digits - decimals
+                    expected = self.max_digits - self.decimal_places
+                    if whole_digits > expected:
+                        raise PydanticCustomError(
+                            'decimal_whole_digits',
+                            'ensure that there are no more than {whole_digits} digits before the decimal point',
+                            {'whole_digits': expected},
+                        )
+
+        if self.multiple_of is not None:
+            mod = value / self.multiple_of % 1
+            if mod != 0:
+                raise PydanticCustomError(
+                    'decimal_multiple_of',
+                    'Input should be a multiple of {multiple_of}',
+                    {'multiple_of': self.multiple_of},
+                )
+
+        # these type checks are here to handle the following error:
+        # Operator ">" not supported for types "(
+        #   <subclass of int and Decimal>
+        #   | <subclass of float and Decimal>
+        #   | <subclass of str and Decimal>
+        #   | Decimal" and "int
+        #   | Decimal"
+        # )
+        if self.gt is not None and not value > self.gt:  # type: ignore
+            raise PydanticKnownError('greater_than', {'gt': self.gt})
+        elif self.ge is not None and not value >= self.ge:  # type: ignore
+            raise PydanticKnownError('greater_than_equal', {'ge': self.ge})
+
+        if self.lt is not None and not value < self.lt:  # type: ignore
+            raise PydanticKnownError('less_than', {'lt': self.lt})
+        if self.le is not None and not value <= self.le:  # type: ignore
+            raise PydanticKnownError('less_than_equal', {'le': self.le})
+
+        return value
+
+
+FLOAT_CONSTRAINTS = (
+    annotated_types.Gt,
+    annotated_types.Lt,
+    annotated_types.Ge,
+    annotated_types.Le,
+    annotated_types.MultipleOf,
+    annotated_types.Interval,
+)
+
+
+def decimal_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> list[Any]:
+    metadata: dict[str, Any] = {}
+    remaining_annotations: list[Any] = []
+
+    def check_metadata(annotation: Any, new_metadata: Mapping[str, Any]) -> None:
+        for k in new_metadata:
+            if k not in DecimalValidator.__dataclass_fields__:
+                raise TypeError(f'{k!r} is not a valid constraint for DecimalValidator')
+
+    for annotation in annotations:
+        if annotation is None:
+            continue
+        if isinstance(annotation, annotated_types.GroupedMetadata):
+            expanded = list(annotation)
+        else:
+            expanded = [annotation]
+        for annotation in expanded:
+            # Do we really want to consume any `BaseMetadata`?
+            # It does let us give a better error when there is an annotation that doesn't apply
+            # But it seems dangerous!
+            metadata_dict = None
+            if isinstance(annotation, PydanticGeneralMetadata):
+                metadata_dict = annotation.__dict__
+            elif isinstance(annotation, (annotated_types.BaseMetadata, PydanticMetadata)):
+                metadata_dict = asdict(annotation)  # type: ignore[call-overload]
+            elif isinstance(annotation, type) and issubclass(annotation, PydanticMetadata):
+                # also support PydanticMetadata classes being used without initialisation,
+                # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
+                metadata_dict = {k: v for k, v in vars(annotation).items() if not k.startswith('_')}
+
+            if metadata_dict is not None:
+                check_metadata(annotation, metadata_dict)
+                metadata.update(metadata_dict)
+            else:
+                remaining_annotations.append(annotation)
+
+    unknown_annotations = set(metadata.keys() - DecimalValidator.__dataclass_fields__.keys())
+
+    if unknown_annotations:
+        raise TypeError()
+
+    new_annotations = [
+        Decimal,
+        DecimalValidator(**metadata),
+        *remaining_annotations,
+    ]
+    return new_annotations
 
 
 @schema_function(UUID)

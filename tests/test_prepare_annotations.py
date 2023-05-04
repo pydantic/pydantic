@@ -27,6 +27,11 @@ class MetadataApplier:
 
 
 class MyDecimal(float):
+    """
+    An example of what a user would need to do if they wanted to implement something that
+    behaves like Decimal (aside from the fact that we special case Decimal).
+    """
+
     @classmethod
     def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> Sequence[Any]:
         assert source_type is MyDecimal
@@ -91,7 +96,7 @@ def test_return_no_annotations_in_annotated() -> None:
         def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> List[Any]:
             return []
 
-    msg = 'You must return at least 1 item since the first item is the replacement source type'
+    msg = 'Custom types must return at least 1 item since the first item is the replacement source type'
 
     with pytest.raises(PydanticSchemaGenerationError, match=msg):
         AnalyzedType(Annotated[MyType, Gt(0)])
@@ -103,7 +108,7 @@ def test_return_no_annotations_in_annotated() -> None:
 def test_generator_custom_type() -> None:
     class MyType(int):
         @classmethod
-        def __prepare_pydantic_annotations__(self, source_type: Any, annotations: Sequence[Any]) -> Iterator[Any]:
+        def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> Iterator[Any]:
             assert source_type is MyType
             yield int
             yield Gt(123)
@@ -114,3 +119,46 @@ def test_generator_custom_type() -> None:
 
     a = AnalyzedType(Annotated[MyType, Lt(420)])
     assert a.core_schema == de.IsPartialDict(core_schema.int_schema(gt=123, lt=420))
+
+
+def test_returns_itself_called_only_once() -> None:
+    """
+    If `__prepare_pydantic_annotations__` returns something that implements `__prepare_pydantic_annotations__`
+    (including itself) we don't recurse infinitely.
+    """
+    calls: list[Any] = []
+
+    class MyType(int):
+        @classmethod
+        def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> Iterator[Any]:
+            calls.append(cls.__prepare_pydantic_annotations__)
+            # we return ourselves as the first annotation
+            # this may be fine if the thing implements `__get_pydantic_core_schema__` as well
+            # (although I'm not sure why you'd want to do that)
+            # but at the very least we should _not_ fail with a recursion error
+            # which is easy to have happen because we'd just call this method again in GenerateSchema's
+            # next iteration
+            yield cls
+            yield from annotations
+
+    msg = (
+        'Unable to generate pydantic-core schema for'
+        f" <class '{__name__}.test_returns_itself_called_only_once.<locals>.MyType'>"
+    )
+    with pytest.raises(PydanticSchemaGenerationError, match=msg):
+        AnalyzedType(MyType)
+
+    assert calls == [MyType.__prepare_pydantic_annotations__]
+    calls.clear()
+
+    class MyTypeGood(MyType):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            calls.append(cls.__get_pydantic_core_schema__)
+            assert source_type == MyTypeGood
+            return handler(int)
+
+    a = AnalyzedType(MyTypeGood)
+    assert a.core_schema == core_schema.int_schema()
+
+    assert calls == [MyTypeGood.__prepare_pydantic_annotations__, MyTypeGood.__get_pydantic_core_schema__]
