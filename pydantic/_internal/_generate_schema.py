@@ -4,7 +4,6 @@ Convert python types to pydantic-core schema.
 from __future__ import annotations as _annotations
 
 import collections.abc
-import dataclasses
 import inspect
 import re
 import sys
@@ -16,13 +15,12 @@ from itertools import chain
 from types import FunctionType, LambdaType, MethodType
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
-from annotated_types import BaseMetadata, GroupedMetadata
 from pydantic_core import CoreSchema, SchemaError, SchemaValidator, core_schema
 from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo
-from . import _discriminated_union, _typing_extra
+from . import _discriminated_union, _metadata, _typing_extra
 from ._config import ConfigWrapper
 from ._core_metadata import (
     CoreMetadataHandler,
@@ -50,8 +48,6 @@ from ._decorators import (
     inspect_validator,
 )
 from ._fields import (
-    PydanticGeneralMetadata,
-    PydanticMetadata,
     Undefined,
     collect_dataclass_fields,
     get_type_hints_infer_globalns,
@@ -1361,55 +1357,34 @@ def get_wrapped_inner_schema(
 def apply_single_annotation(
     schema: core_schema.CoreSchema, metadata: Any, definitions: dict[str, core_schema.CoreSchema]
 ) -> core_schema.CoreSchema:
-    if isinstance(metadata, GroupedMetadata):
-        for a in metadata:
-            schema = apply_single_annotation(schema, a, definitions)
-    elif isinstance(metadata, FieldInfo):
+    if isinstance(metadata, FieldInfo):
         for field_metadata in metadata.metadata:
             schema = apply_single_annotation(schema, field_metadata, definitions)
         if metadata.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator, definitions)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
+    # note that we ignore any unrecognized metadata
+    # PEP 593: "If a library (or tool) encounters a typehint Annotated[T, x] and has no
+    # special logic for metadata x, it should ignore it and simply treat the type as T."
+    # Allow, but ignore, any unknown metadata.
+    metadata_dict, _ = _metadata.collect_known_metadata([metadata])
 
-    if isinstance(metadata, PydanticGeneralMetadata):
-        metadata_dict = metadata.__dict__
-    elif isinstance(metadata, (BaseMetadata, PydanticMetadata)):
-        metadata_dict = dataclasses.asdict(metadata)  # type: ignore[call-overload]
-    elif isinstance(metadata, type) and issubclass(metadata, PydanticMetadata):
-        # also support PydanticMetadata classes being used without initialisation,
-        # e.g. `Annotated[int, Strict]` as well as `Annotated[int, Strict()]`
-        metadata_dict = {k: v for k, v in vars(metadata).items() if not k.startswith('_')}
-    else:
-        # PEP 593: "If a library (or tool) encounters a typehint Annotated[T, x] and has no
-        # special logic for metadata x, it should ignore it and simply treat the type as T."
-        # Allow, but ignore, any unknown metadata.
-        return schema
-
-    # TODO we need a way to remove metadata which this line currently prevents
-    metadata_dict = {k: v for k, v in metadata_dict.items() if v is not None}
     if not metadata_dict:
         return schema
 
-    handler = CoreMetadataHandler(schema)
-    update_schema_function = handler.metadata.get('pydantic_cs_update_function')
-    if update_schema_function is not None:
-        new_schema = update_schema_function(schema, **metadata_dict)
-        if new_schema is not None:
-            schema = new_schema
+    if schema['type'] == 'nullable':
+        # for nullable schemas, metadata is automatically applied to the inner schema
+        # TODO need to do the same for lists, tuples and more
+        schema['schema'].update(metadata_dict)
     else:
-        if schema['type'] == 'nullable':
-            # for nullable schemas, metadata is automatically applied to the inner schema
-            # TODO need to do the same for lists, tuples and more
-            schema['schema'].update(metadata_dict)
-        else:
-            schema.update(metadata_dict)  # type: ignore[typeddict-item]
-        try:
-            SchemaValidator(schema)
-        except SchemaError as e:
-            # TODO: Generate an easier-to-understand ValueError here saying the field constraints are not enforced
-            # The relevant test is: `tests.test_schema.test_unenforced_constraints_schema
-            raise e
+        schema.update(metadata_dict)  # type: ignore[typeddict-item]
+    try:
+        SchemaValidator(schema)
+    except SchemaError as e:
+        # TODO: Generate an easier-to-understand ValueError here saying the field constraints are not enforced
+        # The relevant test is: `tests.test_schema.test_unenforced_constraints_schema
+        raise e
     return schema
 
 
