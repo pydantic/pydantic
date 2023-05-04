@@ -207,11 +207,7 @@ def complete_model_class(
     cls.__pydantic_core_schema__ = schema
     schema = simplify_schema_references(schema)
     cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
-    try:
-        cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
-    except Exception:
-        schema = simplify_schema_references(schema)
-        raise
+    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances

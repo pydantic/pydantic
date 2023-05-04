@@ -6,7 +6,7 @@ from datetime import date, datetime
 from enum import Enum
 from functools import partial, partialmethod
 from itertools import product
-from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple, Union
 from unittest.mock import MagicMock
 
 import pytest
@@ -1412,7 +1412,7 @@ def test_root_validator_pre():
 
 
 def test_root_validator_types():
-    root_val_values: Optional[Tuple[Type[BaseModel], Dict[str, Any]]] = None
+    root_val_values = None
 
     class Model(BaseModel):
         a: int = 1
@@ -1421,14 +1421,14 @@ def test_root_validator_types():
         @root_validator(skip_on_failure=True)
         def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             nonlocal root_val_values
-            root_val_values = cls, values
+            root_val_values = cls, repr(values)
             return values
 
         model_config = ConfigDict(extra='allow')
 
     assert Model(b='bar', c='wobble').model_dump() == {'a': 1, 'b': 'bar', 'c': 'wobble'}
 
-    assert root_val_values == (Model, {'a': 1, 'b': 'bar', 'c': 'wobble'})
+    assert root_val_values == (Model, "{'a': 1, 'b': 'bar', 'c': 'wobble'}")
 
 
 def test_root_validator_returns_none_exception():

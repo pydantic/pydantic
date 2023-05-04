@@ -4,7 +4,7 @@ Logic for V1 validators, e.g. `@validator` and `@root_validator`.
 from __future__ import annotations as _annotations
 
 from inspect import Parameter, signature
-from typing import Any, Dict, Set, Tuple, Union, cast
+from typing import Any, Dict, Tuple, Union, cast
 
 from pydantic_core import core_schema
 from typing_extensions import Protocol
@@ -94,9 +94,8 @@ def make_generic_v1_field_validator(validator: V1Validator) -> core_schema.Field
 
 
 RootValidatorValues = Dict[str, Any]
-RootValidatorExtra = Dict[str, Any] | None
-RootValidatorFieldsSet = Set[str]
-RootValidatorValuesExtraFieldsSet = Tuple[RootValidatorValues, RootValidatorExtra, RootValidatorFieldsSet]
+# technically tuple[model_dict, model_extra, fields_set] | tuple[dataclass_dict, init_vars]
+RootValidatorFieldsTuple = Tuple[Any, ...]
 
 
 class V1RootValidatorFunction(Protocol):
@@ -111,8 +110,8 @@ class V2CoreBeforeRootValidator(Protocol):
 
 class V2CoreAfterRootValidator(Protocol):
     def __call__(
-        self, __values_and_fields_set: RootValidatorValuesExtraFieldsSet, __info: core_schema.ValidationInfo
-    ) -> RootValidatorValuesExtraFieldsSet:
+        self, __fields_tuple: RootValidatorFieldsTuple, __info: core_schema.ValidationInfo
+    ) -> RootValidatorFieldsTuple:
         ...
 
 
@@ -130,11 +129,25 @@ def make_v1_generic_root_validator(
         return _wrapper1
 
     # mode='after' for pydantic-core
-    def _wrapper2(
-        values_extra_fields_set: RootValidatorValuesExtraFieldsSet, _: core_schema.ValidationInfo
-    ) -> RootValidatorValuesExtraFieldsSet:
-        values, extra, fields_set = values_extra_fields_set
-        values = validator(values)
-        return values, extra, fields_set
+    def _wrapper2(fields_tuple: RootValidatorFieldsTuple, _: core_schema.ValidationInfo) -> RootValidatorFieldsTuple:
+        if len(fields_tuple) == 2:
+            # dataclass, this is easy
+            values, init_vars = fields_tuple
+            values = validator(values)
+            return values, init_vars
+        else:
+            # ugly hack: to match v1 behaviour, we merge values and model_extra, then split them up based on fields
+            # afterwards
+            model_dict, model_extra, fields_set = fields_tuple
+            if model_extra:
+                fields = set(model_dict.keys())
+                model_dict.update(model_extra)
+                model_dict_new = validator(model_dict)
+                for k in list(model_dict_new.keys()):
+                    if k not in fields:
+                        model_extra[k] = model_dict_new.pop(k)
+            else:
+                model_dict_new = validator(model_dict)
+            return model_dict_new, model_extra, fields_set
 
     return _wrapper2
