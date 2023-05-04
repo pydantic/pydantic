@@ -125,7 +125,7 @@ def test_typeddict(TypedDict):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(td={'a': [1], 'b': 2, 'c': 3, 'd': 'qwe'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('td', 'a'), 'msg': 'Input should be a valid integer', 'input': [1]}
     ]
 
@@ -140,7 +140,7 @@ def test_typeddict_non_total(TypedDict):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(movie={'year': '2002'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'missing', 'loc': ('movie', 'name'), 'msg': 'Field required', 'input': {'year': '2002'}}
     ]
 
@@ -178,8 +178,8 @@ def test_typeddict_extra_default(TypedDict):
 
     with pytest.raises(ValidationError) as exc_info:
         val.validate_python({'name': 'pika', 'age': 7, 'rank': 1})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'extra_forbidden', 'loc': ('rank',), 'msg': 'Extra inputs are not permitted', 'input': 1}
     ]
 
@@ -268,15 +268,26 @@ def test_typeddict_from_attributes():
         name: str
         age: int
 
-    class FromAttributesModel(BaseModel, from_attributes=True):
-        u: Annotated[User, Field(strict=False)]
+    class FromAttributesCls:
+        def __init__(self, u: User):
+            self.u = u
 
     class Model(BaseModel):
         u: Annotated[User, Field(strict=False)]
 
-    assert FromAttributesModel(u=UserCls('foo', 15)).u == {'name': 'foo', 'age': 15}
+    class FromAttributesModel(BaseModel, from_attributes=True):
+        u: Annotated[User, Field(strict=False)]
+
+    # You can validate the TypedDict from attributes from a type that has a field with an appropriate attribute
+    assert FromAttributesModel.model_validate(FromAttributesCls(u={'name': 'foo', 'age': 15}))
+
+    # The normal case: you can't populate a TypedDict from attributes with the relevant config setting disabled
     with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
         Model(u=UserCls('foo', 15))
+
+    # Going further: even with from_attributes allowed, it won't attempt to populate a TypedDict from attributes
+    with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
+        FromAttributesModel(u=UserCls('foo', 15))
 
 
 def test_typeddict_not_required_schema(TypedDict, req_no_req):
@@ -419,7 +430,7 @@ def test_recursive_typeddict(create_module):
     assert module.RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
     with pytest.raises(ValidationError) as exc_info:
         module.RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 1,
             'loc': ('rec', 'foo', 'foo', 'foo'),
@@ -444,7 +455,7 @@ def test_generic_typeddict_in_concrete_model():
     Model(y={'x': 1})
     with pytest.raises(ValidationError) as exc_info:
         Model(y={'x': 'a'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': ('y', 'x'),
@@ -466,7 +477,7 @@ def test_generic_typeddict_in_generic_model():
     Model[int](y={'x': 1})
     with pytest.raises(ValidationError) as exc_info:
         Model[int](y={'x': 'a'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': ('y', 'x'),
@@ -501,7 +512,7 @@ def test_recursive_generic_typeddict_in_module(create_module):
     str_data: module.RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
     with pytest.raises(ValidationError) as exc_info:
         module.RecursiveGenTypedDictModel[int](rec=str_data)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
@@ -538,7 +549,7 @@ def test_recursive_generic_typeddict_in_function_1():
     str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
     with pytest.raises(ValidationError) as exc_info:
         RecursiveGenTypedDictModel[int](rec=str_data)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
@@ -572,7 +583,7 @@ def test_recursive_generic_typeddict_in_function_2():
     str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
     with pytest.raises(ValidationError) as exc_info:
         RecursiveGenTypedDictModel[int](rec=str_data)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),
@@ -633,7 +644,7 @@ def test_recursive_generic_typeddict_in_function_rebuild_pass():
     str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
     with pytest.raises(ValidationError) as exc_info:
         IntModel(rec=str_data)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': ('rec', 'foo', 'ls', 0),

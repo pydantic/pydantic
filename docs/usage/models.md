@@ -456,7 +456,7 @@ try:
 except ValidationError as e:
     # print(e.json())
     # TODO set back to .json() once we add it
-    print(e.errors())
+    print(e.errors(include_url=False))
     """
     [
         {
@@ -523,7 +523,7 @@ class Model(BaseModel):
 try:
     Model(foo='ber')
 except ValidationError as e:
-    print(e.errors())
+    print(e.errors(include_url=False))
     """
     [
         {
@@ -562,7 +562,7 @@ class Model(BaseModel):
 try:
     Model(foo='ber')
 except ValidationError as e:
-    print(e.errors())
+    print(e.errors(include_url=False))
     """
     [
         {

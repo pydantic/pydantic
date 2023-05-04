@@ -89,7 +89,7 @@ def test_discriminated_union_root_same_discriminator():
     CatDog({'pet_type': 'dog'})
     with pytest.raises(ValidationError) as exc_info:
         CatDog({'pet_type': 'llama'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'blackcat', 'whitecat', 'dog'", 'tag': 'llama'},
             'input': {'pet_type': 'llama'},
@@ -128,7 +128,7 @@ def test_discriminated_union_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'"},
             'input': {'pet_typ': 'cat'},
@@ -146,7 +146,7 @@ def test_discriminated_union_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': 'fish', 'number': 2})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'fish',
             'loc': ('pet',),
@@ -157,7 +157,7 @@ def test_discriminated_union_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'fish'}, 'number': 2})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog', 'reptile', 'lizard'", 'tag': 'fish'},
             'input': {'pet_type': 'fish'},
@@ -170,7 +170,7 @@ def test_discriminated_union_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'lizard'}, 'number': 2})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {'pet_type': 'lizard'}, 'loc': ('pet', 'lizard', 'm'), 'msg': 'Field required', 'type': 'missing'}
     ]
 
@@ -180,7 +180,7 @@ def test_discriminated_union_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': {'color': 'white', 'pet_type': 'cat'},
             'loc': ('pet', 'cat', 'white', 'white_infos'),
@@ -217,7 +217,7 @@ def test_discriminated_annotated_union():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_typ': 'cat'}, 'number': 'x'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'"},
             'input': {'pet_typ': 'cat'},
@@ -235,7 +235,7 @@ def test_discriminated_annotated_union():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'fish'}, 'number': 2})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'fish'},
             'input': {'pet_type': 'fish'},
@@ -247,7 +247,7 @@ def test_discriminated_annotated_union():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'dog'}, 'number': 2})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {'pet_type': 'dog'}, 'loc': ('pet', 'dog', 'dog_name'), 'msg': 'Field required', 'type': 'missing'}
     ]
     m = Model.model_validate({'pet': {'pet_type': 'dog', 'dog_name': 'milou'}, 'number': 2})
@@ -255,7 +255,7 @@ def test_discriminated_annotated_union():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'red'}, 'number': 2})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'color'", 'expected_tags': "'black', 'white'", 'tag': 'red'},
             'input': {'color': 'red', 'pet_type': 'cat'},
@@ -267,7 +267,7 @@ def test_discriminated_annotated_union():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'pet': {'pet_type': 'cat', 'color': 'white'}, 'number': 2})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': {'color': 'white', 'pet_type': 'cat'},
             'loc': ('pet', 'cat', 'white', 'white_infos'),
@@ -309,7 +309,7 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
     # TODO: Adding this note here that we should make sure the produced error messages for DiscriminatedUnion
     #   have the same behavior as elsewhere when aliases are involved.
     #   (I.e., possibly using the alias value as the 'loc')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {'literal': 'a'}, 'loc': ('lit',), 'msg': 'Field required', 'type': 'missing'}
     ]
     assert Top(sub=A(lit='a')).sub.literal == 'a'
@@ -330,7 +330,7 @@ def test_discriminated_union_int():
     assert isinstance(Top.model_validate({'sub': {'m': 2}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
         Top.model_validate({'sub': {'m': 3}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'m'", 'expected_tags': '1, 2', 'tag': '3'},
             'input': {'m': 3},
@@ -386,7 +386,7 @@ def test_discriminated_union_enum(base_class, choices):
         Top.model_validate({'sub': {'m': 3}})
 
     expected_tags = f'{EnumValue.a.value!r}, {EnumValue.b.value!r}'
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'m'", 'expected_tags': expected_tags, 'tag': '3'},
             'input': {'m': 3},
@@ -476,14 +476,14 @@ def test_generic():
 
     with pytest.raises(ValidationError, match=r'Container\[str\]\nresult\.Success\.data') as exc_info:
         Container[str].model_validate({'result': {'type': 'Success'}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {'type': 'Success'}, 'loc': ('result', 'Success', 'data'), 'msg': 'Field required', 'type': 'missing'}
     ]
 
     # invalid types error
     with pytest.raises(ValidationError) as exc_info:
         Container[str].model_validate({'result': {'type': 'Success', 'data': 1}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 1,
             'loc': ('result', 'Success', 'data'),
@@ -513,11 +513,13 @@ def test_optional_union():
 
     with pytest.raises(ValidationError) as exc_info:
         Pet()
-    assert exc_info.value.errors() == [{'input': {}, 'loc': ('pet',), 'msg': 'Field required', 'type': 'missing'}]
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': {}, 'loc': ('pet',), 'msg': 'Field required', 'type': 'missing'}
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         Pet(pet={'name': 'Benji'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'"},
             'input': {'name': 'Benji'},
@@ -529,7 +531,7 @@ def test_optional_union():
 
     with pytest.raises(ValidationError) as exc_info:
         Pet(pet={'pet_type': 'lizard'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'pet_type': 'lizard'},
@@ -559,7 +561,7 @@ def test_optional_union_with_defaults():
 
     with pytest.raises(ValidationError) as exc_info:
         Pet(pet={'name': 'Benji'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'"},
             'input': {'name': 'Benji'},
@@ -571,7 +573,7 @@ def test_optional_union_with_defaults():
 
     with pytest.raises(ValidationError) as exc_info:
         Pet(pet={'pet_type': 'lizard'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'pet_type': 'lizard'},
@@ -619,13 +621,13 @@ def test_nested_optional_unions() -> None:
 
     with pytest.raises(ValidationError) as exc_info:
         Pet.model_validate({'pet': {'pet_type': None}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': None, 'loc': ('pet',), 'msg': 'Input should be a valid string', 'type': 'string_type'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Pet.model_validate({'pet': {'pet_type': 'fox'}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type'", 'expected_tags': "'cat', 'dog', 'lizard', 'reptile'", 'tag': 'fox'},
             'input': {'pet_type': 'fox'},
@@ -659,7 +661,7 @@ def test_nested_discriminated_union() -> None:
 
     with pytest.raises(ValidationError) as exc_info:
         Pet.model_validate({'pet': {'pet_type': 'reptile'}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {
                 'discriminator': "'pet_type'",
@@ -713,7 +715,7 @@ def test_union_discriminator_literals() -> None:
     assert Model(**{'pet': {'typeOfPet': 'CAT'}}).pet.pet_type == 'CAT'
     with pytest.raises(ValidationError) as exc_info:
         Model(**{'pet': {'typeOfPet': 'Cat'}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'pet_type' | 'typeOfPet'", 'expected_tags': "'cat', 'dog', 'CAT'", 'tag': 'Cat'},
             'input': {'typeOfPet': 'Cat'},
@@ -738,7 +740,7 @@ def test_none_schema() -> None:
     assert validator.validate_python(None) is None
     with pytest.raises(ValidationError) as exc_info:
         validator.validate_python({'kind': 'lizard'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'kind'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'kind': 'lizard'},
@@ -769,7 +771,7 @@ def test_nested_unwrapping() -> None:
     assert validator.validate_python(None) is None
     with pytest.raises(ValidationError) as exc_info:
         validator.validate_python({'kind': 'lizard'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'kind'", 'expected_tags': "'cat', 'dog'", 'tag': 'lizard'},
             'input': {'kind': 'lizard'},
@@ -1005,7 +1007,7 @@ def test_wrapped_nullable_union() -> None:
     assert validator.validate_python(None) is None
     with pytest.raises(ValidationError) as exc_info:
         validator.validate_python({'kind': 'armadillo'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'discriminator': "'kind'", 'expected_tags': "'ant', 'cat', 'dog'", 'tag': 'armadillo'},
             'input': {'kind': 'armadillo'},

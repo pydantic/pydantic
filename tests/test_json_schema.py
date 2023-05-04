@@ -1761,7 +1761,7 @@ def test_optional_validator():
     assert Model(something='hello').model_dump() == {'something': 'hello'}
     with pytest.raises(ValidationError) as exc_info:
         Model(something='hellox')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'error': 'should not contain x'},
             'input': 'hellox',

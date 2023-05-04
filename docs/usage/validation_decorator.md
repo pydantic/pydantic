@@ -300,7 +300,7 @@ async def main():
     try:
         await get_user_email(-4)
     except ValidationError as exc:
-        print(exc.errors())
+        print(exc.errors(include_url=False))
         """
         [
             {

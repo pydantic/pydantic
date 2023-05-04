@@ -24,19 +24,12 @@ FunctionSchemaWithInnerSchema = Union[
     core_schema.WrapValidatorFunctionSchema,
 ]
 
-_CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field'}
+CoreSchemaField = Union[core_schema.ModelField, core_schema.DataclassField, core_schema.TypedDictField]
+CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 
-
-def is_typed_dict_field(
-    schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField,
-) -> TypeGuard[core_schema.TypedDictField]:
-    return schema['type'] == 'typed-dict-field'
-
-
-def is_dataclass_field(
-    schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField,
-) -> TypeGuard[core_schema.DataclassField]:
-    return schema['type'] == 'dataclass-field'
+_CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field'}
+_FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
+_LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozenset'}
 
 
 def is_definition_ref_schema(s: core_schema.CoreSchema) -> TypeGuard[core_schema.DefinitionReferenceSchema]:
@@ -48,15 +41,21 @@ def is_definitions_schema(s: core_schema.CoreSchema) -> TypeGuard[core_schema.De
 
 
 def is_core_schema(
-    schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField,
+    schema: CoreSchemaOrField,
 ) -> TypeGuard[CoreSchema]:
     return schema['type'] not in _CORE_SCHEMA_FIELD_TYPES
 
 
+def is_core_schema_field(
+    schema: CoreSchemaOrField,
+) -> TypeGuard[CoreSchemaField]:
+    return schema['type'] in _CORE_SCHEMA_FIELD_TYPES
+
+
 def is_function_with_inner_schema(
-    schema: CoreSchema | core_schema.TypedDictField,
+    schema: CoreSchemaOrField,
 ) -> TypeGuard[FunctionSchemaWithInnerSchema]:
-    return is_core_schema(schema) and schema['type'] in ('function-before', 'function-after', 'function-wrap')
+    return schema['type'] in _FUNCTION_WITH_INNER_SCHEMA_TYPES
 
 
 def is_list_like_schema_with_items_schema(
@@ -64,7 +63,7 @@ def is_list_like_schema_with_items_schema(
 ) -> TypeGuard[
     core_schema.ListSchema | core_schema.TupleVariableSchema | core_schema.SetSchema | core_schema.FrozenSetSchema
 ]:
-    return schema['type'] in ('list', 'tuple-variable', 'set', 'frozenset')
+    return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
 def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
@@ -244,12 +243,22 @@ class _WalkCoreSchema:
         return f(schema.copy(), self._walk)
 
     def _walk(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
-        return self._schema_type_to_method[schema['type']](schema, f)
+        ser_schema: core_schema.SerSchema | None = schema.get('serialization', None)  # type: ignore
+        schema = self._schema_type_to_method[schema['type']](schema, f)
+        if ser_schema:
+            schema['serialization'] = self._handle_ser_schemas(ser_schema.copy(), f)
+        return schema
 
     def _handle_other_schemas(self, schema: core_schema.CoreSchema, f: Walk) -> core_schema.CoreSchema:
         if 'schema' in schema:
             schema['schema'] = self.walk(schema['schema'], f)  # type: ignore
         return schema
+
+    def _handle_ser_schemas(self, ser_schema: core_schema.SerSchema, f: Walk) -> core_schema.SerSchema:
+        schema: core_schema.CoreSchema | None = ser_schema.get('schema', None)
+        if schema is not None:
+            ser_schema['schema'] = self.walk(schema, f)  # type: ignore
+        return ser_schema
 
     def handle_definitions_schema(self, schema: core_schema.DefinitionsSchema, f: Walk) -> core_schema.CoreSchema:
         new_definitions: list[core_schema.CoreSchema] = []
@@ -339,6 +348,17 @@ class _WalkCoreSchema:
     def handle_lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema, f: Walk) -> core_schema.CoreSchema:
         schema['lax_schema'] = self.walk(schema['lax_schema'], f)
         schema['strict_schema'] = self.walk(schema['strict_schema'], f)
+        return schema
+
+    def handle_model_fields_schema(self, schema: core_schema.ModelFieldsSchema, f: Walk) -> core_schema.CoreSchema:
+        if 'extra_validator' in schema:
+            schema['extra_validator'] = self.walk(schema['extra_validator'], f)
+        replaced_fields: dict[str, core_schema.ModelField] = {}
+        for k, v in schema['fields'].items():
+            replaced_field = v.copy()
+            replaced_field['schema'] = self.walk(v['schema'], f)
+            replaced_fields[k] = replaced_field
+        schema['fields'] = replaced_fields
         return schema
 
     def handle_typed_dict_schema(self, schema: core_schema.TypedDictSchema, f: Walk) -> core_schema.CoreSchema:

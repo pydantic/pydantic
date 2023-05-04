@@ -59,7 +59,7 @@ def test_validate_multiple():
 
     with pytest.raises(ValidationError) as exc_info:
         MyDataclass(a='x', b='x')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'error': 'a is too short'},
             'input': 'x',
@@ -176,7 +176,7 @@ def test_root_validator():
         MyDataclass(1, b='snap dragon')
     assert root_val_values == [{'a': 123, 'b': 'barbar'}, {'a': 1, 'b': 'snap dragonsnap dragon'}]
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'error': 'foobar'},
             'input': HasRepr("ArgsKwargs((1,), {'b': 'snap dragon'})"),

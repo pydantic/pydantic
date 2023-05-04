@@ -150,8 +150,8 @@ def test_self_forward_ref_collection(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         module.Foo(b={'a': '321'}, c=[{'b': 234}], d={'bar': {'a': 345}})
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'dict_type', 'loc': ('c', 0, 'b'), 'msg': 'Input should be a valid dictionary', 'input': 234}
     ]
 

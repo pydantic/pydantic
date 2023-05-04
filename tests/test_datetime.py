@@ -199,7 +199,7 @@ def test_aware_datetime_validation_fails(aware_datetime_type):
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'datetime_aware',
             'loc': ('foo',),
@@ -227,7 +227,7 @@ def test_naive_datetime_validation_fails(naive_datetime_type):
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'datetime_naive',
             'loc': ('foo',),
@@ -342,8 +342,8 @@ def test_model_type_errors(field, value, error_message):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(**{field: value})
-    assert len(exc_info.value.errors()) == 1
-    error = exc_info.value.errors()[0]
+    assert len(exc_info.value.errors(include_url=False)) == 1
+    error = exc_info.value.errors(include_url=False)[0]
     assert error['msg'] == error_message
 
 
@@ -368,8 +368,8 @@ def test_nan():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(dt=float('nan'), d=float('nan'))
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'datetime_parsing',
             'loc': ('dt',),
@@ -438,8 +438,8 @@ def test_past_date_validation_fails(value, past_date_type):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'date_past',
             'loc': ('foo',),
@@ -477,8 +477,8 @@ def test_future_date_validation_fails(value, future_date_type):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(foo=value)
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'date_future',
             'loc': ('foo',),

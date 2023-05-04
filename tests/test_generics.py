@@ -114,7 +114,7 @@ def test_value_validation():
     assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 'a'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('data', 1),
@@ -125,7 +125,7 @@ def test_value_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 0})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': ('data',),
@@ -137,7 +137,7 @@ def test_value_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Response[Dict[int, int]](data={1: 3, 2: 6})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': (),
@@ -509,7 +509,7 @@ def test_generic():
     )
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](error=Error(message='error'), positive_number=-1)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': ('positive_number',),
@@ -521,7 +521,7 @@ def test_generic():
 
     with pytest.raises(ValidationError) as exc_info:
         Result[Data, Error](data=[Data(number=1, text='a')], error=Error(message='error'), positive_number=1)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': ('error',),
@@ -563,7 +563,9 @@ def test_required_value():
 
     with pytest.raises(ValidationError) as exc_info:
         MyModel[int]()
-    assert exc_info.value.errors() == [{'input': {}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}]
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': {}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}
+    ]
 
 
 def test_optional_value():
@@ -644,7 +646,7 @@ def test_nested():
 
     with pytest.raises(ValidationError) as exc_info:
         OuterT_SameType[int](i=inner_str.model_dump())
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('i', 'a'),
@@ -655,19 +657,19 @@ def test_nested():
 
     with pytest.raises(ValidationError) as exc_info:
         OuterT_SameType[int](i=inner_str)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': InnerT[str](a='ate'), 'loc': ('i',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         OuterT_SameType[int](i=inner_dict_any.model_dump())
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('i', 'a'), 'msg': 'Input should be a valid integer', 'input': {}}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         OuterT_SameType[int](i=inner_dict_any)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': InnerT[Any](a={}), 'loc': ('i',), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
 
@@ -685,7 +687,7 @@ def test_partial_specification():
     concrete_model(a=1, b='abc')
     with pytest.raises(ValidationError) as exc_info:
         concrete_model(a='abc', b=None)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a',),
@@ -745,7 +747,7 @@ def test_partial_specification_instantiation():
 
     with pytest.raises(ValidationError) as exc_info:
         partial_model(a='a', b=2)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a',),
@@ -766,7 +768,7 @@ def test_partial_specification_instantiation_bounded():
     Model(a=1, b=1)
     with pytest.raises(ValidationError) as exc_info:
         Model(a=1, b='a')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('b',),
@@ -779,7 +781,7 @@ def test_partial_specification_instantiation_bounded():
     partial_model(a=1, b=1)
     with pytest.raises(ValidationError) as exc_info:
         partial_model(a=1, b='a')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('b',),
@@ -802,7 +804,7 @@ def test_typevar_parametrization():
 
     with pytest.raises(ValidationError) as exc_info:
         Model[CT, DT](a='a', b='b')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a',),
@@ -832,7 +834,7 @@ def test_multiple_specification():
 
     with pytest.raises(ValidationError) as exc_info:
         concrete_model(a=None, b=None)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'string_type', 'loc': ('a',), 'msg': 'Input should be a valid string', 'input': None},
         {'type': 'string_type', 'loc': ('b',), 'msg': 'Input should be a valid string', 'input': None},
     ]
@@ -1357,7 +1359,7 @@ def test_deep_generic_with_multiple_inheritance():
 
     with pytest.raises(ValidationError) as exc_info:
         ConcreteInnerModel(data={1.1: '5'}, stuff=[123], extra=5)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': 123, 'loc': ('stuff', 0), 'msg': 'Input should be a valid string', 'type': 'string_type'},
         {
             'input': 1.1,
@@ -1454,7 +1456,7 @@ def test_generic_recursive_models(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': {'ref': {'ref': 123}},
             'loc': ('ref', 'ref', 'str'),
@@ -1509,7 +1511,7 @@ def test_generic_recursive_models_separate_parameters(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': {'ref': {'ref': 123}},
             'loc': ('ref', 'ref', 'str'),
@@ -1575,7 +1577,7 @@ def test_generic_recursive_models_repeated_separate_parameters(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         Model1[str].model_validate(dict(ref=dict(ref=dict(ref=dict(ref=123)))))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': {'ref': {'ref': 123}},
             'loc': ('ref', 'ref', 'str'),
@@ -1635,7 +1637,7 @@ def test_generic_recursive_models_triple(create_module):
 
     with pytest.raises(ValidationError) as exc_info:
         A1[str].model_validate({'a1': {'a2': {'a3': 1}}})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 1,
             'loc': ('a1', 'a2', 'a3', 'A1[str]'),
@@ -1956,7 +1958,7 @@ def test_parent_field_parametrization():
 
     with pytest.raises(ValidationError) as exc_info:
         B[int](a='a', b=1)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': ('a',),
@@ -2163,7 +2165,7 @@ def test_construct_generic_model_with_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Page[int](page=41, items=[], unenforced=11)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'ge': 42},
             'input': 41,
@@ -2200,7 +2202,7 @@ def test_construct_other_generic_model_with_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         concrete_model(page=41, items=[])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'ge': 42},
             'input': 41,
@@ -2228,7 +2230,7 @@ def test_generic_enum_bound():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=1)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'class': 'Enum'},
             'input': 1,
@@ -2243,7 +2245,7 @@ def test_generic_enum_bound():
 
     with pytest.raises(ValidationError) as exc_info:
         Model[MyEnum](x=OtherEnum.b)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'expected': '1'},
             'input': OtherEnum.b,
@@ -2279,7 +2281,7 @@ def test_generic_intenum_bound():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=1)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'class': 'IntEnum'},
             'input': 1,
@@ -2294,7 +2296,7 @@ def test_generic_intenum_bound():
 
     with pytest.raises(ValidationError) as exc_info:
         Model[MyEnum](x=OtherEnum.b)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'expected': '1'},
             'input': 2,

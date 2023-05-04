@@ -174,21 +174,6 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
 {
   "oneOf": [
     {
-      "$ref": "#/$defs/Cat"
-    },
-    {
-      "$ref": "#/$defs/Dog"
-    }
-  ],
-  "discriminator": {
-    "propertyName": "pet_type",
-    "mapping": {
-      "cat": "#/$defs/Cat",
-      "dog": "#/$defs/Dog"
-    }
-  },
-  "$defs": {
-    "Cat": {
       "type": "object",
       "properties": {
         "pet_type": {
@@ -206,7 +191,7 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
       ],
       "title": "Cat"
     },
-    "Dog": {
+    {
       "type": "object",
       "properties": {
         "pet_type": {
@@ -223,6 +208,47 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
         "dog_name"
       ],
       "title": "Dog"
+    }
+  ],
+  "discriminator": {
+    "propertyName": "pet_type",
+    "mapping": {
+      "cat": {
+        "type": "object",
+        "properties": {
+          "pet_type": {
+            "const": "cat",
+            "title": "Pet Type"
+          },
+          "cat_name": {
+            "type": "string",
+            "title": "Cat Name"
+          }
+        },
+        "required": [
+          "pet_type",
+          "cat_name"
+        ],
+        "title": "Cat"
+      },
+      "dog": {
+        "type": "object",
+        "properties": {
+          "pet_type": {
+            "const": "dog",
+            "title": "Pet Type"
+          },
+          "dog_name": {
+            "type": "string",
+            "title": "Dog Name"
+          }
+        },
+        "required": [
+          "pet_type",
+          "dog_name"
+        ],
+        "title": "Dog"
+      }
     }
   },
   "title": "The Pet Schema"
@@ -718,37 +744,7 @@ top_level_schema = AnalyzedType.json_schemas(
     [AnalyzedType(Model)], ref_template='#/components/schemas/{model}'
 )
 print(json.dumps(top_level_schema, indent=2))
-"""
-{
-  "$defs": {
-    "Foo": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "type": "integer",
-          "title": "A"
-        }
-      },
-      "required": [
-        "a"
-      ],
-      "title": "Foo"
-    },
-    "Model": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "$ref": "#/components/schemas/Foo"
-        }
-      },
-      "required": [
-        "a"
-      ],
-      "title": "Model"
-    }
-  }
-}
-"""
+#> {}
 ```
 
 It's also possible to extend/override the generated JSON schema in a model.

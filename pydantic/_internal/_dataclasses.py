@@ -14,6 +14,7 @@ from typing_extensions import TypeGuard
 
 from ..fields import FieldInfo
 from . import _decorators, _typing_extra
+from ._core_utils import simplify_schema_references
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
@@ -85,6 +86,7 @@ def complete_dataclass(
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
+    schema = simplify_schema_references(schema)
     cls.__pydantic_validator__ = validator = SchemaValidator(schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
     # dataclasses only:

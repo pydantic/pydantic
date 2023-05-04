@@ -109,19 +109,19 @@ def test_validate_python_strict() -> None:
     assert lax_validator.validate_python({'x': '1'}, strict=False) == Model(x=1)
     with pytest.raises(ValidationError) as exc_info:
         lax_validator.validate_python({'x': '1'}, strict=True)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         strict_validator.validate_python({'x': '1'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
     assert strict_validator.validate_python({'x': '1'}, strict=False) == Model(x=1)
     with pytest.raises(ValidationError) as exc_info:
         strict_validator.validate_python({'x': '1'}, strict=True)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
 
@@ -137,19 +137,19 @@ def test_validate_json_strict() -> None:
     assert lax_validator.validate_json(json.dumps({'x': '1'}), strict=False) == Model(x=1)
     with pytest.raises(ValidationError) as exc_info:
         lax_validator.validate_json(json.dumps({'x': '1'}), strict=True)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         strict_validator.validate_json(json.dumps({'x': '1'}), strict=None)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
     assert strict_validator.validate_json(json.dumps({'x': '1'}), strict=False) == Model(x=1)
     with pytest.raises(ValidationError) as exc_info:
         strict_validator.validate_json(json.dumps({'x': '1'}), strict=True)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
 
@@ -205,7 +205,7 @@ def test_merge_config() -> None:
     assert analyzed.json_schema()['title'] == 'FooModel'
     with pytest.raises(ValidationError) as exc_info:
         analyzed.validate_python({'x': 1, 'y': 'x' * 21})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_too_long',
             'loc': ('y',),

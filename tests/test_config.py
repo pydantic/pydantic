@@ -222,8 +222,8 @@ class TestsBaseConfig:
         assert Model(a=42).a == 42
         with pytest.raises(ValidationError) as exc_info:
             Model(a=float('nan'))
-        # insert_assert(exc_info.value.errors())
-        assert exc_info.value.errors() == [
+        # insert_assert(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == [
             {
                 'type': 'finite_number',
                 'loc': ('a',),

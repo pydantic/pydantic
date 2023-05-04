@@ -77,6 +77,20 @@ class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
         return super().__setitem__(k, v)
 
 
+def model_extra_getattr(self: BaseModel, item: str) -> Any:
+    """
+    This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
+    allow (and store) extra
+    """
+    if self.__pydantic_extra__ is not None:
+        try:
+            return self.__pydantic_extra__[item]
+        except KeyError as exc:
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+    else:
+        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
+
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
     def __new__(
@@ -117,6 +131,9 @@ class ModelMetaclass(ABCMeta):
 
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
+
+            if config_wrapper.extra == 'allow':
+                namespace['__getattr__'] = model_extra_getattr
 
             if '__hash__' not in namespace and config_wrapper.frozen:
 
@@ -225,7 +242,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     model_config = ConfigDict()
-    __slots__ = '__dict__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
 
@@ -613,6 +630,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
         yield from [(k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr]
+        pydantic_extra = getattr(self, '__pydantic_extra__', None)
+        if pydantic_extra:
+            yield from [(k, v) for k, v in self.__pydantic_extra__.items()]
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
@@ -811,7 +831,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             # ctx is missing here, but since we've added `input` to the error, we're not pretending it's the same
             error: pydantic_core.InitErrorDetails = {
-                'type': pydantic_core.PydanticCustomError(type_str, str(exc)),
+                # The type: ignore on the next line is to ignore the requirement of LiteralString
+                'type': pydantic_core.PydanticCustomError(type_str, str(exc)),  # type: ignore
                 'loc': ('__root__',),
                 'input': b,
             }
@@ -1053,7 +1074,7 @@ def create_model(
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
-        __base__ = (typing.cast(typing.Type['Model'], BaseModel),)
+        __base__ = (cast(typing.Type['Model'], BaseModel),)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 

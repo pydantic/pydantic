@@ -94,8 +94,9 @@ def make_generic_v1_field_validator(validator: V1Validator) -> core_schema.Field
 
 
 RootValidatorValues = Dict[str, Any]
+RootValidatorExtra = Dict[str, Any] | None
 RootValidatorFieldsSet = Set[str]
-RootValidatorValuesAndFieldsSet = Tuple[RootValidatorValues, RootValidatorFieldsSet]
+RootValidatorValuesExtraFieldsSet = Tuple[RootValidatorValues, RootValidatorExtra, RootValidatorFieldsSet]
 
 
 class V1RootValidatorFunction(Protocol):
@@ -110,8 +111,8 @@ class V2CoreBeforeRootValidator(Protocol):
 
 class V2CoreAfterRootValidator(Protocol):
     def __call__(
-        self, __values_and_fields_set: RootValidatorValuesAndFieldsSet, __info: core_schema.ValidationInfo
-    ) -> RootValidatorValuesAndFieldsSet:
+        self, __values_and_fields_set: RootValidatorValuesExtraFieldsSet, __info: core_schema.ValidationInfo
+    ) -> RootValidatorValuesExtraFieldsSet:
         ...
 
 
@@ -130,10 +131,10 @@ def make_v1_generic_root_validator(
 
     # mode='after' for pydantic-core
     def _wrapper2(
-        values_and_fields_set: tuple[RootValidatorValues, RootValidatorFieldsSet], _: core_schema.ValidationInfo
-    ) -> tuple[RootValidatorValues, RootValidatorFieldsSet]:
-        values, fields_set = values_and_fields_set
+        values_extra_fields_set: RootValidatorValuesExtraFieldsSet, _: core_schema.ValidationInfo
+    ) -> RootValidatorValuesExtraFieldsSet:
+        values, extra, fields_set = values_extra_fields_set
         values = validator(values)
-        return values, fields_set
+        return values, extra, fields_set
 
     return _wrapper2

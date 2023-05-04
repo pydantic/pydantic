@@ -13,6 +13,7 @@ from pydantic_core import SchemaSerializer, SchemaValidator
 from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
+from ._core_utils import simplify_schema_references
 from ._decorators import ComputedFieldInfo, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
@@ -204,8 +205,13 @@ def complete_model_class(
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
+    schema = simplify_schema_references(schema)
     cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
-    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+    try:
+        cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+    except Exception:
+        schema = simplify_schema_references(schema)
+        raise
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances

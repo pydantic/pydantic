@@ -84,7 +84,7 @@ def test_annotated_validator_wrap() -> None:
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x=date(year=1970, month=4, day=17))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': ('x',),
@@ -111,7 +111,7 @@ def test_annotated_validator_nested() -> None:
     with pytest.raises(ValidationError) as exc_info:
         Model(x=[0, -1, -2])
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'assertion_error',
             'loc': ('x',),
@@ -171,7 +171,7 @@ def test_simple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': ('a',),
@@ -188,7 +188,7 @@ def test_int_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a',),
@@ -201,7 +201,7 @@ def test_int_validation():
     assert Model(a=False).a == 0
     with pytest.raises(ValidationError) as exc_info:
         Model(a=4.5)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_from_float',
             'loc': ('a',),
@@ -221,7 +221,7 @@ def test_int_overflow_validation(value):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=value)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'finite_number', 'loc': ('a',), 'msg': 'Input should be a finite number', 'input': value}
     ]
 
@@ -232,7 +232,7 @@ def test_frozenset_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'frozen_set_type', 'loc': ('a',), 'msg': 'Input should be a valid frozenset', 'input': 'snap'}
     ]
     assert Model(a={1, 2, 3}).a == frozenset({1, 2, 3})
@@ -248,12 +248,12 @@ def test_deque_validation():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list', 'input': 'snap'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(a=['a'])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a', 0),
@@ -263,7 +263,7 @@ def test_deque_validation():
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(a=('a',))
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a', 0),
@@ -273,7 +273,7 @@ def test_deque_validation():
     ]
     with pytest.raises(ValidationError) as exc_info:
         Model(a={'1'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list', 'input': {'1'}}
     ]
     assert Model(a=[4, 5]).a == deque([4, 5])
@@ -328,7 +328,7 @@ def test_validate_pre_error():
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[1, 3])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': ('a',),
@@ -342,7 +342,7 @@ def test_validate_pre_error():
     calls = []
     with pytest.raises(ValidationError) as exc_info:
         Model(a=[5, 10])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': ('a',),
@@ -417,7 +417,7 @@ def test_validating_assignment_extra(ValidateAssignmentModel):
 def test_validating_assignment_dict(ValidateAssignmentModel):
     with pytest.raises(ValidationError) as exc_info:
         ValidateAssignmentModel(a='x', b='xx')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a',),
@@ -468,7 +468,7 @@ def test_validate_multiple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='x', b='x')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'assertion_error',
             'loc': ('a',),
@@ -752,7 +752,7 @@ def test_wildcard_validator_error(decorator, pytest_warns):
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': ('a',),
@@ -1266,7 +1266,7 @@ def test_assert_raises_validation_error():
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
     injected_by_pytest = "assert 'snap' == 'a'\n  - a\n  + snap"
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'assertion_error',
             'loc': ('a',),
@@ -1308,7 +1308,7 @@ def test_root_validator():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(b='snap dragon', c='snap dragon2')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': (),
@@ -1320,7 +1320,7 @@ def test_root_validator():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='broken', b='bar', c='baz')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a',),
@@ -1400,7 +1400,7 @@ def test_root_validator_pre():
         Model(b='snap dragon')
 
     assert root_val_values == [{'a': '123', 'b': 'bar'}, {'b': 'snap dragon'}]
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': (),
@@ -1490,7 +1490,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
 
     with pytest.raises(ValidationError) as exc_info:
         Model(b='snap dragon')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': (),
@@ -1502,7 +1502,7 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='broken', b='bar')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a',),
@@ -1546,7 +1546,7 @@ def test_literal_validator():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='nope')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': ('a',),
@@ -1594,7 +1594,7 @@ def test_nested_literal_validator():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='nope')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'literal_error',
             'loc': ('a',),
@@ -1612,7 +1612,9 @@ def test_union_literal_with_constraints():
     m = Model(x=42)
     with pytest.raises(ValidationError) as exc_info:
         m.x += 1
-    assert exc_info.value.errors() == [{'input': 43, 'loc': ('x',), 'msg': 'Field is frozen', 'type': 'frozen_field'}]
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 43, 'loc': ('x',), 'msg': 'Field is frozen', 'type': 'frozen_field'}
+    ]
 
 
 def test_field_that_is_being_validated_is_excluded_from_validator_values():
@@ -1724,7 +1726,7 @@ def test_validating_assignment_pre_root_validator_fail():
     m = Model(current=100, max_value=200)
     with pytest.raises(ValidationError) as exc_info:
         m.current_value = '100'
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'value_error',
             'loc': (),
@@ -2028,7 +2030,7 @@ def test_model_config_validate_default():
 
     with pytest.raises(ValidationError) as exc_info:
         ValidatingModel()
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'error': 'assert -1 > 0'},
             'input': -1,

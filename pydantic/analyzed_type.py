@@ -8,6 +8,7 @@ from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 from typing_extensions import Literal
 
 from ._internal import _config, _generate_schema, _typing_extra
+from ._internal._core_utils import simplify_schema_references
 from .config import ConfigDict
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
 
@@ -102,6 +103,8 @@ class AnalyzedType(Generic[T]):
             core_schema = __type.__pydantic_core_schema__
         except AttributeError:
             core_schema = _get_schema(__type, config_wrapper, parent_depth=_parent_depth + 1)
+
+        core_schema = simplify_schema_references(core_schema)
 
         core_config = config_wrapper.core_config()
         validator: SchemaValidator

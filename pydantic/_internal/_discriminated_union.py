@@ -7,7 +7,7 @@ from pydantic_core import core_schema
 
 from ..errors import PydanticUserError
 from . import _core_utils
-from ._core_utils import collect_definitions
+from ._core_utils import CoreSchemaField, collect_definitions
 
 
 def apply_discriminator(
@@ -222,7 +222,7 @@ class _ApplyInferredDiscriminator:
             and (self.discriminator in inner_discriminator or [self.discriminator] in inner_discriminator)
         )
 
-    def _infer_discriminator_values_for_choice(
+    def _infer_discriminator_values_for_choice(  # noqa C901
         self, choice: core_schema.CoreSchema, source_name: str | None
     ) -> list[str | int]:
         """
@@ -273,6 +273,9 @@ class _ApplyInferredDiscriminator:
         elif choice['type'] == 'dataclass':
             return self._infer_discriminator_values_for_choice(choice['schema'], source_name=choice['cls'].__name__)
 
+        elif choice['type'] == 'model-fields':
+            return self._infer_discriminator_values_for_model_choice(choice, source_name=source_name)
+
         elif choice['type'] == 'dataclass-args':
             return self._infer_discriminator_values_for_dataclass_choice(choice, source_name=source_name)
 
@@ -292,7 +295,18 @@ class _ApplyInferredDiscriminator:
         This method just extracts the _infer_discriminator_values_for_choice logic specific to TypedDictSchema
         for the sake of readability.
         """
-        source = 'TypedDict' if source_name is None else f'Model {source_name!r}'
+        source = 'TypedDict' if source_name is None else f'TypedDict {source_name!r}'
+        field = choice['fields'].get(self.discriminator)
+        if field is None:
+            raise PydanticUserError(
+                f'{source} needs a discriminator field for key {self.discriminator!r}', code='discriminator-no-field'
+            )
+        return self._infer_discriminator_values_for_field(field, source)
+
+    def _infer_discriminator_values_for_model_choice(
+        self, choice: core_schema.ModelFieldsSchema, source_name: str | None = None
+    ) -> list[str | int]:
+        source = 'ModelFields' if source_name is None else f'Model {source_name!r}'
         field = choice['fields'].get(self.discriminator)
         if field is None:
             raise PydanticUserError(
@@ -313,9 +327,7 @@ class _ApplyInferredDiscriminator:
             )
         return self._infer_discriminator_values_for_field(field, source)
 
-    def _infer_discriminator_values_for_field(
-        self, field: core_schema.TypedDictField | core_schema.DataclassField, source: str
-    ) -> list[str | int]:
+    def _infer_discriminator_values_for_field(self, field: CoreSchemaField, source: str) -> list[str | int]:
         alias = field.get('validation_alias', self.discriminator)
         if not isinstance(alias, str):
             raise PydanticUserError(
