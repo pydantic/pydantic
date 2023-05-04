@@ -50,9 +50,10 @@ impl BuildSerializer for FunctionAfterSerializerBuilder {
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
-        // while `before` schemas have an obvious type, for
-        // `after` schemas it's less, clear but the default will be the same type, and the user/lib can always
-        // override the serializer
+        // While `before` function schemas do not modify the output type (and therefore affect the
+        // serialization), for `after` schemas, there's no way to directly infer what schema should
+        // be used for serialization. For convenience, the default is to assume the wrapped schema
+        // should be used; the user/lib can override the serializer if necessary.
         let schema = schema.get_as_req(intern!(py, "schema"))?;
         CombinedSerializer::build(schema, config, definitions)
     }
@@ -279,7 +280,13 @@ impl BuildSerializer for FunctionWrapSerializerBuilder {
         config: Option<&PyDict>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        super::any::AnySerializer::build(schema, config, definitions)
+        let py = schema.py();
+        // While `before` function schemas do not modify the output type (and therefore affect the
+        // serialization), for `wrap` schemas (like `after`), there's no way to directly infer what
+        // schema should be used for serialization. For convenience, the default is to assume the
+        // wrapped schema should be used; the user/lib can override the serializer if necessary.
+        let schema = schema.get_as_req(intern!(py, "schema"))?;
+        CombinedSerializer::build(schema, config, definitions)
     }
 }
 
