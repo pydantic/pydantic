@@ -3,10 +3,10 @@ description: Support for storing data in an encoded form.
 ---
 
 `EncodedBytes`
-: bytes value being encoded into a bytes value upon serialization
+: a bytes value which is decoded from/encoded into a (different) bytes value during validation/serialization
 
 `EncodedStr`
-: string value being encoded into a string value upon serialization
+: a string value which is decoded from/encoded into a (different) string value during validation/serialization
 
 `EncodedBytes` and `EncodedStr` needs an encoder that implements `EncoderProtocol` to operate.
 
@@ -83,7 +83,7 @@ except ValidationError as e:
 
 ## Base64 encoding support
 
-*pydantic* uses `EncodedBytes` and `EncodedStr` types for `base64` implementation in `Base64Bytes` and `Base64Str` respectively.
+Internally, pydantic uses the `pydantic.types.EncodedBytes` and `pydantic.types.EncodedStr` annotations with `pydantic.types.Base64Encoder` to implement base64 encoding/decoding in the `Base64Bytes` and `Base64Str` types, respectively.
 
 ```py
 from typing import Optional
