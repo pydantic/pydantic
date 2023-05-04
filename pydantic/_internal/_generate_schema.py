@@ -1142,6 +1142,7 @@ class GenerateSchema:
         if prepare is None:
             # check if this is one of our "known" types
             prepare = self._get_prepare_pydantic_annotations_for_known_type(source_type)
+
         if prepare is not None:
             # make annotations a tuple to error if it gets mutated
             # make the return type a list to support generators or returning a sequence
