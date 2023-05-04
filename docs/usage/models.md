@@ -1514,3 +1514,38 @@ match a:
 !!! note
     A match-case statement may seem as if it creates a new model, but don't be fooled;
     it is just syntactic sugar for getting an attribute and either comparing it or declaring and initializing it.
+
+## Attribute copies
+
+In many cases arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion. When constructing classes with data attributes, Pydantic copies the attributes in order to efficiently iterate over its elements for validation.
+
+In this example, note that the ID of the list changes after the class is constructed because it has been copied for validation.
+
+```py
+from typing import List
+
+from pydantic import BaseModel
+
+
+class C1:
+    arr = []
+
+    def __init__(self, in_arr):
+        self.arr = in_arr
+
+
+class C2(BaseModel):
+    arr: List[int]
+
+
+arr_orig = [1, 9, 10, 3]
+
+
+c1 = C1(arr_orig)
+c2 = C2(arr=arr_orig)
+print('id(c1.arr) == id(c2.arr)  ', id(c1.arr) == id(c2.arr))
+#> id(c1.arr) == id(c2.arr)   False
+```
+
+!!! note
+    There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting [`config.revalidate_instances='always'`](/api/config/) in your model.
