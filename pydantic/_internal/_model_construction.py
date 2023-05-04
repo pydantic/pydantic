@@ -321,3 +321,17 @@ def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> N
             field_info.validation_alias = alias
             field_info.serialization_alias = alias
             field_info.alias_priority = 1
+
+
+def model_extra_getattr(self: BaseModel, item: str) -> Any:
+    """
+    This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
+    allow (and store) extra
+    """
+    if self.__pydantic_extra__ is not None:
+        try:
+            return self.__pydantic_extra__[item]
+        except KeyError as exc:
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+    else:
+        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')

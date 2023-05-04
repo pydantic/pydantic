@@ -220,9 +220,14 @@ def test_not_required():
 def test_allow_extra():
     class Model(BaseModel):
         model_config = ConfigDict(extra='allow')
-        a: float = ...
+        a: float
 
-    assert Model(a='10.2', b=12).b == 12
+    m = Model(a='10.2', b=12)
+    assert m.__dict__ == {'a': 10.2}
+    assert m.__pydantic_extra__ == {'b': 12}
+    assert m.a == 10.2
+    assert m.b == 12
+    assert m.model_extra == {'b': 12}
 
 
 @pytest.mark.parametrize('extra', ['ignore', 'forbid', 'allow'])
@@ -323,8 +328,10 @@ def test_extra_ignored():
     model = Model(a=0.2, b=0.1)
     assert not hasattr(model, 'b')
 
-    with pytest.raises(ValueError, match='"Model" object has no field "c"'):
-        model.c = 1
+    with pytest.raises(ValueError, match='"Model" object has no field "b"'):
+        model.b = 1
+
+    assert model.model_extra is None
 
 
 def test_field_order_is_preserved_with_extra():

@@ -77,20 +77,6 @@ class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
         return super().__setitem__(k, v)
 
 
-def model_extra_getattr(self: BaseModel, item: str) -> Any:
-    """
-    This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
-    allow (and store) extra
-    """
-    if self.__pydantic_extra__ is not None:
-        try:
-            return self.__pydantic_extra__[item]
-        except KeyError as exc:
-            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
-    else:
-        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
-
-
 @typing_extensions.dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
     def __new__(
@@ -133,7 +119,7 @@ class ModelMetaclass(ABCMeta):
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
             if config_wrapper.extra == 'allow':
-                namespace['__getattr__'] = model_extra_getattr
+                namespace['__getattr__'] = _model_construction.model_extra_getattr
 
             if '__hash__' not in namespace and config_wrapper.frozen:
 
@@ -229,6 +215,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
         __pydantic_fields_set__: set[str] = set()
+        __pydantic_extra__: dict[str, Any] | None = None
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
@@ -339,6 +326,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         The set of fields that have been set on this model instance, i.e. that were not filled from defaults.
         """
         return self.__pydantic_fields_set__
+
+    @property
+    def model_extra(self) -> dict[str, Any] | None:
+        """
+        Extra fields set during validation, this will be `None` if `config.extra` is not set to `"allow"`.
+        """
+        return self.__pydantic_extra__
 
     @property
     def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
@@ -629,10 +623,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             for k, v in self.__dict__.items()
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         ]
+        pydantic_extra = self.__pydantic_extra__
+        if pydantic_extra is not None:
+            yield from [(k, v) for k, v in pydantic_extra.items()]
         yield from [(k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr]
-        pydantic_extra = getattr(self, '__pydantic_extra__', None)
-        if pydantic_extra:
-            yield from [(k, v) for k, v in self.__pydantic_extra__.items()]
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
