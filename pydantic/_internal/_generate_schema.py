@@ -1139,7 +1139,6 @@ class GenerateSchema:
         `Annotated[source_type, *annotations]` -> `Annotated[new_source_type, *new_annotations]`
         """
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
-        annotations = list(annotations)
         if prepare is None:
             # check if this is one of our "known" types
             prepare = self._get_prepare_pydantic_annotations_for_known_type(source_type)
@@ -1154,7 +1153,7 @@ class GenerateSchema:
                     ' Custom types must return at least 1 item since the first item is the replacement source type.'
                 )
             source_type, *annotations = res
-        return (source_type, annotations)
+        return (source_type, list(annotations))
 
     def _apply_annotations(
         self,
