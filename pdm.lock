@@ -688,7 +688,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 [metadata]
 lock_version = "4.2"
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-content_hash = "sha256:90804d733449c98b09d120d3fc4a43917f5f1b261c2eda892437af297ca14d84"
+content_hash = "sha256:c80bc667b2f8c86bbef010bf03dd24041d7a2866121ade0ff51283a77214eb84"
 
 [metadata.files]
 "annotated-types 0.4.0" = [

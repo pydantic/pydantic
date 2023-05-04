@@ -80,6 +80,7 @@ docs = [
     "pyupgrade",
     "mike @ git+https://github.com/jimporter/mike.git",
     "mkdocs-embed-external-markdown>=2.3.0",
+    "black>=23.3.0",
 ]
 linting = [
     "black",
