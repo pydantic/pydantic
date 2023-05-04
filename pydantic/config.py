@@ -1,21 +1,15 @@
 """Configuration for Pydantic models."""
 from __future__ import annotations as _annotations
 
-from typing import Any, Callable
+from typing import Any, Callable, overload
 from warnings import warn
 
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Literal, Protocol, TypedDict
 
 from ._migration import getattr_migration
 from .deprecated.config import BaseConfig
 
 __all__ = 'BaseConfig', 'ConfigDict', 'Extra'
-
-
-# if TYPE_CHECKING:
-from typing import overload
-
-from typing_extensions import Protocol
 
 
 class JsonSchemaExtraCallable(Protocol):
@@ -26,10 +20,6 @@ class JsonSchemaExtraCallable(Protocol):
     @overload
     def __call__(self, schema: dict[str, Any], model_class: type[Any]) -> None:
         pass
-
-
-# else:
-#     JsonSchemaExtraCallable = Callable[..., None]
 
 
 class _Extra:
