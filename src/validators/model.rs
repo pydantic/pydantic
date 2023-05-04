@@ -1,4 +1,3 @@
-use std::cmp::Ordering;
 use std::ptr::null_mut;
 
 use pyo3::conversion::AsPyPointer;
@@ -7,7 +6,7 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
-use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
+use crate::build_tools::{build_model_config, py_err, schema_or_config_same, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{py_error_on_minusone, Input};
 use crate::recursion_guard::RecursionGuard;
@@ -67,7 +66,7 @@ impl BuildValidator for ModelValidator {
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
         // models ignore the parent config and always use the config from this model
-        let config = build_config(py, schema, config)?;
+        let config = build_model_config(py, schema, config)?;
 
         let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema: &PyAny = schema.get_as_req(intern!(py, "schema"))?;
@@ -320,44 +319,5 @@ where
             py,
             ffi::PyObject_GenericSetAttr(obj.as_ptr(), attr_name.as_ptr(), value.as_ptr()),
         )
-    }
-}
-
-fn build_config<'a>(
-    py: Python<'a>,
-    schema: &'a PyDict,
-    parent_config: Option<&'a PyDict>,
-) -> PyResult<Option<&'a PyDict>> {
-    let child_config: Option<&PyDict> = schema.get_as(intern!(py, "config"))?;
-    match (parent_config, child_config) {
-        (Some(parent), None) => Ok(Some(parent)),
-        (None, Some(child)) => Ok(Some(child)),
-        (None, None) => Ok(None),
-        (Some(parent), Some(child)) => {
-            let key = intern!(py, "config_choose_priority");
-            let parent_choose: i32 = parent.get_as(key)?.unwrap_or_default();
-            let child_choose: i32 = child.get_as(key)?.unwrap_or_default();
-            match parent_choose.cmp(&child_choose) {
-                Ordering::Greater => Ok(Some(parent)),
-                Ordering::Less => Ok(Some(child)),
-                Ordering::Equal => {
-                    let key = intern!(py, "config_merge_priority");
-                    let parent_merge: i32 = parent.get_as(key)?.unwrap_or_default();
-                    let child_merge: i32 = child.get_as(key)?.unwrap_or_default();
-                    let update = intern!(py, "update");
-                    match parent_merge.cmp(&child_merge) {
-                        Ordering::Greater => {
-                            child.getattr(update)?.call1((parent,))?;
-                            Ok(Some(child))
-                        }
-                        // otherwise child is the winner
-                        _ => {
-                            parent.getattr(update)?.call1((child,))?;
-                            Ok(Some(parent))
-                        }
-                    }
-                }
-            }
-        }
     }
 }

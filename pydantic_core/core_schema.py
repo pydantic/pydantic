@@ -30,7 +30,7 @@ class CoreConfig(TypedDict, total=False):
     config_choose_priority: int
     # if configs are merged, which should take precedence, default 0, default means child takes precedence
     config_merge_priority: int
-    # settings related to typed_dicts only
+    # settings related to typed dicts, model fields, dataclass fields
     extra_fields_behavior: ExtraBehavior
     typed_dict_total: bool  # default: True
     # used on typed-dicts and tagged union keys
@@ -2841,6 +2841,7 @@ class ModelSchema(TypedDict, total=False):
     revalidate_instances: Literal['always', 'never', 'subclass-instances']  # default: 'never'
     strict: bool
     frozen: bool
+    extra_behavior: ExtraBehavior
     config: CoreConfig
     ref: str
     metadata: Any
@@ -2855,6 +2856,7 @@ def model_schema(
     revalidate_instances: Literal['always', 'never', 'subclass-instances'] | None = None,
     strict: bool | None = None,
     frozen: bool | None = None,
+    extra_behavior: ExtraBehavior | None = None,
     config: CoreConfig | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -2894,6 +2896,7 @@ def model_schema(
           should re-validate defaults to config.revalidate_instances, else 'never'
         strict: Whether the model is strict
         frozen: Whether the model is frozen
+        extra_behavior: The extra behavior to use for the model, used in serialization
         config: The config to use for the model
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -2907,6 +2910,7 @@ def model_schema(
         revalidate_instances=revalidate_instances,
         strict=strict,
         frozen=frozen,
+        extra_behavior=extra_behavior,
         config=config,
         ref=ref,
         metadata=metadata,

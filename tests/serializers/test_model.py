@@ -10,8 +10,11 @@ except ImportError:
     cached_property = None
 
 import pytest
+from dirty_equals import IsJson
 
 from pydantic_core import PydanticSerializationError, SchemaSerializer, SchemaValidator, core_schema
+
+from ..conftest import plain_repr
 
 on_pypy = platform.python_implementation() == 'PyPy'
 # pypy doesn't seem to maintain order of `__dict__`
@@ -43,6 +46,8 @@ def test_model():
             ),
         )
     )
+    assert 'mode:SimpleDict' in plain_repr(s)
+    assert 'has_extra:false' in plain_repr(s)
     assert s.to_python(BasicModel(foo=1, bar=b'more')) == IsStrictDict(foo=1, bar=b'more')
     assert s.to_python(BasicSubModel(foo=1, bar=b'more')) == IsStrictDict(foo=1, bar=b'more')
     assert s.to_python(BasicModel(bar=b'more', foo=1)) == IsStrictDict(bar=b'more', foo=1)
@@ -117,16 +122,21 @@ def test_model_allow_extra():
                 },
                 extra_behavior='allow',
             ),
+            extra_behavior='allow',
         )
     )
-    assert s.to_python(BasicModel(foo=1, bar=b'more')) == IsStrictDict(foo=1, bar=b'more')
-    assert s.to_python(BasicModel(bar=b'more', foo=1)) == IsStrictDict(bar=b'more', foo=1)
-    assert s.to_python(BasicModel(foo=1, c=3, bar=b'more')) == IsStrictDict(foo=1, c=3, bar=b'more')
-    assert s.to_python(BasicModel(bar=b'more', c=3, foo=1), mode='json') == IsStrictDict(bar='more', c=3, foo=1)
+    assert s.to_python(BasicModel(foo=1, bar=b'more', __pydantic_extra__={})) == IsStrictDict(foo=1, bar=b'more')
+    assert s.to_python(BasicModel(bar=b'more', foo=1, __pydantic_extra__={})) == IsStrictDict(bar=b'more', foo=1)
+    assert s.to_python(BasicModel(foo=1, __pydantic_extra__=dict(c=3), bar=b'more')) == IsStrictDict(
+        foo=1, bar=b'more', c=3
+    )
+    assert s.to_python(BasicModel(bar=b'more', __pydantic_extra__=dict(c=3, foo=1)), mode='json') == IsStrictDict(
+        bar='more', c=3, foo=1
+    )
 
-    j = s.to_json(BasicModel(bar=b'more', foo=1, c=3))
+    j = s.to_json(BasicModel(bar=b'more', foo=1, __pydantic_extra__=dict(c=3)))
     if on_pypy:
-        assert json.loads(j) == {'bar': 'more', 'foo': 1, 'c': 3}
+        assert j == IsJson({'bar': 'more', 'foo': 1, 'c': 3})
     else:
         assert j == b'{"bar":"more","foo":1,"c":3}'
 
@@ -741,3 +751,111 @@ def test_property_setter():
     del sq.area
     assert s.to_python(sq, by_alias=False) == {'side': 0, 'area': 0, 'random_n': the_random_n}
     assert s.to_python(sq, exclude={'random_n'}) == {'side': 0, 'area': 0}
+
+
+def test_extra():
+    class MyModel:
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        field_a: str
+        field_b: int
+
+    schema = core_schema.model_schema(
+        MyModel,
+        core_schema.model_fields_schema(
+            {
+                'field_a': core_schema.model_field(core_schema.bytes_schema()),
+                'field_b': core_schema.model_field(core_schema.int_schema()),
+            },
+            extra_behavior='allow',
+        ),
+        extra_behavior='allow',
+    )
+    v = SchemaValidator(schema)
+    m = v.validate_python({'field_a': b'test', 'field_b': 12, 'field_c': 'extra'})
+    assert isinstance(m, MyModel)
+    assert m.__dict__ == {'field_a': b'test', 'field_b': 12}
+    assert m.__pydantic_extra__ == {'field_c': 'extra'}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'field_c'}
+
+    s = SchemaSerializer(schema)
+    assert 'mode:ModelExtra' in plain_repr(s)
+    assert 'has_extra:true' in plain_repr(s)
+    assert s.to_python(m) == {'field_a': b'test', 'field_b': 12, 'field_c': 'extra'}
+    assert s.to_python(m, mode='json') == {'field_a': 'test', 'field_b': 12, 'field_c': 'extra'}
+    assert s.to_json(m) == b'{"field_a":"test","field_b":12,"field_c":"extra"}'
+
+    # test filtering
+    m = v.validate_python({'field_a': b'test', 'field_b': 12, 'field_c': None, 'field_d': [1, 2, 3]})
+    assert isinstance(m, MyModel)
+    assert m.__dict__ == {'field_a': b'test', 'field_b': 12}
+    assert m.__pydantic_extra__ == {'field_c': None, 'field_d': [1, 2, 3]}
+    assert m.__pydantic_fields_set__ == {'field_a', 'field_b', 'field_c', 'field_d'}
+
+    assert s.to_python(m) == {'field_a': b'test', 'field_b': 12, 'field_c': None, 'field_d': [1, 2, 3]}
+    assert s.to_json(m) == b'{"field_a":"test","field_b":12,"field_c":null,"field_d":[1,2,3]}'
+
+    assert s.to_python(m, exclude_none=True) == {'field_a': b'test', 'field_b': 12, 'field_d': [1, 2, 3]}
+    assert s.to_json(m, exclude_none=True) == b'{"field_a":"test","field_b":12,"field_d":[1,2,3]}'
+
+    assert s.to_python(m, exclude={'field_c'}) == {'field_a': b'test', 'field_b': 12, 'field_d': [1, 2, 3]}
+    assert s.to_json(m, exclude={'field_c'}) == b'{"field_a":"test","field_b":12,"field_d":[1,2,3]}'
+
+    assert s.to_python(m, exclude={'field_d': [0]}) == {
+        'field_a': b'test',
+        'field_b': 12,
+        'field_c': None,
+        'field_d': [2, 3],
+    }
+    assert s.to_json(m, exclude={'field_d': [0]}) == b'{"field_a":"test","field_b":12,"field_c":null,"field_d":[2,3]}'
+
+
+def test_extra_config():
+    class MyModel:
+        # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        field_a: str
+        field_b: int
+
+    schema = core_schema.model_schema(
+        MyModel,
+        core_schema.model_fields_schema(
+            {
+                'field_a': core_schema.model_field(core_schema.bytes_schema()),
+                'field_b': core_schema.model_field(core_schema.int_schema()),
+            }
+        ),
+        config=core_schema.CoreConfig(extra_fields_behavior='allow'),
+    )
+    s = SchemaSerializer(schema)
+    assert 'mode:ModelExtra' in plain_repr(s)
+    assert 'has_extra:true' in plain_repr(s)
+
+
+def test_extra_config_nested_model():
+    class OuterModel:
+        pass
+
+    class InnerModel:
+        pass
+
+    schema = core_schema.model_schema(
+        OuterModel,
+        core_schema.model_fields_schema(
+            {
+                'sub_model': core_schema.model_field(
+                    core_schema.model_schema(
+                        InnerModel,
+                        core_schema.model_fields_schema({'int': core_schema.model_field(core_schema.int_schema())}),
+                        config=core_schema.CoreConfig(extra_fields_behavior='allow'),
+                    )
+                )
+            }
+        ),
+        config={},
+    )
+    s = SchemaSerializer(schema)
+    # debug(s)
+    s_repr = plain_repr(s)
+    assert 'has_extra:true,name:"InnerModel"' in s_repr
+    assert 'has_extra:false,name:"OuterModel"' in s_repr
