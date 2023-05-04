@@ -2493,3 +2493,26 @@ def test_sequences_str(sequence_type, input_data, expected_error_type, expected_
         Model(str_sequence=input_data)
 
     assert e.value.errors() == [expected_error]
+
+
+def test_union_without_duplicate_ref():
+    """
+    This test checks that a union of models with same nested model consolidates refs.
+
+    Related issue: https://github.com/pydantic/pydantic/issues/5660
+    """
+
+    class Nested(BaseModel):
+        pass
+
+    class SomeData(BaseModel):
+        nested1: Nested
+
+    class FirstModel(BaseModel):
+        nested2: Nested
+        data: SomeData
+
+    class SecondModel(BaseModel):
+        nested3: Nested
+
+    AnalyzedType(Union[FirstModel, SecondModel])

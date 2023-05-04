@@ -620,6 +620,7 @@ class GenerateSchema:
             s = choices[0]
         else:
             s = core_schema.union_schema(choices)
+            s = consolidate_refs(s)
 
         if nullable:
             s = core_schema.nullable_schema(s)
