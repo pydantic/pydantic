@@ -133,6 +133,12 @@ __all__ = [
     'AwareDatetime',
     'NaiveDatetime',
     'AllowInfNan',
+    'EncoderProtocol',
+    'EncodedBytes',
+    'EncodedStr',
+    'Base64Encoder',
+    'Base64Bytes',
+    'Base64Str',
     # version
     'VERSION',
 ]
