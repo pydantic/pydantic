@@ -151,7 +151,7 @@ plugins:
 - mkdocstrings:
     handlers:
       python:
-        paths: .
+        paths: [.]
         options:
           separate_signature: true
 - mkdocs-simple-hooks:
