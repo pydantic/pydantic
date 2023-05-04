@@ -4,7 +4,7 @@ use std::hash::Hash;
 use pyo3::exceptions::PyTypeError;
 use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyBool, PyDict, PySet, PyString};
+use pyo3::types::{PyBool, PyDict, PySet};
 
 use crate::build_tools::SchemaDict;
 
@@ -61,19 +61,6 @@ impl SchemaFilter<isize> {
         let include = Self::build_set_hashes(include)?;
         let exclude = Self::build_set_hashes(exclude)?;
         Ok(Self { include, exclude })
-    }
-
-    pub fn from_vec_hash(py: Python, exclude: Vec<Py<PyString>>) -> PyResult<Self> {
-        let exclude = if exclude.is_empty() {
-            None
-        } else {
-            let mut set: AHashSet<isize> = AHashSet::with_capacity(exclude.len());
-            for item in exclude {
-                set.insert(item.as_ref(py).hash()?);
-            }
-            Some(set)
-        };
-        Ok(Self { include: None, exclude })
     }
 
     fn build_set_hashes(v: Option<&PyAny>) -> PyResult<Option<AHashSet<isize>>> {
