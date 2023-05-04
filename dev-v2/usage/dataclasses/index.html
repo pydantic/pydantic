@@ -1050,7 +1050,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#json-dumping" class="md-nav__link">
-    JSON Dumping
+    JSON dumping
   </a>
   
 </li>
@@ -1726,7 +1726,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#json-dumping" class="md-nav__link">
-    JSON Dumping
+    JSON dumping
   </a>
   
 </li>
@@ -1772,14 +1772,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </code></pre></div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>Keep in mind that <code>pydantic.dataclasses.dataclass</code> is a drop-in replacement for <code>dataclasses.dataclass</code>
-with validation, <strong>not</strong> a replacement for <code>pydantic.BaseModel</code> (with a small difference in how <a href="#initialize-hooks">initialization hooks</a> work). There are cases where subclassing
-<code>pydantic.BaseModel</code> is the better choice.</p>
+<p>Keep in mind that <code>pydantic.dataclasses.dataclass</code> is <strong>not</strong> a replacement for <code>pydantic.BaseModel</code> (with a small
+difference in how <a href="#initialize-hooks">initialization hooks</a> work). <code>pydantic.dataclasses.dataclass</code> provides a
+similar functionality to <code>dataclasses.dataclass</code> with the addition of Pydantic validation. There are cases where
+subclassing <code>pydantic.BaseModel</code> is the better choice.</p>
 <p>For more information and discussion see
 <a href="https://github.com/pydantic/pydantic/issues/710">pydantic/pydantic#710</a>.</p>
 </div>
-<p>You can use all the standard <em>pydantic</em> field types, and the resulting dataclass will be identical to the one
-created by the standard library <code>dataclass</code> decorator.</p>
+<p>You can use all the standard <em>pydantic</em> field types. Note, however, that arguments passed to constructor will be copied in order to perform validation and, where necessary coercion.</p>
 <p>The underlying model and its schema can be accessed through <code>__pydantic_model__</code>.
 Also, fields that require a <code>default_factory</code> can be specified by either a <code>pydantic.Field</code> or a <code>dataclasses.field</code>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
@@ -2197,7 +2197,7 @@ be done before. In this case you can set <code>Config.post_init_call = 'after_va
 <h3 id="difference-with-stdlib-dataclasses">Difference with stdlib dataclasses<a class="headerlink" href="#difference-with-stdlib-dataclasses" title="Permanent link">&para;</a></h3>
 <p>Note that the <code>dataclasses.dataclass</code> from Python stdlib implements only the <code>__post_init__</code> method since it doesn't run a validation step.</p>
 <p>When substituting usage of <code>dataclasses.dataclass</code> with <code>pydantic.dataclasses.dataclass</code>, it is recommended to move the code executed in the <code>__post_init__</code> method to the <code>__post_init_post_parse__</code> method, and only leave behind part of code which needs to be executed before validation.</p>
-<h2 id="json-dumping">JSON Dumping<a class="headerlink" href="#json-dumping" title="Permanent link">&para;</a></h2>
+<h2 id="json-dumping">JSON dumping<a class="headerlink" href="#json-dumping" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> dataclasses do not feature a <code>.json()</code> function. To dump them as JSON, you will need to make use of the <code>pydantic_encoder</code> as follows:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">

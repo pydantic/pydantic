@@ -745,6 +745,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#attribute-copies" class="md-nav__link">
+    Attribute copies
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2015,6 +2022,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <li class="md-nav__item">
   <a href="#structural-pattern-matching" class="md-nav__link">
     Structural pattern matching
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#attribute-copies" class="md-nav__link">
+    Attribute copies
   </a>
   
 </li>
@@ -4018,6 +4032,67 @@ This may be fixed one day once <a href="https://github.com/pydantic/pydantic/iss
 <p class="admonition-title">Note</p>
 <p>A match-case statement may seem as if it creates a new model, but don't be fooled;
 it is just syntactic sugar for getting an attribute and either comparing it or declaring and initializing it.</p>
+</div>
+<h2 id="attribute-copies">Attribute copies<a class="headerlink" href="#attribute-copies" title="Permanent link">&para;</a></h2>
+<p>In many cases arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion. When constructing classes with data attributes, Pydantic copies the attributes in order to efficiently iterate over its elements for validation.</p>
+<p>In this example, note that the ID of the list changes after the class is constructed because it has been copied for validation.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">Python 3.7 and above</label><label for="__tabbed_15_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">C1</span><span class="p">:</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_arr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">in_arr</span>
+
+
+<span class="k">class</span> <span class="nc">C2</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">arr</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+
+<span class="n">arr_orig</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+
+<span class="n">c1</span> <span class="o">=</span> <span class="n">C1</span><span class="p">(</span><span class="n">arr_orig</span><span class="p">)</span>
+<span class="n">c2</span> <span class="o">=</span> <span class="n">C2</span><span class="p">(</span><span class="n">arr</span><span class="o">=</span><span class="n">arr_orig</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;id(c1.arr) == id(c2.arr)  &#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">arr</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">c2</span><span class="o">.</span><span class="n">arr</span><span class="p">))</span>
+<span class="c1">#&gt; id(c1.arr) == id(c2.arr)   False</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">C1</span><span class="p">:</span>
+    <span class="n">arr</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_arr</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">arr</span> <span class="o">=</span> <span class="n">in_arr</span>
+
+
+<span class="k">class</span> <span class="nc">C2</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">arr</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+
+<span class="n">arr_orig</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+
+
+<span class="n">c1</span> <span class="o">=</span> <span class="n">C1</span><span class="p">(</span><span class="n">arr_orig</span><span class="p">)</span>
+<span class="n">c2</span> <span class="o">=</span> <span class="n">C2</span><span class="p">(</span><span class="n">arr</span><span class="o">=</span><span class="n">arr_orig</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s1">&#39;id(c1.arr) == id(c2.arr)  &#39;</span><span class="p">,</span> <span class="nb">id</span><span class="p">(</span><span class="n">c1</span><span class="o">.</span><span class="n">arr</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">c2</span><span class="o">.</span><span class="n">arr</span><span class="p">))</span>
+<span class="c1">#&gt; id(c1.arr) == id(c2.arr)   False</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting <a href="/api/config/"><code>config.revalidate_instances='always'</code></a> in your model.</p>
 </div>
 
 
