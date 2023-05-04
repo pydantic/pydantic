@@ -612,3 +612,21 @@ def test_pydantic_serialization_unexpected_value():
     v = PydanticSerializationUnexpectedValue()
     assert str(v) == 'Unexpected Value'
     assert repr(v) == 'PydanticSerializationUnexpectedValue(Unexpected Value)'
+
+
+def test_function_after_preserves_wrapped_serialization():
+    def f(value, _info):
+        return value
+
+    s = SchemaSerializer(core_schema.general_after_validator_function(f, core_schema.int_schema()))
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+        assert s.to_python('abc') == 'abc'
+
+
+def test_function_wrap_preserves_wrapped_serialization():
+    def f(value, handler, _info):
+        return handler(value)
+
+    s = SchemaSerializer(core_schema.general_wrap_validator_function(f, core_schema.int_schema()))
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+        assert s.to_python('abc') == 'abc'
