@@ -299,9 +299,9 @@ class GenerateSchema:
         Note: `__get_pydantic_core_schema__` takes priority so it can
         decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
         """
-        obj, new_annotations = self.prepare_annotations(obj, [])
+        obj, new_annotations = self._prepare_annotations(obj, [])
         if new_annotations:
-            return self.apply_annotations(
+            return self._apply_annotations(
                 CallbackGetCoreSchemaHandler(partial(self.generate_schema, from_prepare_args=False)),
                 obj,
                 new_annotations,
@@ -574,7 +574,7 @@ class GenerateSchema:
                 schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator, self.definitions)
             return schema
 
-        schema = self.apply_annotations(
+        schema = self._apply_annotations(
             CallbackGetCoreSchemaHandler(generate_schema), field_info.annotation, field_info.metadata
         )
 
@@ -751,7 +751,7 @@ class GenerateSchema:
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-        schema = self.apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), annotation, field.metadata)
+        schema = self._apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), annotation, field.metadata)
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -1119,7 +1119,7 @@ class GenerateSchema:
         Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
         """
         first_arg, *other_args = get_args(annotated_type)
-        return self.apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), first_arg, other_args)
+        return self._apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), first_arg, other_args)
 
     def _get_prepare_pydantic_annotations_for_known_type(self, obj: Any) -> Callable[..., Any] | None:
         from decimal import Decimal
@@ -1131,7 +1131,13 @@ class GenerateSchema:
 
         return None
 
-    def prepare_annotations(self, source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
+    def _prepare_annotations(self, source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
+        """
+        Call `__prepare_pydantic_annotations__` if it exists and return a tuple of (new_source_type, new_annotations).
+
+        This should be treated conceptually similar to the transformation
+        `Annotated[source_type, *annotations]` -> `Annotated[new_source_type, *new_annotations]`
+        """
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
         annotations = list(annotations)
         if prepare is None:
@@ -1150,7 +1156,7 @@ class GenerateSchema:
             source_type, *annotations = res
         return (source_type, annotations)
 
-    def apply_annotations(
+    def _apply_annotations(
         self,
         get_inner_schema: GetCoreSchemaHandler,
         source_type: Any,
@@ -1158,8 +1164,12 @@ class GenerateSchema:
     ) -> CoreSchema:
         """
         Apply arguments from `Annotated` or from `FieldInfo` to a schema.
+
+        This gets called by `GenerateSchema._annotated_schema` but differs from it in that it does
+        not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
+        (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
-        source_type, annotations = self.prepare_annotations(source_type, annotations)
+        source_type, annotations = self._prepare_annotations(source_type, annotations)
 
         idx = -1
         while True:
