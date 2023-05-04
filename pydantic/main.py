@@ -471,11 +471,21 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 fields_values[name] = values[name]
             elif not field.is_required():
                 fields_values[name] = field.get_default(call_default_factory=True)
-        fields_values.update(values)
+        _extra: dict[str, Any] | None = None
+        if cls.model_config.get('extra') == 'allow':
+            _extra = {}
+            for k, v in values.items():
+                if k in cls.model_fields:
+                    fields_values[k] = v
+                else:
+                    _extra[k] = v
+        else:
+            fields_values.update(values)
         _object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
             _fields_set = set(values.keys())
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
+        _object_setattr(m, '__pydantic_extra__', _extra)
         if type(m).model_post_init is not BaseModel.model_post_init:
             m.model_post_init(None)
         return m
@@ -583,7 +593,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         copied = self.__deepcopy__() if deep else self.__copy__()
         if update:
-            copied.__dict__.update(update)
+            if self.model_config.get('extra') == 'allow':
+                for k, v in update.items():
+                    if k in self.model_fields:
+                        copied.__dict__[k] = v
+                    else:
+                        if copied.__pydantic_extra__ is None:
+                            copied.__pydantic_extra__ = {}
+                        copied.__pydantic_extra__[k] = v
+            else:
+                copied.__dict__.update(update)
             copied.__pydantic_fields_set__.update(update.keys())
         return copied
 
@@ -594,6 +613,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', copy(self.__dict__))
+        _object_setattr(m, '__pydantic_extra__', copy(self.__pydantic_extra__))
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
@@ -608,6 +628,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
+        _object_setattr(m, '__pydantic_extra__', deepcopy(self.__pydantic_extra__, memo=memo))
         # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
@@ -623,7 +644,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             for k, v in self.__dict__.items()
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
         )
-        pydantic_extra = getattr(self, '__pydantic_extra__', None)
+        pydantic_extra = self.__pydantic_extra__
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
@@ -912,6 +933,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             ),
             **(update or {}),
         )
+        if self.__pydantic_extra__ is None:
+            extra: dict[str, Any] | None = None
+        else:
+            extra = self.__pydantic_extra__.copy()
+            for k in list(self.__pydantic_extra__):
+                if k not in values:  # k was in the exclude
+                    extra.pop(k)
+            for k in list(values):
+                if k in self.__pydantic_extra__:  # k must have come from extra
+                    extra[k] = values.pop(k)
 
         # new `__pydantic_fields_set__` can have unset optional fields with a set value in `update` kwarg
         if update:
@@ -923,7 +954,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, deep=deep)  # type: ignore
+        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, extra, deep=deep)
 
     @classmethod
     @deprecated('The `schema` method is deprecated; use `model_json_schema` instead.')

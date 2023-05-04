@@ -57,7 +57,7 @@ classifiers = [
 requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.5.0',
-    'pydantic-core==0.27.0',
+    'pydantic-core==0.28.1',
     'annotated-types>=0.4.0',
 ]
 dynamic = ['version', 'readme']
