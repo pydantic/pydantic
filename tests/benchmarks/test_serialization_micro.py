@@ -257,16 +257,16 @@ def basic_model_serializer_fixture():
     return SchemaSerializer(
         core_schema.model_schema(
             BasicModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'a': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'b': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'c': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'd': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'e': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'f': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'g': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'h': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'a': core_schema.model_field(core_schema.int_schema()),
+                    'b': core_schema.model_field(core_schema.int_schema()),
+                    'c': core_schema.model_field(core_schema.int_schema()),
+                    'd': core_schema.model_field(core_schema.int_schema()),
+                    'e': core_schema.model_field(core_schema.int_schema()),
+                    'f': core_schema.model_field(core_schema.int_schema()),
+                    'g': core_schema.model_field(core_schema.int_schema()),
+                    'h': core_schema.model_field(core_schema.int_schema()),
                 }
             ),
         )
@@ -280,11 +280,58 @@ def test_core_model_py(benchmark, basic_model_serializer):
     benchmark(basic_model_serializer.to_python, m)
 
 
+@pytest.fixture(scope='module', name='basic_model_serializer_extra')
+def basic_model_serializer_extra_fixture():
+    return SchemaSerializer(
+        core_schema.model_schema(
+            BasicModel,
+            core_schema.model_fields_schema(
+                {
+                    'a': core_schema.model_field(core_schema.int_schema()),
+                    'b': core_schema.model_field(core_schema.int_schema()),
+                    'c': core_schema.model_field(core_schema.int_schema()),
+                    'd': core_schema.model_field(core_schema.int_schema()),
+                    'e': core_schema.model_field(core_schema.int_schema()),
+                    'f': core_schema.model_field(core_schema.int_schema()),
+                    'g': core_schema.model_field(core_schema.int_schema()),
+                    'h': core_schema.model_field(core_schema.int_schema()),
+                },
+                extra_behavior='allow',
+            ),
+            extra_behavior='allow',
+        )
+    )
+
+
+@pytest.mark.benchmark(group='model-python')
+def test_core_model_py_extra(benchmark, basic_model_serializer_extra):
+    m = BasicModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __pydantic_extra__={'i': 9})
+    assert basic_model_serializer_extra.to_python(m) == {
+        'a': 1,
+        'b': 2,
+        'c': 3,
+        'd': 4,
+        'e': 5,
+        'f': 6,
+        'g': 7,
+        'h': 8,
+        'i': 9,
+    }
+    benchmark(basic_model_serializer_extra.to_python, m)
+
+
 @pytest.mark.benchmark(group='model-json')
 def test_core_model_json(benchmark, basic_model_serializer):
     m = BasicModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8)
     assert basic_model_serializer.to_json(m) == b'{"a":1,"b":2,"c":3,"d":4,"e":5,"f":6,"g":7,"h":8}'
     benchmark(basic_model_serializer.to_json, m)
+
+
+@pytest.mark.benchmark(group='model-json')
+def test_core_model_json_extra(benchmark, basic_model_serializer_extra):
+    m = BasicModel(a=1, b=2, c=3, d=4, e=5, f=6, g=7, h=8, __pydantic_extra__={'i': 9})
+    assert basic_model_serializer_extra.to_json(m) == b'{"a":1,"b":2,"c":3,"d":4,"e":5,"f":6,"g":7,"h":8,"i":9}'
+    benchmark(basic_model_serializer_extra.to_json, m)
 
 
 class FieldsSetModel:
@@ -300,16 +347,16 @@ def fs_model_serializer_fixture():
     return SchemaSerializer(
         core_schema.model_schema(
             FieldsSetModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'a': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'b': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'c': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'd': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'e': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'f': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'g': core_schema.typed_dict_field(core_schema.int_schema()),
-                    'h': core_schema.typed_dict_field(core_schema.int_schema()),
+                    'a': core_schema.model_field(core_schema.int_schema()),
+                    'b': core_schema.model_field(core_schema.int_schema()),
+                    'c': core_schema.model_field(core_schema.int_schema()),
+                    'd': core_schema.model_field(core_schema.int_schema()),
+                    'e': core_schema.model_field(core_schema.int_schema()),
+                    'f': core_schema.model_field(core_schema.int_schema()),
+                    'g': core_schema.model_field(core_schema.int_schema()),
+                    'h': core_schema.model_field(core_schema.int_schema()),
                 }
             ),
         )
@@ -362,9 +409,9 @@ def test_model_list_core_json(benchmark):
     s = SchemaSerializer(
         core_schema.model_schema(
             BasicModel,
-            core_schema.typed_dict_schema(
+            core_schema.model_fields_schema(
                 {
-                    'a': core_schema.typed_dict_field(
+                    'a': core_schema.model_field(
                         core_schema.list_schema(
                             core_schema.int_schema(), serialization=core_schema.filter_seq_schema(exclude={1, 2})
                         )

@@ -1084,7 +1084,7 @@ def test_from_attributes_extra():
         def static_method():
             return 'wrong'
 
-        # this is omitted along with the static method by the !PyFunction::is_type_of(attr) check in typed_dict.rs
+        # this is omitted along with the static method by the !PyFunction::is_type_of(attr) check in fields
         function_attribute = another_function
 
         @classmethod
@@ -1107,11 +1107,11 @@ def test_from_attributes_extra():
         }
     )
 
-    assert v.validate_python(Foobar()) == ({'a': 1}, None, {'a'})
-    assert v.validate_python(MyDataclass()) == ({'a': 1}, None, {'a'})
-    assert v.validate_python(Cls(a=1, b=2, c='ham')) == ({'a': 1}, None, {'a'})
-    assert v.validate_python(Cls(a=1, b=datetime(2000, 1, 1))) == ({'a': 1}, None, {'a'})
-    assert v.validate_python(Cls(a=1, b=datetime.now, c=lambda: 42)) == ({'a': 1}, None, {'a'})
+    assert v.validate_python(Foobar()) == ({'a': 1}, {}, {'a'})
+    assert v.validate_python(MyDataclass()) == ({'a': 1}, {}, {'a'})
+    assert v.validate_python(Cls(a=1, b=2, c='ham')) == ({'a': 1}, {}, {'a'})
+    assert v.validate_python(Cls(a=1, b=datetime(2000, 1, 1))) == ({'a': 1}, {}, {'a'})
+    assert v.validate_python(Cls(a=1, b=datetime.now, c=lambda: 42)) == ({'a': 1}, {}, {'a'})
 
 
 def test_from_attributes_extra_ignore_no_attributes_accessed() -> None:
@@ -1360,8 +1360,8 @@ def test_alias_extra_from_attributes():
         }
     )
     assert v.validate_python({'FieldA': 1}) == ({'field_a': 1}, {}, {'field_a'})
-    assert v.validate_python(Cls(FieldA=1)) == ({'field_a': 1}, None, {'field_a'})
-    assert v.validate_python(Cls(foo=[1, 2, 3])) == ({'field_a': 3}, None, {'field_a'})
+    assert v.validate_python(Cls(FieldA=1)) == ({'field_a': 1}, {}, {'field_a'})
+    assert v.validate_python(Cls(foo=[1, 2, 3])) == ({'field_a': 3}, {}, {'field_a'})
     assert v.validate_python({'foo': [1, 2, 3]}) == ({'field_a': 3}, {}, {'field_a'})
 
 
@@ -1377,8 +1377,8 @@ def test_alias_extra_by_name(py_and_json: PyAndJson):
     )
     assert v.validate_test({'FieldA': 1}) == ({'field_a': 1}, {}, {'field_a'})
     assert v.validate_test({'field_a': 1}) == ({'field_a': 1}, {}, {'field_a'})
-    assert v.validate_python(Cls(FieldA=1)) == ({'field_a': 1}, None, {'field_a'})
-    assert v.validate_python(Cls(field_a=1)) == ({'field_a': 1}, None, {'field_a'})
+    assert v.validate_python(Cls(FieldA=1)) == ({'field_a': 1}, {}, {'field_a'})
+    assert v.validate_python(Cls(field_a=1)) == ({'field_a': 1}, {}, {'field_a'})
 
 
 def test_alias_extra_forbid(py_and_json: PyAndJson):

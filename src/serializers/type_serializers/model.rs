@@ -1,22 +1,18 @@
 use std::borrow::Cow;
 
-use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString, PyType};
+use pyo3::{intern, PyTraverseError, PyVisit};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{py_error_type, ExtraBehavior, SchemaDict};
+use crate::build_tools::{build_model_config, py_error_type, ExtraBehavior, SchemaDict};
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::computed_fields::ComputedFields;
-use crate::serializers::extra::SerCheck;
-use crate::serializers::infer::{infer_serialize, infer_to_python};
-use crate::serializers::ob_type::ObType;
-use crate::serializers::type_serializers::typed_dict::{FieldSerializer, TypedDictSerializer};
 
 use super::{
-    infer_json_key, infer_json_key_known, object_to_dict, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
-    TypeSerializer,
+    infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, object_to_dict, py_err_se_err,
+    BuildSerializer, CombinedSerializer, ComputedFields, Extra, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
+    SerField, TypeSerializer,
 };
 
 pub struct ModelFieldsBuilder;
@@ -31,13 +27,13 @@ impl BuildSerializer for ModelFieldsBuilder {
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
-        let include_extra = matches!(
-            ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?,
-            ExtraBehavior::Allow
-        );
+        let fields_mode = match has_extra(schema, config)? {
+            true => FieldsMode::ModelExtra,
+            false => FieldsMode::SimpleDict,
+        };
 
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields: AHashMap<String, FieldSerializer> = AHashMap::with_capacity(fields_dict.len());
+        let mut fields: AHashMap<String, SerField> = AHashMap::with_capacity(fields_dict.len());
 
         for (key, value) in fields_dict.iter() {
             let key_py: &PyString = key.downcast()?;
@@ -47,7 +43,7 @@ impl BuildSerializer for ModelFieldsBuilder {
             let key_py: Py<PyString> = key_py.into_py(py);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                fields.insert(key, FieldSerializer::new(py, key_py, None, None, true));
+                fields.insert(key, SerField::new(py, key_py, None, None, true));
             } else {
                 let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
 
@@ -55,13 +51,13 @@ impl BuildSerializer for ModelFieldsBuilder {
                 let serializer = CombinedSerializer::build(schema, config, definitions)
                     .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
 
-                fields.insert(key, FieldSerializer::new(py, key_py, alias, Some(serializer), true));
+                fields.insert(key, SerField::new(py, key_py, alias, Some(serializer), true));
             }
         }
 
         let computed_fields = ComputedFields::new(schema)?;
 
-        Ok(TypedDictSerializer::new(fields, include_extra, computed_fields).into())
+        Ok(GeneralFieldsSerializer::new(fields, fields_mode, computed_fields).into())
     }
 }
 
@@ -69,6 +65,7 @@ impl BuildSerializer for ModelFieldsBuilder {
 pub struct ModelSerializer {
     class: Py<PyType>,
     serializer: Box<CombinedSerializer>,
+    has_extra: bool,
     name: String,
 }
 
@@ -81,6 +78,10 @@ impl BuildSerializer for ModelSerializer {
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
+
+        // models ignore the parent config and always use the config from this model
+        let config = build_model_config(py, schema, config)?;
+
         let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema: &PyDict = schema.get_as_req(intern!(py, "schema"))?;
         let serializer = Box::new(CombinedSerializer::build(sub_schema, config, definitions)?);
@@ -88,10 +89,17 @@ impl BuildSerializer for ModelSerializer {
         Ok(Self {
             class: class.into(),
             serializer,
+            has_extra: has_extra(schema, config)?,
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
         }
         .into())
     }
+}
+
+fn has_extra(schema: &PyDict, config: Option<&PyDict>) -> PyResult<bool> {
+    let py = schema.py();
+    let extra_behaviour = ExtraBehavior::from_schema_or_config(py, schema, config, ExtraBehavior::Ignore)?;
+    Ok(matches!(extra_behaviour, ExtraBehavior::Allow))
 }
 
 impl ModelSerializer {
@@ -102,10 +110,23 @@ impl ModelSerializer {
             SerCheck::None => value.hasattr(intern!(value.py(), "__dict__")),
         }
     }
+
+    fn get_inner_value<'py>(&self, value: &'py PyAny, extra: &Extra) -> PyResult<&'py PyAny> {
+        let py = value.py();
+        let dict = object_to_dict(value, true, extra)?;
+
+        if self.has_extra {
+            let model_extra = value.getattr(intern!(py, "__pydantic_extra__"))?;
+            let py_tuple = (dict, model_extra).to_object(py);
+            Ok(py_tuple.into_ref(py))
+        } else {
+            Ok(dict)
+        }
+    }
 }
 
 impl TypeSerializer for ModelSerializer {
-    fn py_gc_traverse(&self, visit: &pyo3::PyVisit<'_>) -> Result<(), pyo3::PyTraverseError> {
+    fn py_gc_traverse(&self, visit: &PyVisit<'_>) -> Result<(), PyTraverseError> {
         visit.call(&self.class)?;
         self.serializer.py_gc_traverse(visit)?;
         Ok(())
@@ -123,8 +144,8 @@ impl TypeSerializer for ModelSerializer {
             ..*extra
         };
         if self.allow_value(value, &extra)? {
-            let dict = object_to_dict(value, true, &extra)?;
-            self.serializer.to_python(dict, include, exclude, &extra)
+            let inner_value = self.get_inner_value(value, &extra)?;
+            self.serializer.to_python(inner_value, include, exclude, &extra)
         } else {
             extra.warnings.on_fallback_py(self.get_name(), value, &extra)?;
             infer_to_python(value, include, exclude, &extra)
@@ -153,9 +174,9 @@ impl TypeSerializer for ModelSerializer {
             ..*extra
         };
         if self.allow_value(value, &extra).map_err(py_err_se_err)? {
-            let dict = object_to_dict(value, true, &extra).map_err(py_err_se_err)?;
+            let inner_value = self.get_inner_value(value, &extra).map_err(py_err_se_err)?;
             self.serializer
-                .serde_serialize(dict, serializer, include, exclude, &extra)
+                .serde_serialize(inner_value, serializer, include, exclude, &extra)
         } else {
             extra.warnings.on_fallback_ser::<S>(self.get_name(), value, &extra)?;
             infer_serialize(value, serializer, include, exclude, &extra)

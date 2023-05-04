@@ -5,12 +5,11 @@ use std::borrow::Cow;
 
 use crate::build_tools::{py_err, SchemaDict};
 use crate::definitions::DefinitionsBuilder;
-use crate::serializers::extra::SerCheck;
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
-    TypeSerializer,
+    SerCheck, TypeSerializer,
 };
 
 #[derive(Debug, Clone)]

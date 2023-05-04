@@ -79,6 +79,7 @@ combined_serializer! {
         // hence they're here.
         Function: super::type_serializers::function::FunctionPlainSerializer;
         FunctionWrap: super::type_serializers::function::FunctionWrapSerializer;
+        Fields: super::fields::GeneralFieldsSerializer;
     }
     // `find_only` is for type_serializers which are built directly via the `type` key and `find_serializer`
     // but aren't actually used for serialization, e.g. their `build` method must return another serializer
@@ -100,6 +101,7 @@ combined_serializer! {
         super::type_serializers::function::FunctionPlainSerializerBuilder;
         super::type_serializers::function::FunctionWrapSerializerBuilder;
         super::type_serializers::model::ModelFieldsBuilder;
+        super::type_serializers::typed_dict::TypedDictBuilder;
     }
     // `both` means the struct is added to both the `CombinedSerializer` enum and the match statement in
     // `find_serializer` so they can be used via a `type` str.
@@ -120,7 +122,6 @@ combined_serializer! {
         FrozenSet: super::type_serializers::set_frozenset::FrozenSetSerializer;
         Generator: super::type_serializers::generator::GeneratorSerializer;
         Dict: super::type_serializers::dict::DictSerializer;
-        TypedDict: super::type_serializers::typed_dict::TypedDictSerializer;
         Model: super::type_serializers::model::ModelSerializer;
         Url: super::type_serializers::url::UrlSerializer;
         MultiHostUrl: super::type_serializers::url::MultiHostUrlSerializer;

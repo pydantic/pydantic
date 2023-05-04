@@ -18,6 +18,7 @@ mod computed_fields;
 mod config;
 mod errors;
 mod extra;
+mod fields;
 mod filter;
 mod infer;
 mod ob_type;
