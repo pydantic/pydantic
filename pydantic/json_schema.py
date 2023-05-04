@@ -586,7 +586,7 @@ class GenerateJsonSchema:
         # We do not use schema['model'].model_json_schema() because it could lead to inconsistent refs handling, etc.
         json_schema = self.generate_inner(schema['schema'])
 
-        cls = cast(type[BaseModel], schema['cls'])
+        cls = cast('type[BaseModel]', schema['cls'])
         config = cls.model_config
         title = config.get('title')
         forbid_additional_properties = config.get('extra') == 'forbid'
