@@ -16,21 +16,23 @@ use super::{
     ComputedFields, Extra, PydanticSerializer, SchemaFilter, SerializeInfer, TypeSerializer,
 };
 
+/// representation of a field for serialization, used by `TypedDictSerializer` and `ModelFieldsSerializer`
 #[derive(Debug, Clone)]
-pub(super) struct TypedDictField {
+pub(super) struct FieldSerializer {
     key_py: Py<PyString>,
     alias: Option<String>,
     alias_py: Option<Py<PyString>>,
-    serializer: CombinedSerializer,
+    // None serializer means exclude
+    serializer: Option<CombinedSerializer>,
     required: bool,
 }
 
-impl TypedDictField {
+impl FieldSerializer {
     pub(super) fn new(
         py: Python,
         key_py: Py<PyString>,
         alias: Option<String>,
-        serializer: CombinedSerializer,
+        serializer: Option<CombinedSerializer>,
         required: bool,
     ) -> Self {
         let alias_py = alias.as_ref().map(|alias| PyString::new(py, alias.as_str()).into());
@@ -64,10 +66,10 @@ impl TypedDictField {
 
 #[derive(Debug, Clone)]
 pub struct TypedDictSerializer {
-    fields: AHashMap<String, TypedDictField>,
+    fields: AHashMap<String, FieldSerializer>,
     computed_fields: Option<ComputedFields>,
     include_extra: bool,
-    // isize because we look up include exclude via `.hash()` which returns an isize
+    // isize because we look up filter via `.hash()` which returns an isize
     filter: SchemaFilter<isize>,
 }
 
@@ -90,8 +92,7 @@ impl BuildSerializer for TypedDictSerializer {
         );
 
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields: AHashMap<String, TypedDictField> = AHashMap::with_capacity(fields_dict.len());
-        let mut exclude: Vec<Py<PyString>> = Vec::with_capacity(fields_dict.len());
+        let mut fields: AHashMap<String, FieldSerializer> = AHashMap::with_capacity(fields_dict.len());
 
         for (key, value) in fields_dict.iter() {
             let key_py: &PyString = key.downcast()?;
@@ -99,47 +100,36 @@ impl BuildSerializer for TypedDictSerializer {
             let field_info: &PyDict = value.downcast()?;
 
             let key_py: Py<PyString> = key_py.into_py(py);
+            let required = field_info.get_as(intern!(py, "required"))?.unwrap_or(total);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                exclude.push(key_py.clone_ref(py));
+                fields.insert(key, FieldSerializer::new(py, key_py, None, None, required));
             } else {
                 let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
 
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
                 let serializer = CombinedSerializer::build(schema, config, definitions)
                     .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
-
-                fields.insert(
-                    key,
-                    TypedDictField::new(
-                        py,
-                        key_py,
-                        alias,
-                        serializer,
-                        field_info.get_as(intern!(py, "required"))?.unwrap_or(total),
-                    ),
-                );
+                fields.insert(key, FieldSerializer::new(py, key_py, alias, Some(serializer), required));
             }
         }
 
-        let filter = SchemaFilter::from_vec_hash(py, exclude)?;
         let computed_fields = ComputedFields::new(schema)?;
 
-        Ok(Self::new(fields, include_extra, filter, computed_fields).into())
+        Ok(Self::new(fields, include_extra, computed_fields).into())
     }
 }
 
 impl TypedDictSerializer {
     pub(super) fn new(
-        fields: AHashMap<String, TypedDictField>,
+        fields: AHashMap<String, FieldSerializer>,
         include_extra: bool,
-        filter: SchemaFilter<isize>,
         computed_fields: Option<ComputedFields>,
     ) -> Self {
         Self {
             fields,
             include_extra,
-            filter,
+            filter: SchemaFilter::default(),
             computed_fields,
         }
     }
@@ -151,9 +141,9 @@ impl TypedDictSerializer {
         }
     }
 
-    fn exclude_default(&self, value: &PyAny, extra: &Extra, field: &TypedDictField) -> PyResult<bool> {
+    fn exclude_default(&self, value: &PyAny, extra: &Extra, serializer: &CombinedSerializer) -> PyResult<bool> {
         if extra.exclude_defaults {
-            if let Some(default) = field.serializer.get_default(value.py())? {
+            if let Some(default) = serializer.get_default(value.py())? {
                 if value.eq(default)? {
                     return Ok(true);
                 }
@@ -190,21 +180,25 @@ impl TypeSerializer for TypedDictSerializer {
                 };
 
                 for (key, value) in py_dict {
-                    let extra = Extra {
-                        field_name: Some(key.extract()?),
-                        ..td_extra
-                    };
                     if extra.exclude_none && value.is_none() {
                         continue;
                     }
                     if let Some((next_include, next_exclude)) = self.filter.key_filter(key, include, exclude)? {
+                        let extra = Extra {
+                            field_name: Some(key.extract()?),
+                            ..td_extra
+                        };
                         if let Ok(key_py_str) = key.downcast::<PyString>() {
                             let key_str = key_py_str.to_str()?;
                             if let Some(field) = self.fields.get(key_str) {
-                                if self.exclude_default(value, &extra, field)? {
+                                let serializer = match field.serializer {
+                                    Some(ref serializer) => serializer,
+                                    None => continue,
+                                };
+                                if self.exclude_default(value, &extra, serializer)? {
                                     continue;
                                 }
-                                let value = field.serializer.to_python(value, next_include, next_exclude, &extra)?;
+                                let value = serializer.to_python(value, next_include, next_exclude, &extra)?;
                                 let output_key = field.get_key_py(py, &extra);
                                 output_dict.set_item(output_key, value)?;
 
@@ -289,17 +283,15 @@ impl TypeSerializer for TypedDictSerializer {
                         if let Ok(key_py_str) = key.downcast::<PyString>() {
                             let key_str = key_py_str.to_str().map_err(py_err_se_err)?;
                             if let Some(field) = self.fields.get(key_str) {
-                                if self.exclude_default(value, &extra, field).map_err(py_err_se_err)? {
+                                let serializer = match field.serializer {
+                                    Some(ref serializer) => serializer,
+                                    None => continue,
+                                };
+                                if self.exclude_default(value, &extra, serializer).map_err(py_err_se_err)? {
                                     continue;
                                 }
                                 let output_key = field.get_key_json(key_str, &extra);
-                                let s = PydanticSerializer::new(
-                                    value,
-                                    &field.serializer,
-                                    next_include,
-                                    next_exclude,
-                                    &extra,
-                                );
+                                let s = PydanticSerializer::new(value, serializer, next_include, next_exclude, &extra);
                                 map.serialize_entry(&output_key, &s)?;
                                 continue;
                             }

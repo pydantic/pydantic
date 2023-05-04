@@ -10,10 +10,9 @@ use crate::build_tools::{py_error_type, ExtraBehavior, SchemaDict};
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::computed_fields::ComputedFields;
 use crate::serializers::extra::SerCheck;
-use crate::serializers::filter::SchemaFilter;
 use crate::serializers::infer::{infer_serialize, infer_to_python};
 use crate::serializers::ob_type::ObType;
-use crate::serializers::type_serializers::typed_dict::{TypedDictField, TypedDictSerializer};
+use crate::serializers::type_serializers::typed_dict::{FieldSerializer, TypedDictSerializer};
 
 use super::{
     infer_json_key, infer_json_key_known, object_to_dict, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
@@ -38,8 +37,7 @@ impl BuildSerializer for ModelFieldsBuilder {
         );
 
         let fields_dict: &PyDict = schema.get_as_req(intern!(py, "fields"))?;
-        let mut fields: AHashMap<String, TypedDictField> = AHashMap::with_capacity(fields_dict.len());
-        let mut exclude: Vec<Py<PyString>> = Vec::with_capacity(fields_dict.len());
+        let mut fields: AHashMap<String, FieldSerializer> = AHashMap::with_capacity(fields_dict.len());
 
         for (key, value) in fields_dict.iter() {
             let key_py: &PyString = key.downcast()?;
@@ -49,7 +47,7 @@ impl BuildSerializer for ModelFieldsBuilder {
             let key_py: Py<PyString> = key_py.into_py(py);
 
             if field_info.get_as(intern!(py, "serialization_exclude"))? == Some(true) {
-                exclude.push(key_py.clone_ref(py));
+                fields.insert(key, FieldSerializer::new(py, key_py, None, None, true));
             } else {
                 let alias: Option<String> = field_info.get_as(intern!(py, "serialization_alias"))?;
 
@@ -57,14 +55,13 @@ impl BuildSerializer for ModelFieldsBuilder {
                 let serializer = CombinedSerializer::build(schema, config, definitions)
                     .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
 
-                fields.insert(key, TypedDictField::new(py, key_py, alias, serializer, true));
+                fields.insert(key, FieldSerializer::new(py, key_py, alias, Some(serializer), true));
             }
         }
 
-        let filter = SchemaFilter::from_vec_hash(py, exclude)?;
         let computed_fields = ComputedFields::new(schema)?;
 
-        Ok(TypedDictSerializer::new(fields, include_extra, filter, computed_fields).into())
+        Ok(TypedDictSerializer::new(fields, include_extra, computed_fields).into())
     }
 }
 
