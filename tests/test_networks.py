@@ -647,6 +647,41 @@ def test_custom_schemes():
         Model(v='ws:///foo/bar')
 
 
+def test_url_constraints_hash_equal():
+    options = {
+        "max_length": 1,
+        "allowed_schemes": ["scheme"],
+        "host_required": False,
+        "default_host": "host",
+        "default_port": 0,
+        "default_path": "path",
+    }
+    assert hash(UrlConstraints(**options)) == hash(UrlConstraints(**options))
+
+
+@pytest.mark.parametrize(
+    "changes",
+    [
+        {"max_length": 2},
+        {"allowed_schemes": ["new-scheme"]},
+        {"host_required": True},
+        {"default_host": "new-host"},
+        {"default_port": 1},
+        {"default_path": "new-path"},
+    ],
+)
+def test_url_constraints_hash_inequal(changes: dict):
+    options = {
+        "max_length": 1,
+        "allowed_schemes": ["scheme"],
+        "host_required": False,
+        "default_host": "host",
+        "default_port": 0,
+        "default_path": "path",
+    }
+    assert hash(UrlConstraints(**options)) != hash(UrlConstraints(**{**options, **changes}))
+
+
 def test_json():
     class Model(BaseModel):
         v: HttpUrl
