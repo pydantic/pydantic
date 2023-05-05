@@ -1,3 +1,5 @@
+from typing import Union
+
 import pytest
 from pydantic_core import PydanticCustomError, Url
 from typing_extensions import Annotated
@@ -271,6 +273,14 @@ def test_http_url_success(value, expected):
         v: HttpUrl
 
     assert str(Model(v=value).v) == expected
+
+
+def test_nullable_http_url():
+    class Model(BaseModel):
+        v: Union[HttpUrl, None]
+
+    assert Model(v=None).v is None
+    assert str(Model(v='http://example.org').v) == 'http://example.org/'
 
 
 @pytest.mark.parametrize(
@@ -645,6 +655,60 @@ def test_custom_schemes():
 
     with pytest.raises(ValidationError, match=r'syntax rules, expected // \[type=url_syntax_violation,'):
         Model(v='ws:///foo/bar')
+
+
+@pytest.mark.parametrize(
+    'options',
+    [
+        # Ensures the hash is generated correctly when a field is null
+        {'max_length': None},
+        {'allowed_schemes': None},
+        {'host_required': None},
+        {'default_host': None},
+        {'default_port': None},
+        {'default_path': None},
+    ],
+)
+def test_url_constraints_hash_equal(options):
+    defaults = {
+        'max_length': 1,
+        'allowed_schemes': ['scheme'],
+        'host_required': False,
+        'default_host': 'host',
+        'default_port': 0,
+        'default_path': 'path',
+    }
+    options = {**defaults, **options}
+    assert hash(UrlConstraints(**options)) == hash(UrlConstraints(**options))
+
+
+@pytest.mark.parametrize(
+    'changes',
+    [
+        {'max_length': 2},
+        {'allowed_schemes': ['new-scheme']},
+        {'host_required': True},
+        {'default_host': 'new-host'},
+        {'default_port': 1},
+        {'default_path': 'new-path'},
+        {'max_length': None},
+        {'allowed_schemes': None},
+        {'host_required': None},
+        {'default_host': None},
+        {'default_port': None},
+        {'default_path': None},
+    ],
+)
+def test_url_constraints_hash_inequal(changes):
+    options = {
+        'max_length': 1,
+        'allowed_schemes': ['scheme'],
+        'host_required': False,
+        'default_host': 'host',
+        'default_port': 0,
+        'default_path': 'path',
+    }
+    assert hash(UrlConstraints(**options)) != hash(UrlConstraints(**{**options, **changes}))
 
 
 def test_json():

@@ -54,6 +54,18 @@ class UrlConstraints(_fields.PydanticMetadata):
     default_port: int | None = None
     default_path: str | None = None
 
+    def __hash__(self) -> int:
+        return hash(
+            (
+                self.max_length,
+                tuple(self.allowed_schemes) if self.allowed_schemes is not None else None,
+                self.host_required,
+                self.default_host,
+                self.default_port,
+                self.default_path,
+            )
+        )
+
 
 AnyUrl = Url
 # host_required is false because all schemes are "special" so host is required by rust-url automatically
