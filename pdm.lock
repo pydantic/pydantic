@@ -28,15 +28,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "attrs"
-version = "23.1.0"
-requires_python = ">=3.7"
-summary = "Classes Without Boilerplate"
-dependencies = [
-    "importlib-metadata; python_version < \"3.8\"",
-]
-
-[[package]]
 name = "autoflake"
 version = "2.1.1"
 requires_python = ">=3.7"
@@ -181,17 +172,6 @@ summary = "Signatures for entire Python programs. Extract the structure, the fra
 dependencies = [
     "cached-property; python_version < \"3.8\"",
     "colorama>=0.4",
-]
-
-[[package]]
-name = "hypothesis"
-version = "6.74.0"
-requires_python = ">=3.7"
-summary = "A library for property-based testing"
-dependencies = [
-    "attrs>=19.2.0",
-    "exceptiongroup>=1.0.0; python_version < \"3.11\"",
-    "sortedcontainers<3.0.0,>=2.1.0",
 ]
 
 [[package]]
@@ -614,11 +594,6 @@ requires_python = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*"
 summary = "Python 2 and 3 compatibility utilities"
 
 [[package]]
-name = "sortedcontainers"
-version = "2.4.0"
-summary = "Sorted Containers -- Sorted List, Sorted Dict, Sorted Set"
-
-[[package]]
 name = "sqlalchemy"
 version = "1.4.0"
 requires_python = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,!=3.4.*,!=3.5.*,>=2.7"
@@ -678,7 +653,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 [metadata]
 lock_version = "4.2"
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-content_hash = "sha256:cb95f0e529f0d16d6873c6624f7acaedfe3ba04fec7edd1572c7735ef3e87393"
+content_hash = "sha256:fd3d04f6cc9855b332c5507ead2db9e7addf29a6294e1347430da7651fd3fb58"
 
 [metadata.files]
 "annotated-types 0.4.0" = [
@@ -692,10 +667,6 @@ content_hash = "sha256:cb95f0e529f0d16d6873c6624f7acaedfe3ba04fec7edd1572c7735ef
 "asttokens 2.2.1" = [
     {url = "https://files.pythonhosted.org/packages/c8/e3/b0b4f32162621126fbdaba636c152c6b6baec486c99f48686e66343d638f/asttokens-2.2.1.tar.gz", hash = "sha256:4622110b2a6f30b77e1473affaa97e711bc2f07d3f10848420ff1898edbe94f3"},
     {url = "https://files.pythonhosted.org/packages/f3/e1/64679d9d0759db5b182222c81ff322c2fe2c31e156a59afd6e9208c960e5/asttokens-2.2.1-py2.py3-none-any.whl", hash = "sha256:6b0ac9e93fb0335014d382b8fa9b3afa7df546984258005da0b9e7095b3deb1c"},
-]
-"attrs 23.1.0" = [
-    {url = "https://files.pythonhosted.org/packages/97/90/81f95d5f705be17872843536b1868f351805acf6971251ff07c1b8334dbb/attrs-23.1.0.tar.gz", hash = "sha256:6279836d581513a26f1bf235f9acd333bc9115683f14f7e8fae46c98fc50e015"},
-    {url = "https://files.pythonhosted.org/packages/f0/eb/fcb708c7bf5056045e9e98f62b93bd7467eb718b0202e7698eb11d66416c/attrs-23.1.0-py3-none-any.whl", hash = "sha256:1f28b4522cdc2fb4256ac1a020c78acf9cba2c6b461ccd2c126f3aa8e8335d04"},
 ]
 "autoflake 2.1.1" = [
     {url = "https://files.pythonhosted.org/packages/50/4c/24cf18273b0a76cd31255b76f76999dbbeba119c3dd370a6ed84b0f1e85f/autoflake-2.1.1-py3-none-any.whl", hash = "sha256:94e330a2bcf5ac01384fb2bf98bea60c6383eaa59ea62be486e376622deba985"},
@@ -967,10 +938,6 @@ content_hash = "sha256:cb95f0e529f0d16d6873c6624f7acaedfe3ba04fec7edd1572c7735ef
 "griffe 0.27.1" = [
     {url = "https://files.pythonhosted.org/packages/44/57/026985c45f4fed4ff38c5c58f0937da66162b9b85fd8353c08b0ed298ca5/griffe-0.27.1.tar.gz", hash = "sha256:f213e87f99bf3b76d2d4da999d5a38c2ec01b9a6ce3660c5ab52b663d785edba"},
     {url = "https://files.pythonhosted.org/packages/73/27/37c67d0fb6aa5abac2550458a6d23ce8eb7c762238f08b0760293a9c3e07/griffe-0.27.1-py3-none-any.whl", hash = "sha256:867008786a17532ec529cbf58cee7c4f131b85d61f38691c2046b1883f7be253"},
-]
-"hypothesis 6.74.0" = [
-    {url = "https://files.pythonhosted.org/packages/4a/78/da0668f5cbf7422d5c77e1ec987193469cb0b511643474314f2bccff9891/hypothesis-6.74.0.tar.gz", hash = "sha256:b933baab6569c6639f6d8e1232ecc9f5388faa0cc5fba15cfc4d3447143b5965"},
-    {url = "https://files.pythonhosted.org/packages/f6/28/bee4dc1bac42d354ae15e91a0b945d8ec5ae85d073ee38d221ff93419527/hypothesis-6.74.0-py3-none-any.whl", hash = "sha256:6f19e61ac13bd35d5271b2788fd51b1e8cc673696b7a353d9a425960113efdbf"},
 ]
 "idna 3.4" = [
     {url = "https://files.pythonhosted.org/packages/8b/e1/43beb3d38dba6cb420cefa297822eac205a277ab43e5ba5d5c46faf96438/idna-3.4.tar.gz", hash = "sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4"},
@@ -1456,10 +1423,6 @@ content_hash = "sha256:cb95f0e529f0d16d6873c6624f7acaedfe3ba04fec7edd1572c7735ef
 "six 1.16.0" = [
     {url = "https://files.pythonhosted.org/packages/71/39/171f1c67cd00715f190ba0b100d606d440a28c93c7714febeca8b79af85e/six-1.16.0.tar.gz", hash = "sha256:1e61c37477a1626458e36f7b1d82aa5c9b094fa4802892072e49de9c60c4c926"},
     {url = "https://files.pythonhosted.org/packages/d9/5a/e7c31adbe875f2abbb91bd84cf2dc52d792b5a01506781dbcf25c91daf11/six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
-]
-"sortedcontainers 2.4.0" = [
-    {url = "https://files.pythonhosted.org/packages/32/46/9cb0e58b2deb7f82b84065f37f3bffeb12413f947f9388e4cac22c4621ce/sortedcontainers-2.4.0-py2.py3-none-any.whl", hash = "sha256:a163dcaede0f1c021485e957a39245190e74249897e2ae4b2aa38595db237ee0"},
-    {url = "https://files.pythonhosted.org/packages/e8/c4/ba2f8066cceb6f23394729afe52f3bf7adec04bf9ed2c820b39e19299111/sortedcontainers-2.4.0.tar.gz", hash = "sha256:25caa5a06cc30b6b83d11423433f65d1f9d76c4c6a0c90e3379eaa43b9bfdb88"},
 ]
 "sqlalchemy 1.4.0" = [
     {url = "https://files.pythonhosted.org/packages/04/be/c261fede8d46f9cbd5ba39f4b2f3d591fe788323c6bc08e7ed017be26f9e/SQLAlchemy-1.4.0-cp36-cp36m-manylinux2014_aarch64.whl", hash = "sha256:5beadd632440aa67f3cb3ec235246c3753f8b3d72b254ee5a87c1e87619952f4"},
