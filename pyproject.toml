@@ -89,6 +89,11 @@ target-version = ['py37', 'py38', 'py39', 'py310']
 skip-string-normalization = true
 skip-magic-trailing-comma = true
 
+# configuring https://github.com/pydantic/hooky
+[tool.hooky]
+reviewers = ['samuelcolvin', 'adriangb', 'dmontagu']
+require_change_file = false
+
 [tool.pyright]
 include = ['pydantic_core', 'tests/test_typing.py']
 reportUnnecessaryTypeIgnoreComment = true
