@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Callable, cast
 from pydantic_core import core_schema
 from typing_extensions import Literal, Self
 
-from ..config import ConfigDict, ExtraValues
+from ..config import ConfigDict, ExtraValues, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
 
 DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use ConfigDict instead.'
@@ -43,6 +43,7 @@ class ConfigWrapper:
     alias_generator: Callable[[str], str] | None
     ignored_types: tuple[type, ...]
     allow_inf_nan: bool
+    json_schema_extra: dict[str, object] | JsonSchemaExtraCallable | None
 
     # new in V2
     strict: bool
@@ -162,6 +163,7 @@ config_defaults = ConfigDict(
     alias_generator=None,
     ignored_types=(),
     allow_inf_nan=True,
+    json_schema_extra=None,
     strict=False,
     revalidate_instances='never',
     ser_json_timedelta='iso8601',
@@ -195,7 +197,6 @@ V2_REMOVED_KEYS = {
     'error_msg_templates',
     'fields',
     'getter_dict',
-    'schema_extra',
     'smart_union',
     'underscore_attrs_are_private',
     'json_loads',
@@ -213,13 +214,14 @@ V2_RENAMED_KEYS = {
     'max_anystr_length': 'str_max_length',
     'min_anystr_length': 'str_min_length',
     'orm_mode': 'from_attributes',
+    'schema_extra': 'json_schema_extra',
     'validate_all': 'validate_default',
 }
 
 
 def check_deprecated(config_dict: ConfigDict) -> None:
     """
-    Check for depreciated config keys and warn the user.
+    Check for deprecated config keys and warn the user.
     """
     deprecated_removed_keys = V2_REMOVED_KEYS & config_dict.keys()
     deprecated_renamed_keys = V2_RENAMED_KEYS.keys() & config_dict.keys()

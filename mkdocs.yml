@@ -59,6 +59,7 @@ nav:
     - Color Types: usage/types/color_types.md
     - Datetimes: usage/types/datetime.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
+    - Encoded Types: usage/types/encoded.md
     - Enums and Choices: usage/types/enums.md
     - File Types: usage/types/file_types.md
     - JSON: usage/types/json.md
@@ -83,11 +84,10 @@ nav:
   - usage/dataclasses.md
   - usage/validation_decorator.md
   - usage/postponed_annotations.md
-  - usage/pydantic_settings.md
   - usage/conversion_table.md
-  - Errors:
-    - Usage Errors: usage/errors.md
-    - Validation Errors: usage/validation_errors.md
+- Error Messages:
+  - Validation Errors: usage/validation_errors.md
+  - Usage Errors: usage/errors.md
 - Integrations:
   - 'Mypy': integrations/mypy.md
   - 'PyCharm': integrations/pycharm.md
@@ -102,7 +102,7 @@ nav:
   - blog/pydantic-v2.md
 - API:
   - 'pydantic.alias_generators': api/alias_generators.md
-  - 'pydantic.analyzed_type': api/analyzed_type.md
+  - 'pydantic.type_adapter': api/type_adapter.md
   - 'pydantic.color': api/color.md
   - 'pydantic.config': api/config.md
   - 'pydantic.dataclasses': api/dataclasses.md

@@ -185,18 +185,18 @@ Model(x=1)
 * While it does not raise an error at runtime yet, subclass checks for parametrized generics should no longer be used.
   These will result in `TypeError`s and we can't promise they will work forever. However, it will be okay to do subclass checks against _non-parametrized_ generic models
 
-### AnalyzedType
+### TypeAdapter
 
 Pydantic V1 didn't have good support for validation or serializing non-`BaseModel`.
 To work with them you had to create a "root" model or use the utility functions in `pydantic.tools` (`parse_obj_as` and `schema_of`).
-In Pydantic V2 this is _a lot_ easier: the `AnalyzedType` class lets you build an object that behaves almost like a `BaseModel` class which you can use for a lot of the use cases of root models and as a complete replacement for `parse_obj_as` and `schema_of`.
+In Pydantic V2 this is _a lot_ easier: the `TypeAdapter` class lets you build an object that behaves almost like a `BaseModel` class which you can use for a lot of the use cases of root models and as a complete replacement for `parse_obj_as` and `schema_of`.
 
 ```python
 from typing import List
 
-from pydantic import AnalyzedType
+from pydantic import TypeAdapter
 
-validator = AnalyzedType(List[int])
+validator = TypeAdapter(List[int])
 assert validator.validate_python(['1', '2', '3']) == [1, 2, 3]
 print(validator.json_schema())
 #> {'type': 'array', 'items': {'type': 'integer'}}

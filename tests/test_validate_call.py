@@ -9,7 +9,7 @@ import pytest
 from pydantic_core import ArgsKwargs
 from typing_extensions import Annotated
 
-from pydantic import AnalyzedType, Field, ValidationError, validate_call
+from pydantic import Field, TypeAdapter, ValidationError, validate_call
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 
@@ -403,8 +403,7 @@ def test_json_schema():
     assert foo(1, 2) == '1, 2'
     assert foo(1, b=2) == '1, 2'
     assert foo(1) == '1, None'
-    # insert_assert(AnalyzedType(foo).json_schema())
-    assert AnalyzedType(foo).json_schema() == {
+    assert TypeAdapter(foo).json_schema() == {
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'integer'}, 'b': {'default': None, 'title': 'B', 'type': 'integer'}},
         'required': ['a'],
@@ -418,7 +417,7 @@ def test_config_title():
     def foo(a: int, b: int = None):
         return f'{a}, {b}'
 
-    js = AnalyzedType(foo).json_schema()
+    js = TypeAdapter(foo).json_schema()
     assert js['title'] == 'Testing'
 
 

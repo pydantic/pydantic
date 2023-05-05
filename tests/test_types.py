@@ -41,8 +41,9 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
-    AnalyzedType,
     AwareDatetime,
+    Base64Bytes,
+    Base64Str,
     BaseModel,
     ByteSize,
     ConfigDict,
@@ -73,6 +74,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    TypeAdapter,
     ValidationError,
     conbytes,
     condate,
@@ -1375,9 +1377,9 @@ def test_plain_enum_validate():
     m = Model(x=MyEnum.a)
     assert m.x is MyEnum.a
 
-    assert AnalyzedType(MyEnum).validate_python(1) is MyEnum.a
+    assert TypeAdapter(MyEnum).validate_python(1) is MyEnum.a
     with pytest.raises(ValidationError) as exc_info:
-        AnalyzedType(MyEnum).validate_python(1, strict=True)
+        TypeAdapter(MyEnum).validate_python(1, strict=True)
     assert exc_info.value.errors() == [
         {
             'ctx': {'class': 'test_plain_enum_validate.<locals>.MyEnum'},
@@ -1388,10 +1390,10 @@ def test_plain_enum_validate():
         }
     ]
 
-    assert AnalyzedType(MyEnum).validate_json('1') is MyEnum.a
-    AnalyzedType(MyEnum).validate_json('1', strict=True)
+    assert TypeAdapter(MyEnum).validate_json('1') is MyEnum.a
+    TypeAdapter(MyEnum).validate_json('1', strict=True)
     with pytest.raises(ValidationError) as exc_info:
-        AnalyzedType(MyEnum).validate_json('"1"', strict=True)
+        TypeAdapter(MyEnum).validate_json('"1"', strict=True)
     assert exc_info.value.errors() == [
         {'ctx': {'expected': '1'}, 'input': '1', 'loc': (), 'msg': 'Input should be 1', 'type': 'enum'}
     ]
@@ -4350,4 +4352,83 @@ def test_custom_generic_containers():
             'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
         }
+    ]
+
+
+@pytest.mark.parametrize(
+    ('field_type', 'input_data', 'expected_value', 'serialized_data'),
+    [
+        pytest.param(Base64Bytes, b'Zm9vIGJhcg==\n', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-reversible'),
+        pytest.param(Base64Str, 'Zm9vIGJhcg==\n', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-reversible'),
+        pytest.param(Base64Bytes, b'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-bytes-input'),
+        pytest.param(Base64Bytes, 'Zm9vIGJhcg==', b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-str-input'),
+        pytest.param(
+            Base64Bytes, bytearray(b'Zm9vIGJhcg=='), b'foo bar', b'Zm9vIGJhcg==\n', id='Base64Bytes-bytearray-input'
+        ),
+        pytest.param(Base64Str, b'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytes-input'),
+        pytest.param(Base64Str, 'Zm9vIGJhcg==', 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-str-input'),
+        pytest.param(
+            Base64Str, bytearray(b'Zm9vIGJhcg=='), 'foo bar', 'Zm9vIGJhcg==\n', id='Base64Str-bytearray-input'
+        ),
+    ],
+)
+def test_base64(field_type, input_data, expected_value, serialized_data):
+    class Model(BaseModel):
+        base64_value: field_type
+        base64_value_or_none: Optional[field_type] = None
+
+    m = Model(base64_value=input_data)
+    assert m.base64_value == expected_value
+
+    m = Model.model_construct(base64_value=expected_value)
+    assert m.base64_value == expected_value
+
+    assert m.model_dump() == {
+        'base64_value': serialized_data,
+        'base64_value_or_none': None,
+    }
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'base64_value': {
+                'format': 'base64',
+                'title': 'Base64 Value',
+                'type': 'string',
+            },
+            'base64_value_or_none': {
+                'anyOf': [{'type': 'string', 'format': 'base64'}, {'type': 'null'}],
+                'default': None,
+                'title': 'Base64 Value Or None',
+            },
+        },
+        'required': ['base64_value'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(
+    ('field_type', 'input_data'),
+    [
+        pytest.param(Base64Bytes, b'Zm9vIGJhcg', id='Base64Bytes-invalid-base64-bytes'),
+        pytest.param(Base64Bytes, 'Zm9vIGJhcg', id='Base64Bytes-invalid-base64-str'),
+        pytest.param(Base64Str, b'Zm9vIGJhcg', id='Base64Str-invalid-base64-bytes'),
+        pytest.param(Base64Str, 'Zm9vIGJhcg', id='Base64Str-invalid-base64-str'),
+    ],
+)
+def test_base64_invalid(field_type, input_data):
+    class Model(BaseModel):
+        base64_value: field_type
+
+    with pytest.raises(ValidationError) as e:
+        Model(base64_value=input_data)
+
+    assert e.value.errors() == [
+        {
+            'ctx': {'error': 'Incorrect padding'},
+            'input': input_data,
+            'loc': ('base64_value',),
+            'msg': "Base64 decoding error: 'Incorrect padding'",
+            'type': 'base64_decode',
+        },
     ]

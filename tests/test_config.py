@@ -430,12 +430,12 @@ Valid config keys have changed in V2:
 * 'max_anystr_length' has been renamed to 'str_max_length'
 * 'min_anystr_length' has been renamed to 'str_min_length'
 * 'orm_mode' has been renamed to 'from_attributes'
+* 'schema_extra' has been renamed to 'json_schema_extra'
 * 'validate_all' has been renamed to 'validate_default'
 * 'allow_mutation' has been removed
 * 'error_msg_templates' has been removed
 * 'fields' has been removed
 * 'getter_dict' has been removed
-* 'schema_extra' has been removed
 * 'smart_union' has been removed
 * 'underscore_attrs_are_private' has been removed
     """.strip()

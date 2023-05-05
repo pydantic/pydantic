@@ -2203,3 +2203,14 @@ def test_model_validate_with_context():
     assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 1}).inner.x == 2
     assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 2}).inner.x == 4
     assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 3}).inner.x == 6
+
+
+def test_equality_delegation():
+    from unittest.mock import ANY
+
+    from pydantic import BaseModel
+
+    class MyModel(BaseModel):
+        foo: str
+
+    assert MyModel(foo='bar') == ANY

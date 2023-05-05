@@ -10,7 +10,6 @@ from pydantic_core.core_schema import (
 
 from . import dataclasses
 from ._migration import getattr_migration
-from .analyzed_type import AnalyzedType
 from .config import ConfigDict, Extra
 from .decorators import field_serializer, field_validator, model_serializer, model_validator, root_validator, validator
 from .deprecated.config import BaseConfig
@@ -19,6 +18,7 @@ from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .main import *
 from .networks import *
+from .type_adapter import TypeAdapter
 from .types import *
 from .validate_call import validate_call
 from .version import VERSION
@@ -28,7 +28,6 @@ __version__ = VERSION
 # WARNING __all__ from .errors is not included here, it will be removed as an export here in v2
 # please use "from pydantic.errors import ..." instead
 __all__ = [
-    'AnalyzedType',
     # dataclasses
     'dataclasses',
     # decorators
@@ -133,6 +132,14 @@ __all__ = [
     'AwareDatetime',
     'NaiveDatetime',
     'AllowInfNan',
+    'EncoderProtocol',
+    'EncodedBytes',
+    'EncodedStr',
+    'Base64Encoder',
+    'Base64Bytes',
+    'Base64Str',
+    # type_adapter
+    'TypeAdapter',
     # version
     'VERSION',
 ]
