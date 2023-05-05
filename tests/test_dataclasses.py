@@ -12,7 +12,7 @@ from dirty_equals import HasRepr
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import AnalyzedType, BaseModel, ConfigDict, FieldValidationInfo, ValidationError
+from pydantic import BaseModel, ConfigDict, FieldValidationInfo, TypeAdapter, ValidationError
 from pydantic.decorators import field_validator
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
@@ -1421,7 +1421,7 @@ def test_self_reference_dataclass():
     assert MyDataclass.__pydantic_fields__['self_reference'].annotation == Optional[MyDataclass]
 
     instance = MyDataclass(self_reference=MyDataclass(self_reference=MyDataclass()))
-    assert AnalyzedType(MyDataclass).dump_python(instance) == {
+    assert TypeAdapter(MyDataclass).dump_python(instance) == {
         'self_reference': {'self_reference': {'self_reference': None}}
     }
 
@@ -1453,7 +1453,7 @@ def test_cyclic_reference_dataclass():
 
     instance = D1(d2=D2(d1=D1(d2=D2(d1=D1()))))
 
-    assert AnalyzedType(D1).dump_python(instance) == {...}
+    assert TypeAdapter(D1).dump_python(instance) == {...}
 
     with pytest.raises(ValidationError) as exc_info:
         D1(d2=D2(d1=D1(d2=D2(d1=D2()))))
@@ -1776,8 +1776,8 @@ def test_unparametrized_generic_dataclass(dataclass_decorator):
         x: T
 
     # In principle we could call GenericDataclass(...) below, but this won't do validation
-    # for standard dataclasses, so we just use AnalyzedType to get validation for each.
-    validator = pydantic.AnalyzedType(GenericDataclass)
+    # for standard dataclasses, so we just use TypeAdapter to get validation for each.
+    validator = pydantic.TypeAdapter(GenericDataclass)
 
     assert validator.validate_python({'x': None}).x is None
     assert validator.validate_python({'x': 1}).x == 1
@@ -1817,9 +1817,9 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
     class GenericDataclass(Generic[T]):
         x: T
 
-    # Need to use AnalyzedType here because GenericDataclass[annotation] will be a GenericAlias, which delegates
+    # Need to use TypeAdapter here because GenericDataclass[annotation] will be a GenericAlias, which delegates
     # method calls to the (non-parametrized) origin class. This is essentially a limitation of typing._GenericAlias.
-    validator = pydantic.AnalyzedType(GenericDataclass[annotation])
+    validator = pydantic.TypeAdapter(GenericDataclass[annotation])
 
     if not error:
         assert validator.validate_python({'x': input_value}).x == output_value

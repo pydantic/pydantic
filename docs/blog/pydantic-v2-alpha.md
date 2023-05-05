@@ -82,8 +82,8 @@ With the use of `pydantic-core`, the majority of the logic in the Pydantic libra
 * **Recursive Models** - and validation of recursive data structures is much improved and ready to test.
 * **Custom Types** - custom types have a new interface and are ready to test.
 * **Custom Field Modifiers** - used via `Annotated[]` are working and in use in Pydantic itself.
-* **Validation without a BaseModel** - the new `AnalyzedType` class allows validation without the need for a `BaseModel` class, and it's ready to test.
-* **TypedDict** - we now have full support for `TypedDict` via `AnalyzedType`, it's ready to test.
+* **Validation without a BaseModel** - the new `TypeAdapter` class allows validation without the need for a `BaseModel` class, and it's ready to test.
+* **TypedDict** - we now have full support for `TypedDict` via `TypeAdapter`, it's ready to test.
 
 ### Still under construction
 
@@ -180,18 +180,18 @@ The following config settings have been renamed:
 
 * `GetterDict` has been removed, as it was just an implementation detail for `orm_mode`, which has been removed.
 
-### AnalyzedType
+### TypeAdapter
 
 Pydantic V1 didn't have good support for validation or serializing non-`BaseModel`.
 To work with them you had to create a "root" model or use the utility functions in `pydantic.tools` (`parse_obj_as` and `schema_of`).
-In Pydantic V2 this is _a lot_ easier: the `AnalyzedType` class lets you build an object that behaves almost like a `BaseModel` class which you can use for a lot of the use cases of root models and as a complete replacement for `parse_obj_as` and `schema_of`.
+In Pydantic V2 this is _a lot_ easier: the `TypeAdapter` class lets you build an object that behaves almost like a `BaseModel` class which you can use for a lot of the use cases of root models and as a complete replacement for `parse_obj_as` and `schema_of`.
 
 ```python
 from typing import List
 
-from pydantic import AnalyzedType
+from pydantic import TypeAdapter
 
-validator = AnalyzedType(List[int])
+validator = TypeAdapter(List[int])
 assert validator.validate_python(['1', '2', '3']) == [1, 2, 3]
 print(validator.json_schema())
 #> {'type': 'array', 'items': {'type': 'integer'}}

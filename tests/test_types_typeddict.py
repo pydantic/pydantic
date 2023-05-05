@@ -12,7 +12,7 @@ from annotated_types import Lt
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import BaseModel, Field, PositiveInt, PydanticUserError, ValidationError
-from pydantic.analyzed_type import AnalyzedType
+from pydantic.type_adapter import TypeAdapter
 
 from .conftest import Err
 
@@ -174,7 +174,7 @@ def test_typeddict_extra_default(TypedDict):
         name: str
         age: int
 
-    val = AnalyzedType(User)
+    val = TypeAdapter(User)
 
     with pytest.raises(ValidationError) as exc_info:
         val.validate_python({'name': 'pika', 'age': 7, 'rank': 1})

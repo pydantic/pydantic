@@ -41,7 +41,6 @@ from pydantic import (
     UUID3,
     UUID4,
     UUID5,
-    AnalyzedType,
     AwareDatetime,
     Base64Bytes,
     Base64Str,
@@ -75,6 +74,7 @@ from pydantic import (
     StrictFloat,
     StrictInt,
     StrictStr,
+    TypeAdapter,
     ValidationError,
     conbytes,
     condate,
@@ -1377,9 +1377,9 @@ def test_plain_enum_validate():
     m = Model(x=MyEnum.a)
     assert m.x is MyEnum.a
 
-    assert AnalyzedType(MyEnum).validate_python(1) is MyEnum.a
+    assert TypeAdapter(MyEnum).validate_python(1) is MyEnum.a
     with pytest.raises(ValidationError) as exc_info:
-        AnalyzedType(MyEnum).validate_python(1, strict=True)
+        TypeAdapter(MyEnum).validate_python(1, strict=True)
     assert exc_info.value.errors() == [
         {
             'ctx': {'class': 'test_plain_enum_validate.<locals>.MyEnum'},
@@ -1390,10 +1390,10 @@ def test_plain_enum_validate():
         }
     ]
 
-    assert AnalyzedType(MyEnum).validate_json('1') is MyEnum.a
-    AnalyzedType(MyEnum).validate_json('1', strict=True)
+    assert TypeAdapter(MyEnum).validate_json('1') is MyEnum.a
+    TypeAdapter(MyEnum).validate_json('1', strict=True)
     with pytest.raises(ValidationError) as exc_info:
-        AnalyzedType(MyEnum).validate_json('"1"', strict=True)
+        TypeAdapter(MyEnum).validate_json('"1"', strict=True)
     assert exc_info.value.errors() == [
         {'ctx': {'expected': '1'}, 'input': '1', 'loc': (), 'msg': 'Input should be 1', 'type': 'enum'}
     ]
