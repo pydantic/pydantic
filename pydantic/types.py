@@ -571,8 +571,6 @@ class SecretBytes(SecretField[bytes]):
 
 
 class PaymentCardBrand(str, Enum):
-    # If you add another card type, please also add it to the
-    # Hypothesis strategy in `pydantic._hypothesis_plugin`.
     amex = 'American Express'
     mastercard = 'Mastercard'
     visa = 'Visa'
