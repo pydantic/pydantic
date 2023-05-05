@@ -262,7 +262,7 @@ def plain_serializer_function_ser_schema(
     Args:
         function: The function to use for serialization
         is_field_serializer: Whether the serializer is for a field, e.g. takes `model` as the first argument,
-          and `info` includes `field_name`
+            and `info` includes `field_name`
         info_arg: Whether the function takes an `__info` argument
         json_return_type: The type that the function returns if `mode='json'`
         when_used: When the function should be called
@@ -326,7 +326,7 @@ def wrap_serializer_function_ser_schema(
     Args:
         function: The function to use for serialization
         is_field_serializer: Whether the serializer is for a field, e.g. takes `model` as the first argument,
-          and `info` includes `field_name`
+            and `info` includes `field_name`
         info_arg: Whether the function takes an `__info` argument
         schema: The schema to use for the inner serialization
         json_return_type: The type that the function returns if `mode='json'`
@@ -2893,7 +2893,7 @@ def model_schema(
         schema: The schema to use for the model
         post_init: The call after init to use for the model
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
-          should re-validate defaults to config.revalidate_instances, else 'never'
+            should re-validate defaults to config.revalidate_instances, else 'never'
         strict: Whether the model is strict
         frozen: Whether the model is frozen
         extra_behavior: The extra behavior to use for the model, used in serialization
@@ -3083,7 +3083,7 @@ def dataclass_schema(
         schema: The schema to use for the dataclass fields
         post_init: Whether to call `__post_init__` after validation
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
-          should re-validate defaults to config.revalidate_instances, else 'never'
+            should re-validate defaults to config.revalidate_instances, else 'never'
         strict: Whether to require an exact instance of `cls`
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
