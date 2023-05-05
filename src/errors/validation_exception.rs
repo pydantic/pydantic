@@ -329,7 +329,14 @@ impl PyLineError {
             }
         }
         if let Some(url_prefix) = url_prefix {
-            dict.set_item("url", self.get_error_url(url_prefix))?;
+            match self.error_type {
+                ErrorType::CustomError { custom_error: _ } => {
+                    // Don't add URLs for custom errors
+                }
+                _ => {
+                    dict.set_item("url", self.get_error_url(url_prefix))?;
+                }
+            }
         }
         Ok(dict.into_py(py))
     }
@@ -352,11 +359,19 @@ impl PyLineError {
             write!(output, ", input_type={type_}")?;
         }
         if let Some(url_prefix) = url_prefix {
-            write!(
-                output,
-                "]\n    For further information visit {}",
-                self.get_error_url(url_prefix)
-            )?;
+            match self.error_type {
+                ErrorType::CustomError { custom_error: _ } => {
+                    // Don't display URLs for custom errors
+                    output.push(']');
+                }
+                _ => {
+                    write!(
+                        output,
+                        "]\n    For further information visit {}",
+                        self.get_error_url(url_prefix)
+                    )?;
+                }
+            }
         } else {
             output.push(']');
         }
