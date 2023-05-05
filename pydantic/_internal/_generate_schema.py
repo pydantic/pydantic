@@ -1406,12 +1406,7 @@ def apply_single_annotation(
         # TODO need to do the same for lists, tuples and more
         schema['schema'].update(metadata_dict)
     else:
-        if schema['type'] == 'nullable':
-            # for nullable schemas, metadata is automatically applied to the inner schema
-            # TODO need to do the same for lists, tuples and more
-            schema['schema'].update(metadata_dict)
-        else:
-            schema.update(metadata_dict)  # type: ignore[typeddict-item]
+        schema.update(metadata_dict)  # type: ignore[typeddict-item]
     return schema
 
 
