@@ -85,6 +85,7 @@ nav:
   - usage/validation_decorator.md
   - usage/postponed_annotations.md
   - usage/conversion_table.md
+  - usage/pydantic_settings.md
 - Error Messages:
   - Validation Errors: usage/validation_errors.md
   - Usage Errors: usage/errors.md
