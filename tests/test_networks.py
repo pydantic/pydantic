@@ -280,6 +280,7 @@ def test_nullable_http_url():
         v: Union[HttpUrl, None]
 
     assert Model(v=None).v is None
+    assert str(Model(v='http://example.org').v) == 'http://example.org/'
 
 
 @pytest.mark.parametrize(
@@ -668,7 +669,7 @@ def test_custom_schemes():
         {'default_path': None},
     ],
 )
-def test_url_constraints_hash_equal(options: dict):
+def test_url_constraints_hash_equal(options):
     defaults = {
         'max_length': 1,
         'allowed_schemes': ['scheme'],
@@ -698,7 +699,7 @@ def test_url_constraints_hash_equal(options: dict):
         {'default_path': None},
     ],
 )
-def test_url_constraints_hash_inequal(changes: dict):
+def test_url_constraints_hash_inequal(changes):
     options = {
         'max_length': 1,
         'allowed_schemes': ['scheme'],
