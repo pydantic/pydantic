@@ -1,6 +1,5 @@
 from __future__ import annotations as _annotations
 
-import abc
 import base64
 import dataclasses as _dataclasses
 import re
@@ -16,6 +15,7 @@ from typing import (
     FrozenSet,
     Generic,
     Hashable,
+    Iterable,
     List,
     Set,
     TypeVar,
@@ -24,10 +24,11 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
 from typing_extensions import Annotated, Literal, Protocol
 
-from ._internal import _fields, _internal_dataclass, _validators
+from ._internal import _fields, _internal_dataclass, _known_annotated_metadata, _validators
+from ._internal._internal_dataclass import slots_dataclass
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
 from .errors import PydanticUserError
@@ -84,7 +85,6 @@ __all__ = [
     'Base64Str',
 ]
 
-from ._internal._core_metadata import build_metadata_dict
 from ._internal._schema_generation_shared import GetJsonSchemaHandler
 from ._internal._utils import update_not_none
 from .json_schema import JsonSchemaValue
@@ -453,9 +453,7 @@ else:
 SecretType = TypeVar('SecretType', str, bytes)
 
 
-class SecretField(abc.ABC, Generic[SecretType]):
-    _error_kind: str
-
+class SecretField(Generic[SecretType]):
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
 
@@ -463,67 +461,12 @@ class SecretField(abc.ABC, Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        validator = SecretFieldValidator(cls)
-        js_modify_functions: list[Any] = []
-        if issubclass(cls, SecretStr):
-            # Use a lambda here so that `apply_metadata` can be called on the validator before the override is generated
-            def js_cs_override1(_c: Any, h: Any) -> Any:
-                return h(core_schema.str_schema(min_length=validator.min_length, max_length=validator.max_length))
-
-            js_modify_functions.append(js_cs_override1)
-
-        elif issubclass(cls, SecretBytes):
-
-            def js_cs_override2(_c: Any, h: Any) -> Any:
-                return h(core_schema.bytes_schema(min_length=validator.min_length, max_length=validator.max_length))
-
-            js_modify_functions.append(js_cs_override2)
-
-        metadata = build_metadata_dict(
-            cs_update_function=validator.__pydantic_update_schema__, js_functions=js_modify_functions
-        )
-        return core_schema.general_after_validator_function(
-            validator,
-            core_schema.union_schema(
-                [core_schema.is_instance_schema(cls), cls._pre_core_schema()],
-                strict=True,
-                custom_error_type=cls._error_kind,
-            ),
-            metadata=metadata,
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                cls._serialize, info_arg=True, json_return_type='str'
-            ),
-        )
-
-    @classmethod
-    def _serialize(
-        cls, value: SecretField[SecretType], info: core_schema.SerializationInfo
-    ) -> str | SecretField[SecretType]:
-        if info.mode == 'json':
-            # we want the output to always be string without the `b'` prefix for byties,
-            # hence we just use `secret_display`
-            return secret_display(value)
-        else:
-            return value
-
-    @classmethod
-    @abc.abstractmethod
-    def _pre_core_schema(cls) -> core_schema.CoreSchema:
-        ...
-
-    @classmethod
-    def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
-        field_schema = handler(core_schema)
-        update_not_none(
-            field_schema,
-            type='string',
-            writeOnly=True,
-            format='password',
-        )
-        return field_schema
+    def __prepare_pydantic_annotations__(cls, source: type[Any], annotations: Iterable[Any]) -> Iterable[Any]:
+        metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+        _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
+        yield cls
+        yield _SecretFieldValidator(source, **metadata)
+        yield from remaining_annotations
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
@@ -534,69 +477,94 @@ class SecretField(abc.ABC, Generic[SecretType]):
     def __len__(self) -> int:
         return len(self._secret_value)
 
-    @abc.abstractmethod
-    def _display(self) -> SecretType:
-        ...
-
     def __str__(self) -> str:
         return str(self._display())
 
     def __repr__(self) -> str:
         return f'{self.__class__.__name__}({self._display()!r})'
 
+    def _display(self) -> SecretType:
+        raise NotImplementedError
 
-def secret_display(secret_field: SecretField[Any]) -> str:
-    return '**********' if secret_field.get_secret_value() else ''
+
+def _secret_display(value: str | bytes) -> str:
+    if isinstance(value, bytes):
+        value = value.decode()
+    return '**********' if value else ''
 
 
-class SecretFieldValidator(_fields.CustomValidator, Generic[SecretType]):
-    __slots__ = 'field_type', 'min_length', 'max_length', 'error_prefix'
+@slots_dataclass
+class _SecretFieldValidator:
+    field_type: type[SecretField[Any]]
+    min_length: int | None = None
+    max_length: int | None = None
+    inner_schema: CoreSchema = _dataclasses.field(init=False)
 
-    def __init__(
-        self, field_type: type[SecretField[SecretType]], min_length: int | None = None, max_length: int | None = None
-    ) -> None:
-        self.field_type: type[SecretField[SecretType]] = field_type
-        self.min_length = min_length
-        self.max_length = max_length
-        self.error_prefix: Literal['string', 'bytes'] = 'string' if field_type is SecretStr else 'bytes'
-
-    def __call__(self, __value: SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
-        if self.min_length is not None and len(__value) < self.min_length:
-            short_kind: core_schema.ErrorType = f'{self.error_prefix}_too_short'  # type: ignore[assignment]
+    def validate(self, value: SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
+        error_prefix: Literal['string', 'bytes'] = 'string' if self.field_type is SecretStr else 'bytes'
+        if self.min_length is not None and len(value) < self.min_length:
+            short_kind: core_schema.ErrorType = f'{error_prefix}_too_short'  # type: ignore[assignment]
             raise PydanticKnownError(short_kind, {'min_length': self.min_length})
-        if self.max_length is not None and len(__value) > self.max_length:
-            long_kind: core_schema.ErrorType = f'{self.error_prefix}_too_long'  # type: ignore[assignment]
+        if self.max_length is not None and len(value) > self.max_length:
+            long_kind: core_schema.ErrorType = f'{error_prefix}_too_long'  # type: ignore[assignment]
             raise PydanticKnownError(long_kind, {'max_length': self.max_length})
 
-        if isinstance(__value, self.field_type):
-            return __value
+        if isinstance(value, self.field_type):
+            return value
         else:
-            return self.field_type(__value)  # type: ignore[arg-type]
+            return self.field_type(value)  # type: ignore[arg-type]
 
-    def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **constraints: Any) -> None:
-        self._update_attrs(constraints, {'min_length', 'max_length'})
+    def serialize(
+        self, value: SecretField[SecretType], info: core_schema.SerializationInfo
+    ) -> str | SecretField[SecretType]:
+        if info.mode == 'json':
+            # we want the output to always be string without the `b'` prefix for bytes,
+            # hence we just use `secret_display`
+            return _secret_display(value.get_secret_value())
+        else:
+            return value
+
+    def __get_pydantic_json_schema__(
+        self, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        schema = self.inner_schema.copy()
+        if self.min_length is not None:
+            schema['min_length'] = self.min_length  # type: ignore
+        if self.max_length is not None:
+            schema['max_length'] = self.max_length  # type: ignore
+        json_schema = handler(schema)
+        update_not_none(
+            json_schema,
+            type='string',
+            writeOnly=True,
+            format='password',
+        )
+        return json_schema
+
+    def __get_pydantic_core_schema__(self, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        self.inner_schema = handler(str if self.field_type is SecretStr else bytes)
+        error_kind = 'string_type' if self.field_type is SecretStr else 'bytes_type'
+        return core_schema.general_after_validator_function(
+            self.validate,
+            core_schema.union_schema(
+                [core_schema.is_instance_schema(self.field_type), self.inner_schema],
+                strict=True,
+                custom_error_type=error_kind,
+            ),
+            serialization=core_schema.plain_serializer_function_ser_schema(
+                self.serialize, info_arg=True, json_return_type='str'
+            ),
+        )
 
 
 class SecretStr(SecretField[str]):
-    _error_kind = 'string_type'
-
-    @classmethod
-    def _pre_core_schema(cls) -> core_schema.CoreSchema:
-        return core_schema.str_schema()
-
     def _display(self) -> str:
-        return secret_display(self)
+        return _secret_display(self.get_secret_value())
 
 
 class SecretBytes(SecretField[bytes]):
-    _error_kind = 'bytes_type'
-
-    @classmethod
-    def _pre_core_schema(cls) -> core_schema.CoreSchema:
-        return core_schema.bytes_schema()
-
     def _display(self) -> bytes:
-        return secret_display(self).encode()
+        return _secret_display(self.get_secret_value()).encode()
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PAYMENT CARD TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~

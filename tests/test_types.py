@@ -1539,7 +1539,9 @@ def test_invalid_schema_constraints(kwargs, type_):
 
 
 def test_invalid_decimal_constraint():
-    with pytest.raises(TypeError, match="'max_length' is not a valid constraint for DecimalValidator"):
+    with pytest.raises(
+        TypeError, match="The following constraints cannot be applied to <class 'decimal.Decimal'>: 'max_length'"
+    ):
 
         class Foo(BaseModel):
             a: Decimal = Field('foo', title='A title', description='A description', max_length=5)

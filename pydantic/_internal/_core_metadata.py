@@ -18,10 +18,6 @@ if typing.TYPE_CHECKING:
 
 
 class CoreMetadata(typing_extensions.TypedDict, total=False):
-    # `pydantic_cs_update_function Retrieves the function that will be used to update the CoreSchema.
-    # This is generally obtained from a `__pydantic_update_schema__` function
-    pydantic_cs_update_function: UpdateCoreSchemaCallable | None
-
     pydantic_js_functions: list[GetJsonSchemaFunction]
 
     # If `pydantic_js_prefer_positional_arguments` is True, the JSON schema generator will
@@ -79,7 +75,6 @@ class CoreMetadataHandler:
 
 def build_metadata_dict(
     *,  # force keyword arguments to make it easier to modify this signature in a backwards-compatible way
-    cs_update_function: UpdateCoreSchemaCallable | None = None,
     js_functions: list[GetJsonSchemaFunction] | None = None,
     js_prefer_positional_arguments: bool | None = None,
     initial_metadata: Any | None = None,
@@ -92,7 +87,6 @@ def build_metadata_dict(
         raise TypeError(f'CoreSchema metadata should be a dict; got {initial_metadata!r}.')
 
     metadata = CoreMetadata(
-        pydantic_cs_update_function=cs_update_function,
         pydantic_js_functions=js_functions or [],
         pydantic_js_prefer_positional_arguments=js_prefer_positional_arguments,
     )
