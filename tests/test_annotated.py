@@ -300,6 +300,7 @@ def test_skip_validation_schema():
             return v * 2
 
     assert A(x=1).model_dump() == {'x': 2}
+    assert A(x='abc').model_dump() == {'x': 'abcabc'}  # no validation :)
     assert A.model_json_schema() == {
         'properties': {'x': {'title': 'X', 'type': 'integer'}},
         'required': ['x'],
