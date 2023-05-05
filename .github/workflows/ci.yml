@@ -370,7 +370,7 @@ jobs:
     name: Send tweet
     runs-on: ubuntu-latest
     needs: [release]
-    if: ${{ needs.release.status == 'OK' }}
+    if: ${{ needs.release.status == 'success' }}
 
     steps:
       - uses: actions/setup-python@v4
