@@ -5,8 +5,7 @@ from typing import Any, Dict, cast
 
 import pytest
 
-from pydantic import BaseModel, ValidationInfo
-from pydantic.decorators import model_validator
+from pydantic import BaseModel, ValidationInfo, model_validator
 
 
 def test_model_validator_wrap() -> None:

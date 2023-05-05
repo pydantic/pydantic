@@ -17,7 +17,7 @@ from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
 
 if TYPE_CHECKING:
-    from ..decorators import FieldValidatorModes
+    from ..validators import FieldValidatorModes
 
 try:
     from functools import cached_property  # type: ignore

@@ -2,7 +2,8 @@ from typing import List, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ValidationError, model_serializer, parse_obj_as, root_validator
+from pydantic import BaseModel, ValidationError, parse_obj_as, root_validator
+from pydantic.serializers import model_serializer
 
 
 class Model(BaseModel):

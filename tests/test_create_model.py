@@ -2,8 +2,17 @@ from typing import Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, create_model, errors
-from pydantic.decorators import field_validator, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PydanticUserError,
+    ValidationError,
+    create_model,
+    errors,
+    field_validator,
+)
+from pydantic.decorators import validator
 from pydantic.fields import ModelPrivateAttr
 
 

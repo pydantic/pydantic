@@ -9,7 +9,6 @@ from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
 from warnings import warn
 
-from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, Protocol, TypeAlias
 
 from ._internal import _decorators, _decorators_v1
@@ -40,20 +39,6 @@ if TYPE_CHECKING:
         def __call__(self, __cls: Any, values: dict[str, Any], **kwargs: Any) -> Any:
             ...
 
-    class _V2ValidatorClsMethod(Protocol):
-        def __call__(self, __cls: Any, __input_value: Any, __info: _core_schema.FieldValidationInfo) -> Any:
-            ...
-
-    class _V2WrapValidatorClsMethod(Protocol):
-        def __call__(
-            self,
-            __cls: Any,
-            __input_value: Any,
-            __validator: _core_schema.ValidatorFunctionWrapHandler,
-            __info: _core_schema.ValidationInfo,
-        ) -> Any:
-            ...
-
     class _V1RootValidatorClsMethod(Protocol):
         def __call__(
             self, __cls: Any, __values: _decorators_v1.RootValidatorValues
@@ -72,19 +57,6 @@ if TYPE_CHECKING:
         _decorators_v1.V1ValidatorWithValuesAndKwargs,
     ]
 
-    V2Validator = Union[
-        _V2ValidatorClsMethod,
-        _core_schema.FieldValidatorFunction,
-        _OnlyValueValidatorClsMethod,
-        _core_schema.NoInfoValidatorFunction,
-    ]
-
-    V2WrapValidator = Union[
-        _V2WrapValidatorClsMethod,
-        _core_schema.GeneralWrapValidatorFunction,
-        _core_schema.FieldWrapValidatorFunction,
-    ]
-
     V1RootValidator = Union[
         _V1RootValidatorClsMethod,
         _decorators_v1.V1RootValidatorFunction,
@@ -96,12 +68,6 @@ if TYPE_CHECKING:
     # We lie to type checkers and say we return the same thing we get
     # but in reality we return a proxy object that _mostly_ behaves like the wrapped thing
     _V1ValidatorType = TypeVar('_V1ValidatorType', V1Validator, _PartialClsOrStaticMethod)
-    _V2BeforeAfterOrPlainValidatorType = TypeVar(
-        '_V2BeforeAfterOrPlainValidatorType',
-        V2Validator,
-        _PartialClsOrStaticMethod,
-    )
-    _V2WrapValidatorType = TypeVar('_V2WrapValidatorType', V2WrapValidator, _PartialClsOrStaticMethod)
     _V1RootValidatorFunctionType = TypeVar(
         '_V1RootValidatorFunctionType',
         _decorators_v1.V1RootValidatorFunction,
@@ -150,7 +116,7 @@ def validator(
             "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
-    elif not all(isinstance(field, str) for field in fields):
+    elif not all(isinstance(field, str) for field in fields):  # type: ignore
         raise PydanticUserError(
             "`@validator` fields should be passed as separate string args. "
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
@@ -185,81 +151,6 @@ def validator(
         return _decorators.PydanticDescriptorProxy(f, validator_wrapper_info, shim=wrap)
 
     return dec  # type: ignore[return-value]
-
-
-@overload
-def field_validator(
-    __field: str,
-    *fields: str,
-    mode: Literal['before', 'after', 'plain'] = ...,
-    check_fields: bool | None = ...,
-) -> Callable[[_V2BeforeAfterOrPlainValidatorType], _V2BeforeAfterOrPlainValidatorType]:
-    ...
-
-
-@overload
-def field_validator(
-    __field: str,
-    *fields: str,
-    mode: Literal['wrap'],
-    check_fields: bool | None = ...,
-) -> Callable[[_V2WrapValidatorType], _V2WrapValidatorType]:
-    ...
-
-
-FieldValidatorModes: TypeAlias = Literal['before', 'after', 'wrap', 'plain']
-
-
-def field_validator(
-    __field: str,
-    *fields: str,
-    mode: FieldValidatorModes = 'after',
-    check_fields: bool | None = None,
-) -> Callable[[Any], Any]:
-    """
-    Decorate methods on the class indicating that they should be used to validate fields.
-
-    Args:
-        __field (str): The first field the field_validator should be called on; this is separate
-            from `fields` to ensure an error is raised if you don't pass at least one.
-        *fields (tuple): Additional field(s) the field_validator should be called on.
-        mode (FieldValidatorModes): Specifies whether to validate the fields before or after validation.
-             Defaults to 'after'.
-        check_fields (bool | None): If set to True, checks that the fields actually exist on the model.
-            Defaults to None.
-
-    Returns:
-        Callable: A decorator that can be used to decorate a function to be used as a field_validator.
-    """
-    if isinstance(__field, FunctionType):
-        raise PydanticUserError(
-            '`@field_validator` should be used with fields and keyword arguments, not bare. '
-            "E.g. usage should be `@validator('<field_name>', ...)`",
-            code='validator-no-fields',
-        )
-    fields = __field, *fields
-    if not all(isinstance(field, str) for field in fields):
-        raise PydanticUserError(
-            '`@field_validator` fields should be passed as separate string args. '
-            "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
-            code='validator-invalid-fields',
-        )
-
-    def dec(
-        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
-    ) -> _decorators.PydanticDescriptorProxy[Any]:
-        if _decorators.is_instance_method_from_sig(f):
-            raise PydanticUserError(
-                '`@field_validator` cannot be applied to instance methods', code='validator-instance-method'
-            )
-
-        # auto apply the @classmethod decorator
-        f = _decorators.ensure_classmethod_based_on_signature(f)
-
-        dec_info = _decorators.FieldValidatorDecoratorInfo(fields=fields, mode=mode, check_fields=check_fields)
-        return _decorators.PydanticDescriptorProxy(f, dec_info)
-
-    return dec
 
 
 @overload
@@ -335,253 +226,5 @@ def root_validator(
         res = _decorators.ensure_classmethod_based_on_signature(f)
         dec_info = _decorators.RootValidatorDecoratorInfo(mode=mode)
         return _decorators.PydanticDescriptorProxy(res, dec_info, shim=wrap)
-
-    return dec
-
-
-if TYPE_CHECKING:
-    _PlainSerializationFunction = Union[_core_schema.SerializerFunction, _PartialClsOrStaticMethod]
-
-    _WrapSerializationFunction = Union[_core_schema.WrapSerializerFunction, _PartialClsOrStaticMethod]
-
-    _PlainSerializeMethodType = TypeVar('_PlainSerializeMethodType', bound=_PlainSerializationFunction)
-    _WrapSerializeMethodType = TypeVar('_WrapSerializeMethodType', bound=_WrapSerializationFunction)
-
-
-@overload
-def field_serializer(
-    __field: str,
-    *fields: str,
-    json_return_type: _core_schema.JsonReturnTypes | None = ...,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    check_fields: bool | None = ...,
-) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
-    ...
-
-
-@overload
-def field_serializer(
-    __field: str,
-    *fields: str,
-    mode: Literal['plain'],
-    json_return_type: _core_schema.JsonReturnTypes | None = ...,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    check_fields: bool | None = ...,
-) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
-    ...
-
-
-@overload
-def field_serializer(
-    __field: str,
-    *fields: str,
-    mode: Literal['wrap'],
-    json_return_type: _core_schema.JsonReturnTypes | None = ...,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
-    check_fields: bool | None = ...,
-) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]:
-    ...
-
-
-def field_serializer(
-    *fields: str,
-    mode: Literal['plain', 'wrap'] = 'plain',
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
-    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
-    check_fields: bool | None = None,
-) -> Callable[[Any], Any]:
-    """
-    Decorate methods on the class indicating that they should be used to serialize fields.
-
-    Four signatures are supported:
-
-    - `(self, value: Any, info: FieldSerializationInfo)`
-    - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`
-    - `(value: Any, info: SerializationInfo)`
-    - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
-
-    Args:
-        fields (str): Which field(s) the method should be called on.
-        mode (str): `plain` means the function will be called instead of the default serialization logic,
-            `wrap` means the function will be called with an argument to optionally call the
-            default serialization logic.
-        json_return_type (str): The type that the function returns if the serialization mode is JSON.
-        when_used (str): When the function should be called.
-        check_fields (bool): Whether to check that the fields actually exist on the model.
-
-    Returns:
-        Callable: A decorator that can be used to decorate a function to be used as a field serializer.
-    """
-
-    def dec(
-        f: Callable[..., Any] | staticmethod[Any, Any] | classmethod[Any, Any, Any]
-    ) -> _decorators.PydanticDescriptorProxy[Any]:
-        dec_info = _decorators.FieldSerializerDecoratorInfo(
-            fields=fields,
-            mode=mode,
-            json_return_type=json_return_type,
-            when_used=when_used,
-            check_fields=check_fields,
-        )
-        return _decorators.PydanticDescriptorProxy(f, dec_info)
-
-    return dec
-
-
-def model_serializer(
-    __f: Callable[..., Any] | None = None,
-    *,
-    mode: Literal['plain', 'wrap'] = 'plain',
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
-) -> Callable[[Any], _decorators.PydanticDescriptorProxy[Any]] | _decorators.PydanticDescriptorProxy[Any]:
-    """
-    Decorate a function which will be called to serialize the model.
-
-    (`when_used` is not permitted here since it makes no sense.)
-
-    Args:
-        __f (Callable[..., Any] | None): The function to be decorated.
-        mode (Literal['plain', 'wrap']): The serialization mode. `'plain'` means the function will be called
-            instead of the default serialization logic, `'wrap'` means the function will be called with an argument
-            to optionally call the default serialization logic.
-        json_return_type (_core_schema.JsonReturnTypes | None): The type that the function returns if the
-            serialization mode is JSON.
-
-    Returns:
-        Callable: A decorator that can be used to decorate a function to be used as a model serializer.
-    """
-
-    def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
-        dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, json_return_type=json_return_type)
-        return _decorators.PydanticDescriptorProxy(f, dec_info)
-
-    if __f is None:
-        return dec
-    else:
-        return dec(__f)
-
-
-ModelType = TypeVar('ModelType')
-ModelWrapValidatorHandler = Callable[[Any], ModelType]
-
-
-class ModelWrapValidatorWithoutInfo(Protocol):
-    def __call__(
-        self,
-        cls: type[ModelType],
-        # this can be a dict, a model instance
-        # or anything else that gets passed to validate_python
-        # thus validators _must_ handle all cases
-        __value: Any,
-        __handler: Callable[[Any], ModelType],
-    ) -> ModelType:
-        ...
-
-
-class ModelWrapValidator(Protocol):
-    def __call__(
-        self,
-        cls: type[ModelType],
-        # this can be a dict, a model instance
-        # or anything else that gets passed to validate_python
-        # thus validators _must_ handle all cases
-        __value: Any,
-        __handler: Callable[[Any], ModelType],
-        __info: _core_schema.ValidationInfo,
-    ) -> ModelType:
-        ...
-
-
-class ModelBeforeValidatorWithoutInfo(Protocol):
-    def __call__(
-        self,
-        cls: Any,
-        # this can be a dict, a model instance
-        # or anything else that gets passed to validate_python
-        # thus validators _must_ handle all cases
-        __value: Any,
-    ) -> Any:
-        ...
-
-
-class ModelBeforeValidator(Protocol):
-    def __call__(
-        self,
-        cls: Any,
-        # this can be a dict, a model instance
-        # or anything else that gets passed to validate_python
-        # thus validators _must_ handle all cases
-        __value: Any,
-        __info: _core_schema.ValidationInfo,
-    ) -> Any:
-        ...
-
-
-class ModelAfterValidatorWithoutInfo(Protocol):
-    @staticmethod
-    def __call__(
-        self: ModelType,  # type: ignore
-    ) -> ModelType:
-        ...
-
-
-class ModelAfterValidator(Protocol):
-    @staticmethod
-    def __call__(
-        self: ModelType,  # type: ignore
-        __info: _core_schema.ValidationInfo,
-    ) -> ModelType:
-        ...
-
-
-AnyModelWrapValidator = Union[ModelWrapValidator, ModelWrapValidatorWithoutInfo]
-AnyModeBeforeValidator = Union[ModelBeforeValidator, ModelBeforeValidatorWithoutInfo]
-AnyModeAfterValidator = Union[ModelAfterValidator, ModelAfterValidatorWithoutInfo]
-
-
-@overload
-def model_validator(
-    *,
-    mode: Literal['wrap'],
-) -> Callable[[AnyModelWrapValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
-    ...
-
-
-@overload
-def model_validator(
-    *,
-    mode: Literal['before'],
-) -> Callable[[AnyModeBeforeValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
-    ...
-
-
-@overload
-def model_validator(
-    *,
-    mode: Literal['after'],
-) -> Callable[[AnyModeAfterValidator], _decorators.PydanticDescriptorProxy[_decorators.ModelValidatorDecoratorInfo]]:
-    ...
-
-
-def model_validator(
-    *,
-    mode: Literal['wrap', 'before', 'after'],
-) -> Any:
-    """
-    Decorate model methods for validation purposes.
-
-    Args:
-        mode (Literal['wrap', 'before', 'after']): A required string literal that specifies the validation mode.
-            It can be one of the following: 'wrap', 'before', or 'after'.
-
-    Returns:
-        Any: A decorator that can be used to decorate a function to be used as a model validator.
-    """
-
-    def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
-        # auto apply the @classmethod decorator
-        f = _decorators.ensure_classmethod_based_on_signature(f)
-        dec_info = _decorators.ModelValidatorDecoratorInfo(mode=mode)
-        return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     return dec

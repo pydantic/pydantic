@@ -11,16 +11,18 @@ from pydantic_core.core_schema import (
 from . import dataclasses
 from ._migration import getattr_migration
 from .config import ConfigDict, Extra
-from .decorators import field_serializer, field_validator, model_serializer, model_validator, root_validator, validator
-from .deprecated.config import BaseConfig
+from .decorators import root_validator, validator
+from .deprecated.config import BaseConfig  # type: ignore
 from .deprecated.tools import *
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .main import *
 from .networks import *
+from .serializers import field_serializer, model_serializer
 from .type_adapter import TypeAdapter
 from .types import *
 from .validate_call import validate_call
+from .validators import field_validator, model_validator
 from .version import VERSION
 
 __version__ = VERSION
@@ -31,18 +33,18 @@ __all__ = [
     # dataclasses
     'dataclasses',
     # decorators
-    'field_validator',
-    'model_validator',
     'root_validator',
     'validator',
-    'field_serializer',
-    'model_serializer',
     'ValidationInfo',
     'FieldValidationInfo',
     'SerializationInfo',
     'FieldSerializationInfo',
     'ValidatorFunctionWrapHandler',
     'SerializerFunctionWrapHandler',
+    'field_serializer',
+    'field_validator',
+    'model_serializer',
+    'model_validator',
     # config
     'BaseConfig',
     'ConfigDict',

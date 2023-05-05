@@ -21,10 +21,11 @@ from pydantic import (
     ValidationInfo,
     ValidatorFunctionWrapHandler,
     errors,
+    field_validator,
+    root_validator,
     validator,
 )
-from pydantic.annotated_arguments import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
-from pydantic.decorators import field_validator, root_validator
+from pydantic.validators import AfterValidator, BeforeValidator, PlainValidator, WrapValidator
 
 V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are deprecated'
 

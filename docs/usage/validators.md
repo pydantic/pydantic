@@ -95,7 +95,7 @@ from typing import List
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, ValidationError, field_validator
-from pydantic.annotated_arguments import AfterValidator
+from pydantic.validators import AfterValidator
 
 
 def check_squares(v: int) -> int:
@@ -177,7 +177,7 @@ from typing import List, TypeVar
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
-from pydantic.annotated_arguments import AfterValidator
+from pydantic.validators import AfterValidator
 
 T = TypeVar('T')
 
@@ -340,7 +340,7 @@ In this case you should set `check_fields=False` on the validator.
 
 Validators also work with *pydantic* dataclasses.
 
-**TODO: Change this example so that it _should_ use a validator; right now it would be better off with default_factory..**
+**TODO: Change this example so that it *should* use a validator; right now it would be better off with default_factory..**
 
 ```py
 from datetime import datetime

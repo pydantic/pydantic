@@ -172,7 +172,8 @@ the values should be functions which serialise that type (see the example below)
 ```py
 from datetime import datetime, timedelta, timezone
 
-from pydantic import BaseModel, field_serializer
+from pydantic import BaseModel
+from pydantic.serializers import field_serializer
 
 
 class WithCustomEncoders(BaseModel):

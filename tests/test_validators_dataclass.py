@@ -4,9 +4,8 @@ from typing import Any, List
 import pytest
 from dirty_equals import HasRepr
 
-from pydantic import ValidationError, root_validator
+from pydantic import ValidationError, field_validator, root_validator
 from pydantic.dataclasses import dataclass
-from pydantic.decorators import field_validator
 
 
 def test_simple():

@@ -6,9 +6,9 @@ from typing_extensions import deprecated
 
 from .._internal import _config, _typing_extra
 from ..alias_generators import to_pascal
-from ..decorators import field_validator
 from ..errors import PydanticUserError
 from ..main import BaseModel, create_model
+from ..validators import field_validator
 
 __all__ = ('validate_arguments',)
 

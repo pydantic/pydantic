@@ -1,5 +1,6 @@
+import sys
 import warnings
-from typing import Any, Callable
+from typing import Any, Callable, Dict
 
 from ._internal._validators import import_string
 
@@ -269,6 +270,9 @@ def getattr_migration(module: str) -> Callable[[str], Any]:
             return import_string(DEPRECATED_MOVED_IN_V2[import_path])
         if import_path in REMOVED_IN_V2:
             raise PydanticImportError(f'`{import_path}` has been removed in V2.')
+        globals: Dict[str, Any] = sys.modules[module].__dict__
+        if name in globals:
+            return globals[name]
         raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
 
     return wrapper

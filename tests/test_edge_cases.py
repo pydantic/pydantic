@@ -35,21 +35,21 @@ from pydantic import (
     ValidationError,
     constr,
     errors,
-)
-from pydantic.decorators import (
-    field_serializer,
     field_validator,
-    model_serializer,
     model_validator,
     root_validator,
     validator,
 )
 from pydantic.fields import Field, computed_field
+from pydantic.serializers import (
+    field_serializer,
+    model_serializer,
+)
 
 
 def test_str_bytes():
     class Model(BaseModel):
-        v: Union[str, bytes] = ...
+        v: Union[str, bytes]
 
     m = Model(v='s')
     assert m.v == 's'

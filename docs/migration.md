@@ -96,7 +96,7 @@ This lead to a variety of bugs, for example calling a function with the wrong si
 ```python
 import pytest
 
-from pydantic import BaseModel, field_validator  # or validator
+from pydantic import BaseModel, field_validator  # or pydantic.validator
 
 
 class Model(BaseModel):
@@ -151,7 +151,8 @@ Some of these arguments have been removed:
 * `field`: this argument used to be a `ModelField` object, which was a quasi-internal class that no longer exists in Pydantic V2. Most of this information can still be accessed by using the field name from `info.field_name` to index into `cls.model_fields`
 
 ```python
-from pydantic import BaseModel, FieldValidationInfo, field_validator
+from pydantic import BaseModel, FieldValidationInfo
+from pydantic.validators import field_validator
 
 
 class Model(BaseModel):
