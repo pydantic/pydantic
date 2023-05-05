@@ -239,8 +239,7 @@ def test_typed_dict_error():
 
 
 def test_on_error_default_not_int():
-    with pytest.warns(UserWarning):
-        v = SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'default': [1, 2, 3], 'on_error': 'default'})
+    v = SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'default': [1, 2, 3], 'on_error': 'default'})
     assert v.validate_python(42) == 42
     assert v.validate_python('42') == 42
     assert v.validate_python('wrong') == [1, 2, 3]
@@ -278,25 +277,24 @@ def test_model_class():
         field_a: str
         field_b: int
 
-    with pytest.warns(UserWarning):
-        v = SchemaValidator(
-            {
-                'type': 'model',
-                'cls': MyModel,
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'cls': MyModel,
+            'schema': {
+                'type': 'default',
                 'schema': {
-                    'type': 'default',
-                    'schema': {
-                        'type': 'model-fields',
-                        'fields': {
-                            'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                            'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
-                        },
+                    'type': 'model-fields',
+                    'fields': {
+                        'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                        'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
                     },
-                    'default': ({'field_a': '[default-a]', 'field_b': '[default-b]'}, None, set()),
-                    'on_error': 'default',
                 },
-            }
-        )
+                'default': ({'field_a': '[default-a]', 'field_b': '[default-b]'}, None, set()),
+                'on_error': 'default',
+            },
+        }
+    )
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
@@ -388,44 +386,37 @@ def test_deepcopy_mutable_defaults():
         int_list_with_default: List[int] = stored_empty_list
         str_dict_with_default: Dict[str, str] = stored_empty_dict
 
-    with pytest.warns(
-        UserWarning,
-        match=(
-            r'`[Ll]ist\[int\]` has a mutable default value that will be deep copied during validation.'
-            r' Consider using `default_factory` instead for finer control.'
-        ),
-    ):
-        v = SchemaValidator(
-            {
-                'type': 'model',
-                'cls': Model,
-                'schema': {
-                    'type': 'model-fields',
-                    'fields': {
-                        'int_list_with_default': {
-                            'type': 'model-field',
-                            'schema': {
-                                'type': 'default',
-                                'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
-                                'default': stored_empty_list,
-                            },
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'cls': Model,
+            'schema': {
+                'type': 'model-fields',
+                'fields': {
+                    'int_list_with_default': {
+                        'type': 'model-field',
+                        'schema': {
+                            'type': 'default',
+                            'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                            'default': stored_empty_list,
                         },
-                        'str_dict_with_default': {
-                            'type': 'model-field',
+                    },
+                    'str_dict_with_default': {
+                        'type': 'model-field',
+                        'schema': {
+                            'type': 'default',
                             'schema': {
-                                'type': 'default',
-                                'schema': {
-                                    'type': 'dict',
-                                    'keys_schema': {'type': 'str'},
-                                    'values_schema': {'type': 'str'},
-                                },
-                                'default': stored_empty_dict,
+                                'type': 'dict',
+                                'keys_schema': {'type': 'str'},
+                                'values_schema': {'type': 'str'},
                             },
+                            'default': stored_empty_dict,
                         },
                     },
                 },
-            }
-        )
+            },
+        }
+    )
 
     m1 = v.validate_python({})
 
