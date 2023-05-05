@@ -40,8 +40,8 @@ def test_namedtuple():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(pos=('1', 2), event=['qwe', '2', 3, 'qwe'])
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('event', 0),
@@ -114,8 +114,8 @@ def test_namedtuple_right_length():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(p=(1, 2, 3))
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'unexpected_positional_argument',
             'loc': ('p', 2),

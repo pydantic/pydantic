@@ -67,7 +67,7 @@ def test_alias_error():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(_a='foo')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'foo',
             'loc': ('_a',),
@@ -86,7 +86,7 @@ def test_alias_error_loc_by_alias():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(_a='foo')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'foo',
             'loc': ('a',),
@@ -116,7 +116,7 @@ def test_pop_by_field_name():
     assert Model(last_updated_by='foo').model_dump() == {'last_updated_by': 'foo'}
     with pytest.raises(ValidationError) as exc_info:
         Model(lastUpdatedBy='foo', last_updated_by='bar')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'bar',
             'loc': ('last_updated_by',),
@@ -142,7 +142,7 @@ def test_alias_override_behavior():
     Parent(x1=1)
     with pytest.raises(ValidationError) as exc_info:
         Parent(x1=-1)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'ctx': {'gt': 0}, 'input': -1, 'loc': ('x1',), 'msg': 'Input should be greater than 0', 'type': 'greater_than'}
     ]
 
@@ -154,14 +154,14 @@ def test_alias_override_behavior():
     # Check the alias from Parent cannot be used
     with pytest.raises(ValidationError) as exc_info:
         Child(x1=1, y2=2)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {'x1': 1, 'y2': 2}, 'loc': ('x2',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
     # Check the type hint from Parent _is_ preserved
     with pytest.raises(ValidationError) as exc_info:
         Child(x2='a', y2=2)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': ('x2',),
@@ -295,7 +295,7 @@ def test_validation_alias():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x='bar')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'missing',
             'loc': ('foo',),
@@ -317,7 +317,7 @@ def test_validation_alias_with_alias():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x='bar')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'missing',
             'loc': ('foo',),
@@ -339,7 +339,7 @@ def test_validation_alias_from_str_alias():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(x='bar')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'missing',
             'loc': ('foo',),
@@ -452,7 +452,7 @@ def test_validation_alias_parse_data():
     assert Model.model_validate({'c': 'test'}).x == 'test'
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate({'b': ['hello']})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'missing',
             'loc': ('a',),

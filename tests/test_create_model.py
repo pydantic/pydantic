@@ -173,7 +173,7 @@ def test_funky_name():
     assert m.model_dump() == {'this-is-funky': 123}
     with pytest.raises(ValidationError) as exc_info:
         model()
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {}, 'loc': ('this-is-funky',), 'msg': 'Field required', 'type': 'missing'}
     ]
 

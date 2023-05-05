@@ -9,14 +9,11 @@ from __future__ import annotations as _annotations
 import re
 import typing
 from collections import OrderedDict, defaultdict, deque
-from decimal import Decimal, DecimalException
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any
 from uuid import UUID
 
-from pydantic_core import PydanticCustomError, PydanticKnownError, core_schema
-
-from . import _fields
+from pydantic_core import PydanticCustomError, core_schema
 
 
 def mapping_validator(
@@ -106,148 +103,6 @@ def _import_string_logic(dotted_path: str) -> Any:
         return getattr(module, class_name)
     except AttributeError as e:
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
-
-
-class DecimalValidator(_fields.CustomValidator):
-    __slots__ = (
-        'gt',
-        'ge',
-        'lt',
-        'le',
-        'max_digits',
-        'decimal_places',
-        'multiple_of',
-        'allow_inf_nan',
-        'check_digits',
-        'strict',
-    )
-
-    def __init__(self) -> None:
-        self.gt: int | Decimal | None = None
-        self.ge: int | Decimal | None = None
-        self.lt: int | Decimal | None = None
-        self.le: int | Decimal | None = None
-        self.max_digits: int | None = None
-        self.decimal_places: int | None = None
-        self.multiple_of: int | Decimal | None = None
-        self.allow_inf_nan: bool = False
-        self.check_digits: bool = False
-        self.strict: bool = False
-
-    def json_schema_override_schema(self) -> core_schema.CoreSchema:
-        """
-        This function is used to produce an "override schema" for generating the JSON schema of fields of type Decimal.
-
-        The purpose of an override schema is to use the pre-existing approach to producing a JSON schema from a
-        CoreSchema, where we know we want to use a different CoreSchema for the purposes of JSON schema generation.
-        (Generally because we know what we want and an appropriately simplified CoreSchema will produce it.)
-        """
-        return core_schema.float_schema(
-            allow_inf_nan=self.allow_inf_nan,
-            multiple_of=None if self.multiple_of is None else float(self.multiple_of),
-            le=None if self.le is None else float(self.le),
-            ge=None if self.ge is None else float(self.ge),
-            lt=None if self.lt is None else float(self.lt),
-            gt=None if self.gt is None else float(self.gt),
-        )
-
-    def __pydantic_update_schema__(self, schema: core_schema.CoreSchema, **kwargs: Any) -> None:
-        self._update_attrs(kwargs)
-
-        self.check_digits = self.max_digits is not None or self.decimal_places is not None
-        if self.check_digits and self.allow_inf_nan:
-            raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
-
-    def __call__(self, __input_value: int | float | str) -> Decimal:  # noqa: C901 (ignore complexity)
-        if isinstance(__input_value, Decimal):
-            value = __input_value
-        else:
-            try:
-                value = Decimal(str(__input_value))
-            except DecimalException:
-                raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
-
-        if not self.allow_inf_nan or self.check_digits:
-            _1, digit_tuple, exponent = value.as_tuple()
-            if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
-                raise PydanticKnownError('finite_number')
-
-            if self.check_digits:
-                if isinstance(exponent, str):
-                    raise PydanticKnownError('finite_number')
-                elif exponent >= 0:
-                    # A positive exponent adds that many trailing zeros.
-                    digits = len(digit_tuple) + exponent
-                    decimals = 0
-                else:
-                    # If the absolute value of the negative exponent is larger than the
-                    # number of digits, then it's the same as the number of digits,
-                    # because it'll consume all the digits in digit_tuple and then
-                    # add abs(exponent) - len(digit_tuple) leading zeros after the
-                    # decimal point.
-                    if abs(exponent) > len(digit_tuple):
-                        digits = decimals = abs(exponent)
-                    else:
-                        digits = len(digit_tuple)
-                        decimals = abs(exponent)
-
-                if self.max_digits is not None and digits > self.max_digits:
-                    raise PydanticCustomError(
-                        'decimal_max_digits',
-                        'ensure that there are no more than {max_digits} digits in total',
-                        {'max_digits': self.max_digits},
-                    )
-
-                if self.decimal_places is not None and decimals > self.decimal_places:
-                    raise PydanticCustomError(
-                        'decimal_max_places',
-                        'ensure that there are no more than {decimal_places} decimal places',
-                        {'decimal_places': self.decimal_places},
-                    )
-
-                if self.max_digits is not None and self.decimal_places is not None:
-                    whole_digits = digits - decimals
-                    expected = self.max_digits - self.decimal_places
-                    if whole_digits > expected:
-                        raise PydanticCustomError(
-                            'decimal_whole_digits',
-                            'ensure that there are no more than {whole_digits} digits before the decimal point',
-                            {'whole_digits': expected},
-                        )
-
-        if self.multiple_of is not None:
-            mod = value / self.multiple_of % 1
-            if mod != 0:
-                raise PydanticCustomError(
-                    'decimal_multiple_of',
-                    'Input should be a multiple of {multiple_of}',
-                    {'multiple_of': self.multiple_of},
-                )
-
-        # these type checks are here to handle the following error:
-        # Operator ">" not supported for types "(
-        #   <subclass of int and Decimal>
-        #   | <subclass of float and Decimal>
-        #   | <subclass of str and Decimal>
-        #   | Decimal" and "int
-        #   | Decimal"
-        # )
-        if self.gt is not None and not value > self.gt:  # type: ignore
-            raise PydanticKnownError('greater_than', {'gt': self.gt})
-        elif self.ge is not None and not value >= self.ge:  # type: ignore
-            raise PydanticKnownError('greater_than_equal', {'ge': self.ge})
-
-        if self.lt is not None and not value < self.lt:  # type: ignore
-            raise PydanticKnownError('less_than', {'lt': self.lt})
-        if self.le is not None and not value <= self.le:  # type: ignore
-            raise PydanticKnownError('less_than_equal', {'le': self.le})
-
-        return value
-
-    def __repr__(self) -> str:
-        slots = [(k, getattr(self, k)) for k in self.__slots__]
-        s = ', '.join(f'{k}={v!r}' for k, v in slots if v is not None)
-        return f'DecimalValidator({s})'
 
 
 def uuid_validator(__input_value: str | bytes) -> UUID:

@@ -83,6 +83,7 @@ except ValidationError as e:
             'loc': ('id',),
             'msg': 'Field required',
             'input': {'signup_ts': 'broken', 'friends': [1, 2, 'not number']},
+            'url': 'https://errors.pydantic.dev/2/v/missing',
         },
         {
             'type': 'datetime_parsing',
@@ -90,12 +91,14 @@ except ValidationError as e:
             'msg': 'Input should be a valid datetime, input is too short',
             'input': 'broken',
             'ctx': {'error': 'input is too short'},
+            'url': 'https://errors.pydantic.dev/2/v/datetime_parsing',
         },
         {
             'type': 'int_parsing',
             'loc': ('friends', 2),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'not number',
+            'url': 'https://errors.pydantic.dev/2/v/int_parsing',
         },
     ]
     """

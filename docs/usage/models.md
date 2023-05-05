@@ -469,6 +469,7 @@ except ValidationError as e:
                 'recursive_model': {'lat': 4.2, 'lng': 'New York'},
                 'gt_int': 21,
             },
+            'url': 'https://errors.pydantic.dev/2/v/missing',
         },
         {
             'type': 'greater_than',
@@ -476,24 +477,28 @@ except ValidationError as e:
             'msg': 'Input should be greater than 42',
             'input': 21,
             'ctx': {'gt': 42},
+            'url': 'https://errors.pydantic.dev/2/v/greater_than',
         },
         {
             'type': 'int_parsing',
             'loc': ('list_of_ints', 2),
             'msg': 'Input should be a valid integer, unable to parse string as an integer',
             'input': 'bad',
+            'url': 'https://errors.pydantic.dev/2/v/int_parsing',
         },
         {
             'type': 'float_parsing',
             'loc': ('a_float',),
             'msg': 'Input should be a valid number, unable to parse string as an number',
             'input': 'not a float',
+            'url': 'https://errors.pydantic.dev/2/v/float_parsing',
         },
         {
             'type': 'float_parsing',
             'loc': ('recursive_model', 'lng'),
             'msg': 'Input should be a valid number, unable to parse string as an number',
             'input': 'New York',
+            'url': 'https://errors.pydantic.dev/2/v/float_parsing',
         },
     ]
     """
@@ -532,6 +537,7 @@ except ValidationError as e:
             'msg': 'Value error, value must be "bar"',
             'input': 'ber',
             'ctx': {'error': 'value must be "bar"'},
+            'url': 'https://errors.pydantic.dev/2/v/value_error',
         }
     ]
     """
@@ -571,6 +577,7 @@ except ValidationError as e:
             'msg': 'value is not "bar", got "ber"',
             'input': 'ber',
             'ctx': {'wrong_value': 'ber'},
+            'url': 'https://errors.pydantic.dev/2/v/not_a_bar',
         }
     ]
     """
