@@ -330,7 +330,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
 
     raise PydanticUserError(
         f'Unrecognized field_validator function signature for {validator} with `mode={mode}`:{sig}',
-        code='field-validator-signature',
+        code='validator-signature',
     )
 
 

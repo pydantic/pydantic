@@ -502,7 +502,7 @@ def test_classmethod():
 
 
 def test_use_bare():
-    with pytest.raises(TypeError, match='validators should be used with fields'):
+    with pytest.raises(TypeError, match='`@validator` should be used with fields'):
 
         class Model(BaseModel):
             a: str
@@ -515,7 +515,7 @@ def test_use_bare():
 
 
 def test_use_bare_field_validator():
-    with pytest.raises(TypeError, match='field_validators should be used with fields'):
+    with pytest.raises(TypeError, match='`@field_validator` should be used with fields'):
 
         class Model(BaseModel):
             a: str
@@ -556,7 +556,7 @@ def test_validator_bad_fields_throws_configerror():
     Attempts to create a validator with fields set as a list of strings,
     rather than just multiple string args. Expects ConfigError to be raised.
     """
-    with pytest.raises(TypeError, match='validator fields should be passed as separate string args.'):
+    with pytest.raises(TypeError, match='`@validator` fields should be passed as separate string args.'):
 
         class Model(BaseModel):
             a: str
@@ -574,7 +574,7 @@ def test_field_validator_bad_fields_throws_configerror():
     Attempts to create a validator with fields set as a list of strings,
     rather than just multiple string args. Expects ConfigError to be raised.
     """
-    with pytest.raises(TypeError, match='field_validator fields should be passed as separate string args.'):
+    with pytest.raises(TypeError, match='`@field_validator` fields should be passed as separate string args.'):
 
         class Model(BaseModel):
             a: str
@@ -766,7 +766,7 @@ def test_wildcard_validator_error(decorator, pytest_warns):
 
 def test_invalid_field():
     msg = (
-        r'Validators defined with incorrect fields:'
+        r'Decorators defined with incorrect fields:'
         r' tests.test_validators.test_invalid_field.<locals>.Model:\d+.check_b'
         r" \(use check_fields=False if you're inheriting from the model and intended this\)"
     )
