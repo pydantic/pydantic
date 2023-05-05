@@ -95,11 +95,6 @@ impl BuildValidator for WithDefaultValidator {
         } else {
             false
         };
-        if copy_default {
-            let message = format!("`{}` has a mutable default value that will be deep copied during validation. Consider using `default_factory` instead for finer control.", validator.get_name());
-            let user_warning_type = py.import("builtins")?.getattr("UserWarning")?;
-            PyErr::warn(py, user_warning_type, &message, 0)?;
-        }
 
         let name = format!("{}[{}]", Self::EXPECTED_TYPE, validator.get_name());
 
