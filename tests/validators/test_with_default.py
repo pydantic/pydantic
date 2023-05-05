@@ -1,4 +1,5 @@
 from collections import deque
+from typing import Dict, List
 
 import pytest
 
@@ -238,14 +239,11 @@ def test_typed_dict_error():
 
 
 def test_on_error_default_not_int():
-    v = SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'default': [1, 2, 3], 'on_error': 'default'})
+    with pytest.warns(UserWarning):
+        v = SchemaValidator({'type': 'default', 'schema': {'type': 'int'}, 'default': [1, 2, 3], 'on_error': 'default'})
     assert v.validate_python(42) == 42
     assert v.validate_python('42') == 42
-    a = v.validate_python('wrong')
-    assert a == [1, 2, 3]
-    # default is not copied, so mutating it mutates the default
-    a.append(4)
-    assert v.validate_python('wrong') == [1, 2, 3, 4]
+    assert v.validate_python('wrong') == [1, 2, 3]
 
 
 def test_on_error_default_factory():
@@ -280,24 +278,25 @@ def test_model_class():
         field_a: str
         field_b: int
 
-    v = SchemaValidator(
-        {
-            'type': 'model',
-            'cls': MyModel,
-            'schema': {
-                'type': 'default',
+    with pytest.warns(UserWarning):
+        v = SchemaValidator(
+            {
+                'type': 'model',
+                'cls': MyModel,
                 'schema': {
-                    'type': 'model-fields',
-                    'fields': {
-                        'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
-                        'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
+                    'type': 'default',
+                    'schema': {
+                        'type': 'model-fields',
+                        'fields': {
+                            'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
+                            'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
+                        },
                     },
+                    'default': ({'field_a': '[default-a]', 'field_b': '[default-b]'}, None, set()),
+                    'on_error': 'default',
                 },
-                'default': ({'field_a': '[default-a]', 'field_b': '[default-b]'}, None, set()),
-                'on_error': 'default',
-            },
-        }
-    )
+            }
+        )
     m = v.validate_python({'field_a': 'test', 'field_b': 12})
     assert isinstance(m, MyModel)
     assert m.field_a == 'test'
@@ -379,3 +378,70 @@ def test_validate_default_error_typed_dict():
             'input': 'xx',
         }
     ]
+
+
+def test_deepcopy_mutable_defaults():
+    stored_empty_list = []
+    stored_empty_dict = {}
+
+    class Model:
+        int_list_with_default: List[int] = stored_empty_list
+        str_dict_with_default: Dict[str, str] = stored_empty_dict
+
+    with pytest.warns(
+        UserWarning,
+        match=(
+            r'`[Ll]ist\[int\]` has a mutable default value that will be deep copied during validation.'
+            r' Consider using `default_factory` instead for finer control.'
+        ),
+    ):
+        v = SchemaValidator(
+            {
+                'type': 'model',
+                'cls': Model,
+                'schema': {
+                    'type': 'model-fields',
+                    'fields': {
+                        'int_list_with_default': {
+                            'type': 'model-field',
+                            'schema': {
+                                'type': 'default',
+                                'schema': {'type': 'list', 'items_schema': {'type': 'int'}},
+                                'default': stored_empty_list,
+                            },
+                        },
+                        'str_dict_with_default': {
+                            'type': 'model-field',
+                            'schema': {
+                                'type': 'default',
+                                'schema': {
+                                    'type': 'dict',
+                                    'keys_schema': {'type': 'str'},
+                                    'values_schema': {'type': 'str'},
+                                },
+                                'default': stored_empty_dict,
+                            },
+                        },
+                    },
+                },
+            }
+        )
+
+    m1 = v.validate_python({})
+
+    assert m1.int_list_with_default == []
+    assert m1.str_dict_with_default == {}
+
+    assert m1.int_list_with_default is not stored_empty_list
+    assert m1.str_dict_with_default is not stored_empty_dict
+
+    m1.int_list_with_default.append(1)
+    m1.str_dict_with_default['a'] = 'abc'
+
+    m2 = v.validate_python({})
+
+    assert m2.int_list_with_default == []
+    assert m2.str_dict_with_default == {}
+
+    assert m2.int_list_with_default is not m1.int_list_with_default
+    assert m2.str_dict_with_default is not m1.str_dict_with_default
