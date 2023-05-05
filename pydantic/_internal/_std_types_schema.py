@@ -85,7 +85,8 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         try:
             return enum_type(__input_value)
         except ValueError:
-            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})
+            # The type: ignore on the next line is to ignore the requirement of LiteralString
+            raise PydanticCustomError('enum', f'Input should be {expected}', {'expected': expected})  # type: ignore
 
     enum_ref = get_type_ref(enum_type)
     description = None if not enum_type.__doc__ else inspect.cleandoc(enum_type.__doc__)

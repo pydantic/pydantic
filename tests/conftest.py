@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import os
 import re
 import secrets
 import sys
@@ -37,6 +38,13 @@ def _create_module_file(code, tmp_path, name):
     path = tmp_path / f'{name}.py'
     path.write_text(code)
     return name, str(path)
+
+
+@pytest.fixture(scope='session', autouse=True)
+def disable_error_urls():
+    # Don't add URLs during docs tests when printing
+    # Otherwise we'll get version numbers in the URLs that will update frequently
+    os.environ['PYDANTIC_ERRORS_OMIT_URL'] = 'true'
 
 
 @pytest.fixture

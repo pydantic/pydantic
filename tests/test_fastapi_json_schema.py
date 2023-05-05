@@ -14,11 +14,10 @@ from dataclasses import dataclass
 from typing import Any
 
 from dirty_equals import HasRepr, IsInstance, IsStr
-from pydantic_core import CoreSchema
-from pydantic_core.core_schema import TypedDictField
 
 from pydantic import BaseModel, ConfigDict
 from pydantic._internal._core_metadata import CoreMetadataHandler
+from pydantic._internal._core_utils import CoreSchemaOrField
 from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.json_schema import GenerateJsonSchema, JsonSchemaValue
 
@@ -46,7 +45,7 @@ class FastAPIGenerateJsonSchema(GenerateJsonSchema):
     I'm not sure which approach is better.
     """
 
-    def handle_invalid_for_json_schema(self, schema: CoreSchema | TypedDictField, error_info: str) -> JsonSchemaValue:
+    def handle_invalid_for_json_schema(self, schema: CoreSchemaOrField, error_info: str) -> JsonSchemaValue:
         # NOTE: I think it may be a good idea to rework this method to either not use CoreMetadataHandler,
         #    and/or to make CoreMetadataHandler a public API.
         if CoreMetadataHandler(schema).metadata.get('pydantic_js_modify_function') is not None:

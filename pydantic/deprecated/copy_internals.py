@@ -51,12 +51,19 @@ def _iter(
     if allowed_keys is None and not (to_dict or by_alias or exclude_unset or exclude_defaults or exclude_none):
         # huge boost for plain _iter()
         yield from self.__dict__.items()
+        if self.__pydantic_extra__:
+            yield from self.__pydantic_extra__.items()
         return
 
     value_exclude = _utils.ValueItems(self, exclude) if exclude is not None else None
     value_include = _utils.ValueItems(self, include) if include is not None else None
 
-    for field_key, v in self.__dict__.items():
+    if self.__pydantic_extra__ is None:
+        items = self.__dict__.items()
+    else:
+        items = list(self.__dict__.items()) + list(self.__pydantic_extra__.items())
+
+    for field_key, v in items:
         if (allowed_keys is not None and field_key not in allowed_keys) or (exclude_none and v is None):
             continue
 
@@ -90,7 +97,12 @@ def _iter(
 
 
 def _copy_and_set_values(
-    self: Model, values: typing.Dict[str, Any], fields_set: set[str], *, deep: bool  # noqa UP006
+    self: Model,
+    values: dict[str, Any],
+    fields_set: set[str],
+    extra: dict[str, Any] | None = None,
+    *,
+    deep: bool,  # UP006
 ) -> Model:
     if deep:
         # chances of having empty dict here are quite low for using smart_deepcopy
@@ -99,6 +111,7 @@ def _copy_and_set_values(
     cls = self.__class__
     m = cls.__new__(cls)
     _object_setattr(m, '__dict__', values)
+    _object_setattr(m, '__pydantic_extra__', extra)
     _object_setattr(m, '__pydantic_fields_set__', fields_set)
     for name in self.__private_attributes__:
         value = getattr(self, name, Undefined)
@@ -199,7 +212,8 @@ def _calculate_keys(
     if exclude_unset:
         keys = self.__pydantic_fields_set__.copy()
     else:
-        keys = self.__dict__.keys()
+        keys = set(self.__dict__.keys())
+        keys = keys | (self.__pydantic_extra__ or {}).keys()
 
     if include is not None:
         keys &= include.keys()

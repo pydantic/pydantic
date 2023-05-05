@@ -57,8 +57,8 @@ classifiers = [
 requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.5.0',
-    'pydantic-core==0.27.0',
     'annotated-types>=0.4.0',
+    "pydantic-core==0.28.1",
 ]
 dynamic = ['version', 'readme']
 
@@ -79,6 +79,7 @@ docs = [
     "tomli",
     "pyupgrade",
     "mike @ git+https://github.com/jimporter/mike.git",
+    "pytest-examples>=0.0.9",
 ]
 linting = [
     "black",

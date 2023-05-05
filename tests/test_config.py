@@ -191,10 +191,14 @@ class TestsBaseConfig:
         assert Model.__slots__ == {'_foo'}
         m = Model(_foo='field')
         assert m._foo == 'private_attribute'
-        assert m.__dict__ == m.model_dump() == {'_foo': 'field'}
+        assert m.__dict__ == {}
+        assert m.__pydantic_extra__ == {'_foo': 'field'}
+        assert m.model_dump() == {'_foo': 'field'}
         m._foo = 'still_private'
         assert m._foo == 'still_private'
-        assert m.__dict__ == m.model_dump() == {'_foo': 'field'}
+        assert m.__dict__ == {}
+        assert m.__pydantic_extra__ == {'_foo': 'field'}
+        assert m.model_dump() == {'_foo': 'field'}
 
     def test_base_config_parse_model_with_strict_config_disabled(
         self, BaseConfigModelWithStrictConfig: Type[BaseModel]
@@ -222,8 +226,8 @@ class TestsBaseConfig:
         assert Model(a=42).a == 42
         with pytest.raises(ValidationError) as exc_info:
             Model(a=float('nan'))
-        # insert_assert(exc_info.value.errors())
-        assert exc_info.value.errors() == [
+        # insert_assert(exc_info.value.errors(include_url=False))
+        assert exc_info.value.errors(include_url=False) == [
             {
                 'type': 'finite_number',
                 'loc': ('a',),

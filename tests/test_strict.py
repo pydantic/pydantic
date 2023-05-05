@@ -30,7 +30,7 @@ def model_with_strict_field():
 def test_parse_strict_mode_on_field_invalid(value: Any, ModelWithStrictField: Type[BaseModel]) -> None:
     with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictField(a=value)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('a',), 'msg': 'Input should be a valid integer', 'input': value}
     ]
 
@@ -59,17 +59,17 @@ def model_with_strict_config_false():
 def test_parse_model_with_strict_config_enabled(ModelWithStrictConfig: Type[BaseModel]) -> None:
     with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictConfig(a='1', b=2, c=3, d=4)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('a',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictConfig(a=1, b=2, c='3', d=4)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('c',), 'msg': 'Input should be a valid integer', 'input': '3'}
     ]
     with pytest.raises(ValidationError) as exc_info:
         ModelWithStrictConfig(a=1, b=2, c=3, d='4')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'type': 'int_type', 'loc': ('d',), 'msg': 'Input should be a valid integer', 'input': '4'}
     ]
     values = [

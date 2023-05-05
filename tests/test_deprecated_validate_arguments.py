@@ -33,14 +33,14 @@ def test_args():
 
     with pytest.raises(ValidationError) as exc_info:
         foo()
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
         {'input': {}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         foo(1, 'x')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'x',
             'loc': ('b',),
@@ -94,7 +94,7 @@ def test_kwargs():
     with pytest.raises(ValidationError) as exc_info:
         foo(a=1, b='x')
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'x',
             'loc': ('b',),
@@ -234,7 +234,9 @@ def test_async():
     asyncio.run(run())
     with pytest.raises(ValidationError) as exc_info:
         asyncio.run(foo('x'))
-    assert exc_info.value.errors() == [{'input': {'a': 'x'}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'}]
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': {'a': 'x'}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'}
+    ]
 
 
 def test_string_annotation():
@@ -246,7 +248,7 @@ def test_string_annotation():
 
     with pytest.raises(ValidationError) as exc_info:
         foo(['x'])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'x',
             'loc': ('a', 0),
@@ -274,7 +276,7 @@ def test_item_method():
     with pytest.raises(ValidationError) as exc_info:
         x.foo()
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {'self': IsInstance(X)}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
         {'input': {'self': IsInstance(X)}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
     ]
@@ -295,7 +297,7 @@ def test_class_method():
     with pytest.raises(ValidationError) as exc_info:
         x.foo()
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {'cls': X}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'},
         {'input': {'cls': X}, 'loc': ('b',), 'msg': 'Field required', 'type': 'missing'},
     ]
@@ -345,7 +347,7 @@ def test_config_arbitrary_types_allowed():
     with pytest.raises(ValidationError) as exc_info:
         assert foo(1, 2) == '1, 2'
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'class': 'test_config_arbitrary_types_allowed.<locals>.EggBox'},
             'input': 2,

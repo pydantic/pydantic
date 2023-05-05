@@ -147,11 +147,15 @@ def test_private_attribute_intersection_with_extra_field():
     assert Model.__slots__ == {'_foo'}
     m = Model(_foo='field')
     assert m._foo == 'private_attribute'
-    assert m.__dict__ == m.model_dump() == {'_foo': 'field'}
+    assert m.__dict__ == {}
+    assert m.__pydantic_extra__ == {'_foo': 'field'}
+    assert m.model_dump() == {'_foo': 'field'}
 
     m._foo = 'still_private'
     assert m._foo == 'still_private'
-    assert m.__dict__ == m.model_dump() == {'_foo': 'field'}
+    assert m.__dict__ == {}
+    assert m.__pydantic_extra__ == {'_foo': 'field'}
+    assert m.model_dump() == {'_foo': 'field'}
 
 
 def test_private_attribute_invalid_name():

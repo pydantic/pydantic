@@ -721,19 +721,6 @@ print(json.dumps(top_level_schema, indent=2))
 """
 {
   "$defs": {
-    "Foo": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "type": "integer",
-          "title": "A"
-        }
-      },
-      "required": [
-        "a"
-      ],
-      "title": "Foo"
-    },
     "Model": {
       "type": "object",
       "properties": {

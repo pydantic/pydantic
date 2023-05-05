@@ -124,8 +124,8 @@ def test_model_validation():
     assert Model(color=Color('red')).color.as_hex() == '#f00'
     with pytest.raises(ValidationError) as exc_info:
         Model(color='snot')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'color_error',
             'loc': ('color',),
