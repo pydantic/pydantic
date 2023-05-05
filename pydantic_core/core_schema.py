@@ -33,7 +33,7 @@ class CoreConfig(TypedDict, total=False):
     # settings related to typed dicts, model fields, dataclass fields
     extra_fields_behavior: ExtraBehavior
     typed_dict_total: bool  # default: True
-    # used on typed-dicts and tagged union keys
+    # used for models, dataclasses, and tagged union keys
     from_attributes: bool
     # whether to use the used alias (or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default True
@@ -2837,6 +2837,7 @@ class ModelSchema(TypedDict, total=False):
     type: Required[Literal['model']]
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
+    custom_init: bool
     post_init: str
     revalidate_instances: Literal['always', 'never', 'subclass-instances']  # default: 'never'
     strict: bool
@@ -2852,6 +2853,7 @@ def model_schema(
     cls: Type[Any],
     schema: CoreSchema,
     *,
+    custom_init: bool | None = None,
     post_init: str | None = None,
     revalidate_instances: Literal['always', 'never', 'subclass-instances'] | None = None,
     strict: bool | None = None,
@@ -2891,6 +2893,7 @@ def model_schema(
     Args:
         cls: The class to use for the model
         schema: The schema to use for the model
+        custom_init: Whether the model has a custom init method
         post_init: The call after init to use for the model
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
             should re-validate defaults to config.revalidate_instances, else 'never'
@@ -2906,6 +2909,7 @@ def model_schema(
         type='model',
         cls=cls,
         schema=schema,
+        custom_init=custom_init,
         post_init=post_init,
         revalidate_instances=revalidate_instances,
         strict=strict,

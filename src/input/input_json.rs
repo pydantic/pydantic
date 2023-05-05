@@ -1,4 +1,5 @@
 use pyo3::prelude::*;
+use pyo3::types::PyDict;
 
 use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValResult};
 
@@ -51,6 +52,19 @@ impl<'a> Input<'a> for JsonInput {
                 JsonInput::Object(_) => JsonType::Object,
             };
             Ok(json_type.matches(json_mask))
+        }
+    }
+
+    fn as_kwargs(&'a self, py: Python<'a>) -> Option<&'a PyDict> {
+        match self {
+            JsonInput::Object(object) => {
+                let dict = PyDict::new(py);
+                for (k, v) in object.iter() {
+                    dict.set_item(k, v.to_object(py)).unwrap();
+                }
+                Some(dict)
+            }
+            _ => None,
         }
     }
 
@@ -339,6 +353,10 @@ impl<'a> Input<'a> for String {
         } else {
             Ok(JsonType::String.matches(json_mask))
         }
+    }
+
+    fn as_kwargs(&'a self, _py: Python<'a>) -> Option<&'a PyDict> {
+        None
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]

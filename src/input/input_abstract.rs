@@ -1,7 +1,7 @@
 use std::fmt;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyString, PyType};
+use pyo3::types::{PyDict, PyString, PyType};
 
 use crate::errors::{InputValue, LocItem, ValResult};
 use crate::{PyMultiHostUrl, PyUrl};
@@ -54,6 +54,8 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     fn is_python(&self) -> bool {
         false
     }
+
+    fn as_kwargs(&'a self, py: Python<'a>) -> Option<&'a PyDict>;
 
     fn input_is_subclass(&self, _class: &PyType) -> PyResult<bool> {
         Ok(false)
