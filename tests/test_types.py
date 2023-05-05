@@ -33,8 +33,7 @@ from uuid import UUID
 import annotated_types
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import core_schema
-from pydantic_core._pydantic_core import PydanticCustomError, SchemaError
+from pydantic_core import PydanticCustomError, SchemaError, core_schema
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import Annotated, Literal, TypedDict
 

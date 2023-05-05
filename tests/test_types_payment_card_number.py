@@ -2,7 +2,7 @@ from collections import namedtuple
 from typing import Any
 
 import pytest
-from pydantic_core._pydantic_core import PydanticCustomError
+from pydantic_core import PydanticCustomError
 
 from pydantic import BaseModel, ValidationError
 from pydantic.types import PaymentCardBrand, PaymentCardNumber
