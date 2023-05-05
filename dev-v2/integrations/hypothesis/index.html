@@ -80,11 +80,6 @@
     <label class="md-overlay" for="__drawer"></label>
     <div data-md-component="skip">
       
-        
-        <a href="#example-tests" class="md-skip">
-          Skip to content
-        </a>
-      
     </div>
     <div data-md-component="announce">
       
@@ -1168,47 +1163,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
       
       
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Hypothesis
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
       <a href="./" class="md-nav__link md-nav__link--active">
         Hypothesis
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#example-tests" class="md-nav__link">
-    Example tests
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#use-with-json-schemas" class="md-nav__link">
-    Use with JSON Schemas
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
       
     </li>
   
@@ -1620,28 +1577,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
   
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#example-tests" class="md-nav__link">
-    Example tests
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#use-with-json-schemas" class="md-nav__link">
-    Use with JSON Schemas
-  </a>
-  
-</li>
-      
-    </ul>
-  
 </nav>
                   </div>
                 </div>
@@ -1667,86 +1602,9 @@ Hypothesis can infer how to construct type-annotated classes, and supports built
 many standard library types, and generic types from the
 <a href="https://docs.python.org/3/library/typing.html"><code>typing</code></a> and
 <a href="https://pypi.org/project/typing-extensions/"><code>typing_extensions</code></a> modules by default.</p>
-<p>From Pydantic v1.8 and <a href="https://hypothesis.readthedocs.io/en/latest/changes.html#v5-29-0">Hypothesis v5.29.0</a>,
-Hypothesis will automatically load support for <a href="/usage/types/">custom types</a> like
-<code>PaymentCardNumber</code> and <code>PositiveFloat</code>, so that the
-<a href="https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.builds"><code>st.builds()</code></a>
-and <a href="https://hypothesis.readthedocs.io/en/latest/data.html#hypothesis.strategies.from_type"><code>st.from_type()</code></a>
-strategies support them without any user configuration.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Please note, while the plugin supports these types, hypothesis will(currently) generate values outside
-of given args for the constrained function types.</p>
-</div>
-<h3 id="example-tests">Example tests<a class="headerlink" href="#example-tests" title="Permanent link">&para;</a></h3>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">typing</span>
-
-<span class="kn">from</span> <span class="nn">hypothesis</span> <span class="kn">import</span> <span class="n">given</span>
-<span class="kn">from</span> <span class="nn">hypothesis</span> <span class="kn">import</span> <span class="n">strategies</span> <span class="k">as</span> <span class="n">st</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PaymentCardNumber</span><span class="p">,</span> <span class="n">PositiveFloat</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">card</span><span class="p">:</span> <span class="n">PaymentCardNumber</span>
-    <span class="n">price</span><span class="p">:</span> <span class="n">PositiveFloat</span>
-    <span class="n">users</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">List</span><span class="p">[</span><span class="n">EmailStr</span><span class="p">]</span>
-
-
-<span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">test_property</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
-    <span class="c1"># Hypothesis calls this test function many times with varied Models,</span>
-    <span class="c1"># so you can write a test that should pass given *any* instance.</span>
-    <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span>
-    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">for</span> <span class="n">email</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">users</span><span class="p">)</span>
-
-
-<span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">floats</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)))</span>
-<span class="k">def</span> <span class="nf">test_with_discount</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
-    <span class="c1"># This test shows how you can override specific fields,</span>
-    <span class="c1"># and let Hypothesis fill in any you don&#39;t care about.</span>
-    <span class="k">assert</span> <span class="mi">100</span> <span class="o">&lt;=</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span> <span class="o">&lt;=</span> <span class="mi">200</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">hypothesis</span> <span class="kn">import</span> <span class="n">given</span>
-<span class="kn">from</span> <span class="nn">hypothesis</span> <span class="kn">import</span> <span class="n">strategies</span> <span class="k">as</span> <span class="n">st</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">EmailStr</span><span class="p">,</span> <span class="n">PaymentCardNumber</span><span class="p">,</span> <span class="n">PositiveFloat</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">card</span><span class="p">:</span> <span class="n">PaymentCardNumber</span>
-    <span class="n">price</span><span class="p">:</span> <span class="n">PositiveFloat</span>
-    <span class="n">users</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">EmailStr</span><span class="p">]</span>
-
-
-<span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">))</span>
-<span class="k">def</span> <span class="nf">test_property</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
-    <span class="c1"># Hypothesis calls this test function many times with varied Models,</span>
-    <span class="c1"># so you can write a test that should pass given *any* instance.</span>
-    <span class="k">assert</span> <span class="mi">0</span> <span class="o">&lt;</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span>
-    <span class="k">assert</span> <span class="nb">all</span><span class="p">(</span><span class="s1">&#39;@&#39;</span> <span class="ow">in</span> <span class="n">email</span> <span class="k">for</span> <span class="n">email</span> <span class="ow">in</span> <span class="n">instance</span><span class="o">.</span><span class="n">users</span><span class="p">)</span>
-
-
-<span class="nd">@given</span><span class="p">(</span><span class="n">st</span><span class="o">.</span><span class="n">builds</span><span class="p">(</span><span class="n">Model</span><span class="p">,</span> <span class="n">price</span><span class="o">=</span><span class="n">st</span><span class="o">.</span><span class="n">floats</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">)))</span>
-<span class="k">def</span> <span class="nf">test_with_discount</span><span class="p">(</span><span class="n">instance</span><span class="p">):</span>
-    <span class="c1"># This test shows how you can override specific fields,</span>
-    <span class="c1"># and let Hypothesis fill in any you don&#39;t care about.</span>
-    <span class="k">assert</span> <span class="mi">100</span> <span class="o">&lt;=</span> <span class="n">instance</span><span class="o">.</span><span class="n">price</span> <span class="o">&lt;=</span> <span class="mi">200</span>
-</code></pre></div>
-</div>
-</div>
-</div>
-<h3 id="use-with-json-schemas">Use with JSON Schemas<a class="headerlink" href="#use-with-json-schemas" title="Permanent link">&para;</a></h3>
-<p>To test client-side code, you can use <a href="usage/models/"><code>Model.model_json_schema()</code></a> with the
-<a href="https://pypi.org/project/hypothesis-jsonschema/"><code>hypothesis-jsonschema</code> package</a>
-to generate arbitrary JSON instances matching the schema.
-For web API testing, <a href="https://schemathesis.readthedocs.io">Schemathesis</a> provides
-a higher-level wrapper and can detect both errors and security vulnerabilities.</p>
+<p>Pydantic v2.0 drops built-in support for Hypothesis and no more ships with the integrated Hypothesis plugin.</p>
+<p>We are temporarily removing the Hypothesis plugin in favor of another mechanism discussed here - <a href="https://github.com/annotated-types/annotated-types/issues/37">Way to communicate more information between libraries · Issue #37 · annotated-types/annotated-types</a>.
+It is also possible that Hypothesis plugin will be back in Pydantic v2.0+ (see <a href="https://github.com/pydantic/pydantic/issues/4682">V2: hypothesis plugin rewrite · Issue #4682 · pydantic/pydantic</a>).</p>
 
 
 
