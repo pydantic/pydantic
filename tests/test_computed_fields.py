@@ -8,7 +8,7 @@ from typing import Any, ClassVar
 import pytest
 from pydantic_core import PydanticSerializationError, ValidationError
 
-from pydantic import AnalyzedType, BaseModel, Field, PrivateAttr, computed_field, dataclasses, field_validator
+from pydantic import BaseModel, Field, PrivateAttr, TypeAdapter, computed_field, dataclasses, field_validator
 
 try:
     from functools import cached_property, lru_cache, singledispatchmethod
@@ -339,7 +339,7 @@ def test_dataclass():
 
     m = MyDataClass(x=2)
     assert m.double == 4
-    assert AnalyzedType(MyDataClass).dump_python(m) == {'x': 2, 'double': 4}
+    assert TypeAdapter(MyDataClass).dump_python(m) == {'x': 2, 'double': 4}
 
 
 def test_free_function():

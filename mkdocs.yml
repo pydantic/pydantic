@@ -101,7 +101,7 @@ nav:
   - blog/pydantic-v2.md
 - API:
   - 'pydantic.alias_generators': api/alias_generators.md
-  - 'pydantic.analyzed_type': api/analyzed_type.md
+  - 'pydantic.type_adapter': api/type_adapter.md
   - 'pydantic.color': api/color.md
   - 'pydantic.config': api/config.md
   - 'pydantic.dataclasses': api/dataclasses.md

@@ -1,4 +1,4 @@
-"""A class representing the analyzed type."""
+"""A class representing the type adapter."""
 from __future__ import annotations as _annotations
 
 import sys
@@ -41,16 +41,16 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
 
     b.py
     ```python
-    from pydantic import AnalyzedType
+    from pydantic import TypeAdapter
     from a import OuterDict
     IntList = int  # replaces the symbol the forward reference is looking for
-    v = AnalyzedType(OuterDict)
+    v = TypeAdapter(OuterDict)
     v({"x": 1})  # should fail but doesn't
     ```
 
     If OuterDict were a `BaseModel`, this would work because it would resolve
     the forward reference within the `a.py` namespace.
-    But `AnalyzedType(OuterDict)`
+    But `TypeAdapter(OuterDict)`
     can't know what module OuterDict came from.
 
     In other words, the assumption that _all_ forward references exist in the
@@ -68,33 +68,33 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     return gen.generate_schema(type_)
 
 
-class AnalyzedType(Generic[T]):
-    """A class representing the analyzed type.
+class TypeAdapter(Generic[T]):
+    """A class representing the type adapter.
 
     Attributes:
-        core_schema (CoreSchema): The core schema for the analyzed data.
-        validator (SchemaValidator): The schema validator for the analyzed data.
-        serializer (SchemaSerializer): The schema serializer for the analyzed data.
+        core_schema (CoreSchema): The core schema for the type.
+        validator (SchemaValidator): The schema validator for the type.
+        serializer (SchemaSerializer): The schema serializer for the type.
     """
 
     if TYPE_CHECKING:
 
         @overload
-        def __new__(cls, __type: type[T], *, config: ConfigDict | None = ...) -> AnalyzedType[T]:
+        def __new__(cls, __type: type[T], *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
             ...
 
         # this overload is for non-type things like Union[int, str]
-        # Pyright currently handles this "correctly", but MyPy understands this as AnalyzedType[object]
+        # Pyright currently handles this "correctly", but MyPy understands this as TypeAdapter[object]
         # so an explicit type cast is needed
         @overload
-        def __new__(cls, __type: T, *, config: ConfigDict | None = ...) -> AnalyzedType[T]:
+        def __new__(cls, __type: T, *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
             ...
 
-        def __new__(cls, __type: Any, *, config: ConfigDict | None = ...) -> AnalyzedType[T]:
+        def __new__(cls, __type: Any, *, config: ConfigDict | None = ...) -> TypeAdapter[T]:
             raise NotImplementedError
 
     def __init__(self, __type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
-        """Initializes the AnalyzedType object."""
+        """Initializes the TypeAdapter object."""
         config_wrapper = _config.ConfigWrapper(config)
 
         core_schema: CoreSchema
@@ -265,7 +265,7 @@ class AnalyzedType(Generic[T]):
 
     @staticmethod
     def json_schemas(
-        __analyzed_types: Iterable[AnalyzedType[Any]],
+        __types: Iterable[TypeAdapter[Any]],
         *,
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
@@ -276,7 +276,7 @@ class AnalyzedType(Generic[T]):
         """Generate JSON schemas for multiple models.
 
         Args:
-            __analyzed_types (Iterable[AnalyzedType[Any]]): The types to generate schemas for.
+            __types (Iterable[TypeAdapter[Any]]): The types to generate schemas for.
             by_alias (bool): Whether to use alias names (default: True).
             ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
             title (Optional[str]): The title for the schema (default: None).
@@ -290,7 +290,7 @@ class AnalyzedType(Generic[T]):
         # TODO: can we use model.__schema_cache__?
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
-        core_schemas = [at.core_schema for at in __analyzed_types]
+        core_schemas = [at.core_schema for at in __types]
 
         definitions = schema_generator_instance.generate_definitions(core_schemas)
 

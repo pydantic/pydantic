@@ -632,19 +632,19 @@ def test_deprecated_module(tmp_path: Path) -> None:
 
     assert hasattr(parse_obj_as, '__deprecated__')
     with pytest.warns(
-        DeprecationWarning, match='parse_obj_as is deprecated. Use pydantic.AnalyzedType.validate_python instead.'
+        DeprecationWarning, match='parse_obj_as is deprecated. Use pydantic.TypeAdapter.validate_python instead.'
     ):
         parse_obj_as(Model, {'x': 1})
 
     assert hasattr(schema_json_of, '__deprecated__')
     with pytest.warns(
-        DeprecationWarning, match='schema_json_of is deprecated. Use pydantic.AnalyzedType.json_schema instead.'
+        DeprecationWarning, match='schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.'
     ):
         schema_json_of(Model)
 
     assert hasattr(schema_of, '__deprecated__')
     with pytest.warns(
-        DeprecationWarning, match='schema_of is deprecated. Use pydantic.AnalyzedType.json_schema instead.'
+        DeprecationWarning, match='schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.'
     ):
         schema_of(Model)
 

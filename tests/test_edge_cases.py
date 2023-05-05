@@ -27,11 +27,11 @@ from pydantic_core import PydanticSerializationError, core_schema
 from typing_extensions import Annotated, get_args
 
 from pydantic import (
-    AnalyzedType,
     BaseModel,
     ConfigDict,
     PydanticInvalidForJsonSchema,
     PydanticSchemaGenerationError,
+    TypeAdapter,
     ValidationError,
     constr,
     errors,
@@ -1894,8 +1894,8 @@ def test_custom_generic_validators():
             if not args:
                 return schema
 
-            t1_f = AnalyzedType(args[0]).validate_python
-            t2_f = AnalyzedType(args[1]).validate_python
+            t1_f = TypeAdapter(args[0]).validate_python
+            t2_f = TypeAdapter(args[1]).validate_python
 
             def validate(v, info):
                 if not args:

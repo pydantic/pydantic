@@ -39,7 +39,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic._internal._core_metadata import build_metadata_dict
-from pydantic.analyzed_type import AnalyzedType
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
 from pydantic.config import ConfigDict
@@ -55,6 +54,7 @@ from pydantic.json_schema import (
     models_json_schema,
 )
 from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
+from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
     UUID3,
@@ -3533,7 +3533,7 @@ def test_get_pydantic_core_schema_calls() -> None:
 
     AnnotatedType = Annotated[str, CustomAnnotation('foo'), CustomAnnotation('bar')]
 
-    schema = AnalyzedType(AnnotatedType).json_schema()
+    schema = TypeAdapter(AnnotatedType).json_schema()
     expected: JsonSchemaValue = {'type': 'string'}
 
     assert schema == expected
@@ -3577,7 +3577,7 @@ def test_get_pydantic_core_schema_calls() -> None:
 
     AnnotatedModel = Annotated[Model, CustomAnnotation('foo')]
 
-    schema = AnalyzedType(AnnotatedModel).json_schema()
+    schema = TypeAdapter(AnnotatedModel).json_schema()
     expected: JsonSchemaValue = {}
 
     assert schema == expected
@@ -3631,7 +3631,7 @@ def test_annotated_get_json_schema() -> None:
             json_schema = handler(schema)
             return json_schema
 
-    AnalyzedType(Annotated[CustomType, 123]).json_schema()
+    TypeAdapter(Annotated[CustomType, 123]).json_schema()
 
     assert sum(calls) == 1
 

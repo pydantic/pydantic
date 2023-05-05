@@ -989,14 +989,14 @@ except ValidationError as e:
 You may have types that are not `BaseModel`s that you want to validate data against.
 Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
 
-To do this Pydantic provides `AnalyzedType`. An `AnalyzedType` instance behaves nearly the same as a `BaseModel` instance, with the difference that `AnalyzedType` is not an actual type so you cannot use it in type annotations and such.
+To do this Pydantic provides `TypeAdapter`. A `TypeAdapter` instance behaves nearly the same as a `BaseModel` instance, with the difference that `TypeAdapter` is not an actual type so you cannot use it in type annotations and such.
 
 ```py
 from typing import List
 
 from typing_extensions import TypedDict
 
-from pydantic import AnalyzedType, ValidationError
+from pydantic import TypeAdapter, ValidationError
 
 
 class User(TypedDict):
@@ -1004,7 +1004,7 @@ class User(TypedDict):
     id: int
 
 
-UserListValidator = AnalyzedType(List[User])
+UserListValidator = TypeAdapter(List[User])
 print(repr(UserListValidator.validate_python([{'name': 'Fred', 'id': '3'}])))
 #> [{'name': 'Fred', 'id': 3}]
 
@@ -1021,7 +1021,7 @@ except ValidationError as e:
     """
 ```
 
-For many use cases `AnalyzedType` can replace BaseModels with a `__root__` field in Pydantic V1.
+For many use cases `TypeAdapter` can replace BaseModels with a `__root__` field in Pydantic V1.
 
 ## Custom Root Types
 
