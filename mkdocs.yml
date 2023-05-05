@@ -85,6 +85,7 @@ nav:
   - usage/validation_decorator.md
   - usage/postponed_annotations.md
   - usage/conversion_table.md
+  - usage/pydantic_settings.md
 - Error Messages:
   - Validation Errors: usage/validation_errors.md
   - Usage Errors: usage/errors.md
@@ -152,7 +153,9 @@ plugins:
 - mkdocstrings:
     handlers:
       python:
-        path: .
+        paths: [.]
+        options:
+          separate_signature: true
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'
@@ -168,3 +171,4 @@ plugins:
       'pycharm_plugin.md': 'integrations/pycharm.md'
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
+- external-markdown:

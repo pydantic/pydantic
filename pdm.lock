@@ -308,6 +308,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "mkdocs-embed-external-markdown"
+version = "2.3.0"
+requires_python = ">=3.6.2,<4.0.0"
+summary = "Mkdocs plugin that allow to inject external markdown or markdown section from given url"
+dependencies = [
+    "Jinja2<4.0.0,>=3.0.3",
+    "requests<3.0.0,>=2.27.1",
+]
+
+[[package]]
 name = "mkdocs-exclude"
 version = "1.0.2"
 summary = "A mkdocs plugin that lets you exclude files or trees."
@@ -653,7 +663,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 [metadata]
 lock_version = "4.2"
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-content_hash = "sha256:fd3d04f6cc9855b332c5507ead2db9e7addf29a6294e1347430da7651fd3fb58"
+content_hash = "sha256:b0f4d25f97b612604c8f853c414dc17ac281a6b4bbd14972bdb8e945a8f7e5fe"
 
 [metadata.files]
 "annotated-types 0.4.0" = [
@@ -1055,6 +1065,10 @@ content_hash = "sha256:fd3d04f6cc9855b332c5507ead2db9e7addf29a6294e1347430da7651
 "mkdocs-autorefs 0.4.1" = [
     {url = "https://files.pythonhosted.org/packages/3b/3f/9531888bc92bafb1bffddca5d9240a7bae9a479d465528883b61808ef9d6/mkdocs-autorefs-0.4.1.tar.gz", hash = "sha256:70748a7bd025f9ecd6d6feeba8ba63f8e891a1af55f48e366d6d6e78493aba84"},
     {url = "https://files.pythonhosted.org/packages/fb/5c/6594400290df38f99bf8d9ef249387b56f4ad962667836266f6fe7da8597/mkdocs_autorefs-0.4.1-py3-none-any.whl", hash = "sha256:a2248a9501b29dc0cc8ba4c09f4f47ff121945f6ce33d760f145d6f89d313f5b"},
+]
+"mkdocs-embed-external-markdown 2.3.0" = [
+    {url = "https://files.pythonhosted.org/packages/77/0d/72119c7e9075e193daae6e02ed4e8212b23a91877df773802e5b90233868/mkdocs_embed_external_markdown-2.3.0-py3-none-any.whl", hash = "sha256:a14918a2beacf50ba215670e802fee75de3013bb9db8d8e8d23dd6978004b5bc"},
+    {url = "https://files.pythonhosted.org/packages/b7/d6/45813b061306de85c758150b53a9132381568344d40f8953dceac7cc91c1/mkdocs-embed-external-markdown-2.3.0.tar.gz", hash = "sha256:543ecbaf1d1b62bb6b557714d20ac76b7c24b2b76adc5243a406e636964a8d45"},
 ]
 "mkdocs-exclude 1.0.2" = [
     {url = "https://files.pythonhosted.org/packages/54/b5/3a8e289282c9e8d7003f8a2f53d673d4fdaa81d493dc6966092d9985b6fc/mkdocs-exclude-1.0.2.tar.gz", hash = "sha256:ba6fab3c80ddbe3fd31d3e579861fd3124513708271180a5f81846da8c7e2a51"},

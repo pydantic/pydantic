@@ -1,6 +1,7 @@
 Below are details on common errors developers can see when working with pydantic, together
 with some suggestions on how to fix them.
 
+{% raw %}
 ## Decorator on missing field {#decorator-missing-field}
 
 TODO
@@ -172,3 +173,4 @@ TODO
 ## Multiple field serializers {#multiple-field-serializers}
 
 TODO
+{% endraw %}
