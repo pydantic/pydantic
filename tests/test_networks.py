@@ -1,6 +1,7 @@
 import pytest
 from pydantic_core import PydanticCustomError, Url
 from typing_extensions import Annotated
+from typing import Union
 
 from pydantic import (
     AmqpDsn,
@@ -271,6 +272,13 @@ def test_http_url_success(value, expected):
         v: HttpUrl
 
     assert str(Model(v=value).v) == expected
+
+
+def test_nullable_http_url():
+    class Model(BaseModel):
+        v: Union[HttpUrl, None]
+
+    assert Model(v=None).v is None
 
 
 @pytest.mark.parametrize(
