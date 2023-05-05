@@ -577,7 +577,6 @@ except ValidationError as e:
             'msg': 'value is not "bar", got "ber"',
             'input': 'ber',
             'ctx': {'wrong_value': 'ber'},
-            'url': 'https://errors.pydantic.dev/2/v/not_a_bar',
         }
     ]
     """

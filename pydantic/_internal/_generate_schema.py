@@ -285,6 +285,7 @@ class GenerateSchema:
             config=core_config,
             post_init=model_post_init,
             metadata=metadata,
+            custom_init=cls.__init__ is not BaseModel.__init__,
         )
         model_schema = consolidate_refs(model_schema)
         schema = apply_model_serializers(model_schema, decorators.model_serializer.values())

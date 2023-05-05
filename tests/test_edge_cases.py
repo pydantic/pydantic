@@ -1315,8 +1315,24 @@ def test_self_recursive():
     assert m.model_dump() == {'sm': {'self': 123}}
 
 
-@pytest.mark.xfail(reason='need to detect and error if you override __init__; need to suggest a migration path')
-def test_nested_init():
+def test_custom_init():
+    class Model(BaseModel):
+        x: int
+
+        def __init__(self, x: int, y: int):
+            if isinstance(y, str):
+                y = len(y)
+            super().__init__(x=x + int(y))
+
+    assert Model(x=1, y=1).x == 2
+    assert Model.model_validate({'x': 1, 'y': 1}).x == 2
+    assert Model.model_validate_json('{"x": 1, "y": 2}').x == 3
+
+    # For documentation purposes: type hints on __init__ are not currently used for validation:
+    assert Model.model_validate({'x': 1, 'y': 'abc'}).x == 4
+
+
+def test_nested_custom_init():
     class NestedModel(BaseModel):
         self: str
         modified_number: int = 1
@@ -1329,12 +1345,6 @@ def test_nested_init():
         self: str
         nest: NestedModel
 
-    # TODO: Do we want any changes to this behavior in v2? (Currently the __init__-override is not called)
-    #   "I guess this should be an error or warning. If you want to do stuff on init, you should use model_post_init"
-    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130684097
-    #   -
-    #   I think we can detect and warn/error if you override `__init__`. If we do that,
-    #   we'll need to add a note to the migration guide about it.
     m = TopModel.model_validate(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
     assert m.self == 'Top Model'
     assert m.nest.self == 'Nested Model'
@@ -1342,15 +1352,21 @@ def test_nested_init():
 
 
 def test_init_inspection():
+    calls = []
+
     class Foobar(BaseModel):
         x: int
 
         def __init__(self, **data) -> None:
             with pytest.raises(AttributeError):
+                calls.append(data)
                 assert self.x
             super().__init__(**data)
 
     Foobar(x=1)
+    Foobar.model_validate({'x': 2})
+    Foobar.model_validate_json('{"x": 3}')
+    assert calls == [{'x': 1}, {'x': 2}, {'x': 3}]
 
 
 def test_type_on_annotation():
