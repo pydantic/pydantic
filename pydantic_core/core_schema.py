@@ -2838,6 +2838,7 @@ class ModelSchema(TypedDict, total=False):
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
     custom_init: bool
+    root_model: bool
     post_init: str
     revalidate_instances: Literal['always', 'never', 'subclass-instances']  # default: 'never'
     strict: bool
@@ -2854,6 +2855,7 @@ def model_schema(
     schema: CoreSchema,
     *,
     custom_init: bool | None = None,
+    root_model: bool | None = None,
     post_init: str | None = None,
     revalidate_instances: Literal['always', 'never', 'subclass-instances'] | None = None,
     strict: bool | None = None,
@@ -2894,6 +2896,7 @@ def model_schema(
         cls: The class to use for the model
         schema: The schema to use for the model
         custom_init: Whether the model has a custom init method
+        root_model: Whether the model is a `RootModel`
         post_init: The call after init to use for the model
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
             should re-validate defaults to config.revalidate_instances, else 'never'
@@ -2910,6 +2913,7 @@ def model_schema(
         cls=cls,
         schema=schema,
         custom_init=custom_init,
+        root_model=root_model,
         post_init=post_init,
         revalidate_instances=revalidate_instances,
         strict=strict,

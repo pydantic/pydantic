@@ -14,6 +14,7 @@ use crate::recursion_guard::RecursionGuard;
 use super::function::convert_err;
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
+const ROOT_FIELD: &str = "root";
 const DUNDER_DICT: &str = "__dict__";
 const DUNDER_FIELDS_SET_KEY: &str = "__pydantic_fields_set__";
 const DUNDER_MODEL_EXTRA_KEY: &str = "__pydantic_extra__";
@@ -52,9 +53,10 @@ pub struct ModelValidator {
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
     post_init: Option<Py<PyString>>,
-    name: String,
     frozen: bool,
     custom_init: bool,
+    root_model: bool,
+    name: String,
 }
 
 impl BuildValidator for ModelValidator {
@@ -87,11 +89,12 @@ impl BuildValidator for ModelValidator {
             post_init: schema
                 .get_as::<&str>(intern!(py, "post_init"))?
                 .map(|s| PyString::intern(py, s).into_py(py)),
+            frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
+            custom_init: schema.get_as(intern!(py, "custom_init"))?.unwrap_or(false),
+            root_model: schema.get_as(intern!(py, "root_model"))?.unwrap_or(false),
             // Get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
             // which is not what we want here
             name: class.getattr(intern!(py, "__name__"))?.extract()?,
-            frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
-            custom_init: schema.get_as(intern!(py, "custom_init"))?.unwrap_or(false),
         }
         .into())
     }
@@ -125,28 +128,24 @@ impl Validator for ModelValidator {
         // mask 0 so JSON is input is never true here
         if input.input_is_instance(class, 0)? {
             if self.revalidate.should_revalidate(input, class) {
-                let fields_set = input.input_get_attr(intern!(py, DUNDER_FIELDS_SET_KEY)).unwrap()?;
-
-                // get dict here so from_attributes logic doesn't apply
-                let dict = input.input_get_attr(intern!(py, DUNDER_DICT)).unwrap()?;
-                let model_extra = input.input_get_attr(intern!(py, DUNDER_MODEL_EXTRA_KEY)).unwrap()?;
-
-                let full_model_dict: &PyAny = if model_extra.is_none() {
-                    dict
+                if self.root_model {
+                    let inner_input: &PyAny = input.input_get_attr(intern!(py, ROOT_FIELD)).unwrap()?;
+                    self.validate_construct(py, inner_input, None, extra, definitions, recursion_guard)
                 } else {
-                    let full_model_dict = dict.downcast::<PyDict>()?.copy()?;
-                    full_model_dict.update(model_extra.downcast()?)?;
-                    full_model_dict
-                };
+                    let fields_set = input.input_get_attr(intern!(py, DUNDER_FIELDS_SET_KEY)).unwrap()?;
+                    // get dict here so from_attributes logic doesn't apply
+                    let dict = input.input_get_attr(intern!(py, DUNDER_DICT)).unwrap()?;
+                    let model_extra = input.input_get_attr(intern!(py, DUNDER_MODEL_EXTRA_KEY)).unwrap()?;
 
-                let output = self
-                    .validator
-                    .validate(py, full_model_dict, extra, definitions, recursion_guard)?;
-
-                let (model_dict, model_extra, _): (&PyAny, &PyAny, &PyAny) = output.extract(py)?;
-                let instance = self.create_class(model_dict, model_extra, fields_set)?;
-
-                self.call_post_init(py, instance, input, extra)
+                    let inner_input: &PyAny = if model_extra.is_none() {
+                        dict
+                    } else {
+                        let full_model_dict = dict.downcast::<PyDict>()?.copy()?;
+                        full_model_dict.update(model_extra.downcast()?)?;
+                        full_model_dict
+                    };
+                    self.validate_construct(py, inner_input, Some(fields_set), extra, definitions, recursion_guard)
+                }
             } else {
                 Ok(input.to_object(py))
             }
@@ -158,22 +157,7 @@ impl Validator for ModelValidator {
                 input,
             ))
         } else {
-            if self.custom_init {
-                // If we wanted, we could introspect the __init__ signature, and store the
-                // keyword arguments and types, and create a validator for them.
-                // Perhaps something similar to `validate_call`? Could probably make
-                // this work with from_attributes, and would essentially allow you to
-                // handle init vars by adding them to the __init__ signature.
-                if let Some(kwargs) = input.as_kwargs(py) {
-                    return Ok(self.class.call(py, (), Some(kwargs))?);
-                }
-            }
-            let output = self
-                .validator
-                .validate(py, input, extra, definitions, recursion_guard)?;
-            let (model_dict, model_extra, fields_set): (&PyAny, &PyAny, &PyAny) = output.extract(py)?;
-            let instance = self.create_class(model_dict, model_extra, fields_set)?;
-            self.call_post_init(py, instance, input, extra)
+            self.validate_construct(py, input, None, extra, definitions, recursion_guard)
         }
     }
 
@@ -189,9 +173,29 @@ impl Validator for ModelValidator {
     ) -> ValResult<'data, PyObject> {
         if self.frozen {
             return Err(ValError::new(ErrorType::FrozenInstance, field_value));
+        } else if self.root_model {
+            return if field_name != ROOT_FIELD {
+                Err(ValError::new_with_loc(
+                    ErrorType::NoSuchAttribute {
+                        attribute: field_name.to_string(),
+                    },
+                    field_value,
+                    field_name.to_string(),
+                ))
+            } else {
+                let field_extra = Extra {
+                    field_name: Some(field_name),
+                    ..*extra
+                };
+                let output = self
+                    .validator
+                    .validate(py, field_value, &field_extra, definitions, recursion_guard)?;
+
+                force_setattr(py, model, intern!(py, ROOT_FIELD), output)?;
+                Ok(model.into_py(py))
+            };
         }
-        let dict_py_str = intern!(py, DUNDER_DICT);
-        let dict: &PyDict = model.getattr(dict_py_str)?.downcast()?;
+        let dict: &PyDict = model.getattr(intern!(py, DUNDER_DICT))?.downcast()?;
 
         let new_dict = dict.copy()?;
         new_dict.set_item(field_name, field_value)?;
@@ -216,7 +220,7 @@ impl Validator for ModelValidator {
         }
         let output = output.to_object(py);
 
-        force_setattr(py, model, dict_py_str, output)?;
+        force_setattr(py, model, intern!(py, DUNDER_DICT), output)?;
         Ok(model.into_py(py))
     }
 
@@ -262,9 +266,59 @@ impl ModelValidator {
         let output = self
             .validator
             .validate(py, input, &new_extra, definitions, recursion_guard)?;
-        let (model_dict, model_extra, fields_set): (&PyAny, &PyAny, &PyAny) = output.extract(py)?;
-        set_model_attrs(self_instance, model_dict, model_extra, fields_set)?;
+
+        if self.root_model {
+            force_setattr(py, self_instance, intern!(py, ROOT_FIELD), output.as_ref(py))?;
+        } else {
+            let (model_dict, model_extra, fields_set): (&PyAny, &PyAny, &PyAny) = output.extract(py)?;
+            set_model_attrs(self_instance, model_dict, model_extra, fields_set)?;
+        }
         self.call_post_init(py, self_instance.into_py(py), input, extra)
+    }
+
+    fn validate_construct<'s, 'data>(
+        &'s self,
+        py: Python<'data>,
+        input: &'data impl Input<'data>,
+        existing_fields_set: Option<&'data PyAny>,
+        extra: &Extra,
+        definitions: &'data Definitions<CombinedValidator>,
+        recursion_guard: &'s mut RecursionGuard,
+    ) -> ValResult<'data, PyObject> {
+        if self.custom_init {
+            // If we wanted, we could introspect the __init__ signature, and store the
+            // keyword arguments and types, and create a validator for them.
+            // Perhaps something similar to `validate_call`? Could probably make
+            // this work with from_attributes, and would essentially allow you to
+            // handle init vars by adding them to the __init__ signature.
+            if let Some(kwargs) = input.as_kwargs(py) {
+                return Ok(self.class.call(py, (), Some(kwargs))?);
+            }
+        }
+
+        let output = if self.root_model {
+            let field_extra = Extra {
+                field_name: Some(ROOT_FIELD),
+                ..*extra
+            };
+            self.validator
+                .validate(py, input, &field_extra, definitions, recursion_guard)?
+        } else {
+            self.validator
+                .validate(py, input, extra, definitions, recursion_guard)?
+        };
+
+        let instance = create_class(self.class.as_ref(py))?;
+        let instance_ref = instance.as_ref(py);
+
+        if self.root_model {
+            force_setattr(py, instance_ref, intern!(py, ROOT_FIELD), output)?;
+        } else {
+            let (model_dict, model_extra, val_fields_set): (&PyAny, &PyAny, &PyAny) = output.extract(py)?;
+            let fields_set = existing_fields_set.unwrap_or(val_fields_set);
+            set_model_attrs(instance_ref, model_dict, model_extra, fields_set)?;
+        }
+        self.call_post_init(py, instance, input, extra)
     }
 
     fn call_post_init<'s, 'data>(
@@ -279,13 +333,6 @@ impl ModelValidator {
                 .call_method1(py, post_init.as_ref(py), (extra.context,))
                 .map_err(|e| convert_err(py, e, input))?;
         }
-        Ok(instance)
-    }
-
-    fn create_class(&self, model_dict: &PyAny, model_extra: &PyAny, fields_set: &PyAny) -> PyResult<PyObject> {
-        let py = model_dict.py();
-        let instance = create_class(self.class.as_ref(py))?;
-        set_model_attrs(instance.as_ref(py), model_dict, model_extra, fields_set)?;
         Ok(instance)
     }
 }

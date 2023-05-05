@@ -33,9 +33,9 @@ def test_model_init():
     m2 = MyModel()
     ans = v.validate_python({'field_a': 'test', 'field_b': 12}, self_instance=m2)
     assert ans == m2
-    assert m.field_a == 'test'
-    assert m.field_b == 12
-    assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
+    assert ans.field_a == 'test'
+    assert ans.field_b == 12
+    assert ans.__pydantic_fields_set__ == {'field_a', 'field_b'}
 
 
 def test_model_init_nested():
@@ -381,3 +381,40 @@ def test_model_custom_init_extra():
         ('inner', {'a': 1, 'b': 3}, {'b', 'z'}, {'z': 1}),
         ('outer', {'a': 2, 'b': IsInstance(ModelInner)}, {'c', 'a', 'b'}, {'c': 1}),
     ]
+
+
+def test_model_custom_init_revalidate():
+    calls = []
+
+    class Model:
+        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+
+        def __init__(self, **kwargs):
+            calls.append(repr(kwargs))
+            self.__dict__.update(kwargs)
+            self.__pydantic_fields_set__ = {'custom'}
+            self.__pydantic_extra__ = None
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema({'a': core_schema.model_field(core_schema.int_schema())}),
+            custom_init=True,
+            config=dict(revalidate_instances='always'),
+        )
+    )
+
+    m = v.validate_python({'a': '1'})
+    assert isinstance(m, Model)
+    assert m.a == '1'
+    assert m.__pydantic_fields_set__ == {'custom'}
+    assert calls == ["{'a': '1'}"]
+    m.x = 4
+
+    m2 = v.validate_python(m)
+    assert m2 is not m
+    assert isinstance(m2, Model)
+    assert m2.a == '1'
+    assert m2.__dict__ == {'a': '1', 'x': 4}
+    assert m2.__pydantic_fields_set__ == {'custom'}
+    assert calls == ["{'a': '1'}", "{'a': '1', 'x': 4}"]
