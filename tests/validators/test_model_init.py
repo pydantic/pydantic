@@ -1,4 +1,6 @@
-from pydantic_core import SchemaValidator
+from dirty_equals import IsInstance
+
+from pydantic_core import CoreConfig, SchemaValidator, core_schema
 
 
 class MyModel:
@@ -206,3 +208,176 @@ def test_simple():
 
     assert v.validate_json('"abc"', self_instance='foobar') == 'abc'
     assert v.isinstance_json('"abc"', self_instance='foobar') is True
+
+
+def test_model_custom_init():
+    calls = []
+
+    class Model:
+        def __init__(self, **kwargs):
+            calls.append(repr(kwargs))
+            if 'a' in kwargs:
+                kwargs['a'] *= 2
+            self.__pydantic_validator__.validate_python(kwargs, self_instance=self)
+            self.c = self.a + 2
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                {
+                    'a': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=1)),
+                    'b': core_schema.model_field(core_schema.int_schema()),
+                }
+            ),
+            custom_init=True,
+        )
+    )
+    Model.__pydantic_validator__ = v
+
+    m = v.validate_python({'b': 2})
+    assert m.a == 1
+    assert m.b == 2
+    assert m.c == 3
+    assert m.__pydantic_fields_set__ == {'b'}
+    assert calls == ["{'b': 2}"]
+
+    m2 = v.validate_python({'a': 5, 'b': 3})
+    assert m2.a == 10
+    assert m2.b == 3
+    assert m2.c == 12
+    assert m2.__pydantic_fields_set__ == {'a', 'b'}
+    assert calls == ["{'b': 2}", "{'a': 5, 'b': 3}"]
+
+    m3 = v.validate_json('{"a":10, "b": 4}')
+    assert m3.a == 20
+    assert m3.b == 4
+    assert m3.c == 22
+    assert m3.__pydantic_fields_set__ == {'a', 'b'}
+    assert calls == ["{'b': 2}", "{'a': 5, 'b': 3}", "{'a': 10, 'b': 4}"]
+
+
+def test_model_custom_init_nested():
+    calls = []
+
+    class ModelInner:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
+        a: int
+        b: int
+
+        def __init__(self, **data):
+            calls.append(f'inner: {data!r}')
+            self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+    inner_schema = core_schema.model_schema(
+        ModelInner,
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=1)),
+                'b': core_schema.model_field(core_schema.int_schema()),
+            }
+        ),
+        custom_init=True,
+    )
+    ModelInner.__pydantic_validator__ = SchemaValidator(inner_schema)
+
+    class ModelOuter:
+        __slots__ = '__dict__', '__pydantic_fields_set__'
+        a: int
+        b: ModelInner
+
+        def __init__(self, **data):
+            calls.append(f'outer: {data!r}')
+            self.__pydantic_validator__.validate_python(data, self_instance=self)
+
+    ModelOuter.__pydantic_validator__ = SchemaValidator(
+        core_schema.model_schema(
+            ModelOuter,
+            core_schema.model_fields_schema(
+                {
+                    'a': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=1)),
+                    'b': core_schema.model_field(inner_schema),
+                }
+            ),
+            custom_init=True,
+        )
+    )
+
+    m = ModelOuter(a=2, b={'b': 3})
+    assert m.__pydantic_fields_set__ == {'a', 'b'}
+    assert m.a == 2
+    assert isinstance(m.b, ModelInner)
+    assert m.b.a == 1
+    assert m.b.b == 3
+    # insert_assert(calls)
+    assert calls == ["outer: {'a': 2, 'b': {'b': 3}}", "inner: {'b': 3}"]
+
+
+def test_model_custom_init_extra():
+    calls = []
+
+    class ModelInner:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
+        a: int
+        b: int
+
+        def __getattr__(self, item):
+            return self.__pydantic_extra__[item]
+
+        def __init__(self, **data):
+            self.__pydantic_validator__.validate_python(data, self_instance=self)
+            calls.append(('inner', self.__dict__, self.__pydantic_fields_set__, self.__pydantic_extra__))
+
+    inner_schema = core_schema.model_schema(
+        ModelInner,
+        core_schema.model_fields_schema(
+            {
+                'a': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=1)),
+                'b': core_schema.model_field(core_schema.int_schema()),
+            }
+        ),
+        config=CoreConfig(extra_fields_behavior='allow'),
+        custom_init=True,
+    )
+    ModelInner.__pydantic_validator__ = SchemaValidator(inner_schema)
+
+    class ModelOuter:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
+        a: int
+        b: ModelInner
+
+        def __getattr__(self, item):
+            return self.__pydantic_extra__[item]
+
+        def __init__(self, **data):
+            data['b']['z'] = 1
+            self.__pydantic_validator__.validate_python(data, self_instance=self)
+            calls.append(('outer', self.__dict__, self.__pydantic_fields_set__, self.__pydantic_extra__))
+
+    ModelOuter.__pydantic_validator__ = SchemaValidator(
+        core_schema.model_schema(
+            ModelOuter,
+            core_schema.model_fields_schema(
+                {
+                    'a': core_schema.model_field(core_schema.with_default_schema(core_schema.int_schema(), default=1)),
+                    'b': core_schema.model_field(inner_schema),
+                }
+            ),
+            config=CoreConfig(extra_fields_behavior='allow'),
+            custom_init=True,
+        )
+    )
+
+    m = ModelOuter(a=2, b={'b': 3}, c=1)
+    assert m.__pydantic_fields_set__ == {'a', 'b', 'c'}
+    assert m.a == 2
+    assert m.c == 1
+    assert isinstance(m.b, ModelInner)
+    assert m.b.a == 1
+    assert m.b.b == 3
+    assert m.b.z == 1
+    # insert_assert(calls)
+    assert calls == [
+        ('inner', {'a': 1, 'b': 3}, {'b', 'z'}, {'z': 1}),
+        ('outer', {'a': 2, 'b': IsInstance(ModelInner)}, {'c', 'a', 'b'}, {'c': 1}),
+    ]
