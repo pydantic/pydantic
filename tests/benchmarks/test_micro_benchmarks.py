@@ -1313,3 +1313,29 @@ def test_validate_literal(
         assert res == expected_val_res
 
         benchmark(validator.validate_json, input_json)
+
+
+@pytest.mark.benchmark(group='root_model')
+def test_core_root_model(benchmark):
+    class MyModel:
+        __slots__ = 'root'
+        root: List[int]
+
+    v = SchemaValidator(
+        core_schema.model_schema(MyModel, core_schema.list_schema(core_schema.int_schema()), root_model=True)
+    )
+    assert v.validate_python([1, 2, '3']).root == [1, 2, 3]
+    input_data = list(range(100))
+    benchmark(v.validate_python, input_data)
+
+
+@skip_pydantic
+@pytest.mark.benchmark(group='root_model')
+def test_v1_root_model(benchmark):
+    class MyModel(BaseModel):
+        __root__: List[int]
+
+    assert MyModel.parse_obj([1, 2, '3']).__root__ == [1, 2, 3]
+    input_data = list(range(100))
+
+    benchmark(MyModel.parse_obj, input_data)
