@@ -91,7 +91,6 @@ nav:
 - Integrations:
   - 'Mypy': integrations/mypy.md
   - 'PyCharm': integrations/pycharm.md
-  - 'Hypothesis': integrations/hypothesis.md
   - 'Visual Studio Code': integrations/visual_studio_code.md
   - 'datamodel-code-generator': integrations/datamodel_code_generator.md
   - 'devtools': integrations/devtools.md

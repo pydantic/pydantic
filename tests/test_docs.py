@@ -26,11 +26,6 @@ def skip_docs_tests():
         return 'not cpython'
 
     try:
-        import hypothesis  # noqa: F401
-    except ImportError:
-        return 'hypothesis not installed'
-
-    try:
         import devtools  # noqa: F401
     except ImportError:
         return 'devtools not installed'

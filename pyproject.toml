@@ -49,7 +49,6 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Environment :: Console',
     'Environment :: MacOS X',
-    'Framework :: Hypothesis',
     'Framework :: Pydantic',
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: Internet',
@@ -61,8 +60,6 @@ dependencies = [
     "pydantic-core==0.28.1",
 ]
 dynamic = ['version', 'readme']
-
-entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
 
 [project.optional-dependencies]
 email = ['email-validator>=2.0.0']
@@ -83,7 +80,6 @@ docs = [
 ]
 linting = [
     "black",
-    "hypothesis",
     "ruff",
     "mypy~=1.1.1",
 ]
@@ -91,7 +87,6 @@ testing-extra = [
     # used when generate devtools docs example
     "ansi2html",
     "devtools",
-    "hypothesis",
     # used in docs tests
     "sqlalchemy==1.4.0",
 ]
@@ -195,7 +190,7 @@ skip-string-normalization = true
 
 [tool.pyright]
 include = ['pydantic']
-exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']
+exclude = ['pydantic/mypy.py']
 
 [tool.codespell]
 skip = '.git,env*'
