@@ -118,6 +118,10 @@ impl<'a> Input<'a> for PyAny {
         true
     }
 
+    fn as_kwargs(&'a self, _py: Python<'a>) -> Option<&'a PyDict> {
+        self.downcast::<PyDict>().ok()
+    }
+
     fn input_is_subclass(&self, class: &PyType) -> PyResult<bool> {
         match self.downcast::<PyType>() {
             Ok(py_type) => py_type.is_subclass(class),
