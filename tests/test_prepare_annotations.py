@@ -7,7 +7,7 @@ from annotated_types import Gt, Lt
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated
 
-from pydantic.analyzed_type import AnalyzedType
+from pydantic import TypeAdapter
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.annotated_arguments import AfterValidator
 from pydantic.errors import PydanticSchemaGenerationError
@@ -56,7 +56,7 @@ def test_decimal_like_in_annotated() -> None:
     def no_op_val(x: Any) -> Any:
         return x
 
-    a = AnalyzedType(List[Annotated[MyDecimal, Gt(10), AfterValidator(no_op_val)]])
+    a = TypeAdapter(List[Annotated[MyDecimal, Gt(10), AfterValidator(no_op_val)]])
 
     expected = de.IsPartialDict(
         core_schema.list_schema(
@@ -77,7 +77,7 @@ def test_decimal_like_in_annotated() -> None:
 
 
 def test_decimal_like_outside_of_annotated() -> None:
-    a = AnalyzedType(List[MyDecimal])
+    a = TypeAdapter(List[MyDecimal])
 
     expected = de.IsPartialDict(
         core_schema.list_schema(
@@ -99,10 +99,10 @@ def test_return_no_annotations_in_annotated() -> None:
     msg = 'Custom types must return at least 1 item since the first item is the replacement source type'
 
     with pytest.raises(PydanticSchemaGenerationError, match=msg):
-        AnalyzedType(Annotated[MyType, Gt(0)])
+        TypeAdapter(Annotated[MyType, Gt(0)])
 
     with pytest.raises(PydanticSchemaGenerationError, match=msg):
-        AnalyzedType(MyType)
+        TypeAdapter(MyType)
 
 
 def test_generator_custom_type() -> None:
@@ -114,10 +114,10 @@ def test_generator_custom_type() -> None:
             yield Gt(123)
             yield from annotations
 
-    a = AnalyzedType(MyType)
+    a = TypeAdapter(MyType)
     assert a.core_schema == de.IsPartialDict(core_schema.int_schema(gt=123))
 
-    a = AnalyzedType(Annotated[MyType, Lt(420)])
+    a = TypeAdapter(Annotated[MyType, Lt(420)])
     assert a.core_schema == de.IsPartialDict(core_schema.int_schema(gt=123, lt=420))
 
 
@@ -146,7 +146,7 @@ def test_returns_itself_called_only_once() -> None:
         f" <class '{__name__}.test_returns_itself_called_only_once.<locals>.MyType'>"
     )
     with pytest.raises(PydanticSchemaGenerationError, match=msg):
-        AnalyzedType(MyType)
+        TypeAdapter(MyType)
 
     assert calls == [MyType.__prepare_pydantic_annotations__]
     calls.clear()
@@ -158,7 +158,7 @@ def test_returns_itself_called_only_once() -> None:
             assert source_type == MyTypeGood
             return handler(int)
 
-    a = AnalyzedType(MyTypeGood)
+    a = TypeAdapter(MyTypeGood)
     assert a.core_schema == core_schema.int_schema()
 
     assert calls == [MyTypeGood.__prepare_pydantic_annotations__, MyTypeGood.__get_pydantic_core_schema__]
