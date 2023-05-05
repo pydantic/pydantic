@@ -3466,21 +3466,23 @@ def test_pattern(pattern_type):
     # }
 
 
+@pytest.mark.parametrize(
+    ('pattern_value', 'error_type', 'error_msg'),
+    [
+        pytest.param('[xx', 'pattern_regex', 'Input should be a valid regular expression'),
+        pytest.param((), 'pattern_type', 'Input should be a valid pattern'),
+    ],
+)
 @pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
-def test_pattern_error(pattern_type):
+def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     class Foobar(BaseModel):
         pattern: pattern_type
 
     with pytest.raises(ValidationError) as exc_info:
-        Foobar(pattern='[xx')
+        Foobar(pattern=pattern_value)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'pattern_regex',
-            'loc': ('pattern',),
-            'msg': 'Input should be a valid regular expression',
-            'input': '[xx',
-        }
+        {'type': error_type, 'loc': ('pattern',), 'msg': error_msg, 'input': pattern_value}
     ]
 
 
