@@ -96,7 +96,7 @@ This lead to a variety of bugs, for example calling a function with the wrong si
 ```python
 import pytest
 
-from pydantic import BaseModel, field_validator  # or pydantic.validator
+from pydantic import BaseModel, field_validator  # or validator
 
 
 class Model(BaseModel):
