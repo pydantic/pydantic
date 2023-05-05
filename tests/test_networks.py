@@ -1,7 +1,8 @@
+from typing import Union
+
 import pytest
 from pydantic_core import PydanticCustomError, Url
 from typing_extensions import Annotated
-from typing import Union
 
 from pydantic import (
     AmqpDsn,
