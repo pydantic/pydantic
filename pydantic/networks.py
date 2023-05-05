@@ -58,7 +58,7 @@ class UrlConstraints(_fields.PydanticMetadata):
         return hash(
             (
                 self.max_length,
-                tuple(self.allowed_schemes),
+                tuple(self.allowed_schemes) if self.allowed_schemes is not None else None,
                 self.host_required,
                 self.default_host,
                 self.default_port,
