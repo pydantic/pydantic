@@ -31,7 +31,7 @@ from typing import (
 import pytest
 from dirty_equals import HasRepr
 from pydantic_core import core_schema
-from typing_extensions import Annotated, Literal, OrderedDict
+from typing_extensions import Annotated, Literal, OrderedDict, TypeVarTuple, Unpack
 
 from pydantic import (
     BaseModel,
@@ -42,6 +42,7 @@ from pydantic import (
     PydanticUserError,
     ValidationError,
     ValidationInfo,
+    computed_field,
     root_validator,
 )
 from pydantic._internal._core_utils import collect_invalid_schemas
@@ -2313,3 +2314,65 @@ def test_generic_intenum_bound():
         'title': 'Model[test_generic_intenum_bound.<locals>.MyEnum]',
         'type': 'object',
     }
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason='requires python 3.11 or higher')
+@pytest.mark.xfail(reason='TODO: Variadic generic parametrization is not supported yet')
+def test_variadic_generic_init():
+    class ComponentModel(BaseModel):
+        pass
+
+    class Wrench(ComponentModel):
+        pass
+
+    class Screwdriver(ComponentModel):
+        pass
+
+    ComponentVar = TypeVar('ComponentVar', bound=ComponentModel)
+    NumberOfComponents = TypeVarTuple('NumberOfComponents')
+
+    class VariadicToolbox(BaseModel, Generic[ComponentVar, Unpack[NumberOfComponents]]):
+        main_component: ComponentVar
+        left_component_pocket: Optional[list[ComponentVar]] = Field(default_factory=list)
+        right_component_pocket: Optional[list[ComponentVar]] = Field(default_factory=list)
+
+        @computed_field
+        @property
+        def all_components(self) -> tuple[ComponentVar, Unpack[NumberOfComponents]]:
+            return (self.main_component, *self.left_component_pocket, *self.right_component_pocket)
+
+    sa, sb, w = Screwdriver(), Screwdriver(), Wrench()
+    my_toolbox = VariadicToolbox[Screwdriver, Screwdriver, Wrench](
+        main_component=sa, left_component_pocket=[w], right_component_pocket=[sb]
+    )
+
+    assert my_toolbox.all_components == [sa, w, sb]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 11), reason='requires python 3.11 or higher')
+@pytest.mark.xfail(reason='TODO: Variadic fields are not supported yet')
+def test_variadic_generic_with_variadic_fields():
+    class ComponentModel(BaseModel):
+        pass
+
+    class Wrench(ComponentModel):
+        pass
+
+    class Screwdriver(ComponentModel):
+        pass
+
+    ComponentVar = TypeVar('ComponentVar', bound=ComponentModel)
+    NumberOfComponents = TypeVarTuple('NumberOfComponents')
+
+    class VariadicToolbox(BaseModel, Generic[ComponentVar, Unpack[NumberOfComponents]]):
+        toolbelt_cm_size: Optional[tuple[Unpack[NumberOfComponents]]] = Field(default_factory=tuple)
+        manual_toolset: Optional[tuple[ComponentVar, Unpack[NumberOfComponents]]] = Field(default_factory=tuple)
+
+    MyToolboxClass = VariadicToolbox[Screwdriver, Screwdriver, Wrench]
+
+    sa, sb, w = Screwdriver(), Screwdriver(), Wrench()
+    MyToolboxClass(toolbelt_cm_size=(5, 10.5, 4), manual_toolset=(sa, sb, w))
+
+    with pytest.raises(TypeError):
+        # Should raise error because integer 5 does not meet the bound requirements of ComponentVar
+        MyToolboxClass(manual_toolset=(sa, sb, 5))
