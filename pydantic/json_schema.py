@@ -253,7 +253,7 @@ class GenerateJsonSchema:
         # on types that should have different JSON schemas
         if 'ref' in schema:
             core_ref = CoreRef(schema['ref'])  # type: ignore[typeddict-item]
-            if core_ref in self.core_to_json_refs:
+            if core_ref in self.core_to_defs_refs and self.core_to_defs_refs[core_ref] in self.definitions:
                 return {'$ref': self.core_to_json_refs[core_ref]}
 
         # Generate the JSON schema, accounting for the json_schema_override and core_schema_override
