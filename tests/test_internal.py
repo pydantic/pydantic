@@ -4,7 +4,8 @@ Tests for internal things that are complex enough to warrant their own unit test
 import pytest
 from pydantic_core import core_schema as cs
 
-from pydantic._internal._core_utils import simplify_schema_references
+# TODO: rewrite these tests to use the two individual functions
+from pydantic._internal._core_utils import _simplify_schema_references as simplify_schema_references  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -114,5 +115,5 @@ from pydantic._internal._core_utils import simplify_schema_references
     ],
 )
 def test_build_definitions_schema(input_schema: cs.CoreSchema, expected_output: cs.CoreSchema):
-    result = simplify_schema_references(input_schema)
+    result = simplify_schema_references(input_schema, True)
     assert result == expected_output

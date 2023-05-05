@@ -165,7 +165,7 @@ def test_ip_strict(tp: Any, value: Any, errors: List[Any]) -> None:
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=str(value))
-    assert exc_info.value.errors() == errors
+    assert exc_info.value.errors(include_url=False) == errors
 
     assert Model(v=value).v == value
 
@@ -198,7 +198,7 @@ def test_ipaddress_fails(value):
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
     assert exc_info.value.error_count() == 1
-    assert exc_info.value.errors()[0] == {
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_any_address',
         'loc': ('ip',),
         'msg': 'value is not a valid IPv4 or IPv6 address',
@@ -214,7 +214,7 @@ def test_ipv4address_fails(value):
     with pytest.raises(ValidationError) as exc_info:
         Model(ipv4=value)
     assert exc_info.value.error_count() == 1
-    assert exc_info.value.errors()[0] == {
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_v4_address',
         'loc': ('ipv4',),
         'msg': 'Input is not a valid IPv4 address',
@@ -230,8 +230,8 @@ def test_ipv6address_fails(value):
     with pytest.raises(ValidationError) as exc_info:
         Model(ipv6=value)
     assert exc_info.value.error_count() == 1
-    # insert_assert(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == {
+    # insert_assert(exc_info.value.errors(include_url=False)[0])
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_v6_address',
         'loc': ('ipv6',),
         'msg': 'Input is not a valid IPv6 address',
@@ -304,8 +304,8 @@ def test_ipnetwork_fails(value):
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
     assert exc_info.value.error_count() == 1
-    # insert_assert(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == {
+    # insert_assert(exc_info.value.errors(include_url=False)[0])
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_any_network',
         'loc': ('ip',),
         'msg': 'value is not a valid IPv4 or IPv6 network',
@@ -321,8 +321,8 @@ def test_ip_v4_network_fails(value):
     with pytest.raises(ValidationError) as exc_info:
         Model(ip=value)
     assert exc_info.value.error_count() == 1
-    # insert_assert(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == {
+    # insert_assert(exc_info.value.errors(include_url=False)[0])
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_v4_network',
         'loc': ('ip',),
         'msg': 'Input is not a valid IPv4 network',
@@ -339,8 +339,8 @@ def test_ip_v6_network_fails(value):
         Model(ip=value)
 
     assert exc_info.value.error_count() == 1
-    # insert_assert(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == {
+    # insert_assert(exc_info.value.errors(include_url=False)[0])
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_v6_network',
         'loc': ('ip',),
         'msg': 'Input is not a valid IPv6 network',
@@ -437,8 +437,8 @@ def test_ipinterface_fails(value):
         Model(ip=value)
 
     assert exc_info.value.error_count() == 1
-    # insert_assert(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == {
+    # insert_assert(exc_info.value.errors(include_url=False)[0])
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_any_interface',
         'loc': ('ip',),
         'msg': 'value is not a valid IPv4 or IPv6 interface',
@@ -455,8 +455,8 @@ def test_ip_v4_interface_fails(value):
         Model(ip=value)
 
     assert exc_info.value.error_count() == 1
-    # insert_assert(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == {
+    # insert_assert(exc_info.value.errors(include_url=False)[0])
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_v4_interface',
         'loc': ('ip',),
         'msg': 'Input is not a valid IPv4 interface',
@@ -473,8 +473,8 @@ def test_ip_v6_interface_fails(value):
         Model(ip=value)
 
     assert exc_info.value.error_count() == 1
-    # insert_assert(exc_info.value.errors()[0])
-    assert exc_info.value.errors()[0] == {
+    # insert_assert(exc_info.value.errors(include_url=False)[0])
+    assert exc_info.value.errors(include_url=False)[0] == {
         'type': 'ip_v6_interface',
         'loc': ('ip',),
         'msg': 'Input is not a valid IPv6 interface',

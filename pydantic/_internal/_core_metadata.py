@@ -4,7 +4,7 @@ import typing
 from typing import Any
 
 import typing_extensions
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import CoreSchema
 
 if typing.TYPE_CHECKING:
     from ..json_schema import JsonSchemaValue
@@ -40,7 +40,7 @@ class CoreMetadataHandler:
 
     __slots__ = ('_schema',)
 
-    def __init__(self, schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField):
+    def __init__(self, schema: CoreSchemaOrField):
         self._schema = schema
 
         metadata = schema.get('metadata')
@@ -64,7 +64,7 @@ class CoreMetadataHandler:
 
     def get_json_schema(
         self,
-        core_schema: CoreSchema | core_schema.TypedDictField | core_schema.DataclassField,
+        core_schema: CoreSchemaOrField,
         handler: GetJsonSchemaHandler,
     ) -> JsonSchemaValue:
         js_function = self.metadata.get('pydantic_js_function')

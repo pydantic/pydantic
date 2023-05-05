@@ -52,8 +52,8 @@ def test_value_error():
     with pytest.raises(ValidationError) as exc_info:
         MyDataclass(1, 'wrong')
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': (1,),
@@ -96,7 +96,7 @@ def test_validate_assignment_error():
 
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxx'
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('a',),
@@ -181,7 +181,7 @@ def test_validate_assignment_extra_unknown_field_assigned_errors(config: ConfigD
     with pytest.raises(ValidationError) as exc_info:
         d.extra_field = 1.23
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'no_such_attribute',
             'loc': ('extra_field',),
@@ -352,8 +352,8 @@ def test_validate_long_string_error():
     with pytest.raises(ValidationError) as exc_info:
         MyDataclass('xxxx')
 
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_too_long',
             'loc': (0,),
@@ -373,7 +373,7 @@ def test_validate_assignment_long_string_error():
     with pytest.raises(ValidationError) as exc_info:
         d.a = 'xxxx'
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'string_too_long',
             'loc': ('a',),
@@ -414,8 +414,8 @@ def test_nested_dataclass():
 
     with pytest.raises(ValidationError) as exc_info:
         Outer(n='not nested')
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'dataclass_type',
             'loc': ('n',),
@@ -427,7 +427,7 @@ def test_nested_dataclass():
 
     with pytest.raises(ValidationError) as exc_info:
         Outer(n={'number': 'x'})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'int_parsing',
             'loc': ('n', 'number'),
@@ -452,8 +452,8 @@ def test_arbitrary_types_allowed():
 
     with pytest.raises(ValidationError) as exc_info:
         Navbar(button=('b',))
-    # insert_assert(exc_info.value.errors())
-    assert exc_info.value.errors() == [
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'is_instance_of',
             'loc': ('button',),
@@ -701,14 +701,14 @@ def test_hashable_required():
     MyDataclass(v=None)
     with pytest.raises(ValidationError) as exc_info:
         MyDataclass(v=[])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': [], 'loc': ('v',), 'msg': 'Input should be hashable', 'type': 'is_hashable'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         # Should this raise a TypeError instead? https://github.com/pydantic/pydantic/issues/5487
         MyDataclass()
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': HasRepr('ArgsKwargs(())'), 'loc': ('v',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
@@ -760,7 +760,7 @@ def test_override_builtin_dataclass():
     with pytest.raises(ValidationError) as e:
         ValidFile(hash=[1], name='name', size=3)
 
-    assert e.value.errors() == [
+    assert e.value.errors(include_url=False) == [
         {
             'type': 'string_type',
             'loc': ('hash',),
@@ -814,7 +814,7 @@ def test_override_builtin_dataclass_nested():
 
     with pytest.raises(ValidationError) as e:
         FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count=['7']))
-    assert e.value.errors() == [
+    assert e.value.errors(include_url=False) == [
         {'loc': ('meta', 'seen_count'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
     ]
 
@@ -1428,7 +1428,7 @@ def test_self_reference_dataclass():
     with pytest.raises(ValidationError) as exc_info:
         MyDataclass(self_reference=MyDataclass(self_reference=1))
 
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'dataclass_name': 'MyDataclass'},
             'input': 1,
@@ -1457,7 +1457,7 @@ def test_cyclic_reference_dataclass():
 
     with pytest.raises(ValidationError) as exc_info:
         D1(d2=D2(d1=D1(d2=D2(d1=D2()))))
-    assert exc_info.value.errors() == [...]
+    assert exc_info.value.errors(include_url=False) == [...]
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
@@ -1736,7 +1736,7 @@ def test_dataclass_config_validate_default():
 
     with pytest.raises(ValidationError) as exc_info:
         ValidatingModel()
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'ctx': {'error': 'assert -1 > 0'},
             'input': -1,
@@ -1784,7 +1784,7 @@ def test_unparametrized_generic_dataclass(dataclass_decorator):
 
     with pytest.raises(ValidationError) as exc_info:
         validator.validate_python({'y': None})
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': {'y': None}, 'loc': ('x',), 'msg': 'Field required', 'type': 'missing'}
     ]
 
@@ -1826,7 +1826,7 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
     else:
         with pytest.raises(ValidationError) as exc_info:
             validator.validate_python({'x': input_value})
-        assert exc_info.value.errors() == output_value
+        assert exc_info.value.errors(include_url=False) == output_value
 
 
 @pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(identity=True))

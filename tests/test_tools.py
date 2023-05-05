@@ -40,7 +40,7 @@ def test_parse_obj_preserves_subclasses():
 def test_parse_obj_fails():
     with pytest.raises(ValidationError) as exc_info:
         parse_obj_as(int, 'a')
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'input': 'a',
             'loc': (),

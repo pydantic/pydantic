@@ -309,6 +309,7 @@ async def main():
                 'msg': 'Input should be greater than 0',
                 'input': -4,
                 'ctx': {'gt': 0},
+                'url': 'https://errors.pydantic.dev/2/v/greater_than',
             }
         ]
         """

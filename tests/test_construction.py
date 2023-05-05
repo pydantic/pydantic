@@ -357,6 +357,7 @@ def test_immutable_copy_with_frozen(copy_method):
 
     m = Model(a=40, b=10)
     assert m == copy_method(m)
+    assert repr(m) == 'Model(a=40, b=10)'
 
     m2 = copy_method(m, update={'b': 12})
     assert repr(m2) == 'Model(a=40, b=12)'

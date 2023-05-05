@@ -118,6 +118,9 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
+            if config_wrapper.extra == 'allow':
+                namespace['__getattr__'] = _model_construction.model_extra_getattr
+
             if '__hash__' not in namespace and config_wrapper.frozen:
 
                 def hash_func(self: Any) -> int:
@@ -212,6 +215,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
         __pydantic_fields_set__: set[str] = set()
+        __pydantic_extra__: dict[str, Any] | None = None
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
     else:
@@ -225,7 +229,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         )
 
     model_config = ConfigDict()
-    __slots__ = '__dict__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
     __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
 
@@ -322,6 +326,13 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         The set of fields that have been set on this model instance, i.e. that were not filled from defaults.
         """
         return self.__pydantic_fields_set__
+
+    @property
+    def model_extra(self) -> dict[str, Any] | None:
+        """
+        Extra fields set during validation, this will be `None` if `config.extra` is not set to `"allow"`.
+        """
+        return self.__pydantic_extra__
 
     @property
     def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
@@ -460,11 +471,21 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 fields_values[name] = values[name]
             elif not field.is_required():
                 fields_values[name] = field.get_default(call_default_factory=True)
-        fields_values.update(values)
+        _extra: dict[str, Any] | None = None
+        if cls.model_config.get('extra') == 'allow':
+            _extra = {}
+            for k, v in values.items():
+                if k in cls.model_fields:
+                    fields_values[k] = v
+                else:
+                    _extra[k] = v
+        else:
+            fields_values.update(values)
         _object_setattr(m, '__dict__', fields_values)
         if _fields_set is None:
             _fields_set = set(values.keys())
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
+        _object_setattr(m, '__pydantic_extra__', _extra)
         if type(m).model_post_init is not BaseModel.model_post_init:
             m.model_post_init(None)
         return m
@@ -572,7 +593,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         """
         copied = self.__deepcopy__() if deep else self.__copy__()
         if update:
-            copied.__dict__.update(update)
+            if self.model_config.get('extra') == 'allow':
+                for k, v in update.items():
+                    if k in self.model_fields:
+                        copied.__dict__[k] = v
+                    else:
+                        if copied.__pydantic_extra__ is None:
+                            copied.__pydantic_extra__ = {}
+                        copied.__pydantic_extra__[k] = v
+            else:
+                copied.__dict__.update(update)
             copied.__pydantic_fields_set__.update(update.keys())
         return copied
 
@@ -583,6 +613,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', copy(self.__dict__))
+        _object_setattr(m, '__pydantic_extra__', copy(self.__pydantic_extra__))
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
         for name in self.__private_attributes__:
             value = getattr(self, name, Undefined)
@@ -597,6 +628,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
+        _object_setattr(m, '__pydantic_extra__', deepcopy(self.__pydantic_extra__, memo=memo))
         # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
@@ -607,12 +639,15 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return m
 
     def __repr_args__(self) -> _repr.ReprArgs:
-        yield from [
+        yield from (
             (k, v)
             for k, v in self.__dict__.items()
             if not k.startswith('_') and (k not in self.model_fields or self.model_fields[k].repr)
-        ]
-        yield from [(k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr]
+        )
+        pydantic_extra = self.__pydantic_extra__
+        if pydantic_extra is not None:
+            yield from ((k, v) for k, v in pydantic_extra.items())
+        yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
@@ -811,7 +846,8 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
             # ctx is missing here, but since we've added `input` to the error, we're not pretending it's the same
             error: pydantic_core.InitErrorDetails = {
-                'type': pydantic_core.PydanticCustomError(type_str, str(exc)),
+                # The type: ignore on the next line is to ignore the requirement of LiteralString
+                'type': pydantic_core.PydanticCustomError(type_str, str(exc)),  # type: ignore
                 'loc': ('__root__',),
                 'input': b,
             }
@@ -897,6 +933,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             ),
             **(update or {}),
         )
+        if self.__pydantic_extra__ is None:
+            extra: dict[str, Any] | None = None
+        else:
+            extra = self.__pydantic_extra__.copy()
+            for k in list(self.__pydantic_extra__):
+                if k not in values:  # k was in the exclude
+                    extra.pop(k)
+            for k in list(values):
+                if k in self.__pydantic_extra__:  # k must have come from extra
+                    extra[k] = values.pop(k)
 
         # new `__pydantic_fields_set__` can have unset optional fields with a set value in `update` kwarg
         if update:
@@ -908,7 +954,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, deep=deep)  # type: ignore
+        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, extra, deep=deep)
 
     @classmethod
     @deprecated('The `schema` method is deprecated; use `model_json_schema` instead.')
@@ -1053,7 +1099,7 @@ def create_model(
         if not isinstance(__base__, tuple):
             __base__ = (__base__,)
     else:
-        __base__ = (typing.cast(typing.Type['Model'], BaseModel),)
+        __base__ = (cast(typing.Type['Model'], BaseModel),)
 
     __cls_kwargs__ = __cls_kwargs__ or {}
 

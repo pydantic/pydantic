@@ -31,6 +31,6 @@ def test_assert_raises_validation_error():
             'ctx': {'error': 'invalid a'},
         }
     ]
-    actual_errors = exc_info.value.errors()
+    actual_errors = exc_info.value.errors(include_url=False)
     if expected_errors != actual_errors:
         pytest.fail(f'Actual errors: {actual_errors}\nExpected errors: {expected_errors}')

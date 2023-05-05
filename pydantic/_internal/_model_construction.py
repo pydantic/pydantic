@@ -13,6 +13,7 @@ from pydantic_core import SchemaSerializer, SchemaValidator
 from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
+from ._core_utils import flatten_schema_defs, inline_schema_defs
 from ._decorators import ComputedFieldInfo, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
@@ -204,8 +205,11 @@ def complete_model_class(
 
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    cls.__pydantic_validator__ = SchemaValidator(schema, core_config)
-    cls.__pydantic_serializer__ = SchemaSerializer(schema, core_config)
+
+    schema = flatten_schema_defs(schema)
+    simplified_core_schema = inline_schema_defs(schema)
+    cls.__pydantic_validator__ = SchemaValidator(simplified_core_schema, core_config)
+    cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
     cls.__pydantic_model_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
@@ -319,3 +323,17 @@ def apply_alias_generator(config: ConfigDict, fields: dict[str, FieldInfo]) -> N
             field_info.validation_alias = alias
             field_info.serialization_alias = alias
             field_info.alias_priority = 1
+
+
+def model_extra_getattr(self: BaseModel, item: str) -> Any:
+    """
+    This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
+    allow (and store) extra
+    """
+    if self.__pydantic_extra__ is not None:
+        try:
+            return self.__pydantic_extra__[item]
+        except KeyError as exc:
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+    else:
+        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')

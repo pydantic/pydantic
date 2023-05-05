@@ -62,6 +62,11 @@ def test_serialize_extra_allow_subclass_2() -> None:
 
     m = Model(inner=Child(x=1, y=2))
     assert m.inner.y == 2
+    assert m.model_dump() == {'inner': {'x': 1}}
+    assert json.loads(m.model_dump_json()) == {'inner': {'x': 1}}
+
+    m = Model(inner=Parent(x=1, y=2))
+    assert m.inner.y == 2
     assert m.model_dump() == {'inner': {'x': 1, 'y': 2}}
     assert json.loads(m.model_dump_json()) == {'inner': {'x': 1, 'y': 2}}
 

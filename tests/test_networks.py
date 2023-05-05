@@ -142,8 +142,8 @@ def test_any_url_invalid(value, err_type, err_msg):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
-    error = exc_info.value.errors()[0]
+    assert len(exc_info.value.errors(include_url=False)) == 1, exc_info.value.errors(include_url=False)
+    error = exc_info.value.errors(include_url=False)[0]
     # debug(error)
     assert {'type': error['type'], 'msg': error['msg']} == {'type': err_type, 'msg': err_msg}
 
@@ -294,8 +294,8 @@ def test_http_url_invalid(value, err_type, err_msg):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(v=value)
-    assert len(exc_info.value.errors()) == 1, exc_info.value.errors()
-    error = exc_info.value.errors()[0]
+    assert len(exc_info.value.errors(include_url=False)) == 1, exc_info.value.errors(include_url=False)
+    error = exc_info.value.errors(include_url=False)[0]
     assert {'type': error['type'], 'msg': error['msg']} == {'type': err_type, 'msg': err_msg}
 
 
@@ -467,7 +467,7 @@ def test_postgres_dsns_validation_error(dsn, error_message):
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a=dsn)
-    error = exc_info.value.errors()[0]
+    error = exc_info.value.errors(include_url=False)[0]
     error.pop('ctx', None)
     assert error == error_message
 
@@ -510,7 +510,7 @@ def test_cockroach_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url_scheme'
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'url_scheme'
 
 
 def test_amqp_dsns():
@@ -527,7 +527,7 @@ def test_amqp_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url_scheme'
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'url_scheme'
 
     # Password is not required for AMQP protocol
     m = Model(a='amqp://localhost:1234/app')
@@ -561,7 +561,7 @@ def test_redis_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url_scheme'
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'url_scheme'
 
     # Password is not required for Redis protocol
     m = Model(a='redis://localhost:1234/app')
@@ -590,7 +590,7 @@ def test_mongodb_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url_scheme'
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'url_scheme'
 
     # Password is not required for MongoDB protocol
     m = Model(a='mongodb://localhost:1234/app')
@@ -620,7 +620,7 @@ def test_kafka_dsns():
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='http://example.org')
-    assert exc_info.value.errors()[0]['type'] == 'url_scheme'
+    assert exc_info.value.errors(include_url=False)[0]['type'] == 'url_scheme'
 
     m = Model(a='kafka://kafka3:9093')
     assert m.a.username is None

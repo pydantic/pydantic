@@ -15,7 +15,7 @@ from itertools import chain
 from types import FunctionType, LambdaType, MethodType
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
-from pydantic_core import CoreSchema, SchemaError, SchemaValidator, core_schema
+from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
@@ -263,10 +263,9 @@ class GenerateSchema:
         config_wrapper = ConfigWrapper(cls.model_config, check=False)
         self._config_wrapper_stack.append(config_wrapper)
         try:
-            fields_schema: core_schema.CoreSchema = core_schema.typed_dict_schema(
-                {k: self._generate_td_field_schema(k, v, decorators) for k, v in fields.items()},
+            fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
+                {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
                 computed_fields=generate_computed_field(decorators.computed_fields),
-                return_fields_set=True,
             )
         finally:
             self._config_wrapper_stack.pop()
@@ -539,6 +538,26 @@ class GenerateSchema:
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
+            metadata=common_field['metadata'],
+        )
+
+    def _generate_md_field_schema(
+        self,
+        name: str,
+        field_info: FieldInfo,
+        decorators: DecoratorInfos,
+        *,
+        required: bool = True,
+    ) -> core_schema.ModelField:
+        """
+        Prepare a ModelField to represent a model field.
+        """
+        common_field = self._common_field_schema(name, field_info, decorators)
+        return core_schema.model_field(
+            common_field['schema'],
+            serialization_exclude=common_field['serialization_exclude'],
+            validation_alias=common_field['validation_alias'],
+            serialization_alias=common_field['serialization_alias'],
             frozen=common_field['frozen'],
             metadata=common_field['metadata'],
         )
@@ -595,7 +614,7 @@ class GenerateSchema:
         )
 
         # the default validator needs to go outside of any other validators
-        # so that it is the topmost validator for the typed-dict-field validator
+        # so that it is the topmost validator for the field validator
         # which uses it to check if the field has a default value or not
         if not field_info.is_required():
             schema = wrap_default(field_info, schema)
@@ -1031,12 +1050,23 @@ class GenerateSchema:
         decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos()
         args = [self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
         has_post_init = hasattr(dataclass, '__post_init__')
-        args_schema = core_schema.dataclass_args_schema(
-            dataclass.__name__,
-            args,
-            computed_fields=generate_computed_field(decorators.computed_fields),
-            collect_init_only=has_post_init,
-        )
+
+        config = getattr(dataclass, '__pydantic_config__', None)
+        if config is not None:
+            config_wrapper = ConfigWrapper(config, check=False)
+            self._config_wrapper_stack.append(config_wrapper)
+
+        try:
+            args_schema = core_schema.dataclass_args_schema(
+                dataclass.__name__,
+                args,
+                computed_fields=generate_computed_field(decorators.computed_fields),
+                collect_init_only=has_post_init,
+            )
+        finally:
+            if config is not None:
+                self._config_wrapper_stack.pop()
+
         inner_schema = apply_validators(args_schema, decorators.root_validator.values())
         dc_schema = core_schema.dataclass_schema(dataclass, inner_schema, post_init=has_post_init, ref=dataclass_ref)
         schema = apply_model_serializers(dc_schema, decorators.model_serializer.values())
@@ -1377,12 +1407,6 @@ def apply_single_annotation(
         schema['schema'].update(metadata_dict)
     else:
         schema.update(metadata_dict)  # type: ignore[typeddict-item]
-    try:
-        SchemaValidator(schema)
-    except SchemaError as e:
-        # TODO: Generate an easier-to-understand ValueError here saying the field constraints are not enforced
-        # The relevant test is: `tests.test_schema.test_unenforced_constraints_schema
-        raise e
     return schema
 
 

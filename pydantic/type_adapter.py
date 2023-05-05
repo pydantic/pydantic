@@ -8,6 +8,7 @@ from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
 from typing_extensions import Literal
 
 from ._internal import _config, _generate_schema, _typing_extra
+from ._internal._core_utils import flatten_schema_defs, inline_schema_defs
 from .config import ConfigDict
 from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
 
@@ -103,18 +104,21 @@ class TypeAdapter(Generic[T]):
         except AttributeError:
             core_schema = _get_schema(__type, config_wrapper, parent_depth=_parent_depth + 1)
 
+        core_schema = flatten_schema_defs(core_schema)
+        simplified_core_schema = inline_schema_defs(core_schema)
+
         core_config = config_wrapper.core_config()
         validator: SchemaValidator
         if hasattr(__type, '__pydantic_validator__') and config is None:
             validator = __type.__pydantic_validator__
         else:
-            validator = SchemaValidator(core_schema, core_config)
+            validator = SchemaValidator(simplified_core_schema, core_config)
 
         serializer: SchemaSerializer
         if hasattr(__type, '__pydantic_serializer__') and config is None:
             serializer = __type.__pydantic_serializer__
         else:
-            serializer = SchemaSerializer(core_schema, core_config)
+            serializer = SchemaSerializer(simplified_core_schema, core_config)
 
         self.core_schema = core_schema
         self.validator = validator

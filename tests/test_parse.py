@@ -18,7 +18,7 @@ def test_obj():
 def test_model_validate_fails():
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate([1, 2, 3])
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': [1, 2, 3], 'loc': (), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
 
@@ -34,13 +34,15 @@ def test_model_validate_wrong_model():
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate(Foo())
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {'input': Foo(), 'loc': (), 'msg': 'Input should be a valid dictionary', 'type': 'dict_type'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
         Model.model_validate(Foo().model_dump())
-    assert exc_info.value.errors() == [{'input': {'c': 123}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}]
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': {'c': 123}, 'loc': ('a',), 'msg': 'Field required', 'type': 'missing'}
+    ]
 
 
 def test_root_model_error():

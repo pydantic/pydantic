@@ -3,16 +3,17 @@ Types and utility functions used by various other internal tools.
 """
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Callable, Dict, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict
 
 from pydantic_core import core_schema
+
+from pydantic._internal._core_utils import CoreSchemaOrField
 
 if TYPE_CHECKING:
     from pydantic.json_schema import GenerateJsonSchema
 
 
 JsonSchemaValue = Dict[str, Any]
-CoreSchemaOrField = Union[core_schema.CoreSchema, core_schema.DataclassField, core_schema.TypedDictField]
 
 
 class GetJsonSchemaHandler:

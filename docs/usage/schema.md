@@ -721,6 +721,18 @@ print(json.dumps(top_level_schema, indent=2))
 """
 {
   "$defs": {
+    "Model": {
+      "type": "object",
+      "properties": {
+        "a": {
+          "$ref": "#/components/schemas/Foo"
+        }
+      },
+      "required": [
+        "a"
+      ],
+      "title": "Model"
+    },
     "Foo": {
       "type": "object",
       "properties": {
@@ -733,18 +745,6 @@ print(json.dumps(top_level_schema, indent=2))
         "a"
       ],
       "title": "Foo"
-    },
-    "Model": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "$ref": "#/components/schemas/Foo"
-        }
-      },
-      "required": [
-        "a"
-      ],
-      "title": "Model"
     }
   }
 }
