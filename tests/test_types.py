@@ -3442,7 +3442,7 @@ def test_json_required():
         JsonRequired()
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
+@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern, Pattern[str]])
 def test_pattern(pattern_type):
     class Foobar(BaseModel):
         pattern: pattern_type
