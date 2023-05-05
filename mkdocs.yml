@@ -83,7 +83,7 @@ nav:
   - usage/dataclasses.md
   - usage/validation_decorator.md
   - usage/postponed_annotations.md
-  - usage/pydantic-settings.md
+  - usage/pydantic_settings.md
   - usage/conversion_table.md
   - Errors:
     - Usage Errors: usage/errors.md

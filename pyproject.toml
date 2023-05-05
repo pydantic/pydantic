@@ -71,6 +71,7 @@ email = ['email-validator>=2.0.0']
 docs = [
     "autoflake",
     "mkdocs",
+    "mkdocs-embed-external-markdown",
     "mkdocs-exclude",
     "mkdocs-material",
     "mkdocs-redirects",
