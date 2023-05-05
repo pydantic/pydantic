@@ -56,6 +56,7 @@ format:
 lint-python:
 	$(ruff)
 	$(black) --check --diff
+	griffe dump -f -d google -LWARNING -o/dev/null pydantic_core
 
 .PHONY: lint-rust
 lint-rust:
