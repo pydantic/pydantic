@@ -49,6 +49,7 @@ classifiers = [
     'Operating System :: POSIX :: Linux',
     'Environment :: Console',
     'Environment :: MacOS X',
+    'Framework :: Hypothesis',
     'Framework :: Pydantic',
     'Topic :: Software Development :: Libraries :: Python Modules',
     'Topic :: Internet',
@@ -60,6 +61,8 @@ dependencies = [
     "pydantic-core==0.28.1",
 ]
 dynamic = ['version', 'readme']
+
+entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
 
 [project.optional-dependencies]
 email = ['email-validator>=2.0.0']
@@ -190,7 +193,7 @@ skip-string-normalization = true
 
 [tool.pyright]
 include = ['pydantic']
-exclude = ['pydantic/mypy.py']
+exclude = ['pydantic/_hypothesis_plugin.py', 'pydantic/mypy.py']
 
 [tool.codespell]
 skip = '.git,env*'
