@@ -31,11 +31,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/api/analyzed_type/</loc>
-         <lastmod>2023-05-05</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/api/color/</loc>
          <lastmod>2023-05-05</lastmod>
          <changefreq>daily</changefreq>
@@ -82,6 +77,11 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/networks/</loc>
+         <lastmod>2023-05-05</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/type_adapter/</loc>
          <lastmod>2023-05-05</lastmod>
          <changefreq>daily</changefreq>
     </url>

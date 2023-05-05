@@ -1421,8 +1421,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/analyzed_type/" class="md-nav__link">
-        pydantic.analyzed_type
+      <a href="../../api/type_adapter/" class="md-nav__link">
+        pydantic.type_adapter
       </a>
     </li>
   
@@ -3435,7 +3435,7 @@ sub-models in its <code>definitions</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.analyzed_type</span> <span class="kn">import</span> <span class="n">AnalyzedType</span>
+<span class="kn">from</span> <span class="nn">pydantic.type_adapter</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
 
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3447,8 +3447,8 @@ sub-models in its <code>definitions</code>:</p>
 
 
 <span class="c1"># Default location for OpenAPI</span>
-<span class="n">top_level_schema</span> <span class="o">=</span> <span class="n">AnalyzedType</span><span class="o">.</span><span class="n">json_schemas</span><span class="p">(</span>
-    <span class="p">[</span><span class="n">AnalyzedType</span><span class="p">(</span><span class="n">Model</span><span class="p">)],</span> <span class="n">ref_template</span><span class="o">=</span><span class="s1">&#39;#/components/schemas/</span><span class="si">{model}</span><span class="s1">&#39;</span>
+<span class="n">top_level_schema</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="o">.</span><span class="n">json_schemas</span><span class="p">(</span>
+    <span class="p">[</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">Model</span><span class="p">)],</span> <span class="n">ref_template</span><span class="o">=</span><span class="s1">&#39;#/components/schemas/</span><span class="si">{model}</span><span class="s1">&#39;</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">top_level_schema</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
 </code></pre></div>

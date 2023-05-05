@@ -1377,8 +1377,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
         
           <li class="md-nav__item">
-  <a href="#analyzedtype" class="md-nav__link">
-    AnalyzedType
+  <a href="#typeadapter" class="md-nav__link">
+    TypeAdapter
   </a>
   
 </li>
@@ -1466,8 +1466,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/analyzed_type/" class="md-nav__link">
-        pydantic.analyzed_type
+      <a href="../../api/type_adapter/" class="md-nav__link">
+        pydantic.type_adapter
       </a>
     </li>
   
@@ -1782,8 +1782,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
         
           <li class="md-nav__item">
-  <a href="#analyzedtype" class="md-nav__link">
-    AnalyzedType
+  <a href="#typeadapter" class="md-nav__link">
+    TypeAdapter
   </a>
   
 </li>
@@ -1876,8 +1876,8 @@ This has a number of big advantages:</p>
 <li><strong>Recursive Models</strong> - and validation of recursive data structures is much improved and ready to test.</li>
 <li><strong>Custom Types</strong> - custom types have a new interface and are ready to test.</li>
 <li><strong>Custom Field Modifiers</strong> - used via <code>Annotated[]</code> are working and in use in Pydantic itself.</li>
-<li><strong>Validation without a BaseModel</strong> - the new <code>AnalyzedType</code> class allows validation without the need for a <code>BaseModel</code> class, and it's ready to test.</li>
-<li><strong>TypedDict</strong> - we now have full support for <code>TypedDict</code> via <code>AnalyzedType</code>, it's ready to test.</li>
+<li><strong>Validation without a BaseModel</strong> - the new <code>TypeAdapter</code> class allows validation without the need for a <code>BaseModel</code> class, and it's ready to test.</li>
+<li><strong>TypedDict</strong> - we now have full support for <code>TypedDict</code> via <code>TypeAdapter</code>, it's ready to test.</li>
 </ul>
 <h3 id="still-under-construction">Still under construction<a class="headerlink" href="#still-under-construction" title="Permanent link">&para;</a></h3>
 <ul>
@@ -1972,27 +1972,27 @@ a full migration guide, but for now the following pointers should be some help w
 <ul>
 <li><code>GetterDict</code> has been removed, as it was just an implementation detail for <code>orm_mode</code>, which has been removed.</li>
 </ul>
-<h3 id="analyzedtype">AnalyzedType<a class="headerlink" href="#analyzedtype" title="Permanent link">&para;</a></h3>
+<h3 id="typeadapter">TypeAdapter<a class="headerlink" href="#typeadapter" title="Permanent link">&para;</a></h3>
 <p>Pydantic V1 didn't have good support for validation or serializing non-<code>BaseModel</code>.
 To work with them you had to create a "root" model or use the utility functions in <code>pydantic.tools</code> (<code>parse_obj_as</code> and <code>schema_of</code>).
-In Pydantic V2 this is <em>a lot</em> easier: the <code>AnalyzedType</code> class lets you build an object that behaves almost like a <code>BaseModel</code> class which you can use for a lot of the use cases of root models and as a complete replacement for <code>parse_obj_as</code> and <code>schema_of</code>.</p>
+In Pydantic V2 this is <em>a lot</em> easier: the <code>TypeAdapter</code> class lets you build an object that behaves almost like a <code>BaseModel</code> class which you can use for a lot of the use cases of root models and as a complete replacement for <code>parse_obj_as</code> and <code>schema_of</code>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnalyzedType</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
 
-<span class="n">validator</span> <span class="o">=</span> <span class="n">AnalyzedType</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+<span class="n">validator</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
 <span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;type&#39;: &#39;array&#39;, &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}}</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnalyzedType</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">TypeAdapter</span>
 
-<span class="n">validator</span> <span class="o">=</span> <span class="n">AnalyzedType</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
+<span class="n">validator</span> <span class="o">=</span> <span class="n">TypeAdapter</span><span class="p">(</span><span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span>
 <span class="k">assert</span> <span class="n">validator</span><span class="o">.</span><span class="n">validate_python</span><span class="p">([</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">])</span> <span class="o">==</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">validator</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;type&#39;: &#39;array&#39;, &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;}}</span>
