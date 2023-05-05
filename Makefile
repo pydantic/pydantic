@@ -56,6 +56,8 @@ test: .pdm
 testcov: test
 	@echo "building coverage html"
 	@pdm run coverage html
+	@echo "building coverage lcov"
+	@pdm run coverage lcov
 
 .PHONY: test-examples  ## Run only the tests from the documentation
 test-examples: .pdm
