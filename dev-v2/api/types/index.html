@@ -1027,6 +1027,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/pydantic_settings/" class="md-nav__link">
+        Settings Management
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1777,7 +1791,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h2 id="pydantic.types.EncoderProtocol" class="doc doc-heading">
-        <code>EncoderProtocol</code>
+        <span class="doc doc-object-name doc-class-name">EncoderProtocol</span>
 
 
 <a href="#pydantic.types.EncoderProtocol" class="headerlink" title="Permanent link">&para;</a></h2>
@@ -1836,14 +1850,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.types.EncoderProtocol.decode" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">decode</span><span class="p">(</span><span class="n">data</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">decode</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.types.EncoderProtocol.decode" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">decode</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -1877,7 +1893,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h2 id="pydantic.types.PaymentCardNumber" class="doc doc-heading">
-        <code>PaymentCardNumber</code>
+        <span class="doc doc-object-name doc-class-name">PaymentCardNumber</span>
 
 
 <a href="#pydantic.types.PaymentCardNumber" class="headerlink" title="Permanent link">&para;</a></h2>
@@ -2110,14 +2126,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.types.PaymentCardNumber.validate_brand" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">validate_brand</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
 
 <a href="#pydantic.types.PaymentCardNumber.validate_brand" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -2206,14 +2224,16 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 
 
 <h3 id="pydantic.types.PaymentCardNumber.validate_luhn_check_digit" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">validate_luhn_check_digit</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">validate_luhn_check_digit</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.types.PaymentCardNumber.validate_luhn_check_digit" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">validate_luhn_check_digit</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -2278,10 +2298,18 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 
 
 <h2 id="pydantic.types.conlist" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">conlist</span><span class="p">(</span><span class="n">item_type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">unique_items</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">conlist</span>
+
 
 <a href="#pydantic.types.conlist" class="headerlink" title="Permanent link">&para;</a></h2>
-
+<div class="highlight"><pre><span></span><code><span class="n">conlist</span><span class="p">(</span>
+    <span class="n">item_type</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">unique_items</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   

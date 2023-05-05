@@ -1027,6 +1027,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/pydantic_settings/" class="md-nav__link">
+        Settings Management
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -2045,7 +2059,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h2 id="pydantic.main.BaseModel" class="doc doc-heading">
-        <code>BaseModel</code>
+        <span class="doc doc-object-name doc-class-name">BaseModel</span>
 
 
 <a href="#pydantic.main.BaseModel" class="headerlink" title="Permanent link">&para;</a></h2>
@@ -3724,14 +3738,18 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.main.BaseModel.__pydantic_decorators__" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">__pydantic_decorators__</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span><span class="n">_decorators</span><span class="o">.</span><span class="n">DecoratorInfos</span><span class="p">]</span></code>
+        <span class="doc doc-object-name doc-attribute-name">__pydantic_decorators__</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-class-attribute"><code>class-attribute</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.__pydantic_decorators__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">__pydantic_decorators__</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span>
+    <span class="n">_decorators</span><span class="o">.</span><span class="n">DecoratorInfos</span>
+<span class="p">]</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3745,14 +3763,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.main.BaseModel.model_computed_fields" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_computed_fields</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComputedFieldInfo</span><span class="p">]</span></code>
+        <span class="doc doc-object-name doc-attribute-name">model_computed_fields</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-property"><code>property</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_computed_fields" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_computed_fields</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ComputedFieldInfo</span><span class="p">]</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3766,14 +3786,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.main.BaseModel.model_extra" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_extra</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span></code>
+        <span class="doc doc-object-name doc-attribute-name">model_extra</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-property"><code>property</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_extra" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_extra</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3787,14 +3809,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.main.BaseModel.model_fields_set" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_fields_set</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span></code>
+        <span class="doc doc-object-name doc-attribute-name">model_fields_set</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-property"><code>property</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_fields_set" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_fields_set</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3810,10 +3834,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.main.BaseModel.__copy__" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">__copy__</span><span class="p">()</span></code>
+        <span class="doc doc-object-name doc-function-name">__copy__</span>
+
 
 <a href="#pydantic.main.BaseModel.__copy__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">__copy__</span><span class="p">()</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3859,10 +3885,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.main.BaseModel.__deepcopy__" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">__deepcopy__</span><span class="p">(</span><span class="n">memo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">__deepcopy__</span>
+
 
 <a href="#pydantic.main.BaseModel.__deepcopy__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">__deepcopy__</span><span class="p">(</span><span class="n">memo</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3912,14 +3940,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.main.BaseModel.__get_pydantic_core_schema__" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">__get_pydantic_core_schema__</span><span class="p">(</span><span class="n">__source</span><span class="p">,</span> <span class="n">__handler</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">__get_pydantic_core_schema__</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.__get_pydantic_core_schema__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">__get_pydantic_core_schema__</span><span class="p">(</span><span class="n">__source</span><span class="p">,</span> <span class="n">__handler</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4041,14 +4071,16 @@ A callable that calls into Pydantic's internal CoreSchema generation logic.</p><
 
 
 <h3 id="pydantic.main.BaseModel.__get_pydantic_json_schema__" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">__get_pydantic_json_schema__</span><span class="p">(</span><span class="n">__core_schema</span><span class="p">,</span> <span class="n">__handler</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">__get_pydantic_json_schema__</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.__get_pydantic_json_schema__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">__get_pydantic_json_schema__</span><span class="p">(</span><span class="n">__core_schema</span><span class="p">,</span> <span class="n">__handler</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4174,10 +4206,12 @@ for a type.</p></td>
 
 
 <h3 id="pydantic.main.BaseModel.__init__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">__init__</span>
+
 
 <a href="#pydantic.main.BaseModel.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4219,10 +4253,12 @@ for a type.</p></td>
 
 
 <h3 id="pydantic.main.BaseModel.__iter__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__iter__</span><span class="p">()</span></code>
+        <span class="doc doc-object-name doc-function-name">__iter__</span>
+
 
 <a href="#pydantic.main.BaseModel.__iter__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="fm">__iter__</span><span class="p">()</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4250,14 +4286,16 @@ for a type.</p></td>
 
 
 <h3 id="pydantic.main.BaseModel.__pydantic_init_subclass__" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">__pydantic_init_subclass__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">__pydantic_init_subclass__</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.__pydantic_init_subclass__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">__pydantic_init_subclass__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4312,10 +4350,14 @@ any kwargs passed to the class definition that aren't used internally by pydanti
 
 
 <h3 id="pydantic.main.BaseModel.copy" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">copy</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">copy</span>
+
 
 <a href="#pydantic.main.BaseModel.copy" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">copy</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4437,14 +4479,16 @@ copied = self.model_validate(data)
 
 
 <h3 id="pydantic.main.BaseModel.model_construct" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_construct</span><span class="p">(</span><span class="n">_fields_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_construct</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_construct" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_construct</span><span class="p">(</span><span class="n">_fields_set</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4532,10 +4576,12 @@ Behaves as if <code>Config.extra = 'allow'</code> was set since it adds all pass
 
 
 <h3 id="pydantic.main.BaseModel.model_copy" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_copy</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_copy</span>
+
 
 <a href="#pydantic.main.BaseModel.model_copy" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_copy</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4603,10 +4649,23 @@ Behaves as if <code>Config.extra = 'allow'</code> was set since it adds all pass
 
 
 <h3 id="pydantic.main.BaseModel.model_dump" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_dump</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_dump</span>
+
 
 <a href="#pydantic.main.BaseModel.model_dump" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_dump</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4680,10 +4739,23 @@ Behaves as if <code>Config.extra = 'allow'</code> was set since it adds all pass
 
 
 <h3 id="pydantic.main.BaseModel.model_dump_json" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_dump_json</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_dump_json</span>
+
 
 <a href="#pydantic.main.BaseModel.model_dump_json" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_dump_json</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4757,14 +4829,20 @@ Behaves as if <code>Config.extra = 'allow'</code> was set since it adds all pass
 
 
 <h3 id="pydantic.main.BaseModel.model_json_schema" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_json_schema</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span> <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_json_schema</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_json_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_json_schema</span><span class="p">(</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4810,14 +4888,16 @@ value of <code>schema_generator</code> to be your subclass.</p>
 
 
 <h3 id="pydantic.main.BaseModel.model_modify_json_schema" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_modify_json_schema</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_modify_json_schema</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_modify_json_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_modify_json_schema</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4867,14 +4947,16 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 
 
 <h3 id="pydantic.main.BaseModel.model_parametrized_name" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_parametrized_name</span><span class="p">(</span><span class="n">params</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_parametrized_name</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_parametrized_name" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_parametrized_name</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4942,10 +5024,12 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 
 
 <h3 id="pydantic.main.BaseModel.model_post_init" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_post_init</span><span class="p">(</span><span class="n">__context</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_post_init</span>
+
 
 <a href="#pydantic.main.BaseModel.model_post_init" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_post_init</span><span class="p">(</span><span class="n">__context</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -4973,14 +5057,22 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 
 
 <h3 id="pydantic.main.BaseModel.model_rebuild" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">model_rebuild</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">raise_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">_parent_namespace_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">_types_namespace</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">model_rebuild</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-classmethod"><code>classmethod</code></small>
   </span>
 
 <a href="#pydantic.main.BaseModel.model_rebuild" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">model_rebuild</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">force</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">raise_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">_parent_namespace_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">_types_namespace</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -5072,7 +5164,7 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 
 
 <h2 id="pydantic.main.ModelMetaclass" class="doc doc-heading">
-        <code>ModelMetaclass</code>
+        <span class="doc doc-object-name doc-class-name">ModelMetaclass</span>
 
 
 <a href="#pydantic.main.ModelMetaclass" class="headerlink" title="Permanent link">&para;</a></h2>
@@ -5351,10 +5443,12 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 
 
 <h3 id="pydantic.main.ModelMetaclass.__instancecheck__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__instancecheck__</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">__instancecheck__</span>
+
 
 <a href="#pydantic.main.ModelMetaclass.__instancecheck__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="fm">__instancecheck__</span><span class="p">(</span><span class="n">instance</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -5396,10 +5490,22 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 
 
 <h2 id="pydantic.main.create_model" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">create_model</span><span class="p">(</span><span class="n">__model_name</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">__config__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">__base__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="vm">__module__</span><span class="o">=</span><span class="vm">__name__</span><span class="p">,</span> <span class="n">__validators__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">__cls_kwargs__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="vm">__slots__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">field_definitions</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">create_model</span>
+
 
 <a href="#pydantic.main.create_model" class="headerlink" title="Permanent link">&para;</a></h2>
-
+<div class="highlight"><pre><span></span><code><span class="n">create_model</span><span class="p">(</span>
+    <span class="n">__model_name</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">__config__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">__base__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="vm">__module__</span><span class="o">=</span><span class="vm">__name__</span><span class="p">,</span>
+    <span class="n">__validators__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">__cls_kwargs__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="vm">__slots__</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">field_definitions</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   

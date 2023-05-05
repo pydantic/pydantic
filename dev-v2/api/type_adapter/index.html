@@ -1027,6 +1027,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
             
           
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../usage/pydantic_settings/" class="md-nav__link">
+        Settings Management
+      </a>
+    </li>
+  
+
+            
+          
         </ul>
       </nav>
     </li>
@@ -1795,7 +1809,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h2 id="pydantic.type_adapter.TypeAdapter" class="doc doc-heading">
-        <code>TypeAdapter</code>
+        <span class="doc doc-object-name doc-class-name">TypeAdapter</span>
 
 
 <a href="#pydantic.type_adapter.TypeAdapter" class="headerlink" title="Permanent link">&para;</a></h2>
@@ -2340,10 +2354,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.type_adapter.TypeAdapter.__init__" class="doc doc-heading">
-<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="n">__type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_parent_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">__init__</span>
+
 
 <a href="#pydantic.type_adapter.TypeAdapter.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="fm">__init__</span><span class="p">(</span><span class="n">__type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_parent_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -2419,10 +2435,24 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <h3 id="pydantic.type_adapter.TypeAdapter.dump_json" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">dump_json</span><span class="p">(</span><span class="n">__instance</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">dump_json</span>
+
 
 <a href="#pydantic.type_adapter.TypeAdapter.dump_json" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">dump_json</span><span class="p">(</span>
+    <span class="n">__instance</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -2661,10 +2691,24 @@ round-tripping (default: False).</p></td>
 
 
 <h3 id="pydantic.type_adapter.TypeAdapter.dump_python" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">dump_python</span><span class="p">(</span><span class="n">__instance</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;python&#39;</span><span class="p">,</span> <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">dump_python</span>
+
 
 <a href="#pydantic.type_adapter.TypeAdapter.dump_python" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">dump_python</span><span class="p">(</span>
+    <span class="n">__instance</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;python&quot;</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_unset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">warnings</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -2905,10 +2949,17 @@ deserialization. Defaults to False.</p></td>
 
 
 <h3 id="pydantic.type_adapter.TypeAdapter.json_schema" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">json_schema</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span> <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">json_schema</span>
+
 
 <a href="#pydantic.type_adapter.TypeAdapter.json_schema" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">json_schema</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3029,14 +3080,24 @@ deserialization. Defaults to False.</p></td>
 
 
 <h3 id="pydantic.type_adapter.TypeAdapter.json_schemas" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">json_schemas</span><span class="p">(</span><span class="n">__types</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">json_schemas</span>
+
   
   <span class="doc doc-labels">
       <small class="doc doc-label doc-label-staticmethod"><code>staticmethod</code></small>
   </span>
 
 <a href="#pydantic.type_adapter.TypeAdapter.json_schemas" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">json_schemas</span><span class="p">(</span>
+    <span class="n">__types</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
+    <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span>
+<span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3227,10 +3288,12 @@ schema (default: GenerateJsonSchema).</p></td>
 
 
 <h3 id="pydantic.type_adapter.TypeAdapter.validate_json" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">validate_json</span><span class="p">(</span><span class="n">__data</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">validate_json</span>
+
 
 <a href="#pydantic.type_adapter.TypeAdapter.validate_json" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">validate_json</span><span class="p">(</span><span class="n">__data</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
@@ -3340,10 +3403,12 @@ schema (default: GenerateJsonSchema).</p></td>
 
 
 <h3 id="pydantic.type_adapter.TypeAdapter.validate_python" class="doc doc-heading">
-<code class="highlight language-python"><span class="n">validate_python</span><span class="p">(</span><span class="n">__object</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+        <span class="doc doc-object-name doc-function-name">validate_python</span>
+
 
 <a href="#pydantic.type_adapter.TypeAdapter.validate_python" class="headerlink" title="Permanent link">&para;</a></h3>
-
+<div class="highlight"><pre><span></span><code><span class="n">validate_python</span><span class="p">(</span><span class="n">__object</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
   
