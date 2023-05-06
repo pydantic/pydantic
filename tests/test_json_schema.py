@@ -951,7 +951,6 @@ def test_special_int_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        # (ConstrainedFloat, {}),
         (confloat(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (confloat(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
         (confloat(multiple_of=5), {'multipleOf': 5}),
@@ -959,13 +958,6 @@ def test_special_int_types(field_type, expected_schema):
         (NegativeFloat, {'exclusiveMaximum': 0}),
         (NonNegativeFloat, {'minimum': 0}),
         (NonPositiveFloat, {'maximum': 0}),
-        # (ConstrainedDecimal, {}),
-        (
-            condecimal(gt=5, lt=10),
-            {'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
-        ),
-        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
-        (condecimal(multiple_of=5), {'multipleOf': 5}),
     ],
 )
 def test_special_float_types(field_type, expected_schema):
@@ -979,6 +971,29 @@ def test_special_float_types(field_type, expected_schema):
         'required': ['a'],
     }
     base_schema['properties']['a'].update(expected_schema)
+
+    assert Model.model_json_schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (condecimal(multiple_of=5), {'multipleOf': 5}),
+    ],
+)
+def test_special_decimal_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'title': 'A'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['anyOf'][0].update(expected_schema)
 
     assert Model.model_json_schema() == base_schema
 
