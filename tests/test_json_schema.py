@@ -1336,9 +1336,12 @@ def test_schema_from_models():
         name: str
         ingredients: List[Ingredient]
 
-    model_schema = models_json_schema(
-        [Model, Pizza], title='Multi-model schema', description='Single JSON Schema with multiple definitions'
+    keys_map, model_schema = models_json_schema(
+        [(Model, 'validation'), (Pizza, 'validation')],
+        title='Multi-model schema',
+        description='Single JSON Schema with multiple definitions',
     )
+    assert keys_map == {(Pizza, 'validation'): 'Pizza', (Model, 'validation'): 'Model'}
     assert model_schema == {
         'title': 'Multi-model schema',
         'description': 'Single JSON Schema with multiple definitions',
@@ -1402,7 +1405,8 @@ def test_schema_with_refs():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = models_json_schema([Bar, Baz], ref_template=ref_template)
+    keys_map, model_schema = models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template=ref_template)
+    assert keys_map == {(Bar, 'validation'): 'Bar', (Baz, 'validation'): 'Baz'}
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1437,7 +1441,10 @@ def test_schema_with_custom_ref_template():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = models_json_schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
+    keys_map, model_schema = models_json_schema(
+        [(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{model}.json#/'
+    )
+    assert keys_map == {(Bar, 'validation'): 'Bar', (Baz, 'validation'): 'Baz'}
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1473,11 +1480,12 @@ def test_schema_ref_template_key_error():
         c: Bar
 
     with pytest.raises(KeyError):
-        models_json_schema([Bar, Baz], ref_template='/schemas/{bad_name}.json#/')
+        models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{bad_name}.json#/')
 
 
 def test_schema_no_definitions():
-    model_schema = models_json_schema([], title='Schema without definitions')
+    keys_map, model_schema = models_json_schema([], title='Schema without definitions')
+    assert keys_map == {}
     assert model_schema == {'title': 'Schema without definitions'}
 
 
@@ -2051,16 +2059,19 @@ def test_dataclass():
     class Model:
         a: bool
 
-    assert models_json_schema([Model]) == {
-        '$defs': {
-            'Model': {
-                'title': 'Model',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'boolean'}},
-                'required': ['a'],
+    assert models_json_schema([(Model, 'validation')]) == (
+        {(Model, 'validation'): 'Model'},
+        {
+            '$defs': {
+                'Model': {
+                    'title': 'Model',
+                    'type': 'object',
+                    'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+                    'required': ['a'],
+                }
             }
-        }
-    }
+        },
+    )
 
     assert model_json_schema(Model) == {
         'title': 'Model',
@@ -2205,14 +2216,43 @@ class NestedModel(BaseModel):
         """
     )
 
-    models = [module.ModelOne, module.ModelTwo, module.NestedModel]
-    model_names = set(models_json_schema(models)['$defs'].keys())
+    # All validation
+    keys_map, schema = models_json_schema(
+        [(module.ModelOne, 'validation'), (module.ModelTwo, 'validation'), (module.NestedModel, 'validation')]
+    )
+    model_names = set(schema['$defs'].keys())
     expected_model_names = {
         'ModelOne',
         'ModelTwo',
         f'{module.__name__}__ModelOne__NestedModel',
         f'{module.__name__}__ModelTwo__NestedModel',
         f'{module.__name__}__NestedModel',
+    }
+    assert model_names == expected_model_names
+
+    # Validation + serialization
+    keys_map, schema = models_json_schema(
+        [
+            (module.ModelOne, 'validation'),
+            (module.ModelTwo, 'validation'),
+            (module.NestedModel, 'validation'),
+            (module.ModelOne, 'serialization'),
+            (module.ModelTwo, 'serialization'),
+            (module.NestedModel, 'serialization'),
+        ]
+    )
+    model_names = set(schema['$defs'].keys())
+    expected_model_names = {
+        'ModelOneInput',
+        'ModelOneOutput',
+        'ModelTwoInput',
+        'ModelTwoOutput',
+        f'{module.__name__}__ModelOne__NestedModelInput',
+        f'{module.__name__}__ModelOne__NestedModelOutput',
+        f'{module.__name__}__ModelTwo__NestedModelInput',
+        f'{module.__name__}__ModelTwo__NestedModelOutput',
+        f'{module.__name__}__NestedModelInput',
+        f'{module.__name__}__NestedModelOutput',
     }
     assert model_names == expected_model_names
 
@@ -3440,8 +3480,8 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
 
 def test_override_generate_json_schema():
     class MyGenerateJsonSchema(GenerateJsonSchema):
-        def generate(self, schema):
-            json_schema = super().generate(schema)
+        def generate(self, schema, mode='validation'):
+            json_schema = super().generate(schema, mode=mode)
             json_schema['$schema'] = self.schema_dialect
             return json_schema
 
@@ -3452,8 +3492,9 @@ def test_override_generate_json_schema():
             by_alias: bool = True,
             ref_template: str = DEFAULT_REF_TEMPLATE,
             schema_generator: Type[GenerateJsonSchema] = MyGenerateJsonSchema,
+            mode='validation',
         ) -> Dict[str, Any]:
-            return super().model_json_schema(by_alias, ref_template, schema_generator)
+            return super().model_json_schema(by_alias, ref_template, schema_generator, mode)
 
     class MyModel(MyBaseModel):
         x: int

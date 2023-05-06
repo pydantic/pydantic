@@ -643,7 +643,9 @@ class Bar(BaseModel):
     c: int
 
 
-top_level_schema = models_json_schema([Model, Bar], title='My Schema')
+_, top_level_schema = models_json_schema(
+    [(Model, 'validation'), (Bar, 'validation')], title='My Schema'
+)
 print(json.dumps(top_level_schema, indent=2))
 """
 {
@@ -714,8 +716,9 @@ class Model(BaseModel):
 
 
 # Default location for OpenAPI
-top_level_schema = TypeAdapter.json_schemas(
-    [TypeAdapter(Model)], ref_template='#/components/schemas/{model}'
+_, top_level_schema = TypeAdapter.json_schemas(
+    [(Model, 'validation', TypeAdapter(Model))],
+    ref_template='#/components/schemas/{model}',
 )
 print(json.dumps(top_level_schema, indent=2))
 """

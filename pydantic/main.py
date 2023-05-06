@@ -37,6 +37,7 @@ from .json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     GetJsonSchemaHandler,
+    JsonSchemaMode,
     JsonSchemaValue,
     model_json_schema,
 )
@@ -496,13 +497,16 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
         """
         To override the logic used to generate the JSON schema, you can create a subclass of GenerateJsonSchema
         with your desired modifications, then override this method on a custom base class and set the default
         value of `schema_generator` to be your subclass.
         """
-        return model_json_schema(cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
+        return model_json_schema(
+            cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
+        )
 
     @classmethod
     def model_modify_json_schema(cls, json_schema: JsonSchemaValue) -> JsonSchemaValue:
