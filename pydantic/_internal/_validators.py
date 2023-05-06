@@ -132,8 +132,8 @@ def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:
 
 def pattern_str_validator(__input_value: Any) -> typing.Pattern[str]:
     if isinstance(__input_value, typing.Pattern):
-        if isinstance(__input_value.pattern, str):  # type: ignore
-            return __input_value  # type: ignore
+        if isinstance(__input_value.pattern, str):
+            return __input_value
         else:
             raise PydanticCustomError('pattern_str_type', 'Input should be a string pattern')
     elif isinstance(__input_value, str):
@@ -144,7 +144,7 @@ def pattern_str_validator(__input_value: Any) -> typing.Pattern[str]:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_bytes_validator(__input_value: Any) -> Any:
+def pattern_bytes_validator(__input_value: Any) -> typing.Pattern[bytes]:
     if isinstance(__input_value, typing.Pattern):
         if isinstance(__input_value.pattern, bytes):
             return __input_value
