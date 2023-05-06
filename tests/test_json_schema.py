@@ -3840,3 +3840,77 @@ def test_model_with_schema_extra_callable_instance_method():
                     assert model_class is Model
 
         assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_serialization_validation_interaction():
+    class Inner(BaseModel):
+        x: Json[int]
+
+    class Outer(BaseModel):
+        inner: Inner
+
+    _, v_schema = models_json_schema([(Outer, 'validation')])
+    assert v_schema == {
+        '$defs': {
+            'Inner': {
+                'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'Outer': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
+
+    _, s_schema = models_json_schema([(Outer, 'serialization')])
+    assert s_schema == {
+        '$defs': {
+            'Inner': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'Outer': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
+
+    _, vs_schema = models_json_schema([(Outer, 'validation'), (Outer, 'serialization')])
+    assert vs_schema == {
+        '$defs': {
+            'InnerInput': {
+                'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'InnerOutput': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'OuterInput': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+            'OuterOutput': {
+                'properties': {'inner': {'$ref': '#/$defs/InnerOutput'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
