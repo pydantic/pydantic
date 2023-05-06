@@ -3467,13 +3467,41 @@ def test_pattern(pattern_type):
 
 
 @pytest.mark.parametrize(
-    ('pattern_value', 'error_type', 'error_msg'),
+    ('pattern_type', 'pattern_value', 'error_type', 'error_msg'),
     [
-        pytest.param('[xx', 'pattern_regex', 'Input should be a valid regular expression'),
-        pytest.param((), 'pattern_type', 'Input should be a valid pattern'),
+        pytest.param(
+            re.Pattern,
+            '[xx',
+            'pattern_regex',
+            'Input should be a valid regular expression',
+            id='re.Pattern-pattern_regex',
+        ),
+        pytest.param(
+            Pattern, '[xx', 'pattern_regex', 'Input should be a valid regular expression', id='re.Pattern-pattern_regex'
+        ),
+        pytest.param(
+            re.Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern-pattern_type'
+        ),
+        pytest.param(Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern-pattern_type'),
+        pytest.param(
+            Pattern[str],
+            re.compile(b''),
+            'pattern_str_type',
+            'Input should be a string pattern',
+            id='typing.Pattern[str]-pattern_str_type-non_str',
+        ),
+        pytest.param(
+            Pattern[str],
+            b'',
+            'pattern_str_type',
+            'Input should be a string pattern',
+            id='typing.Pattern[str]-pattern_str_type-bytes',
+        ),
+        pytest.param(
+            Pattern[str], (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern[str]-pattern_type'
+        ),
     ],
 )
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
 def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     class Foobar(BaseModel):
         pattern: pattern_type
