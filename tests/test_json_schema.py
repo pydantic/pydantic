@@ -1590,14 +1590,14 @@ def test_model_default():
         ({'ge': -math.inf}, float, {'type': 'number'}),
         ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
-        ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
-        ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
-        ({'ge': 2}, Decimal, {'type': 'number', 'minimum': 2}),
-        ({'le': 5}, Decimal, {'type': 'number', 'maximum': 5}),
-        ({'multiple_of': 5}, Decimal, {'type': 'number', 'multipleOf': 5}),
+        ({'gt': 2}, Decimal, {'anyOf': [{'exclusiveMinimum': 2.0, 'type': 'number'}, {'type': 'string'}]}),
+        ({'lt': 5}, Decimal, {'anyOf': [{'type': 'number', 'exclusiveMaximum': 5}, {'type': 'string'}]}),
+        ({'ge': 2}, Decimal, {'anyOf': [{'type': 'number', 'minimum': 2}, {'type': 'string'}]}),
+        ({'le': 5}, Decimal, {'anyOf': [{'type': 'number', 'maximum': 5}, {'type': 'string'}]}),
+        ({'multiple_of': 5}, Decimal, {'anyOf': [{'type': 'number', 'multipleOf': 5}, {'type': 'string'}]}),
     ],
 )
-def test_constraints_schema(kwargs, type_, expected_extra):
+def test_constraints_schema_validation(kwargs, type_, expected_extra):
     class Foo(BaseModel):
         a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
@@ -1608,7 +1608,51 @@ def test_constraints_schema(kwargs, type_, expected_extra):
     }
 
     expected_schema['properties']['a'].update(expected_extra)
-    assert Foo.model_json_schema() == expected_schema
+    assert Foo.model_json_schema(mode='validation') == expected_schema
+
+
+@pytest.mark.parametrize(
+    'kwargs,type_,expected_extra',
+    [
+        ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
+        ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
+        ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
+        ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
+        ({'pattern': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
+        ({'gt': 2}, int, {'type': 'integer', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, int, {'type': 'integer', 'minimum': 2}),
+        ({'le': 5}, int, {'type': 'integer', 'maximum': 5}),
+        ({'multiple_of': 5}, int, {'type': 'integer', 'multipleOf': 5}),
+        ({'gt': 2}, float, {'type': 'number', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
+        ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'gt': -math.inf}, float, {'type': 'number'}),
+        ({'lt': math.inf}, float, {'type': 'number'}),
+        ({'ge': -math.inf}, float, {'type': 'number'}),
+        ({'le': math.inf}, float, {'type': 'number'}),
+        ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
+        ({'gt': 2}, Decimal, {'type': 'string'}),
+        ({'lt': 5}, Decimal, {'type': 'string'}),
+        ({'ge': 2}, Decimal, {'type': 'string'}),
+        ({'le': 5}, Decimal, {'type': 'string'}),
+        ({'multiple_of': 5}, Decimal, {'type': 'string'}),
+    ],
+)
+def test_constraints_schema_serialization(kwargs, type_, expected_extra):
+    class Foo(BaseModel):
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+
+    expected_schema = {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
+        'required': ['a'],
+    }
+
+    expected_schema['properties']['a'].update(expected_extra)
+    assert Foo.model_json_schema(mode='serialization') == expected_schema
 
 
 @pytest.mark.parametrize(
@@ -1643,7 +1687,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'le': 5}, Decimal, Decimal(5)),
     ],
 )
-def test_constraints_schema_validation(kwargs, type_, value):
+def test_constraints_schema_validation_passes(kwargs, type_, value):
     class Foo(BaseModel):
         a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
