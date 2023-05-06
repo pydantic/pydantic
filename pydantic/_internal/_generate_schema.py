@@ -991,7 +991,7 @@ class GenerateSchema:
                 _validators.pattern_bytes_validator, serialization=ser, metadata=metadata
             )
         else:
-            raise PydanticSchemaGenerationError(f'Unable to generate pydantic-core schema for {pattern_type!r}.')
+            raise PydanticSchemaGenerationError(f"Unable to generate pydantic-core schema for '{pattern_type!r}'.")
 
     def _hashable_schema(self) -> core_schema.CoreSchema:
         return core_schema.custom_error_schema(
