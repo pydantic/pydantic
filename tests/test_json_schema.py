@@ -480,27 +480,40 @@ def test_enum_schema_cleandoc():
     }
 
 
-def test_json_schema():
+def test_decimal_json_schema():
     class Model(BaseModel):
         a: bytes = b'foobar'
         b: Decimal = Decimal('12.34')
-
-    # TODO: What do we want the generated schema to be for Decimal? I'm thinking 'integer', 'number', _or_ 'str'
-    #     Decision: What we have in v1 is not bad enough to be worth changing
-    #     (i.e., keep it as only 'number'; maybe add a comment that other things could be okay)
 
     with pytest.warns(
         DeprecationWarning,
         match=re.escape('The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.'),
     ):
         schema_json = Model.schema_json(indent=2)
-    assert json.loads(schema_json) == {
+        loaded_schema_json = json.loads(schema_json)
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    assert (
+        loaded_schema_json
+        == model_json_schema_validation
+        == {
+            'properties': {
+                'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+                'b': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'default': '12.34', 'title': 'B'},
+            },
+            'title': 'Model',
+            'type': 'object',
+        }
+    )
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+            'b': {'default': '12.34', 'title': 'B', 'type': 'string'},
+        },
+        'required': ['a', 'b'],
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
-            'b': {'title': 'B', 'default': '12.34', 'type': 'number'},
-        },
     }
 
 
