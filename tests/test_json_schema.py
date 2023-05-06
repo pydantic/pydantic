@@ -3901,7 +3901,7 @@ def test_serialization_validation_interaction():
                 'type': 'object',
             },
             'OuterInput': {
-                'properties': {'inner': {'$ref': '#/$defs/Inner'}},
+                'properties': {'inner': {'$ref': '#/$defs/InnerInput'}},
                 'required': ['inner'],
                 'title': 'Outer',
                 'type': 'object',

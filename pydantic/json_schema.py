@@ -1025,6 +1025,9 @@ class GenerateJsonSchema:
             else:
                 return item
 
+        for k, v in self.definitions.items():
+            self.definitions[k] = walk_replace_json_schema_ref(v)
+
         return walk_replace_json_schema_ref(json_schema)
 
     def get_cache_defs_ref_schema(self, core_ref: CoreRef) -> tuple[DefsRef, JsonSchemaValue]:
