@@ -36,6 +36,7 @@ from pydantic import (
     Field,
     ImportString,
     ValidationError,
+    computed_field,
     field_validator,
 )
 from pydantic._internal._core_metadata import build_metadata_dict
@@ -3928,4 +3929,27 @@ def test_serialization_validation_interaction():
                 'type': 'object',
             },
         }
+    }
+
+
+def test_computed_field():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field
+        @property
+        def double_x(self) -> int:
+            return 2 * self.x
+
+    assert Model.model_json_schema(mode='validation') == {
+        'properties': {'x': {'title': 'X', 'type': 'integer'}},
+        'required': ['x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'double_x': {'title': 'Double X', 'type': 'integer'}, 'x': {'title': 'X', 'type': 'integer'}},
+        'required': ['x', 'double_x'],
+        'title': 'Model',
+        'type': 'object',
     }

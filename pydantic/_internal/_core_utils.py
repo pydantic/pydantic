@@ -24,10 +24,12 @@ FunctionSchemaWithInnerSchema = Union[
     core_schema.WrapValidatorFunctionSchema,
 ]
 
-CoreSchemaField = Union[core_schema.ModelField, core_schema.DataclassField, core_schema.TypedDictField]
+CoreSchemaField = Union[
+    core_schema.ModelField, core_schema.DataclassField, core_schema.TypedDictField, core_schema.ComputedField
+]
 CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 
-_CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field'}
+_CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozenset'}
 

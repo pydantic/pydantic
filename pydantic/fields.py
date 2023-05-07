@@ -22,8 +22,6 @@ from ._internal._generics import replace_types
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
-    from pydantic_core import core_schema as _core_schema
-
     from ._internal._repr import ReprArgs
 
 
@@ -748,8 +746,9 @@ class ComputedFieldInfo:
     """
 
     decorator_repr: typing.ClassVar[str] = '@computed_field'
+
     wrapped_property: property
-    json_return_type: _core_schema.JsonReturnTypes | None
+    return_type: Any
     alias: str | None
     title: str | None
     description: str | None
@@ -764,11 +763,11 @@ PropertyT = typing.TypeVar('PropertyT')
 @typing.overload
 def computed_field(
     *,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
     alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
+    return_type: Any = Any,
 ) -> typing.Callable[[PropertyT], PropertyT]:
     ...
 
@@ -785,7 +784,7 @@ def computed_field(
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    return_type: Any = Undefined,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """
     Decorate to include `property` and `cached_property` when serialising models.
@@ -807,14 +806,44 @@ def computed_field(
         A proxy wrapper for the property.
     """
 
+    def get_annotations_source(f: Any) -> Any:
+        annotation_source = f
+        if hasattr(annotation_source, '__func__'):
+            # This will be hit for staticmethod, classmethod; in this case, get annotations from the wrapped item
+            annotation_source = annotation_source.__func__
+
+        if not hasattr(annotation_source, '__annotations__'):
+            # If there are no annotations, the most likely scenarios are @property or something from functools
+            if isinstance(annotation_source, property):
+                annotation_source = annotation_source.fget
+            elif hasattr(annotation_source, 'func'):
+                # This will be hit for functools.cached_property, functools.partial, etc.
+                annotation_source = annotation_source.func
+            elif hasattr(annotation_source, '__call__'):
+                annotation_source = annotation_source.__call__
+        return annotation_source
+
     def dec(f: Any) -> Any:
-        nonlocal description
+        nonlocal description, return_type
         if description is None and f.__doc__:
             description = inspect.cleandoc(f.__doc__)
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
-        dec_info = ComputedFieldInfo(f, json_return_type, alias, title, description, repr)
+        if return_type is Undefined:
+            annotations_source = get_annotations_source(f)
+            try:
+                annotations = inspect.getfullargspec(annotations_source).annotations
+            except TypeError as exc:
+                if str(exc) == 'unsupported callable':
+                    raise ValueError(
+                        f'Unable to infer return_type for computed_property({f});'
+                        f' explicitly specify the return_type in the computed_field decorator'
+                    ) from exc
+                raise
+
+            return_type = annotations.get('return', Any)
+        dec_info = ComputedFieldInfo(f, return_type, alias, title, description, repr)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:

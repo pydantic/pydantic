@@ -265,7 +265,7 @@ class GenerateSchema:
         try:
             fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
                 {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
-                computed_fields=generate_computed_field(decorators.computed_fields),
+                computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
             )
         finally:
             self._config_wrapper_stack.pop()
@@ -1061,7 +1061,7 @@ class GenerateSchema:
             args_schema = core_schema.dataclass_args_schema(
                 dataclass.__name__,
                 args,
-                computed_fields=generate_computed_field(decorators.computed_fields),
+                computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
                 collect_init_only=has_post_init,
             )
         finally:
@@ -1144,6 +1144,10 @@ class GenerateSchema:
         else:
             self.recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
             return obj_ref, None
+
+    def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
+        return_type_schema = self.generate_schema(d.info.return_type)
+        return core_schema.computed_field(d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias)
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """
@@ -1474,15 +1478,3 @@ def _common_field(
         'frozen': frozen,
         'metadata': metadata,
     }
-
-
-def generate_computed_field(d: dict[str, Decorator[ComputedFieldInfo]]) -> list[core_schema.ComputedField] | None:
-    r = [
-        core_schema.computed_field(
-            d.cls_var_name,
-            json_return_type=d.info.json_return_type,
-            alias=d.info.alias,
-        )
-        for d in d.values()
-    ]
-    return r

@@ -24,73 +24,24 @@ from typing import (
 )
 
 import pydantic_core
+from pydantic_core import CoreSchema, core_schema
+from pydantic_core.core_schema import ComputedField
 from typing_extensions import Literal
 
 from pydantic._internal._schema_generation_shared import GenerateJsonSchemaHandler
 
 from ._internal import _core_metadata, _core_utils, _schema_generation_shared, _typing_extra
-from ._internal._core_utils import CoreSchemaOrField, is_core_schema, is_core_schema_field
+from ._internal._core_utils import CoreSchemaField, CoreSchemaOrField, is_core_schema, is_core_schema_field
 from .config import JsonSchemaExtraCallable
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
-    from pydantic_core import CoreSchema, core_schema
-
     from . import ConfigDict
     from ._internal._dataclasses import PydanticDataclass
     from .main import BaseModel
 
-CoreSchemaOrFieldType = Literal[
-    'any',
-    'none',
-    'bool',
-    'int',
-    'float',
-    'str',
-    'bytes',
-    'date',
-    'time',
-    'datetime',
-    'timedelta',
-    'literal',
-    'is-instance',
-    'is-subclass',
-    'callable',
-    'list',
-    'tuple-positional',
-    'tuple-variable',
-    'set',
-    'frozenset',
-    'generator',
-    'dict',
-    'function-after',
-    'function-before',
-    'function-wrap',
-    'function-plain',
-    'default',
-    'nullable',
-    'union',
-    'tagged-union',
-    'chain',
-    'lax-or-strict',
-    'typed-dict',
-    'model-fields',
-    'model',
-    'dataclass-args',
-    'dataclass',
-    'arguments',
-    'call',
-    'custom-error',
-    'json',
-    'url',
-    'multi-host-url',
-    'definitions',
-    'definition-ref',
-    'model-field',
-    'dataclass-field',
-    'typed-dict-field',
-]
 
+CoreSchemaOrFieldType = Literal[core_schema.CoreSchemaType, core_schema.CoreSchemaFieldType]
 
 JsonSchemaValue = _schema_generation_shared.JsonSchemaValue
 # re export GetJsonSchemaHandler
@@ -614,29 +565,28 @@ class GenerateJsonSchema:
             return self.generate_inner(schema['lax_schema'])
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
-        named_required_fields = [
-            (k, v['required'], v) for k, v in schema['fields'].items()  # type: ignore  # required is always populated
+        fields = schema['fields'].copy()
+        named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
+            (k, v['required'], v) for k, v in fields.items()  # type: ignore  # required is always populated
         ]
+        if self.mode == 'serialization':
+            named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         return self._named_required_fields_schema(named_required_fields)
 
+    @staticmethod
+    def _name_required_computed_fields(
+        computed_fields: list[ComputedField],
+    ) -> list[tuple[str, bool, core_schema.ComputedField]]:
+        return [(field['property_name'], True, field) for field in computed_fields]
+
     def _named_required_fields_schema(
-        self, named_required_fields: Sequence[tuple[str, bool, CoreSchemaOrField]]
+        self, named_required_fields: Sequence[tuple[str, bool, CoreSchemaField]]
     ) -> JsonSchemaValue:
         properties: dict[str, JsonSchemaValue] = {}
         required_fields: list[str] = []
         for name, required, field in named_required_fields:
             if self.by_alias:
-                alias: Any = field.get('validation_alias', name)
-                if isinstance(alias, str):
-                    name = alias
-                elif isinstance(alias, list):
-                    alias = cast('list[str] | str', alias)
-                    for path in alias:
-                        if isinstance(path, list) and len(path) == 1 and isinstance(path[0], str):
-                            # Use the first valid single-item string path; the code that constructs the alias array
-                            # should ensure the first such item is what belongs in the JSON schema
-                            name = path[0]
-                            break
+                name = self._get_alias_name(field, name)
             field_json_schema = self.generate_inner(field).copy()
             if 'title' not in field_json_schema and self.field_title_should_be_set(field):
                 title = self.get_title_from_name(name)
@@ -653,6 +603,25 @@ class GenerateJsonSchema:
             json_schema['required'] = required_fields  # type: ignore
         return json_schema
 
+    def _get_alias_name(self, field: CoreSchemaField, name: str) -> str:
+        if field['type'] == 'computed-field':
+            alias: Any = field.get('alias', name)
+        elif self.mode == 'validation':
+            alias = field.get('validation_alias', name)
+        else:
+            alias = field.get('serialization_alias', name)
+        if isinstance(alias, str):
+            name = alias
+        elif isinstance(alias, list):
+            alias = cast('list[str] | str', alias)
+            for path in alias:
+                if isinstance(path, list) and len(path) == 1 and isinstance(path[0], str):
+                    # Use the first valid single-item string path; the code that constructs the alias array
+                    # should ensure the first such item is what belongs in the JSON schema
+                    name = path[0]
+                    break
+        return name
+
     def typed_dict_field_schema(self, schema: core_schema.TypedDictField) -> JsonSchemaValue:
         return self.generate_inner(schema['schema'])
 
@@ -661,6 +630,9 @@ class GenerateJsonSchema:
 
     def model_field_schema(self, schema: core_schema.ModelField) -> JsonSchemaValue:
         return self.generate_inner(schema['schema'])
+
+    def computed_field_schema(self, schema: core_schema.ComputedField) -> JsonSchemaValue:
+        return self.generate_inner(schema['return_schema'])
 
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
         # We do not use schema['model'].model_json_schema() because it could lead to inconsistent refs handling, etc.
@@ -716,15 +688,20 @@ class GenerateJsonSchema:
         return json_schema
 
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
-        named_required_fields = [
+        named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
             (name, field['schema']['type'] != 'default', field) for name, field in schema['fields'].items()
         ]
+        if self.mode == 'serialization':
+            named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         return self._named_required_fields_schema(named_required_fields)
 
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
-        named_required_fields = [
-            (field['name'], field['schema']['type'] != 'default', field) for field in schema['fields']
+        fields = schema['fields']
+        named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
+            (field['name'], field['schema']['type'] != 'default', field) for field in fields
         ]
+        if self.mode == 'serialization':
+            named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         return self._named_required_fields_schema(named_required_fields)
 
     def dataclass_schema(self, schema: core_schema.DataclassSchema) -> JsonSchemaValue:
@@ -903,7 +880,11 @@ class GenerateJsonSchema:
         (e.g., int, float, str), and false for those that would (e.g., BaseModel subclasses).
         """
         if _core_utils.is_core_schema_field(schema):
-            return self.field_title_should_be_set(schema['schema'])
+            if schema['type'] == 'computed-field':
+                field_schema = schema['return_schema']
+            else:
+                field_schema = schema['schema']
+            return self.field_title_should_be_set(field_schema)
 
         elif _core_utils.is_core_schema(schema):
             if schema.get('ref'):  # things with refs, such as models and enums, should not have titles set

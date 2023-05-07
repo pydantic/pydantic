@@ -328,6 +328,10 @@ class _ApplyInferredDiscriminator:
         return self._infer_discriminator_values_for_field(field, source)
 
     def _infer_discriminator_values_for_field(self, field: CoreSchemaField, source: str) -> list[str | int]:
+        if field['type'] == 'computed-field':
+            # This should never occur as a discriminator, as it is only relevant to serialization
+            return []
+
         alias = field.get('validation_alias', self.discriminator)
         if not isinstance(alias, str):
             raise PydanticUserError(

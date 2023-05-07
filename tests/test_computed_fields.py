@@ -1,12 +1,13 @@
 from __future__ import annotations as _annotations
 
 import random
+import re
 import sys
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar
 
 import pytest
-from pydantic_core import PydanticSerializationError, ValidationError
+from pydantic_core import ValidationError
 
 from pydantic import BaseModel, Field, PrivateAttr, TypeAdapter, computed_field, dataclasses, field_validator
 
@@ -275,11 +276,11 @@ def test_expected_type():
         x: int
         y: int
 
-        @computed_field(json_return_type='list')
+        @computed_field
         def x_list(self) -> list[int]:
             return [self.x, self.x + 1]
 
-        @computed_field(json_return_type='bytes')
+        @computed_field
         def y_str(self) -> bytes:
             s = f'y={self.y}'
             return s.encode()
@@ -294,16 +295,19 @@ def test_expected_type_wrong():
     class Model(BaseModel):
         x: int
 
-        @computed_field(json_return_type='list')
+        @computed_field
         def x_list(self) -> list[int]:
             return 'not a list'
 
     m = Model(x=1)
-    with pytest.raises(TypeError, match="^'str' object cannot be converted to 'PyList'$"):
+    match = re.escape(
+        'Pydantic serializer warnings:\n  Expected `list[int]` but got `str` - serialized value may not be as expected'
+    )
+    with pytest.warns(UserWarning, match=match):
         m.model_dump()
-    with pytest.raises(TypeError, match="^'str' object cannot be converted to 'PyList'$"):
+    with pytest.raises(UserWarning, match=match):
         m.model_dump(mode='json')
-    with pytest.raises(PydanticSerializationError, match="Error serializing to JSON: 'str' object cannot be converted"):
+    with pytest.raises(UserWarning, match=match):
         m.model_dump_json()
 
 
