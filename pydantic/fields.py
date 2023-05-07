@@ -680,14 +680,13 @@ class ModelPrivateAttr(_repr.Representation):
         """
         preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
         """
-        if self.default is not Undefined:
-            try:
-                set_name = getattr(self.default, '__set_name__')
-            except AttributeError:
-                pass
-            else:
-                if callable(set_name):
-                    set_name(cls, name)
+        if self.default is Undefined:
+            return
+        if not hasattr(self.default, '__set_name__'):
+            return
+        set_name = self.default.__set_name__
+        if callable(set_name):
+            set_name(cls, name)
 
     def get_default(self) -> Any:
         """Returns the default value for the object.
