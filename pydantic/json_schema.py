@@ -138,7 +138,7 @@ DefsRef = NewType('DefsRef', str)
 #       * By default, these look like "#/$defs/MyModel", as in {"$ref": "#/$defs/MyModel"}
 JsonRef = NewType('JsonRef', str)
 
-CoreModeRef = tuple[CoreRef, JsonSchemaMode]
+CoreModeRef = Tuple[CoreRef, JsonSchemaMode]
 JsonSchemaKeyT = TypeVar('JsonSchemaKeyT', bound=Hashable)
 
 
