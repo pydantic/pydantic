@@ -209,7 +209,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         __pydantic_core_schema__: typing.ClassVar[CoreSchema]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
         __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
-        """metadata for `@validator`, `@root_validator` and `@serializer` decorators"""
+        """metadata for `@field_validator`, `@root_validator` and `@serializer` decorators"""
         model_fields: typing.ClassVar[dict[str, FieldInfo]] = {}
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
@@ -1076,7 +1076,7 @@ def create_model(
     :param __config__: config dict/class to use for the new model
     :param __base__: base class for the new model to inherit from
     :param __module__: module of the created model
-    :param __validators__: a dict of method names and @validator class methods
+    :param __validators__: a dict of method names and @field_validator class methods
     :param __cls_kwargs__: a dict for class creation
     :param __slots__: Deprecated, `__slots__` should not be passed to `create_model`
     :param field_definitions: fields of the model (or extra fields if a base is supplied)
