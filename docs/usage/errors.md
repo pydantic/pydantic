@@ -60,7 +60,7 @@ class Model(BaseModel):
 
 ## Discriminator alias type {#discriminator-alias-type}
 
-This error is raised when you define a non-string alias on discriminator field.
+This error is raised when you define a non-string alias on a discriminator field.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from typing import Union
