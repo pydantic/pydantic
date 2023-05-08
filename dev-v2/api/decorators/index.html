@@ -2138,14 +2138,14 @@ Defaults to None.</p></td>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">__field</span><span class="p">,</span> <span class="n">FunctionType</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-            <span class="s1">&#39;field_validators should be used with fields and keyword arguments, not bare. &#39;</span>
+            <span class="s1">&#39;`@field_validator` should be used with fields and keyword arguments, not bare. &#39;</span>
             <span class="s2">&quot;E.g. usage should be `@validator(&#39;&lt;field_name&gt;&#39;, ...)`&quot;</span><span class="p">,</span>
             <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-no-fields&#39;</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="n">fields</span> <span class="o">=</span> <span class="n">__field</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-            <span class="s1">&#39;field_validator fields should be passed as separate string args. &#39;</span>
+            <span class="s1">&#39;`@field_validator` fields should be passed as separate string args. &#39;</span>
             <span class="s2">&quot;E.g. usage should be `@validator(&#39;&lt;field_name_1&gt;&#39;, &#39;&lt;field_name_2&gt;&#39;, ...)`&quot;</span><span class="p">,</span>
             <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-invalid-fields&#39;</span><span class="p">,</span>
         <span class="p">)</span>
@@ -2852,13 +2852,13 @@ function to be used as a validator.</p></td>
     <span class="n">fields</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">__field</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span><span class="p">))</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fields</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">FunctionType</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-            <span class="s2">&quot;validators should be used with fields and keyword arguments, not bare. &quot;</span>
+            <span class="s2">&quot;`@validator` should be used with fields and keyword arguments, not bare. &quot;</span>
             <span class="s2">&quot;E.g. usage should be `@validator(&#39;&lt;field_name&gt;&#39;, ...)`&quot;</span><span class="p">,</span>
             <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-no-fields&#39;</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-            <span class="s2">&quot;validator fields should be passed as separate string args. &quot;</span>
+            <span class="s2">&quot;`@validator` fields should be passed as separate string args. &quot;</span>
             <span class="s2">&quot;E.g. usage should be `@validator(&#39;&lt;field_name_1&gt;&#39;, &#39;&lt;field_name_2&gt;&#39;, ...)`&quot;</span><span class="p">,</span>
             <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-invalid-fields&#39;</span><span class="p">,</span>
         <span class="p">)</span>
