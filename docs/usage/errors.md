@@ -508,7 +508,7 @@ class Model(BaseModel):
 
 ## Unrecognized field_validator signature {#validator-signature}
 
-This error is raised when a `field_validator` or `model_validator` function has wrong signature.
+This error is raised when a `field_validator` or `model_validator` function has the wrong signature.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, field_validator
