@@ -1,5 +1,5 @@
 """
-Logic related to validators applied to models etc. via the `@validator` and `@root_validator` decorators.
+Logic related to validators applied to models etc. via the `@field_validator` and `@root_validator` decorators.
 """
 from __future__ import annotations as _annotations
 
