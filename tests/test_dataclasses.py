@@ -1887,7 +1887,7 @@ def test_dataclass_alias_generator():
 
     with pytest.raises(ValidationError) as exc_info:
         User(name='test name', score=2)
-    assert exc_info.value.errors() == [
+    assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'missing',
             'loc': ('alias_name',),
