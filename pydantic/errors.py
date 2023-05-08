@@ -25,7 +25,6 @@ __all__ = (
 DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{VERSION}/u/'
 PydanticErrorCodes = Literal[
     'decorator-missing-field',
-    'dataclass-not-fully-defined',
     'discriminator-no-field',
     'discriminator-alias-type',
     'discriminator-needs-literal',
@@ -51,7 +50,7 @@ PydanticErrorCodes = Literal[
     'model-serializer-instance-method',
     'validator-field-config-info',
     'validator-v1-signature',
-    'field-validator-signature',
+    'validator-signature',
     'field-serializer-signature',
     'model-serializer-signature',
     'multiple-field-serializers',
