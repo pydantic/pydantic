@@ -1,4 +1,4 @@
-Custom validation and complex relationships between objects can be achieved using the `validator` decorator.
+Custom validation and complex relationships between objects can be achieved using the `field_validator` decorator.
 
 ```py
 from pydantic_core.core_schema import FieldValidationInfo
@@ -204,13 +204,13 @@ to set a dynamic default value.
 ```py test="xfail - we need default value validation"
 from datetime import datetime
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 
 class DemoModel(BaseModel):
     ts: datetime = None
 
-    @validator('ts', pre=True, always=True)
+    @field_validator('ts', pre=True, always=True)
     def set_ts_now(cls, v):
         return v or datetime.now()
 

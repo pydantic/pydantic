@@ -36,7 +36,7 @@ if typing.TYPE_CHECKING:
         __pydantic_validator__: typing.ClassVar[SchemaValidator]
         __pydantic_serializer__: typing.ClassVar[SchemaSerializer]
         __pydantic_decorators__: typing.ClassVar[_decorators.DecoratorInfos]
-        """metadata for `@validator`, `@root_validator` and `@serializer` decorators"""
+        """metadata for `@field_validator`, `@root_validator` and `@serializer` decorators"""
         __pydantic_fields__: typing.ClassVar[dict[str, FieldInfo]]
         __pydantic_config__: typing.ClassVar[ConfigDict]
 
