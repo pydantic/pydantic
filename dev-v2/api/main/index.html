@@ -2903,7 +2903,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="n">__pydantic_core_schema__</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">]</span>
         <span class="n">__pydantic_serializer__</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span><span class="n">SchemaSerializer</span><span class="p">]</span>
         <span class="n">__pydantic_decorators__</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span><span class="n">_decorators</span><span class="o">.</span><span class="n">DecoratorInfos</span><span class="p">]</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;metadata for `@validator`, `@root_validator` and `@serializer` decorators&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;metadata for `@field_validator`, `@root_validator` and `@serializer` decorators&quot;&quot;&quot;</span>
         <span class="n">model_fields</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FieldInfo</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">__signature__</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span><span class="n">Signature</span><span class="p">]</span>
         <span class="n">__private_attributes__</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ModelPrivateAttr</span><span class="p">]]</span>
@@ -3753,7 +3753,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <div class="doc doc-contents ">
   
-      <p>metadata for <code>@validator</code>, <code>@root_validator</code> and <code>@serializer</code> decorators</p>
+      <p>metadata for <code>@field_validator</code>, <code>@root_validator</code> and <code>@serializer</code> decorators</p>
   </div>
 
 </div>
@@ -5514,7 +5514,7 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 :param __config</strong>: config dict/class to use for the new model
 :param <strong>base</strong>: base class for the new model to inherit from
 :param <strong>module</strong>: module of the created model
-:param <strong>validators</strong>: a dict of method names and @validator class methods
+:param <strong>validators</strong>: a dict of method names and @field_validator class methods
 :param <strong>cls_kwargs</strong>: a dict for class creation
 :param <strong>slots</strong>: Deprecated, <code>__slots__</code> should not be passed to <code>create_model</code>
 :param field_definitions: fields of the model (or extra fields if a base is supplied)
@@ -5616,7 +5616,7 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 <span class="sd">    :param __config__: config dict/class to use for the new model</span>
 <span class="sd">    :param __base__: base class for the new model to inherit from</span>
 <span class="sd">    :param __module__: module of the created model</span>
-<span class="sd">    :param __validators__: a dict of method names and @validator class methods</span>
+<span class="sd">    :param __validators__: a dict of method names and @field_validator class methods</span>
 <span class="sd">    :param __cls_kwargs__: a dict for class creation</span>
 <span class="sd">    :param __slots__: Deprecated, `__slots__` should not be passed to `create_model`</span>
 <span class="sd">    :param field_definitions: fields of the model (or extra fields if a base is supplied)</span>

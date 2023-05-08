@@ -2201,7 +2201,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="o">=</span><span class="n">message</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;undefined-annotation&#39;</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_name_error</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name_error</span><span class="p">:</span> <span class="ne">NameError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PydanticUndefinedAnnotation</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_name_error</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name_error</span><span class="p">:</span> <span class="ne">NameError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Convert a `NameError` to a `PydanticUndefinedAnnotation` error.</span>
 
@@ -2286,7 +2286,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <tbody>
         <tr>
 <td><code>PydanticUndefinedAnnotation</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticUndefinedAnnotation" href="#pydantic.errors.PydanticUndefinedAnnotation">PydanticUndefinedAnnotation</a></code>
+                <code><span title="typing_extensions.Self">Self</span></code>
           </td>
           <td><p>Converted <code>PydanticUndefinedAnnotation</code> error.</p></td>
         </tr>
@@ -2311,7 +2311,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">from_name_error</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name_error</span><span class="p">:</span> <span class="ne">NameError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PydanticUndefinedAnnotation</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">from_name_error</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name_error</span><span class="p">:</span> <span class="ne">NameError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert a `NameError` to a `PydanticUndefinedAnnotation` error.</span>
 

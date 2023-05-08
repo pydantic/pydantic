@@ -2703,7 +2703,7 @@ while building the pydantic-core schema.</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">kw_only</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;kw_only&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_field</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_field</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create a new `FieldInfo` object with the `Field` function.</span>
 
@@ -2733,7 +2733,7 @@ while building the pydantic-core schema.</p>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">_forward_ref</span><span class="o">.</span><span class="n">PydanticForwardRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">_forward_ref</span><span class="o">.</span><span class="n">PydanticForwardRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Creates a `FieldInfo` instance from a bare annotation.</span>
 
@@ -2785,7 +2785,7 @@ while building the pydantic-core schema.</p>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">final</span><span class="o">=</span><span class="n">final</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Create `FieldInfo` from an annotation with a default value.</span>
 
@@ -2851,7 +2851,7 @@ while building the pydantic-core schema.</p>
             <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">annotation</span><span class="o">=</span><span class="n">annotation</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="n">default</span><span class="p">,</span> <span class="n">final</span><span class="o">=</span><span class="n">final</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_from_dataclass_field</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dc_field</span><span class="p">:</span> <span class="n">DataclassField</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_from_dataclass_field</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dc_field</span><span class="p">:</span> <span class="n">DataclassField</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Return a new `FieldInfo` instance from a `dataclasses.Field` instance.</span>
 
@@ -3148,7 +3148,7 @@ while building the pydantic-core schema.</p>
     <tbody>
         <tr>
 <td><code>FieldInfo</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
+                <code>typing_extensions.<span title="typing_extensions.Self">Self</span></code>
           </td>
           <td><p>A field object with the passed values.</p></td>
         </tr>
@@ -3232,7 +3232,7 @@ while building the pydantic-core schema.</p>
 <span class="normal">282</span>
 <span class="normal">283</span>
 <span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create `FieldInfo` from an annotation with a default value.</span>
 
@@ -3357,7 +3357,7 @@ while building the pydantic-core schema.</p>
     <tbody>
         <tr>
 <td><code>FieldInfo</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
+                <code>typing_extensions.<span title="typing_extensions.Self">Self</span></code>
           </td>
           <td><p>An instance of the field metadata.</p></td>
         </tr>
@@ -3432,7 +3432,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">216</span>
 <span class="normal">217</span>
 <span class="normal">218</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">_forward_ref</span><span class="o">.</span><span class="n">PydanticForwardRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">_forward_ref</span><span class="o">.</span><span class="n">PydanticForwardRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates a `FieldInfo` instance from a bare annotation.</span>
 
@@ -3571,7 +3571,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
     <tbody>
         <tr>
 <td><code>FieldInfo</code></td>          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.fields.FieldInfo" href="#pydantic.fields.FieldInfo">FieldInfo</a></code>
+                <code>typing_extensions.<span title="typing_extensions.Self">Self</span></code>
           </td>
           <td><p>A new FieldInfo object with the given parameters.</p></td>
         </tr>
@@ -3617,7 +3617,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">164</span>
 <span class="normal">165</span>
 <span class="normal">166</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
-<span class="k">def</span> <span class="nf">from_field</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">FieldInfo</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">from_field</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a new `FieldInfo` object with the `Field` function.</span>
 
