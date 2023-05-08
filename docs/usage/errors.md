@@ -60,7 +60,7 @@ class Model(BaseModel):
 
 ## Discriminator alias type {#discriminator-alias-type}
 
-This error is raised when you define a non string alias on discriminator field.
+This error is raised when you define a non-string alias on discriminator field.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from typing import Union
@@ -84,7 +84,7 @@ class Model(BaseModel):
 
 ## Discriminator needs literal {#discriminator-needs-literal}
 
-This error is raised when you define a non `Literal` type discriminator field.
+This error is raised when you define a non-`Literal` type discriminator field.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from typing import Union
@@ -229,7 +229,7 @@ class Bar(BaseModel):
 foo = Foo(a={'b': {'a': None}})
 ```
 
-It can be fixed by defining the type and then call `.model_rebuild()`:
+It can be fixed by defining the type and then calling `.model_rebuild()`:
 
 ```py test="skip" lint="skip" upgrade="skip"
 from typing import Optional
@@ -301,7 +301,7 @@ You must create a new instance to generate a new JSON schema.'
 
 ## BaseModel instantiated {#base-model-instantiated}
 
-This error is raised when you instantiated `BaseModel` directly. Pydantic models should inherit from `BaseModel`.
+This error is raised when you instantiate `BaseModel` directly. Pydantic models should inherit from `BaseModel`.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel
@@ -395,7 +395,7 @@ class Model(BaseModel):
 
 ## Invalid validator fields {#validator-invalid-fields}
 
-This error is raised when you use validator with non string fields.
+This error is raised when you use validator with non-string fields.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, field_validator
@@ -410,7 +410,7 @@ class Model(BaseModel):
         return v
 ```
 
-fields should be passed as separate string args:
+Fields should be passed as separate string args:
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, field_validator
@@ -492,7 +492,7 @@ The `field` argument is no longer available.
 
 ## V1 validator signature {#validator-v1-signature}
 
-This error is raised when you use unsupported signature for V1 style validator.
+This error is raised when you use an unsupported signature for V1 style validator.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, validator
@@ -508,7 +508,7 @@ class Model(BaseModel):
 
 ## Unrecognized field_validator signature {#validator-signature}
 
-This error is raised when `field_validator` or `model_validator` function has wrong signature.
+This error is raised when a `field_validator` or `model_validator` function has wrong signature.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, field_validator
@@ -525,7 +525,7 @@ class Model(BaseModel):
 
 ## Unrecognized field_serializer signature {#field-serializer-signature}
 
-This error is raised when `field_serializer` function has wrong signature.
+This error is raised when `field_serializer` function has the wrong signature.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, field_serializer
@@ -579,7 +579,7 @@ def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ..
 
 ## Unrecognized model_serializer signature {#model-serializer-signature}
 
-This error is raised when `model_serializer` function has wrong signature.
+This error is raised when `model_serializer` function has the wrong signature.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, model_serializer
