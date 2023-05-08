@@ -37,7 +37,7 @@ model = create_model('FooModel', a=(str, 'cake'), __base__=Model)
 
 ## Discriminator no field {#discriminator-no-field}
 
-This error is raised when a model in discriminated unions doesn't define discriminator field.
+This error is raised when a model in discriminated unions doesn't define a discriminator field.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from typing import Union
