@@ -288,9 +288,9 @@ class TypeAdapter(Generic[T]):
         """Generate JSON schemas for multiple type adapters.
 
         Args:
-            __inputs (Iterable[tuple[Hashable, JsonSchemaMode, TypeAdapter[Any]]]): The inputs to schema generation.
-                The first two items will form the keys of the first output mapping; the type adapters will provide
-                the core schemas converted into definitions in the output JSON schema.
+            __inputs (Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]): Inputs to schema generation.
+                The first two items will form the keys of the (first) output mapping; the type adapters will provide
+                the core schemas that get converted into definitions in the output JSON schema.
             by_alias (bool): Whether to use alias names (default: True).
             title (Optional[str]): The title for the schema (default: None).
             description (Optional[str]): The description for the schema (default: None).
