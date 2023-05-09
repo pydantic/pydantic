@@ -3442,19 +3442,27 @@ def test_json_required():
         JsonRequired()
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
-def test_pattern(pattern_type):
+@pytest.mark.parametrize(
+    ('pattern_type', 'pattern_value', 'matching_value', 'non_matching_value'),
+    [
+        pytest.param(re.Pattern, r'^whatev.r\d$', 'whatever1', ' whatever1', id='re.Pattern'),
+        pytest.param(Pattern, r'^whatev.r\d$', 'whatever1', ' whatever1', id='Pattern'),
+        pytest.param(Pattern[str], r'^whatev.r\d$', 'whatever1', ' whatever1', id='Pattern[str]'),
+        pytest.param(Pattern[bytes], rb'^whatev.r\d$', b'whatever1', b' whatever1', id='Pattern[bytes]'),
+    ],
+)
+def test_pattern(pattern_type, pattern_value, matching_value, non_matching_value):
     class Foobar(BaseModel):
         pattern: pattern_type
 
-    f = Foobar(pattern=r'^whatev.r\d$')
+    f = Foobar(pattern=pattern_value)
     assert f.pattern.__class__.__name__ == 'Pattern'
     # check it's really a proper pattern
-    assert f.pattern.match('whatever1')
-    assert not f.pattern.match(' whatever1')
+    assert f.pattern.match(matching_value)
+    assert not f.pattern.match(non_matching_value)
 
     # Check that pre-compiled patterns are accepted unchanged
-    p = re.compile(r'^whatev.r\d$')
+    p = re.compile(pattern_value)
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
@@ -3466,21 +3474,72 @@ def test_pattern(pattern_type):
     # }
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
-def test_pattern_error(pattern_type):
+@pytest.mark.parametrize(
+    ('pattern_type', 'pattern_value', 'error_type', 'error_msg'),
+    [
+        pytest.param(
+            re.Pattern,
+            '[xx',
+            'pattern_regex',
+            'Input should be a valid regular expression',
+            id='re.Pattern-pattern_regex',
+        ),
+        pytest.param(
+            Pattern, '[xx', 'pattern_regex', 'Input should be a valid regular expression', id='re.Pattern-pattern_regex'
+        ),
+        pytest.param(
+            re.Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern-pattern_type'
+        ),
+        pytest.param(Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern-pattern_type'),
+        pytest.param(
+            Pattern[str],
+            re.compile(b''),
+            'pattern_str_type',
+            'Input should be a string pattern',
+            id='typing.Pattern[str]-pattern_str_type-non_str',
+        ),
+        pytest.param(
+            Pattern[str],
+            b'',
+            'pattern_str_type',
+            'Input should be a string pattern',
+            id='typing.Pattern[str]-pattern_str_type-bytes',
+        ),
+        pytest.param(
+            Pattern[str], (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern[str]-pattern_type'
+        ),
+        pytest.param(
+            Pattern[bytes],
+            re.compile(''),
+            'pattern_bytes_type',
+            'Input should be a bytes pattern',
+            id='typing.Pattern[bytes]-pattern_bytes_type-non_bytes',
+        ),
+        pytest.param(
+            Pattern[bytes],
+            '',
+            'pattern_bytes_type',
+            'Input should be a bytes pattern',
+            id='typing.Pattern[bytes]-pattern_bytes_type-str',
+        ),
+        pytest.param(
+            Pattern[bytes],
+            (),
+            'pattern_type',
+            'Input should be a valid pattern',
+            id='typing.Pattern[bytes]-pattern_type',
+        ),
+    ],
+)
+def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     class Foobar(BaseModel):
         pattern: pattern_type
 
     with pytest.raises(ValidationError) as exc_info:
-        Foobar(pattern='[xx')
+        Foobar(pattern=pattern_value)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'pattern_regex',
-            'loc': ('pattern',),
-            'msg': 'Input should be a valid regular expression',
-            'input': '[xx',
-        }
+        {'type': error_type, 'loc': ('pattern',), 'msg': error_msg, 'input': pattern_value}
     ]
 
 

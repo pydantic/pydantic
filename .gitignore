@@ -27,6 +27,7 @@ _build/
 /benchmarks/*.json
 /htmlcov/
 /codecov.sh
+/coverage.lcov
 .coverage
 test.py
 
