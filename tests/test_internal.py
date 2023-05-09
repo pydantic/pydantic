@@ -1,11 +1,14 @@
 """
 Tests for internal things that are complex enough to warrant their own unit tests.
 """
+from dataclasses import dataclass
+
 import pytest
 from pydantic_core import core_schema as cs
 
 # TODO: rewrite these tests to use the two individual functions
 from pydantic._internal._core_utils import _simplify_schema_references as simplify_schema_references  # type: ignore
+from pydantic._internal._repr import Representation
 
 
 @pytest.mark.parametrize(
@@ -117,3 +120,22 @@ from pydantic._internal._core_utils import _simplify_schema_references as simpli
 def test_build_definitions_schema(input_schema: cs.CoreSchema, expected_output: cs.CoreSchema):
     result = simplify_schema_references(input_schema, True)
     assert result == expected_output
+
+
+def test_representation():
+    devtools = pytest.importorskip('devtools')
+
+    @dataclass
+    class Obj(Representation):
+        int_attr: int = 42
+        str_attr: str = 'Marvin'
+
+    obj = Obj()
+
+    assert str(devtools.debug.format(obj)).split('\n')[1:] == [
+        '    Obj(',
+        '        int_attr=42,',
+        "        str_attr='Marvin',",
+        '    ) (Obj)',
+    ]
+    assert list(obj.__rich_repr__()) == [('int_attr', 42), ('str_attr', 'Marvin')]
