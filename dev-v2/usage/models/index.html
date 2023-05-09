@@ -3720,7 +3720,7 @@ values of instance attributes will raise errors. See <a href="../model_config/">
 <p>Immutability in Python is never strict. If developers are determined/stupid they can always
 modify a so-called "immutable" object.</p>
 </div>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">FooBarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3733,9 +3733,13 @@ modify a so-called "immutable" object.</p>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">foobar</span><span class="o">.</span><span class="n">a</span> <span class="o">=</span> <span class="s1">&#39;different&#39;</span>
-<span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-    <span class="c1">#&gt; &quot;FooBarModel&quot; is frozen and does not support item assignment</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for FooBarModel</span>
+<span class="sd">    a</span>
+<span class="sd">      Instance is frozen [type=frozen_instance, input_value=&#39;different&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">foobar</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
 <span class="c1">#&gt; hello</span>
