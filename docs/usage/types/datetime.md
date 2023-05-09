@@ -23,6 +23,12 @@ types:
 `FutureDate`
 : like `date`, but the date should be in the future
 
+`PastDatetime`
+: like `datetime`, but the datetime should be in the past
+
+`FutureDatetime`
+: like `datetime`, but the datetime should be in the future
+
 ## Datetime types
 
 * `datetime` fields can be:
@@ -73,6 +79,12 @@ types:
 
 `NaiveDatetime`
 : like `datetime`, but requires the value to lack timezone info
+
+`PastDatetime`
+: like `datetime`, but the datetime should be in the past
+
+`FutureDatetime`
+: like `datetime`, but the datetime should be in the future
 
 
 ```py

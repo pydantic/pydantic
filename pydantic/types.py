@@ -73,6 +73,8 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
+    'PastDatetime',
+    'FutureDatetime',
     'condate',
     'AwareDatetime',
     'NaiveDatetime',
@@ -822,6 +824,9 @@ def condate(
 if TYPE_CHECKING:
     AwareDatetime = Annotated[datetime, ...]
     NaiveDatetime = Annotated[datetime, ...]
+    PastDatetime = Annotated[datetime, ...]
+    FutureDatetime = Annotated[datetime, ...]
+
 else:
 
     class AwareDatetime:
@@ -857,6 +862,40 @@ else:
 
         def __repr__(self) -> str:
             return 'NaiveDatetime'
+
+    class PastDatetime:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            if cls is source:
+                # used directly as a type
+                return core_schema.datetime_schema(now_op='past')
+            else:
+                schema = handler(source)
+                assert schema['type'] == 'datetime'
+                schema['now_op'] = 'past'
+                return schema
+
+        def __repr__(self) -> str:
+            return 'PastDatetime'
+
+    class FutureDatetime:
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source: type[Any], handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            if cls is source:
+                # used directly as a type
+                return core_schema.datetime_schema(now_op='future')
+            else:
+                schema = handler(source)
+                assert schema['type'] == 'datetime'
+                schema['now_op'] = 'future'
+                return schema
+
+        def __repr__(self) -> str:
+            return 'FutureDatetime'
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ Encoded TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
