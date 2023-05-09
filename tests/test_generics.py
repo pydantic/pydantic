@@ -44,7 +44,7 @@ from pydantic import (
     ValidationInfo,
     computed_field,
     field_validator,
-    root_validator,
+    model_validator,
 )
 from pydantic._internal._core_utils import collect_invalid_schemas
 from pydantic._internal._generics import (
@@ -104,13 +104,13 @@ def test_value_validation():
                 raise ValueError('some value is zero')
             return v
 
-        @root_validator(skip_on_failure=True)
+        @model_validator(mode='after')
         @classmethod
-        def validate_sum(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            data = values.get('data', {})
+        def validate_sum(cls, m):
+            data = m.data
             if sum(data.values()) > 5:
                 raise ValueError('sum too large')
-            return values
+            return m
 
     assert Response[Dict[int, int]](data={1: '4'}).model_dump() == {'data': {1: 4}}
     with pytest.raises(ValidationError) as exc_info:

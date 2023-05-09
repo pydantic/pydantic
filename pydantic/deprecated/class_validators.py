@@ -1,5 +1,5 @@
 """
-Public methods used as decorators within pydantic models and dataclasses.
+Old `@validator` and `@root_validator` function validators from V1.
 """
 
 from __future__ import annotations as _annotations
@@ -11,8 +11,8 @@ from warnings import warn
 
 from typing_extensions import Literal, Protocol, TypeAlias
 
-from ._internal import _decorators, _decorators_v1
-from .errors import PydanticUserError
+from .._internal import _decorators, _decorators_v1
+from ..errors import PydanticUserError
 
 _ALLOW_REUSE_WARNING_MESSAGE = '`allow_reuse` is deprecated and will be ignored; it should no longer be necessary'
 
@@ -208,6 +208,13 @@ def root_validator(
     Returns:
         Any: A decorator that can be used to decorate a function to be used as a root_validator.
     """
+    warn(
+        'Pydantic V1 style `@root_validator` validators are deprecated.'
+        ' You should migrate to Pydantic V2 style `@model_validator` validators,'
+        ' see the migration guide for more details',
+        DeprecationWarning,
+        stacklevel=2,
+    )
     if allow_reuse is True:  # pragma: no cover
         warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'

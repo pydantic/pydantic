@@ -2346,11 +2346,13 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         def my_model_validator(cls, values, handler, info):
             raise NotImplementedError
 
-        @root_validator(skip_on_failure=True)
-        @classmethod
-        @abstractmethod
-        def my_root_validator(cls, values):
-            raise NotImplementedError
+        with pytest.warns(DeprecationWarning):
+
+            @root_validator(skip_on_failure=True)
+            @classmethod
+            @abstractmethod
+            def my_root_validator(cls, values):
+                raise NotImplementedError
 
         with pytest.warns(DeprecationWarning):
 

@@ -20,6 +20,8 @@ DEPRECATED_MOVED_IN_V2 = {
     'pydantic.json.custom_pydantic_encoder': 'pydantic.deprecated.json.custom_pydantic_encoder',
     'pydantic.json.timedelta_isoformat': 'pydantic.deprecated.json.timedelta_isoformat',
     'pydantic.decorator.validate_arguments': 'pydantic.deprecated.decorator.validate_arguments',
+    'pydantic.class_validators.validator': 'pydantic.deprecated.class_validators.validator',
+    'pydantic.class_validators.root_validator': 'pydantic.deprecated.class_validators.root_validator',
 }
 
 REMOVED_IN_V2 = {

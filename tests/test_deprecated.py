@@ -88,27 +88,29 @@ def test_from_attributes_root():
         en_name: str
         jp_name: str
 
-    class PokemonList(BaseModel):
-        root: List[Pokemon]
+    with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
 
-        @root_validator(pre=True)
-        @classmethod
-        def populate_root(cls, values):
-            return {'root': values}
+        class PokemonList(BaseModel):
+            root: List[Pokemon]
 
-        @model_serializer(mode='wrap')
-        def _serialize(self, handler, info):
-            data = handler(self)
-            if info.mode == 'json':
-                return data['root']
-            else:
-                return data
+            @root_validator(pre=True)
+            @classmethod
+            def populate_root(cls, values):
+                return {'root': values}
 
-        @classmethod
-        def model_modify_json_schema(cls, json_schema):
-            return json_schema['properties']['root']
+            @model_serializer(mode='wrap')
+            def _serialize(self, handler, info):
+                data = handler(self)
+                if info.mode == 'json':
+                    return data['root']
+                else:
+                    return data
 
-        model_config = ConfigDict(from_attributes=True)
+            @classmethod
+            def model_modify_json_schema(cls, json_schema):
+                return json_schema['properties']['root']
+
+            model_config = ConfigDict(from_attributes=True)
 
     pika = PokemonCls(en_name='Pikachu', jp_name='ピカチュウ')
     bulbi = PokemonCls(en_name='Bulbasaur', jp_name='フシギダネ')
@@ -119,26 +121,28 @@ def test_from_attributes_root():
         Pokemon(en_name='Bulbasaur', jp_name='フシギダネ'),
     ]
 
-    class PokemonDict(BaseModel):
-        root: Dict[str, Pokemon]
-        model_config = ConfigDict(from_attributes=True)
+    with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
 
-        @root_validator(pre=True)
-        @classmethod
-        def populate_root(cls, values):
-            return {'root': values}
+        class PokemonDict(BaseModel):
+            root: Dict[str, Pokemon]
+            model_config = ConfigDict(from_attributes=True)
 
-        @model_serializer(mode='wrap')
-        def _serialize(self, handler, info):
-            data = handler(self)
-            if info.mode == 'json':
-                return data['root']
-            else:
-                return data
+            @root_validator(pre=True)
+            @classmethod
+            def populate_root(cls, values):
+                return {'root': values}
 
-        @classmethod
-        def model_modify_json_schema(cls, json_schema):
-            return json_schema['properties']['root']
+            @model_serializer(mode='wrap')
+            def _serialize(self, handler, info):
+                data = handler(self)
+                if info.mode == 'json':
+                    return data['root']
+                else:
+                    return data
+
+            @classmethod
+            def model_modify_json_schema(cls, json_schema):
+                return json_schema['properties']['root']
 
     pokemons = deprecated_from_orm(PokemonDict, {'pika': pika, 'bulbi': bulbi})
     assert pokemons.root == {

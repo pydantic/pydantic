@@ -11,8 +11,8 @@ from pydantic import (
     create_model,
     errors,
     field_validator,
+    validator,
 )
-from pydantic.decorators import validator
 from pydantic.fields import ModelPrivateAttr
 
 

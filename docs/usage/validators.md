@@ -266,12 +266,12 @@ declarative.
     define a help function with which you will avoid setting `allow_reuse=True` over and
     over again.
 
-## Root Validators
+## Model Validators
 
 Validation can also be performed on the entire model's data.
 
 ```py
-from pydantic import BaseModel, ValidationError, root_validator
+from pydantic import BaseModel, ValidationError, model_validator
 
 
 class UserModel(BaseModel):
@@ -279,17 +279,18 @@ class UserModel(BaseModel):
     password1: str
     password2: str
 
-    @root_validator(pre=True)
-    def check_card_number_omitted(cls, values):
-        assert 'card_number' not in values, 'card_number should not be included'
-        return values
+    @model_validator(mode='before')
+    def check_card_number_omitted(cls, data):
+        assert 'card_number' not in data, 'card_number should not be included'
+        return data
 
-    @root_validator(skip_on_failure=True)
-    def check_passwords_match(cls, values):
-        pw1, pw2 = values.get('password1'), values.get('password2')
+    @model_validator(mode='after')
+    def check_passwords_match(cls, m: 'UserModel'):
+        pw1 = m.password1
+        pw2 = m.password2
         if pw1 is not None and pw2 is not None and pw1 != pw2:
             raise ValueError('passwords do not match')
-        return values
+        return m
 
 
 print(UserModel(username='scolvin', password1='zxcvbn', password2='zxcvbn'))

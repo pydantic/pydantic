@@ -4,7 +4,7 @@ from typing import Any, List
 import pytest
 from dirty_equals import HasRepr
 
-from pydantic import ValidationError, field_validator, root_validator
+from pydantic import ValidationError, field_validator, model_validator
 from pydantic.dataclasses import dataclass
 
 
@@ -149,7 +149,7 @@ def test_inheritance_replace():
     assert Child(a=0).a == 5
 
 
-def test_root_validator():
+def test_model_validator():
     root_val_values = []
 
     @dataclass
@@ -162,12 +162,13 @@ def test_root_validator():
         def repeat_b(cls, v):
             return v * 2
 
-        @root_validator(skip_on_failure=True)
-        def root_validator(cls, values):
-            root_val_values.append(values)
-            if 'snap' in values.get('b', ''):
+        @model_validator(mode='after')
+        def root_validator(cls, m):
+            root_val_values.append(asdict(m))
+            if 'snap' in m.b:
                 raise ValueError('foobar')
-            return dict(values, b='changed')
+            m.b = 'changed'
+            return m
 
     assert asdict(MyDataclass(a='123', b='bar')) == {'a': 123, 'b': 'changed'}
 

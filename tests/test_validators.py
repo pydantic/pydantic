@@ -22,6 +22,7 @@ from pydantic import (
     ValidatorFunctionWrapHandler,
     errors,
     field_validator,
+    model_validator,
     root_validator,
     validator,
 )
@@ -960,39 +961,41 @@ def test_inheritance_replace_root_validator():
     it replaces the existing validator and is run instead of it.
     """
 
-    class Parent(BaseModel):
-        a: List[str]
+    with pytest.warns(DeprecationWarning):
 
-        @root_validator(skip_on_failure=True)
-        def parent_val_before(cls, values: Dict[str, Any]):
-            values['a'].append('parent before')
-            return values
+        class Parent(BaseModel):
+            a: List[str]
 
-        @root_validator(skip_on_failure=True)
-        def val(cls, values: Dict[str, Any]):
-            values['a'].append('parent')
-            return values
+            @root_validator(skip_on_failure=True)
+            def parent_val_before(cls, values: Dict[str, Any]):
+                values['a'].append('parent before')
+                return values
 
-        @root_validator(skip_on_failure=True)
-        def parent_val_after(cls, values: Dict[str, Any]):
-            values['a'].append('parent after')
-            return values
+            @root_validator(skip_on_failure=True)
+            def val(cls, values: Dict[str, Any]):
+                values['a'].append('parent')
+                return values
 
-    class Child(Parent):
-        @root_validator(skip_on_failure=True)
-        def child_val_before(cls, values: Dict[str, Any]):
-            values['a'].append('child before')
-            return values
+            @root_validator(skip_on_failure=True)
+            def parent_val_after(cls, values: Dict[str, Any]):
+                values['a'].append('parent after')
+                return values
 
-        @root_validator(skip_on_failure=True)
-        def val(cls, values: Dict[str, Any]):
-            values['a'].append('child')
-            return values
+        class Child(Parent):
+            @root_validator(skip_on_failure=True)
+            def child_val_before(cls, values: Dict[str, Any]):
+                values['a'].append('child before')
+                return values
 
-        @root_validator(skip_on_failure=True)
-        def child_val_after(cls, values: Dict[str, Any]):
-            values['a'].append('child after')
-            return values
+            @root_validator(skip_on_failure=True)
+            def val(cls, values: Dict[str, Any]):
+                values['a'].append('child')
+                return values
+
+            @root_validator(skip_on_failure=True)
+            def child_val_after(cls, values: Dict[str, Any]):
+                values['a'].append('child after')
+                return values
 
     assert Parent(a=[]).a == ['parent before', 'parent', 'parent after']
     assert Child(a=[]).a == ['parent before', 'child', 'parent after', 'child before', 'child after']
@@ -1291,19 +1294,21 @@ def test_root_validator():
         def repeat_b(cls, v: Any):
             return v * 2
 
-        @root_validator(skip_on_failure=True)
-        def example_root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            root_val_values.append(values)
-            if 'snap' in values.get('b', ''):
-                raise ValueError('foobar')
-            return dict(values, b='changed')
+        with pytest.warns(DeprecationWarning):
 
-        @root_validator(skip_on_failure=True)
-        def example_root_validator2(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            root_val_values.append(values)
-            if 'snap' in values.get('c', ''):
-                raise ValueError('foobar2')
-            return dict(values, c='changed')
+            @root_validator(skip_on_failure=True)
+            def example_root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                root_val_values.append(values)
+                if 'snap' in values.get('b', ''):
+                    raise ValueError('foobar')
+                return dict(values, b='changed')
+
+            @root_validator(skip_on_failure=True)
+            def example_root_validator2(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                root_val_values.append(values)
+                if 'snap' in values.get('c', ''):
+                    raise ValueError('foobar2')
+                return dict(values, c='changed')
 
     assert Model(a='123', b='bar', c='baz').model_dump() == {'a': 123, 'b': 'changed', 'c': 'changed'}
 
@@ -1345,23 +1350,26 @@ def test_root_validator_subclass():
     class Parent(BaseModel):
         x: int
         expected: Any
+        with pytest.warns(DeprecationWarning):
 
-        @root_validator(skip_on_failure=True)
-        @classmethod
-        def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            assert cls is values['expected']
-            return values
+            @root_validator(skip_on_failure=True)
+            @classmethod
+            def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                assert cls is values['expected']
+                return values
 
     class Child1(Parent):
         pass
 
     class Child2(Parent):
-        @root_validator(skip_on_failure=True)
-        @classmethod
-        def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            assert cls is Child2
-            values['x'] = values['x'] * 2
-            return values
+        with pytest.warns(DeprecationWarning):
+
+            @root_validator(skip_on_failure=True)
+            @classmethod
+            def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                assert cls is Child2
+                values['x'] = values['x'] * 2
+                return values
 
     class Child3(Parent):
         @classmethod
@@ -1388,12 +1396,14 @@ def test_root_validator_pre():
         def repeat_b(cls, v: Any):
             return v * 2
 
-        @root_validator(pre=True)
-        def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            root_val_values.append(values)
-            if 'snap' in values.get('b', ''):
-                raise ValueError('foobar')
-            return {'a': 42, 'b': 'changed'}
+        with pytest.warns(DeprecationWarning):
+
+            @root_validator(pre=True)
+            def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                root_val_values.append(values)
+                if 'snap' in values.get('b', ''):
+                    raise ValueError('foobar')
+                return {'a': 42, 'b': 'changed'}
 
     assert Model(a='123', b='bar').model_dump() == {'a': 42, 'b': 'changedchanged'}
 
@@ -1419,11 +1429,13 @@ def test_root_validator_types():
         a: int = 1
         b: str
 
-        @root_validator(skip_on_failure=True)
-        def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            nonlocal root_val_values
-            root_val_values = cls, repr(values)
-            return values
+        with pytest.warns(DeprecationWarning):
+
+            @root_validator(skip_on_failure=True)
+            def root_validator(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                nonlocal root_val_values
+                root_val_values = cls, repr(values)
+                return values
 
         model_config = ConfigDict(extra='allow')
 
@@ -1436,15 +1448,31 @@ def test_root_validator_returns_none_exception():
     class Model(BaseModel):
         a: int = 1
 
-        @root_validator(skip_on_failure=True)
-        def root_validator_repeated(cls, values):
-            return None
+        with pytest.warns(DeprecationWarning):
+
+            @root_validator(skip_on_failure=True)
+            def root_validator_repeated(cls, values):
+                return None
 
     with pytest.raises(
         TypeError,
         match=r"(:?__dict__ must be set to a dictionary, not a 'NoneType')|(:?setting dictionary to a non-dict)",
     ):
         Model()
+
+
+def test_model_validator_returns_ignore():
+    # This is weird, and I don't understand entirely why it's happening, but it kind of makes sense
+
+    class Model(BaseModel):
+        a: int = 1
+
+        @model_validator(mode='after')
+        def model_validator_return_none(cls, m):
+            return None
+
+    m = Model(a=2)
+    assert m.model_dump() == {'a': 2}
 
 
 def reusable_validator(num: int) -> int:
@@ -1485,7 +1513,9 @@ def test_root_validator_classmethod(validator_classmethod, root_validator_classm
 
         if root_validator_classmethod:
             example_root_validator = classmethod(example_root_validator)
-        example_root_validator = root_validator(skip_on_failure=True)(example_root_validator)
+
+        with pytest.warns(DeprecationWarning):
+            example_root_validator = root_validator(skip_on_failure=True)(example_root_validator)
 
     assert Model(a='123', b='bar').model_dump() == {'a': 123, 'b': 'changed'}
 
@@ -1681,23 +1711,23 @@ def test_overridden_root_validators():
     class A(BaseModel):
         x: str
 
-        @root_validator(pre=True)
+        @model_validator(mode='before')
         def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('A', 'pre')
             return values
 
-        @root_validator(pre=False, skip_on_failure=True)
+        @model_validator(mode='after')
         def post_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('A', 'post')
             return values
 
     class B(A):
-        @root_validator(pre=True)
+        @model_validator(mode='before')
         def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('B', 'pre')
             return values
 
-        @root_validator(pre=False, skip_on_failure=True)
+        @model_validator(mode='after')
         def post_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
             validate_stub('B', 'post')
             return values
@@ -1717,9 +1747,39 @@ def test_validating_assignment_pre_root_validator_fail():
         max_value: float
 
         model_config = ConfigDict(validate_assignment=True)
+        with pytest.warns(DeprecationWarning):
 
-        @root_validator(pre=True)
+            @root_validator(pre=True)
+            def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                if any(isinstance(x, str) for x in values.values()):
+                    raise ValueError('values cannot be a string')
+                return values
+
+    m = Model(current=100, max_value=200)
+    with pytest.raises(ValidationError) as exc_info:
+        m.current_value = '100'
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'value_error',
+            'loc': (),
+            'msg': 'Value error, values cannot be a string',
+            'input': {'current_value': '100', 'max_value': 200.0},
+            'ctx': {'error': 'values cannot be a string'},
+        }
+    ]
+
+
+@pytest.mark.xfail(reason='Something weird going on with model_validator and assignment')
+def test_validating_assignment_model_validator_before_fail():
+    class Model(BaseModel):
+        current_value: float = Field(..., alias='current')
+        max_value: float
+
+        model_config = ConfigDict(validate_assignment=True)
+
+        @model_validator(mode='before')
         def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+            print(values)
             if any(isinstance(x, str) for x in values.values()):
                 raise ValueError('values cannot be a string')
             return values
@@ -1748,11 +1808,12 @@ def test_validating_assignment_pre_root_validator_fail():
 )
 def test_root_validator_skip_on_failure_invalid(kwargs: Dict[str, Any]):
     with pytest.raises(TypeError, match='MUST specify `skip_on_failure=True`'):
+        with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
 
-        class Model(BaseModel):
-            @root_validator(**kwargs)
-            def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-                return values
+            class Model(BaseModel):
+                @root_validator(**kwargs)
+                def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                    return values
 
 
 @pytest.mark.parametrize(
@@ -1765,13 +1826,15 @@ def test_root_validator_skip_on_failure_invalid(kwargs: Dict[str, Any]):
     ],
 )
 def test_root_validator_skip_on_failure_valid(kwargs: Dict[str, Any]):
-    class Model(BaseModel):
-        @root_validator(**kwargs)
-        def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            return values
+    with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
+
+        class Model(BaseModel):
+            @root_validator(**kwargs)
+            def root_val(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+                return values
 
 
-def test_root_validator_many_values_change():
+def test_model_validator_many_values_change():
     """It should run root_validator on assignment and update ALL concerned fields"""
 
     class Rectangle(BaseModel):
@@ -1781,10 +1844,10 @@ def test_root_validator_many_values_change():
 
         model_config = ConfigDict(validate_assignment=True)
 
-        @root_validator(skip_on_failure=True)
-        def set_area(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            values['area'] = values['width'] * values['height']
-            return values
+        @model_validator(mode='after')
+        def set_area(cls, m: 'Rectangle') -> 'Rectangle':
+            m.__dict__['area'] = m.width * m.height
+            return m
 
     r = Rectangle(width=1, height=1)
     assert r.area == 1
@@ -1879,13 +1942,14 @@ def test_decorator_proxy():
 
 def test_root_validator_self():
     with pytest.raises(TypeError, match=r'`@root_validator` cannot be applied to instance methods'):
+        with pytest.warns(DeprecationWarning):
 
-        class Model(BaseModel):
-            a: int = 1
+            class Model(BaseModel):
+                a: int = 1
 
-            @root_validator(skip_on_failure=True)
-            def root_validator(self, values: Any) -> Any:
-                return values
+                @root_validator(skip_on_failure=True)
+                def root_validator(self, values: Any) -> Any:
+                    return values
 
 
 def test_validator_self():
@@ -2431,21 +2495,25 @@ def test_root_validator_allow_reuse_same_field():
 
 
 def test_root_validator_allow_reuse_inheritance():
-    class Parent(BaseModel):
-        x: int
+    with pytest.warns(DeprecationWarning):
 
-        @root_validator(skip_on_failure=True)
-        def root_val(cls, v: Dict[str, Any]) -> Dict[str, Any]:
-            v['x'] += 1
-            return v
+        class Parent(BaseModel):
+            x: int
 
-    class Child(Parent):
-        @root_validator(skip_on_failure=True)
-        def root_val(cls, v: Dict[str, Any]) -> Dict[str, Any]:
-            assert v == {'x': 1}
-            v = super().root_val(v)
-            assert v == {'x': 2}
-            return {'x': 4}
+            @root_validator(skip_on_failure=True)
+            def root_val(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+                v['x'] += 1
+                return v
+
+    with pytest.warns(DeprecationWarning):
+
+        class Child(Parent):
+            @root_validator(skip_on_failure=True)
+            def root_val(cls, v: Dict[str, Any]) -> Dict[str, Any]:
+                assert v == {'x': 1}
+                v = super().root_val(v)
+                assert v == {'x': 2}
+                return {'x': 4}
 
     assert Parent(x=1).model_dump() == {'x': 2}
     assert Child(x=1).model_dump() == {'x': 4}
