@@ -6,9 +6,8 @@ import pytest
 from pydantic_core import ValidationError
 from typing_extensions import TypeAlias, TypedDict
 
-from pydantic import BaseModel, TypeAdapter, ValidationInfo
+from pydantic import BaseModel, TypeAdapter, ValidationInfo, field_validator
 from pydantic.config import ConfigDict
-from pydantic.decorators import field_validator
 
 ItemType = TypeVar('ItemType')
 

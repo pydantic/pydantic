@@ -68,8 +68,8 @@ from ._typing_extra import is_finalvar
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
-    from ..decorators import FieldValidatorModes
     from ..main import BaseModel
+    from ..validators import FieldValidatorModes
     from ._dataclasses import StandardDataclass
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)

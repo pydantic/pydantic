@@ -8,7 +8,15 @@ from typing import Any, ClassVar
 import pytest
 from pydantic_core import PydanticSerializationError, ValidationError
 
-from pydantic import BaseModel, Field, PrivateAttr, TypeAdapter, computed_field, dataclasses, field_validator
+from pydantic import (
+    BaseModel,
+    Field,
+    PrivateAttr,
+    TypeAdapter,
+    computed_field,
+    dataclasses,
+    field_validator,
+)
 
 try:
     from functools import cached_property, lru_cache, singledispatchmethod
