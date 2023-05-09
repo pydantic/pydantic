@@ -333,7 +333,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="../alias_generators/" class="md-tabs__link md-tabs__link--active">
+      <a href="../main/" class="md-tabs__link md-tabs__link--active">
         API
       </a>
     </li>
@@ -1358,6 +1358,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
+      <a href="../main/" class="md-nav__link">
+        pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../alias_generators/" class="md-nav__link">
         pydantic.alias_generators
       </a>
@@ -1417,13 +1431,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
     <nav class="md-nav" aria-label="TypeAdapter">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.type_adapter.TypeAdapter.__init__" class="md-nav__link">
-    __init__()
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#pydantic.type_adapter.TypeAdapter.dump_json" class="md-nav__link">
@@ -1585,20 +1592,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../main/" class="md-nav__link">
-        pydantic.main
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../mypy/" class="md-nav__link">
         pydantic.mypy
       </a>
@@ -1709,13 +1702,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
     <nav class="md-nav" aria-label="TypeAdapter">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.type_adapter.TypeAdapter.__init__" class="md-nav__link">
-    __init__()
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#pydantic.type_adapter.TypeAdapter.dump_json" class="md-nav__link">
@@ -2348,87 +2334,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-
-<h3 id="pydantic.type_adapter.TypeAdapter.__init__" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">__init__</span>
-
-
-<a href="#pydantic.type_adapter.TypeAdapter.__init__" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="fm">__init__</span><span class="p">(</span><span class="n">__type</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">_parent_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Initializes the TypeAdapter object.</p>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 97</span>
-<span class="normal"> 98</span>
-<span class="normal"> 99</span>
-<span class="normal">100</span>
-<span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span>
-<span class="normal">107</span>
-<span class="normal">108</span>
-<span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span>
-<span class="normal">114</span>
-<span class="normal">115</span>
-<span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
-<span class="normal">119</span>
-<span class="normal">120</span>
-<span class="normal">121</span>
-<span class="normal">122</span>
-<span class="normal">123</span>
-<span class="normal">124</span>
-<span class="normal">125</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">_parent_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Initializes the TypeAdapter object.&quot;&quot;&quot;</span>
-    <span class="n">config_wrapper</span> <span class="o">=</span> <span class="n">_config</span><span class="o">.</span><span class="n">ConfigWrapper</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
-
-    <span class="n">core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span>
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">core_schema</span> <span class="o">=</span> <span class="n">__type</span><span class="o">.</span><span class="n">__pydantic_core_schema__</span>
-    <span class="k">except</span> <span class="ne">AttributeError</span><span class="p">:</span>
-        <span class="n">core_schema</span> <span class="o">=</span> <span class="n">_get_schema</span><span class="p">(</span><span class="n">__type</span><span class="p">,</span> <span class="n">config_wrapper</span><span class="p">,</span> <span class="n">parent_depth</span><span class="o">=</span><span class="n">_parent_depth</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-
-    <span class="n">core_schema</span> <span class="o">=</span> <span class="n">flatten_schema_defs</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
-    <span class="n">simplified_core_schema</span> <span class="o">=</span> <span class="n">inline_schema_defs</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
-
-    <span class="n">core_config</span> <span class="o">=</span> <span class="n">config_wrapper</span><span class="o">.</span><span class="n">core_config</span><span class="p">()</span>
-    <span class="n">validator</span><span class="p">:</span> <span class="n">SchemaValidator</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">__type</span><span class="p">,</span> <span class="s1">&#39;__pydantic_validator__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">validator</span> <span class="o">=</span> <span class="n">__type</span><span class="o">.</span><span class="n">__pydantic_validator__</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">validator</span> <span class="o">=</span> <span class="n">SchemaValidator</span><span class="p">(</span><span class="n">simplified_core_schema</span><span class="p">,</span> <span class="n">core_config</span><span class="p">)</span>
-
-    <span class="n">serializer</span><span class="p">:</span> <span class="n">SchemaSerializer</span>
-    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">__type</span><span class="p">,</span> <span class="s1">&#39;__pydantic_serializer__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">serializer</span> <span class="o">=</span> <span class="n">__type</span><span class="o">.</span><span class="n">__pydantic_serializer__</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="n">serializer</span> <span class="o">=</span> <span class="n">SchemaSerializer</span><span class="p">(</span><span class="n">simplified_core_schema</span><span class="p">,</span> <span class="n">core_config</span><span class="p">)</span>
-
-    <span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span> <span class="o">=</span> <span class="n">core_schema</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">validator</span> <span class="o">=</span> <span class="n">validator</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span> <span class="o">=</span> <span class="n">serializer</span>
-</code></pre></div></td></tr></table></div>
-      </details>
-  </div>
-
-</div>
 
 <div class="doc doc-object doc-function">
 

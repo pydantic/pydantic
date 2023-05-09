@@ -333,7 +333,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="../alias_generators/" class="md-tabs__link md-tabs__link--active">
+      <a href="../main/" class="md-tabs__link md-tabs__link--active">
         API
       </a>
     </li>
@@ -1358,6 +1358,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
+      <a href="../main/" class="md-nav__link">
+        pydantic
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../alias_generators/" class="md-nav__link">
         pydantic.alias_generators
       </a>
@@ -1572,13 +1586,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#pydantic.fields.ModelPrivateAttr.__set_name__" class="md-nav__link">
-    __set_name__()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
   <a href="#pydantic.fields.ModelPrivateAttr.get_default" class="md-nav__link">
     get_default()
   </a>
@@ -1628,20 +1635,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <li class="md-nav__item">
       <a href="../json_schema/" class="md-nav__link">
         pydantic.json_schema
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../main/" class="md-nav__link">
-        pydantic.main
       </a>
     </li>
   
@@ -1833,13 +1826,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
     <nav class="md-nav" aria-label="ModelPrivateAttr">
       <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.fields.ModelPrivateAttr.__set_name__" class="md-nav__link">
-    __set_name__()
-  </a>
-  
-</li>
         
           <li class="md-nav__item">
   <a href="#pydantic.fields.ModelPrivateAttr.get_default" class="md-nav__link">
@@ -4009,51 +3995,6 @@ attribute if not provided.</p></td>
 
 
 
-
-<div class="doc doc-object doc-function">
-
-
-
-<h3 id="pydantic.fields.ModelPrivateAttr.__set_name__" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">__set_name__</span>
-
-
-<a href="#pydantic.fields.ModelPrivateAttr.__set_name__" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">__set_name__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>preserve <code>__set_name__</code> protocol defined in https://peps.python.org/pep-0487</p>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span>
-<span class="normal">682</span>
-<span class="normal">683</span>
-<span class="normal">684</span>
-<span class="normal">685</span>
-<span class="normal">686</span>
-<span class="normal">687</span>
-<span class="normal">688</span>
-<span class="normal">689</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">__set_name__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="n">Undefined</span><span class="p">:</span>
-        <span class="k">return</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="p">,</span> <span class="s1">&#39;__set_name__&#39;</span><span class="p">):</span>
-        <span class="k">return</span>
-    <span class="n">set_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">default</span><span class="o">.</span><span class="n">__set_name__</span>
-    <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">set_name</span><span class="p">):</span>
-        <span class="n">set_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
-</code></pre></div></td></tr></table></div>
-      </details>
-  </div>
-
-</div>
 
 <div class="doc doc-object doc-function">
 
