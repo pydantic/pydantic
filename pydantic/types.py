@@ -764,12 +764,17 @@ class ByteSize(int):
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ DATE TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+
+def _check_annotated_type(annotated_type: str, expected_type: str, annotation: str) -> None:
+    if annotated_type != expected_type:
+        raise PydanticUserError(f"'{annotation}' cannot annotate '{annotated_type}'.", code='invalid_annotated_type')
+
+
 if TYPE_CHECKING:
     PastDate = Annotated[date, ...]
     FutureDate = Annotated[date, ...]
 else:
 
-    @_internal_dataclass.slots_dataclass(frozen=True)
     class PastDate:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -780,14 +785,13 @@ else:
                 return core_schema.date_schema(now_op='past')
             else:
                 schema = handler(source)
-                assert schema['type'] == 'date'
+                _check_annotated_type(schema['type'], 'date', cls.__name__)
                 schema['now_op'] = 'past'
                 return schema
 
         def __repr__(self) -> str:
             return 'PastDate'
 
-    @_internal_dataclass.slots_dataclass(frozen=True)
     class FutureDate:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -798,7 +802,7 @@ else:
                 return core_schema.date_schema(now_op='future')
             else:
                 schema = handler(source)
-                assert schema['type'] == 'date'
+                _check_annotated_type(schema['type'], 'date', cls.__name__)
                 schema['now_op'] = 'future'
                 return schema
 
@@ -831,7 +835,6 @@ if TYPE_CHECKING:
 
 else:
 
-    @_internal_dataclass.slots_dataclass(frozen=True)
     class AwareDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -842,14 +845,13 @@ else:
                 return core_schema.datetime_schema(tz_constraint='aware')
             else:
                 schema = handler(source)
-                assert schema['type'] == 'datetime'
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
                 schema['tz_constraint'] = 'aware'
                 return schema
 
         def __repr__(self) -> str:
             return 'AwareDatetime'
 
-    @_internal_dataclass.slots_dataclass(frozen=True)
     class NaiveDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -860,14 +862,13 @@ else:
                 return core_schema.datetime_schema(tz_constraint='naive')
             else:
                 schema = handler(source)
-                assert schema['type'] == 'datetime'
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
                 schema['tz_constraint'] = 'naive'
                 return schema
 
         def __repr__(self) -> str:
             return 'NaiveDatetime'
 
-    @_internal_dataclass.slots_dataclass(frozen=True)
     class PastDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -878,14 +879,13 @@ else:
                 return core_schema.datetime_schema(now_op='past')
             else:
                 schema = handler(source)
-                assert schema['type'] == 'datetime'
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
                 schema['now_op'] = 'past'
                 return schema
 
         def __repr__(self) -> str:
             return 'PastDatetime'
 
-    @_internal_dataclass.slots_dataclass(frozen=True)
     class FutureDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -896,7 +896,7 @@ else:
                 return core_schema.datetime_schema(now_op='future')
             else:
                 schema = handler(source)
-                assert schema['type'] == 'datetime'
+                _check_annotated_type(schema['type'], 'datetime', cls.__name__)
                 schema['now_op'] = 'future'
                 return schema
 

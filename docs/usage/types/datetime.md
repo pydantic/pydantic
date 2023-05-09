@@ -23,12 +23,6 @@ types:
 `FutureDate`
 : like `date`, but the date should be in the future
 
-`PastDatetime`
-: like `datetime`, but the datetime should be in the past
-
-`FutureDatetime`
-: like `datetime`, but the datetime should be in the future
-
 ## Datetime types
 
 * `datetime` fields can be:

@@ -576,3 +576,21 @@ def test_future_datetime_validation_fails(value, future_datetime_type):
             'input': value,
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'annotation',
+    (
+        PastDate,
+        PastDatetime,
+        FutureDate,
+        FutureDatetime,
+        NaiveDatetime,
+        AwareDatetime,
+    ),
+)
+def test_invalid_annotated_type(annotation):
+    with pytest.raises(TypeError, match=f"'{annotation.__name__}' cannot annotate 'str'."):
+
+        class Model(BaseModel):
+            foo: Annotated[str, annotation()]

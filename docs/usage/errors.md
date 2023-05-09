@@ -613,4 +613,18 @@ class MyModel(BaseModel):
     def serializer2(v):
         return v
 ```
+
+## Invalid annotated type {#invalid_annotated_type}
+
+This error is raised when annotation cannot annotated the type.
+
+```py test="skip" lint="skip" upgrade="skip"
+from typing_extensions import Annotated
+
+from pydantic import BaseModel, FutureDate
+
+
+class Model(BaseModel):
+    foo: Annotated[str, FutureDate()]
+```
 {% endraw %}
