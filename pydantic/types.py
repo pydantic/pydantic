@@ -769,6 +769,7 @@ if TYPE_CHECKING:
     FutureDate = Annotated[date, ...]
 else:
 
+    @_internal_dataclass.slots_dataclass(frozen=True)
     class PastDate:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -786,6 +787,7 @@ else:
         def __repr__(self) -> str:
             return 'PastDate'
 
+    @_internal_dataclass.slots_dataclass(frozen=True)
     class FutureDate:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -829,6 +831,7 @@ if TYPE_CHECKING:
 
 else:
 
+    @_internal_dataclass.slots_dataclass(frozen=True)
     class AwareDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -846,6 +849,7 @@ else:
         def __repr__(self) -> str:
             return 'AwareDatetime'
 
+    @_internal_dataclass.slots_dataclass(frozen=True)
     class NaiveDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -863,6 +867,7 @@ else:
         def __repr__(self) -> str:
             return 'NaiveDatetime'
 
+    @_internal_dataclass.slots_dataclass(frozen=True)
     class PastDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
@@ -880,6 +885,7 @@ else:
         def __repr__(self) -> str:
             return 'PastDatetime'
 
+    @_internal_dataclass.slots_dataclass(frozen=True)
     class FutureDatetime:
         @classmethod
         def __get_pydantic_core_schema__(
