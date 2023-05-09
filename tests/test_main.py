@@ -446,7 +446,7 @@ def test_frozen_model():
     with pytest.raises(ValidationError) as exc_info:
         m.a = 11
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'frozen_instance', 'loc': ('__root__',), 'msg': 'Instance is frozen', 'input': 11}
+        {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': 11}
     ]
 
 

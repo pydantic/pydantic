@@ -371,7 +371,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         elif self.model_config.get('frozen', None):
             error: pydantic_core.InitErrorDetails = {
                 'type': 'frozen_instance',
-                'loc': ('__root__',),
+                'loc': (name,),
                 'input': value,
             }
             raise pydantic_core.ValidationError(self.__class__.__name__, [error])

@@ -1147,7 +1147,7 @@ except ValidationError as e:
     print(e)
     """
     1 validation error for FooBarModel
-    __root__
+    a
       Instance is frozen [type=frozen_instance, input_value='different', input_type=str]
     """
 

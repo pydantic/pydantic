@@ -178,7 +178,7 @@ def test_config_is_inherited():
     with pytest.raises(ValidationError) as exc_info:
         instance.data = 2
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'frozen_instance', 'loc': ('__root__',), 'msg': 'Instance is frozen', 'input': 2}
+        {'type': 'frozen_instance', 'loc': ('data',), 'msg': 'Instance is frozen', 'input': 2}
     ]
 
 
