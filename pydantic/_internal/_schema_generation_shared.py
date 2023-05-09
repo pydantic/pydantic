@@ -164,6 +164,22 @@ class GetCoreSchemaHandler:
         """
         raise NotImplementedError
 
+    def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
+        """
+        Generate a schema unrelated to the current context.
+        Use this function if e.g. you are handling schema generation for a sequence
+        and want to generate a schema for it's items.
+        Otherwise you may end up doing something like applying a `min_length` constraint
+        that was intended for the sequence itself to it's items!
+
+        Args:
+            __source_type (Any): The input type.
+
+        Returns:
+            CoreSchema: the `pydantic-core` CoreSchema generated.
+        """
+        raise NotImplementedError
+
 
 class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
     """
@@ -173,8 +189,14 @@ class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
     See `GetCoreSchemaHandler` for the handler API.
     """
 
-    def __init__(self, handler: Callable[[Any], core_schema.CoreSchema]) -> None:
+    def __init__(
+        self, handler: Callable[[Any], core_schema.CoreSchema], generate_schema: Callable[[Any], core_schema.CoreSchema]
+    ) -> None:
         self._handler = handler
+        self._generate_schema = generate_schema
 
     def __call__(self, __source_type: Any) -> core_schema.CoreSchema:
         return self._handler(__source_type)
+
+    def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
+        return self._generate_schema(__source_type)

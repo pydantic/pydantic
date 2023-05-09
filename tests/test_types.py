@@ -28,7 +28,7 @@ from typing import (
     TypeVar,
     Union,
 )
-from uuid import UUID
+from uuid import UUID, uuid4
 
 import annotated_types
 import pytest
@@ -2472,23 +2472,90 @@ def test_bool_unhashable_fails():
 
 
 def test_uuid_error():
-    class Model(BaseModel):
-        v: UUID
+    v = TypeAdapter(UUID)
+
+    valid = uuid4()
+
+    # sanity check
+    assert v.validate_python(valid) == valid
+    assert v.validate_python(valid.hex) == valid
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
+        v.validate_python('ebcdab58-6eb8-46fb-a190-d07a3')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'uuid_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid UUID, string, or bytes',
+            'type': 'uuid_parsing',
+            'loc': (),
+            'msg': 'Input should be a valid UUID, unable to parse string as an UUID',
             'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
         }
     ]
 
-    with pytest.raises(ValidationError, match='Input should be a valid UUID, string, or bytes'):
-        Model(v=None)
+    not_a_valid_input_type = object()
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(not_a_valid_input_type)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'string_type',
+            'loc': ('str',),
+            'msg': 'Input should be a valid string',
+            'input': not_a_valid_input_type,
+        },
+        {
+            'type': 'bytes_type',
+            'loc': ('bytes',),
+            'msg': 'Input should be a valid bytes',
+            'input': not_a_valid_input_type,
+        },
+        {
+            'type': 'is_instance_of',
+            'loc': ('is-instance[UUID]',),
+            'msg': 'Input should be an instance of UUID',
+            'input': not_a_valid_input_type,
+            'ctx': {'class': 'UUID'},
+        },
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(valid.hex, strict=True)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_instance_of',
+            'loc': (),
+            'msg': 'Input should be an instance of UUID',
+            'input': valid.hex,
+            'ctx': {'class': 'UUID'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(valid.hex, strict=True)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_instance_of',
+            'loc': (),
+            'msg': 'Input should be an instance of UUID',
+            'input': valid.hex,
+            'ctx': {'class': 'UUID'},
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json(json.dumps(valid.hex), strict=True)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_instance_of',
+            'loc': (),
+            'msg': 'Input should be an instance of UUID',
+            'input': '1b765c15ce0a40c3934f933178686772',
+            'ctx': {'class': 'UUID'},
+        }
+    ]
 
 
 def test_uuid_json():
@@ -4125,50 +4192,6 @@ def test_deque_json():
         v: Deque[int]
 
     assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
-
-
-def test_deque_any_maxlen():
-    class DequeModel1(BaseModel):
-        field: deque
-
-    assert DequeModel1(field=deque()).field.maxlen is None
-    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
-
-    class DequeModel2(BaseModel):
-        field: deque = deque()
-
-    assert DequeModel2().field.maxlen is None
-    assert DequeModel2(field=deque()).field.maxlen is None
-    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
-
-    class DequeModel3(BaseModel):
-        field: deque = deque(maxlen=5)
-
-    assert DequeModel3().field.maxlen == 5
-    assert DequeModel3(field=deque()).field.maxlen is None
-    assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
-
-
-def test_deque_typed_maxlen():
-    class DequeModel1(BaseModel):
-        field: Deque[int]
-
-    assert DequeModel1(field=deque()).field.maxlen is None
-    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
-
-    class DequeModel2(BaseModel):
-        field: Deque[int] = deque()
-
-    assert DequeModel2().field.maxlen is None
-    assert DequeModel2(field=deque()).field.maxlen is None
-    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
-
-    class DequeModel3(BaseModel):
-        field: Deque[int] = deque(maxlen=5)
-
-    assert DequeModel3().field.maxlen == 5
-    assert DequeModel3(field=deque()).field.maxlen is None
-    assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__))

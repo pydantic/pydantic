@@ -301,7 +301,9 @@ class GenerateSchema:
         obj, new_annotations = self._prepare_annotations(obj, [])
         if new_annotations:
             return self._apply_annotations(
-                CallbackGetCoreSchemaHandler(partial(self.generate_schema, from_prepare_args=False)),
+                CallbackGetCoreSchemaHandler(
+                    partial(self.generate_schema, from_prepare_args=False), self.generate_schema
+                ),
                 obj,
                 new_annotations,
             )
@@ -463,12 +465,6 @@ class GenerateSchema:
             return self._union_schema(obj)
         elif issubclass(origin, Annotated):  # type: ignore[arg-type]
             return self._annotated_schema(obj)
-        elif issubclass(origin, typing.List):
-            return self._generic_collection_schema(list, obj, origin)
-        elif issubclass(origin, typing.Set):
-            return self._generic_collection_schema(set, obj, origin)
-        elif issubclass(origin, typing.FrozenSet):
-            return self._generic_collection_schema(frozenset, obj, origin)
         elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
             # TODO: To support generic subclasses of typing.Tuple, we need to better-introspect the args to origin
             return self._tuple_schema(obj)
@@ -487,10 +483,6 @@ class GenerateSchema:
             return self._mapping_schema(obj)
         elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
             return self._subclass_schema(obj)
-        elif issubclass(origin, typing.Deque):
-            from ._std_types_schema import deque_schema
-
-            return deque_schema(self, obj)
         elif issubclass(origin, typing.OrderedDict):
             # Subclasses of typing.OrderedDict may be handled as subclasses of dict; see note above
             from ._std_types_schema import ordered_dict_schema
@@ -593,8 +585,12 @@ class GenerateSchema:
                 schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator, self.definitions)
             return schema
 
+        source_type, annotations = field_info.annotation, field_info.metadata
+        source_type, annotations = self._prepare_annotations(source_type, annotations)
         schema = self._apply_annotations(
-            CallbackGetCoreSchemaHandler(generate_schema), field_info.annotation, field_info.metadata
+            CallbackGetCoreSchemaHandler(generate_schema, self.generate_schema),
+            source_type,
+            annotations,
         )
 
         # TODO: remove this V1 compatibility shim once it's deprecated
@@ -770,7 +766,11 @@ class GenerateSchema:
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-        schema = self._apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), annotation, field.metadata)
+        source_type, annotations = annotation, field.metadata
+        source_type, annotations = self._prepare_annotations(source_type, annotations)
+        schema = self._apply_annotations(
+            CallbackGetCoreSchemaHandler(self.generate_schema, self.generate_schema), source_type, annotations
+        )
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -785,32 +785,6 @@ class GenerateSchema:
             if alias_generator:
                 parameter_schema['alias'] = alias_generator(name)
         return parameter_schema
-
-    def _generic_collection_schema(
-        self, parent_type: type[Any], type_: type[Any], origin: type[Any]
-    ) -> core_schema.CoreSchema:
-        """
-        Generate schema for List, Set, and FrozenSet, possibly parameterized.
-
-        :param parent_type: Either `list`, `set` or `frozenset` - the builtin type
-        :param type_: The type of the collection, e.g. `List[int]` or `List`, or a subclass of one of them
-        :param origin: The origin type
-        """
-        schema: core_schema.CoreSchema = {  # type: ignore[misc,assignment]
-            'type': parent_type.__name__.lower(),
-            'items_schema': self.generate_schema(get_first_arg(type_)),
-        }
-
-        if origin == parent_type:
-            return schema
-        else:
-            # Ensure the validated value is converted back to the specific subclass type
-            # NOTE: we might have better performance by using a tuple or list validator for the schema here,
-            # but if you care about performance, you can define your own schema.
-            # We should optimize for compatibility, not performance in this case
-            return core_schema.general_after_validator_function(
-                lambda __input_value, __info: type_(__input_value), schema
-            )
 
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
         """
@@ -1153,15 +1127,28 @@ class GenerateSchema:
         Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
         """
         first_arg, *other_args = get_args(annotated_type)
-        return self._apply_annotations(CallbackGetCoreSchemaHandler(self.generate_schema), first_arg, other_args)
 
-    def _get_prepare_pydantic_annotations_for_known_type(self, obj: Any) -> Callable[..., Any] | None:
-        from decimal import Decimal
+        source_type, annotations = self._prepare_annotations(first_arg, other_args)
 
+        return self._apply_annotations(
+            CallbackGetCoreSchemaHandler(self.generate_schema, self.generate_schema), source_type, annotations
+        )
+
+    def _get_prepare_pydantic_annotations_for_known_type(
+        self, obj: Any, annotations: tuple[Any, ...]
+    ) -> Iterable[Any] | None:
         from . import _std_types_schema as std_types
 
-        if obj is Decimal:
-            return std_types.decimal_prepare_pydantic_annotations
+        for gen in (
+            std_types.decimal_prepare_pydantic_annotations,
+            std_types.sequence_like_prepare_pydantic_annotations,
+            std_types.datetime_prepare_pydantic_annotations,
+            std_types.uuid_prepare_pydantic_annotations,
+            std_types.path_schema_prepare_pydantic_annotations,
+        ):
+            res = gen(obj, annotations)
+            if res is not None:
+                return res
 
         return None
 
@@ -1172,22 +1159,29 @@ class GenerateSchema:
         This should be treated conceptually similar to the transformation
         `Annotated[source_type, *annotations]` -> `Annotated[new_source_type, *new_annotations]`
         """
-        prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
-        if prepare is None:
-            # check if this is one of our "known" types
-            prepare = self._get_prepare_pydantic_annotations_for_known_type(source_type)
 
-        if prepare is not None:
-            # make annotations a tuple to error if it gets mutated
-            # make the return type a list to support generators or returning a sequence
-            res = list(prepare(source_type, tuple(annotations)))
+        def split_return(res: Iterable[Any]) -> tuple[Any, list[Any]]:
+            res = list(res)  # support generators
             if not res:
                 raise PydanticSchemaGenerationError(
                     f'The type {source_type} that implements `__prepare_pydantic_annotations__`'
                     ' returned no annotations when called.'
                     ' Custom types must return at least 1 item since the first item is the replacement source type.'
                 )
-            source_type, *annotations = res
+            tp, *annotations = res
+            return tp, annotations
+
+        prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
+
+        annotations = tuple(annotations)  # make them immutable to avoid confusion over mutating them
+
+        if prepare is not None:
+            source_type, annotations = split_return(prepare(source_type, tuple(annotations)))
+        else:
+            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, annotations)
+            if res is not None:
+                source_type, annotations = split_return(res)
+
         return (source_type, list(annotations))
 
     def _apply_annotations(
@@ -1195,6 +1189,7 @@ class GenerateSchema:
         get_inner_schema: GetCoreSchemaHandler,
         source_type: Any,
         annotations: typing.Iterable[Any],
+        check_prepare_on_source: bool = True,
     ) -> CoreSchema:
         """
         Apply arguments from `Annotated` or from `FieldInfo` to a schema.
@@ -1203,8 +1198,6 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
-        source_type, annotations = self._prepare_annotations(source_type, annotations)
-
         idx = -1
         while True:
             idx += 1
@@ -1220,9 +1213,28 @@ class GenerateSchema:
                 remaining = list(prepare(source_type, tuple(remaining)))
                 annotations = previous + remaining
             annotation = annotations[idx]
-            get_inner_schema = get_wrapped_inner_schema(get_inner_schema, annotation, self.definitions)
+            get_inner_schema = self._get_wrapped_inner_schema(get_inner_schema, annotation, self.definitions)
 
         return get_inner_schema(source_type)
+
+    def _get_wrapped_inner_schema(
+        self, get_inner_schema: GetCoreSchemaHandler, annotation: Any, definitions: dict[str, core_schema.CoreSchema]
+    ) -> CallbackGetCoreSchemaHandler:
+        metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
+            lambda source, handler: handler(source)
+        )
+
+        def new_handler(source: Any) -> core_schema.CoreSchema:
+            schema = metadata_get_schema(source, get_inner_schema)
+            schema = apply_single_annotation(schema, annotation, definitions)
+
+            metadata_js_function = _extract_get_pydantic_json_schema(annotation)
+            if metadata_js_function is not None:
+                metadata = CoreMetadataHandler(schema).metadata
+                metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
+            return schema
+
+        return CallbackGetCoreSchemaHandler(new_handler, self.generate_schema)
 
 
 _VALIDATOR_F_MATCH: Mapping[
@@ -1363,26 +1375,6 @@ def apply_model_validators(
             else:
                 schema = core_schema.no_info_after_validator_function(function=validator.func, schema=schema)
     return schema
-
-
-def get_wrapped_inner_schema(
-    get_inner_schema: GetCoreSchemaHandler, annotation: Any, definitions: dict[str, core_schema.CoreSchema]
-) -> CallbackGetCoreSchemaHandler:
-    metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
-        lambda source, handler: handler(source)
-    )
-
-    def new_handler(source: Any) -> core_schema.CoreSchema:
-        schema = metadata_get_schema(source, get_inner_schema)
-        schema = apply_single_annotation(schema, annotation, definitions)
-
-        metadata_js_function = _extract_get_pydantic_json_schema(annotation)
-        if metadata_js_function is not None:
-            metadata = CoreMetadataHandler(schema).metadata
-            metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
-        return schema
-
-    return CallbackGetCoreSchemaHandler(new_handler)
 
 
 def apply_single_annotation(

@@ -11,7 +11,6 @@ import typing
 from collections import OrderedDict, defaultdict, deque
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any
-from uuid import UUID
 
 from pydantic_core import PydanticCustomError, core_schema
 
@@ -103,21 +102,6 @@ def _import_string_logic(dotted_path: str) -> Any:
         return getattr(module, class_name)
     except AttributeError as e:
         raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
-
-
-def uuid_validator(__input_value: str | bytes) -> UUID:
-    try:
-        if isinstance(__input_value, str):
-            return UUID(__input_value)
-        else:
-            try:
-                return UUID(__input_value.decode())
-            except ValueError:
-                # 16 bytes in big-endian order as the bytes argument fail
-                # the above check
-                return UUID(bytes=__input_value)
-    except ValueError:
-        raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
 
 
 def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:
