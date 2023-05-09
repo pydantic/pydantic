@@ -415,23 +415,25 @@ SerSchema = Union[
 class ComputedField(TypedDict, total=False):
     type: Required[Literal['computed-field']]
     property_name: Required[str]
-    json_return_type: JsonReturnTypes
+    return_schema: Required[CoreSchema]
     alias: str
+    metadata: Any
 
 
 def computed_field(
-    property_name: str, *, json_return_type: JsonReturnTypes | None = None, alias: str | None = None
+    property_name: str, return_schema: CoreSchema, *, alias: str | None = None, metadata: Any = None
 ) -> ComputedField:
     """
     ComputedFields are properties of a model or dataclass that are included in serialization.
 
     Args:
         property_name: The name of the property on the model or dataclass
-        json_return_type: The type that the property returns if `mode='json'`
+        return_schema: The schema used for the type returned by the computed field
         alias: The name to use in the serialized output
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
     """
     return dict_not_none(
-        type='computed-field', property_name=property_name, json_return_type=json_return_type, alias=alias
+        type='computed-field', property_name=property_name, return_schema=return_schema, alias=alias, metadata=metadata
     )
 
 
@@ -3676,6 +3678,8 @@ CoreSchemaType = Literal[
     'definitions',
     'definition-ref',
 ]
+
+CoreSchemaFieldType = Literal['model-field', 'dataclass-field', 'typed-dict-field', 'computed-field']
 
 
 # used in _pydantic_core.pyi::PydanticKnownError

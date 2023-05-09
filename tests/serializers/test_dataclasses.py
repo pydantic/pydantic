@@ -105,7 +105,7 @@ def test_properties():
                 core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
                 core_schema.dataclass_field(name='b', schema=core_schema.bytes_schema()),
             ],
-            computed_fields=[core_schema.computed_field('c')],
+            computed_fields=[core_schema.computed_field('c', core_schema.str_schema())],
         ),
     )
     s = SchemaSerializer(schema)
