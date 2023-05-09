@@ -46,17 +46,22 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/api/decorators/</loc>
-         <lastmod>2023-05-09</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/api/errors/</loc>
          <lastmod>2023-05-09</lastmod>
          <changefreq>daily</changefreq>
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/api/fields/</loc>
+         <lastmod>2023-05-09</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/functional_serializers/</loc>
+         <lastmod>2023-05-09</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/functional_validators/</loc>
          <lastmod>2023-05-09</lastmod>
          <changefreq>daily</changefreq>
     </url>

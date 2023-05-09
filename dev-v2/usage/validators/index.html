@@ -334,7 +334,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
     <li class="md-tabs__item">
       <a href="../../api/main/" class="md-tabs__link">
-        API
+        API Documentation
       </a>
     </li>
   
@@ -975,8 +975,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#root-validators" class="md-nav__link">
-    Root Validators
+  <a href="#model-validators" class="md-nav__link">
+    Model Validators
   </a>
   
 </li>
@@ -1428,14 +1428,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
       
         <label class="md-nav__link" for="__nav_7" id="__nav_7_label" tabindex="0">
-          API
+          API Documentation
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
-          API
+          API Documentation
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1529,8 +1529,22 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/decorators/" class="md-nav__link">
-        pydantic.decorators
+      <a href="../../api/functional_validators/" class="md-nav__link">
+        pydantic.functional_validators
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api/functional_serializers/" class="md-nav__link">
+        pydantic.functional_serializers
       </a>
     </li>
   
@@ -1716,8 +1730,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#root-validators" class="md-nav__link">
-    Root Validators
+  <a href="#model-validators" class="md-nav__link">
+    Model Validators
   </a>
   
 </li>
@@ -1857,7 +1871,7 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated_arguments</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
 
 
 <span class="k">def</span> <span class="nf">check_squares</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
@@ -1925,7 +1939,7 @@ disables <code>assert</code> statements, and <strong>validators will stop workin
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated_arguments</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
 
 
 <span class="k">def</span> <span class="nf">check_squares</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
@@ -2009,7 +2023,7 @@ In this example we also use type aliases to create a generic validated collectio
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated_arguments</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
 
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
 
@@ -2033,7 +2047,7 @@ In this example we also use type aliases to create a generic validated collectio
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated_arguments</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
+<span class="kn">from</span> <span class="nn">pydantic.functional_validators</span> <span class="kn">import</span> <span class="n">AfterValidator</span>
 
 <span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;T&#39;</span><span class="p">)</span>
 
@@ -2115,9 +2129,9 @@ declarative.</p>
 define a help function with which you will avoid setting <code>allow_reuse=True</code> over and
 over again.</p>
 </div>
-<h2 id="root-validators">Root Validators<a class="headerlink" href="#root-validators" title="Permanent link">&para;</a></h2>
+<h2 id="model-validators">Model Validators<a class="headerlink" href="#model-validators" title="Permanent link">&para;</a></h2>
 <p>Validation can also be performed on the entire model's data.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">root_validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">model_validator</span>
 
 
 <span class="k">class</span> <span class="nc">UserModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -2125,17 +2139,18 @@ over again.</p>
     <span class="n">password1</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">password2</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="nd">@root_validator</span><span class="p">(</span><span class="n">pre</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_card_number_omitted</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
-        <span class="k">assert</span> <span class="s1">&#39;card_number&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">values</span><span class="p">,</span> <span class="s1">&#39;card_number should not be included&#39;</span>
-        <span class="k">return</span> <span class="n">values</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;before&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">check_card_number_omitted</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+        <span class="k">assert</span> <span class="s1">&#39;card_number&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">data</span><span class="p">,</span> <span class="s1">&#39;card_number should not be included&#39;</span>
+        <span class="k">return</span> <span class="n">data</span>
 
-    <span class="nd">@root_validator</span><span class="p">(</span><span class="n">skip_on_failure</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
-        <span class="n">pw1</span><span class="p">,</span> <span class="n">pw2</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password1&#39;</span><span class="p">),</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;password2&#39;</span><span class="p">)</span>
+    <span class="nd">@model_validator</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="s1">&#39;after&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">check_passwords_match</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">m</span><span class="p">:</span> <span class="s1">&#39;UserModel&#39;</span><span class="p">):</span>
+        <span class="n">pw1</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">password1</span>
+        <span class="n">pw2</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">password2</span>
         <span class="k">if</span> <span class="n">pw1</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw2</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pw1</span> <span class="o">!=</span> <span class="n">pw2</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;passwords do not match&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">values</span>
+        <span class="k">return</span> <span class="n">m</span>
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">UserModel</span><span class="p">(</span><span class="n">username</span><span class="o">=</span><span class="s1">&#39;scolvin&#39;</span><span class="p">,</span> <span class="n">password1</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">,</span> <span class="n">password2</span><span class="o">=</span><span class="s1">&#39;zxcvbn&#39;</span><span class="p">))</span>

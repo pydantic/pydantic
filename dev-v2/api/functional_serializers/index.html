@@ -10,20 +10,20 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/mypy/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/functional_serializers/">
       
       
-        <link rel="prev" href="../../usage/errors/">
+        <link rel="prev" href="../functional_validators/">
       
       
-        <link rel="next" href="../pycharm/">
+        <link rel="next" href="../errors/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.8">
     
     
       
-        <title>Mypy - pydantic</title>
+        <title>pydantic.functional_serializers - pydantic</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#using-mypy-without-the-plugin" class="md-skip">
+        <a href="#pydantic.functional_serializers" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +135,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Mypy
+              pydantic.functional_serializers
             
           </span>
         </div>
@@ -281,15 +281,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
   
   
-    
-  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="./" class="md-tabs__link md-tabs__link--active">
+      <a href="../../integrations/mypy/" class="md-tabs__link">
         Integrations
       </a>
     </li>
@@ -327,13 +325,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
   
   
+    
+  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../../api/main/" class="md-tabs__link">
+      <a href="../main/" class="md-tabs__link md-tabs__link--active">
         API Documentation
       </a>
     </li>
@@ -1116,16 +1116,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
       
       
       
@@ -1134,7 +1132,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           Integrations
@@ -1145,172 +1143,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Mypy
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../integrations/mypy/" class="md-nav__link">
         Mypy
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#using-mypy-without-the-plugin" class="md-nav__link">
-    Using mypy without the plugin
-  </a>
-  
-    <nav class="md-nav" aria-label="Using mypy without the plugin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#strict-optional" class="md-nav__link">
-    Strict Optional
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#other-pydantic-interfaces" class="md-nav__link">
-    Other Pydantic interfaces
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#mypy-plugin-capabilities" class="md-nav__link">
-    Mypy Plugin Capabilities
-  </a>
-  
-    <nav class="md-nav" aria-label="Mypy Plugin Capabilities">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-signature-for-model__init__" class="md-nav__link">
-    Generate a signature for Model.__init__
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-typed-signature-for-modelmodel_construct" class="md-nav__link">
-    Generate a typed signature for Model.model_construct
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configallow_mutation" class="md-nav__link">
-    Respect Config.allow_mutation
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configfrom_attributes" class="md-nav__link">
-    Respect Config.from_attributes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-signature-for-dataclasses" class="md-nav__link">
-    Generate a signature for dataclasses
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-the-type-of-the-fields-default-and-default_factory" class="md-nav__link">
-    Respect the type of the Field's default and default_factory
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#warn-about-the-use-of-untyped-fields" class="md-nav__link">
-    Warn about the use of untyped fields
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-capabilities" class="md-nav__link">
-    Optional Capabilities:
-  </a>
-  
-    <nav class="md-nav" aria-label="Optional Capabilities:">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prevent-the-use-of-required-dynamic-aliases" class="md-nav__link">
-    Prevent the use of required dynamic aliases
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enabling-the-plugin" class="md-nav__link">
-    Enabling the Plugin
-  </a>
-  
-    <nav class="md-nav" aria-label="Enabling the Plugin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configuring-the-plugin" class="md-nav__link">
-    Configuring the Plugin
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1322,7 +1159,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../pycharm/" class="md-nav__link">
+      <a href="../../integrations/pycharm/" class="md-nav__link">
         PyCharm
       </a>
     </li>
@@ -1336,7 +1173,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../hypothesis/" class="md-nav__link">
+      <a href="../../integrations/hypothesis/" class="md-nav__link">
         Hypothesis
       </a>
     </li>
@@ -1350,7 +1187,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../visual_studio_code/" class="md-nav__link">
+      <a href="../../integrations/visual_studio_code/" class="md-nav__link">
         Visual Studio Code
       </a>
     </li>
@@ -1364,7 +1201,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../datamodel_code_generator/" class="md-nav__link">
+      <a href="../../integrations/datamodel_code_generator/" class="md-nav__link">
         datamodel-code-generator
       </a>
     </li>
@@ -1378,7 +1215,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../devtools/" class="md-nav__link">
+      <a href="../../integrations/devtools/" class="md-nav__link">
         devtools
       </a>
     </li>
@@ -1392,7 +1229,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../rich/" class="md-nav__link">
+      <a href="../../integrations/rich/" class="md-nav__link">
         Rich
       </a>
     </li>
@@ -1490,14 +1327,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
       
       
       
@@ -1506,7 +1345,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           API Documentation
@@ -1519,7 +1358,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/main/" class="md-nav__link">
+      <a href="../main/" class="md-nav__link">
         pydantic
       </a>
     </li>
@@ -1533,7 +1372,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/alias_generators/" class="md-nav__link">
+      <a href="../alias_generators/" class="md-nav__link">
         pydantic.alias_generators
       </a>
     </li>
@@ -1547,7 +1386,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/type_adapter/" class="md-nav__link">
+      <a href="../type_adapter/" class="md-nav__link">
         pydantic.type_adapter
       </a>
     </li>
@@ -1561,7 +1400,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/color/" class="md-nav__link">
+      <a href="../color/" class="md-nav__link">
         pydantic.color
       </a>
     </li>
@@ -1575,7 +1414,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         pydantic.config
       </a>
     </li>
@@ -1589,7 +1428,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/dataclasses/" class="md-nav__link">
+      <a href="../dataclasses/" class="md-nav__link">
         pydantic.dataclasses
       </a>
     </li>
@@ -1603,7 +1442,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/functional_validators/" class="md-nav__link">
+      <a href="../functional_validators/" class="md-nav__link">
         pydantic.functional_validators
       </a>
     </li>
@@ -1615,11 +1454,64 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../api/functional_serializers/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic.functional_serializers
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         pydantic.functional_serializers
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_serializers" class="md-nav__link">
+    pydantic.functional_serializers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_serializers.field_serializer" class="md-nav__link">
+    field_serializer()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_serializers.model_serializer" class="md-nav__link">
+    model_serializer()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1631,7 +1523,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         pydantic.errors
       </a>
     </li>
@@ -1645,7 +1537,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/fields/" class="md-nav__link">
+      <a href="../fields/" class="md-nav__link">
         pydantic.fields
       </a>
     </li>
@@ -1659,7 +1551,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/json_schema/" class="md-nav__link">
+      <a href="../json_schema/" class="md-nav__link">
         pydantic.json_schema
       </a>
     </li>
@@ -1673,7 +1565,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/mypy/" class="md-nav__link">
+      <a href="../mypy/" class="md-nav__link">
         pydantic.mypy
       </a>
     </li>
@@ -1687,7 +1579,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/networks/" class="md-nav__link">
+      <a href="../networks/" class="md-nav__link">
         pydantic.networks
       </a>
     </li>
@@ -1701,7 +1593,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/types/" class="md-nav__link">
+      <a href="../types/" class="md-nav__link">
         pydantic.types
       </a>
     </li>
@@ -1715,7 +1607,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/validate_call/" class="md-nav__link">
+      <a href="../validate_call/" class="md-nav__link">
         pydantic.validate_call
       </a>
     </li>
@@ -1729,7 +1621,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/version/" class="md-nav__link">
+      <a href="../version/" class="md-nav__link">
         pydantic.version
       </a>
     </li>
@@ -1770,131 +1662,23 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#using-mypy-without-the-plugin" class="md-nav__link">
-    Using mypy without the plugin
+  <a href="#pydantic.functional_serializers" class="md-nav__link">
+    pydantic.functional_serializers
   </a>
-  
-    <nav class="md-nav" aria-label="Using mypy without the plugin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#strict-optional" class="md-nav__link">
-    Strict Optional
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#other-pydantic-interfaces" class="md-nav__link">
-    Other Pydantic interfaces
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#mypy-plugin-capabilities" class="md-nav__link">
-    Mypy Plugin Capabilities
+  <a href="#pydantic.functional_serializers.field_serializer" class="md-nav__link">
+    field_serializer()
   </a>
-  
-    <nav class="md-nav" aria-label="Mypy Plugin Capabilities">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-signature-for-model__init__" class="md-nav__link">
-    Generate a signature for Model.__init__
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-typed-signature-for-modelmodel_construct" class="md-nav__link">
-    Generate a typed signature for Model.model_construct
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configallow_mutation" class="md-nav__link">
-    Respect Config.allow_mutation
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configfrom_attributes" class="md-nav__link">
-    Respect Config.from_attributes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-signature-for-dataclasses" class="md-nav__link">
-    Generate a signature for dataclasses
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-the-type-of-the-fields-default-and-default_factory" class="md-nav__link">
-    Respect the type of the Field's default and default_factory
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#warn-about-the-use-of-untyped-fields" class="md-nav__link">
-    Warn about the use of untyped fields
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#optional-capabilities" class="md-nav__link">
-    Optional Capabilities:
+  <a href="#pydantic.functional_serializers.model_serializer" class="md-nav__link">
+    model_serializer()
   </a>
-  
-    <nav class="md-nav" aria-label="Optional Capabilities:">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prevent-the-use-of-required-dynamic-aliases" class="md-nav__link">
-    Prevent the use of required dynamic aliases
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enabling-the-plugin" class="md-nav__link">
-    Enabling the Plugin
-  </a>
-  
-    <nav class="md-nav" aria-label="Enabling the Plugin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configuring-the-plugin" class="md-nav__link">
-    Configuring the Plugin
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1917,216 +1701,392 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>Mypy</h1>
+  <h1>pydantic.functional_serializers</h1>
 
-<p>Pydantic works well with <a href="http://mypy-lang.org/">mypy</a> right out of the box.</p>
-<p>However, Pydantic also ships with a mypy plugin that adds a number of important pydantic-specific
-features to mypy that improve its ability to type-check your code.</p>
-<p>For example, consider the following script:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="doc doc-object doc-module">
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<a id="pydantic.functional_serializers"></a>
+  <div class="doc doc-contents first">
+
+  
+
+  <div class="doc doc-children">
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
-<span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="pydantic.functional_serializers.field_serializer" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">field_serializer</span>
+
+
+<a href="#pydantic.functional_serializers.field_serializer" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">field_serializer</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">fields</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
+    <span class="n">json_return_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">when_used</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
+    <span class="n">check_fields</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
 </code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Decorate methods on the class indicating that they should be used to serialize fields.</p>
+<p>Four signatures are supported:</p>
+<ul>
+<li><code>(self, value: Any, info: FieldSerializationInfo)</code></li>
+<li><code>(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)</code></li>
+<li><code>(value: Any, info: SerializationInfo)</code></li>
+<li><code>(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)</code></li>
+</ul>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>fields</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>Which field(s) the method should be called on.</p></td>
+          <td>
+                <code>()</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>mode</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p><code>plain</code> means the function will be called instead of the default serialization logic,
+<code>wrap</code> means the function will be called with an argument to optionally call the
+default serialization logic.</p></td>
+          <td>
+                <code>&#39;plain&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>json_return_type</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>The type that the function returns if the serialization mode is JSON.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>when_used</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>When the function should be called.</p></td>
+          <td>
+                <code>&#39;always&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>check_fields</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td><p>Whether to check that the fields actually exist on the model.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>Callable</code></td>          <td>
+                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
+          </td>
+          <td><p>A decorator that can be used to decorate a function to be used as a field serializer.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
+    <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
+    <span class="n">json_return_type</span><span class="p">:</span> <span class="n">_core_schema</span><span class="o">.</span><span class="n">JsonReturnTypes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span><span class="p">,</span>
+    <span class="n">check_fields</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorate methods on the class indicating that they should be used to serialize fields.</span>
+
+<span class="sd">    Four signatures are supported:</span>
+
+<span class="sd">    - `(self, value: Any, info: FieldSerializationInfo)`</span>
+<span class="sd">    - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`</span>
+<span class="sd">    - `(value: Any, info: SerializationInfo)`</span>
+<span class="sd">    - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        fields (str): Which field(s) the method should be called on.</span>
+<span class="sd">        mode (str): `plain` means the function will be called instead of the default serialization logic,</span>
+<span class="sd">            `wrap` means the function will be called with an argument to optionally call the</span>
+<span class="sd">            default serialization logic.</span>
+<span class="sd">        json_return_type (str): The type that the function returns if the serialization mode is JSON.</span>
+<span class="sd">        when_used (str): When the function should be called.</span>
+<span class="sd">        check_fields (bool): Whether to check that the fields actually exist on the model.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Callable: A decorator that can be used to decorate a function to be used as a field serializer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span>
+        <span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">staticmethod</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">classmethod</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">FieldSerializerDecoratorInfo</span><span class="p">(</span>
+            <span class="n">fields</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span>
+            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+            <span class="n">json_return_type</span><span class="o">=</span><span class="n">json_return_type</span><span class="p">,</span>
+            <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span><span class="p">,</span>
+            <span class="n">check_fields</span><span class="o">=</span><span class="n">check_fields</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">dec</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
 </div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="doc doc-object doc-function">
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+
+<h2 id="pydantic.functional_serializers.model_serializer" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">model_serializer</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
-<span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
+<a href="#pydantic.functional_serializers.model_serializer" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">model_serializer</span><span class="p">(</span>
+    <span class="n">__f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span> <span class="n">json_return_type</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
 </code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Decorate a function which will be called to serialize the model.</p>
+<p>(<code>when_used</code> is not permitted here since it makes no sense.)</p>
+
+  <p><strong>Parameters:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+        <th>Default</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>__f</code></td>
+          <td>
+                <code><span title="typing.Callable">Callable</span>[..., <span title="typing.Any">Any</span>] | None</code>
+          </td>
+          <td><p>The function to be decorated.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>mode</code></td>
+          <td>
+                <code><span title="typing_extensions.Literal">Literal</span>[&#39;plain&#39;, &#39;wrap&#39;]</code>
+          </td>
+          <td><p>The serialization mode. <code>'plain'</code> means the function will be called
+instead of the default serialization logic, <code>'wrap'</code> means the function will be called with an argument
+to optionally call the default serialization logic.</p></td>
+          <td>
+                <code>&#39;plain&#39;</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>json_return_type</code></td>
+          <td>
+                <code><span title="pydantic_core.core_schema">_core_schema</span>.<span title="pydantic_core.core_schema.JsonReturnTypes">JsonReturnTypes</span> | None</code>
+          </td>
+          <td><p>The type that the function returns if the
+serialization mode is JSON.</p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>Callable</code></td>          <td>
+                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="pydantic._internal._decorators">_decorators</span>.<span title="pydantic._internal._decorators.PydanticDescriptorProxy">PydanticDescriptorProxy</span>[<span title="typing.Any">Any</span>]] | <span title="pydantic._internal._decorators">_decorators</span>.<span title="pydantic._internal._decorators.PydanticDescriptorProxy">PydanticDescriptorProxy</span>[<span title="typing.Any">Any</span>]</code>
+          </td>
+          <td><p>A decorator that can be used to decorate a function to be used as a model serializer.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
+    <span class="n">__f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
+    <span class="n">json_return_type</span><span class="p">:</span> <span class="n">_core_schema</span><span class="o">.</span><span class="n">JsonReturnTypes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Decorate a function which will be called to serialize the model.</span>
+
+<span class="sd">    (`when_used` is not permitted here since it makes no sense.)</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        __f (Callable[..., Any] | None): The function to be decorated.</span>
+<span class="sd">        mode (Literal[&#39;plain&#39;, &#39;wrap&#39;]): The serialization mode. `&#39;plain&#39;` means the function will be called</span>
+<span class="sd">            instead of the default serialization logic, `&#39;wrap&#39;` means the function will be called with an argument</span>
+<span class="sd">            to optionally call the default serialization logic.</span>
+<span class="sd">        json_return_type (_core_schema.JsonReturnTypes | None): The type that the function returns if the</span>
+<span class="sd">            serialization mode is JSON.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        Callable: A decorator that can be used to decorate a function to be used as a model serializer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ModelSerializerDecoratorInfo</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">json_return_type</span><span class="o">=</span><span class="n">json_return_type</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">__f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dec</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">dec</span><span class="p">(</span><span class="n">__f</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
 </div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
+  </div>
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
-<span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
-</code></pre></div>
+  </div>
+
 </div>
-</div>
-</div>
-<p>Without any special configuration, mypy catches one of the errors:</p>
-<div class="highlight"><pre><span></span><code>13: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;
-</code></pre></div>
-<p>But <a href="#enabling-the-plugin">with the plugin enabled</a>, it catches both:
-<div class="highlight"><pre><span></span><code>13: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;
-16: error: Missing named argument &quot;age&quot; for &quot;Model&quot;
-16: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;
-</code></pre></div></p>
-<p>With the pydantic mypy plugin, you can fearlessly refactor your models knowing mypy will catch any mistakes
-if your field names or types change.</p>
-<p>There are other benefits too! See below for more details.</p>
-<h2 id="using-mypy-without-the-plugin">Using mypy without the plugin<a class="headerlink" href="#using-mypy-without-the-plugin" title="Permanent link">&para;</a></h2>
-<p>You can run your code through mypy with:</p>
-<div class="highlight"><pre><span></span><code>mypy<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--ignore-missing-imports<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--follow-imports<span class="o">=</span>skip<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--strict-optional<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>pydantic_mypy_test.py
-</code></pre></div>
-<h3 id="strict-optional">Strict Optional<a class="headerlink" href="#strict-optional" title="Permanent link">&para;</a></h3>
-<p>For your code to pass with <code>--strict-optional</code>, you need to to use <code>Optional[]</code> or an alias of <code>Optional[]</code>
-for all fields with <code>None</code> as the default. (This is standard with mypy.)</p>
-<p>Pydantic provides a few useful optional or union types:</p>
-<ul>
-<li><code>NoneStr</code> aka. <code>Optional[str]</code></li>
-<li><code>NoneBytes</code> aka. <code>Optional[bytes]</code></li>
-<li><code>StrBytes</code> aka. <code>Union[str, bytes]</code></li>
-<li><code>NoneStrBytes</code> aka. <code>Optional[StrBytes]</code></li>
-</ul>
-<p>If these aren't sufficient you can of course define your own.</p>
-<h3 id="other-pydantic-interfaces">Other Pydantic interfaces<a class="headerlink" href="#other-pydantic-interfaces" title="Permanent link">&para;</a></h3>
-<p>Pydantic <a href="/usage/dataclasses/">dataclasses</a> and the <a href="/usage/validation_decorator/"><code>validate_arguments</code> decorator</a>
-should also work well with mypy.</p>
-<h2 id="mypy-plugin-capabilities">Mypy Plugin Capabilities<a class="headerlink" href="#mypy-plugin-capabilities" title="Permanent link">&para;</a></h2>
-<h3 id="generate-a-signature-for-model__init__">Generate a signature for <code>Model.__init__</code><a class="headerlink" href="#generate-a-signature-for-model__init__" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Any required fields that don't have dynamically-determined aliases will be included as required
-  keyword arguments.</li>
-<li>If <code>Config.populate_by_name=True</code>, the generated signature will use the field names,
-  rather than aliases.</li>
-<li>If <code>Config.extra="forbid"</code> and you don't make use of dynamically-determined aliases, the generated signature
-  will not allow unexpected inputs.</li>
-<li><strong>Optional:</strong> If the <a href="#plugin-settings"><code>init_forbid_extra</code> <strong>plugin setting</strong></a> is set to <code>True</code>, unexpected inputs to
-  <code>__init__</code> will raise errors even if <code>Config.extra</code> is not <code>"forbid"</code>.</li>
-<li><strong>Optional:</strong> If the <a href="#plugin-settings"><code>init_typed</code> <strong>plugin setting</strong></a> is set to <code>True</code>, the generated signature
-  will use the types of the model fields (otherwise they will be annotated as <code>Any</code> to allow parsing).</li>
-</ul>
-<h3 id="generate-a-typed-signature-for-modelmodel_construct">Generate a typed signature for <code>Model.model_construct</code><a class="headerlink" href="#generate-a-typed-signature-for-modelmodel_construct" title="Permanent link">&para;</a></h3>
-<ul>
-<li>The <a href="/usage/models/#creating-models-without-validation"><code>model_construct</code></a> method is a faster alternative to <code>__init__</code>
-  when input data is known to be valid and does not need to be parsed. But because this method performs no runtime
-  validation, static checking is important to detect errors.</li>
-</ul>
-<h3 id="respect-configallow_mutation">Respect <code>Config.allow_mutation</code><a class="headerlink" href="#respect-configallow_mutation" title="Permanent link">&para;</a></h3>
-<ul>
-<li>If <code>Config.allow_mutation</code> is <code>False</code>, you'll get a mypy error if you try to change
-  the value of a model field; cf. <a href="/usage/models/#faux-immutability">faux immutability</a>.</li>
-</ul>
-<h3 id="respect-configfrom_attributes">Respect <code>Config.from_attributes</code><a class="headerlink" href="#respect-configfrom_attributes" title="Permanent link">&para;</a></h3>
-<ul>
-<li>If <code>Config.from_attributes</code> is <code>False</code>, you'll get a mypy error if you try to call <code>.from_orm()</code>;
-  cf. <a href="/usage/models/#orm-mode-aka-arbitrary-class-instances">ORM mode</a></li>
-</ul>
-<h3 id="generate-a-signature-for-dataclasses">Generate a signature for <code>dataclasses</code><a class="headerlink" href="#generate-a-signature-for-dataclasses" title="Permanent link">&para;</a></h3>
-<ul>
-<li>classes decorated with <a href="/usage/dataclasses/"><code>@pydantic.dataclasses.dataclass</code></a> are type checked the same as standard Python dataclasses</li>
-<li>The <code>@pydantic.dataclasses.dataclass</code> decorator accepts a <code>config</code> keyword argument which has the same meaning as <a href="/usage/model_config/">the <code>Config</code> sub-class</a>.</li>
-</ul>
-<h3 id="respect-the-type-of-the-fields-default-and-default_factory">Respect the type of the <code>Field</code>'s <code>default</code> and <code>default_factory</code><a class="headerlink" href="#respect-the-type-of-the-fields-default-and-default_factory" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Field with both a <code>default</code> and a <code>default_factory</code> will result in an error during static checking.</li>
-<li>The type of the <code>default</code> and <code>default_factory</code> value must be compatible with the one of the field.</li>
-</ul>
-<h3 id="warn-about-the-use-of-untyped-fields">Warn about the use of untyped fields<a class="headerlink" href="#warn-about-the-use-of-untyped-fields" title="Permanent link">&para;</a></h3>
-<ul>
-<li>You'll get a mypy error any time you assign a public attribute on a model without annotating its type</li>
-<li>If your goal is to set a ClassVar, you should explicitly annotate the field using typing.ClassVar</li>
-</ul>
-<h2 id="optional-capabilities">Optional Capabilities:<a class="headerlink" href="#optional-capabilities" title="Permanent link">&para;</a></h2>
-<h3 id="prevent-the-use-of-required-dynamic-aliases">Prevent the use of required dynamic aliases<a class="headerlink" href="#prevent-the-use-of-required-dynamic-aliases" title="Permanent link">&para;</a></h3>
-<ul>
-<li>If the <a href="#plugin-settings"><code>warn_required_dynamic_aliases</code> <strong>plugin setting</strong></a> is set to <code>True</code>, you'll get a mypy
-  error any time you use a dynamically-determined alias or alias generator on a model with
-  <code>Config.populate_by_name=False</code>.</li>
-<li>This is important because if such aliases are present, mypy cannot properly type check calls to <code>__init__</code>.
-  In this case, it will default to treating all arguments as optional.</li>
-</ul>
-<h2 id="enabling-the-plugin">Enabling the Plugin<a class="headerlink" href="#enabling-the-plugin" title="Permanent link">&para;</a></h2>
-<p>To enable the plugin, just add <code>pydantic.mypy</code> to the list of plugins in your
-<a href="https://mypy.readthedocs.io/en/latest/config_file.html">mypy config file</a>
-(this could be <code>mypy.ini</code> or <code>setup.cfg</code>).</p>
-<p>To get started, all you need to do is create a <code>mypy.ini</code> file with following contents:
-<div class="highlight"><pre><span></span><code><span class="k">[mypy]</span>
-<span class="na">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pydantic.mypy</span>
-</code></pre></div></p>
-<p>The plugin is compatible with mypy versions <code>&gt;=0.930</code>.</p>
-<p>See the <a href="#configuring-the-plugin">plugin configuration</a> docs for more details.</p>
-<h3 id="configuring-the-plugin">Configuring the Plugin<a class="headerlink" href="#configuring-the-plugin" title="Permanent link">&para;</a></h3>
-<p>To change the values of the plugin settings, create a section in your mypy config file called <code>[pydantic-mypy]</code>,
-and add any key-value pairs for settings you want to override.</p>
-<p>A <code>mypy.ini</code> file with all plugin strictness flags enabled (and some other mypy strictness flags, too) might look like:</p>
-<div class="highlight"><pre><span></span><code><span class="k">[mypy]</span>
-<span class="na">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pydantic.mypy</span>
-
-<span class="na">follow_imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">silent</span>
-<span class="na">warn_redundant_casts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">warn_unused_ignores</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">disallow_any_generics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">check_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">no_implicit_reexport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-
-<span class="c1"># for strict mypy: (this is the tricky one :-))</span>
-<span class="na">disallow_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-
-<span class="k">[pydantic-mypy]</span>
-<span class="na">init_forbid_extra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">init_typed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">warn_required_dynamic_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-</code></pre></div>
-<p>As of <code>mypy&gt;=0.900</code>, mypy config may also be included in the <code>pyproject.toml</code> file rather than <code>mypy.ini</code>.
-The same configuration as above would be:</p>
-<div class="highlight"><pre><span></span><code><span class="k">[tool.mypy]</span>
-<span class="n">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s">&quot;pydantic.mypy&quot;</span>
-<span class="p">]</span>
-
-<span class="n">follow_imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;silent&quot;</span>
-<span class="n">warn_redundant_casts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">warn_unused_ignores</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">disallow_any_generics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">check_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">no_implicit_reexport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-
-<span class="c1"># for strict mypy: (this is the tricky one :-))</span>
-<span class="n">disallow_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-
-<span class="k">[tool.pydantic-mypy]</span>
-<span class="n">init_forbid_extra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">init_typed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">warn_required_dynamic_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-</code></pre></div>
 
 
 
