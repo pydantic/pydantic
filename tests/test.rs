@@ -42,7 +42,9 @@ schema = {
     "cls": A,
     "config": {},
     "schema": {
-        "computed_fields": [{"property_name": "b", "type": "computed-field"}],
+        "computed_fields": [
+            {"property_name": "b", "return_schema": {"type": "any"}, "type": "computed-field"}
+        ],
         "fields": {},
         "type": "model-fields",
     },

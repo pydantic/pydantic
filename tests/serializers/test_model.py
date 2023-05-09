@@ -546,7 +546,7 @@ def test_property():
                     'width': core_schema.model_field(core_schema.int_schema()),
                     'height': core_schema.model_field(core_schema.int_schema()),
                 },
-                computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
+                computed_fields=[core_schema.computed_field('area', core_schema.bytes_schema())],
             ),
         )
     )
@@ -578,8 +578,8 @@ def test_property_alias():
                     'height': core_schema.model_field(core_schema.int_schema()),
                 },
                 computed_fields=[
-                    core_schema.computed_field('area', alias='Area'),
-                    core_schema.computed_field('volume'),
+                    core_schema.computed_field('area', core_schema.int_schema(), alias='Area'),
+                    core_schema.computed_field('volume', core_schema.int_schema()),
                 ],
             ),
         )
@@ -608,7 +608,7 @@ def test_cached_property_alias():
                     'width': core_schema.model_field(core_schema.int_schema()),
                     'height': core_schema.model_field(core_schema.int_schema()),
                 },
-                computed_fields=[core_schema.computed_field('area')],
+                computed_fields=[core_schema.computed_field('area', core_schema.int_schema())],
             ),
         )
     )
@@ -627,7 +627,7 @@ def test_property_attribute_error():
             Model,
             core_schema.model_fields_schema(
                 {'width': core_schema.model_field(core_schema.int_schema())},
-                computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
+                computed_fields=[core_schema.computed_field('area', core_schema.bytes_schema())],
             ),
         )
     )
@@ -655,7 +655,7 @@ def test_property_other_error():
             Model,
             core_schema.model_fields_schema(
                 {'width': core_schema.model_field(core_schema.int_schema())},
-                computed_fields=[core_schema.computed_field('area', json_return_type='bytes')],
+                computed_fields=[core_schema.computed_field('area', core_schema.bytes_schema())],
             ),
         )
     )
@@ -684,7 +684,7 @@ def test_property_include_exclude():
             Model,
             core_schema.model_fields_schema(
                 {'a': core_schema.model_field(core_schema.int_schema())},
-                computed_fields=[core_schema.computed_field('b')],
+                computed_fields=[core_schema.computed_field('b', core_schema.list_schema())],
             ),
         )
     )
@@ -734,8 +734,8 @@ def test_property_setter():
             core_schema.model_fields_schema(
                 {'side': core_schema.model_field(core_schema.float_schema())},
                 computed_fields=[
-                    core_schema.computed_field('area', json_return_type='float'),
-                    core_schema.computed_field('random_n', alias='The random number', json_return_type='int'),
+                    core_schema.computed_field('area', core_schema.float_schema()),
+                    core_schema.computed_field('random_n', core_schema.int_schema(), alias='The random number'),
                 ],
             ),
         )

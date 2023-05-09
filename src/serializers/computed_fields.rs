@@ -1,30 +1,31 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
-
 use serde::ser::SerializeMap;
 use serde::Serialize;
 
-use crate::build_tools::SchemaDict;
+use crate::build_tools::{py_error_type, SchemaDict};
+use crate::definitions::DefinitionsBuilder;
 use crate::serializers::filter::SchemaFilter;
+use crate::serializers::shared::{BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer};
 
 use super::errors::py_err_se_err;
-use super::infer::{infer_serialize, infer_serialize_known, infer_to_python, infer_to_python_known};
-use super::ob_type::ObType;
 use super::Extra;
-
-use super::type_serializers::function::get_json_return_type;
 
 #[derive(Debug, Clone)]
 pub(super) struct ComputedFields(Vec<ComputedField>);
 
 impl ComputedFields {
-    pub fn new(schema: &PyDict) -> PyResult<Option<Self>> {
+    pub fn new(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
+    ) -> PyResult<Option<Self>> {
         let py = schema.py();
         if let Some(computed_fields) = schema.get_as::<&PyList>(intern!(py, "computed_fields"))? {
             let computed_fields = computed_fields
                 .iter()
-                .map(ComputedField::new)
+                .map(|field| ComputedField::new(field, config, definitions))
                 .collect::<PyResult<Vec<_>>>()?;
             Ok(Some(Self(computed_fields)))
         } else {
@@ -88,22 +89,28 @@ impl ComputedFields {
 struct ComputedField {
     property_name: String,
     property_name_py: Py<PyString>,
-    return_ob_type: Option<ObType>,
+    serializer: CombinedSerializer,
     alias: String,
     alias_py: Py<PyString>,
 }
 
 impl ComputedField {
-    pub fn new(schema: &PyAny) -> PyResult<Self> {
+    pub fn new(
+        schema: &PyAny,
+        config: Option<&PyDict>,
+        definitions: &mut DefinitionsBuilder<CombinedSerializer>,
+    ) -> PyResult<Self> {
         let py = schema.py();
         let schema: &PyDict = schema.downcast()?;
         let property_name: &PyString = schema.get_as_req(intern!(py, "property_name"))?;
-        let return_ob_type = get_json_return_type(schema)?;
+        let return_schema = schema.get_as_req(intern!(py, "return_schema"))?;
+        let serializer = CombinedSerializer::build(return_schema, config, definitions)
+            .map_err(|e| py_error_type!("Computed field `{}`:\n  {}", property_name, e))?;
         let alias_py: &PyString = schema.get_as(intern!(py, "alias"))?.unwrap_or(property_name);
         Ok(Self {
             property_name: property_name.extract()?,
             property_name_py: property_name.into_py(py),
-            return_ob_type,
+            serializer,
             alias: alias_py.extract()?,
             alias_py: alias_py.into_py(py),
         })
@@ -124,11 +131,9 @@ impl ComputedField {
         if let Some((next_include, next_exclude)) = filter.key_filter(property_name_py, include, exclude)? {
             let next_value = model.getattr(property_name_py)?;
 
-            // TODO fix include & exclude
-            let value = match self.return_ob_type {
-                Some(ref ob_type) => infer_to_python_known(ob_type, next_value, next_include, next_exclude, extra),
-                None => infer_to_python(next_value, next_include, next_exclude, extra),
-            }?;
+            let value = self
+                .serializer
+                .to_python(next_value, next_include, next_exclude, extra)?;
             let key = match extra.by_alias {
                 true => self.alias_py.as_ref(py),
                 false => property_name_py,
@@ -152,12 +157,13 @@ impl<'py> Serialize for ComputedFieldSerializer<'py> {
         let py = self.model.py();
         let property_name_py = self.computed_field.property_name_py.as_ref(py);
         let next_value = self.model.getattr(property_name_py).map_err(py_err_se_err)?;
-
-        match self.computed_field.return_ob_type {
-            Some(ref ob_type) => {
-                infer_serialize_known(ob_type, next_value, serializer, self.include, self.exclude, self.extra)
-            }
-            None => infer_serialize(next_value, serializer, self.include, self.exclude, self.extra),
-        }
+        let s = PydanticSerializer::new(
+            next_value,
+            &self.computed_field.serializer,
+            self.include,
+            self.exclude,
+            self.extra,
+        );
+        s.serialize(serializer)
     }
 }

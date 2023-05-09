@@ -53,7 +53,7 @@ impl BuildSerializer for TypedDictBuilder {
             }
         }
 
-        let computed_fields = ComputedFields::new(schema)?;
+        let computed_fields = ComputedFields::new(schema, config, definitions)?;
 
         Ok(GeneralFieldsSerializer::new(fields, fields_mode, computed_fields).into())
     }
