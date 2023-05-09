@@ -9,9 +9,9 @@ from typing_extensions import Annotated
 
 from pydantic import TypeAdapter
 from pydantic.annotated import GetCoreSchemaHandler
-from pydantic.validators import AfterValidator
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
+from pydantic.validators import AfterValidator
 
 
 @dataclass

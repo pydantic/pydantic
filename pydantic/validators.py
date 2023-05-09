@@ -160,14 +160,14 @@ def field_validator(
     """
     if isinstance(__field, FunctionType):
         raise PydanticUserError(
-            'field_validators should be used with fields and keyword arguments, not bare. '
+            '`@field_validator` should be used with fields and keyword arguments, not bare. '
             "E.g. usage should be `@validator('<field_name>', ...)`",
             code='validator-no-fields',
         )
     fields = __field, *fields
     if not all(isinstance(field, str) for field in fields):  # type: ignore
         raise PydanticUserError(
-            'field_validator fields should be passed as separate string args. '
+            '`@field_validator` fields should be passed as separate string args. '
             "E.g. usage should be `@validator('<field_name_1>', '<field_name_2>', ...)`",
             code='validator-invalid-fields',
         )
