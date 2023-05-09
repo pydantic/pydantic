@@ -443,9 +443,11 @@ def test_frozen_model():
     m = FrozenModel()
 
     assert m.a == 10
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         m.a = 11
-    assert '"FrozenModel" is frozen and does not support item assignment' in exc_info.value.args[0]
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': 11}
+    ]
 
 
 def test_not_frozen_are_not_hashable():

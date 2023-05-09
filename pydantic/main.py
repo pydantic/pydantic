@@ -455,7 +455,12 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             _object_setattr(self, name, value)
             return
         elif self.model_config.get('frozen', None):
-            raise TypeError(f'"{self.__class__.__name__}" is frozen and does not support item assignment')
+            error: pydantic_core.InitErrorDetails = {
+                'type': 'frozen_instance',
+                'loc': (name,),
+                'input': value,
+            }
+            raise pydantic_core.ValidationError(self.__class__.__name__, [error])
 
         attr = getattr(self.__class__, name, None)
         if isinstance(attr, property):

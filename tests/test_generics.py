@@ -175,10 +175,11 @@ def test_config_is_inherited():
 
     instance = Model[int](data=1)
 
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         instance.data = 2
-
-    assert str(exc_info.value) == '"Model[int]" is frozen and does not support item assignment'
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_instance', 'loc': ('data',), 'msg': 'Instance is frozen', 'input': 2}
+    ]
 
 
 def test_default_argument():
@@ -444,7 +445,7 @@ def test_generic_config():
 
     result = Result[int](data=1)
     assert result.data == 1
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         result.data = 2
 
 

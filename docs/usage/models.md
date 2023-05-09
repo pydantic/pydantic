@@ -1130,7 +1130,7 @@ values of instance attributes will raise errors. See [model config](model_config
     modify a so-called "immutable" object.
 
 ```py
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 class FooBarModel(BaseModel):
@@ -1143,9 +1143,13 @@ foobar = FooBarModel(a='hello', b={'apple': 'pear'})
 
 try:
     foobar.a = 'different'
-except TypeError as e:
+except ValidationError as e:
     print(e)
-    #> "FooBarModel" is frozen and does not support item assignment
+    """
+    1 validation error for FooBarModel
+    a
+      Instance is frozen [type=frozen_instance, input_value='different', input_type=str]
+    """
 
 print(foobar.a)
 #> hello

@@ -101,7 +101,7 @@ def test_custom_config():
     m = model(**{'foo': '987'})
     assert m.foo == 987
     assert model.model_config == expected_config
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         m.foo = 654
 
 
