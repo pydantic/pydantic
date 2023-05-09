@@ -15,11 +15,12 @@ from pydantic import (
     FieldSerializationInfo,
     SerializationInfo,
     SerializerFunctionWrapHandler,
+    errors,
     field_serializer,
     model_serializer,
 )
-from pydantic.annotated_arguments import PlainSerializer, WrapSerializer
 from pydantic.config import ConfigDict
+from pydantic.functional_serializers import PlainSerializer, WrapSerializer
 
 
 def test_serialize_extra_allow() -> None:
@@ -785,3 +786,19 @@ def test_serialize_any_model():
     assert m.model_dump() == {'m': 'custom:test'}
     assert to_jsonable_python(AnyModel(x=m)) == {'x': {'m': 'custom:test'}}
     assert AnyModel(x=m).model_dump() == {'x': {'m': 'custom:test'}}
+
+
+def test_invalid_field():
+    msg = (
+        r'Decorators defined with incorrect fields:'
+        r' tests.test_serialize.test_invalid_field.<locals>.Model:\d+.customise_b_serialisation'
+        r" \(use check_fields=False if you're inheriting from the model and intended this\)"
+    )
+    with pytest.raises(errors.PydanticUserError, match=msg):
+
+        class Model(BaseModel):
+            a: str
+
+            @field_serializer('b')
+            def customise_b_serialisation(v):
+                return v

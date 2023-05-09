@@ -1,5 +1,5 @@
 """
-Logic related to validators applied to models etc. via the `@validator` and `@root_validator` decorators.
+Logic related to validators applied to models etc. via the `@field_validator` and `@root_validator` decorators.
 """
 from __future__ import annotations as _annotations
 
@@ -17,7 +17,7 @@ from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
 
 if TYPE_CHECKING:
-    from ..decorators import FieldValidatorModes
+    from ..functional_validators import FieldValidatorModes
 
 try:
     from functools import cached_property  # type: ignore
@@ -330,7 +330,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
 
     raise PydanticUserError(
         f'Unrecognized field_validator function signature for {validator} with `mode={mode}`:{sig}',
-        code='field-validator-signature',
+        code='validator-signature',
     )
 
 

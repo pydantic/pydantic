@@ -12,8 +12,7 @@ from dirty_equals import HasRepr
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, ConfigDict, FieldValidationInfo, TypeAdapter, ValidationError
-from pydantic.decorators import field_validator
+from pydantic import BaseModel, ConfigDict, FieldValidationInfo, TypeAdapter, ValidationError, field_validator
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
 

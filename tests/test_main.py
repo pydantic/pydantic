@@ -37,8 +37,8 @@ from pydantic import (
     ValidationError,
     ValidationInfo,
     constr,
+    field_validator,
 )
-from pydantic.decorators import field_validator
 
 
 def test_success():

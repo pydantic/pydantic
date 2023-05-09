@@ -136,7 +136,7 @@ class FieldInfo(_repr.Representation):
         self.kw_only = kwargs.get('kw_only', None)
 
     @classmethod
-    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
+    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> typing_extensions.Self:
         """
         Create a new `FieldInfo` object with the `Field` function.
 
@@ -166,7 +166,7 @@ class FieldInfo(_repr.Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> FieldInfo:
+    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> typing_extensions.Self:
         """
         Creates a `FieldInfo` instance from a bare annotation.
 
@@ -218,7 +218,7 @@ class FieldInfo(_repr.Representation):
         return cls(annotation=annotation, final=final)
 
     @classmethod
-    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
+    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> typing_extensions.Self:
         """
         Create `FieldInfo` from an annotation with a default value.
 
@@ -284,7 +284,7 @@ class FieldInfo(_repr.Representation):
             return cls(annotation=annotation, default=default, final=final)
 
     @classmethod
-    def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
+    def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> typing_extensions.Self:
         """
         Return a new `FieldInfo` instance from a `dataclasses.Field` instance.
 
@@ -680,14 +680,13 @@ class ModelPrivateAttr(_repr.Representation):
         """
         preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
         """
-        if self.default is not Undefined:
-            try:
-                set_name = getattr(self.default, '__set_name__')
-            except AttributeError:
-                pass
-            else:
-                if callable(set_name):
-                    set_name(cls, name)
+        if self.default is Undefined:
+            return
+        if not hasattr(self.default, '__set_name__'):
+            return
+        set_name = self.default.__set_name__
+        if callable(set_name):
+            set_name(cls, name)
 
     def get_default(self) -> Any:
         """Returns the default value for the object.

@@ -68,8 +68,8 @@ from ._typing_extra import is_finalvar
 from ._utils import lenient_issubclass
 
 if TYPE_CHECKING:
-    from ..decorators import FieldValidatorModes
     from ..main import BaseModel
+    from ..validators import FieldValidatorModes
     from ._dataclasses import StandardDataclass
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
@@ -109,7 +109,7 @@ def check_decorator_fields_exist(decorators: Iterable[AnyFieldDecorator], fields
         for field in dec.info.fields:
             if field not in fields:
                 raise PydanticUserError(
-                    f'Validators defined with incorrect fields: {dec.cls_ref}.{dec.cls_var_name}'
+                    f'Decorators defined with incorrect fields: {dec.cls_ref}.{dec.cls_var_name}'
                     " (use check_fields=False if you're inheriting from the model and intended this)",
                     code='decorator-missing-field',
                 )
