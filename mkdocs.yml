@@ -102,6 +102,7 @@ nav:
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
 - API:
+  - 'pydantic': api/main.md
   - 'pydantic.alias_generators': api/alias_generators.md
   - 'pydantic.type_adapter': api/type_adapter.md
   - 'pydantic.color': api/color.md
@@ -111,7 +112,6 @@ nav:
   - 'pydantic.errors': api/errors.md
   - 'pydantic.fields': api/fields.md
   - 'pydantic.json_schema': api/json_schema.md
-  - 'pydantic.main': api/main.md
   - 'pydantic.mypy': api/mypy.md
   - 'pydantic.networks': api/networks.md
   - 'pydantic.types': api/types.md
@@ -156,6 +156,7 @@ plugins:
         paths: [.]
         options:
           separate_signature: true
+          filters: ["!^_"]
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'
