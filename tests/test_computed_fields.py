@@ -408,8 +408,11 @@ def test_frozen():
     assert m.area == 16.0
     assert m.model_dump() == {'side': 4.0, 'area': 16.0}
 
-    with pytest.raises(TypeError, match='"Square" is frozen and does not support item assignment'):
+    with pytest.raises(ValidationError) as exc_info:
         m.area = 4
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_instance', 'loc': ('__root__',), 'msg': 'Instance is frozen', 'input': 4}
+    ]
 
 
 def test_validate_assignment():

@@ -2,6 +2,7 @@ import pickle
 from typing import Any, List, Optional
 
 import pytest
+from pydantic_core import ValidationError
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
 from pydantic.fields import Undefined
@@ -361,7 +362,7 @@ def test_immutable_copy_with_frozen(copy_method):
 
     m2 = copy_method(m, update={'b': 12})
     assert repr(m2) == 'Model(a=40, b=12)'
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         m2.b = 13
 
 
