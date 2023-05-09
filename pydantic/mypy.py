@@ -81,12 +81,12 @@ MODEL_METACLASS_FULLNAME = 'pydantic.main.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 DECORATOR_FULLNAMES = {
-    'pydantic.decorators.validator',
-    'pydantic.validators.field_validator',
-    'pydantic.validators.model_validator',
-    'pydantic.decorators.root_validator',
-    'pydantic.serializers.serializer',
-    'pydantic.serializers.model_serializer',
+    'pydantic.functional_validators.field_validator',
+    'pydantic.functional_validators.model_validator',
+    'pydantic.functional_serializers.serializer',
+    'pydantic.functional_serializers.model_serializer',
+    'pydantic.deprecated.class_validators.validator',
+    'pydantic.deprecated.class_validators.root_validator',
 }
 
 

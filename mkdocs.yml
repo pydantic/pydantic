@@ -101,14 +101,15 @@ nav:
 - Blog:
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
-- API:
+- API Documentation:
   - 'pydantic': api/main.md
   - 'pydantic.alias_generators': api/alias_generators.md
   - 'pydantic.type_adapter': api/type_adapter.md
   - 'pydantic.color': api/color.md
   - 'pydantic.config': api/config.md
   - 'pydantic.dataclasses': api/dataclasses.md
-  - 'pydantic.decorators': api/decorators.md
+  - 'pydantic.functional_validators': api/functional_validators.md
+  - 'pydantic.functional_serializers': api/functional_serializers.md
   - 'pydantic.errors': api/errors.md
   - 'pydantic.fields': api/fields.md
   - 'pydantic.json_schema': api/json_schema.md
