@@ -95,7 +95,7 @@ from typing import List
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, ValidationError, field_validator
-from pydantic.validators import AfterValidator
+from pydantic.functional_validators import AfterValidator
 
 
 def check_squares(v: int) -> int:
@@ -177,7 +177,7 @@ from typing import List, TypeVar
 from typing_extensions import Annotated
 
 from pydantic import BaseModel
-from pydantic.validators import AfterValidator
+from pydantic.functional_validators import AfterValidator
 
 T = TypeVar('T')
 

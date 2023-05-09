@@ -41,7 +41,7 @@ from pydantic import (
     validator,
 )
 from pydantic.fields import Field, computed_field
-from pydantic.serializers import (
+from pydantic.functional_serializers import (
     field_serializer,
     model_serializer,
 )

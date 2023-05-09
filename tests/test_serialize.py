@@ -20,7 +20,7 @@ from pydantic import (
     model_serializer,
 )
 from pydantic.config import ConfigDict
-from pydantic.serializers import PlainSerializer, WrapSerializer
+from pydantic.functional_serializers import PlainSerializer, WrapSerializer
 
 
 def test_serialize_extra_allow() -> None:

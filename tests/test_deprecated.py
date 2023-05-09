@@ -15,7 +15,7 @@ from pydantic.deprecated.decorator import validate_arguments
 from pydantic.deprecated.json import custom_pydantic_encoder, pydantic_encoder, timedelta_isoformat
 from pydantic.deprecated.parse import load_file, load_str_bytes
 from pydantic.deprecated.tools import parse_obj_as, schema_json_of, schema_of
-from pydantic.serializers import model_serializer
+from pydantic.functional_serializers import model_serializer
 
 if sys.version_info < (3, 11):
     from typing_extensions import get_overloads

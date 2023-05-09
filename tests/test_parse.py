@@ -3,7 +3,7 @@ from typing import List, Tuple
 import pytest
 
 from pydantic import BaseModel, ValidationError, model_validator, parse_obj_as
-from pydantic.serializers import model_serializer
+from pydantic.functional_serializers import model_serializer
 
 
 class Model(BaseModel):

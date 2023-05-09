@@ -16,13 +16,13 @@ from .deprecated.config import BaseConfig  # type: ignore
 from .deprecated.tools import *
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
+from .functional_serializers import field_serializer, model_serializer
+from .functional_validators import field_validator, model_validator
 from .main import *
 from .networks import *
-from .serializers import field_serializer, model_serializer
 from .type_adapter import TypeAdapter
 from .types import *
 from .validate_call import validate_call
-from .validators import field_validator, model_validator
 from .version import VERSION
 
 __version__ = VERSION
