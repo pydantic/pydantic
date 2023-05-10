@@ -616,7 +616,7 @@ class MyModel(BaseModel):
 
 ## Invalid annotated type {#invalid_annotated_type}
 
-This error is raised when annotation cannot annotated the type.
+This error is raised when an annotation cannot annotate a type.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from typing_extensions import Annotated
