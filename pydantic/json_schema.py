@@ -89,6 +89,7 @@ CoreSchemaOrFieldType = Literal[
     'model-field',
     'dataclass-field',
     'typed-dict-field',
+    'json-or-python',
 ]
 
 
@@ -598,6 +599,12 @@ class GenerateJsonSchema:
             return self.generate_inner(schema['steps'][0])
         except IndexError as e:
             raise ValueError('Cannot generate a JsonSchema for a zero-step ChainSchema') from e
+
+    def json_or_python_schema(self, schema: core_schema.JsonOrPythonSchema) -> JsonSchemaValue:
+        """
+        Always uses the json schema
+        """
+        return self.generate_inner(schema['json_schema'])
 
     def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:
         """

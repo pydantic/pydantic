@@ -81,7 +81,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     else:
         expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
 
-    def to_enum(__input_value: Any, info: core_schema.ValidationInfo | None = None) -> Enum:
+    def to_enum(__input_value: Any) -> Enum:
         try:
             return enum_type(__input_value)
         except ValueError:
@@ -103,28 +103,39 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 
     metadata = build_metadata_dict(js_functions=[update_schema])
 
-    to_enum_validator = core_schema.general_plain_validator_function(to_enum)
+    to_enum_validator = core_schema.no_info_plain_validator_function(to_enum)
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         updates['type'] = 'integer'
         lax = core_schema.chain_schema([core_schema.int_schema(), to_enum_validator])
         # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
         # Disallow float from JSON due to strict mode
-        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str'}, json_function=to_enum)
+        strict = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.int_schema()),
+            python_schema=core_schema.is_instance_schema(enum_type),
+        )
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'string'
         lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
         # Allow all types from JSON to get better error messages (numeric types will still fail validation in to_enum)
-        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str', 'float'}, json_function=to_enum)
+        strict = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.str_schema()),
+            python_schema=core_schema.is_instance_schema(enum_type),
+        )
     elif issubclass(enum_type, float):
         updates['type'] = 'numeric'
         lax = core_schema.chain_schema([core_schema.float_schema(), to_enum_validator])
         # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
-        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str', 'float'}, json_function=to_enum)
+        strict = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.float_schema()),
+            python_schema=core_schema.is_instance_schema(enum_type),
+        )
     else:
         lax = to_enum_validator
-        strict = core_schema.is_instance_schema(enum_type, json_types={'float', 'int', 'str'}, json_function=to_enum)
+        strict = core_schema.json_or_python_schema(
+            json_schema=to_enum_validator, python_schema=core_schema.is_instance_schema(enum_type)
+        )
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=strict,
@@ -182,27 +193,35 @@ class DecimalValidator:
             return string_schema
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
+        primitive_type_union = [
+            core_schema.int_schema(),
+            core_schema.float_schema(),
+            core_schema.str_schema(strip_whitespace=True),
+        ]
+        is_instance_schema = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(
+                Decimal, core_schema.union_schema(primitive_type_union)
+            ),
+            python_schema=core_schema.is_instance_schema(Decimal),
+        )
         lax = core_schema.no_info_after_validator_function(
             self.validate,
             core_schema.union_schema(
-                [
-                    core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
-                    core_schema.int_schema(),
-                    core_schema.float_schema(),
-                    core_schema.str_schema(strip_whitespace=True),
-                ],
+                [is_instance_schema, *primitive_type_union],
                 strict=True,
             ),
         )
         strict = core_schema.custom_error_schema(
             core_schema.no_info_after_validator_function(
                 self.validate,
-                core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
+                is_instance_schema,
             ),
             custom_error_type='decimal_type',
             custom_error_message='Input should be a valid Decimal instance or decimal string in JSON',
         )
-        return core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
+        return core_schema.lax_or_strict_schema(
+            lax_schema=lax, strict_schema=strict, serialization=core_schema.to_string_ser_schema()
+        )
 
     def validate(self, __input_value: int | float | str) -> Decimal:  # noqa: C901 (ignore complexity)
         if isinstance(__input_value, Decimal):
@@ -304,57 +323,51 @@ def decimal_prepare_pydantic_annotations(_source: Any, annotations: Iterable[Any
 @schema_function(UUID)
 def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> core_schema.LaxOrStrictSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'uuid'}])
-    # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
-    lax = core_schema.union_schema(
-        [
-            core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-            core_schema.no_info_after_validator_function(
-                _validators.uuid_validator,
-                core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()]),
-            ),
-        ],
-        custom_error_type='uuid_type',
-        custom_error_message='Input should be a valid UUID, string, or bytes',
-        strict=True,
+
+    from_primitive_type_schema = core_schema.no_info_after_validator_function(
+        _validators.uuid_validator, core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()])
+    )
+    lax = core_schema.json_or_python_schema(
+        json_schema=from_primitive_type_schema,
+        python_schema=core_schema.union_schema(
+            [core_schema.is_instance_schema(UUID), from_primitive_type_schema],
+            custom_error_type='uuid_type',
+            custom_error_message='Input should be a valid UUID, string, or bytes',
+            strict=True,
+            metadata=metadata,
+        ),
+        metadata=metadata,
+    )
+
+    strict = core_schema.json_or_python_schema(
+        json_schema=from_primitive_type_schema,
+        python_schema=core_schema.is_instance_schema(UUID),
         metadata=metadata,
     )
 
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
-        strict_schema=core_schema.chain_schema(
-            [
-                core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-                core_schema.union_schema(
-                    [
-                        core_schema.is_instance_schema(UUID),
-                        core_schema.chain_schema(
-                            [
-                                core_schema.str_schema(),
-                                core_schema.no_info_plain_validator_function(_validators.uuid_validator),
-                            ]
-                        ),
-                    ]
-                ),
-            ],
-            metadata=metadata,
-        ),
+        strict_schema=strict,
         serialization=core_schema.to_string_ser_schema(),
     )
 
 
 @schema_function(PurePath)
 @schema_function(PathLike)
-def path_schema(_schema_generator: GenerateSchema, path_type: type[PathLike]) -> core_schema.LaxOrStrictSchema:
+def path_schema(_schema_generator: GenerateSchema, path_type: type[PathLike[Any]]) -> core_schema.LaxOrStrictSchema:
     construct_path = PurePath if path_type is PathLike else path_type
     metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'path'}])
 
-    def path_validator(__input_value: str) -> PathLike:
+    def path_validator(input_value: str) -> PathLike[Any]:
         try:
-            return construct_path(__input_value)  # type: ignore
+            return construct_path(input_value)  # type: ignore
         except TypeError as e:
             raise PydanticCustomError('path_type', 'Input is not a valid path') from e
 
-    instance_schema = core_schema.is_instance_schema(path_type, json_types={'str'}, json_function=path_validator)
+    instance_schema = core_schema.json_or_python_schema(
+        json_schema=core_schema.no_info_after_validator_function(path_validator, core_schema.str_schema()),
+        python_schema=core_schema.is_instance_schema(path_type),
+    )
 
     return core_schema.lax_or_strict_schema(
         lax_schema=core_schema.union_schema(
@@ -382,15 +395,17 @@ def _deque_ser_schema(
 
 def _deque_any_schema() -> core_schema.LaxOrStrictSchema:
     metadata = build_metadata_dict(js_functions=[lambda _c, h: h(core_schema.list_schema(core_schema.any_schema()))])
+    lax_schema = core_schema.no_info_wrap_validator_function(
+        _validators.deque_any_validator,
+        core_schema.list_schema(),
+    )
+    strict_schema = core_schema.json_or_python_schema(
+        json_schema=lax_schema,
+        python_schema=core_schema.is_instance_schema(deque),
+    )
     return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_wrap_validator_function(
-            _validators.deque_any_validator,
-            core_schema.list_schema(),
-        ),
-        strict_schema=core_schema.general_after_validator_function(
-            lambda x, _: x if isinstance(x, deque) else deque(x),
-            core_schema.is_instance_schema(deque, json_types={'list'}),
-        ),
+        lax_schema=lax_schema,
+        strict_schema=strict_schema,
         serialization=_deque_ser_schema(),
         metadata=metadata,
     )
@@ -423,8 +438,9 @@ def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.Core
 
         return core_schema.lax_or_strict_schema(
             lax_schema=lax_schema,
-            strict_schema=core_schema.chain_schema(
-                [core_schema.is_instance_schema(deque, json_types={'list'}), lax_schema],
+            strict_schema=core_schema.json_or_python_schema(
+                json_schema=lax_schema,
+                python_schema=core_schema.chain_schema([core_schema.is_instance_schema(deque), lax_schema]),
             ),
             serialization=_deque_ser_schema(inner_schema),
             metadata=metadata,
@@ -436,9 +452,9 @@ def _ordered_dict_any_schema() -> core_schema.LaxOrStrictSchema:
         lax_schema=core_schema.no_info_wrap_validator_function(
             _validators.ordered_dict_any_validator, core_schema.dict_schema()
         ),
-        strict_schema=core_schema.general_after_validator_function(
-            lambda x, _: OrderedDict(x),
-            core_schema.is_instance_schema(OrderedDict, json_types={'dict'}),
+        strict_schema=core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(OrderedDict, core_schema.dict_schema()),
+            python_schema=core_schema.is_instance_schema(OrderedDict),
         ),
     )
 
@@ -469,22 +485,24 @@ def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_sche
                     schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
                 ),
             ),
-            strict_schema=core_schema.general_after_validator_function(
-                lambda x, _: OrderedDict(x),
-                core_schema.chain_schema(
-                    [
-                        core_schema.is_instance_schema(OrderedDict, json_types={'dict'}),
-                        core_schema.dict_schema(inner_schema),
-                    ],
+            strict_schema=core_schema.json_or_python_schema(
+                json_schema=core_schema.no_info_after_validator_function(
+                    OrderedDict, core_schema.dict_schema(inner_schema)
+                ),
+                python_schema=core_schema.no_info_after_validator_function(
+                    OrderedDict,
+                    core_schema.chain_schema(
+                        [core_schema.is_instance_schema(OrderedDict), core_schema.dict_schema(inner_schema)]
+                    ),
                 ),
             ),
         )
 
 
 def make_strict_ip_schema(tp: type[Any], metadata: Any) -> CoreSchema:
-    return core_schema.general_after_validator_function(
-        lambda x, _: tp(x),
-        core_schema.is_instance_schema(tp, json_types={'str'}),
+    return core_schema.json_or_python_schema(
+        json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
+        python_schema=core_schema.is_instance_schema(tp),
         metadata=metadata,
     )
 

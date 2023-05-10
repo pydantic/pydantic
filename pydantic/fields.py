@@ -22,8 +22,6 @@ from ._internal._generics import replace_types
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
-    from pydantic_core import core_schema as _core_schema
-
     from ._internal._repr import ReprArgs
 
 
@@ -748,7 +746,7 @@ class ComputedFieldInfo:
 
     decorator_repr: typing.ClassVar[str] = '@computed_field'
     wrapped_property: property
-    json_return_type: _core_schema.JsonReturnTypes | None
+    return_type: type[Any]
     alias: str | None
     title: str | None
     description: str | None
@@ -763,7 +761,7 @@ PropertyT = typing.TypeVar('PropertyT')
 @typing.overload
 def computed_field(
     *,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    return_type: Any = Any,
     alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
@@ -777,6 +775,9 @@ def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
+_UNSET: Any = object()
+
+
 def computed_field(
     __f: PropertyT | None = None,
     *,
@@ -784,7 +785,7 @@ def computed_field(
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    return_type: Any = _UNSET,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """
     Decorate to include `property` and `cached_property` when serialising models.
@@ -799,21 +800,33 @@ def computed_field(
         description: Description to used when including this computed field in JSON Schema, defaults to the functions
             docstring, currently unused waiting for #4697
         repr: whether to include this computed field in model repr
-        json_return_type: optional return for serialization logic to expect when serialising to JSON, if included
-            this must be correct, otherwise a `TypeError` is raised
+        return_type: optional return for serialization logic to expect when serialising to JSON, if included
+            this must be correct, otherwise a `TypeError` is raised.
+            If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
+            objects.
 
     Returns:
         A proxy wrapper for the property.
     """
 
     def dec(f: Any) -> Any:
-        nonlocal description
+        nonlocal description, return_type
         if description is None and f.__doc__:
             description = inspect.cleandoc(f.__doc__)
 
+        if return_type is _UNSET:
+            # try to get it from the type annotation
+            res = _typing_extra.get_type_hints(_decorators.unwrap_wrapped_function(f))
+            return_type = res.get('return', _UNSET)
+            if return_type is _UNSET:
+                raise PydanticUserError(
+                    'Computed field is missing return type annotation',
+                    code='model-field-missing-annotation',
+                )
+
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
-        dec_info = ComputedFieldInfo(f, json_return_type, alias, title, description, repr)
+        dec_info = ComputedFieldInfo(f, return_type, alias, title, description, repr)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:

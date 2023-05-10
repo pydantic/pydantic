@@ -489,22 +489,36 @@ def unwrap_wrapped_function(
     Returns:
         The underlying function of the wrapped function.
     """
-    all: tuple[Any, ...]
+    all: list[Any]
+    try:
+        from functools import cached_property
+
+        cached_property_list = [cached_property]
+    except ImportError:
+        cached_property = int  # anything that doesn't match isinstance below
+        cached_property_list = []
+
     if unwrap_class_static_method:
-        all = (
+        all = [
             staticmethod,
             classmethod,
             partial,
             partialmethod,
-        )
+            property,
+            *cached_property_list,
+        ]
     else:
-        all = partial, partialmethod
+        all = [partial, partialmethod, property, *cached_property_list]
 
-    while isinstance(func, all):
+    while isinstance(func, tuple(all)):
         if unwrap_class_static_method and isinstance(func, (classmethod, staticmethod)):
             func = func.__func__
         elif isinstance(func, (partial, partialmethod)):
             func = func.func
+        elif isinstance(func, property):
+            func = func.fget  # arbitrary choice, convenient for computed fields
+        elif isinstance(func, cached_property):
+            func = func.func  # type: ignore # same reasoning as above
 
     return func
 

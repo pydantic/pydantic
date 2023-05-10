@@ -350,6 +350,11 @@ class _WalkCoreSchema:
         schema['strict_schema'] = self.walk(schema['strict_schema'], f)
         return schema
 
+    def handle_json_or_python_schema(self, schema: core_schema.JsonOrPythonSchema, f: Walk) -> core_schema.CoreSchema:
+        schema['json_schema'] = self.walk(schema['json_schema'], f)
+        schema['python_schema'] = self.walk(schema['python_schema'], f)
+        return schema
+
     def handle_model_fields_schema(self, schema: core_schema.ModelFieldsSchema, f: Walk) -> core_schema.CoreSchema:
         if 'extra_validator' in schema:
             schema['extra_validator'] = self.walk(schema['extra_validator'], f)
