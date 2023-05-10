@@ -285,6 +285,64 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
     assert Top(sub=B(literal='b')).sub.literal == 'b'
 
 
+def test_discriminated_union_model_with_alias():
+    class A(BaseModel):
+        literal: Literal['a'] = Field(alias='lit')
+
+    class B(BaseModel):
+        literal: Literal['b'] = Field(alias='lit')
+
+        class Config:
+            allow_population_by_field_name = True
+
+    class TopDisallow(BaseModel):
+        sub: Union[A, B] = Field(..., discriminator='literal', alias='s')
+
+    class TopAllow(BaseModel):
+        sub: Union[A, B] = Field(..., discriminator='literal', alias='s')
+
+        class Config:
+            allow_population_by_field_name = True
+
+    assert TopDisallow.parse_obj({'s': {'lit': 'a'}}).sub.literal == 'a'
+    assert TopDisallow.parse_obj({'s': {'literal': 'b'}}).sub.literal == 'b'
+
+    with pytest.raises(ValidationError) as exc_info:
+        TopDisallow.parse_obj({'s': {'literal': 'a'}})
+
+    assert exc_info.value.errors() == [
+        {'loc': ('s', 'A', 'lit'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        TopDisallow.parse_obj({'sub': {'lit': 'a'}})
+
+    assert exc_info.value.errors() == [
+        {'loc': ('s',), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+    assert TopAllow.parse_obj({'s': {'lit': 'a'}}).sub.literal == 'a'
+    assert TopAllow.parse_obj({'s': {'lit': 'b'}}).sub.literal == 'b'
+    assert TopAllow.parse_obj({'s': {'literal': 'b'}}).sub.literal == 'b'
+    assert TopAllow.parse_obj({'sub': {'lit': 'a'}}).sub.literal == 'a'
+    assert TopAllow.parse_obj({'sub': {'lit': 'b'}}).sub.literal == 'b'
+    assert TopAllow.parse_obj({'sub': {'literal': 'b'}}).sub.literal == 'b'
+
+    with pytest.raises(ValidationError) as exc_info:
+        TopAllow.parse_obj({'s': {'literal': 'a'}})
+
+    assert exc_info.value.errors() == [
+        {'loc': ('s', 'A', 'lit'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        TopAllow.parse_obj({'sub': {'literal': 'a'}})
+
+    assert exc_info.value.errors() == [
+        {'loc': ('s', 'A', 'lit'), 'msg': 'field required', 'type': 'value_error.missing'},
+    ]
+
+
 def test_discriminated_union_int():
     class A(BaseModel):
         l: Literal[1]
