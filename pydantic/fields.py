@@ -605,7 +605,7 @@ def Field(  # noqa C901
         warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
         frozen = True
     if regex:
-        raise PydanticUserError('`regex` is removed. use `Pattern` instead', code='deprecated_kwargs')
+        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='deprecated_kwargs')
     if extra:
         warn(
             'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',

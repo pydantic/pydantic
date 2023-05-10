@@ -523,7 +523,7 @@ def test_allow_mutation():
 
 
 def test_field_regex():
-    with pytest.raises(PydanticUserError, match='`regex` is removed. use `Pattern` instead'):
+    with pytest.raises(PydanticUserError, match='`regex` is removed. use `pattern` instead'):
 
         class Model(BaseModel):
             x: str = Field('test', regex=r'^test$')
