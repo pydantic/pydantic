@@ -10,7 +10,14 @@ from typing_extensions import Literal
 from ._internal import _config, _generate_schema, _typing_extra
 from ._internal._core_utils import flatten_schema_defs, inline_schema_defs
 from .config import ConfigDict
-from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema
+from .json_schema import (
+    DEFAULT_REF_TEMPLATE,
+    DefsRef,
+    GenerateJsonSchema,
+    JsonSchemaKeyT,
+    JsonSchemaMode,
+    JsonSchemaValue,
+)
 
 T = TypeVar('T')
 
@@ -252,6 +259,7 @@ class TypeAdapter(Generic[T]):
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
         """Generate a JSON schema for the model.
 
@@ -265,38 +273,41 @@ class TypeAdapter(Generic[T]):
             Dict[str, Any]: The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
-        return schema_generator_instance.generate(self.core_schema)
+        return schema_generator_instance.generate(self.core_schema, mode=mode)
 
     @staticmethod
     def json_schemas(
-        __types: Iterable[TypeAdapter[Any]],
+        __inputs: Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]],
         *,
         by_alias: bool = True,
-        ref_template: str = DEFAULT_REF_TEMPLATE,
         title: str | None = None,
         description: str | None = None,
+        ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
-    ) -> dict[str, Any]:
-        """Generate JSON schemas for multiple models.
+    ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef], JsonSchemaValue]:
+        """Generate JSON schemas for multiple type adapters.
 
         Args:
-            __types (Iterable[TypeAdapter[Any]]): The types to generate schemas for.
+            __inputs (Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]): Inputs to schema generation.
+                The first two items will form the keys of the (first) output mapping; the type adapters will provide
+                the core schemas that get converted into definitions in the output JSON schema.
             by_alias (bool): Whether to use alias names (default: True).
-            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
             title (Optional[str]): The title for the schema (default: None).
             description (Optional[str]): The description for the schema (default: None).
+            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
             schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the
                 schema (default: GenerateJsonSchema).
 
         Returns:
-            Dict[str, Any]: The JSON schema for the models as a dictionary.
+            tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:
+                The first item contains the mapping of key + mode to a definitions reference, which will be a key
+                of the $defs mapping in the JSON schema included as the second member of the returned tuple.
         """
-        # TODO: can we use model.__schema_cache__?
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 
-        core_schemas = [at.core_schema for at in __types]
+        inputs = [(key, mode, adapter.core_schema) for key, mode, adapter in __inputs]
 
-        definitions = schema_generator_instance.generate_definitions(core_schemas)
+        key_map, definitions = schema_generator_instance.generate_definitions(inputs)
 
         json_schema: dict[str, Any] = {}
         if definitions:
@@ -306,4 +317,4 @@ class TypeAdapter(Generic[T]):
         if description:
             json_schema['description'] = description
 
-        return json_schema
+        return key_map, json_schema

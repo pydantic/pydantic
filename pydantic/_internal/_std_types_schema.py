@@ -164,15 +164,22 @@ class DecimalValidator:
             raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
 
     def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = core_schema.float_schema(
-            allow_inf_nan=self.allow_inf_nan,
-            multiple_of=None if self.multiple_of is None else float(self.multiple_of),
-            le=None if self.le is None else float(self.le),
-            ge=None if self.ge is None else float(self.ge),
-            lt=None if self.lt is None else float(self.lt),
-            gt=None if self.gt is None else float(self.gt),
-        )
-        return handler(json_schema)
+        string_schema = handler(core_schema.str_schema())
+
+        if handler.mode == 'validation':
+            float_schema = handler(
+                core_schema.float_schema(
+                    allow_inf_nan=self.allow_inf_nan,
+                    multiple_of=None if self.multiple_of is None else float(self.multiple_of),
+                    le=None if self.le is None else float(self.le),
+                    ge=None if self.ge is None else float(self.ge),
+                    lt=None if self.lt is None else float(self.lt),
+                    gt=None if self.gt is None else float(self.gt),
+                )
+            )
+            return {'anyOf': [float_schema, string_schema]}
+        else:
+            return string_schema
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         lax = core_schema.no_info_after_validator_function(

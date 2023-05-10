@@ -37,6 +37,7 @@ from .json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
     GetJsonSchemaHandler,
+    JsonSchemaMode,
     JsonSchemaValue,
     model_json_schema,
 )
@@ -632,6 +633,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         by_alias: bool = True,
         ref_template: str = DEFAULT_REF_TEMPLATE,
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
+        mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
         """
         Generates a JSON schema for a model class.
@@ -649,7 +651,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         Returns:
             Dict: The JSON schema for the given `cls` model class.
         """
-        return model_json_schema(cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator)
+        return model_json_schema(
+            cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
+        )
 
     @classmethod
     def model_modify_json_schema(cls, json_schema: JsonSchemaValue) -> JsonSchemaValue:

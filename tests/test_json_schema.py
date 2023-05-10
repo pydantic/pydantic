@@ -480,27 +480,40 @@ def test_enum_schema_cleandoc():
     }
 
 
-def test_json_schema():
+def test_decimal_json_schema():
     class Model(BaseModel):
         a: bytes = b'foobar'
         b: Decimal = Decimal('12.34')
-
-    # TODO: What do we want the generated schema to be for Decimal? I'm thinking 'integer', 'number', _or_ 'str'
-    #     Decision: What we have in v1 is not bad enough to be worth changing
-    #     (i.e., keep it as only 'number'; maybe add a comment that other things could be okay)
 
     with pytest.warns(
         DeprecationWarning,
         match=re.escape('The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.'),
     ):
         schema_json = Model.schema_json(indent=2)
-    assert json.loads(schema_json) == {
+        loaded_schema_json = json.loads(schema_json)
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    assert (
+        loaded_schema_json
+        == model_json_schema_validation
+        == {
+            'properties': {
+                'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+                'b': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'default': '12.34', 'title': 'B'},
+            },
+            'title': 'Model',
+            'type': 'object',
+        }
+    )
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+            'b': {'default': '12.34', 'title': 'B', 'type': 'string'},
+        },
+        'required': ['a', 'b'],
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
-            'b': {'title': 'B', 'default': '12.34', 'type': 'number'},
-        },
     }
 
 
@@ -938,7 +951,6 @@ def test_special_int_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        # (ConstrainedFloat, {}),
         (confloat(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (confloat(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
         (confloat(multiple_of=5), {'multipleOf': 5}),
@@ -946,13 +958,6 @@ def test_special_int_types(field_type, expected_schema):
         (NegativeFloat, {'exclusiveMaximum': 0}),
         (NonNegativeFloat, {'minimum': 0}),
         (NonPositiveFloat, {'maximum': 0}),
-        # (ConstrainedDecimal, {}),
-        (
-            condecimal(gt=5, lt=10),
-            {'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
-        ),
-        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
-        (condecimal(multiple_of=5), {'multipleOf': 5}),
     ],
 )
 def test_special_float_types(field_type, expected_schema):
@@ -966,6 +971,29 @@ def test_special_float_types(field_type, expected_schema):
         'required': ['a'],
     }
     base_schema['properties']['a'].update(expected_schema)
+
+    assert Model.model_json_schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (condecimal(multiple_of=5), {'multipleOf': 5}),
+    ],
+)
+def test_special_decimal_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'title': 'A'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['anyOf'][0].update(expected_schema)
 
     assert Model.model_json_schema() == base_schema
 
@@ -1336,9 +1364,12 @@ def test_schema_from_models():
         name: str
         ingredients: List[Ingredient]
 
-    model_schema = models_json_schema(
-        [Model, Pizza], title='Multi-model schema', description='Single JSON Schema with multiple definitions'
+    keys_map, model_schema = models_json_schema(
+        [(Model, 'validation'), (Pizza, 'validation')],
+        title='Multi-model schema',
+        description='Single JSON Schema with multiple definitions',
     )
+    assert keys_map == {(Pizza, 'validation'): 'Pizza', (Model, 'validation'): 'Model'}
     assert model_schema == {
         'title': 'Multi-model schema',
         'description': 'Single JSON Schema with multiple definitions',
@@ -1402,7 +1433,8 @@ def test_schema_with_refs():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = models_json_schema([Bar, Baz], ref_template=ref_template)
+    keys_map, model_schema = models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template=ref_template)
+    assert keys_map == {(Bar, 'validation'): 'Bar', (Baz, 'validation'): 'Baz'}
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1437,7 +1469,10 @@ def test_schema_with_custom_ref_template():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = models_json_schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
+    keys_map, model_schema = models_json_schema(
+        [(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{model}.json#/'
+    )
+    assert keys_map == {(Bar, 'validation'): 'Bar', (Baz, 'validation'): 'Baz'}
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1473,11 +1508,12 @@ def test_schema_ref_template_key_error():
         c: Bar
 
     with pytest.raises(KeyError):
-        models_json_schema([Bar, Baz], ref_template='/schemas/{bad_name}.json#/')
+        models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{bad_name}.json#/')
 
 
 def test_schema_no_definitions():
-    model_schema = models_json_schema([], title='Schema without definitions')
+    keys_map, model_schema = models_json_schema([], title='Schema without definitions')
+    assert keys_map == {}
     assert model_schema == {'title': 'Schema without definitions'}
 
 
@@ -1582,14 +1618,14 @@ def test_model_default():
         ({'ge': -math.inf}, float, {'type': 'number'}),
         ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
-        ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
-        ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
-        ({'ge': 2}, Decimal, {'type': 'number', 'minimum': 2}),
-        ({'le': 5}, Decimal, {'type': 'number', 'maximum': 5}),
-        ({'multiple_of': 5}, Decimal, {'type': 'number', 'multipleOf': 5}),
+        ({'gt': 2}, Decimal, {'anyOf': [{'exclusiveMinimum': 2.0, 'type': 'number'}, {'type': 'string'}]}),
+        ({'lt': 5}, Decimal, {'anyOf': [{'type': 'number', 'exclusiveMaximum': 5}, {'type': 'string'}]}),
+        ({'ge': 2}, Decimal, {'anyOf': [{'type': 'number', 'minimum': 2}, {'type': 'string'}]}),
+        ({'le': 5}, Decimal, {'anyOf': [{'type': 'number', 'maximum': 5}, {'type': 'string'}]}),
+        ({'multiple_of': 5}, Decimal, {'anyOf': [{'type': 'number', 'multipleOf': 5}, {'type': 'string'}]}),
     ],
 )
-def test_constraints_schema(kwargs, type_, expected_extra):
+def test_constraints_schema_validation(kwargs, type_, expected_extra):
     class Foo(BaseModel):
         a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
@@ -1600,7 +1636,51 @@ def test_constraints_schema(kwargs, type_, expected_extra):
     }
 
     expected_schema['properties']['a'].update(expected_extra)
-    assert Foo.model_json_schema() == expected_schema
+    assert Foo.model_json_schema(mode='validation') == expected_schema
+
+
+@pytest.mark.parametrize(
+    'kwargs,type_,expected_extra',
+    [
+        ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
+        ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
+        ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
+        ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
+        ({'pattern': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
+        ({'gt': 2}, int, {'type': 'integer', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, int, {'type': 'integer', 'minimum': 2}),
+        ({'le': 5}, int, {'type': 'integer', 'maximum': 5}),
+        ({'multiple_of': 5}, int, {'type': 'integer', 'multipleOf': 5}),
+        ({'gt': 2}, float, {'type': 'number', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
+        ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'gt': -math.inf}, float, {'type': 'number'}),
+        ({'lt': math.inf}, float, {'type': 'number'}),
+        ({'ge': -math.inf}, float, {'type': 'number'}),
+        ({'le': math.inf}, float, {'type': 'number'}),
+        ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
+        ({'gt': 2}, Decimal, {'type': 'string'}),
+        ({'lt': 5}, Decimal, {'type': 'string'}),
+        ({'ge': 2}, Decimal, {'type': 'string'}),
+        ({'le': 5}, Decimal, {'type': 'string'}),
+        ({'multiple_of': 5}, Decimal, {'type': 'string'}),
+    ],
+)
+def test_constraints_schema_serialization(kwargs, type_, expected_extra):
+    class Foo(BaseModel):
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+
+    expected_schema = {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
+        'required': ['a'],
+    }
+
+    expected_schema['properties']['a'].update(expected_extra)
+    assert Foo.model_json_schema(mode='serialization') == expected_schema
 
 
 @pytest.mark.parametrize(
@@ -1635,7 +1715,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'le': 5}, Decimal, Decimal(5)),
     ],
 )
-def test_constraints_schema_validation(kwargs, type_, value):
+def test_constraints_schema_validation_passes(kwargs, type_, value):
     class Foo(BaseModel):
         a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
@@ -2051,16 +2131,19 @@ def test_dataclass():
     class Model:
         a: bool
 
-    assert models_json_schema([Model]) == {
-        '$defs': {
-            'Model': {
-                'title': 'Model',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'boolean'}},
-                'required': ['a'],
+    assert models_json_schema([(Model, 'validation')]) == (
+        {(Model, 'validation'): 'Model'},
+        {
+            '$defs': {
+                'Model': {
+                    'title': 'Model',
+                    'type': 'object',
+                    'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+                    'required': ['a'],
+                }
             }
-        }
-    }
+        },
+    )
 
     assert model_json_schema(Model) == {
         'title': 'Model',
@@ -2205,14 +2288,43 @@ class NestedModel(BaseModel):
         """
     )
 
-    models = [module.ModelOne, module.ModelTwo, module.NestedModel]
-    model_names = set(models_json_schema(models)['$defs'].keys())
+    # All validation
+    keys_map, schema = models_json_schema(
+        [(module.ModelOne, 'validation'), (module.ModelTwo, 'validation'), (module.NestedModel, 'validation')]
+    )
+    model_names = set(schema['$defs'].keys())
     expected_model_names = {
         'ModelOne',
         'ModelTwo',
         f'{module.__name__}__ModelOne__NestedModel',
         f'{module.__name__}__ModelTwo__NestedModel',
         f'{module.__name__}__NestedModel',
+    }
+    assert model_names == expected_model_names
+
+    # Validation + serialization
+    keys_map, schema = models_json_schema(
+        [
+            (module.ModelOne, 'validation'),
+            (module.ModelTwo, 'validation'),
+            (module.NestedModel, 'validation'),
+            (module.ModelOne, 'serialization'),
+            (module.ModelTwo, 'serialization'),
+            (module.NestedModel, 'serialization'),
+        ]
+    )
+    model_names = set(schema['$defs'].keys())
+    expected_model_names = {
+        'ModelOneInput',
+        'ModelOneOutput',
+        'ModelTwoInput',
+        'ModelTwoOutput',
+        f'{module.__name__}__ModelOne__NestedModelInput',
+        f'{module.__name__}__ModelOne__NestedModelOutput',
+        f'{module.__name__}__ModelTwo__NestedModelInput',
+        f'{module.__name__}__ModelTwo__NestedModelOutput',
+        f'{module.__name__}__NestedModelInput',
+        f'{module.__name__}__NestedModelOutput',
     }
     assert model_names == expected_model_names
 
@@ -3440,8 +3552,8 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
 
 def test_override_generate_json_schema():
     class MyGenerateJsonSchema(GenerateJsonSchema):
-        def generate(self, schema):
-            json_schema = super().generate(schema)
+        def generate(self, schema, mode='validation'):
+            json_schema = super().generate(schema, mode=mode)
             json_schema['$schema'] = self.schema_dialect
             return json_schema
 
@@ -3452,8 +3564,9 @@ def test_override_generate_json_schema():
             by_alias: bool = True,
             ref_template: str = DEFAULT_REF_TEMPLATE,
             schema_generator: Type[GenerateJsonSchema] = MyGenerateJsonSchema,
+            mode='validation',
         ) -> Dict[str, Any]:
-            return super().model_json_schema(by_alias, ref_template, schema_generator)
+            return super().model_json_schema(by_alias, ref_template, schema_generator, mode)
 
     class MyModel(MyBaseModel):
         x: int
@@ -3742,3 +3855,77 @@ def test_model_with_schema_extra_callable_instance_method():
                     assert model_class is Model
 
         assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_serialization_validation_interaction():
+    class Inner(BaseModel):
+        x: Json[int]
+
+    class Outer(BaseModel):
+        inner: Inner
+
+    _, v_schema = models_json_schema([(Outer, 'validation')])
+    assert v_schema == {
+        '$defs': {
+            'Inner': {
+                'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'Outer': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
+
+    _, s_schema = models_json_schema([(Outer, 'serialization')])
+    assert s_schema == {
+        '$defs': {
+            'Inner': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'Outer': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
+
+    _, vs_schema = models_json_schema([(Outer, 'validation'), (Outer, 'serialization')])
+    assert vs_schema == {
+        '$defs': {
+            'InnerInput': {
+                'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'InnerOutput': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'OuterInput': {
+                'properties': {'inner': {'$ref': '#/$defs/InnerInput'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+            'OuterOutput': {
+                'properties': {'inner': {'$ref': '#/$defs/InnerOutput'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
