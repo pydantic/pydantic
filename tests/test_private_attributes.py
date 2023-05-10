@@ -328,3 +328,14 @@ def test_ignored_types_are_ignored_cached_property():
         _b: int
 
     assert set(MyModel.__private_attributes__) == {'_b'}
+
+
+def test_none_as_private_attr():
+    from pydantic import BaseModel
+
+    class A(BaseModel):
+        _x: None
+
+    a = A()
+    a._x = None
+    assert a._x is None
