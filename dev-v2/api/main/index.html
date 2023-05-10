@@ -2083,8 +2083,7 @@ and <code>@serializer</code> decorators.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/main.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 222</span>
-<span class="normal"> 223</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 223</span>
 <span class="normal"> 224</span>
 <span class="normal"> 225</span>
 <span class="normal"> 226</span>
@@ -3064,7 +3063,11 @@ and <code>@serializer</code> decorators.</p></td>
 <span class="normal">1200</span>
 <span class="normal">1201</span>
 <span class="normal">1202</span>
-<span class="normal">1203</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">,</span> <span class="n">metaclass</span><span class="o">=</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A base model class for creating Pydantic models.</span>
 
@@ -3477,6 +3480,7 @@ and <code>@serializer</code> decorators.</p></td>
         <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
         <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">:</span> <span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="s1">&#39;validation&#39;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Generates a JSON schema for a model class.</span>
@@ -3494,7 +3498,9 @@ and <code>@serializer</code> decorators.</p></td>
 <span class="sd">        Returns:</span>
 <span class="sd">            Dict: The JSON schema for the given `cls` model class.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">model_json_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">,</span> <span class="n">schema_generator</span><span class="o">=</span><span class="n">schema_generator</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">model_json_schema</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">,</span> <span class="n">schema_generator</span><span class="o">=</span><span class="n">schema_generator</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span>
+        <span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">model_modify_json_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
@@ -4209,11 +4215,7 @@ copied = self.model_validate(data)
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1083</span>
-<span class="normal">1084</span>
-<span class="normal">1085</span>
-<span class="normal">1086</span>
-<span class="normal">1087</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1087</span>
 <span class="normal">1088</span>
 <span class="normal">1089</span>
 <span class="normal">1090</span>
@@ -4258,7 +4260,11 @@ copied = self.model_validate(data)
 <span class="normal">1129</span>
 <span class="normal">1130</span>
 <span class="normal">1131</span>
-<span class="normal">1132</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">)</span>
+<span class="normal">1132</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -4401,8 +4407,7 @@ Behaves as if <code>Config.extra = 'allow'</code> was set since it adds all pass
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">584</span>
-<span class="normal">585</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">585</span>
 <span class="normal">586</span>
 <span class="normal">587</span>
 <span class="normal">588</span>
@@ -4444,7 +4449,8 @@ Behaves as if <code>Config.extra = 'allow'</code> was set since it adds all pass
 <span class="normal">624</span>
 <span class="normal">625</span>
 <span class="normal">626</span>
-<span class="normal">627</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">627</span>
+<span class="normal">628</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_construct</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">],</span> <span class="n">_fields_set</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">values</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates a new instance of the `Model` class with validated data.</span>
@@ -4565,11 +4571,7 @@ before creating the new model. You should trust this data.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">752</span>
-<span class="normal">753</span>
-<span class="normal">754</span>
-<span class="normal">755</span>
-<span class="normal">756</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">756</span>
 <span class="normal">757</span>
 <span class="normal">758</span>
 <span class="normal">759</span>
@@ -4590,7 +4592,11 @@ before creating the new model. You should trust this data.</p></td>
 <span class="normal">774</span>
 <span class="normal">775</span>
 <span class="normal">776</span>
-<span class="normal">777</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
+<span class="normal">777</span>
+<span class="normal">778</span>
+<span class="normal">779</span>
+<span class="normal">780</span>
+<span class="normal">781</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a copy of the Model.</span>
 
@@ -4785,8 +4791,7 @@ If mode is 'python', the dictionary may contain any Python objects.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">491</span>
-<span class="normal">492</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">492</span>
 <span class="normal">493</span>
 <span class="normal">494</span>
 <span class="normal">495</span>
@@ -4829,7 +4834,8 @@ If mode is 'python', the dictionary may contain any Python objects.</p></td>
 <span class="normal">532</span>
 <span class="normal">533</span>
 <span class="normal">534</span>
-<span class="normal">535</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span>
+<span class="normal">535</span>
+<span class="normal">536</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_dump</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;python&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;python&#39;</span><span class="p">,</span>
@@ -5035,8 +5041,7 @@ to False.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">537</span>
-<span class="normal">538</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">538</span>
 <span class="normal">539</span>
 <span class="normal">540</span>
 <span class="normal">541</span>
@@ -5080,7 +5085,8 @@ to False.</p></td>
 <span class="normal">579</span>
 <span class="normal">580</span>
 <span class="normal">581</span>
-<span class="normal">582</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_dump_json</span><span class="p">(</span>
+<span class="normal">582</span>
+<span class="normal">583</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_dump_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">indent</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5149,6 +5155,7 @@ to False.</p></td>
     <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;validation&quot;</span><span class="p">,</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -5233,8 +5240,7 @@ value of <code>schema_generator</code> to be your subclass.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">629</span>
-<span class="normal">630</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">630</span>
 <span class="normal">631</span>
 <span class="normal">632</span>
 <span class="normal">633</span>
@@ -5256,12 +5262,17 @@ value of <code>schema_generator</code> to be your subclass.</p>
 <span class="normal">649</span>
 <span class="normal">650</span>
 <span class="normal">651</span>
-<span class="normal">652</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">652</span>
+<span class="normal">653</span>
+<span class="normal">654</span>
+<span class="normal">655</span>
+<span class="normal">656</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_json_schema</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="s1">&#39;validation&#39;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Generates a JSON schema for a model class.</span>
@@ -5279,7 +5290,9 @@ value of <code>schema_generator</code> to be your subclass.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        Dict: The JSON schema for the given `cls` model class.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">model_json_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">,</span> <span class="n">schema_generator</span><span class="o">=</span><span class="n">schema_generator</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">model_json_schema</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">,</span> <span class="n">schema_generator</span><span class="o">=</span><span class="n">schema_generator</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -5365,11 +5378,7 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">654</span>
-<span class="normal">655</span>
-<span class="normal">656</span>
-<span class="normal">657</span>
-<span class="normal">658</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">658</span>
 <span class="normal">659</span>
 <span class="normal">660</span>
 <span class="normal">661</span>
@@ -5386,7 +5395,11 @@ a subclass of <code>GenerateJsonSchema</code> and pass it as <code>schema_genera
 <span class="normal">672</span>
 <span class="normal">673</span>
 <span class="normal">674</span>
-<span class="normal">675</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">675</span>
+<span class="normal">676</span>
+<span class="normal">677</span>
+<span class="normal">678</span>
+<span class="normal">679</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_modify_json_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This is a convenience method that primarily controls how the &quot;generic&quot; properties of the JSON schema are</span>
@@ -5499,11 +5512,7 @@ the value <code>(str, int)</code> would be passed to <code>params</code>.</p></t
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">886</span>
-<span class="normal">887</span>
-<span class="normal">888</span>
-<span class="normal">889</span>
-<span class="normal">890</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">890</span>
 <span class="normal">891</span>
 <span class="normal">892</span>
 <span class="normal">893</span>
@@ -5525,7 +5534,11 @@ the value <code>(str, int)</code> would be passed to <code>params</code>.</p></t
 <span class="normal">909</span>
 <span class="normal">910</span>
 <span class="normal">911</span>
-<span class="normal">912</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">912</span>
+<span class="normal">913</span>
+<span class="normal">914</span>
+<span class="normal">915</span>
+<span class="normal">916</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_parametrized_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute class name for parametrizations of generic classes.</span>
@@ -5577,12 +5590,12 @@ This is useful if you want to do some validation that requires the entire model 
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">441</span>
-<span class="normal">442</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">442</span>
 <span class="normal">443</span>
 <span class="normal">444</span>
 <span class="normal">445</span>
-<span class="normal">446</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__context</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">446</span>
+<span class="normal">447</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_post_init</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__context</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Override this method to perform additional initialization after `__init__` and `model_construct`.</span>
 <span class="sd">    This is useful if you want to do some validation that requires the entire model to be initialized.</span>
@@ -5705,11 +5718,7 @@ This is useful if you want to do some validation that requires the entire model 
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">677</span>
-<span class="normal">678</span>
-<span class="normal">679</span>
-<span class="normal">680</span>
-<span class="normal">681</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">681</span>
 <span class="normal">682</span>
 <span class="normal">683</span>
 <span class="normal">684</span>
@@ -5749,7 +5758,11 @@ This is useful if you want to do some validation that requires the entire model 
 <span class="normal">718</span>
 <span class="normal">719</span>
 <span class="normal">720</span>
-<span class="normal">721</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">721</span>
+<span class="normal">722</span>
+<span class="normal">723</span>
+<span class="normal">724</span>
+<span class="normal">725</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_rebuild</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -5912,8 +5925,7 @@ This is useful if you want to do some validation that requires the entire model 
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">360</span>
-<span class="normal">361</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">361</span>
 <span class="normal">362</span>
 <span class="normal">363</span>
 <span class="normal">364</span>
@@ -5932,7 +5944,8 @@ This is useful if you want to do some validation that requires the entire model 
 <span class="normal">377</span>
 <span class="normal">378</span>
 <span class="normal">379</span>
-<span class="normal">380</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">380</span>
+<span class="normal">381</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_validate</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">],</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
@@ -6080,8 +6093,7 @@ This is useful if you want to do some validation that requires the entire model 
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">413</span>
-<span class="normal">414</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">414</span>
 <span class="normal">415</span>
 <span class="normal">416</span>
 <span class="normal">417</span>
@@ -6106,7 +6118,8 @@ This is useful if you want to do some validation that requires the entire model 
 <span class="normal">436</span>
 <span class="normal">437</span>
 <span class="normal">438</span>
-<span class="normal">439</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">439</span>
+<span class="normal">440</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_validate_json</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Model</span><span class="p">],</span>
     <span class="n">json_data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span> <span class="o">|</span> <span class="nb">bytearray</span><span class="p">,</span>
@@ -6166,8 +6179,7 @@ This is useful if you want to do some validation that requires the entire model 
 
         <details class="quote">
           <summary>Source code in <code>pydantic/main.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 84</span>
-<span class="normal"> 85</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 85</span>
 <span class="normal"> 86</span>
 <span class="normal"> 87</span>
 <span class="normal"> 88</span>
@@ -6301,7 +6313,8 @@ This is useful if you want to do some validation that requires the entire model 
 <span class="normal">216</span>
 <span class="normal">217</span>
 <span class="normal">218</span>
-<span class="normal">219</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">dataclass_transform</span><span class="p">(</span><span class="n">kw_only_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">Field</span><span class="p">,))</span>
+<span class="normal">219</span>
+<span class="normal">220</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@typing_extensions</span><span class="o">.</span><span class="n">dataclass_transform</span><span class="p">(</span><span class="n">kw_only_default</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">Field</span><span class="p">,))</span>
 <span class="k">class</span> <span class="nc">ModelMetaclass</span><span class="p">(</span><span class="n">ABCMeta</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__new__</span><span class="p">(</span>
         <span class="n">mcs</span><span class="p">,</span>
@@ -6604,11 +6617,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1237</span>
-<span class="normal">1238</span>
-<span class="normal">1239</span>
-<span class="normal">1240</span>
-<span class="normal">1241</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1241</span>
 <span class="normal">1242</span>
 <span class="normal">1243</span>
 <span class="normal">1244</span>
@@ -6684,7 +6693,11 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 <span class="normal">1314</span>
 <span class="normal">1315</span>
 <span class="normal">1316</span>
-<span class="normal">1317</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1317</span>
+<span class="normal">1318</span>
+<span class="normal">1319</span>
+<span class="normal">1320</span>
+<span class="normal">1321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>

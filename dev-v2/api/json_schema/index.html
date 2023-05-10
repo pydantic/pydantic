@@ -1931,12 +1931,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 140</span>
-<span class="normal"> 141</span>
-<span class="normal"> 142</span>
-<span class="normal"> 143</span>
-<span class="normal"> 144</span>
-<span class="normal"> 145</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 145</span>
 <span class="normal"> 146</span>
 <span class="normal"> 147</span>
 <span class="normal"> 148</span>
@@ -2971,7 +2966,43 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">1177</span>
 <span class="normal">1178</span>
 <span class="normal">1179</span>
-<span class="normal">1180</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GenerateJsonSchema</span><span class="p">:</span>
+<span class="normal">1180</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span>
+<span class="normal">1189</span>
+<span class="normal">1190</span>
+<span class="normal">1191</span>
+<span class="normal">1192</span>
+<span class="normal">1193</span>
+<span class="normal">1194</span>
+<span class="normal">1195</span>
+<span class="normal">1196</span>
+<span class="normal">1197</span>
+<span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
+<span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span>
+<span class="normal">1210</span>
+<span class="normal">1211</span>
+<span class="normal">1212</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span>
+<span class="normal">1215</span>
+<span class="normal">1216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GenerateJsonSchema</span><span class="p">:</span>
     <span class="c1"># See https://json-schema.org/understanding-json-schema/reference/schema.html#id4 for more info about dialects</span>
     <span class="n">schema_dialect</span> <span class="o">=</span> <span class="s1">&#39;https://json-schema.org/draft/2020-12/schema&#39;</span>
 
@@ -2983,9 +3014,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="bp">self</span><span class="o">.</span><span class="n">by_alias</span> <span class="o">=</span> <span class="n">by_alias</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ref_template</span> <span class="o">=</span> <span class="n">ref_template</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CoreRef</span><span class="p">,</span> <span class="n">JsonRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CoreRef</span><span class="p">,</span> <span class="n">DefsRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">CoreRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CoreModeRef</span><span class="p">,</span> <span class="n">JsonRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CoreModeRef</span><span class="p">,</span> <span class="n">DefsRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">CoreModeRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">JsonRef</span><span class="p">,</span> <span class="n">DefsRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">JsonSchemaValue</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
@@ -2994,13 +3025,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="c1"># during generation, but we also track the colliding tag so that it</span>
         <span class="c1"># can be remapped for the first occurrence at the end of the process</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">collisions</span><span class="p">:</span> <span class="nb">set</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">]</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CoreRef</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">CoreModeRef</span><span class="p">,</span> <span class="nb">list</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">]]</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_schema_type_to_method</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_schema_type_to_method</span><span class="p">()</span>
 
         <span class="c1"># This changes to True after generating a schema, to prevent issues caused by accidental re-use</span>
         <span class="c1"># of a single instance of a schema generator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_used</span> <span class="o">=</span> <span class="kc">False</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">:</span> <span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="s1">&#39;validation&#39;</span>
 
     <span class="k">def</span> <span class="nf">build_schema_type_to_method</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -3020,7 +3053,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
                 <span class="p">)</span> <span class="kn">from</span> <span class="nn">e</span>
         <span class="k">return</span> <span class="n">mapping</span>
 
-    <span class="k">def</span> <span class="nf">generate_definitions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schemas</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">generate_definitions</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">]]</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">DefsRef</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">JsonSchemaValue</span><span class="p">]]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Given a list of core_schema, generate all JSON schema definitions, and return the generated definitions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
@@ -3030,15 +3065,28 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
                 <span class="sa">f</span><span class="s1">&#39;You must create a new instance of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> to generate a new JSON schema.&#39;</span><span class="p">,</span>
                 <span class="n">code</span><span class="o">=</span><span class="s1">&#39;json-schema-already-used&#39;</span><span class="p">,</span>
             <span class="p">)</span>
-        <span class="k">for</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">schemas</span><span class="p">:</span>
+
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">resolve_collisions</span><span class="p">({})</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_used</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span>
+        <span class="n">refs_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">DefsRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
+            <span class="n">json_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+            <span class="k">if</span> <span class="s1">&#39;$ref&#39;</span> <span class="ow">in</span> <span class="n">json_schema</span><span class="p">:</span>
+                <span class="n">json_ref</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">JsonRef</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;$ref&#39;</span><span class="p">])</span>
+                <span class="n">defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">json_ref</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">defs_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">refs_map</span><span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">)]</span> <span class="o">=</span> <span class="n">defs_ref</span>
 
-    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_used</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="n">refs_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span>
+
+    <span class="k">def</span> <span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">mode</span><span class="p">:</span> <span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="s1">&#39;validation&#39;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_used</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
                 <span class="s1">&#39;This JSON schema generator has already been used to generate a JSON schema. &#39;</span>
@@ -3087,8 +3135,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="c1"># on types that should have different JSON schemas</span>
         <span class="k">if</span> <span class="s1">&#39;ref&#39;</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">:</span>
             <span class="n">core_ref</span> <span class="o">=</span> <span class="n">CoreRef</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;ref&#39;</span><span class="p">])</span>  <span class="c1"># type: ignore[typeddict-item]</span>
-            <span class="k">if</span> <span class="n">core_ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;$ref&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]}</span>
+            <span class="n">core_mode_ref</span> <span class="o">=</span> <span class="p">(</span><span class="n">core_ref</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">core_mode_ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;$ref&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]}</span>
 
         <span class="c1"># Generate the JSON schema, accounting for the json_schema_override and core_schema_override</span>
         <span class="n">metadata_handler</span> <span class="o">=</span> <span class="n">_core_metadata</span><span class="o">.</span><span class="n">CoreMetadataHandler</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
@@ -3454,7 +3503,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
                 <span class="n">field_json_schema</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title</span>
             <span class="n">field_json_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">handle_ref_overrides</span><span class="p">(</span><span class="n">field_json_schema</span><span class="p">)</span>
             <span class="n">properties</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_json_schema</span>
-            <span class="k">if</span> <span class="n">required</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">required</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;serialization&#39;</span><span class="p">:</span>
+                <span class="c1"># Note: This assumes all fields will be included during serialization</span>
+                <span class="c1"># TODO: Probably want to make this more configurable in some way, on a per-model and/or per-field basis</span>
                 <span class="n">required_fields</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
 
         <span class="n">json_schema</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;object&#39;</span><span class="p">,</span> <span class="s1">&#39;properties&#39;</span><span class="p">:</span> <span class="n">properties</span><span class="p">}</span>
@@ -3589,7 +3640,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
                 <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">p_arguments_schema</span><span class="p">(</span><span class="n">p_only_arguments</span> <span class="o">+</span> <span class="n">kw_or_p_arguments</span><span class="p">,</span> <span class="n">var_args_schema</span><span class="p">)</span>
 
         <span class="k">raise</span> <span class="n">PydanticInvalidForJsonSchema</span><span class="p">(</span>
-            <span class="s1">&#39;Unable to generate JSON schema for arguments validator with positional only and keyword only arguments&#39;</span>
+            <span class="s1">&#39;Unable to generate JSON schema for arguments validator with positional-only and keyword-only arguments&#39;</span>
         <span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">kw_arguments_schema</span><span class="p">(</span>
@@ -3670,13 +3721,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">])</span>
 
     <span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">JsonSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
-        <span class="c1"># TODO: For v1 compatibility, we should probably be using `schema[&#39;schema&#39;]` to produce the schema.</span>
-        <span class="c1">#   This is a serialization vs. validation thing; see https://github.com/pydantic/pydantic/issues/5072</span>
-        <span class="c1">#   -</span>
-        <span class="c1">#   The behavior below is not currently consistent with the v1 behavior, so should probably be changed.</span>
-        <span class="c1">#   I think making it work like v1 should be as easy as handling schema[&#39;schema&#39;] instead, with the note</span>
-        <span class="c1">#   that we&#39;ll need to make generics work with Json (there is a test for this in test_generics.py).</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;json-string&#39;</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;json-string&#39;</span><span class="p">}</span>
+        <span class="k">elif</span> <span class="s1">&#39;schema&#39;</span> <span class="ow">in</span> <span class="n">schema</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">[</span><span class="s1">&#39;schema&#39;</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># No wrapped schema, so return the same thing we would for an Any schema</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">core_schema</span><span class="o">.</span><span class="n">any_schema</span><span class="p">())</span>
 
     <span class="k">def</span> <span class="nf">url_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">UrlSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
         <span class="n">json_schema</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;type&#39;</span><span class="p">:</span> <span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="s1">&#39;format&#39;</span><span class="p">:</span> <span class="s1">&#39;uri&#39;</span><span class="p">,</span> <span class="s1">&#39;minLength&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
@@ -3733,11 +3784,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <span class="k">def</span> <span class="nf">normalize_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;[^a-zA-Z0-9.\-_]&#39;</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39;__&#39;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">get_defs_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">:</span> <span class="n">CoreRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefsRef</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">get_defs_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">core_mode_ref</span><span class="p">:</span> <span class="n">CoreModeRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefsRef</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Override this method to change the way that definitions keys are generated from a core reference.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="c1"># Split the core ref into &quot;components&quot;; generic origins and arguments are each separate components</span>
+        <span class="n">core_ref</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="n">core_mode_ref</span>
         <span class="n">components</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([\][,])&#39;</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">)</span>
         <span class="c1"># Remove IDs from each component</span>
         <span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="p">]</span>
@@ -3746,18 +3798,23 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?:[^.[\]]+\.)+((?:[^.[\]]+))&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="p">]</span>
         <span class="n">short_ref</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">components</span><span class="p">)</span>
 
-        <span class="n">first_choice</span> <span class="o">=</span> <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">short_ref</span><span class="p">))</span>  <span class="c1"># name</span>
-        <span class="n">second_choice</span> <span class="o">=</span> <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref_no_id</span><span class="p">))</span>  <span class="c1"># module + qualname</span>
-        <span class="n">third_choice</span> <span class="o">=</span> <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref</span><span class="p">))</span>  <span class="c1"># module + qualname + id</span>
-
+        <span class="n">mode_title</span> <span class="o">=</span> <span class="n">_MODE_TITLE_MAPPING</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
         <span class="c1"># It is important that the generated defs_ref values be such that at least one could not</span>
         <span class="c1"># be generated for any other core_ref. Currently, this should be the case because we include</span>
-        <span class="c1"># the id of the source type in the core_ref, and therefore in the third_choice</span>
-        <span class="n">choices</span> <span class="o">=</span> <span class="p">[</span><span class="n">first_choice</span><span class="p">,</span> <span class="n">second_choice</span><span class="p">,</span> <span class="n">third_choice</span><span class="p">]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+        <span class="c1"># the id of the source type in the core_ref</span>
+        <span class="n">choices</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">short_ref</span><span class="p">)),</span>  <span class="c1"># name</span>
+            <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">short_ref</span> <span class="o">+</span> <span class="n">mode_title</span><span class="p">)),</span>  <span class="c1"># name + mode</span>
+            <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref_no_id</span><span class="p">)),</span>  <span class="c1"># module + qualname</span>
+            <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref_no_id</span> <span class="o">+</span> <span class="n">mode_title</span><span class="p">)),</span>  <span class="c1"># module + qualname + mode</span>
+            <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref</span><span class="p">)),</span>  <span class="c1"># module + qualname + id</span>
+            <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref</span> <span class="o">+</span> <span class="n">mode_title</span><span class="p">)),</span>  <span class="c1"># module + qualname + id + mode</span>
+        <span class="p">]</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
 
         <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">choices</span><span class="p">:</span>
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">core_ref</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">core_mode_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">core_mode_ref</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">choice</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">collisions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
@@ -3780,15 +3837,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="k">while</span> <span class="n">made_changes</span><span class="p">:</span>
             <span class="n">made_changes</span> <span class="o">=</span> <span class="kc">False</span>
 
-            <span class="k">for</span> <span class="n">defs_ref</span><span class="p">,</span> <span class="n">core_ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">defs_ref</span><span class="p">,</span> <span class="n">core_mode_ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">defs_ref</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collisions</span><span class="p">:</span>
                     <span class="k">continue</span>
 
-                <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]:</span>
                     <span class="k">if</span> <span class="n">choice</span> <span class="o">==</span> <span class="n">defs_ref</span> <span class="ow">or</span> <span class="n">choice</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collisions</span><span class="p">:</span>
                         <span class="k">continue</span>
 
-                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">core_ref</span><span class="p">:</span>
+                    <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">core_mode_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">core_mode_ref</span><span class="p">:</span>
                         <span class="n">json_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">change_defs_ref</span><span class="p">(</span><span class="n">defs_ref</span><span class="p">,</span> <span class="n">choice</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">)</span>
                         <span class="n">made_changes</span> <span class="o">=</span> <span class="kc">True</span>
                         <span class="k">break</span>
@@ -3803,15 +3860,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <span class="k">def</span> <span class="nf">change_defs_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">old</span><span class="p">:</span> <span class="n">DefsRef</span><span class="p">,</span> <span class="n">new</span><span class="p">:</span> <span class="n">DefsRef</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">new</span> <span class="o">==</span> <span class="n">old</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">json_schema</span>
-        <span class="n">core_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">[</span><span class="n">old</span><span class="p">]</span>
-        <span class="n">old_json_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span>
+        <span class="n">core_mode_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">[</span><span class="n">old</span><span class="p">]</span>
+        <span class="n">old_json_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span>
         <span class="n">new_json_ref</span> <span class="o">=</span> <span class="n">JsonRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">new</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span><span class="p">[</span><span class="n">new</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">[</span><span class="n">new</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="p">[</span><span class="n">new_json_ref</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old_json_ref</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_json_ref</span>
+        <span class="k">assert</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old_json_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">old</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="p">[</span><span class="n">new_json_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">new</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_json_ref</span>
 
         <span class="k">def</span> <span class="nf">walk_replace_json_schema_ref</span><span class="p">(</span><span class="n">item</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
@@ -3827,6 +3885,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">return</span> <span class="n">item</span>
 
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">walk_replace_json_schema_ref</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+
         <span class="k">return</span> <span class="n">walk_replace_json_schema_ref</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">get_cache_defs_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">:</span> <span class="n">CoreRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
@@ -3834,19 +3895,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">        This method wraps the get_defs_ref method with some cache-lookup/population logic,</span>
 <span class="sd">        and returns both the produced defs_ref and the JSON schema that will refer to the right definition.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">maybe_defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">core_ref</span><span class="p">)</span>
+        <span class="n">core_mode_ref</span> <span class="o">=</span> <span class="p">(</span><span class="n">core_ref</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+        <span class="n">maybe_defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">core_mode_ref</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">maybe_defs_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">json_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span>
+            <span class="n">json_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">maybe_defs_ref</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;$ref&#39;</span><span class="p">:</span> <span class="n">json_ref</span><span class="p">}</span>
 
-        <span class="n">defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defs_ref</span><span class="p">(</span><span class="n">core_ref</span><span class="p">)</span>
+        <span class="n">defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defs_ref</span><span class="p">(</span><span class="n">core_mode_ref</span><span class="p">)</span>
 
         <span class="c1"># populate the ref translation mappings</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">defs_ref</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">[</span><span class="n">defs_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">core_ref</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">defs_ref</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">[</span><span class="n">defs_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">core_mode_ref</span>
 
         <span class="n">json_ref</span> <span class="o">=</span> <span class="n">JsonRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">defs_ref</span><span class="p">))</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">json_ref</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">json_ref</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="p">[</span><span class="n">json_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">defs_ref</span>
         <span class="n">ref_json_schema</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;$ref&#39;</span><span class="p">:</span> <span class="n">json_ref</span><span class="p">}</span>
         <span class="k">return</span> <span class="n">defs_ref</span><span class="p">,</span> <span class="n">ref_json_schema</span>
@@ -3986,7 +4048,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="k">return</span> <span class="n">json_refs</span>
 
     <span class="k">def</span> <span class="nf">handle_invalid_for_json_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchemaOrField</span><span class="p">,</span> <span class="n">error_info</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">_core_metadata</span><span class="o">.</span><span class="n">CoreMetadataHandler</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pydantic_js_modify_function&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">_core_metadata</span><span class="o">.</span><span class="n">CoreMetadataHandler</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span><span class="o">.</span><span class="n">metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;pydantic_js_functions&#39;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Since there is a json schema modify function, assume that this type is meant to be handled,</span>
             <span class="c1"># and the modify function will set all properties as appropriate</span>
             <span class="k">return</span> <span class="p">{}</span>
@@ -4048,44 +4110,44 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1079</span>
-<span class="normal">1080</span>
-<span class="normal">1081</span>
-<span class="normal">1082</span>
-<span class="normal">1083</span>
-<span class="normal">1084</span>
-<span class="normal">1085</span>
-<span class="normal">1086</span>
-<span class="normal">1087</span>
-<span class="normal">1088</span>
-<span class="normal">1089</span>
-<span class="normal">1090</span>
-<span class="normal">1091</span>
-<span class="normal">1092</span>
-<span class="normal">1093</span>
-<span class="normal">1094</span>
-<span class="normal">1095</span>
-<span class="normal">1096</span>
-<span class="normal">1097</span>
-<span class="normal">1098</span>
-<span class="normal">1099</span>
-<span class="normal">1100</span>
-<span class="normal">1101</span>
-<span class="normal">1102</span>
-<span class="normal">1103</span>
-<span class="normal">1104</span>
-<span class="normal">1105</span>
-<span class="normal">1106</span>
-<span class="normal">1107</span>
-<span class="normal">1108</span>
-<span class="normal">1109</span>
-<span class="normal">1110</span>
-<span class="normal">1111</span>
-<span class="normal">1112</span>
-<span class="normal">1113</span>
-<span class="normal">1114</span>
-<span class="normal">1115</span>
-<span class="normal">1116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ValidationsMapping</span><span class="p">:</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1115</span>
+<span class="normal">1116</span>
+<span class="normal">1117</span>
+<span class="normal">1118</span>
+<span class="normal">1119</span>
+<span class="normal">1120</span>
+<span class="normal">1121</span>
+<span class="normal">1122</span>
+<span class="normal">1123</span>
+<span class="normal">1124</span>
+<span class="normal">1125</span>
+<span class="normal">1126</span>
+<span class="normal">1127</span>
+<span class="normal">1128</span>
+<span class="normal">1129</span>
+<span class="normal">1130</span>
+<span class="normal">1131</span>
+<span class="normal">1132</span>
+<span class="normal">1133</span>
+<span class="normal">1134</span>
+<span class="normal">1135</span>
+<span class="normal">1136</span>
+<span class="normal">1137</span>
+<span class="normal">1138</span>
+<span class="normal">1139</span>
+<span class="normal">1140</span>
+<span class="normal">1141</span>
+<span class="normal">1142</span>
+<span class="normal">1143</span>
+<span class="normal">1144</span>
+<span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span>
+<span class="normal">1151</span>
+<span class="normal">1152</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ValidationsMapping</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class just contains mappings from core_schema attribute names to the corresponding</span>
 <span class="sd">    JSON schema attribute names. While I suspect it is unlikely to be necessary, you can in</span>
@@ -4165,13 +4227,13 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1162</span>
-<span class="normal">1163</span>
-<span class="normal">1164</span>
-<span class="normal">1165</span>
-<span class="normal">1166</span>
-<span class="normal">1167</span>
-<span class="normal">1168</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">emit_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">JsonSchemaWarningKind</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">emit_warning</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">JsonSchemaWarningKind</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This method simply emits PydanticJsonSchemaWarnings based on handling in the `warning_message` method.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4204,31 +4266,31 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">873</span>
-<span class="normal">874</span>
-<span class="normal">875</span>
-<span class="normal">876</span>
-<span class="normal">877</span>
-<span class="normal">878</span>
-<span class="normal">879</span>
-<span class="normal">880</span>
-<span class="normal">881</span>
-<span class="normal">882</span>
-<span class="normal">883</span>
-<span class="normal">884</span>
-<span class="normal">885</span>
-<span class="normal">886</span>
-<span class="normal">887</span>
-<span class="normal">888</span>
-<span class="normal">889</span>
-<span class="normal">890</span>
-<span class="normal">891</span>
-<span class="normal">892</span>
-<span class="normal">893</span>
-<span class="normal">894</span>
-<span class="normal">895</span>
-<span class="normal">896</span>
-<span class="normal">897</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_title_should_be_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchemaOrField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">898</span>
+<span class="normal">899</span>
+<span class="normal">900</span>
+<span class="normal">901</span>
+<span class="normal">902</span>
+<span class="normal">903</span>
+<span class="normal">904</span>
+<span class="normal">905</span>
+<span class="normal">906</span>
+<span class="normal">907</span>
+<span class="normal">908</span>
+<span class="normal">909</span>
+<span class="normal">910</span>
+<span class="normal">911</span>
+<span class="normal">912</span>
+<span class="normal">913</span>
+<span class="normal">914</span>
+<span class="normal">915</span>
+<span class="normal">916</span>
+<span class="normal">917</span>
+<span class="normal">918</span>
+<span class="normal">919</span>
+<span class="normal">920</span>
+<span class="normal">921</span>
+<span class="normal">922</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_title_should_be_set</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchemaOrField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns true if a field with the given schema should have a title set based on the field name.</span>
 
@@ -4268,7 +4330,7 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.generate_definitions" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">generate_definitions</span><span class="p">(</span><span class="n">schemas</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">generate_definitions</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4277,14 +4339,7 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">196</span>
 <span class="normal">197</span>
 <span class="normal">198</span>
 <span class="normal">199</span>
@@ -4293,7 +4348,30 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
 <span class="normal">202</span>
 <span class="normal">203</span>
 <span class="normal">204</span>
-<span class="normal">205</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate_definitions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schemas</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">CoreSchema</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate_definitions</span><span class="p">(</span>
+    <span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">]]</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">DefsRef</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">JsonSchemaValue</span><span class="p">]]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Given a list of core_schema, generate all JSON schema definitions, and return the generated definitions.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4303,13 +4381,25 @@ GenerateJsonSchema.ValidationsMapping) to change these mappings.</p>
             <span class="sa">f</span><span class="s1">&#39;You must create a new instance of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> to generate a new JSON schema.&#39;</span><span class="p">,</span>
             <span class="n">code</span><span class="o">=</span><span class="s1">&#39;json-schema-already-used&#39;</span><span class="p">,</span>
         <span class="p">)</span>
-    <span class="k">for</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">schemas</span><span class="p">:</span>
+
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
 
     <span class="bp">self</span><span class="o">.</span><span class="n">resolve_collisions</span><span class="p">({})</span>
 
+    <span class="n">refs_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">DefsRef</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">schema</span> <span class="ow">in</span> <span class="n">inputs</span><span class="p">:</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="o">=</span> <span class="n">mode</span>
+        <span class="n">json_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_inner</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s1">&#39;$ref&#39;</span> <span class="ow">in</span> <span class="n">json_schema</span><span class="p">:</span>
+            <span class="n">json_ref</span> <span class="o">=</span> <span class="n">cast</span><span class="p">(</span><span class="n">JsonRef</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;$ref&#39;</span><span class="p">])</span>
+            <span class="n">defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">json_ref</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">defs_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">refs_map</span><span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">)]</span> <span class="o">=</span> <span class="n">defs_ref</span>
+
     <span class="bp">self</span><span class="o">.</span><span class="n">_used</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span>
+    <span class="k">return</span> <span class="n">refs_map</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">definitions</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -4335,44 +4425,46 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 998</span>
-<span class="normal"> 999</span>
-<span class="normal">1000</span>
-<span class="normal">1001</span>
-<span class="normal">1002</span>
-<span class="normal">1003</span>
-<span class="normal">1004</span>
-<span class="normal">1005</span>
-<span class="normal">1006</span>
-<span class="normal">1007</span>
-<span class="normal">1008</span>
-<span class="normal">1009</span>
-<span class="normal">1010</span>
-<span class="normal">1011</span>
-<span class="normal">1012</span>
-<span class="normal">1013</span>
-<span class="normal">1014</span>
-<span class="normal">1015</span>
-<span class="normal">1016</span>
-<span class="normal">1017</span>
-<span class="normal">1018</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_cache_defs_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">:</span> <span class="n">CoreRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1033</span>
+<span class="normal">1034</span>
+<span class="normal">1035</span>
+<span class="normal">1036</span>
+<span class="normal">1037</span>
+<span class="normal">1038</span>
+<span class="normal">1039</span>
+<span class="normal">1040</span>
+<span class="normal">1041</span>
+<span class="normal">1042</span>
+<span class="normal">1043</span>
+<span class="normal">1044</span>
+<span class="normal">1045</span>
+<span class="normal">1046</span>
+<span class="normal">1047</span>
+<span class="normal">1048</span>
+<span class="normal">1049</span>
+<span class="normal">1050</span>
+<span class="normal">1051</span>
+<span class="normal">1052</span>
+<span class="normal">1053</span>
+<span class="normal">1054</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_cache_defs_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">:</span> <span class="n">CoreRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">DefsRef</span><span class="p">,</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This method wraps the get_defs_ref method with some cache-lookup/population logic,</span>
 <span class="sd">    and returns both the produced defs_ref and the JSON schema that will refer to the right definition.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">maybe_defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">core_ref</span><span class="p">)</span>
+    <span class="n">core_mode_ref</span> <span class="o">=</span> <span class="p">(</span><span class="n">core_ref</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
+    <span class="n">maybe_defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">core_mode_ref</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">maybe_defs_ref</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">json_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span>
+        <span class="n">json_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">maybe_defs_ref</span><span class="p">,</span> <span class="p">{</span><span class="s1">&#39;$ref&#39;</span><span class="p">:</span> <span class="n">json_ref</span><span class="p">}</span>
 
-    <span class="n">defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defs_ref</span><span class="p">(</span><span class="n">core_ref</span><span class="p">)</span>
+    <span class="n">defs_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_defs_ref</span><span class="p">(</span><span class="n">core_mode_ref</span><span class="p">)</span>
 
     <span class="c1"># populate the ref translation mappings</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">defs_ref</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">[</span><span class="n">defs_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">core_ref</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">core_to_defs_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">defs_ref</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="p">[</span><span class="n">defs_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">core_mode_ref</span>
 
     <span class="n">json_ref</span> <span class="o">=</span> <span class="n">JsonRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">ref_template</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">defs_ref</span><span class="p">))</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">json_ref</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">core_to_json_refs</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">json_ref</span>
     <span class="bp">self</span><span class="o">.</span><span class="n">json_to_defs_refs</span><span class="p">[</span><span class="n">json_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">defs_ref</span>
     <span class="n">ref_json_schema</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;$ref&#39;</span><span class="p">:</span> <span class="n">json_ref</span><span class="p">}</span>
     <span class="k">return</span> <span class="n">defs_ref</span><span class="p">,</span> <span class="n">ref_json_schema</span>
@@ -4391,7 +4483,7 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
 
 
 <a href="#pydantic.json_schema.GenerateJsonSchema.get_defs_ref" class="headerlink" title="Permanent link">&para;</a></h3>
-<div class="highlight"><pre><span></span><code><span class="n">get_defs_ref</span><span class="p">(</span><span class="n">core_ref</span><span class="p">)</span>
+<div class="highlight"><pre><span></span><code><span class="n">get_defs_ref</span><span class="p">(</span><span class="n">core_mode_ref</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
@@ -4400,40 +4492,47 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">902</span>
-<span class="normal">903</span>
-<span class="normal">904</span>
-<span class="normal">905</span>
-<span class="normal">906</span>
-<span class="normal">907</span>
-<span class="normal">908</span>
-<span class="normal">909</span>
-<span class="normal">910</span>
-<span class="normal">911</span>
-<span class="normal">912</span>
-<span class="normal">913</span>
-<span class="normal">914</span>
-<span class="normal">915</span>
-<span class="normal">916</span>
-<span class="normal">917</span>
-<span class="normal">918</span>
-<span class="normal">919</span>
-<span class="normal">920</span>
-<span class="normal">921</span>
-<span class="normal">922</span>
-<span class="normal">923</span>
-<span class="normal">924</span>
-<span class="normal">925</span>
-<span class="normal">926</span>
-<span class="normal">927</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">927</span>
 <span class="normal">928</span>
 <span class="normal">929</span>
 <span class="normal">930</span>
-<span class="normal">931</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_defs_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">:</span> <span class="n">CoreRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefsRef</span><span class="p">:</span>
+<span class="normal">931</span>
+<span class="normal">932</span>
+<span class="normal">933</span>
+<span class="normal">934</span>
+<span class="normal">935</span>
+<span class="normal">936</span>
+<span class="normal">937</span>
+<span class="normal">938</span>
+<span class="normal">939</span>
+<span class="normal">940</span>
+<span class="normal">941</span>
+<span class="normal">942</span>
+<span class="normal">943</span>
+<span class="normal">944</span>
+<span class="normal">945</span>
+<span class="normal">946</span>
+<span class="normal">947</span>
+<span class="normal">948</span>
+<span class="normal">949</span>
+<span class="normal">950</span>
+<span class="normal">951</span>
+<span class="normal">952</span>
+<span class="normal">953</span>
+<span class="normal">954</span>
+<span class="normal">955</span>
+<span class="normal">956</span>
+<span class="normal">957</span>
+<span class="normal">958</span>
+<span class="normal">959</span>
+<span class="normal">960</span>
+<span class="normal">961</span>
+<span class="normal">962</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_defs_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">core_mode_ref</span><span class="p">:</span> <span class="n">CoreModeRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">DefsRef</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Override this method to change the way that definitions keys are generated from a core reference.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="c1"># Split the core ref into &quot;components&quot;; generic origins and arguments are each separate components</span>
+    <span class="n">core_ref</span><span class="p">,</span> <span class="n">mode</span> <span class="o">=</span> <span class="n">core_mode_ref</span>
     <span class="n">components</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;([\][,])&#39;</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">)</span>
     <span class="c1"># Remove IDs from each component</span>
     <span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="p">]</span>
@@ -4442,18 +4541,23 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
     <span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(?:[^.[\]]+\.)+((?:[^.[\]]+))&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;\1&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">components</span><span class="p">]</span>
     <span class="n">short_ref</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">components</span><span class="p">)</span>
 
-    <span class="n">first_choice</span> <span class="o">=</span> <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">short_ref</span><span class="p">))</span>  <span class="c1"># name</span>
-    <span class="n">second_choice</span> <span class="o">=</span> <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref_no_id</span><span class="p">))</span>  <span class="c1"># module + qualname</span>
-    <span class="n">third_choice</span> <span class="o">=</span> <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref</span><span class="p">))</span>  <span class="c1"># module + qualname + id</span>
-
+    <span class="n">mode_title</span> <span class="o">=</span> <span class="n">_MODE_TITLE_MAPPING</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span>
     <span class="c1"># It is important that the generated defs_ref values be such that at least one could not</span>
     <span class="c1"># be generated for any other core_ref. Currently, this should be the case because we include</span>
-    <span class="c1"># the id of the source type in the core_ref, and therefore in the third_choice</span>
-    <span class="n">choices</span> <span class="o">=</span> <span class="p">[</span><span class="n">first_choice</span><span class="p">,</span> <span class="n">second_choice</span><span class="p">,</span> <span class="n">third_choice</span><span class="p">]</span>
-    <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="c1"># the id of the source type in the core_ref</span>
+    <span class="n">choices</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">short_ref</span><span class="p">)),</span>  <span class="c1"># name</span>
+        <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">short_ref</span> <span class="o">+</span> <span class="n">mode_title</span><span class="p">)),</span>  <span class="c1"># name + mode</span>
+        <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref_no_id</span><span class="p">)),</span>  <span class="c1"># module + qualname</span>
+        <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref_no_id</span> <span class="o">+</span> <span class="n">mode_title</span><span class="p">)),</span>  <span class="c1"># module + qualname + mode</span>
+        <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref</span><span class="p">)),</span>  <span class="c1"># module + qualname + id</span>
+        <span class="n">DefsRef</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">normalize_name</span><span class="p">(</span><span class="n">core_ref</span> <span class="o">+</span> <span class="n">mode_title</span><span class="p">)),</span>  <span class="c1"># module + qualname + id + mode</span>
+    <span class="p">]</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]</span> <span class="o">=</span> <span class="n">choices</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
 
     <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="n">choices</span><span class="p">:</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">core_ref</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">core_mode_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">core_mode_ref</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">choice</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">collisions</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">choice</span><span class="p">)</span>
@@ -4483,29 +4587,29 @@ and returns both the produced defs_ref and the JSON schema that will refer to th
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1130</span>
-<span class="normal">1131</span>
-<span class="normal">1132</span>
-<span class="normal">1133</span>
-<span class="normal">1134</span>
-<span class="normal">1135</span>
-<span class="normal">1136</span>
-<span class="normal">1137</span>
-<span class="normal">1138</span>
-<span class="normal">1139</span>
-<span class="normal">1140</span>
-<span class="normal">1141</span>
-<span class="normal">1142</span>
-<span class="normal">1143</span>
-<span class="normal">1144</span>
-<span class="normal">1145</span>
-<span class="normal">1146</span>
-<span class="normal">1147</span>
-<span class="normal">1148</span>
-<span class="normal">1149</span>
-<span class="normal">1150</span>
-<span class="normal">1151</span>
-<span class="normal">1152</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_json_ref_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">JsonRef</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1166</span>
+<span class="normal">1167</span>
+<span class="normal">1168</span>
+<span class="normal">1169</span>
+<span class="normal">1170</span>
+<span class="normal">1171</span>
+<span class="normal">1172</span>
+<span class="normal">1173</span>
+<span class="normal">1174</span>
+<span class="normal">1175</span>
+<span class="normal">1176</span>
+<span class="normal">1177</span>
+<span class="normal">1178</span>
+<span class="normal">1179</span>
+<span class="normal">1180</span>
+<span class="normal">1181</span>
+<span class="normal">1182</span>
+<span class="normal">1183</span>
+<span class="normal">1184</span>
+<span class="normal">1185</span>
+<span class="normal">1186</span>
+<span class="normal">1187</span>
+<span class="normal">1188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_json_ref_counts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="n">JsonRef</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get all values corresponding to the key &#39;$ref&#39; anywhere in the json_schema</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -4557,47 +4661,47 @@ any remain, we transform the schema from a top-level '$ref' to use allOf to move
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1020</span>
-<span class="normal">1021</span>
-<span class="normal">1022</span>
-<span class="normal">1023</span>
-<span class="normal">1024</span>
-<span class="normal">1025</span>
-<span class="normal">1026</span>
-<span class="normal">1027</span>
-<span class="normal">1028</span>
-<span class="normal">1029</span>
-<span class="normal">1030</span>
-<span class="normal">1031</span>
-<span class="normal">1032</span>
-<span class="normal">1033</span>
-<span class="normal">1034</span>
-<span class="normal">1035</span>
-<span class="normal">1036</span>
-<span class="normal">1037</span>
-<span class="normal">1038</span>
-<span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span>
-<span class="normal">1043</span>
-<span class="normal">1044</span>
-<span class="normal">1045</span>
-<span class="normal">1046</span>
-<span class="normal">1047</span>
-<span class="normal">1048</span>
-<span class="normal">1049</span>
-<span class="normal">1050</span>
-<span class="normal">1051</span>
-<span class="normal">1052</span>
-<span class="normal">1053</span>
-<span class="normal">1054</span>
-<span class="normal">1055</span>
-<span class="normal">1056</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1056</span>
 <span class="normal">1057</span>
 <span class="normal">1058</span>
 <span class="normal">1059</span>
-<span class="normal">1060</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">handle_ref_overrides</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+<span class="normal">1060</span>
+<span class="normal">1061</span>
+<span class="normal">1062</span>
+<span class="normal">1063</span>
+<span class="normal">1064</span>
+<span class="normal">1065</span>
+<span class="normal">1066</span>
+<span class="normal">1067</span>
+<span class="normal">1068</span>
+<span class="normal">1069</span>
+<span class="normal">1070</span>
+<span class="normal">1071</span>
+<span class="normal">1072</span>
+<span class="normal">1073</span>
+<span class="normal">1074</span>
+<span class="normal">1075</span>
+<span class="normal">1076</span>
+<span class="normal">1077</span>
+<span class="normal">1078</span>
+<span class="normal">1079</span>
+<span class="normal">1080</span>
+<span class="normal">1081</span>
+<span class="normal">1082</span>
+<span class="normal">1083</span>
+<span class="normal">1084</span>
+<span class="normal">1085</span>
+<span class="normal">1086</span>
+<span class="normal">1087</span>
+<span class="normal">1088</span>
+<span class="normal">1089</span>
+<span class="normal">1090</span>
+<span class="normal">1091</span>
+<span class="normal">1092</span>
+<span class="normal">1093</span>
+<span class="normal">1094</span>
+<span class="normal">1095</span>
+<span class="normal">1096</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">handle_ref_overrides</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    It is not valid for a schema with a top-level $ref to have sibling keys.</span>
 
@@ -4663,19 +4767,19 @@ unless it was overridden here.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">579</span>
-<span class="normal">580</span>
-<span class="normal">581</span>
-<span class="normal">582</span>
-<span class="normal">583</span>
-<span class="normal">584</span>
-<span class="normal">585</span>
-<span class="normal">586</span>
-<span class="normal">587</span>
-<span class="normal">588</span>
-<span class="normal">589</span>
-<span class="normal">590</span>
-<span class="normal">591</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">lax_or_strict_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">LaxOrStrictSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">lax_or_strict_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">LaxOrStrictSchema</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    LaxOrStrict will use the strict branch for serialization internally,</span>
 <span class="sd">    unless it was overridden here.</span>
@@ -4715,17 +4819,17 @@ just return None in situations where you don't want warnings to be emitted.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1170</span>
-<span class="normal">1171</span>
-<span class="normal">1172</span>
-<span class="normal">1173</span>
-<span class="normal">1174</span>
-<span class="normal">1175</span>
-<span class="normal">1176</span>
-<span class="normal">1177</span>
-<span class="normal">1178</span>
-<span class="normal">1179</span>
-<span class="normal">1180</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">render_warning_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">JsonSchemaWarningKind</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1206</span>
+<span class="normal">1207</span>
+<span class="normal">1208</span>
+<span class="normal">1209</span>
+<span class="normal">1210</span>
+<span class="normal">1211</span>
+<span class="normal">1212</span>
+<span class="normal">1213</span>
+<span class="normal">1214</span>
+<span class="normal">1215</span>
+<span class="normal">1216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">render_warning_message</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kind</span><span class="p">:</span> <span class="n">JsonSchemaWarningKind</span><span class="p">,</span> <span class="n">detail</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This method is responsible for ignoring warnings as desired, and for formatting the warning messages.</span>
 
@@ -4764,41 +4868,41 @@ ref depends on the order in which the types were visited.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">933</span>
-<span class="normal">934</span>
-<span class="normal">935</span>
-<span class="normal">936</span>
-<span class="normal">937</span>
-<span class="normal">938</span>
-<span class="normal">939</span>
-<span class="normal">940</span>
-<span class="normal">941</span>
-<span class="normal">942</span>
-<span class="normal">943</span>
-<span class="normal">944</span>
-<span class="normal">945</span>
-<span class="normal">946</span>
-<span class="normal">947</span>
-<span class="normal">948</span>
-<span class="normal">949</span>
-<span class="normal">950</span>
-<span class="normal">951</span>
-<span class="normal">952</span>
-<span class="normal">953</span>
-<span class="normal">954</span>
-<span class="normal">955</span>
-<span class="normal">956</span>
-<span class="normal">957</span>
-<span class="normal">958</span>
-<span class="normal">959</span>
-<span class="normal">960</span>
-<span class="normal">961</span>
-<span class="normal">962</span>
-<span class="normal">963</span>
-<span class="normal">964</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">964</span>
 <span class="normal">965</span>
 <span class="normal">966</span>
-<span class="normal">967</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">resolve_collisions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+<span class="normal">967</span>
+<span class="normal">968</span>
+<span class="normal">969</span>
+<span class="normal">970</span>
+<span class="normal">971</span>
+<span class="normal">972</span>
+<span class="normal">973</span>
+<span class="normal">974</span>
+<span class="normal">975</span>
+<span class="normal">976</span>
+<span class="normal">977</span>
+<span class="normal">978</span>
+<span class="normal">979</span>
+<span class="normal">980</span>
+<span class="normal">981</span>
+<span class="normal">982</span>
+<span class="normal">983</span>
+<span class="normal">984</span>
+<span class="normal">985</span>
+<span class="normal">986</span>
+<span class="normal">987</span>
+<span class="normal">988</span>
+<span class="normal">989</span>
+<span class="normal">990</span>
+<span class="normal">991</span>
+<span class="normal">992</span>
+<span class="normal">993</span>
+<span class="normal">994</span>
+<span class="normal">995</span>
+<span class="normal">996</span>
+<span class="normal">997</span>
+<span class="normal">998</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">resolve_collisions</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This function ensures that any defs_ref&#39;s that were involved in collisions</span>
 <span class="sd">    (due to simplification of the core_ref) get updated, even if they were the</span>
@@ -4814,15 +4918,15 @@ ref depends on the order in which the types were visited.</p>
     <span class="k">while</span> <span class="n">made_changes</span><span class="p">:</span>
         <span class="n">made_changes</span> <span class="o">=</span> <span class="kc">False</span>
 
-        <span class="k">for</span> <span class="n">defs_ref</span><span class="p">,</span> <span class="n">core_ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">for</span> <span class="n">defs_ref</span><span class="p">,</span> <span class="n">core_mode_ref</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">defs_ref</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collisions</span><span class="p">:</span>
                 <span class="k">continue</span>
 
-            <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">[</span><span class="n">core_ref</span><span class="p">]:</span>
+            <span class="k">for</span> <span class="n">choice</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_ref_fallbacks</span><span class="p">[</span><span class="n">core_mode_ref</span><span class="p">]:</span>
                 <span class="k">if</span> <span class="n">choice</span> <span class="o">==</span> <span class="n">defs_ref</span> <span class="ow">or</span> <span class="n">choice</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">collisions</span><span class="p">:</span>
                     <span class="k">continue</span>
 
-                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">core_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">core_ref</span><span class="p">:</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">defs_to_core_refs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">choice</span><span class="p">,</span> <span class="n">core_mode_ref</span><span class="p">)</span> <span class="o">==</span> <span class="n">core_mode_ref</span><span class="p">:</span>
                     <span class="n">json_schema</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">change_defs_ref</span><span class="p">(</span><span class="n">defs_ref</span><span class="p">,</span> <span class="n">choice</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">)</span>
                     <span class="n">made_changes</span> <span class="o">=</span> <span class="kc">True</span>
                     <span class="k">break</span>
@@ -4858,16 +4962,16 @@ using the provided mapping to translate keys in core_schema to the appropriate k
 
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1068</span>
-<span class="normal">1069</span>
-<span class="normal">1070</span>
-<span class="normal">1071</span>
-<span class="normal">1072</span>
-<span class="normal">1073</span>
-<span class="normal">1074</span>
-<span class="normal">1075</span>
-<span class="normal">1076</span>
-<span class="normal">1077</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">update_with_validations</span><span class="p">(</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1104</span>
+<span class="normal">1105</span>
+<span class="normal">1106</span>
+<span class="normal">1107</span>
+<span class="normal">1108</span>
+<span class="normal">1109</span>
+<span class="normal">1110</span>
+<span class="normal">1111</span>
+<span class="normal">1112</span>
+<span class="normal">1113</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">update_with_validations</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -4914,12 +5018,12 @@ methods for more details; these can be overridden to control warning behavior</p
 
         <details class="quote">
           <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">116</span>
-<span class="normal">117</span>
-<span class="normal">118</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
-<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticJsonSchemaWarning</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">):</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticJsonSchemaWarning</span><span class="p">(</span><span class="ne">UserWarning</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This class is used to emit warnings produced during JSON schema generation.</span>
 <span class="sd">    See the `GenerateJsonSchema.emit_warning` and `GenerateJsonSchema.render_warning_message`</span>
@@ -4955,15 +5059,15 @@ methods for more details; these can be overridden to control warning behavior</p
 </details>
       <details class="quote">
         <summary>Source code in <code>pydantic/json_schema.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">101</span>
-<span class="normal">102</span>
-<span class="normal">103</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">103</span>
 <span class="normal">104</span>
 <span class="normal">105</span>
 <span class="normal">106</span>
 <span class="normal">107</span>
 <span class="normal">108</span>
-<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">update_json_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">,</span> <span class="n">updates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">update_json_schema</span><span class="p">(</span><span class="n">schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">,</span> <span class="n">updates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A convenience function useful for creating `js_modify_function` functions that just set values for some keys.</span>
 

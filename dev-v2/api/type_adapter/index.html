@@ -1859,14 +1859,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 72</span>
-<span class="normal"> 73</span>
-<span class="normal"> 74</span>
-<span class="normal"> 75</span>
-<span class="normal"> 76</span>
-<span class="normal"> 77</span>
-<span class="normal"> 78</span>
-<span class="normal"> 79</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 79</span>
 <span class="normal"> 80</span>
 <span class="normal"> 81</span>
 <span class="normal"> 82</span>
@@ -2096,7 +2089,18 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">306</span>
 <span class="normal">307</span>
 <span class="normal">308</span>
-<span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TypeAdapter</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TypeAdapter</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A class representing the type adapter.</span>
 
 <span class="sd">    Attributes:</span>
@@ -2279,6 +2283,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
         <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
+        <span class="n">mode</span><span class="p">:</span> <span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="s1">&#39;validation&#39;</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a JSON schema for the model.</span>
 
@@ -2292,38 +2297,41 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">            Dict[str, Any]: The JSON schema for the model as a dictionary.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">json_schemas</span><span class="p">(</span>
-        <span class="n">__types</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span>
+        <span class="n">__inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
         <span class="o">*</span><span class="p">,</span>
         <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
         <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
         <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate JSON schemas for multiple models.</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">DefsRef</span><span class="p">],</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate JSON schemas for multiple type adapters.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            __types (Iterable[TypeAdapter[Any]]): The types to generate schemas for.</span>
+<span class="sd">            __inputs (Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]): Inputs to schema generation.</span>
+<span class="sd">                The first two items will form the keys of the (first) output mapping; the type adapters will provide</span>
+<span class="sd">                the core schemas that get converted into definitions in the output JSON schema.</span>
 <span class="sd">            by_alias (bool): Whether to use alias names (default: True).</span>
-<span class="sd">            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</span>
 <span class="sd">            title (Optional[str]): The title for the schema (default: None).</span>
 <span class="sd">            description (Optional[str]): The description for the schema (default: None).</span>
+<span class="sd">            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</span>
 <span class="sd">            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the</span>
 <span class="sd">                schema (default: GenerateJsonSchema).</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Dict[str, Any]: The JSON schema for the models as a dictionary.</span>
+<span class="sd">            tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:</span>
+<span class="sd">                The first item contains the mapping of key + mode to a definitions reference, which will be a key</span>
+<span class="sd">                of the $defs mapping in the JSON schema included as the second member of the returned tuple.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># TODO: can we use model.__schema_cache__?</span>
         <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
 
-        <span class="n">core_schemas</span> <span class="o">=</span> <span class="p">[</span><span class="n">at</span><span class="o">.</span><span class="n">core_schema</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">__types</span><span class="p">]</span>
+        <span class="n">inputs</span> <span class="o">=</span> <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span><span class="o">.</span><span class="n">core_schema</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span> <span class="ow">in</span> <span class="n">__inputs</span><span class="p">]</span>
 
-        <span class="n">definitions</span> <span class="o">=</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate_definitions</span><span class="p">(</span><span class="n">core_schemas</span><span class="p">)</span>
+        <span class="n">key_map</span><span class="p">,</span> <span class="n">definitions</span> <span class="o">=</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate_definitions</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
 
         <span class="n">json_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="n">definitions</span><span class="p">:</span>
@@ -2333,7 +2341,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
             <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
 
-        <span class="k">return</span> <span class="n">json_schema</span>
+        <span class="k">return</span> <span class="n">key_map</span><span class="p">,</span> <span class="n">json_schema</span>
 </code></pre></div></td></tr></table></div>
         </details>
 
@@ -2512,14 +2520,7 @@ round-tripping (default: False).</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
 <span class="normal">214</span>
@@ -2555,7 +2556,14 @@ round-tripping (default: False).</p></td>
 <span class="normal">244</span>
 <span class="normal">245</span>
 <span class="normal">246</span>
-<span class="normal">247</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">__instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2768,14 +2776,7 @@ deserialization. Defaults to False.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">165</span>
 <span class="normal">166</span>
 <span class="normal">167</span>
 <span class="normal">168</span>
@@ -2812,7 +2813,14 @@ deserialization. Defaults to False.</p></td>
 <span class="normal">199</span>
 <span class="normal">200</span>
 <span class="normal">201</span>
-<span class="normal">202</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_python</span><span class="p">(</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_python</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">__instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2876,7 +2884,8 @@ deserialization. Defaults to False.</p></td>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
-    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span>
+    <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;validation&quot;</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -2949,14 +2958,7 @@ deserialization. Defaults to False.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">249</span>
-<span class="normal">250</span>
-<span class="normal">251</span>
-<span class="normal">252</span>
-<span class="normal">253</span>
-<span class="normal">254</span>
-<span class="normal">255</span>
-<span class="normal">256</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">256</span>
 <span class="normal">257</span>
 <span class="normal">258</span>
 <span class="normal">259</span>
@@ -2968,12 +2970,21 @@ deserialization. Defaults to False.</p></td>
 <span class="normal">265</span>
 <span class="normal">266</span>
 <span class="normal">267</span>
-<span class="normal">268</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">JsonSchemaMode</span> <span class="o">=</span> <span class="s1">&#39;validation&#39;</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a JSON schema for the model.</span>
 
@@ -2987,7 +2998,7 @@ deserialization. Defaults to False.</p></td>
 <span class="sd">        Dict[str, Any]: The JSON schema for the model as a dictionary.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -3008,19 +3019,19 @@ deserialization. Defaults to False.</p></td>
 
 <a href="#pydantic.type_adapter.TypeAdapter.json_schemas" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">json_schemas</span><span class="p">(</span>
-    <span class="n">__types</span><span class="p">,</span>
+    <span class="n">__inputs</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
     <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="o">=</span><span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="o">=</span><span class="n">GenerateJsonSchema</span>
 <span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Generate JSON schemas for multiple models.</p>
+      <p>Generate JSON schemas for multiple type adapters.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -3034,11 +3045,13 @@ deserialization. Defaults to False.</p></td>
     </thead>
     <tbody>
         <tr>
-          <td><code>__types</code></td>
+          <td><code>__inputs</code></td>
           <td>
-                <code><span title="typing.Iterable">Iterable</span>[<a class="autorefs autorefs-internal" title="pydantic.type_adapter.TypeAdapter" href="#pydantic.type_adapter.TypeAdapter">TypeAdapter</a>[<span title="typing.Any">Any</span>]]</code>
+                <code><span title="typing.Iterable">Iterable</span>[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <span title="pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</span>, <a class="autorefs autorefs-internal" title="pydantic.type_adapter.TypeAdapter" href="#pydantic.type_adapter.TypeAdapter">TypeAdapter</a>[<span title="typing.Any">Any</span>]]]</code>
           </td>
-          <td><p>The types to generate schemas for.</p></td>
+          <td><p>Inputs to schema generation.
+The first two items will form the keys of the (first) output mapping; the type adapters will provide
+the core schemas that get converted into definitions in the output JSON schema.</p></td>
           <td>
               <em>required</em>
           </td>
@@ -3051,16 +3064,6 @@ deserialization. Defaults to False.</p></td>
           <td><p>Whether to use alias names (default: True).</p></td>
           <td>
                 <code>True</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>ref_template</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td><p>The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</p></td>
-          <td>
-                <code>DEFAULT_REF_TEMPLATE</code>
           </td>
         </tr>
         <tr>
@@ -3081,6 +3084,16 @@ deserialization. Defaults to False.</p></td>
           <td><p>The description for the schema (default: None).</p></td>
           <td>
                 <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>ref_template</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</p></td>
+          <td>
+                <code>DEFAULT_REF_TEMPLATE</code>
           </td>
         </tr>
         <tr>
@@ -3108,24 +3121,18 @@ schema (default: GenerateJsonSchema).</p></td>
     <tbody>
         <tr>
           <td>
-                <code>dict[str, <span title="typing.Any">Any</span>]</code>
+                <code>tuple[dict[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <span title="pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</span>], <span title="pydantic.json_schema.DefsRef">DefsRef</span>], <span title="pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</span>]</code>
           </td>
-          <td><p>Dict[str, Any]: The JSON schema for the models as a dictionary.</p></td>
+          <td><p>tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:
+The first item contains the mapping of key + mode to a definitions reference, which will be a key
+of the $defs mapping in the JSON schema included as the second member of the returned tuple.</p></td>
         </tr>
     </tbody>
   </table>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">270</span>
-<span class="normal">271</span>
-<span class="normal">272</span>
-<span class="normal">273</span>
-<span class="normal">274</span>
-<span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">278</span>
 <span class="normal">279</span>
 <span class="normal">280</span>
 <span class="normal">281</span>
@@ -3156,36 +3163,50 @@ schema (default: GenerateJsonSchema).</p></td>
 <span class="normal">306</span>
 <span class="normal">307</span>
 <span class="normal">308</span>
-<span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">json_schemas</span><span class="p">(</span>
-    <span class="n">__types</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]],</span>
+    <span class="n">__inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">ref_template</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">DEFAULT_REF_TEMPLATE</span><span class="p">,</span>
     <span class="n">schema_generator</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">GenerateJsonSchema</span><span class="p">]</span> <span class="o">=</span> <span class="n">GenerateJsonSchema</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate JSON schemas for multiple models.</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">],</span> <span class="n">DefsRef</span><span class="p">],</span> <span class="n">JsonSchemaValue</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate JSON schemas for multiple type adapters.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __types (Iterable[TypeAdapter[Any]]): The types to generate schemas for.</span>
+<span class="sd">        __inputs (Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]): Inputs to schema generation.</span>
+<span class="sd">            The first two items will form the keys of the (first) output mapping; the type adapters will provide</span>
+<span class="sd">            the core schemas that get converted into definitions in the output JSON schema.</span>
 <span class="sd">        by_alias (bool): Whether to use alias names (default: True).</span>
-<span class="sd">        ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</span>
 <span class="sd">        title (Optional[str]): The title for the schema (default: None).</span>
 <span class="sd">        description (Optional[str]): The description for the schema (default: None).</span>
+<span class="sd">        ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</span>
 <span class="sd">        schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the</span>
 <span class="sd">            schema (default: GenerateJsonSchema).</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[str, Any]: The JSON schema for the models as a dictionary.</span>
+<span class="sd">        tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:</span>
+<span class="sd">            The first item contains the mapping of key + mode to a definitions reference, which will be a key</span>
+<span class="sd">            of the $defs mapping in the JSON schema included as the second member of the returned tuple.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="c1"># TODO: can we use model.__schema_cache__?</span>
     <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
 
-    <span class="n">core_schemas</span> <span class="o">=</span> <span class="p">[</span><span class="n">at</span><span class="o">.</span><span class="n">core_schema</span> <span class="k">for</span> <span class="n">at</span> <span class="ow">in</span> <span class="n">__types</span><span class="p">]</span>
+    <span class="n">inputs</span> <span class="o">=</span> <span class="p">[(</span><span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span><span class="o">.</span><span class="n">core_schema</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">adapter</span> <span class="ow">in</span> <span class="n">__inputs</span><span class="p">]</span>
 
-    <span class="n">definitions</span> <span class="o">=</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate_definitions</span><span class="p">(</span><span class="n">core_schemas</span><span class="p">)</span>
+    <span class="n">key_map</span><span class="p">,</span> <span class="n">definitions</span> <span class="o">=</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate_definitions</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
 
     <span class="n">json_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="k">if</span> <span class="n">definitions</span><span class="p">:</span>
@@ -3195,7 +3216,7 @@ schema (default: GenerateJsonSchema).</p></td>
     <span class="k">if</span> <span class="n">description</span><span class="p">:</span>
         <span class="n">json_schema</span><span class="p">[</span><span class="s1">&#39;description&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">description</span>
 
-    <span class="k">return</span> <span class="n">json_schema</span>
+    <span class="k">return</span> <span class="n">key_map</span><span class="p">,</span> <span class="n">json_schema</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -3282,21 +3303,21 @@ schema (default: GenerateJsonSchema).</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">149</span>
 <span class="normal">150</span>
 <span class="normal">151</span>
 <span class="normal">152</span>
 <span class="normal">153</span>
 <span class="normal">154</span>
 <span class="normal">155</span>
-<span class="normal">156</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_json</span><span class="p">(</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span> <span class="n">__data</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">bytes</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a JSON string or bytes against the model.</span>
@@ -3397,20 +3418,20 @@ schema (default: GenerateJsonSchema).</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
-<span class="normal">130</span>
-<span class="normal">131</span>
-<span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">134</span>
 <span class="normal">135</span>
 <span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
 <span class="normal">139</span>
-<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_python</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__object</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_python</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__object</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">context</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Validate a Python object against the model.</span>
 
