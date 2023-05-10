@@ -220,7 +220,7 @@ class ModelMetaclass(ABCMeta):
         return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
 
 
-class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
+class BaseModel(metaclass=ModelMetaclass):
     """
     A base model class for creating Pydantic models.
 
@@ -272,7 +272,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     model_config = ConfigDict()
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
-    __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
@@ -812,6 +811,9 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
                 _object_setattr(m, name, deepcopy(value, memo=memo))
         return m
 
+    def __repr_name__(self) -> str:
+        return self.__class__.__name__
+
     def __repr_args__(self) -> _repr.ReprArgs:
         yield from (
             (k, v)
@@ -822,6 +824,40 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
+
+    def __repr_str__(self, join_str: str) -> str:
+        return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
+
+    def __pretty__(self, fmt: typing.Callable[[Any], Any], **kwargs: Any) -> typing.Generator[Any, None, None]:
+        """
+        Used by devtools (https://python-devtools.helpmanual.io/) to pretty print models.
+        """
+        yield self.__repr_name__() + '('
+        yield 1
+        for name, value in self.__repr_args__():
+            if name is not None:
+                yield name + '='
+            yield fmt(value)
+            yield ','
+            yield 0
+        yield -1
+        yield ')'
+
+    def __rich_repr__(self) -> _repr.RichReprResult:
+        """
+        Used by Rich (https://rich.readthedocs.io/en/stable/pretty.html) to pretty print models.
+        """
+        for name, field_repr in self.__repr_args__():
+            if name is None:
+                yield field_repr
+            else:
+                yield name, field_repr
+
+    def __str__(self) -> str:
+        return self.__repr_str__(' ')
+
+    def __repr__(self) -> str:
+        return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
