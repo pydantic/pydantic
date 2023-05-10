@@ -358,6 +358,8 @@ class GenerateSchema:
             if self.typevars_map:
                 obj = replace_types(obj, self.typevars_map)
 
+            return self.generate_schema(obj)
+
         from ..main import BaseModel
 
         if lenient_issubclass(obj, BaseModel):
@@ -1188,7 +1190,7 @@ class GenerateSchema:
         self,
         get_inner_schema: GetCoreSchemaHandler,
         source_type: Any,
-        annotations: typing.Iterable[Any],
+        annotations: list[Any],
         check_prepare_on_source: bool = True,
     ) -> CoreSchema:
         """

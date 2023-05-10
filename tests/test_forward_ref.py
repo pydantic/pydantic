@@ -425,13 +425,12 @@ def test_forward_ref_with_field(create_module):
         from typing import ForwardRef, List
 
         import pytest
-        from pydantic_core import SchemaError
 
         from pydantic import BaseModel, Field
 
         Foo = ForwardRef('Foo')
 
-        with pytest.raises(SchemaError, match=r'Extra inputs are not permitted \[type=extra_forbidden,'):
+        with pytest.raises(TypeError, match=r'The following constraints cannot be applied.*\'gt\''):
 
             class Foo(BaseModel):
                 c: List[Foo] = Field(..., gt=0)

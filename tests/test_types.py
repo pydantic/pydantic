@@ -28,14 +28,14 @@ from typing import (
     TypeVar,
     Union,
 )
-from uuid import UUID, uuid4
+from uuid import UUID
 
 import annotated_types
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import PydanticCustomError, SchemaError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
 from pydantic_core.core_schema import ValidationInfo
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import Annotated, Literal, TypedDict, get_args
 
 from pydantic import (
     UUID1,
@@ -90,6 +90,7 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 from pydantic.types import AllowInfNan, ImportString, SecretField, Strict
 
@@ -1536,7 +1537,10 @@ def test_enum_from_json(enum_base, strict):
     ],
 )
 def test_invalid_schema_constraints(kwargs, type_):
-    with pytest.raises(SchemaError, match='Invalid Schema:\n.*\n  Extra inputs are not permitted'):
+    match = (
+        r'(:?Invalid Schema:\n.*\n  Extra inputs are not permitted)|(:?The following constraints cannot be applied to)'
+    )
+    with pytest.raises((SchemaError, TypeError), match=match):
 
         class Foo(BaseModel):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)
@@ -2474,7 +2478,7 @@ def test_bool_unhashable_fails():
 def test_uuid_error():
     v = TypeAdapter(UUID)
 
-    valid = uuid4()
+    valid = UUID('49fdfa1d856d4003a83e4b9236532ec6')
 
     # sanity check
     assert v.validate_python(valid) == valid
@@ -2485,11 +2489,18 @@ def test_uuid_error():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
+            'type': 'is_instance_of',
+            'loc': ('is-instance[UUID]',),
+            'msg': 'Input should be an instance of UUID',
+            'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
+            'ctx': {'class': 'UUID'},
+        },
+        {
             'type': 'uuid_parsing',
-            'loc': (),
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]',),
             'msg': 'Input should be a valid UUID, unable to parse string as an UUID',
             'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
-        }
+        },
     ]
 
     not_a_valid_input_type = object()
@@ -2498,24 +2509,24 @@ def test_uuid_error():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'string_type',
-            'loc': ('str',),
-            'msg': 'Input should be a valid string',
-            'input': not_a_valid_input_type,
-        },
-        {
-            'type': 'bytes_type',
-            'loc': ('bytes',),
-            'msg': 'Input should be a valid bytes',
-            'input': not_a_valid_input_type,
-        },
-        {
             'type': 'is_instance_of',
             'loc': ('is-instance[UUID]',),
             'msg': 'Input should be an instance of UUID',
             'input': not_a_valid_input_type,
             'ctx': {'class': 'UUID'},
         },
+        {
+            'type': 'string_type',
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'str'),
+            'msg': 'Input should be a valid string',
+            'input': not_a_valid_input_type,
+        },
+        {
+            'type': 'bytes_type',
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'bytes'),
+            'msg': 'Input should be a valid bytes',
+            'input': not_a_valid_input_type,
+        },
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -2526,36 +2537,12 @@ def test_uuid_error():
             'type': 'is_instance_of',
             'loc': (),
             'msg': 'Input should be an instance of UUID',
-            'input': valid.hex,
+            'input': '49fdfa1d856d4003a83e4b9236532ec6',
             'ctx': {'class': 'UUID'},
         }
     ]
 
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_python(valid.hex, strict=True)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'is_instance_of',
-            'loc': (),
-            'msg': 'Input should be an instance of UUID',
-            'input': valid.hex,
-            'ctx': {'class': 'UUID'},
-        }
-    ]
-
-    with pytest.raises(ValidationError) as exc_info:
-        v.validate_json(json.dumps(valid.hex), strict=True)
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'is_instance_of',
-            'loc': (),
-            'msg': 'Input should be an instance of UUID',
-            'input': '1b765c15ce0a40c3934f933178686772',
-            'ctx': {'class': 'UUID'},
-        }
-    ]
+    assert v.validate_json(json.dumps(valid.hex), strict=True) == valid
 
 
 def test_uuid_json():
@@ -4424,7 +4411,9 @@ def test_custom_generic_containers():
     T = TypeVar('T')
 
     class GenericList(List[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
 
     class Model(BaseModel):
         field: GenericList[int]

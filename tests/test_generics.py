@@ -30,8 +30,8 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr
-from pydantic_core import core_schema
-from typing_extensions import Annotated, Literal, OrderedDict, TypeVarTuple, Unpack
+from pydantic_core import CoreSchema, core_schema
+from typing_extensions import Annotated, Literal, OrderedDict, TypeVarTuple, Unpack, get_args
 
 from pydantic import (
     BaseModel,
@@ -56,6 +56,7 @@ from pydantic._internal._generics import (
     recursively_defined_type_refs,
     replace_types,
 )
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 @pytest.fixture()
@@ -1109,25 +1110,33 @@ def test_replace_types_with_user_defined_generic_type_field():
     VT = TypeVar('VT')
 
     class CustomCounter(Counter[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(Counter[get_args(source_type)[0]]))
 
     class CustomDefaultDict(DefaultDict[KT, VT]):
         pass
 
     class CustomDeque(Deque[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(Deque[get_args(source_type)[0]]))
 
     class CustomDict(Dict[KT, VT]):
         pass
 
     class CustomFrozenset(FrozenSet[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(FrozenSet[get_args(source_type)[0]]))
 
     class CustomIterable(Iterable[T]):
         pass
 
     class CustomList(List[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(List[get_args(source_type)[0]]))
 
     class CustomMapping(Mapping[KT, VT]):
         pass
@@ -1136,7 +1145,9 @@ def test_replace_types_with_user_defined_generic_type_field():
         pass
 
     class CustomSet(Set[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(Set[get_args(source_type)[0]]))
 
     class CustomTuple(Tuple[T]):
         pass
@@ -1174,9 +1185,9 @@ def test_replace_types_with_user_defined_generic_type_field():
 
     # The following assertions are just to document the current behavior, and should
     # be updated if/when we do a better job of respecting the exact annotated type
-    assert type(m.counter_field) is Counter.__origin__
+    assert type(m.counter_field) is CustomCounter
     assert type(m.default_dict_field) is dict
-    assert type(m.deque_field) is deque
+    assert type(m.deque_field) is CustomDeque
     assert type(m.dict_field) is dict
     assert type(m.frozenset_field) is CustomFrozenset
     assert type(m.iterable_field).__name__ == 'ValidatorIterator'
@@ -1831,7 +1842,9 @@ def test_generic_with_user_defined_generic_field():
     T = TypeVar('T')
 
     class GenericList(List[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
 
     class Model(BaseModel, Generic[T]):
         field: GenericList[T]
