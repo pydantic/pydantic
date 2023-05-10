@@ -108,7 +108,6 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         updates['type'] = 'integer'
         lax = core_schema.chain_schema([core_schema.int_schema(), to_enum_validator])
-        # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
         # Disallow float from JSON due to strict mode
         strict = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.int_schema()),
@@ -118,7 +117,6 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'string'
         lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
-        # Allow all types from JSON to get better error messages (numeric types will still fail validation in to_enum)
         strict = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.str_schema()),
             python_schema=core_schema.is_instance_schema(enum_type),
@@ -126,7 +124,6 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     elif issubclass(enum_type, float):
         updates['type'] = 'numeric'
         lax = core_schema.chain_schema([core_schema.float_schema(), to_enum_validator])
-        # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
         strict = core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.float_schema()),
             python_schema=core_schema.is_instance_schema(enum_type),
