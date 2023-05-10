@@ -820,7 +820,8 @@ def computed_field(
             return_type = res.get('return', _UNSET)
             if return_type is _UNSET:
                 raise PydanticUserError(
-                    'Computed field is missing return type annotation',
+                    'Computed field is missing return type annotation or specifying `return_type`'
+                    ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)',
                     code='model-field-missing-annotation',
                 )
 
