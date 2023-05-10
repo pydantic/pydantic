@@ -130,6 +130,7 @@ combined_serializer! {
         ToString: super::type_serializers::format::ToStringSerializer;
         WithDefault: super::type_serializers::with_default::WithDefaultSerializer;
         Json: super::type_serializers::json::JsonSerializer;
+        JsonOrPython: super::type_serializers::json_or_python::JsonOrPythonSerializer;
         Union: super::type_serializers::union::UnionSerializer;
         Literal: super::type_serializers::literal::LiteralSerializer;
         Recursive: super::type_serializers::definitions::DefinitionRefSerializer;

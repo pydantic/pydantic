@@ -53,14 +53,6 @@ class SchemaValidator:
         context: Any = None,
         self_instance: 'Any | None' = None,
     ) -> Any: ...
-    def isinstance_json(
-        self,
-        input: 'str | bytes | bytearray',
-        *,
-        strict: 'bool | None' = None,
-        context: Any = None,
-        self_instance: 'Any | None' = None,
-    ) -> bool: ...
     def validate_assignment(
         self, obj: Any, field: str, input: Any, *, strict: 'bool | None' = None, context: Any = None
     ) -> 'dict[str, Any]': ...

@@ -11,7 +11,7 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{ErrorMode, LocItem, ValError, ValResult, ValidationError};
-use crate::input::Input;
+use crate::input::{Input, InputType};
 use crate::recursion_guard::RecursionGuard;
 
 mod any;
@@ -35,6 +35,7 @@ mod int;
 mod is_instance;
 mod is_subclass;
 mod json;
+mod json_or_python;
 mod lax_or_strict;
 mod list;
 mod literal;
@@ -112,7 +113,7 @@ impl SchemaValidator {
         context: Option<&PyAny>,
         self_instance: Option<&PyAny>,
     ) -> PyResult<PyObject> {
-        let r = self._validate(py, input, strict, context, self_instance);
+        let r = self._validate(py, input, InputType::Python, strict, context, self_instance);
         r.map_err(|e| self.prepare_validation_err(py, e, ErrorMode::Python))
     }
 
@@ -125,7 +126,7 @@ impl SchemaValidator {
         context: Option<&PyAny>,
         self_instance: Option<&PyAny>,
     ) -> PyResult<bool> {
-        match self._validate(py, input, strict, context, self_instance) {
+        match self._validate(py, input, InputType::Python, strict, context, self_instance) {
             Ok(_) => Ok(true),
             Err(ValError::InternalErr(err)) => Err(err),
             Err(ValError::Omit) => Err(ValidationError::omit_error()),
@@ -144,30 +145,10 @@ impl SchemaValidator {
     ) -> PyResult<PyObject> {
         match input.parse_json() {
             Ok(input) => {
-                let r = self._validate(py, &input, strict, context, self_instance);
+                let r = self._validate(py, &input, InputType::Json, strict, context, self_instance);
                 r.map_err(|e| self.prepare_validation_err(py, e, ErrorMode::Json))
             }
             Err(err) => Err(self.prepare_validation_err(py, err, ErrorMode::Json)),
-        }
-    }
-
-    #[pyo3(signature = (input, *, strict=None, context=None, self_instance=None))]
-    pub fn isinstance_json(
-        &self,
-        py: Python,
-        input: &PyAny,
-        strict: Option<bool>,
-        context: Option<&PyAny>,
-        self_instance: Option<&PyAny>,
-    ) -> PyResult<bool> {
-        match input.parse_json() {
-            Ok(input) => match self._validate(py, &input, strict, context, self_instance) {
-                Ok(_) => Ok(true),
-                Err(ValError::InternalErr(err)) => Err(err),
-                Err(ValError::Omit) => Err(ValidationError::omit_error()),
-                Err(ValError::LineErrors(_)) => Ok(false),
-            },
-            Err(_) => Ok(false),
         }
     }
 
@@ -182,6 +163,7 @@ impl SchemaValidator {
         context: Option<&PyAny>,
     ) -> PyResult<PyObject> {
         let extra = Extra {
+            mode: InputType::Python,
             data: None,
             strict,
             ultra_strict: false,
@@ -227,6 +209,7 @@ impl SchemaValidator {
         &'data self,
         py: Python<'data>,
         input: &'data impl Input<'data>,
+        mode: InputType,
         strict: Option<bool>,
         context: Option<&'data PyAny>,
         self_instance: Option<&PyAny>,
@@ -237,7 +220,7 @@ impl SchemaValidator {
         self.validator.validate(
             py,
             input,
-            &Extra::new(strict, context, self_instance),
+            &Extra::new(strict, context, self_instance, mode),
             &self.definitions,
             &mut RecursionGuard::default(),
         )
@@ -265,10 +248,11 @@ impl<'py> SelfValidator<'py> {
     }
 
     pub fn validate_schema(&self, py: Python<'py>, schema: &'py PyAny) -> PyResult<&'py PyAny> {
+        let extra = Extra::new(None, None, None, InputType::Python);
         match self.validator.validator.validate(
             py,
             schema,
-            &Extra::default(),
+            &extra,
             &self.validator.definitions,
             &mut RecursionGuard::default(),
         ) {
@@ -424,6 +408,8 @@ pub fn build_validator<'a>(
         chain::ChainValidator,
         // lax or strict
         lax_or_strict::LaxOrStrictValidator,
+        // json or python
+        json_or_python::JsonOrPython,
         // generator validators
         generator::GeneratorValidator,
         // custom error
@@ -441,8 +427,10 @@ pub fn build_validator<'a>(
 
 /// More (mostly immutable) data to pass between validators, should probably be class `Context`,
 /// but that would confuse it with context as per pydantic/pydantic#1549
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Extra<'a> {
+    /// Validation mode
+    pub mode: InputType,
     /// This is used as the `data` kwargs to validator functions
     pub data: Option<&'a PyDict>,
     /// Represents the fields of the model we are currently validating
@@ -459,12 +447,20 @@ pub struct Extra<'a> {
 }
 
 impl<'a> Extra<'a> {
-    pub fn new(strict: Option<bool>, context: Option<&'a PyAny>, self_instance: Option<&'a PyAny>) -> Self {
+    pub fn new(
+        strict: Option<bool>,
+        context: Option<&'a PyAny>,
+        self_instance: Option<&'a PyAny>,
+        mode: InputType,
+    ) -> Self {
         Extra {
             strict,
             context,
             self_instance,
-            ..Default::default()
+            mode,
+            data: None,
+            field_name: None,
+            ultra_strict: false,
         }
     }
 }
@@ -472,6 +468,7 @@ impl<'a> Extra<'a> {
 impl<'a> Extra<'a> {
     pub fn as_strict(&self, ultra_strict: bool) -> Self {
         Self {
+            mode: self.mode,
             data: self.data,
             strict: Some(true),
             ultra_strict,
@@ -567,6 +564,8 @@ pub enum CombinedValidator {
     MultiHostUrl(url::MultiHostUrlValidator),
     // reference to definition, useful for recursive (self-referencing) models
     DefinitionRef(definitions::DefinitionRefValidator),
+    // input dependent
+    JsonOrPython(json_or_python::JsonOrPython),
 }
 
 /// This trait must be implemented by all validators, it allows various validators to be accessed consistently,

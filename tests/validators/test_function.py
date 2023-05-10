@@ -834,3 +834,39 @@ def test_model_root_function_assignment(mode: str, calls1: Any, calls2: Any):
 
     v.validate_assignment(m, 'x', b'different')
     assert calls == [calls1, calls2]
+
+
+def test_function_validation_info_mode():
+    calls: list[str] = []
+
+    def f(v: Any, info: core_schema.ValidationInfo) -> Any:
+        calls.append(info.mode)
+        return v
+
+    v = SchemaValidator(core_schema.general_before_validator_function(f, core_schema.int_schema()))
+    assert v.validate_python(1) == 1
+    assert calls == ['python']
+    calls.clear()
+    assert v.validate_json('1') == 1
+    assert calls == ['json']
+    calls.clear()
+
+    v = SchemaValidator(core_schema.general_after_validator_function(f, core_schema.int_schema()))
+    assert v.validate_python(1) == 1
+    assert calls == ['python']
+    calls.clear()
+    assert v.validate_json('1') == 1
+    assert calls == ['json']
+    calls.clear()
+
+    def f_w(v: Any, handler: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo) -> Any:
+        calls.append(info.mode)
+        return handler(v)
+
+    v = SchemaValidator(core_schema.general_wrap_validator_function(f_w, core_schema.int_schema()))
+    assert v.validate_python(1) == 1
+    assert calls == ['python']
+    calls.clear()
+    assert v.validate_json('1') == 1
+    assert calls == ['json']
+    calls.clear()
