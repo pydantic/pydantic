@@ -2231,3 +2231,17 @@ def test_equality_delegation():
         foo: str
 
     assert MyModel(foo='bar') == ANY
+
+
+def test_recursion_loop_error():
+    class Model(BaseModel):
+        x: List['Model']
+
+    data = {'x': []}
+    data['x'].append(data)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(**data)
+    assert repr(exc_info.value.errors(include_url=False)[0]) == (
+        "{'type': 'recursion_loop', 'loc': ('x', 0, 'x', 0), 'msg': "
+        "'Recursion error - cyclic reference detected', 'input': {'x': [{...}]}}"
+    )
