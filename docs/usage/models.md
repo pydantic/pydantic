@@ -292,64 +292,6 @@ name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', s
 """
 ```
 
-
-### Data binding
-
-Arbitrary classes are processed by Pydantic using the `GetterDict` class (see
-[utils.py](https://github.com/pydantic/pydantic/blob/main/pydantic/utils.py)), which attempts to
-provide a dictionary-like interface to any class. You can customise how this works by setting your own
-sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
-
-You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`.
-In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
-
-The `GetterDict` instance will be called for each field with a sentinel as a fallback (if no other default
-value is set). Returning this sentinel means that the field is missing. Any other value will
-be interpreted as the value of the field.
-
-```py
-from collections.abc import Mapping
-from typing import Optional
-from xml.etree.ElementTree import fromstring
-
-from pydantic import BaseModel, Field
-
-xmlstring = """
-<User Id="2138">
-    <FirstName>John</FirstName>
-    <LastName>Foobar</LastName>
-</User>
-"""
-
-
-class XmlMapping(Mapping):
-    def __init__(self, xmlstring):
-        self._xml = fromstring(xmlstring)
-
-    def __getitem__(self, key):
-        if key in {'Id', 'Status'}:
-            return self._xml.attrib.get(key)
-        else:
-            return self._xml.find(key).text
-
-    def __len__(self):
-        return len(self._xml.attrib) + len(self._xml)
-
-    def __iter__(self):
-        ...
-
-
-class User(BaseModel):
-    id: int = Field(alias='Id')
-    first_name: Optional[str] = Field(None, alias='FirstName')
-    last_name: Optional[str] = Field(None, alias='LastName')
-
-
-print(User.model_validate(XmlMapping(xmlstring)))
-#> id=2138 first_name='John' last_name='Foobar'
-```
-
-
 ## Error Handling
 
 *pydantic* will raise `ValidationError` whenever it finds an error in the data it's validating.
