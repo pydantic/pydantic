@@ -1,11 +1,8 @@
 import typing
-from collections import deque
 
 import pytest
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
-
-from ..conftest import plain_repr
 
 
 class Foo:
@@ -18,6 +15,12 @@ class Bar(Foo):
 
 class Spam:
     pass
+
+
+def test_validate_json() -> None:
+    v = SchemaValidator({'type': 'is-instance', 'cls': Foo})
+    with pytest.raises(NotImplementedError, match='use a JsonOrPython validator instead'):
+        v.validate_json('"foo"')
 
 
 def test_is_instance():
@@ -43,9 +46,6 @@ def test_is_instance():
     ]
     with pytest.raises(ValidationError, match='type=is_instance_of'):
         v.validate_python(Foo)
-
-    with pytest.raises(ValidationError, match='type=is_instance_of'):
-        v.validate_json('"foo"')
 
 
 @pytest.mark.parametrize(
@@ -125,79 +125,20 @@ def test_is_type(input_val, value):
     assert v.isinstance_python(input_val) == value
 
 
-@pytest.mark.parametrize(
-    'input_val,expected',
-    [
-        ('null', False),
-        ('true', True),
-        ('1', False),
-        ('1.1', False),
-        ('"a string"', True),
-        ('["s"]', False),
-        ('{"s": 1}', False),
-    ],
-)
-def test_is_instance_json_string_bool(input_val, expected):
-    v = SchemaValidator(core_schema.is_instance_schema(Foo, json_types={'str', 'bool'}))
-    assert v.isinstance_json(input_val) == expected
-
-
-@pytest.mark.parametrize(
-    'input_val,expected',
-    [
-        ('null', False),
-        ('true', False),
-        ('1', False),
-        ('1.1', False),
-        ('"a string"', False),
-        ('["s"]', True),
-        ('{"s": 1}', False),
-    ],
-)
-def test_is_instance_json_list(input_val, expected):
-    v = SchemaValidator(core_schema.is_instance_schema(Foo, json_types=('list',)))
-    assert v.isinstance_json(input_val) == expected
-
-
 def test_is_instance_dict():
     v = SchemaValidator(
         core_schema.dict_schema(
-            keys_schema=core_schema.is_instance_schema(str, json_types={'str'}),
-            values_schema=core_schema.is_instance_schema(int, json_types={'int', 'dict'}),
+            keys_schema=core_schema.is_instance_schema(str), values_schema=core_schema.is_instance_schema(int)
         )
     )
     assert v.isinstance_python({'foo': 1}) is True
     assert v.isinstance_python({1: 1}) is False
-    assert v.isinstance_json('{"foo": 1}') is True
-    assert v.isinstance_json('{"foo": "1"}') is False
-    assert v.isinstance_json('{"foo": {"a": 1}}') is True
 
 
 def test_is_instance_dict_not_str():
-    v = SchemaValidator(core_schema.dict_schema(keys_schema=core_schema.is_instance_schema(int, json_types={'int'})))
+    v = SchemaValidator(core_schema.dict_schema(keys_schema=core_schema.is_instance_schema(int)))
     assert v.isinstance_python({1: 1}) is True
     assert v.isinstance_python({'foo': 1}) is False
-    assert v.isinstance_json('{"foo": 1}') is False
-
-
-def test_json_mask():
-    assert 'json_types:128' in plain_repr(SchemaValidator(core_schema.is_instance_schema(str, json_types={'null'})))
-    assert 'json_types:0' in plain_repr(SchemaValidator(core_schema.is_instance_schema(str)))
-    assert 'json_types:0' in plain_repr(SchemaValidator(core_schema.is_instance_schema(str, json_types=set())))
-    v = SchemaValidator(core_schema.is_instance_schema(str, json_types={'list', 'dict'}))
-    assert 'json_types:6' in plain_repr(v)  # 2 + 4
-
-
-def test_json_function():
-    v = SchemaValidator(core_schema.is_instance_schema(deque, json_types={'list'}, json_function=deque))
-    output = v.validate_python(deque([1, 2, 3]))
-    assert output == deque([1, 2, 3])
-    output = v.validate_json('[1, 2, 3]')
-    assert output == deque([1, 2, 3])
-    with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[type=is_instance_of,'):
-        v.validate_python([1, 2, 3])
-    with pytest.raises(ValidationError, match=r'Input should be an instance of deque \[type=is_instance_of,'):
-        v.validate_json('{"1": 2}')
 
 
 def test_is_instance_sequence():

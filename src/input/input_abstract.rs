@@ -1,7 +1,7 @@
 use std::fmt;
 
-use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString, PyType};
+use pyo3::{intern, prelude::*};
 
 use crate::errors::{InputValue, LocItem, ValResult};
 use crate::{PyMultiHostUrl, PyUrl};
@@ -10,15 +10,18 @@ use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
 use super::{GenericArguments, GenericCollection, GenericIterator, GenericMapping, JsonInput};
 
+#[derive(Debug, Clone, Copy)]
 pub enum InputType {
     Python,
     Json,
-    String,
 }
 
-impl InputType {
-    pub fn is_json(&self) -> bool {
-        matches!(self, Self::Json)
+impl IntoPy<PyObject> for InputType {
+    fn into_py(self, py: Python<'_>) -> PyObject {
+        match self {
+            Self::Json => intern!(py, "json").into(),
+            Self::Python => intern!(py, "python").into(),
+        }
     }
 }
 
@@ -27,8 +30,6 @@ impl InputType {
 /// * `strict_*` & `lax_*` if they have different behavior
 /// * or, `validate_*` and `strict_*` to just call `validate_*` if the behavior for strict and lax is the same
 pub trait Input<'a>: fmt::Debug + ToPyObject {
-    fn get_type(&self) -> &'static InputType;
-
     fn as_loc_item(&self) -> LocItem;
 
     fn as_error_value(&'a self) -> InputValue<'a>;
@@ -43,9 +44,6 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
     fn input_get_attr(&self, _name: &PyString) -> Option<PyResult<&PyAny>> {
         None
     }
-
-    // input_ prefix to differentiate from the function on PyAny
-    fn input_is_instance(&self, class: &PyAny, json_mask: u8) -> PyResult<bool>;
 
     fn is_exact_instance(&self, _class: &PyType) -> bool {
         false

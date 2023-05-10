@@ -8,7 +8,7 @@ use pyo3::{ffi, intern};
 
 use crate::build_tools::{build_model_config, py_err, schema_or_config_same, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValResult};
-use crate::input::{py_error_on_minusone, Input};
+use crate::input::{py_error_on_minusone, Input, InputType};
 use crate::recursion_guard::RecursionGuard;
 
 use super::function::convert_err;
@@ -125,8 +125,7 @@ impl Validator for ModelValidator {
         // if the input is an instance of the class, we "revalidate" it - e.g. we extract and reuse `__pydantic_fields_set__`
         // but use from attributes to create a new instance of the model field type
         let class = self.class.as_ref(py);
-        // mask 0 so JSON is input is never true here
-        if input.input_is_instance(class, 0)? {
+        if matches!(extra.mode, InputType::Python) && input.to_object(py).as_ref(py).is_instance(class)? {
             if self.revalidate.should_revalidate(input, class) {
                 if self.root_model {
                     let inner_input: &PyAny = input.input_get_attr(intern!(py, ROOT_FIELD)).unwrap()?;

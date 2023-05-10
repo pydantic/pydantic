@@ -1,51 +1,10 @@
 use std::fmt;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PySet};
+use pyo3::types::{PyDict, PyList};
 use serde::de::{Deserialize, DeserializeSeed, Error as SerdeError, MapAccess, SeqAccess, Visitor};
 
 use crate::lazy_index_map::LazyIndexMap;
-
-use crate::build_tools::py_err;
-
-#[derive(Copy, Clone, Debug)]
-pub enum JsonType {
-    Null = 0b10000000,
-    Bool = 0b01000000,
-    Int = 0b00100000,
-    Float = 0b00010000,
-    String = 0b00001000,
-    Array = 0b00000100,
-    Object = 0b00000010,
-}
-
-impl JsonType {
-    pub fn combine(set: &PySet) -> PyResult<u8> {
-        set.iter().map(Self::try_from).try_fold(0u8, |a, b| Ok(a | b? as u8))
-    }
-
-    pub fn matches(&self, mask: u8) -> bool {
-        *self as u8 & mask > 0
-    }
-}
-
-impl TryFrom<&PyAny> for JsonType {
-    type Error = PyErr;
-
-    fn try_from(value: &PyAny) -> PyResult<Self> {
-        let s: &str = value.extract()?;
-        match s {
-            "null" => Ok(Self::Null),
-            "bool" => Ok(Self::Bool),
-            "int" => Ok(Self::Int),
-            "float" => Ok(Self::Float),
-            "str" => Ok(Self::String),
-            "list" => Ok(Self::Array),
-            "dict" => Ok(Self::Object),
-            _ => py_err!("Invalid json type: {}", s),
-        }
-    }
-}
 
 /// similar to serde `Value` but with int and float split
 #[derive(Clone, Debug)]

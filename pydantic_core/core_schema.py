@@ -124,6 +124,11 @@ class ValidationInfo(Protocol):
         """The CoreConfig that applies to this validation."""
         ...
 
+    @property
+    def mode(self) -> Literal['python', 'json']:
+        """The type of input data we are currently validating"""
+        ...
+
 
 class FieldValidationInfo(ValidationInfo, Protocol):
     """
@@ -1050,8 +1055,6 @@ class IsInstanceSchema(TypedDict, total=False):
     type: Required[Literal['is-instance']]
     cls: Required[Any]
     cls_repr: str
-    json_types: Set[JsonType]
-    json_function: Callable[[Any], Any]
     ref: str
     metadata: Any
     serialization: SerSchema
@@ -1060,8 +1063,6 @@ class IsInstanceSchema(TypedDict, total=False):
 def is_instance_schema(
     cls: Any,
     *,
-    json_types: Set[JsonType] | None = None,
-    json_function: Callable[[Any], Any] | None = None,
     cls_repr: str | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -1083,23 +1084,13 @@ def is_instance_schema(
 
     Args:
         cls: The value must be an instance of this class
-        json_types: When parsing JSON directly, the value must be one of these json types
-        json_function: When parsing JSON directly, If provided, the JSON value is passed to this
-            function and the return value used as the output value
         cls_repr: If provided this string is used in the validator name instead of `repr(cls)`
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='is-instance',
-        cls=cls,
-        json_types=json_types,
-        json_function=json_function,
-        cls_repr=cls_repr,
-        ref=ref,
-        metadata=metadata,
-        serialization=serialization,
+        type='is-instance', cls=cls, cls_repr=cls_repr, ref=ref, metadata=metadata, serialization=serialization
     )
 
 
@@ -2604,6 +2595,63 @@ def lax_or_strict_schema(
     )
 
 
+class JsonOrPythonSchema(TypedDict, total=False):
+    type: Required[Literal['json-or-python']]
+    json_schema: Required[CoreSchema]
+    python_schema: Required[CoreSchema]
+    ref: str
+    metadata: Any
+    serialization: SerSchema
+
+
+def json_or_python_schema(
+    json_schema: CoreSchema,
+    python_schema: CoreSchema,
+    *,
+    ref: str | None = None,
+    metadata: Any = None,
+    serialization: SerSchema | None = None,
+) -> JsonOrPythonSchema:
+    """
+    Returns a schema that uses the Json or Python schema depending on the input:
+
+    ```py
+    from pydantic_core import SchemaValidator, ValidationError, core_schema
+
+    v = SchemaValidator(
+        core_schema.json_or_python_schema(
+            json_schema=core_schema.int_schema(),
+            python_schema=core_schema.int_schema(strict=True),
+        )
+    )
+
+    assert v.validate_json('"123"') == 123
+
+    try:
+        v.validate_python('123')
+    except ValidationError:
+        pass
+    else:
+        raise AssertionError('Validation should have failed')
+    ```
+
+    Args:
+        json_schema: The schema to use for Json inputs
+        python_schema: The schema to use for Python inputs
+        ref: optional unique identifier of the schema, used to reference the schema in other places
+        metadata: Any other information you want to include with the schema, not used by pydantic-core
+        serialization: Custom serialization schema
+    """
+    return dict_not_none(
+        type='json-or-python',
+        json_schema=json_schema,
+        python_schema=python_schema,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
+    )
+
+
 class TypedDictField(TypedDict, total=False):
     type: Required[Literal['typed-dict-field']]
     schema: Required[CoreSchema]
@@ -3612,6 +3660,7 @@ if not MYPY:
         TaggedUnionSchema,
         ChainSchema,
         LaxOrStrictSchema,
+        JsonOrPythonSchema,
         TypedDictSchema,
         ModelFieldsSchema,
         ModelSchema,
@@ -3664,6 +3713,7 @@ CoreSchemaType = Literal[
     'tagged-union',
     'chain',
     'lax-or-strict',
+    'json-or-python',
     'typed-dict',
     'model-fields',
     'model',

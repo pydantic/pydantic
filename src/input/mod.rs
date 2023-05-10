@@ -14,8 +14,8 @@ pub(crate) use datetime::{
     pydate_as_date, pydatetime_as_datetime, pytime_as_time, pytimedelta_as_duration, EitherDate, EitherDateTime,
     EitherTime, EitherTimedelta,
 };
-pub(crate) use input_abstract::Input;
-pub(crate) use parse_json::{JsonInput, JsonObject, JsonType};
+pub(crate) use input_abstract::{Input, InputType};
+pub(crate) use parse_json::{JsonInput, JsonObject};
 pub(crate) use return_enums::{
     py_string_str, AttributesGenericIterator, DictGenericIterator, EitherBytes, EitherString, GenericArguments,
     GenericCollection, GenericIterator, GenericMapping, JsonArgs, JsonObjectGenericIterator, MappingGenericIterator,

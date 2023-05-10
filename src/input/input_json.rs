@@ -7,19 +7,14 @@ use super::datetime::{
     bytes_as_date, bytes_as_datetime, bytes_as_time, bytes_as_timedelta, float_as_datetime, float_as_duration,
     float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime, EitherTime,
 };
-use super::input_abstract::InputType;
 use super::parse_json::JsonArray;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
     EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection, GenericIterator, GenericMapping,
-    Input, JsonArgs, JsonInput, JsonType,
+    Input, JsonArgs, JsonInput,
 };
 
 impl<'a> Input<'a> for JsonInput {
-    fn get_type(&self) -> &'static InputType {
-        &InputType::Json
-    }
-
     /// This is required by since JSON object keys are always strings, I don't think it can be called
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn as_loc_item(&self) -> LocItem {
@@ -36,23 +31,6 @@ impl<'a> Input<'a> for JsonInput {
 
     fn is_none(&self) -> bool {
         matches!(self, JsonInput::Null)
-    }
-
-    fn input_is_instance(&self, _class: &PyAny, json_mask: u8) -> PyResult<bool> {
-        if json_mask == 0 {
-            Ok(false)
-        } else {
-            let json_type: JsonType = match self {
-                JsonInput::Null => JsonType::Null,
-                JsonInput::Bool(_) => JsonType::Bool,
-                JsonInput::Int(_) => JsonType::Int,
-                JsonInput::Float(_) => JsonType::Float,
-                JsonInput::String(_) => JsonType::String,
-                JsonInput::Array(_) => JsonType::Array,
-                JsonInput::Object(_) => JsonType::Object,
-            };
-            Ok(json_type.matches(json_mask))
-        }
     }
 
     fn as_kwargs(&'a self, py: Python<'a>) -> Option<&'a PyDict> {
@@ -330,10 +308,6 @@ impl<'a> Input<'a> for JsonInput {
 
 /// Required for Dict keys so the string can behave like an Input
 impl<'a> Input<'a> for String {
-    fn get_type(&self) -> &'static InputType {
-        &InputType::String
-    }
-
     fn as_loc_item(&self) -> LocItem {
         self.to_string().into()
     }
@@ -345,14 +319,6 @@ impl<'a> Input<'a> for String {
     #[cfg_attr(has_no_coverage, no_coverage)]
     fn is_none(&self) -> bool {
         false
-    }
-
-    fn input_is_instance(&self, _class: &PyAny, json_mask: u8) -> PyResult<bool> {
-        if json_mask == 0 {
-            Ok(false)
-        } else {
-            Ok(JsonType::String.matches(json_mask))
-        }
     }
 
     fn as_kwargs(&'a self, _py: Python<'a>) -> Option<&'a PyDict> {

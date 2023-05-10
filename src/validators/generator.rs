@@ -10,7 +10,7 @@ use crate::recursion_guard::RecursionGuard;
 use crate::ValidationError;
 
 use super::list::get_items_schema;
-use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, InputType, Validator};
 
 #[derive(Debug, Clone)]
 pub struct GeneratorValidator {
@@ -202,6 +202,7 @@ pub struct InternalValidator {
     context: Option<PyObject>,
     self_instance: Option<PyObject>,
     recursion_guard: RecursionGuard,
+    validation_mode: InputType,
 }
 
 impl fmt::Debug for InternalValidator {
@@ -228,6 +229,7 @@ impl InternalValidator {
             context: extra.context.map(|d| d.into_py(py)),
             self_instance: extra.self_instance.map(|d| d.into_py(py)),
             recursion_guard: recursion_guard.clone(),
+            validation_mode: extra.mode,
         }
     }
 
@@ -240,6 +242,7 @@ impl InternalValidator {
         outer_location: Option<LocItem>,
     ) -> PyResult<PyObject> {
         let extra = Extra {
+            mode: self.validation_mode,
             data: self.data.as_ref().map(|data| data.as_ref(py)),
             strict: self.strict,
             ultra_strict: false,
@@ -272,6 +275,7 @@ impl InternalValidator {
         's: 'data,
     {
         let extra = Extra {
+            mode: self.validation_mode,
             data: self.data.as_ref().map(|data| data.as_ref(py)),
             strict: self.strict,
             ultra_strict: false,

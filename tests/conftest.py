@@ -13,7 +13,7 @@ import hypothesis
 import pytest
 from typing_extensions import Literal
 
-from pydantic_core import ArgsKwargs, SchemaValidator
+from pydantic_core import ArgsKwargs, SchemaValidator, ValidationError
 from pydantic_core.core_schema import CoreConfig
 
 __all__ = 'Err', 'PyAndJson', 'plain_repr', 'infinite_generator'
@@ -70,7 +70,11 @@ class PyAndJsonValidator:
 
     def isinstance_test(self, py_input, strict: bool | None = None, context: Any = None):
         if self.validator_type == 'json':
-            return self.validator.isinstance_json(json.dumps(py_input), strict=strict, context=context)
+            try:
+                self.validator.validate_json(json.dumps(py_input), strict=strict, context=context)
+                return True
+            except ValidationError:
+                return False
         else:
             assert self.validator_type == 'python', self.validator_type
             return self.validator.isinstance_python(py_input, strict=strict, context=context)
