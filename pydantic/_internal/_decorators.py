@@ -491,7 +491,7 @@ def unwrap_wrapped_function(
     """
     all: list[Any]
     try:
-        from functools import cached_property
+        from functools import cached_property  # type: ignore
 
         cached_property_list = [cached_property]
     except ImportError:

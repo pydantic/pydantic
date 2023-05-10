@@ -816,7 +816,7 @@ def computed_field(
 
         if return_type is _UNSET:
             # try to get it from the type annotation
-            res = _typing_extra.get_type_hints(_decorators.unwrap_wrapped_function(f))
+            res = _typing_extra.get_type_hints(_decorators.unwrap_wrapped_function(f), include_extras=True)
             return_type = res.get('return', _UNSET)
             if return_type is _UNSET:
                 raise PydanticUserError(
