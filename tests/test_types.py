@@ -2980,6 +2980,15 @@ def test_path_validation_success(value, result):
     assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
+def test_path_validation_constrained():
+    ta = TypeAdapter(Annotated[Path, Field(min_length=9, max_length=20)])
+    with pytest.raises(ValidationError):
+        ta.validate_python('/short')
+    with pytest.raises(ValidationError):
+        ta.validate_python('/' + 'long' * 100)
+    assert ta.validate_python('/just/right/enough') == Path('/just/right/enough')
+
+
 def test_path_like():
     class Model(BaseModel):
         foo: os.PathLike
@@ -3023,7 +3032,19 @@ def test_path_validation_fails():
         Model(foo=123)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
+        {
+            'type': 'is_instance_of',
+            'loc': ('foo', 'json-or-python[json=function-after[path_validator(), str],python=is-instance[Path]]'),
+            'msg': 'Input should be an instance of Path',
+            'input': 123,
+            'ctx': {'class': 'Path'},
+        },
+        {
+            'type': 'string_type',
+            'loc': ('foo', 'function-after[path_validator(), str]'),
+            'msg': 'Input should be a valid string',
+            'input': 123,
+        },
     ]
 
 
