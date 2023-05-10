@@ -1134,14 +1134,14 @@ def test_generator_rust(benchmark):
 
 @pytest.mark.benchmark(group='isinstance-json')
 def test_isinstance_json(benchmark):
-    validator = SchemaValidator(core_schema.is_instance_schema(str, json_types={'str'}))
-    assert validator.isinstance_json('"foo"') is True
-    assert validator.isinstance_json('123') is False
+    validator = SchemaValidator(core_schema.json_or_python_schema(core_schema.str_schema(), core_schema.int_schema()))
+    assert validator.validate_json('"foo"') == 'foo'
+    with pytest.raises(ValidationError):
+        validator.validate_json('123')
 
     @benchmark
     def t():
-        validator.isinstance_json('"foo"')
-        validator.isinstance_json('123')
+        validator.validate_json('"foo"')
 
 
 @pytest.mark.benchmark(group='error')

@@ -167,8 +167,6 @@ def test_literal_none():
     v = SchemaValidator(core_schema.literal_schema([None]))
     assert v.isinstance_python(None) is True
     assert v.isinstance_python(0) is False
-    assert v.isinstance_json('null') is True
-    assert v.isinstance_json('""') is False
     expected_repr_start = 'SchemaValidator(title="literal[None]"'
     assert plain_repr(v)[: len(expected_repr_start)] == expected_repr_start
 

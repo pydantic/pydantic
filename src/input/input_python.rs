@@ -20,11 +20,10 @@ use super::datetime::{
     float_as_duration, float_as_time, int_as_datetime, int_as_duration, int_as_time, EitherDate, EitherDateTime,
     EitherTime,
 };
-use super::input_abstract::InputType;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    py_error_on_minusone, py_string_str, EitherBytes, EitherString, EitherTimedelta, GenericArguments,
-    GenericCollection, GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
+    py_string_str, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection, GenericIterator,
+    GenericMapping, Input, JsonInput, PyArgs,
 };
 
 /// Extract generators and deques into a `GenericCollection`
@@ -72,10 +71,6 @@ macro_rules! extract_dict_iter {
 }
 
 impl<'a> Input<'a> for PyAny {
-    fn get_type(&self) -> &'static InputType {
-        &InputType::Python
-    }
-
     fn as_loc_item(&self) -> LocItem {
         if let Ok(py_str) = self.downcast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
@@ -100,14 +95,6 @@ impl<'a> Input<'a> for PyAny {
 
     fn input_get_attr(&self, name: &PyString) -> Option<PyResult<&PyAny>> {
         Some(self.getattr(name))
-    }
-
-    fn input_is_instance(&self, class: &PyAny, _json_mask: u8) -> PyResult<bool> {
-        // See PyO3/pyo3#2694 - we can't use `is_instance` here since it requires PyType,
-        // and some check objects are not types, this logic is lifted from `is_instance` in PyO3
-        let result = unsafe { ffi::PyObject_IsInstance(self.as_ptr(), class.as_ptr()) };
-        py_error_on_minusone(self.py(), result)?;
-        Ok(result == 1)
     }
 
     fn is_exact_instance(&self, class: &PyType) -> bool {

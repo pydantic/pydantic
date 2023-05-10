@@ -204,10 +204,8 @@ def test_simple():
     assert v.isinstance_python(b'abc', self_instance='foobar') is True
 
     assert v.validate_json('"abc"') == 'abc'
-    assert v.isinstance_json('"abc"') is True
 
     assert v.validate_json('"abc"', self_instance='foobar') == 'abc'
-    assert v.isinstance_json('"abc"', self_instance='foobar') is True
 
 
 def test_model_custom_init():

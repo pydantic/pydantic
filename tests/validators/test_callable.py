@@ -20,7 +20,6 @@ def test_callable():
     v = SchemaValidator({'type': 'callable'})
     assert v.validate_python(func) == func
     assert v.isinstance_python(func) is True
-    assert v.isinstance_json('"func"') is False
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python(42)

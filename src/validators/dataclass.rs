@@ -7,6 +7,7 @@ use ahash::AHashSet;
 
 use crate::build_tools::{is_strict, py_err, schema_or_config_same, ExtraBehavior, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
+use crate::input::InputType;
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
@@ -471,7 +472,7 @@ impl Validator for DataclassValidator {
 
         // same logic as on models
         let class = self.class.as_ref(py);
-        if input.input_is_instance(class, 0)? {
+        if matches!(extra.mode, InputType::Python) && input.to_object(py).as_ref(py).is_instance(class)? {
             if self.revalidate.should_revalidate(input, class) {
                 let input = input.input_get_attr(intern!(py, "__dict__")).unwrap()?;
                 let val_output = self

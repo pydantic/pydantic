@@ -29,25 +29,6 @@ def test_isinstance_strict():
     assert v.isinstance_python('123') is False
 
 
-def test_isinstance_json():
-    v = SchemaValidator({'type': 'int'})
-    assert v.validate_json('123') == 123
-    assert v.isinstance_json('123') is True
-    assert v.validate_json('"123"') == 123
-    assert v.isinstance_json('"123"') is True
-
-    with pytest.raises(ValidationError, match='Input should be a valid integer'):
-        v.validate_json('"foo"')
-
-    assert v.isinstance_json('"foo"') is False
-
-    with pytest.raises(ValidationError, match=r'Invalid JSON: expected value at line 1 column 1 \[type=json_invalid,'):
-        v.validate_json('x')
-
-    # invalid json returns False, not an error!
-    assert v.isinstance_json('x') is False
-
-
 def test_internal_error():
     v = SchemaValidator(
         {
@@ -65,9 +46,6 @@ def test_internal_error():
     with pytest.raises(AttributeError, match="'int' object has no attribute '__dict__'"):
         v.isinstance_python({'f': 123})
 
-    with pytest.raises(AttributeError, match="'int' object has no attribute '__dict__'"):
-        v.isinstance_json('{"f": 123}')
-
 
 def test_omit(py_and_json: PyAndJson):
     def omit(v, info):
@@ -80,8 +58,10 @@ def test_omit(py_and_json: PyAndJson):
 
     v = py_and_json(core_schema.general_plain_validator_function(omit))
     assert v.validate_test('foo') == 'foo'
-    assert v.isinstance_test('foo') is True
+    if v.validator_type == 'python':
+        assert v.isinstance_test('foo') is True
 
-    assert v.isinstance_test('error') is False
+    if v.validator_type == 'python':
+        assert v.isinstance_test('error') is False
     with pytest.raises(SchemaError, match='Uncaught Omit error, please check your usage of `default` validators.'):
         v.validate_test('omit')

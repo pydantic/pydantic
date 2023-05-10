@@ -8,6 +8,7 @@ pub mod format;
 pub mod function;
 pub mod generator;
 pub mod json;
+pub mod json_or_python;
 pub mod list;
 pub mod literal;
 pub mod model;

@@ -225,6 +225,11 @@ all_schema_functions = [
         args({'type': 'int'}, {'type': 'int'}),
         {'type': 'lax-or-strict', 'lax_schema': {'type': 'int'}, 'strict_schema': {'type': 'int'}},
     ),
+    (
+        core_schema.json_or_python_schema,
+        args({'type': 'int'}, {'type': 'str'}),
+        {'type': 'json-or-python', 'json_schema': {'type': 'int'}, 'python_schema': {'type': 'str'}},
+    ),
     (core_schema.is_subclass_schema, args(MyModel), {'type': 'is-subclass', 'cls': MyModel}),
     (
         core_schema.definitions_schema,
