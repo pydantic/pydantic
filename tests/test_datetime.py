@@ -5,7 +5,17 @@ import pytest
 from dirty_equals import HasRepr
 from typing_extensions import Annotated
 
-from pydantic import AwareDatetime, BaseModel, FutureDate, NaiveDatetime, PastDate, ValidationError, condate
+from pydantic import (
+    AwareDatetime,
+    BaseModel,
+    FutureDate,
+    FutureDatetime,
+    NaiveDatetime,
+    PastDate,
+    PastDatetime,
+    ValidationError,
+    condate,
+)
 
 from .conftest import Err
 
@@ -21,6 +31,16 @@ def future_date_type(request):
 
 @pytest.fixture(scope='module', params=[PastDate, Annotated[date, PastDate()]])
 def past_date_type(request):
+    return request.param
+
+
+@pytest.fixture(scope='module', params=[FutureDatetime, Annotated[datetime, FutureDatetime()]])
+def future_datetime_type(request):
+    return request.param
+
+
+@pytest.fixture(scope='module', params=[PastDatetime, Annotated[datetime, PastDatetime()]])
+def past_datetime_type(request):
     return request.param
 
 
@@ -486,3 +506,91 @@ def test_future_date_validation_fails(value, future_date_type):
             'input': value,
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'value,result',
+    (
+        ('1996-01-22T10:20:30', datetime(1996, 1, 22, 10, 20, 30)),
+        (datetime(1996, 1, 22, 10, 20, 30), datetime(1996, 1, 22, 10, 20, 30)),
+    ),
+)
+def test_past_datetime_validation_success(value, result, past_datetime_type):
+    class Model(BaseModel):
+        foo: past_datetime_type
+
+    assert Model(foo=value).foo == result
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        datetime.now() + timedelta(1),
+        '2064-06-01T10:20:30',
+    ),
+)
+def test_past_datetime_validation_fails(value, past_datetime_type):
+    class Model(BaseModel):
+        foo: past_datetime_type
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'datetime_past',
+            'loc': ('foo',),
+            'msg': 'Datetime should be in the past',
+            'input': value,
+        }
+    ]
+
+
+def test_future_datetime_validation_success(future_datetime_type):
+    class Model(BaseModel):
+        foo: future_datetime_type
+
+    d = datetime.now() + timedelta(1)
+    assert Model(foo=d).foo == d
+    assert Model(foo='2064-06-01T10:20:30').foo == datetime(2064, 6, 1, 10, 20, 30)
+
+
+@pytest.mark.parametrize(
+    'value',
+    (
+        datetime.now(),
+        datetime.now() - timedelta(1),
+        '1996-01-22T10:20:30',
+    ),
+)
+def test_future_datetime_validation_fails(value, future_datetime_type):
+    class Model(BaseModel):
+        foo: future_datetime_type
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'datetime_future',
+            'loc': ('foo',),
+            'msg': 'Datetime should be in the future',
+            'input': value,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'annotation',
+    (
+        PastDate,
+        PastDatetime,
+        FutureDate,
+        FutureDatetime,
+        NaiveDatetime,
+        AwareDatetime,
+    ),
+)
+def test_invalid_annotated_type(annotation):
+    with pytest.raises(TypeError, match=f"'{annotation.__name__}' cannot annotate 'str'."):
+
+        class Model(BaseModel):
+            foo: Annotated[str, annotation()]

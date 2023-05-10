@@ -133,6 +133,8 @@ __all__ = [
     'ByteSize',
     'PastDate',
     'FutureDate',
+    'PastDatetime',
+    'FutureDatetime',
     'AwareDatetime',
     'NaiveDatetime',
     'AllowInfNan',

@@ -19,6 +19,7 @@ from pydantic import (
     DirectoryPath,
     FilePath,
     FutureDate,
+    FutureDatetime,
     ImportString,
     Json,
     NaiveDatetime,
@@ -29,6 +30,7 @@ from pydantic import (
     NonPositiveFloat,
     NonPositiveInt,
     PastDate,
+    PastDatetime,
     PositiveFloat,
     PositiveInt,
     StrictBool,
@@ -236,6 +238,8 @@ class PydanticTypes(BaseModel):
     my_past_date: PastDate = date.today() - timedelta(1)
     my_future_date: FutureDate = date.today() + timedelta(1)
     # Datetime
+    my_past_datetime: PastDatetime = datetime.now() - timedelta(1)
+    my_future_datetime: FutureDatetime = datetime.now() + timedelta(1)
     my_aware_datetime: AwareDatetime = datetime.now(tz=timezone.utc)
     my_naive_datetime: NaiveDatetime = datetime.now()
 

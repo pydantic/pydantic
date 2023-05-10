@@ -74,6 +74,12 @@ types:
 `NaiveDatetime`
 : like `datetime`, but requires the value to lack timezone info
 
+`PastDatetime`
+: like `datetime`, but the datetime should be in the past
+
+`FutureDatetime`
+: like `datetime`, but the datetime should be in the future
+
 
 ```py
 from datetime import date, datetime, time, timedelta
