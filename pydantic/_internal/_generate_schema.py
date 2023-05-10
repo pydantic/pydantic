@@ -224,8 +224,7 @@ class GenerateSchema:
                 metadata_js_function = wrap_json_schema_fn_for_model_or_custom_type_with_ref_unpacking(
                     metadata_js_function
                 )
-            metadata['pydantic_js_functions'] = metadata.get('pydantic_js_functions', [])
-            metadata['pydantic_js_functions'].append(metadata_js_function)
+            metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
 
         if 'ref' in schema:
             # definitions and definition-ref schemas don't have 'ref', causing the type error ignored on the next line
@@ -265,7 +264,7 @@ class GenerateSchema:
         try:
             fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
                 {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
-                computed_fields=generate_computed_field(decorators.computed_fields),
+                computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
             )
         finally:
             self._config_wrapper_stack.pop()
@@ -1061,7 +1060,7 @@ class GenerateSchema:
             args_schema = core_schema.dataclass_args_schema(
                 dataclass.__name__,
                 args,
-                computed_fields=generate_computed_field(decorators.computed_fields),
+                computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
                 collect_init_only=has_post_init,
             )
         finally:
@@ -1144,6 +1143,10 @@ class GenerateSchema:
         else:
             self.recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
             return obj_ref, None
+
+    def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
+        return_type_schema = self.generate_schema(d.info.return_type)
+        return core_schema.computed_field(d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias)
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
         """
@@ -1376,8 +1379,7 @@ def get_wrapped_inner_schema(
         metadata_js_function = _extract_get_pydantic_json_schema(annotation)
         if metadata_js_function is not None:
             metadata = CoreMetadataHandler(schema).metadata
-            metadata['pydantic_js_functions'] = metadata.get('pydantic_js_functions', [])
-            metadata['pydantic_js_functions'].append(metadata_js_function)
+            metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
         return schema
 
     return CallbackGetCoreSchemaHandler(new_handler)
@@ -1474,15 +1476,3 @@ def _common_field(
         'frozen': frozen,
         'metadata': metadata,
     }
-
-
-def generate_computed_field(d: dict[str, Decorator[ComputedFieldInfo]]) -> list[core_schema.ComputedField] | None:
-    r = [
-        core_schema.computed_field(
-            d.cls_var_name,
-            json_return_type=d.info.json_return_type,
-            alias=d.info.alias,
-        )
-        for d in d.values()
-    ]
-    return r

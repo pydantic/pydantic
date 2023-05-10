@@ -24,10 +24,12 @@ FunctionSchemaWithInnerSchema = Union[
     core_schema.WrapValidatorFunctionSchema,
 ]
 
-CoreSchemaField = Union[core_schema.ModelField, core_schema.DataclassField, core_schema.TypedDictField]
+CoreSchemaField = Union[
+    core_schema.ModelField, core_schema.DataclassField, core_schema.TypedDictField, core_schema.ComputedField
+]
 CoreSchemaOrField = Union[core_schema.CoreSchema, CoreSchemaField]
 
-_CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field'}
+_CORE_SCHEMA_FIELD_TYPES = {'typed-dict-field', 'dataclass-field', 'model-field', 'computed-field'}
 _FUNCTION_WITH_INNER_SCHEMA_TYPES = {'function-before', 'function-after', 'function-wrap'}
 _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES = {'list', 'tuple-variable', 'set', 'frozenset'}
 
@@ -348,6 +350,11 @@ class _WalkCoreSchema:
     def handle_lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema, f: Walk) -> core_schema.CoreSchema:
         schema['lax_schema'] = self.walk(schema['lax_schema'], f)
         schema['strict_schema'] = self.walk(schema['strict_schema'], f)
+        return schema
+
+    def handle_json_or_python_schema(self, schema: core_schema.JsonOrPythonSchema, f: Walk) -> core_schema.CoreSchema:
+        schema['json_schema'] = self.walk(schema['json_schema'], f)
+        schema['python_schema'] = self.walk(schema['python_schema'], f)
         return schema
 
     def handle_model_fields_schema(self, schema: core_schema.ModelFieldsSchema, f: Walk) -> core_schema.CoreSchema:

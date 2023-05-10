@@ -1,12 +1,10 @@
-from __future__ import annotations as _annotations
-
 import random
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar
+from typing import Any, ClassVar, List, Tuple
 
 import pytest
-from pydantic_core import PydanticSerializationError, ValidationError
+from pydantic_core import ValidationError, core_schema
 
 from pydantic import (
     BaseModel,
@@ -17,6 +15,8 @@ from pydantic import (
     dataclasses,
     field_validator,
 )
+from pydantic.annotated import GetCoreSchemaHandler
+from pydantic.errors import PydanticUserError
 
 try:
     from functools import cached_property, lru_cache, singledispatchmethod
@@ -264,11 +264,11 @@ def test_include_exclude():
         y: int
 
         @computed_field
-        def x_list(self) -> list[int]:
+        def x_list(self) -> List[int]:
             return [self.x, self.x + 1]
 
         @computed_field
-        def y_list(self) -> list[int]:
+        def y_list(self) -> List[int]:
             return [self.y, self.y + 1, self.y + 2]
 
     m = Model(x=1, y=2)
@@ -283,11 +283,11 @@ def test_expected_type():
         x: int
         y: int
 
-        @computed_field(json_return_type='list')
-        def x_list(self) -> list[int]:
+        @computed_field
+        def x_list(self) -> List[int]:
             return [self.x, self.x + 1]
 
-        @computed_field(json_return_type='bytes')
+        @computed_field
         def y_str(self) -> bytes:
             s = f'y={self.y}'
             return s.encode()
@@ -302,16 +302,16 @@ def test_expected_type_wrong():
     class Model(BaseModel):
         x: int
 
-        @computed_field(json_return_type='list')
-        def x_list(self) -> list[int]:
+        @computed_field
+        def x_list(self) -> List[int]:
             return 'not a list'
 
     m = Model(x=1)
-    with pytest.raises(TypeError, match="^'str' object cannot be converted to 'PyList'$"):
+    with pytest.warns(UserWarning, match=r'Expected `list\[int\]` but got `str`'):
         m.model_dump()
-    with pytest.raises(TypeError, match="^'str' object cannot be converted to 'PyList'$"):
+    with pytest.warns(UserWarning, match=r'Expected `list\[int\]` but got `str`'):
         m.model_dump(mode='json')
-    with pytest.raises(PydanticSerializationError, match="Error serializing to JSON: 'str' object cannot be converted"):
+    with pytest.warns(UserWarning, match=r'Expected `list\[int\]` but got `str`'):
         m.model_dump_json()
 
 
@@ -483,7 +483,7 @@ def test_abstractmethod():
         (BaseModel,),
     ],
 )
-def test_abstractmethod_missing(bases: tuple[Any, ...]):
+def test_abstractmethod_missing(bases: Tuple[Any, ...]):
     class AbstractSquare(*bases):
         side: float
 
@@ -498,3 +498,38 @@ def test_abstractmethod_missing(bases: tuple[Any, ...]):
 
     with pytest.raises(TypeError, match="Can't instantiate abstract class Square with abstract methods? area"):
         Square(side=4.0)
+
+
+class CustomType(str):
+    @classmethod
+    def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        schema = handler(str)
+        schema['serialization'] = core_schema.plain_serializer_function_ser_schema(lambda x: '123')
+        return schema
+
+
+def test_computed_fields_infer_return_type():
+    class Model(BaseModel):
+        @computed_field
+        def cfield(self) -> CustomType:
+            return CustomType('abc')
+
+    assert Model().model_dump() == {'cfield': '123'}
+    assert Model().model_dump_json() == '{"cfield":"123"}'
+
+
+def test_computed_fields_missing_return_type():
+    with pytest.raises(PydanticUserError, match='Computed field is missing return type annotation'):
+
+        class _Model(BaseModel):
+            @computed_field
+            def cfield(self):
+                raise NotImplementedError
+
+    class Model(BaseModel):
+        @computed_field(return_type=CustomType)
+        def cfield(self):
+            return CustomType('abc')
+
+    assert Model().model_dump() == {'cfield': '123'}
+    assert Model().model_dump_json() == '{"cfield":"123"}'

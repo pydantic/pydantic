@@ -5,6 +5,9 @@ build-backend = 'hatchling.build'
 [tool.hatch.version]
 path = 'pydantic/version.py'
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
 [tool.hatch.build.targets.sdist]
 # limit which files are included in the sdist (.tar.gz) asset,
 # see https://github.com/pydantic/pydantic/pull/4542
@@ -58,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.5.0',
     'annotated-types>=0.4.0',
-    "pydantic-core==0.30.0",
+    "pydantic-core==0.31.0",
 ]
 dynamic = ['version', 'readme']
 

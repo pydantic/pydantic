@@ -4536,9 +4536,9 @@ def test_third_party_type_integration():
                 result.x = value
                 return result
 
-            instance_validation_schema = core_schema.is_instance_schema(
-                ThirdPartyType,
-                json_function=validate_from_int,
+            instance_validation_schema = core_schema.json_or_python_schema(
+                json_schema=core_schema.no_info_after_validator_function(validate_from_int, core_schema.int_schema()),
+                python_schema=core_schema.is_instance_schema(ThirdPartyType),
             )
             int_validation_schema = core_schema.chain_schema(
                 [core_schema.int_schema(), core_schema.general_plain_validator_function(validate_from_int)]
@@ -4584,17 +4584,20 @@ def test_third_party_type_integration():
         Model(third_party_type='a')
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'class': 'test_third_party_type_integration.<locals>.ThirdPartyType'},
-            'input': 'a',
-            'loc': ('third_party_type', 'is-instance[test_third_party_type_integration.<locals>.ThirdPartyType]'),
-            'msg': 'Input should be an instance of test_third_party_type_integration.<locals>.ThirdPartyType',
             'type': 'is_instance_of',
+            'loc': (
+                'third_party_type',
+                'json-or-python[json=function-after[validate_from_int(), int],python=is-instance[test_third_party_type_integration.<locals>.ThirdPartyType]]',  # noqa: E501
+            ),
+            'msg': 'Input should be an instance of test_third_party_type_integration.<locals>.ThirdPartyType',
+            'input': 'a',
+            'ctx': {'class': 'test_third_party_type_integration.<locals>.ThirdPartyType'},
         },
         {
-            'input': 'a',
-            'loc': ('third_party_type', 'chain[int,function-plain[validate_from_int()]]'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
+            'loc': ('third_party_type', 'chain[int,function-plain[validate_from_int()]]'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
         },
     ]
 
