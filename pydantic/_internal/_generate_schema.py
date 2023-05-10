@@ -224,8 +224,7 @@ class GenerateSchema:
                 metadata_js_function = wrap_json_schema_fn_for_model_or_custom_type_with_ref_unpacking(
                     metadata_js_function
                 )
-            metadata['pydantic_js_functions'] = metadata.get('pydantic_js_functions', [])
-            metadata['pydantic_js_functions'].append(metadata_js_function)
+            metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
 
         if 'ref' in schema:
             # definitions and definition-ref schemas don't have 'ref', causing the type error ignored on the next line
@@ -1380,8 +1379,7 @@ def get_wrapped_inner_schema(
         metadata_js_function = _extract_get_pydantic_json_schema(annotation)
         if metadata_js_function is not None:
             metadata = CoreMetadataHandler(schema).metadata
-            metadata['pydantic_js_functions'] = metadata.get('pydantic_js_functions', [])
-            metadata['pydantic_js_functions'].append(metadata_js_function)
+            metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
         return schema
 
     return CallbackGetCoreSchemaHandler(new_handler)

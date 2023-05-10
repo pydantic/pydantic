@@ -26,7 +26,7 @@ from typing import (
 import pydantic_core
 from pydantic_core import CoreSchema, core_schema
 from pydantic_core.core_schema import ComputedField
-from typing_extensions import Literal
+from typing_extensions import Literal, assert_never
 
 from pydantic._internal._schema_generation_shared import GenerateJsonSchemaHandler
 
@@ -571,9 +571,10 @@ class GenerateJsonSchema:
         return self.generate_inner(schema['json_schema'])
 
     def typed_dict_schema(self, schema: core_schema.TypedDictSchema) -> JsonSchemaValue:
-        fields = schema['fields'].copy()
         named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
-            (k, v['required'], v) for k, v in fields.items()  # type: ignore  # required is always populated
+            (name, self.field_is_required(field), field)
+            for name, field in schema['fields'].items()
+            if self.field_is_present(field)
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
@@ -599,9 +600,7 @@ class GenerateJsonSchema:
                 field_json_schema['title'] = title
             field_json_schema = self.handle_ref_overrides(field_json_schema)
             properties[name] = field_json_schema
-            if required or self.mode == 'serialization':
-                # Note: This assumes all fields will be included during serialization
-                # TODO: Probably want to make this more configurable in some way, on a per-model and/or per-field basis
+            if required:
                 required_fields.append(name)
 
         json_schema = {'type': 'object', 'properties': properties}
@@ -695,16 +694,49 @@ class GenerateJsonSchema:
 
     def model_fields_schema(self, schema: core_schema.ModelFieldsSchema) -> JsonSchemaValue:
         named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
-            (name, field['schema']['type'] != 'default', field) for name, field in schema['fields'].items()
+            (name, self.field_is_required(field), field)
+            for name, field in schema['fields'].items()
+            if self.field_is_present(field)
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         return self._named_required_fields_schema(named_required_fields)
 
+    def field_is_present(self, field: CoreSchemaField) -> bool:
+        """
+        Whether the field should be included in the generated JSON schema
+        """
+        if self.mode == 'serialization':
+            # If you still want to include the field in the generated JSON schema,
+            # override this method and return True
+            return not field.get('serialization_exclude')
+        elif self.mode == 'validation':
+            return True
+        else:
+            assert_never(self.mode)
+
+    def field_is_required(
+        self, field: core_schema.ModelField | core_schema.DataclassField | core_schema.TypedDictField
+    ) -> bool:
+        """
+        Whether the field should be marked as required in the generated JSON schema.
+        (Note that this is irrelevant if the field is not present in the JSON schema.)
+        """
+        if self.mode == 'serialization':
+            return not field.get('serialization_exclude')
+        elif self.mode == 'validation':
+            if field['type'] == 'typed-dict-field':
+                return field['required']  # type: ignore  # required is always populated
+            else:
+                return field['schema']['type'] != 'default'
+        else:
+            assert_never(self.mode)
+
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
-        fields = schema['fields']
         named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
-            (field['name'], field['schema']['type'] != 'default', field) for field in fields
+            (field['name'], self.field_is_required(field), field)
+            for field in schema['fields']
+            if self.field_is_present(field)
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
