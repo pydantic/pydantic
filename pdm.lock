@@ -440,11 +440,11 @@ dependencies = [
 
 [[package]]
 name = "pydantic-core"
-version = "0.30.0"
+version = "0.31.0"
 requires_python = ">=3.7"
 git = "https://github.com/pydantic/pydantic-core.git"
-ref = "remove-unused-json-or-python"
-revision = "50a82103a05e1c89d85f1daead5135834c035653"
+ref = "main"
+revision = "3603f1078c5c36c21bb5c78c57a124b3bf823198"
 summary = ""
 dependencies = [
     "typing-extensions; python_version < \"3.11.0\"",
@@ -666,7 +666,7 @@ summary = "Backport of pathlib-compatible object wrapper for zip files"
 [metadata]
 lock_version = "4.2"
 groups = ["default", "docs", "email", "linting", "memray", "mypy", "testing", "testing-extra"]
-content_hash = "sha256:eb8bf32ba663d681629b21c335e466ed80001e5c4db479a1b50ff6d51327ae9a"
+content_hash = "sha256:d2841f4ee40eab484c148497277007c608d5d78e8368c3a9cbf001c9949d1e7b"
 
 [metadata.files]
 "annotated-types 0.4.0" = [
