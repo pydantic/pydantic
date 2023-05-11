@@ -132,7 +132,7 @@ def inspect_namespace(  # noqa C901
             and ann_name not in ignored_names
             and not is_classvar(ann_type)
             and ann_type not in all_ignored_types
-            and ann_type.__module__ != 'functools'
+            and getattr(ann_type, '__module__', None) != 'functools'
         ):
             private_attributes[ann_name] = PrivateAttr()
 
