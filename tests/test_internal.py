@@ -122,7 +122,7 @@ def test_build_definitions_schema(input_schema: cs.CoreSchema, expected_output: 
     assert result == expected_output
 
 
-def test_representation():
+def test_representation_integrations():
     devtools = pytest.importorskip('devtools')
 
     @dataclass
