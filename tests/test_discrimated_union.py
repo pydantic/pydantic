@@ -305,13 +305,29 @@ def test_discriminated_union_model_with_alias():
             allow_population_by_field_name = True
 
     assert TopDisallow.parse_obj({'s': {'lit': 'a'}}).sub.literal == 'a'
-    assert TopDisallow.parse_obj({'s': {'literal': 'b'}}).sub.literal == 'b'
+
+    with pytest.raises(ValidationError) as exc_info:
+        TopDisallow.parse_obj({'s': {'literal': 'b'}})
+
+    assert exc_info.value.errors() == [
+        {
+            'ctx': {'discriminator_key': 'literal'},
+            'loc': ('s',),
+            'msg': "Discriminator 'literal' is missing in value",
+            'type': 'value_error.discriminated_union.missing_discriminator',
+        },
+    ]
 
     with pytest.raises(ValidationError) as exc_info:
         TopDisallow.parse_obj({'s': {'literal': 'a'}})
 
     assert exc_info.value.errors() == [
-        {'loc': ('s', 'A', 'lit'), 'msg': 'field required', 'type': 'value_error.missing'},
+        {
+            'ctx': {'discriminator_key': 'literal'},
+            'loc': ('s',),
+            'msg': "Discriminator 'literal' is missing in value",
+            'type': 'value_error.discriminated_union.missing_discriminator',
+        }
     ]
 
     with pytest.raises(ValidationError) as exc_info:
