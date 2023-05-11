@@ -8,7 +8,7 @@ Untrusted data can be passed to a model and, after parsing and validation, Pydan
 of the resultant model instance will conform to the field types defined on the model.
 
 !!! note
-    Pydantic is primarily a parsing library, **not a validation library**.
+    Pydantic is primarily a parsing and transformation library, **not a validation library**.
     Validation is a means to an end: building a model which conforms to the types and constraints provided.
 
     In other words, Pydantic guarantees the types and constraints of the output model, not the input data.
@@ -83,11 +83,11 @@ This model is mutable so field values can be changed.
 The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:
 
-- `model_copy()`: returns a copy (by default, shallow copy) of the model. See
-    [exporting models](exporting_models.md#modelcopy).
 - `model_computed_fields`: a dictionary of the computed fields of this model instance.
 - `model_construct()`: a class method for creating models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
+- `model_copy()`: returns a copy (by default, shallow copy) of the model. See
+    [exporting models](exporting_models.md#modelcopy).
 - `model_dump()`: returns a dictionary of the model's fields and values. See
     [exporting models](exporting_models.md#modeldump).
 - `model_dump_json()`: returns a JSON string representation of `model_dump()`. See
@@ -148,9 +148,11 @@ For self-referencing models, see [postponed annotations](postponed_annotations.m
 
 ## Arbitrary class instances
 
-(Formerly known as "ORM Mode"/`from_orm`)
+(Formerly known as "ORM Mode"/`from_orm`.)
 
-Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.
+Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding
+to the model field names. One common application of this functionality is integration with object-relational mappings
+(ORMs).
 
 To do this, use the `model_config` property on the model with `from_attributes` set to `True`. See
 [Model Config](model_config.md) and [ConfigDict](../api/config.md) for more information.
