@@ -566,6 +566,10 @@ SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
     typing.Sequence: list,
     typing.MutableSequence: list,
     typing.MutableSet: set,
+    # this doesn't handle subclasses of these
+    # parametrized typing.Set creates one of these
+    collections.abc.MutableSet: set,
+    collections.abc.Set: frozenset,
 }
 
 
