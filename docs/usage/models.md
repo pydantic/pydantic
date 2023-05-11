@@ -11,7 +11,7 @@ of the resultant model instance will conform to the field types defined on the m
     Pydantic is primarily a parsing library, **not a validation library**.
     Validation is a means to an end: building a model which conforms to the types and constraints provided.
 
-    In other words, Pydanti guarantees the types and constraints of the output model, not the input data.
+    In other words, Pydantic guarantees the types and constraints of the output model, not the input data.
 
     This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
     how it might affect your usage you should read the section about [Data Conversion](#data-conversion) below.
@@ -34,9 +34,6 @@ In this example, `User` is a model with two fields:
 * `id`, which is an integer and is required
 * `name`, which is a string and is not required (it has a default value).
 
-The type of `name` is inferred from the
-default value, and so a type annotation is not required (however, please see the warning on
-[Field Ordering](#field-ordering) regarding field order when some fields do not have type annotations).
 
 ```py group="basic-model"
 user = User(id='123')
@@ -49,10 +46,10 @@ If no `ValidationError` is raised, you know the resulting model instance is vali
 ```py group="basic-model"
 assert user.id == 123
 assert isinstance(user.id, int)
-# Note that '123' was cast to an int and its value is 123
+# Note that '123' was coerced to an int and its value is 123
 ```
 
-More details on casting can be found in [Data Conversion](#data-conversion).
+More details on pydantic's coercion logic can be found in [Data Conversion](#data-conversion).
 Fields of a model can be accessed as normal attributes of the user object.
 The string '123' has been cast to an int as per the field type.
 
@@ -86,7 +83,7 @@ This model is mutable so field values can be changed.
 The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:
 
-- `copy()`: returns a copy (by default, shallow copy) of the model. See
+- `model_copy()`: returns a copy (by default, shallow copy) of the model. See
     [exporting models](exporting_models.md#modelcopy).
 - `model_computed_fields`: a dictionary of the computed fields of this model instance.
 - `model_construct()`: a class method for creating models without running validation. See
@@ -151,7 +148,7 @@ For self-referencing models, see [postponed annotations](postponed_annotations.m
 
 ## Arbitrary class instances
 
-(Formerly known as "ORM Mode", or building models from attributes.)
+(Formerly known as "ORM Mode"/`from_orm`)
 
 Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.
 
