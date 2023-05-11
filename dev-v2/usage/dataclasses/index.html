@@ -2155,7 +2155,7 @@ In this case you can simply add <code>arbitrary_types_allowed</code> in the conf
 <span class="k">except</span> <span class="n">PydanticSchemaGenerationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>  <span class="c1"># invalid as it is now a pydantic dataclass</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Unable to generate pydantic-core schema for &lt;class &#39;__main__.ArbitraryType&#39;&gt;. Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.</span>
+<span class="sd">    Unable to generate pydantic-core schema for &lt;class &#39;__main__.ArbitraryType&#39;&gt;. Set `arbitrary_types_allowed=True` in the model_config ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 
