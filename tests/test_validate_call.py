@@ -93,6 +93,7 @@ def test_wrap():
     assert foo_bar.__qualname__ == 'test_wrap.<locals>.foo_bar'
     assert isinstance(foo_bar.__pydantic_core_schema__, dict)
     assert callable(foo_bar.raw_function)
+    assert repr(foo_bar) == f'ValidateCallWrapper({repr(foo_bar.raw_function)})'
     assert repr(inspect.signature(foo_bar)) == '<Signature (a: int, b: int)>'
 
 

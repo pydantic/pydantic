@@ -541,6 +541,18 @@ def test_field_extra_arguments():
     }
 
 
+def test_field_extra_does_not_rewrite_json_schema_extra():
+    m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
+    with pytest.warns(DeprecationWarning, match=m):
+
+        class Model(BaseModel):
+            x: str = Field('test', test='test', json_schema_extra={'test': 'json_schema_extra value'})
+
+    assert Model.model_json_schema(by_alias=True)['properties'] == {
+        'x': {'default': 'test', 'test': 'json_schema_extra value', 'title': 'X', 'type': 'string'}
+    }
+
+
 class SimpleModel(BaseModel):
     x: int
 
