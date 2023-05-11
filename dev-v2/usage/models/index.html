@@ -551,8 +551,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#model-properties" class="md-nav__link">
-    Model properties
+  <a href="#model-methods-and-properties" class="md-nav__link">
+    Model methods and properties
   </a>
   
 </li>
@@ -564,17 +564,17 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#recursive-models" class="md-nav__link">
-    Recursive Models
+    Recursive models
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#from-attributes-aka-orm-modearbitrary-class-instances" class="md-nav__link">
-    "From Attributes" (aka ORM Mode/Arbitrary Class Instances)
+  <a href="#arbitrary-class-instances" class="md-nav__link">
+    Arbitrary class instances
   </a>
   
-    <nav class="md-nav" aria-label=""From Attributes" (aka ORM Mode/Arbitrary Class Instances)">
+    <nav class="md-nav" aria-label="Arbitrary class instances">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -585,15 +585,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
         
           <li class="md-nav__item">
-  <a href="#recursive-orm-models" class="md-nav__link">
-    Recursive ORM models
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#data-binding" class="md-nav__link">
-    Data binding
+  <a href="#recursive-models_1" class="md-nav__link">
+    Recursive models
   </a>
   
 </li>
@@ -1875,8 +1868,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#model-properties" class="md-nav__link">
-    Model properties
+  <a href="#model-methods-and-properties" class="md-nav__link">
+    Model methods and properties
   </a>
   
 </li>
@@ -1888,17 +1881,17 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#recursive-models" class="md-nav__link">
-    Recursive Models
+    Recursive models
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#from-attributes-aka-orm-modearbitrary-class-instances" class="md-nav__link">
-    "From Attributes" (aka ORM Mode/Arbitrary Class Instances)
+  <a href="#arbitrary-class-instances" class="md-nav__link">
+    Arbitrary class instances
   </a>
   
-    <nav class="md-nav" aria-label=""From Attributes" (aka ORM Mode/Arbitrary Class Instances)">
+    <nav class="md-nav" aria-label="Arbitrary class instances">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1909,15 +1902,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
         
           <li class="md-nav__item">
-  <a href="#recursive-orm-models" class="md-nav__link">
-    Recursive ORM models
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#data-binding" class="md-nav__link">
-    Data binding
+  <a href="#recursive-models_1" class="md-nav__link">
+    Recursive models
   </a>
   
 </li>
@@ -2113,20 +2099,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Models</h1>
 
-<p>The primary means of defining objects in <em>pydantic</em> is via models
-(models are simply classes which inherit from <code>BaseModel</code>).</p>
+<p>The primary means of defining objects in Pydantic is via models. Models are simply classes which inherit from
+<code>BaseModel</code>.</p>
 <p>You can think of models as similar to types in strictly typed languages, or as the requirements of a single endpoint
 in an API.</p>
-<p>Untrusted data can be passed to a model, and after parsing and validation <em>pydantic</em> guarantees that the fields
+<p>Untrusted data can be passed to a model and, after parsing and validation, Pydantic guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><em>pydantic</em> is primarily a parsing library, <strong>not a validation library</strong>.
+<p>Pydantic is primarily a parsing and transformation library, <strong>not a validation library</strong>.
 Validation is a means to an end: building a model which conforms to the types and constraints provided.</p>
-<p>In other words, <em>pydantic</em> guarantees the types and constraints of the output model, not the input data.</p>
+<p>In other words, Pydantic guarantees the types and constraints of the output model, not the input data.</p>
 <p>This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
 how it might affect your usage you should read the section about <a href="#data-conversion">Data Conversion</a> below.</p>
-<p>Although validation is not the main purpose of <em>pydantic</em>, you <strong>can</strong> use this library for custom <a href="../validators/">validation</a>.</p>
+<p>Although validation is not the main purpose of Pydantic, you <strong>can</strong> use this library for custom <a href="../validators/">validation</a>.</p>
 </div>
 <h2 id="basic-model-usage">Basic model usage<a class="headerlink" href="#basic-model-usage" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -2136,24 +2122,26 @@ how it might affect your usage you should read the section about <a href="#data-
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;Jane Doe&#39;</span>
 </code></pre></div>
-<p><code>User</code> here is a model with two fields <code>id</code> which is an integer and is required,
-and <code>name</code> which is a string and is not required (it has a default value). The type of <code>name</code> is inferred from the
-default value, and so a type annotation is not required (however note <a href="#field-ordering">this</a> warning about field
-order when some fields do not have type annotations).</p>
+<p>In this example, <code>User</code> is a model with two fields:</p>
+<ul>
+<li><code>id</code>, which is an integer and is required</li>
+<li><code>name</code>, which is a string and is not required (it has a default value).</li>
+</ul>
 <div class="highlight"><pre><span></span><code><span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;123&#39;</span><span class="p">)</span>
 </code></pre></div>
-<p><code>user</code> here is an instance of <code>User</code>. Initialisation of the object will perform all parsing and validation,
-if no <code>ValidationError</code> is raised, you know the resulting model instance is valid.</p>
+<p>In this example, <code>user</code> is an instance of <code>User</code>.
+Initialisation of the object will perform all parsing and validation.
+If no <code>ValidationError</code> is raised, you know the resulting model instance is valid.</p>
 <div class="highlight"><pre><span></span><code><span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">123</span>
 <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span>
-<span class="c1"># Note that 123.45 was cast to an int and its value is 123</span>
+<span class="c1"># Note that &#39;123&#39; was coerced to an int and its value is 123</span>
 </code></pre></div>
-<p>More details on the casting in the case of <code>user_x</code> can be found in <a href="#data-conversion">Data Conversion</a>.
+<p>More details on pydantic's coercion logic can be found in <a href="#data-conversion">Data Conversion</a>.
 Fields of a model can be accessed as normal attributes of the user object.
-The string '123' has been cast to an int as per the field type</p>
+The string '123' has been cast to an int as per the field type.</p>
 <div class="highlight"><pre><span></span><code><span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;Jane Doe&#39;</span>
 </code></pre></div>
-<p><code>name</code> wasn't set when user was initialised, so it has the default value</p>
+<p><code>name</code> wasn't set when <code>user</code> was initialised, so it has the default value.</p>
 <div class="highlight"><pre><span></span><code><span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">model_fields_set</span> <span class="o">==</span> <span class="p">{</span><span class="s1">&#39;id&#39;</span><span class="p">}</span>
 </code></pre></div>
 <p>The fields which were supplied when user was initialised.</p>
@@ -2164,42 +2152,33 @@ The string '123' has been cast to an int as per the field type</p>
 <span class="k">assert</span> <span class="n">user</span><span class="o">.</span><span class="n">id</span> <span class="o">==</span> <span class="mi">321</span>
 </code></pre></div>
 <p>This model is mutable so field values can be changed.</p>
-<h3 id="model-properties">Model properties<a class="headerlink" href="#model-properties" title="Permanent link">&para;</a></h3>
+<h3 id="model-methods-and-properties">Model methods and properties<a class="headerlink" href="#model-methods-and-properties" title="Permanent link">&para;</a></h3>
 <p>The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:</p>
-<dl>
-<dt><code>model_dump()</code></dt>
-<dd>returns a dictionary of the model's fields and values;
-  cf. <a href="../exporting_models/#modeldict">exporting models</a></dd>
-<dt><code>model_dump_json()</code></dt>
-<dd>returns a JSON string representation <code>model_dump()</code>;
-  cf. <a href="../exporting_models/#modeljson">exporting models</a></dd>
-<dt><code>copy()</code></dt>
-<dd>returns a copy (by default, shallow copy) of the model; cf. <a href="../exporting_models/#modelcopy">exporting models</a></dd>
-<dt><code>model_validate()</code></dt>
-<dd>a utility for loading any object into a model with error handling if the object is not a dictionary;
-  cf. <a href="#helper-functions">helper functions</a></dd>
-<dt><code>parse_raw()</code></dt>
-<dd>a utility for loading strings of numerous formats; cf. <a href="#helper-functions">helper functions</a></dd>
-<dt><code>parse_file()</code></dt>
-<dd>like <code>parse_raw()</code> but for file paths; cf. <a href="#helper-functions">helper functions</a></dd>
-<dt><code>from_orm()</code></dt>
-<dd>loads data into a model from an arbitrary class; cf. <a href="#orm-mode-aka-arbitrary-class-instances">ORM mode</a></dd>
-<dt><code>model_json_schema()</code></dt>
-<dd>returns a dictionary representing the model as JSON Schema; cf. <a href="../schema/">schema</a></dd>
-<dt><code>schema_json()</code></dt>
-<dd>returns a JSON string representation of <code>schema()</code>; cf. <a href="../schema/">schema</a></dd>
-<dt><code>model_construct()</code></dt>
-<dd>a class method for creating models without running validation;
-  cf. <a href="#creating-models-without-validation">Creating models without validation</a></dd>
-<dt><code>model_fields_set</code></dt>
-<dd>Set of names of fields which were set when the model instance was initialised</dd>
-<dt><code>model_fields</code></dt>
-<dd>a dictionary of the model's fields</dd>
-<dt><code>__config__</code></dt>
-<dd>the configuration class for the model, cf. <a href="../model_config/">model config</a></dd>
-</dl>
-<h2 id="recursive-models">Recursive Models<a class="headerlink" href="#recursive-models" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>model_computed_fields</code>: a dictionary of the computed fields of this model instance.</li>
+<li><code>model_construct()</code>: a class method for creating models without running validation. See
+    <a href="#creating-models-without-validation">Creating models without validation</a>.</li>
+<li><code>model_copy()</code>: returns a copy (by default, shallow copy) of the model. See
+    <a href="../exporting_models/#modelcopy">exporting models</a>.</li>
+<li><code>model_dump()</code>: returns a dictionary of the model's fields and values. See
+    <a href="../exporting_models/#modeldump">exporting models</a>.</li>
+<li><code>model_dump_json()</code>: returns a JSON string representation of <code>model_dump()</code>. See
+    <a href="../exporting_models/#modeldumpjson">exporting models</a>.</li>
+<li><code>model_extra</code>: get extra fields set during validation.</li>
+<li><code>model_fields_set</code>: set of fields which were set when the model instance was initialised.</li>
+<li><code>model_json_schema()</code>: returns a dictionary representing the model as JSON Schema. See <a href="../schema/">schema</a>.</li>
+<li><code>model_modify_json_schema()</code>: a method for how the "generic" properties of the JSON schema are populated.
+    See <a href="../schema/">schema</a>.</li>
+<li><code>model_parameterized_name()</code>: compute the class name for parametrizations of generic classes.</li>
+<li><code>model_post_init()</code>: perform additional initialization after the model is initialised.</li>
+<li><code>model_rebuild()</code>: rebuild the model schema.</li>
+<li><code>model_validate()</code>: a utility for loading any object into a model with error handling if the object is not a
+    dictionary. See <a href="#helper-functions">helper functions</a>.</li>
+<li><code>model_validate_json()</code>: a utility for validating the given JSON data against the Pydantic model. See
+    <a href="#helper-functions">helper functions</a>.</li>
+</ul>
+<h2 id="recursive-models">Recursive models<a class="headerlink" href="#recursive-models" title="Permanent link">&para;</a></h2>
 <p>More complex hierarchical data structures can be defined using models themselves as types in annotations.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
@@ -2309,14 +2288,14 @@ Models possess the following methods and attributes:</p>
 </div>
 </div>
 <p>For self-referencing models, see <a href="../postponed_annotations/#self-referencing-models">postponed annotations</a>.</p>
-<h2 id="from-attributes-aka-orm-modearbitrary-class-instances">"From Attributes" (aka ORM Mode/Arbitrary Class Instances)<a class="headerlink" href="#from-attributes-aka-orm-modearbitrary-class-instances" title="Permanent link">&para;</a></h2>
-<p>Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.</p>
-<p>To do this:</p>
-<ol>
-<li>The <a href="../model_config/">Config</a> property <code>from_attributes</code> must be set to <code>True</code>.</li>
-<li>The special constructor <code>from_orm</code> must be used to create the model instance.</li>
-</ol>
-<p>The example here uses SQLAlchemy, but the same approach should work for any ORM.</p>
+<h2 id="arbitrary-class-instances">Arbitrary class instances<a class="headerlink" href="#arbitrary-class-instances" title="Permanent link">&para;</a></h2>
+<p>(Formerly known as "ORM Mode"/<code>from_orm</code>.)</p>
+<p>Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding
+to the model field names. One common application of this functionality is integration with object-relational mappings
+(ORMs).</p>
+<p>To do this, use the <code>model_config</code> property on the model with <code>from_attributes</code> set to <code>True</code>. See
+<a href="../model_config/">Model Config</a> and <a href="../../api/config/">ConfigDict</a> for more information.</p>
+<p>The example here uses <a href="https://www.sqlalchemy.org/">SQLAlchemy</a>, but the same approach should work for any ORM.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2402,7 +2381,7 @@ Models possess the following methods and attributes:</p>
 </div>
 </div>
 <h3 id="reserved-names">Reserved names<a class="headerlink" href="#reserved-names" title="Permanent link">&para;</a></h3>
-<p>You may want to name a Column after a reserved SQLAlchemy field. In that case, Field aliases will be
+<p>You may want to name a <code>Column</code> after a reserved SQLAlchemy field. In that case, <code>Field</code> aliases will be
 convenient:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
@@ -2479,9 +2458,9 @@ convenient:</p>
 <p>The example above works because aliases have priority over field names for
 field population. Accessing <code>SQLModel</code>'s <code>metadata</code> attribute would lead to a <code>ValidationError</code>.</p>
 </div>
-<h3 id="recursive-orm-models">Recursive ORM models<a class="headerlink" href="#recursive-orm-models" title="Permanent link">&para;</a></h3>
-<p>ORM instances will be parsed with <code>from_orm</code> recursively as well as at the top level.</p>
-<p>Here a vanilla class is used to demonstrate the principle, but any ORM class could be used instead.</p>
+<h3 id="recursive-models_1">Recursive models<a class="headerlink" href="#recursive-models_1" title="Permanent link">&para;</a></h3>
+<p>Model instances will be parsed recursively as well as at the top level.</p>
+<p>Here a vanilla class is used to demonstrate the principle, but any class could be used instead.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2568,103 +2547,6 @@ field population. Accessing <code>SQLModel</code>'s <code>metadata</code> attrib
 </div>
 </div>
 </div>
-<h3 id="data-binding">Data binding<a class="headerlink" href="#data-binding" title="Permanent link">&para;</a></h3>
-<p>Arbitrary classes are processed by <em>pydantic</em> using the <code>GetterDict</code> class (see
-<a href="https://github.com/pydantic/pydantic/blob/main/pydantic/utils.py">utils.py</a>), which attempts to
-provide a dictionary-like interface to any class. You can customise how this works by setting your own
-sub-class of <code>GetterDict</code> as the value of <code>Config.getter_dict</code> (see <a href="../model_config/">config</a>).</p>
-<p>You can also customise class validation using <a href="../validators/#root-validators">root_validators</a> with <code>pre=True</code>.
-In this case your validator function will be passed a <code>GetterDict</code> instance which you may copy and modify.</p>
-<p>The <code>GetterDict</code> instance will be called for each field with a sentinel as a fallback (if no other default
-value is set). Returning this sentinel means that the field is missing. Any other value will
-be interpreted as the value of the field.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-<span class="kn">from</span> <span class="nn">xml.etree.ElementTree</span> <span class="kn">import</span> <span class="n">fromstring</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-<span class="n">xmlstring</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">&lt;User Id=&quot;2138&quot;&gt;</span>
-<span class="s2">    &lt;FirstName&gt;John&lt;/FirstName&gt;</span>
-<span class="s2">    &lt;LastName&gt;Foobar&lt;/LastName&gt;</span>
-<span class="s2">&lt;/User&gt;</span>
-<span class="s2">&quot;&quot;&quot;</span>
-
-
-<span class="k">class</span> <span class="nc">XmlMapping</span><span class="p">(</span><span class="n">Mapping</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmlstring</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_xml</span> <span class="o">=</span> <span class="n">fromstring</span><span class="p">(</span><span class="n">xmlstring</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;Id&#39;</span><span class="p">,</span> <span class="s1">&#39;Status&#39;</span><span class="p">}:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
-
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="o">...</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;Id&#39;</span><span class="p">)</span>
-    <span class="n">first_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FirstName&#39;</span><span class="p">)</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;LastName&#39;</span><span class="p">)</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">XmlMapping</span><span class="p">(</span><span class="n">xmlstring</span><span class="p">)))</span>
-<span class="c1">#&gt; id=2138 first_name=&#39;John&#39; last_name=&#39;Foobar&#39;</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Mapping</span>
-<span class="kn">from</span> <span class="nn">xml.etree.ElementTree</span> <span class="kn">import</span> <span class="n">fromstring</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
-
-<span class="n">xmlstring</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">&lt;User Id=&quot;2138&quot;&gt;</span>
-<span class="s2">    &lt;FirstName&gt;John&lt;/FirstName&gt;</span>
-<span class="s2">    &lt;LastName&gt;Foobar&lt;/LastName&gt;</span>
-<span class="s2">&lt;/User&gt;</span>
-<span class="s2">&quot;&quot;&quot;</span>
-
-
-<span class="k">class</span> <span class="nc">XmlMapping</span><span class="p">(</span><span class="n">Mapping</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xmlstring</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_xml</span> <span class="o">=</span> <span class="n">fromstring</span><span class="p">(</span><span class="n">xmlstring</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">{</span><span class="s1">&#39;Id&#39;</span><span class="p">,</span> <span class="s1">&#39;Status&#39;</span><span class="p">}:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">text</span>
-
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="o">.</span><span class="n">attrib</span><span class="p">)</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_xml</span><span class="p">)</span>
-
-    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="o">...</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;Id&#39;</span><span class="p">)</span>
-    <span class="n">first_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;FirstName&#39;</span><span class="p">)</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;LastName&#39;</span><span class="p">)</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">User</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">XmlMapping</span><span class="p">(</span><span class="n">xmlstring</span><span class="p">)))</span>
-<span class="c1">#&gt; id=2138 first_name=&#39;John&#39; last_name=&#39;Foobar&#39;</span>
-</code></pre></div>
-</div>
-</div>
-</div>
 <h2 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
 <p><em>pydantic</em> will raise <code>ValidationError</code> whenever it finds an error in the data it's validating.</p>
 <div class="admonition note">
@@ -2698,7 +2580,7 @@ contain information about all the errors and how they happened.</p>
 <dd>an optional object which contains values required to render the error message.</dd>
 </dl>
 <p>As a demonstration:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -3072,7 +2954,7 @@ of the data provided.</p>
   pydantic models.</li>
 </ul>
 <p>Here is an example using <code>GenericModel</code> to create an easily-reused HTTP response payload wrapper:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:3"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><input id="__tabbed_7_3" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label><label for="__tabbed_7_3">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:3"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><input id="__tabbed_6_3" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label><label for="__tabbed_6_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TypeVar</span>
@@ -3265,7 +3147,7 @@ parameters in the superclass.</p>
 <span class="c1">#&gt; x=1 y=&#39;y&#39; z=3</span>
 </code></pre></div>
 <p>If the name of the concrete subclasses is important, you can also override the default behavior:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.7 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">TypeVar</span>
@@ -3461,7 +3343,7 @@ extending a base model with extra fields.</p>
 <p>You may have types that are not <code>BaseModel</code>s that you want to validate data against.
 Or you may want to validate a <code>List[SomeModel]</code>, or dump it to JSON.</p>
 <p>To do this Pydantic provides <code>TypeAdapter</code>. A <code>TypeAdapter</code> instance behaves nearly the same as a <code>BaseModel</code> instance, with the difference that <code>TypeAdapter</code> is not an actual type so you cannot use it in type annotations and such.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="9:3"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><input id="__tabbed_9_3" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.7 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label><label for="__tabbed_9_3">Python 3.11 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:3"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><input id="__tabbed_8_3" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.7 and above</label><label for="__tabbed_8_2">Python 3.9 and above</label><label for="__tabbed_8_3">Python 3.11 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -3557,7 +3439,7 @@ Or you may want to validate a <code>List[SomeModel]</code>, or dump it to JSON.<
 <p>The root type can be any type supported by pydantic, and is specified by the type hint on the <code>__root__</code> field.
 The root value can be passed to the model <code>__init__</code> via the <code>__root__</code> keyword argument, or as
 the first and only argument to <code>model_validate</code>.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.7 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="9:2"><input checked="checked" id="__tabbed_9_1" name="__tabbed_9" type="radio" /><input id="__tabbed_9_2" name="__tabbed_9" type="radio" /><div class="tabbed-labels"><label for="__tabbed_9_1">Python 3.7 and above</label><label for="__tabbed_9_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
@@ -3610,7 +3492,7 @@ the following logic is used:</p>
 <li>Otherwise, the dict itself is validated against the custom root type.</li>
 </ul>
 <p>This is demonstrated in the following example:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Python 3.7 and above</label><label for="__tabbed_11_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.7 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
@@ -3668,7 +3550,7 @@ the following logic is used:</p>
 is currently supported for backwards compatibility, but is not recommended and may be dropped in a future version.</p>
 </div>
 <p>If you want to access items in the <code>__root__</code> field directly or to iterate over the items, you can implement custom <code>__iter__</code> and <code>__getitem__</code> functions, as shown in the following example.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Python 3.7 and above</label><label for="__tabbed_12_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Python 3.7 and above</label><label for="__tabbed_11_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -3832,7 +3714,7 @@ fields with an ellipsis (<code>...</code>) as the default value, no longer mean 
 </div>
 <p>If you want to specify a field that can take a <code>None</code> value while still being required,
 you can use <code>Optional</code> with <code>...</code>:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Python 3.7 and above</label><label for="__tabbed_13_2">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="12:2"><input checked="checked" id="__tabbed_12_1" name="__tabbed_12" type="radio" /><input id="__tabbed_12_2" name="__tabbed_12" type="radio" /><div class="tabbed-labels"><label for="__tabbed_12_1">Python 3.7 and above</label><label for="__tabbed_12_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -3971,7 +3853,7 @@ logic used to populate pydantic models in a more ad-hoc way. This function behav
 <code>BaseModel.model_validate</code>, but works with arbitrary pydantic-compatible types.</p>
 <p>This is especially useful when you want to parse results into a type that is not a direct subclass of <code>BaseModel</code>.
 For example:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.7 and above</label><label for="__tabbed_14_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="13:2"><input checked="checked" id="__tabbed_13_1" name="__tabbed_13" type="radio" /><input id="__tabbed_13_2" name="__tabbed_13" type="radio" /><div class="tabbed-labels"><label for="__tabbed_13_1">Python 3.7 and above</label><label for="__tabbed_13_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -4110,7 +3992,7 @@ it is just syntactic sugar for getting an attribute and either comparing it or d
 <h2 id="attribute-copies">Attribute copies<a class="headerlink" href="#attribute-copies" title="Permanent link">&para;</a></h2>
 <p>In many cases arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion. When constructing classes with data attributes, Pydantic copies the attributes in order to efficiently iterate over its elements for validation.</p>
 <p>In this example, note that the ID of the list changes after the class is constructed because it has been copied for validation.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">Python 3.7 and above</label><label for="__tabbed_15_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.7 and above</label><label for="__tabbed_14_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
