@@ -6,6 +6,7 @@ Import of this module is deferred since it contains imports of many standard lib
 from __future__ import annotations as _annotations
 
 import collections
+import collections.abc
 import decimal
 import inspect
 import os
@@ -449,6 +450,18 @@ def path_schema_prepare_pydantic_annotations(source_type: Any, annotations: Iter
     ]
 
 
+def dequeue_validator(
+    input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, maxlen: None | int
+) -> collections.deque[Any]:
+    if isinstance(input_value, collections.deque):
+        maxlens = [v for v in (input_value.maxlen, maxlen) if v is not None]
+        if maxlens:
+            maxlen = min(maxlens)
+        return collections.deque(handler(input_value), maxlen=maxlen)
+    else:
+        return collections.deque(handler(input_value), maxlen=maxlen)
+
+
 @slots_dataclass
 class SequenceValidator:
     mapped_origin: type[Any]
@@ -511,7 +524,17 @@ class SequenceValidator:
                 )
             else:
                 force_instance = None
-            coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
+
+            if self.mapped_origin is collections.deque:
+                # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
+                # this lets us re-use existing metadata annotations to let users set the maxlen on a dequeue
+                # that e.g. comes from JSON
+                coerce_instance_wrap = partial(
+                    core_schema.no_info_wrap_validator_function,
+                    partial(dequeue_validator, maxlen=metadata.get('max_length', None)),
+                )
+            else:
+                coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
 
             serialization = core_schema.wrap_serializer_function_ser_schema(
                 self.serialize_sequence_via_list, schema=items_schema or core_schema.any_schema(), info_arg=True
@@ -542,6 +565,7 @@ SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
     typing.FrozenSet: frozenset,
     typing.Sequence: list,
     typing.MutableSequence: list,
+    typing.MutableSet: set,
 }
 
 

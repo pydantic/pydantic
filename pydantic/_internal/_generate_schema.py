@@ -431,6 +431,9 @@ class GenerateSchema:
         elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
             return self._callable_schema(obj)
 
+        if _typing_extra.is_dataclass(obj):
+            return self._dataclass_schema(obj, None)
+
         # TODO: _std_types_schema iterates over the __mro__ looking for an expected schema.
         #   This will catch subclasses of typing.Deque, preventing us from properly supporting user-defined
         #   generic subclasses. (In principle this would also catch typing.OrderedDict, but that is currently
@@ -439,18 +442,18 @@ class GenerateSchema:
         if std_schema is not None:
             return std_schema
 
-        if _typing_extra.is_dataclass(obj):
-            return self._dataclass_schema(obj, None)
+        unsupported_err = PydanticSchemaGenerationError(
+            f'Unable to generate pydantic-core schema for {obj!r}. '
+            f'Set `arbitrary_types_allowed=True` in the model_config ignore this error'
+            f' or implement `__get_pydantic_core_schema__` on your type to fully support it.'
+        )
 
         origin = get_origin(obj)
         if origin is None:
             if self.arbitrary_types:
                 return core_schema.is_instance_schema(obj)
             else:
-                raise PydanticSchemaGenerationError(
-                    f'Unable to generate pydantic-core schema for {obj!r}. '
-                    f'Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.'
-                )
+                raise unsupported_err
 
         # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
         # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
@@ -493,13 +496,7 @@ class GenerateSchema:
         elif issubclass(origin, typing.Sequence):
             if origin in {typing.Sequence, collections.abc.Sequence}:
                 return self._sequence_schema(obj)
-            # TODO: similarly handle other generic subclasses (like Iterable, etc.) where there's no standard __init__
-            raise PydanticSchemaGenerationError(
-                'Unable to generate pydantic-core schema for custom subclasses of Sequence.'
-                ' Please define `__get_pydantic_core_schema__`. TODO: Add docs link.'
-            )
-        elif issubclass(origin, typing.MutableSet):
-            raise PydanticSchemaGenerationError('Unable to generate pydantic-core schema MutableSet TODO.')
+            raise unsupported_err
         elif issubclass(origin, (typing.Iterable, collections.abc.Iterable)):
             # Because typing.Iterable does not have a specified `__init__` signature, we don't validate into subclasses
             return self._iterable_schema(obj)
@@ -509,10 +506,7 @@ class GenerateSchema:
             if self.arbitrary_types and isinstance(origin, type):
                 return core_schema.is_instance_schema(origin)
             else:
-                raise PydanticSchemaGenerationError(
-                    f'Unable to generate pydantic-core schema for {obj!r} (origin={origin!r}). '
-                    f'Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.'
-                )
+                raise unsupported_err
 
     def _generate_td_field_schema(
         self,

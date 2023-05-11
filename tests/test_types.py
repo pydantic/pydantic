@@ -4,6 +4,7 @@ import math
 import os
 import re
 import sys
+import typing
 import uuid
 from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta, timezone
@@ -18,7 +19,6 @@ from typing import (
     FrozenSet,
     Iterable,
     List,
-    MutableSet,
     NewType,
     Optional,
     Pattern,
@@ -91,6 +91,7 @@ from pydantic import (
     field_validator,
 )
 from pydantic.annotated import GetCoreSchemaHandler
+from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 from pydantic.types import AllowInfNan, ImportString, SecretField, Strict
 
@@ -3949,11 +3950,12 @@ def test_literal_multiple():
     ]
 
 
-def test_unsupported_field_type():
-    with pytest.raises(TypeError, match=r'Unable to generate pydantic-core schema MutableSet'):
-
-        class UnsupportedModel(BaseModel):
-            unsupported: MutableSet[int]
+def test_typing_mutable_set():
+    s1 = TypeAdapter(Set[int]).core_schema
+    s1.pop('metadata', None)
+    s2 = TypeAdapter(typing.MutableSet[int]).core_schema
+    s2.pop('metadata', None)
+    assert s1 == s2
 
 
 def test_frozenset_field():
@@ -4200,6 +4202,82 @@ def test_deque_json():
         v: Deque[int]
 
     assert Model(v=deque((1, 2, 3))).model_dump_json() == '{"v":[1,2,3]}'
+
+
+def test_deque_any_maxlen():
+    class DequeModel1(BaseModel):
+        field: deque
+
+    assert DequeModel1(field=deque()).field.maxlen is None
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel2(BaseModel):
+        field: deque = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen is None
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel3(BaseModel):
+        field: deque = deque(maxlen=5)
+
+    assert DequeModel3().field.maxlen == 5
+    assert DequeModel3(field=deque()).field.maxlen is None
+    assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
+
+
+def test_deque_typed_maxlen():
+    class DequeModel1(BaseModel):
+        field: Deque[int]
+
+    assert DequeModel1(field=deque()).field.maxlen is None
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel2(BaseModel):
+        field: Deque[int] = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen is None
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+
+    class DequeModel3(BaseModel):
+        field: Deque[int] = deque(maxlen=5)
+
+    assert DequeModel3().field.maxlen == 5
+    assert DequeModel3(field=deque()).field.maxlen is None
+    assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
+
+
+def test_deque_set_maxlen():
+    class DequeModel1(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)]
+
+    assert DequeModel1(field=deque()).field.maxlen == 10
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+    assert DequeModel1(field=deque(maxlen=15)).field.maxlen == 10
+
+    class DequeModel2(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)] = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen == 10
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+    assert DequeModel2(field=deque(maxlen=15)).field.maxlen == 10
+
+    class DequeModel3(DequeModel2):
+        model_config = ConfigDict(validate_default=True)
+
+    assert DequeModel3().field.maxlen == 10
+
+    class DequeModel4(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)] = deque(maxlen=5)
+
+    assert DequeModel4().field.maxlen == 5
+
+    class DequeModel5(DequeModel4):
+        model_config = ConfigDict(validate_default=True)
+
+    assert DequeModel4().field.maxlen == 5
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__))
@@ -4640,3 +4718,25 @@ def test_third_party_type_integration():
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_sequence_subclass_without_core_schema() -> None:
+    class MyList(List[int]):
+        # The point of this is that subclasses can do arbitrary things
+        # This is the reason why we don't try to handle them automatically
+        # TBD if we introspect `__init__` / `__new__`
+        # (which is the main thing that would mess us up if modified in a subclass)
+        # and automatically handle cases where the subclass doesn't override it.
+        # There's still edge cases (again, arbitrary behavior...)
+        # and it's harder to explain, but could lead to a better user experience in some cases
+        # It will depend on how the complaints (which have and will happen in both directions)
+        # balance out
+        def __init__(self, *args: Any, required: int, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+
+    with pytest.raises(
+        PydanticSchemaGenerationError, match='implement `__get_pydantic_core_schema__` on your type to fully support it'
+    ):
+
+        class _(BaseModel):
+            x: MyList

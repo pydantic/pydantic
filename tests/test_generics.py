@@ -1224,8 +1224,9 @@ def test_custom_sequence_behavior():
     with pytest.raises(
         PydanticSchemaGenerationError,
         match=(
-            'Unable to generate pydantic-core schema for custom subclasses of Sequence.'
-            ' Please define `__get_pydantic_core_schema__`.'
+            r'Unable to generate pydantic-core schema for .*'
+            ' Set `arbitrary_types_allowed=True` in the model_config ignore this error'
+            ' or implement `__get_pydantic_core_schema__` on your type to fully support it'
         ),
     ):
 
