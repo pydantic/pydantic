@@ -411,7 +411,13 @@ class FieldInfo(_repr.Representation):
 
     def rebuild_annotation(self) -> Any:
         """
-        Rebuild the original annotation for use in signatures.
+        Rebuilds the original annotation for use in function signatures.
+
+        If metadata is present, it adds it to the original annotation using an
+        `AnnotatedAlias`. Otherwise, it returns the original annotation as is.
+
+        Returns:
+            Any: The rebuilt annotation.
         """
         if not self.metadata:
             return self.annotation
@@ -420,11 +426,20 @@ class FieldInfo(_repr.Representation):
 
     def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
         """
-        Apply a typevars_map to the annotation.
+        Apply a `typevars_map` to the annotation.
 
-        This is used when analyzing parametrized generic types to replace typevars with their concrete types.
+        This method is used when analyzing parametrized generic types to replace typevars with their concrete types.
 
-        See pydantic._internal._generics.replace_types for more details.
+        Args:
+            typevars_map (dict | None): A dictionary mapping type variables to their concrete types.
+            types_namespace (dict | None): A dictionary containing related types to the annotated type.
+
+        Returns:
+            None. This method applies the `typevars_map` to the annotation in place.
+
+        See Also:
+            pydantic._internal._generics.replace_types: This function is used for replacing the typevars with
+                their concrete types.
         """
         annotation = _typing_extra.eval_type_lenient(self.annotation, types_namespace, None)
         self.annotation = replace_types(annotation, typevars_map)
@@ -458,23 +473,59 @@ class FieldInfo(_repr.Representation):
 
 @_internal_dataclass.slots_dataclass
 class AliasPath:
+    """
+    A data class that represents a path that includes aliases.
+
+    Attributes:
+        path (list[int | str]): A list representing the path where each element is either an integer or
+            a string indicating an alias.
+
+    Methods:
+        convert_to_aliases(self) -> list[str | int]: Returns a copy of the path list where integers have
+            been replaced by the corresponding previous aliases for easier readability.
+    """
+
     path: list[int | str]
 
     def __init__(self, first_arg: str, *args: str | int) -> None:
         self.path = [first_arg] + list(args)
 
     def convert_to_aliases(self) -> list[str | int]:
+        """
+        Replace integers in the path with previous aliases for easier readability.
+
+        Returns:
+            list[str | int]: A copy of the path list where integers have been replaced by the corresponding
+                previous aliases.
+        """
         return self.path
 
 
 @_internal_dataclass.slots_dataclass
 class AliasChoices:
+    """
+    A class representing alias choices.
+
+    Attributes:
+        choices (list[str | AliasPath]): A list of possible choices.
+
+    Methods:
+        convert_to_aliases(self) -> list[list[str | int]]: Convert the choices to a list of lists of strings
+            or integers.
+    """
+
     choices: list[str | AliasPath]
 
     def __init__(self, *args: str | AliasPath) -> None:
         self.choices = list(args)
 
     def convert_to_aliases(self) -> list[list[str | int]]:
+        """
+        Converts the list of possible choices into aliases.
+
+        Returns:
+            list[list[str | int]]: The list of aliases.
+        """
         aliases: list[list[str | int]] = []
         for c in self.choices:
             if isinstance(c, AliasPath):
@@ -740,8 +791,16 @@ def PrivateAttr(
 @_internal_dataclass.slots_dataclass
 class ComputedFieldInfo:
     """
-    A container for data from `@computed_field` so that we can access it
-    while building the pydantic-core schema.
+    A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr (typing.ClassVar[str]): A class variable representing the decorator string, '@computed_field'.
+        wrapped_property (property): The wrapped computed field property.
+        return_type (type[Any]): The type of the computed field property's return value.
+        alias (str|None): The alias of the property to be used during encoding and decoding.
+        title (str|None): Title of the computed field as in OpenAPI document, should be a short summary.
+        description (str|None): Description of the computed field as in OpenAPI document.
+        repr (bool): A boolean indicating whether or not to include the field in the __repr__ output.
     """
 
     decorator_repr: typing.ClassVar[str] = '@computed_field'
@@ -756,6 +815,24 @@ class ComputedFieldInfo:
 # this should really be `property[T], cached_proprety[T]` but property is not generic unlike cached_property
 # See https://github.com/python/typing/issues/985 and linked issues
 PropertyT = typing.TypeVar('PropertyT')
+"""
+`TypeVar` that can be used to specify the type of a property.
+
+This can be used in combination with the `@property` decorator to specify the type
+of the property.
+
+Example:
+    ```py
+    class MyClass:
+        @property
+        def my_property(self) -> PropertyT:
+            return self._my_property
+
+        @my_property.setter
+        def my_property(self, value: PropertyT) -> None:
+            self._my_property = value
+    ```
+"""
 
 
 @typing.overload

@@ -108,10 +108,10 @@ nav:
   - 'pydantic.color': api/color.md
   - 'pydantic.config': api/config.md
   - 'pydantic.dataclasses': api/dataclasses.md
-  - 'pydantic.functional_validators': api/functional_validators.md
-  - 'pydantic.functional_serializers': api/functional_serializers.md
   - 'pydantic.errors': api/errors.md
   - 'pydantic.fields': api/fields.md
+  - 'pydantic.functional_serializers': api/functional_serializers.md
+  - 'pydantic.functional_validators': api/functional_validators.md
   - 'pydantic.json_schema': api/json_schema.md
   - 'pydantic.mypy': api/mypy.md
   - 'pydantic.networks': api/networks.md
