@@ -1,3 +1,4 @@
+import collections
 import itertools
 import json
 import math
@@ -4868,3 +4869,73 @@ def test_custom_default_dict() -> None:
     ta = TypeAdapter(CustomDefaultDict[str, int])
 
     assert ta.validate_python({'a': 1}) == CustomDefaultDict(int, {'a': 1})
+
+
+@pytest.mark.parametrize('field_type', [typing.OrderedDict, collections.OrderedDict])
+def test_ordered_dict_from_ordered_dict(field_type):
+    class Model(BaseModel):
+        od_field: field_type
+
+    od_value = collections.OrderedDict([('a', 1), ('b', 2)])
+
+    m = Model(od_field=od_value)
+
+    assert isinstance(m.od_field, collections.OrderedDict)
+    assert m.od_field == od_value
+    # we don't make any promises about preserving instances
+    # at the moment we always copy them for consistency and predictability
+    # so this is more so documenting the current behavior than a promise
+    # we make to users
+    assert m.od_field is not od_value
+
+    assert m.model_json_schema() == {
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'required': ['od_field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_ordered_dict_from_ordered_dict_typed():
+    class Model(BaseModel):
+        od_field: typing.OrderedDict[str, int]
+
+    od_value = collections.OrderedDict([('a', 1), ('b', 2)])
+
+    m = Model(od_field=od_value)
+
+    assert isinstance(m.od_field, collections.OrderedDict)
+    assert m.od_field == od_value
+
+    assert m.model_json_schema() == {
+        'properties': {
+            'od_field': {
+                'additionalProperties': {'type': 'integer'},
+                'title': 'Od Field',
+                'type': 'object',
+            }
+        },
+        'required': ['od_field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize('field_type', [typing.OrderedDict, collections.OrderedDict])
+def test_ordered_dict_from_dict(field_type):
+    class Model(BaseModel):
+        od_field: field_type
+
+    od_value = {'a': 1, 'b': 2}
+
+    m = Model(od_field=od_value)
+
+    assert isinstance(m.od_field, collections.OrderedDict)
+    assert m.od_field == collections.OrderedDict(od_value)
+
+    assert m.model_json_schema() == {
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'required': ['od_field'],
+        'title': 'Model',
+        'type': 'object',
+    }
