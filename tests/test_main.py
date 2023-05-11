@@ -2,15 +2,12 @@ import json
 import platform
 import re
 import sys
-from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
 from typing import (
     Any,
     Callable,
     ClassVar,
-    Counter,
-    DefaultDict,
     Dict,
     Generic,
     List,
@@ -1614,39 +1611,9 @@ def test_inherited_model_field_copy():
     assert id(image_2) in {id(image) for image in item.images}
 
 
-def test_mapping_retains_type_subclass():
+def test_mapping_subclass_as_input():
     class CustomMap(dict):
         pass
-
-    class Model(BaseModel):
-        x: Mapping[str, Mapping[str, int]]
-
-    m = Model(x=CustomMap(outer=CustomMap(inner=42)))
-    assert isinstance(m.x, CustomMap)
-    assert isinstance(m.x['outer'], CustomMap)
-    assert m.x['outer']['inner'] == 42
-
-
-def test_mapping_retains_type_defaultdict():
-    class Model(BaseModel):
-        x: Mapping[str, int]
-
-    d = defaultdict(int)
-    d['foo'] = '2'
-    d['bar']
-
-    m = Model(x=d)
-    assert isinstance(m.x, defaultdict)
-    assert m.x['foo'] == 2
-    assert m.x['bar'] == 0
-
-
-def test_mapping_retains_type_fallback_error():
-    class CustomMap(dict):
-        def __init__(self, *args, **kwargs):
-            if args or kwargs:
-                raise TypeError('test')
-            super().__init__(*args, **kwargs)
 
     class Model(BaseModel):
         x: Mapping[str, int]
@@ -1655,8 +1622,14 @@ def test_mapping_retains_type_fallback_error():
     d['one'] = 1
     d['two'] = 2
 
-    with pytest.raises(TypeError, match='test'):
-        Model(x=d)
+    v = Model(x=d).x
+    # we don't promise that this will or will not be a CustomMap
+    # all we promise is that it _will_ be a mapping
+    assert isinstance(v, Mapping)
+    # but the current behavior is that it will be a dict, not a CustomMap
+    # so document that here
+    assert not isinstance(v, CustomMap)
+    assert v == {'one': 1, 'two': 2}
 
 
 def test_typing_coercion_dict():
@@ -1674,59 +1647,6 @@ VT = TypeVar('VT')
 class MyDict(Dict[KT, VT]):
     def __repr__(self):
         return f'MyDict({super().__repr__()})'
-
-
-def test_dict_subclasses_bare():
-    class Model(BaseModel):
-        a: MyDict
-
-    assert repr(Model(a=MyDict({'a': 1})).a) == "MyDict({'a': 1})"
-    assert repr(Model(a=MyDict({b'x': (1, 2)})).a) == "MyDict({b'x': (1, 2)})"
-
-
-def test_dict_subclasses_typed():
-    class Model(BaseModel):
-        a: MyDict[str, int]
-
-    assert repr(Model(a=MyDict({'a': 1})).a) == "MyDict({'a': 1})"
-
-
-def test_typing_coercion_defaultdict():
-    class Model(BaseModel):
-        x: DefaultDict[int, str]
-
-    d = defaultdict(str)
-    d['1']
-    m = Model(x=d)
-    assert isinstance(m.x, defaultdict)
-    assert repr(m.x) == "defaultdict(<class 'str'>, {1: ''})"
-
-
-def test_typing_coercion_counter():
-    class Model(BaseModel):
-        x: Counter[str]
-
-    m = Model(x={'a': 10})
-    assert isinstance(m.x, Counter)
-    assert repr(m.x) == "Counter({'a': 10})"
-
-
-def test_typing_counter_value_validation():
-    class Model(BaseModel):
-        x: Counter[str]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(x={'a': 'a'})
-
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'int_parsing',
-            'loc': ('x', 'a'),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'a',
-        }
-    ]
 
 
 def test_class_kwargs_config():

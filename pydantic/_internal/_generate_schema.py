@@ -413,15 +413,6 @@ class GenerateSchema:
             return self._pattern_schema(obj)
         elif obj is collections.abc.Hashable or obj is typing.Hashable:
             return self._hashable_schema()
-        elif isinstance(obj, type):
-            if obj is dict:
-                return self._dict_schema(obj)
-            if issubclass(obj, dict):
-                # TODO: We would need to handle generic subclasses of certain typing dict subclasses here
-                #   This includes subclasses of typing.Counter, typing.DefaultDict, and typing.OrderedDict
-                #   Note also that we may do a better job of handling typing.DefaultDict by inspecting its arguments.
-                return self._dict_subclass_schema(obj)
-            # probably need to take care of other subclasses here
         elif isinstance(obj, typing.TypeVar):
             return self._unsubstituted_typevar_schema(obj)
         elif is_finalvar(obj):
@@ -473,26 +464,15 @@ class GenerateSchema:
         elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
             # TODO: To support generic subclasses of typing.Tuple, we need to better-introspect the args to origin
             return self._tuple_schema(obj)
-        elif issubclass(origin, typing.Counter):
-            # Subclasses of typing.Counter may be handled as subclasses of dict; see note above
-            return self._counter_schema(obj)
         elif origin in (typing.Dict, dict):
             return self._dict_schema(obj)
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
-        elif issubclass(origin, typing.Dict):
-            # Subclasses of typing.Dict may be handled as subclasses of dict; see note above
-            return self._dict_subclass_schema(obj)
         elif issubclass(origin, typing.Mapping):
             # Because typing.Mapping does not have a specified `__init__` signature, we don't validate into subclasses
             return self._mapping_schema(obj)
         elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
             return self._subclass_schema(obj)
-        elif issubclass(origin, typing.OrderedDict):
-            # Subclasses of typing.OrderedDict may be handled as subclasses of dict; see note above
-            from ._std_types_schema import ordered_dict_schema
-
-            return ordered_dict_schema(self, obj)
         elif issubclass(origin, typing.Sequence):
             if origin in {typing.Sequence, collections.abc.Sequence}:
                 return self._sequence_schema(obj)
@@ -836,43 +816,6 @@ class GenerateSchema:
                 values_schema=self.generate_schema(arg1),
             )
 
-    def _dict_subclass_schema(self, dict_subclass: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for a subclass of dict or Dict
-        """
-        try:
-            arg0, arg1 = get_args(dict_subclass)
-        except ValueError:
-            arg0, arg1 = Any, Any
-
-        from ._validators import mapping_validator
-
-        # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(dict_subclass), ...` in strict mode
-        return core_schema.no_info_wrap_validator_function(
-            mapping_validator,
-            core_schema.dict_schema(
-                keys_schema=self.generate_schema(arg0),
-                values_schema=self.generate_schema(arg1),
-            ),
-        )
-
-    def _counter_schema(self, counter_type: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for `typing.Counter`
-        """
-        arg = get_first_arg(counter_type)
-
-        from ._validators import construct_counter
-
-        # TODO could do `core_schema.chain_schema(core_schema.is_instance_schema(Counter), ...` in strict mode
-        return core_schema.no_info_after_validator_function(
-            construct_counter,
-            core_schema.dict_schema(
-                keys_schema=self.generate_schema(arg),
-                values_schema=core_schema.int_schema(),
-            ),
-        )
-
     def _mapping_schema(self, mapping_type: Any) -> core_schema.CoreSchema:
         """
         Generate schema for a Dict, e.g. `dict[str, int]`.
@@ -1153,6 +1096,7 @@ class GenerateSchema:
             std_types.datetime_prepare_pydantic_annotations,
             std_types.uuid_prepare_pydantic_annotations,
             std_types.path_schema_prepare_pydantic_annotations,
+            std_types.mapping_like_prepare_pydantic_annotations,
         ):
             res = gen(obj, annotations)
             if res is not None:

@@ -11,7 +11,6 @@ import decimal
 import inspect
 import os
 import typing
-from collections import OrderedDict
 from enum import Enum
 from functools import partial
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
@@ -509,21 +508,12 @@ class SequenceValidator:
                 assert self.mapped_origin is frozenset  # safety check in case we forget to add a case
                 constrained_schema = core_schema.frozenset_schema(items_schema, **metadata)
 
-            force_instance = None
-            coerce_instance_wrap = identity
+            js_core_schema = constrained_schema
 
-            serialization = None
+            schema = constrained_schema
         else:
             # safety check in case we forget to add a case
             assert self.mapped_origin in (collections.deque, collections.Counter)
-            constrained_schema = core_schema.list_schema(items_schema, **metadata)
-            if metadata.get('strict', False):
-                force_instance = core_schema.json_or_python_schema(
-                    json_schema=core_schema.list_schema(),
-                    python_schema=core_schema.is_instance_schema(self.mapped_origin),
-                )
-            else:
-                force_instance = None
 
             if self.mapped_origin is collections.deque:
                 # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
@@ -536,19 +526,27 @@ class SequenceValidator:
             else:
                 coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
 
+            constrained_schema = js_core_schema = core_schema.list_schema(items_schema, **metadata)
+
+            check_instance = core_schema.json_or_python_schema(
+                json_schema=core_schema.list_schema(),
+                python_schema=core_schema.is_instance_schema(self.mapped_origin),
+            )
+
             serialization = core_schema.wrap_serializer_function_ser_schema(
                 self.serialize_sequence_via_list, schema=items_schema or core_schema.any_schema(), info_arg=True
             )
 
-        if force_instance:
-            schema = core_schema.chain_schema([force_instance, coerce_instance_wrap(constrained_schema)])
-        else:
-            schema = coerce_instance_wrap(constrained_schema)
+            strict = core_schema.chain_schema([check_instance, coerce_instance_wrap(constrained_schema)])
 
-        if serialization:
+            if metadata.get('strict', False):
+                schema = strict
+            else:
+                lax = coerce_instance_wrap(constrained_schema)
+                schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
             schema['serialization'] = serialization
 
-        self.js_core_schema = constrained_schema
+        self.js_core_schema = js_core_schema
 
         return schema
 
@@ -573,20 +571,6 @@ SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
 }
 
 
-MAPPING_ORIGIN_MAP: dict[Any, Any] = {
-    typing.OrderedDict: collections.OrderedDict,
-    typing.Dict: dict,
-    typing.Mapping: dict,
-    typing.MutableMapping: dict,
-    typing.AbstractSet: set,
-    typing.Set: set,
-    typing.FrozenSet: frozenset,
-    typing.Sequence: list,
-    typing.MutableSequence: list,
-    collections.Counter: collections.Counter,
-}
-
-
 def identity(s: CoreSchema) -> CoreSchema:
     return s
 
@@ -602,9 +586,8 @@ def sequence_like_prepare_pydantic_annotations(source_type: Any, annotations: It
 
     if not args:
         args = (Any,)
-    else:
-        if len(args) != 1:
-            raise ValueError('Expected sequence to have exactly 1 generic parameter')
+    elif len(args) != 1:
+        raise ValueError('Expected sequence to have exactly 1 generic parameter')
 
     item_source_type = args[0]
 
@@ -614,56 +597,116 @@ def sequence_like_prepare_pydantic_annotations(source_type: Any, annotations: It
     return [source_type, SequenceValidator(mapped_origin, item_source_type, **metadata), *remaining_annotations]
 
 
-def _ordered_dict_any_schema() -> core_schema.LaxOrStrictSchema:
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_wrap_validator_function(
-            _validators.ordered_dict_any_validator, core_schema.dict_schema()
-        ),
-        strict_schema=core_schema.json_or_python_schema(
-            json_schema=core_schema.no_info_after_validator_function(OrderedDict, core_schema.dict_schema()),
-            python_schema=core_schema.is_instance_schema(OrderedDict),
-        ),
-    )
+MAPPING_ORIGIN_MAP: dict[Any, Any] = {
+    collections.OrderedDict: collections.OrderedDict,
+    typing.OrderedDict: collections.OrderedDict,
+    typing.Dict: dict,
+    collections.Counter: collections.Counter,
+    typing.Counter: collections.Counter,
+    # this doesn't handle subclasses of these
+    typing.Mapping: dict,
+    typing.MutableMapping: dict,
+    # parametrized typing.{Mutable}Mapping creates one of these
+    collections.abc.MutableMapping: dict,
+    collections.abc.Mapping: dict,
+}
 
 
-@schema_function(OrderedDict)
-def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.CoreSchema:
-    if obj == OrderedDict:
-        # bare `ordered_dict` type used as annotation
-        return _ordered_dict_any_schema()
+@slots_dataclass
+class MappingValidator:
+    mapped_origin: type[Any]
+    keys_source_type: type[Any]
+    values_source_type: type[Any]
+    min_length: int | None = None
+    max_length: int | None = None
+    strict: bool = False
+    js_core_schema: CoreSchema | None = None
 
-    try:
-        keys_arg, values_arg = get_args(obj)
-    except ValueError:
-        # not argument bare `OrderedDict` is equivalent to `OrderedDict[Any, Any]`
-        return _ordered_dict_any_schema()
+    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        assert self.js_core_schema is not None
+        return handler(self.js_core_schema)
 
-    if keys_arg == typing.Any and values_arg == typing.Any:
-        # `OrderedDict[Any, Any]`
-        return _ordered_dict_any_schema()
-    else:
-        inner_schema = core_schema.dict_schema(
-            schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
-        )
-        return core_schema.lax_or_strict_schema(
-            lax_schema=core_schema.no_info_after_validator_function(
-                _validators.ordered_dict_typed_validator,
-                core_schema.dict_schema(
-                    schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
+    def serialize_mapping_via_dict(
+        self, v: Any, handler: core_schema.SerializerFunctionWrapHandler, info: core_schema.SerializationInfo
+    ) -> Any:
+        if info.mode_is_json():
+            return handler(dict(v))
+        else:
+            return self.mapped_origin(handler(dict(v)))
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        if self.keys_source_type is Any:
+            keys_schema = None
+        else:
+            keys_schema = handler.generate_schema(self.keys_source_type)
+        if self.values_source_type is Any:
+            values_schema = None
+        else:
+            values_schema = handler.generate_schema(self.values_source_type)
+
+        metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
+
+        if self.mapped_origin is dict:
+            schema = js_core_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
+        else:
+            constrained_schema = js_core_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
+            check_instance = core_schema.json_or_python_schema(
+                json_schema=core_schema.dict_schema(),
+                python_schema=core_schema.is_instance_schema(self.mapped_origin),
+            )
+            coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
+
+            serialization = core_schema.wrap_serializer_function_ser_schema(
+                self.serialize_mapping_via_dict,
+                schema=core_schema.dict_schema(
+                    keys_schema or core_schema.any_schema(), values_schema or core_schema.any_schema()
                 ),
-            ),
-            strict_schema=core_schema.json_or_python_schema(
-                json_schema=core_schema.no_info_after_validator_function(
-                    OrderedDict, core_schema.dict_schema(inner_schema)
-                ),
-                python_schema=core_schema.no_info_after_validator_function(
-                    OrderedDict,
-                    core_schema.chain_schema(
-                        [core_schema.is_instance_schema(OrderedDict), core_schema.dict_schema(inner_schema)]
-                    ),
-                ),
-            ),
-        )
+                info_arg=True,
+            )
+
+            strict = core_schema.chain_schema([check_instance, coerce_instance_wrap(constrained_schema)])
+
+            if metadata.get('strict', False):
+                schema = strict
+            else:
+                lax = coerce_instance_wrap(constrained_schema)
+                schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
+                schema['serialization'] = serialization
+
+        self.js_core_schema = js_core_schema
+
+        return schema
+
+
+def mapping_like_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> list[Any] | None:
+    origin: Any = get_origin(source_type)
+
+    mapped_origin = MAPPING_ORIGIN_MAP.get(origin, None) if origin else MAPPING_ORIGIN_MAP.get(source_type, None)
+    if mapped_origin is None:
+        return None
+
+    args = get_args(source_type)
+
+    if not args:
+        args = (Any, Any)
+    elif mapped_origin is collections.Counter:
+        # a single generic
+        if len(args) != 1:
+            raise ValueError('Expected Counter to have exactly 1 generic parameter')
+        args = (args[0], int)  # keys are always an int
+    elif len(args) != 2:
+        raise ValueError('Expected mapping to have exactly 2 generic parameters')
+
+    keys_source_type, values_source_type = args
+
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
+
+    return [
+        source_type,
+        MappingValidator(mapped_origin, keys_source_type, values_source_type, **metadata),
+        *remaining_annotations,
+    ]
 
 
 def make_strict_ip_schema(tp: type[Any], metadata: Any) -> CoreSchema:
