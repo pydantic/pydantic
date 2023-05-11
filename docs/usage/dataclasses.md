@@ -262,7 +262,7 @@ try:
 except PydanticSchemaGenerationError as e:  # invalid as it is now a pydantic dataclass
     print(e.message)
     """
-    Unable to generate pydantic-core schema for <class '__main__.ArbitraryType'>. Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.
+    Unable to generate pydantic-core schema for <class '__main__.ArbitraryType'>. Set `arbitrary_types_allowed=True` in the model_config ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.
     """
 
 

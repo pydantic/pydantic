@@ -65,8 +65,6 @@ dependencies = [
 ]
 dynamic = ['version', 'readme']
 
-entry-points.hypothesis = {_ = 'pydantic._hypothesis_plugin'}
-
 [project.optional-dependencies]
 email = ['email-validator>=2.0.0']
 

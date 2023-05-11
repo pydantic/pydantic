@@ -4,6 +4,7 @@ import math
 import os
 import re
 import sys
+import typing
 import uuid
 from collections import OrderedDict, deque
 from datetime import date, datetime, time, timedelta, timezone
@@ -18,7 +19,6 @@ from typing import (
     FrozenSet,
     Iterable,
     List,
-    MutableSet,
     NewType,
     Optional,
     Pattern,
@@ -33,9 +33,9 @@ from uuid import UUID
 import annotated_types
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import PydanticCustomError, SchemaError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
 from pydantic_core.core_schema import ValidationInfo
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import Annotated, Literal, TypedDict, get_args
 
 from pydantic import (
     UUID1,
@@ -90,6 +90,8 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic.annotated import GetCoreSchemaHandler
+from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 from pydantic.types import AllowInfNan, ImportString, SecretField, Strict
 
@@ -1536,7 +1538,10 @@ def test_enum_from_json(enum_base, strict):
     ],
 )
 def test_invalid_schema_constraints(kwargs, type_):
-    with pytest.raises(SchemaError, match='Invalid Schema:\n.*\n  Extra inputs are not permitted'):
+    match = (
+        r'(:?Invalid Schema:\n.*\n  Extra inputs are not permitted)|(:?The following constraints cannot be applied to)'
+    )
+    with pytest.raises((SchemaError, TypeError), match=match):
 
         class Foo(BaseModel):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)
@@ -2472,23 +2477,73 @@ def test_bool_unhashable_fails():
 
 
 def test_uuid_error():
-    class Model(BaseModel):
-        v: UUID
+    v = TypeAdapter(UUID)
+
+    valid = UUID('49fdfa1d856d4003a83e4b9236532ec6')
+
+    # sanity check
+    assert v.validate_python(valid) == valid
+    assert v.validate_python(valid.hex) == valid
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
+        v.validate_python('ebcdab58-6eb8-46fb-a190-d07a3')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'uuid_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid UUID, string, or bytes',
+            'type': 'is_instance_of',
+            'loc': ('is-instance[UUID]',),
+            'msg': 'Input should be an instance of UUID',
             'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'uuid_parsing',
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]',),
+            'msg': 'Input should be a valid UUID, unable to parse string as an UUID',
+            'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
+        },
+    ]
+
+    not_a_valid_input_type = object()
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(not_a_valid_input_type)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_instance_of',
+            'loc': ('is-instance[UUID]',),
+            'msg': 'Input should be an instance of UUID',
+            'input': not_a_valid_input_type,
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'string_type',
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'str'),
+            'msg': 'Input should be a valid string',
+            'input': not_a_valid_input_type,
+        },
+        {
+            'type': 'bytes_type',
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'bytes'),
+            'msg': 'Input should be a valid bytes',
+            'input': not_a_valid_input_type,
+        },
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(valid.hex, strict=True)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_instance_of',
+            'loc': (),
+            'msg': 'Input should be an instance of UUID',
+            'input': '49fdfa1d856d4003a83e4b9236532ec6',
+            'ctx': {'class': 'UUID'},
         }
     ]
 
-    with pytest.raises(ValidationError, match='Input should be a valid UUID, string, or bytes'):
-        Model(v=None)
+    assert v.validate_json(json.dumps(valid.hex), strict=True) == valid
 
 
 def test_uuid_json():
@@ -2926,6 +2981,15 @@ def test_path_validation_success(value, result):
     assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
+def test_path_validation_constrained():
+    ta = TypeAdapter(Annotated[Path, Field(min_length=9, max_length=20)])
+    with pytest.raises(ValidationError):
+        ta.validate_python('/short')
+    with pytest.raises(ValidationError):
+        ta.validate_python('/' + 'long' * 100)
+    assert ta.validate_python('/just/right/enough') == Path('/just/right/enough')
+
+
 def test_path_like():
     class Model(BaseModel):
         foo: os.PathLike
@@ -2969,7 +3033,19 @@ def test_path_validation_fails():
         Model(foo=123)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
+        {
+            'type': 'is_instance_of',
+            'loc': ('foo', 'json-or-python[json=function-after[path_validator(), str],python=is-instance[Path]]'),
+            'msg': 'Input should be an instance of Path',
+            'input': 123,
+            'ctx': {'class': 'Path'},
+        },
+        {
+            'type': 'string_type',
+            'loc': ('foo', 'function-after[path_validator(), str]'),
+            'msg': 'Input should be a valid string',
+            'input': 123,
+        },
     ]
 
 
@@ -3874,11 +3950,12 @@ def test_literal_multiple():
     ]
 
 
-def test_unsupported_field_type():
-    with pytest.raises(TypeError, match=r'Unable to generate pydantic-core schema MutableSet'):
-
-        class UnsupportedModel(BaseModel):
-            unsupported: MutableSet[int]
+def test_typing_mutable_set():
+    s1 = TypeAdapter(Set[int]).core_schema
+    s1.pop('metadata', None)
+    s2 = TypeAdapter(typing.MutableSet[int]).core_schema
+    s2.pop('metadata', None)
+    assert s1 == s2
 
 
 def test_frozenset_field():
@@ -4171,6 +4248,38 @@ def test_deque_typed_maxlen():
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
 
 
+def test_deque_set_maxlen():
+    class DequeModel1(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)]
+
+    assert DequeModel1(field=deque()).field.maxlen == 10
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+    assert DequeModel1(field=deque(maxlen=15)).field.maxlen == 10
+
+    class DequeModel2(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)] = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen == 10
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+    assert DequeModel2(field=deque(maxlen=15)).field.maxlen == 10
+
+    class DequeModel3(DequeModel2):
+        model_config = ConfigDict(validate_default=True)
+
+    assert DequeModel3().field.maxlen == 10
+
+    class DequeModel4(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)] = deque(maxlen=5)
+
+    assert DequeModel4().field.maxlen == 5
+
+    class DequeModel5(DequeModel4):
+        model_config = ConfigDict(validate_default=True)
+
+    assert DequeModel4().field.maxlen == 5
+
+
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__))
 def test_none(value_type):
     class Model(BaseModel):
@@ -4401,7 +4510,9 @@ def test_custom_generic_containers():
     T = TypeVar('T')
 
     class GenericList(List[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
 
     class Model(BaseModel):
         field: GenericList[int]
@@ -4607,3 +4718,25 @@ def test_third_party_type_integration():
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_sequence_subclass_without_core_schema() -> None:
+    class MyList(List[int]):
+        # The point of this is that subclasses can do arbitrary things
+        # This is the reason why we don't try to handle them automatically
+        # TBD if we introspect `__init__` / `__new__`
+        # (which is the main thing that would mess us up if modified in a subclass)
+        # and automatically handle cases where the subclass doesn't override it.
+        # There's still edge cases (again, arbitrary behavior...)
+        # and it's harder to explain, but could lead to a better user experience in some cases
+        # It will depend on how the complaints (which have and will happen in both directions)
+        # balance out
+        def __init__(self, *args: Any, required: int, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+
+    with pytest.raises(
+        PydanticSchemaGenerationError, match='implement `__get_pydantic_core_schema__` on your type to fully support it'
+    ):
+
+        class _(BaseModel):
+            x: MyList
