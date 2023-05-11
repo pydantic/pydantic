@@ -4802,3 +4802,69 @@ def test_mapping_subclass_without_core_schema() -> None:
 
         class _(BaseModel):
             x: MyDict
+
+
+def test_defaultdict_unknown_default_factory() -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/4687
+    """
+    with pytest.raises(
+        PydanticSchemaGenerationError,
+        match=r'Unable to infer a default factory for with keys of type typing.DefaultDict\[int, int\]',
+    ):
+
+        class Model(BaseModel):
+            d: DefaultDict[int, DefaultDict[int, int]]
+
+
+def test_defaultdict_infer_default_factory() -> None:
+    class Model(BaseModel):
+        a: DefaultDict[int, List[int]]
+        b: DefaultDict[int, int]
+
+    m = Model(a={}, b={})
+    assert m.a.default_factory is not None
+    assert m.a.default_factory() == []
+    assert m.b.default_factory is not None
+    assert m.b.default_factory() == 0
+
+
+def test_defaultdict_explicit_default_factory() -> None:
+    class MyList(List[int]):
+        pass
+
+    class Model(BaseModel):
+        a: DefaultDict[int, Annotated[List[int], Field(default_factory=lambda: MyList())]]
+
+    m = Model(a={})
+    assert m.a.default_factory is not None
+    assert isinstance(m.a.default_factory(), MyList)
+
+
+def test_defaultdict_default_factory_preserved() -> None:
+    class Model(BaseModel):
+        a: DefaultDict[int, List[int]]
+
+    class MyList(List[int]):
+        pass
+
+    m = Model(a=defaultdict(lambda: MyList()))
+    assert m.a.default_factory is not None
+    assert isinstance(m.a.default_factory(), MyList)
+
+
+def test_custom_default_dict() -> None:
+    KT = TypeVar('KT')
+    VT = TypeVar('VT')
+
+    class CustomDefaultDict(DefaultDict[KT, VT]):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            keys_type, values_type = get_args(source_type)
+            return core_schema.no_info_after_validator_function(
+                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
+            )
+
+    ta = TypeAdapter(CustomDefaultDict[str, int])
+
+    assert ta.validate_python({'a': 1}) == CustomDefaultDict(int, {'a': 1})

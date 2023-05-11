@@ -464,13 +464,8 @@ class GenerateSchema:
         elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
             # TODO: To support generic subclasses of typing.Tuple, we need to better-introspect the args to origin
             return self._tuple_schema(obj)
-        elif origin in (typing.Dict, dict):
-            return self._dict_schema(obj)
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
-        elif issubclass(origin, typing.Mapping):
-            # Because typing.Mapping does not have a specified `__init__` signature, we don't validate into subclasses
-            return self._mapping_schema(obj)
         elif issubclass(origin, typing.Type):  # type: ignore[arg-type]
             return self._subclass_schema(obj)
         elif issubclass(origin, typing.Sequence):
@@ -801,39 +796,6 @@ class GenerateSchema:
             return core_schema.tuple_positional_schema([])
         else:
             return core_schema.tuple_positional_schema([self.generate_schema(p) for p in params])
-
-    def _dict_schema(self, dict_type: Any) -> core_schema.DictSchema:
-        """
-        Generate schema for a Dict, e.g. `dict[str, int]`.
-        """
-        try:
-            arg0, arg1 = get_args(dict_type)
-        except ValueError:
-            return core_schema.dict_schema()
-        else:
-            return core_schema.dict_schema(
-                keys_schema=self.generate_schema(arg0),
-                values_schema=self.generate_schema(arg1),
-            )
-
-    def _mapping_schema(self, mapping_type: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for a Dict, e.g. `dict[str, int]`.
-        """
-        try:
-            arg0, arg1 = get_args(mapping_type)
-        except ValueError:
-            return core_schema.is_instance_schema(typing.Mapping, cls_repr='Mapping')
-        else:
-            from ._validators import mapping_validator
-
-            return core_schema.no_info_wrap_validator_function(
-                mapping_validator,
-                core_schema.dict_schema(
-                    keys_schema=self.generate_schema(arg0),
-                    values_schema=self.generate_schema(arg1),
-                ),
-            )
 
     def _type_schema(self) -> core_schema.CoreSchema:
         return core_schema.custom_error_schema(
