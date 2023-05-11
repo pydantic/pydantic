@@ -4,11 +4,11 @@ with some suggestions on how to fix them.
 ## `arguments_type`
 
 This error is raised when arguments passed to a function are not
-a tuple, list or a dictionary.
+a tuple, list, or a dictionary.
 
 ## `assertion_error`
 
-This error is raised when there is a failing assertion during the validation.
+This error is raised when a failing assert statement is encountered during validation.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel, field_validator
@@ -31,7 +31,7 @@ Model(x=-1)
 
 ## `bool_parsing`
 
-This error is raised when the value is an invalid boolean string.
+This error is raised when the value is a string that is not valid for coercion to a boolean.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from pydantic import BaseModel
@@ -40,7 +40,8 @@ from pydantic import BaseModel
 class Model(BaseModel):
     x: bool
 
-print(Model(x='test'))
+Model(x='true')  # OK
+Model(x='test')
 ```
 
 ## `bool_type`
@@ -173,7 +174,10 @@ Model(y=Nested(x=1))
 
 ## `date_from_datetime_inexact`
 
-This error is raised when the datetime value provided for a date field is not an exact date.
+This error is raised when the datetime value provided for a date field
+has a nonzero time component.
+For a timestamp to parse into a field of type date, the time components
+must be all zero.
 
 ```py test="skip" lint="skip" upgrade="skip"
 from datetime import date, datetime
@@ -185,6 +189,8 @@ class Model(BaseModel):
     x: date
 
 
+Model(x='2023-01-01')  # OK
+Model(x=datetime(2023, 1, 1))  # OK
 Model(x=datetime(2023, 1, 1, 12))
 ```
 
