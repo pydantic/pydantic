@@ -1934,7 +1934,9 @@ while building the pydantic-core schema.</p>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/fields.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">742</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">740</span>
+<span class="normal">741</span>
+<span class="normal">742</span>
 <span class="normal">743</span>
 <span class="normal">744</span>
 <span class="normal">745</span>
@@ -1945,9 +1947,7 @@ while building the pydantic-core schema.</p>
 <span class="normal">750</span>
 <span class="normal">751</span>
 <span class="normal">752</span>
-<span class="normal">753</span>
-<span class="normal">754</span>
-<span class="normal">755</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
+<span class="normal">753</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
 <span class="k">class</span> <span class="nc">ComputedFieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A container for data from `@computed_field` so that we can access it</span>
@@ -1956,7 +1956,7 @@ while building the pydantic-core schema.</p>
 
     <span class="n">decorator_repr</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">ClassVar</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;@computed_field&#39;</span>
     <span class="n">wrapped_property</span><span class="p">:</span> <span class="nb">property</span>
-    <span class="n">json_return_type</span><span class="p">:</span> <span class="n">_core_schema</span><span class="o">.</span><span class="n">JsonReturnTypes</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
@@ -2166,7 +2166,9 @@ while building the pydantic-core schema.</p>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/fields.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 30</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
 <span class="normal"> 31</span>
 <span class="normal"> 32</span>
 <span class="normal"> 33</span>
@@ -2592,9 +2594,7 @@ while building the pydantic-core schema.</p>
 <span class="normal">453</span>
 <span class="normal">454</span>
 <span class="normal">455</span>
-<span class="normal">456</span>
-<span class="normal">457</span>
-<span class="normal">458</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FieldInfo</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">):</span>
+<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">FieldInfo</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Hold information about a field.</span>
 
@@ -3058,16 +3058,16 @@ while building the pydantic-core schema.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">423</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
 <span class="normal">424</span>
 <span class="normal">425</span>
 <span class="normal">426</span>
 <span class="normal">427</span>
 <span class="normal">428</span>
 <span class="normal">429</span>
-<span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">apply_typevars_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typevars_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<span class="normal">430</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">apply_typevars_map</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">typevars_map</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Apply a typevars_map to the annotation.</span>
 
@@ -3167,7 +3167,9 @@ while building the pydantic-core schema.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">220</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
 <span class="normal">221</span>
 <span class="normal">222</span>
 <span class="normal">223</span>
@@ -3229,9 +3231,7 @@ while building the pydantic-core schema.</p>
 <span class="normal">279</span>
 <span class="normal">280</span>
 <span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">282</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">from_annotated_attribute</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create `FieldInfo` from an annotation with a default value.</span>
@@ -3381,7 +3381,9 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">168</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
 <span class="normal">169</span>
 <span class="normal">170</span>
 <span class="normal">171</span>
@@ -3429,9 +3431,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">213</span>
 <span class="normal">214</span>
 <span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">from_annotation</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">annotation</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="n">_forward_ref</span><span class="o">.</span><span class="n">PydanticForwardRef</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Creates a `FieldInfo` instance from a bare annotation.</span>
@@ -3588,7 +3588,9 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">138</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
 <span class="normal">139</span>
 <span class="normal">140</span>
 <span class="normal">141</span>
@@ -3614,9 +3616,7 @@ one of the (not first) arguments in <code>Annotated</code> are an instance of <c
 <span class="normal">161</span>
 <span class="normal">162</span>
 <span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">164</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">from_field</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">typing_extensions</span><span class="o">.</span><span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Create a new `FieldInfo` object with the `Field` function.</span>
@@ -3714,7 +3714,9 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">385</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
 <span class="normal">386</span>
 <span class="normal">387</span>
 <span class="normal">388</span>
@@ -3731,9 +3733,7 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 <span class="normal">399</span>
 <span class="normal">400</span>
 <span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">402</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">call_default_factory</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Get the default value.</span>
 
@@ -3795,13 +3795,13 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">406</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
 <span class="normal">407</span>
 <span class="normal">408</span>
 <span class="normal">409</span>
-<span class="normal">410</span>
-<span class="normal">411</span>
-<span class="normal">412</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<span class="normal">410</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">is_required</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if the argument is required.</span>
 
 <span class="sd">    Returns:</span>
@@ -3832,14 +3832,14 @@ be called (namely, when instantiating a model via <code>model_construct</code>).
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">414</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
 <span class="normal">415</span>
 <span class="normal">416</span>
 <span class="normal">417</span>
 <span class="normal">418</span>
-<span class="normal">419</span>
-<span class="normal">420</span>
-<span class="normal">421</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">419</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_annotation</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Rebuild the original annotation for use in signatures.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3910,7 +3910,9 @@ attribute if not provided.</p></td>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/fields.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">664</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">662</span>
+<span class="normal">663</span>
+<span class="normal">664</span>
 <span class="normal">665</span>
 <span class="normal">666</span>
 <span class="normal">667</span>
@@ -3950,9 +3952,7 @@ attribute if not provided.</p></td>
 <span class="normal">701</span>
 <span class="normal">702</span>
 <span class="normal">703</span>
-<span class="normal">704</span>
-<span class="normal">705</span>
-<span class="normal">706</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ModelPrivateAttr</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">):</span>
+<span class="normal">704</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ModelPrivateAttr</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A descriptor for private attributes in class models.</span>
 
 <span class="sd">    Attributes:</span>
@@ -4048,16 +4048,16 @@ If <code>self.default_factory</code> is not <code>None</code>, it will call <cod
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">691</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">689</span>
+<span class="normal">690</span>
+<span class="normal">691</span>
 <span class="normal">692</span>
 <span class="normal">693</span>
 <span class="normal">694</span>
 <span class="normal">695</span>
 <span class="normal">696</span>
 <span class="normal">697</span>
-<span class="normal">698</span>
-<span class="normal">699</span>
-<span class="normal">700</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<span class="normal">698</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">get_default</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the default value for the object.</span>
 
 <span class="sd">    If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.</span>
@@ -4520,7 +4520,9 @@ such as <code>True</code> or <code>None</code>.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">489</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
 <span class="normal">490</span>
 <span class="normal">491</span>
 <span class="normal">492</span>
@@ -4690,9 +4692,7 @@ such as <code>True</code> or <code>None</code>.</p></td>
 <span class="normal">656</span>
 <span class="normal">657</span>
 <span class="normal">658</span>
-<span class="normal">659</span>
-<span class="normal">660</span>
-<span class="normal">661</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa C901</span>
+<span class="normal">659</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">Field</span><span class="p">(</span>  <span class="c1"># noqa C901</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -4811,7 +4811,7 @@ such as <code>True</code> or <code>None</code>.</p></td>
         <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;`allow_mutation` is deprecated and will be removed. use `frozen` instead&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="n">frozen</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">if</span> <span class="n">regex</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`regex` is removed. use `Pattern` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated_kwargs&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`regex` is removed. use `pattern` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated_kwargs&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">extra</span><span class="p">:</span>
         <span class="n">warn</span><span class="p">(</span>
             <span class="s1">&#39;Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead&#39;</span><span class="p">,</span>
@@ -4963,7 +4963,9 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">709</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">707</span>
+<span class="normal">708</span>
+<span class="normal">709</span>
 <span class="normal">710</span>
 <span class="normal">711</span>
 <span class="normal">712</span>
@@ -4991,9 +4993,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
 <span class="normal">734</span>
 <span class="normal">735</span>
 <span class="normal">736</span>
-<span class="normal">737</span>
-<span class="normal">738</span>
-<span class="normal">739</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
+<span class="normal">737</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">PrivateAttr</span><span class="p">(</span>
     <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">default_factory</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -5046,7 +5046,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
     <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
-    <span class="n">json_return_type</span><span class="o">=</span><span class="kc">None</span>
+    <span class="n">return_type</span><span class="o">=</span><span class="n">_UNSET</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -5119,14 +5119,16 @@ docstring, currently unused waiting for #4697</p></td>
           </td>
         </tr>
         <tr>
-          <td><code>json_return_type</code></td>
+          <td><code>return_type</code></td>
           <td>
-                <code><span title="pydantic_core.core_schema">_core_schema</span>.<span title="pydantic_core.core_schema.JsonReturnTypes">JsonReturnTypes</span> | None</code>
+                <code><span title="typing.Any">Any</span></code>
           </td>
           <td><p>optional return for serialization logic to expect when serialising to JSON, if included
-this must be correct, otherwise a <code>TypeError</code> is raised</p></td>
+this must be correct, otherwise a <code>TypeError</code> is raised.
+If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
+objects.</p></td>
           <td>
-                <code>None</code>
+                <code>_UNSET</code>
           </td>
         </tr>
     </tbody>
@@ -5152,8 +5154,7 @@ this must be correct, otherwise a <code>TypeError</code> is raised</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">780</span>
-<span class="normal">781</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">781</span>
 <span class="normal">782</span>
 <span class="normal">783</span>
 <span class="normal">784</span>
@@ -5194,14 +5195,28 @@ this must be correct, otherwise a <code>TypeError</code> is raised</p></td>
 <span class="normal">819</span>
 <span class="normal">820</span>
 <span class="normal">821</span>
-<span class="normal">822</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">822</span>
+<span class="normal">823</span>
+<span class="normal">824</span>
+<span class="normal">825</span>
+<span class="normal">826</span>
+<span class="normal">827</span>
+<span class="normal">828</span>
+<span class="normal">829</span>
+<span class="normal">830</span>
+<span class="normal">831</span>
+<span class="normal">832</span>
+<span class="normal">833</span>
+<span class="normal">834</span>
+<span class="normal">835</span>
+<span class="normal">836</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">json_return_type</span><span class="p">:</span> <span class="n">_core_schema</span><span class="o">.</span><span class="n">JsonReturnTypes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="n">_UNSET</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[</span><span class="n">PropertyT</span><span class="p">],</span> <span class="n">PropertyT</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decorate to include `property` and `cached_property` when serialising models.</span>
@@ -5216,21 +5231,34 @@ this must be correct, otherwise a <code>TypeError</code> is raised</p></td>
 <span class="sd">        description: Description to used when including this computed field in JSON Schema, defaults to the functions</span>
 <span class="sd">            docstring, currently unused waiting for #4697</span>
 <span class="sd">        repr: whether to include this computed field in model repr</span>
-<span class="sd">        json_return_type: optional return for serialization logic to expect when serialising to JSON, if included</span>
-<span class="sd">            this must be correct, otherwise a `TypeError` is raised</span>
+<span class="sd">        return_type: optional return for serialization logic to expect when serialising to JSON, if included</span>
+<span class="sd">            this must be correct, otherwise a `TypeError` is raised.</span>
+<span class="sd">            If you don&#39;t include a return type Any is used, which does runtime introspection to handle arbitrary</span>
+<span class="sd">            objects.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A proxy wrapper for the property.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">nonlocal</span> <span class="n">description</span>
+        <span class="k">nonlocal</span> <span class="n">description</span><span class="p">,</span> <span class="n">return_type</span>
         <span class="k">if</span> <span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">:</span>
             <span class="n">description</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">cleandoc</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
 
+        <span class="k">if</span> <span class="n">return_type</span> <span class="ow">is</span> <span class="n">_UNSET</span><span class="p">:</span>
+            <span class="c1"># try to get it from the type annotation</span>
+            <span class="n">res</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">get_type_hints</span><span class="p">(</span><span class="n">_decorators</span><span class="o">.</span><span class="n">unwrap_wrapped_function</span><span class="p">(</span><span class="n">f</span><span class="p">),</span> <span class="n">include_extras</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">return_type</span> <span class="o">=</span> <span class="n">res</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;return&#39;</span><span class="p">,</span> <span class="n">_UNSET</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">return_type</span> <span class="ow">is</span> <span class="n">_UNSET</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
+                    <span class="s1">&#39;Computed field is missing return type annotation or specifying `return_type`&#39;</span>
+                    <span class="s1">&#39; to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)&#39;</span><span class="p">,</span>
+                    <span class="n">code</span><span class="o">=</span><span class="s1">&#39;model-field-missing-annotation&#39;</span><span class="p">,</span>
+                <span class="p">)</span>
+
         <span class="c1"># if the function isn&#39;t already decorated with `@property` (or another descriptor), then we wrap it now</span>
         <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_property</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">ComputedFieldInfo</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">json_return_type</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
+        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">ComputedFieldInfo</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">__f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>

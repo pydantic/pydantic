@@ -1339,6 +1339,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#invalid_annotated_type" class="md-nav__link">
+    Invalid annotated type
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2060,6 +2067,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#invalid_annotated_type" class="md-nav__link">
+    Invalid annotated type
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -2553,6 +2567,16 @@ The <code>field</code> argument is no longer available.</p>
     <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">json_return_type</span><span class="o">=</span><span class="s1">&#39;str&#39;</span><span class="p">)</span>
     <span class="k">def</span> <span class="nf">serializer2</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span>
+</code></pre></div>
+<h2 id="invalid_annotated_type">Invalid annotated type<a class="headerlink" href="#invalid_annotated_type" title="Permanent link">&para;</a></h2>
+<p>This error is raised when an annotation cannot annotate a type.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FutureDate</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FutureDate</span><span class="p">()]</span>
 </code></pre></div>
 
 

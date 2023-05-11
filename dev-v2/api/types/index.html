@@ -1819,19 +1819,19 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/types.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">865</span>
-<span class="normal">866</span>
-<span class="normal">867</span>
-<span class="normal">868</span>
-<span class="normal">869</span>
-<span class="normal">870</span>
-<span class="normal">871</span>
-<span class="normal">872</span>
-<span class="normal">873</span>
-<span class="normal">874</span>
-<span class="normal">875</span>
-<span class="normal">876</span>
-<span class="normal">877</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EncoderProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">910</span>
+<span class="normal">911</span>
+<span class="normal">912</span>
+<span class="normal">913</span>
+<span class="normal">914</span>
+<span class="normal">915</span>
+<span class="normal">916</span>
+<span class="normal">917</span>
+<span class="normal">918</span>
+<span class="normal">919</span>
+<span class="normal">920</span>
+<span class="normal">921</span>
+<span class="normal">922</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EncoderProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Can throw `PydanticCustomError`&quot;&quot;&quot;</span>
@@ -1881,10 +1881,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">866</span>
-<span class="normal">867</span>
-<span class="normal">868</span>
-<span class="normal">869</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">911</span>
+<span class="normal">912</span>
+<span class="normal">913</span>
+<span class="normal">914</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Can throw `PydanticCustomError`&quot;&quot;&quot;</span>
     <span class="o">...</span>
@@ -1923,9 +1923,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/types.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">583</span>
-<span class="normal">584</span>
-<span class="normal">585</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">585</span>
 <span class="normal">586</span>
 <span class="normal">587</span>
 <span class="normal">588</span>
@@ -2021,7 +2019,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">678</span>
 <span class="normal">679</span>
 <span class="normal">680</span>
-<span class="normal">681</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PaymentCardNumber</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PaymentCardNumber</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Based on: https://en.wikipedia.org/wiki/Payment_card_number</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2158,9 +2158,7 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">647</span>
-<span class="normal">648</span>
-<span class="normal">649</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">649</span>
 <span class="normal">650</span>
 <span class="normal">651</span>
 <span class="normal">652</span>
@@ -2192,7 +2190,9 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 <span class="normal">678</span>
 <span class="normal">679</span>
 <span class="normal">680</span>
-<span class="normal">681</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">681</span>
+<span class="normal">682</span>
+<span class="normal">683</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardBrand</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Validate length based on BIN for major brands:</span>
@@ -2255,9 +2255,7 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">627</span>
-<span class="normal">628</span>
-<span class="normal">629</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">629</span>
 <span class="normal">630</span>
 <span class="normal">631</span>
 <span class="normal">632</span>
@@ -2273,7 +2271,9 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 <span class="normal">642</span>
 <span class="normal">643</span>
 <span class="normal">644</span>
-<span class="normal">645</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">645</span>
+<span class="normal">646</span>
+<span class="normal">647</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">validate_luhn_check_digit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Based on: https://en.wikipedia.org/wiki/Luhn_algorithm</span>
@@ -2403,9 +2403,7 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">241</span>
-<span class="normal">242</span>
-<span class="normal">243</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">243</span>
 <span class="normal">244</span>
 <span class="normal">245</span>
 <span class="normal">246</span>
@@ -2432,7 +2430,9 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 <span class="normal">267</span>
 <span class="normal">268</span>
 <span class="normal">269</span>
-<span class="normal">270</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">conlist</span><span class="p">(</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">conlist</span><span class="p">(</span>
     <span class="n">item_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">AnyItemType</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
