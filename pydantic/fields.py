@@ -504,7 +504,7 @@ class AliasChoices:
     A data class used by `validation_alias` as a convenience to create aliases.
 
     Attributes:
-        path (list[int | str]): A list of lists containing string or integer aliases.
+        path (list[str | AliasPatch]): A list containing string or AliasPath.
 
     Methods:
         convert_to_aliases(self) -> list[str | int]: Converts arguments to a list of lists containing string or
