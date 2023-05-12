@@ -474,15 +474,13 @@ class FieldInfo(_repr.Representation):
 @_internal_dataclass.slots_dataclass
 class AliasPath:
     """
-    A data class that represents a path that includes aliases.
+    A data class used by `validation_alias` as a convenience to create aliases.
 
     Attributes:
-        path (list[int | str]): A list representing the path where each element is either an integer or
-            a string indicating an alias.
+        path (list[int | str]): A list of string or integer aliases.
 
     Methods:
-        convert_to_aliases(self) -> list[str | int]: Returns a copy of the path list where integers have
-            been replaced by the corresponding previous aliases for easier readability.
+        convert_to_aliases(self) -> list[str | int]: Converts arguments to a list of string or integer aliases.
     """
 
     path: list[int | str]
@@ -492,11 +490,10 @@ class AliasPath:
 
     def convert_to_aliases(self) -> list[str | int]:
         """
-        Replace integers in the path with previous aliases for easier readability.
+        Converts arguments to a list of string or integer aliases.
 
         Returns:
-            list[str | int]: A copy of the path list where integers have been replaced by the corresponding
-                previous aliases.
+            list[str | int]: The list of aliases.
         """
         return self.path
 
@@ -504,14 +501,14 @@ class AliasPath:
 @_internal_dataclass.slots_dataclass
 class AliasChoices:
     """
-    A class representing alias choices.
+    A data class used by `validation_alias` as a convenience to create aliases.
 
     Attributes:
-        choices (list[str | AliasPath]): A list of possible choices.
+        path (list[int | str]): A list of lists containing string or integer aliases.
 
     Methods:
-        convert_to_aliases(self) -> list[list[str | int]]: Convert the choices to a list of lists of strings
-            or integers.
+        convert_to_aliases(self) -> list[str | int]: Converts arguments to a list of lists containing string or
+            integer aliases.
     """
 
     choices: list[str | AliasPath]
@@ -521,7 +518,7 @@ class AliasChoices:
 
     def convert_to_aliases(self) -> list[list[str | int]]:
         """
-        Converts the list of possible choices into aliases.
+        Converts arguments to a list of lists containing string or integer aliases.
 
         Returns:
             list[list[str | int]]: The list of aliases.
