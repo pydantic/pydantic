@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/api/errors/">
       
       
-        <link rel="prev" href="../functional_serializers/">
+        <link rel="prev" href="../dataclasses/">
       
       
         <link rel="next" href="../fields/">
@@ -1440,34 +1440,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-  
-    <li class="md-nav__item">
-      <a href="../functional_validators/" class="md-nav__link">
-        pydantic.functional_validators
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../functional_serializers/" class="md-nav__link">
-        pydantic.functional_serializers
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -1580,6 +1552,34 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <li class="md-nav__item">
       <a href="../fields/" class="md-nav__link">
         pydantic.fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../functional_serializers/" class="md-nav__link">
+        pydantic.functional_serializers
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../functional_validators/" class="md-nav__link">
+        pydantic.functional_validators
       </a>
     </li>
   
@@ -1924,7 +1924,27 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         Bases: <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticErrorMixin" href="#pydantic.errors.PydanticErrorMixin">PydanticErrorMixin</a></code>, <code>ImportError</code></p>
 
   
-      <p>Error occurs when an import fails due to module changes between V1 and V2.</p>
+      <p>Error raised when an import fails due to module changes between V1 and V2.</p>
+
+  <p><strong>Attributes:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Name</th>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+          <td><code>message</code></td>
+          <td>
+                <code>str</code>
+          </td>
+          <td><p>Description of the error.</p></td>
+        </tr>
+    </tbody>
+  </table>
 
 
         <details class="quote">
@@ -1933,8 +1953,18 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">118</span>
 <span class="normal">119</span>
 <span class="normal">120</span>
-<span class="normal">121</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticImportError</span><span class="p">(</span><span class="n">PydanticErrorMixin</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Error occurs when an import fails due to module changes between V1 and V2.&quot;&quot;&quot;</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticImportError</span><span class="p">(</span><span class="n">PydanticErrorMixin</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Error raised when an import fails due to module changes between V1 and V2.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        message (str): Description of the error.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;import-error&#39;</span><span class="p">)</span>
@@ -2002,16 +2032,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/errors.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">141</span>
 <span class="normal">142</span>
 <span class="normal">143</span>
 <span class="normal">144</span>
-<span class="normal">145</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticInvalidForJsonSchema</span><span class="p">(</span><span class="n">PydanticUserError</span><span class="p">):</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticInvalidForJsonSchema</span><span class="p">(</span><span class="n">PydanticUserError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Error raised during failures to generate a JSON schema for some `CoreSchema`.</span>
 
@@ -2085,16 +2115,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/errors.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">124</span>
-<span class="normal">125</span>
-<span class="normal">126</span>
-<span class="normal">127</span>
-<span class="normal">128</span>
-<span class="normal">129</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">129</span>
 <span class="normal">130</span>
 <span class="normal">131</span>
 <span class="normal">132</span>
-<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticSchemaGenerationError</span><span class="p">(</span><span class="n">PydanticUserError</span><span class="p">):</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticSchemaGenerationError</span><span class="p">(</span><span class="n">PydanticUserError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Error raised during failures to generate a `CoreSchema` for some type.</span>
 
