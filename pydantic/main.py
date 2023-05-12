@@ -811,9 +811,6 @@ class BaseModel(metaclass=ModelMetaclass):
                 _object_setattr(m, name, deepcopy(value, memo=memo))
         return m
 
-    def __repr_name__(self) -> str:
-        return self.__class__.__name__
-
     def __repr_args__(self) -> _repr.ReprArgs:
         yield from (
             (k, v)
@@ -825,33 +822,11 @@ class BaseModel(metaclass=ModelMetaclass):
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
 
-    def __repr_str__(self, join_str: str) -> str:
-        return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
-
-    def __pretty__(self, fmt: typing.Callable[[Any], Any], **kwargs: Any) -> typing.Generator[Any, None, None]:
-        """
-        Used by devtools (https://python-devtools.helpmanual.io/) to pretty print models.
-        """
-        yield self.__repr_name__() + '('
-        yield 1
-        for name, value in self.__repr_args__():
-            if name is not None:
-                yield name + '='
-            yield fmt(value)
-            yield ','
-            yield 0
-        yield -1
-        yield ')'
-
-    def __rich_repr__(self) -> _repr.RichReprResult:
-        """
-        Used by Rich (https://rich.readthedocs.io/en/stable/pretty.html) to pretty print models.
-        """
-        for name, field_repr in self.__repr_args__():
-            if name is None:
-                yield field_repr
-            else:
-                yield name, field_repr
+    # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
+    __repr_name__ = _repr.Representation.__repr_name__
+    __repr_str__ = _repr.Representation.__repr_str__
+    __pretty__ = _repr.Representation.__pretty__
+    __rich_repr__ = _repr.Representation.__rich_repr__
 
     def __str__(self) -> str:
         return self.__repr_str__(' ')
