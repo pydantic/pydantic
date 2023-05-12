@@ -42,15 +42,19 @@ def test_forward_ref_auto_update_no_model(create_module):
     def module():
         from typing import Optional
 
-        from pydantic import BaseModel
+        import pytest
+
+        from pydantic import BaseModel, PydanticUserError
 
         class Foo(BaseModel):
             a: Optional['Bar'] = None
 
+        with pytest.raises(PydanticUserError, match='`Foo` is not fully defined; you should define `Bar`,'):
+            Foo(a={'b': {'a': {}}})
+
         class Bar(BaseModel):
             b: 'Foo'
 
-    assert module.Foo.__pydantic_model_complete__ is False
     assert module.Bar.__pydantic_model_complete__ is True
     assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
@@ -63,15 +67,10 @@ def test_forward_ref_auto_update_no_model(create_module):
         "FieldInfo(annotation=Union[ForwardRef('Bar'), NoneType], required=False)"
     )
 
-    # but Foo is not ready to use
-    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined; you should define `Bar`,'):
-        module.Foo(a={'b': {'a': {}}})
-
-    assert module.Foo.model_rebuild() is True
-    assert module.Foo.__pydantic_model_complete__ is True
-
-    # now Foo is ready to use
+    assert module.Foo.__pydantic_model_complete__ is False
+    # Foo gets auto-rebuilt during the first attempt at validation
     f = module.Foo(a={'b': {'a': {'b': {'a': None}}}})
+    assert module.Foo.__pydantic_model_complete__ is True
     assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
@@ -527,16 +526,16 @@ def test_discriminated_union_forward_ref(create_module):
         class Dog(BaseModel):
             type: Literal['dog']
 
-    with pytest.raises(PydanticUserError, match='`Pet` is not fully defined; you should define `Cat`'):
-        module.Pet.model_validate({'pet': {'type': 'pika'}})
-
-    module.Pet.model_rebuild()
+    assert module.Pet.__pydantic_model_complete__ is False
 
     with pytest.raises(
         ValidationError,
         match="Input tag 'pika' found using 'type' does not match any of the expected tags: 'cat', 'dog'",
     ):
         module.Pet.model_validate({'pet': {'type': 'pika'}})
+
+    # Ensure the rebuild has happened automatically despite validation failure
+    assert module.Pet.__pydantic_model_complete__ is True
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
