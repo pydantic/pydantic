@@ -4790,7 +4790,7 @@ such as <code>True</code> or <code>None</code>.</p></td>
     <span class="c1"># Check deprecated &amp; removed params of V1.</span>
     <span class="c1"># This has to be removed deprecation period over.</span>
     <span class="k">if</span> <span class="n">const</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`const` is removed. use `Literal` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated_kwargs&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`const` is removed. use `Literal` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated-kwargs&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">min_items</span><span class="p">:</span>
         <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;`min_items` is deprecated and will be removed. use `min_length` instead&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">min_length</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -4805,13 +4805,13 @@ such as <code>True</code> or <code>None</code>.</p></td>
                 <span class="s1">&#39;`unique_items` is removed, use `Set` instead&#39;</span>
                 <span class="s1">&#39;(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)&#39;</span>
             <span class="p">),</span>
-            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated_kwargs&#39;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated-kwargs&#39;</span><span class="p">,</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">allow_mutation</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">:</span>
         <span class="n">warn</span><span class="p">(</span><span class="s1">&#39;`allow_mutation` is deprecated and will be removed. use `frozen` instead&#39;</span><span class="p">,</span> <span class="ne">DeprecationWarning</span><span class="p">)</span>
         <span class="n">frozen</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="k">if</span> <span class="n">regex</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`regex` is removed. use `pattern` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated_kwargs&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`regex` is removed. use `pattern` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated-kwargs&#39;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">extra</span><span class="p">:</span>
         <span class="n">warn</span><span class="p">(</span>
             <span class="s1">&#39;Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead&#39;</span><span class="p">,</span>

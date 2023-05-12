@@ -1200,7 +1200,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#deprecated_kwargs" class="md-nav__link">
+  <a href="#deprecated-kwargs" class="md-nav__link">
     Keyword arguments deprecated
   </a>
   
@@ -1928,7 +1928,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#deprecated_kwargs" class="md-nav__link">
+  <a href="#deprecated-kwargs" class="md-nav__link">
     Keyword arguments deprecated
   </a>
   
@@ -2612,7 +2612,7 @@ by annotating it as a <code>ClassVar</code>:</p>
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;config-both&#39;</span>
 </code></pre></div>
-<h2 id="deprecated_kwargs">Keyword arguments deprecated<a class="headerlink" href="#deprecated_kwargs" title="Permanent link">&para;</a></h2>
+<h2 id="deprecated-kwargs">Keyword arguments deprecated<a class="headerlink" href="#deprecated-kwargs" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the keyword arguments are not available in Pydantic V2.</p>
 <p>For example, <code>regex</code> is removed from Pydantic V2:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
@@ -2623,7 +2623,7 @@ by annotating it as a <code>ClassVar</code>:</p>
         <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
 
 <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;deprecated_kwargs&#39;</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;deprecated-kwargs&#39;</span>
 </code></pre></div>
 <h2 id="invalid-for-json-schema">JSON Schema invalid type<a class="headerlink" href="#invalid-for-json-schema" title="Permanent link">&para;</a></h2>
 <p>This error is raised when Pydantic fails to generate a JSON schema for some <code>CoreSchema</code>.</p>
