@@ -582,7 +582,7 @@ def Field(  # noqa C901
     # Check deprecated & removed params of V1.
     # This has to be removed deprecation period over.
     if const:
-        raise PydanticUserError('`const` is removed. use `Literal` instead', code='deprecated_kwargs')
+        raise PydanticUserError('`const` is removed. use `Literal` instead', code='deprecated-kwargs')
     if min_items:
         warn('`min_items` is deprecated and will be removed. use `min_length` instead', DeprecationWarning)
         if min_length is None:
@@ -597,13 +597,13 @@ def Field(  # noqa C901
                 '`unique_items` is removed, use `Set` instead'
                 '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
             ),
-            code='deprecated_kwargs',
+            code='deprecated-kwargs',
         )
     if allow_mutation is False:
         warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
         frozen = True
     if regex:
-        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='deprecated_kwargs')
+        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='deprecated-kwargs')
     if extra:
         warn(
             'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
