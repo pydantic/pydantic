@@ -2101,14 +2101,19 @@ with some suggestions on how to fix them.</p>
 <p>This error is raised when you define a decorator with an invalid field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+<span class="k">try</span><span class="p">:</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_b</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;b&#39;</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">check_b</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;decorator-missing-field&#39;</span>
 </code></pre></div>
 <p>You can use <code>check_fields=False</code> if you're inheriting from the model and intended this.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
@@ -2121,114 +2126,396 @@ with some suggestions on how to fix them.</p>
     <span class="k">def</span> <span class="nf">check_a</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">:</span> <span class="n">Any</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">v</span>
 
+
 <span class="n">model</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;cake&#39;</span><span class="p">),</span> <span class="n">__base__</span><span class="o">=</span><span class="n">Model</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="discriminator-no-field">Discriminator no field<a class="headerlink" href="#discriminator-no-field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a model in discriminated unions doesn't define a discriminator field.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.8 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 
 <span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
 
+
 <span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
     <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-    <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-no-field&#39;</span>
 </code></pre></div>
-<h2 id="discriminator-alias-type">Discriminator alias type<a class="headerlink" href="#discriminator-alias-type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you define a non-string alias on a discriminator field.</p>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-no-field&#39;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Cat</span> <span class="o">|</span> <span class="n">Dog</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-no-field&#39;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="discriminator-alias-type">Discriminator alias type<a class="headerlink" href="#discriminator-alias-type" title="Permanent link">&para;</a></h2>
+<p>This error is raised when you define a non-string alias on a discriminator field.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.8 and above</label><label for="__tabbed_2_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 
 <span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;Pet&#39;</span><span class="p">,</span> <span class="s1">&#39;PET&#39;</span><span class="p">))</span>
     <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
 
+
 <span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
     <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-    <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias-type&#39;</span>
 </code></pre></div>
-<h2 id="discriminator-needs-literal">Discriminator needs literal<a class="headerlink" href="#discriminator-needs-literal" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you define a non-<code>Literal</code> type discriminator field.</p>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;Pet&#39;</span><span class="p">,</span> <span class="s1">&#39;PET&#39;</span><span class="p">))</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias-type&#39;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AliasChoices</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;Pet&#39;</span><span class="p">,</span> <span class="s1">&#39;PET&#39;</span><span class="p">))</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Cat</span> <span class="o">|</span> <span class="n">Dog</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias-type&#39;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="discriminator-needs-literal">Discriminator needs literal<a class="headerlink" href="#discriminator-needs-literal" title="Permanent link">&para;</a></h2>
+<p>This error is raised when you define a non-<code>Literal</code> type discriminator field.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.8 and above</label><label for="__tabbed_3_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 
 <span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
 
+
 <span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
     <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-    <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-needs-literal&#39;</span>
 </code></pre></div>
-<h2 id="discriminator-alias">Discriminator alias<a class="headerlink" href="#discriminator-alias" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you define different aliases on discriminator fields.</p>
+</div>
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-needs-literal&#39;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Cat</span> <span class="o">|</span> <span class="n">Dog</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-needs-literal&#39;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="discriminator-alias">Discriminator alias<a class="headerlink" href="#discriminator-alias" title="Permanent link">&para;</a></h2>
+<p>This error is raised when you define different aliases on discriminator fields.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.8 and above</label><label for="__tabbed_4_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 
 <span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;PET&#39;</span><span class="p">)</span>
     <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
 
+
 <span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;Pet&#39;</span><span class="p">)</span>
     <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
-    <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias&#39;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;PET&#39;</span><span class="p">)</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;Pet&#39;</span><span class="p">)</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Cat</span><span class="p">,</span> <span class="n">Dog</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias&#39;</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Literal</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Cat</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;cat&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;PET&#39;</span><span class="p">)</span>
+    <span class="n">c</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">class</span> <span class="nc">Dog</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">pet_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;dog&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">validation_alias</span><span class="o">=</span><span class="s1">&#39;Pet&#39;</span><span class="p">)</span>
+    <span class="n">d</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">pet</span><span class="p">:</span> <span class="n">Cat</span> <span class="o">|</span> <span class="n">Dog</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">,</span> <span class="n">discriminator</span><span class="o">=</span><span class="s1">&#39;pet_type&#39;</span><span class="p">)</span>
+        <span class="n">number</span><span class="p">:</span> <span class="nb">int</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;discriminator-alias&#39;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="typed-dict-version">TypedDict version<a class="headerlink" href="#typed-dict-version" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use <code>typing_extensions.TypedDict</code>
 instead of <code>typing.TypedDict</code> on Python &lt; 3.11.</p>
 <h2 id="model-field-overridden">Model parent field overridden<a class="headerlink" href="#model-field-overridden" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a field defined on a base class was overridden by a non-annotated attribute.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">float</span>
 
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">Foo</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">12.3</span>
-    <span class="n">a</span> <span class="o">=</span> <span class="mf">123.0</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">Foo</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">12.3</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="mf">123.0</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-field-overridden&#39;</span>
 </code></pre></div>
 <h2 id="model-field-missing-annotation">Model field missing annotation<a class="headerlink" href="#model-field-missing-annotation" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a field doesn't have an annotation.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="s1">&#39;foobar&#39;</span><span class="p">)</span>
-    <span class="n">b</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="s1">&#39;foobar&#39;</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="kc">None</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-field-missing-annotation&#39;</span>
 </code></pre></div>
 <p>If the field is not meant to be a field, you may be able to resolve the error
 by annotating it as a <code>ClassVar</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ClassVar</span>
+
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
@@ -2242,6 +2529,7 @@ by annotating it as a <code>ClassVar</code>:</p>
 <span class="k">class</span> <span class="nc">IgnoredType</span><span class="p">:</span>
     <span class="k">pass</span>
 
+
 <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">ignored_types</span><span class="o">=</span><span class="p">(</span><span class="n">IgnoredType</span><span class="p">,))</span>
 
@@ -2254,40 +2542,54 @@ by annotating it as a <code>ClassVar</code>:</p>
 <p>This error is raised when a type is not defined:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ForwardRef</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 <span class="n">UndefinedType</span> <span class="o">=</span> <span class="n">ForwardRef</span><span class="p">(</span><span class="s1">&#39;UndefinedType&#39;</span><span class="p">)</span>
+
 
 <span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">UndefinedType</span>
 
     <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;undefined_types_warning&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
 
-<span class="n">Foobar</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Foobar</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-not-fully-defined&#39;</span>
 </code></pre></div>
 <p>Or when the type has been defined after usage:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
 
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">undefined_types_warning</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
+
 <span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;Foo&#39;</span>
 
-<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}})</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}})</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-not-fully-defined&#39;</span>
 </code></pre></div>
 <p>It can be fixed by defining the type and then calling <code>.model_rebuild()</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
+
 <span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">undefined_types_warning</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
+
 <span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;Foo&#39;</span>
+
 
 <span class="n">Foo</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
 
@@ -2295,93 +2597,124 @@ by annotating it as a <code>ClassVar</code>:</p>
 </code></pre></div>
 <h2 id="config-both">Config and model_config both defined<a class="headerlink" href="#config-both" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <code>class Config</code> and <code>model_config</code> are used together.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-        <span class="n">from_attributes</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
+            <span class="n">from_attributes</span> <span class="o">=</span> <span class="kc">True</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;config-both&#39;</span>
 </code></pre></div>
 <h2 id="deprecated_kwargs">Keyword arguments deprecated<a class="headerlink" href="#deprecated_kwargs" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the keyword arguments are not available in Pydantic V2.</p>
 <p>For example, <code>regex</code> is removed from Pydantic V2:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">regex</span><span class="o">=</span><span class="s1">&#39;test&#39;</span><span class="p">)</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;deprecated_kwargs&#39;</span>
 </code></pre></div>
 <h2 id="invalid-for-json-schema">JSON Schema invalid type<a class="headerlink" href="#invalid-for-json-schema" title="Permanent link">&para;</a></h2>
 <p>This error is raised when Pydantic fails to generate a JSON schema for some <code>CoreSchema</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">ImportString</span>
 
 
-<span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;invalid-for-json-schema&#39;</span>
 </code></pre></div>
 <h2 id="json-schema-already-used">JSON Schema already used<a class="headerlink" href="#json-schema-already-used" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the JSON schema generator has already been used to generate a JSON schema.
 You must create a new instance to generate a new JSON schema.'</p>
 <h2 id="base-model-instantiated">BaseModel instantiated<a class="headerlink" href="#base-model-instantiated" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you instantiate <code>BaseModel</code> directly. Pydantic models should inherit from <code>BaseModel</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
-
-<span class="n">BaseModel</span><span class="p">()</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">BaseModel</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;base-model-instantiated&#39;</span>
 </code></pre></div>
 <h2 id="undefined-annotation">Undefined annotation<a class="headerlink" href="#undefined-annotation" title="Permanent link">&para;</a></h2>
 <p>This error is raised when handling undefined annotations during <code>CoreSchema</code> generation.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUndefinedAnnotation</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">undefined_types_warning</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="s1">&#39;B&#39;</span>
+    <span class="n">a</span><span class="p">:</span> <span class="s1">&#39;B&#39;</span>  <span class="c1"># noqa F821</span>
 
-<span class="n">Model</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
+<span class="k">except</span> <span class="n">PydanticUndefinedAnnotation</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;undefined-annotation&#39;</span>
 </code></pre></div>
 <h2 id="schema-for-unknown-type">Schema for unknown type<a class="headerlink" href="#schema-for-unknown-type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when Pydantic fails to generate a <code>CoreSchema</code> for some type.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="mi">43</span> <span class="o">=</span> <span class="mi">123</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">:</span> <span class="mi">43</span> <span class="o">=</span> <span class="mi">123</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;schema-for-unknown-type&#39;</span>
 </code></pre></div>
 <h2 id="import-error">Import error<a class="headerlink" href="#import-error" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you try to import an object that was available in V1 but has been removed in V2.</p>
 <h2 id="create-model-field-definitions">create_model field definitions<a class="headerlink" href="#create-model-field-definitions" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you provide invalid field definitions input in <code>create_model</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">create_model</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">create_model</span>
 
-
-<span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;default value&#39;</span><span class="p">,</span> <span class="s1">&#39;more&#39;</span><span class="p">))</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;default value&#39;</span><span class="p">,</span> <span class="s1">&#39;more&#39;</span><span class="p">))</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-field-definitions&#39;</span>
 </code></pre></div>
 <h2 id="create-model-config-base">create_model config base<a class="headerlink" href="#create-model-config-base" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use both <code>__config__</code> and <code>__base__</code> together in <code>create_model</code>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">create_model</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">create_model</span>
 
-
-<span class="n">config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span><span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">__config__</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">__base__</span><span class="o">=</span><span class="n">BaseModel</span><span class="p">)</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">create_model</span><span class="p">(</span>
+        <span class="s1">&#39;FooModel&#39;</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">),</span> <span class="n">__config__</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="n">__base__</span><span class="o">=</span><span class="n">BaseModel</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;create-model-config-base&#39;</span>
 </code></pre></div>
 <h2 id="validator-no-fields">Validator with no fields<a class="headerlink" href="#validator-no-fields" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use validator bare.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="nd">@field_validator</span>
-    <span class="k">def</span> <span class="nf">checker</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span>
+        <span class="nd">@field_validator</span>
+        <span class="k">def</span> <span class="nf">checker</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validator-no-fields&#39;</span>
 </code></pre></div>
 <p>Should be used with fields and keyword arguments.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
@@ -2396,16 +2729,20 @@ You must create a new instance to generate a new JSON schema.'</p>
 </code></pre></div>
 <h2 id="validator-invalid-fields">Invalid validator fields<a class="headerlink" href="#validator-invalid-fields" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use validator with non-string fields.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="n">b</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="nd">@field_validator</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
-    <span class="k">def</span> <span class="nf">check_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span>
+        <span class="nd">@field_validator</span><span class="p">([</span><span class="s1">&#39;a&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">])</span>
+        <span class="k">def</span> <span class="nf">check_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validator-invalid-fields&#39;</span>
 </code></pre></div>
 <p>Fields should be passed as separate string args:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
@@ -2421,15 +2758,19 @@ You must create a new instance to generate a new JSON schema.'</p>
 </code></pre></div>
 <h2 id="validator-instance-method">Validator on instance method<a class="headerlink" href="#validator-instance-method" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you apply validator on an instance method.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_a</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">values</span>
+        <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">check_a</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">values</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validator-instance-method&#39;</span>
 </code></pre></div>
 <h2 id="root-validator-pre-skip">Root Validator, pre, skip_on_failure<a class="headerlink" href="#root-validator-pre-skip" title="Permanent link">&para;</a></h2>
 <p>If you use <code>@root_validator</code> with pre=False (the default) you MUST specify <code>skip_on_failure=True</code>.
@@ -2440,27 +2781,35 @@ If you do, this root validator will no longer be called if validation fails for 
 <h2 id="model-serializer-instance-method">model_validator instance methods<a class="headerlink" href="#model-serializer-instance-method" title="Permanent link">&para;</a></h2>
 <p><code>@model_serializer</code> must be applied to instance methods.</p>
 <p>This error is raised when you apply <code>model_serializer</code> on an instance method without <code>self</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_serializer</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">model_serializer</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="nd">@model_serializer</span>
-    <span class="k">def</span> <span class="nf">_serialize</span><span class="p">(</span><span class="n">slf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">slf</span>
+        <span class="nd">@model_serializer</span>
+        <span class="k">def</span> <span class="nf">_serialize</span><span class="p">(</span><span class="n">slf</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">slf</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-serializer-instance-method&#39;</span>
 </code></pre></div>
 <p>Or on a class method:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_serializer</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">model_serializer</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="nd">@model_serializer</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span>
+        <span class="nd">@model_serializer</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-serializer-instance-method&#39;</span>
 </code></pre></div>
 <h2 id="validator-field-config-info">validator, field, config and info<a class="headerlink" href="#validator-field-config-info" title="Permanent link">&para;</a></h2>
 <p>The <code>field</code> and <code>config</code> parameters are not available in Pydantic V2.
@@ -2469,40 +2818,56 @@ but it is a dictionary instead of an object like it was in Pydantic V1.
 The <code>field</code> argument is no longer available.</p>
 <h2 id="validator-v1-signature">V1 validator signature<a class="headerlink" href="#validator-v1-signature" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you use an unsupported signature for V1 style validator.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">warnings</span>
 
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">validator</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+<span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s1">&#39;ignore&#39;</span><span class="p">,</span> <span class="n">category</span><span class="o">=</span><span class="ne">DeprecationWarning</span><span class="p">)</span>
 
-    <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">check_a</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">value</span>
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+
+        <span class="nd">@validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">check_a</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">foo</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">value</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validator-v1-signature&#39;</span>
 </code></pre></div>
 <h2 id="validator-signature">Unrecognized field_validator signature<a class="headerlink" href="#validator-signature" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a <code>field_validator</code> or <code>model_validator</code> function has the wrong signature.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_validator</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_validator</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
 
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">check_a</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
-        <span class="k">return</span> <span class="s1">&#39;a&#39;</span>
+        <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">check_a</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+            <span class="k">return</span> <span class="s1">&#39;a&#39;</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;validator-signature&#39;</span>
 </code></pre></div>
 <h2 id="field-serializer-signature">Unrecognized field_serializer signature<a class="headerlink" href="#field-serializer-signature" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <code>field_serializer</code> function has the wrong signature.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_serializer</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">no_args</span><span class="p">():</span>
-        <span class="k">return</span> <span class="s1">&#39;x&#39;</span>
+        <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">no_args</span><span class="p">():</span>
+            <span class="k">return</span> <span class="s1">&#39;x&#39;</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;field-serializer-signature&#39;</span>
 </code></pre></div>
 <p>Valid serializer signatures are:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">model_serializer</span>
@@ -2541,43 +2906,75 @@ The <code>field</code> argument is no longer available.</p>
 </code></pre></div>
 <h2 id="model-serializer-signature">Unrecognized model_serializer signature<a class="headerlink" href="#model-serializer-signature" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <code>model_serializer</code> function has the wrong signature.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">model_serializer</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">model_serializer</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="nd">@model_serializer</span>
-    <span class="k">def</span> <span class="nf">_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span>
+        <span class="nd">@model_serializer</span>
+        <span class="k">def</span> <span class="nf">_serialize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">z</span><span class="p">):</span>
+            <span class="k">return</span> <span class="bp">self</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-serializer-signature&#39;</span>
 </code></pre></div>
 <h2 id="multiple-field-serializers">Multiple field serializers<a class="headerlink" href="#multiple-field-serializers" title="Permanent link">&para;</a></h2>
 <p>This error is raised when multiple <code>model_serializer</code> functions are defined for a field.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">field_serializer</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">y</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="k">class</span> <span class="nc">MyModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">x</span><span class="p">:</span> <span class="nb">int</span>
+        <span class="n">y</span><span class="p">:</span> <span class="nb">int</span>
 
-    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">json_return_type</span><span class="o">=</span><span class="s1">&#39;str&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">serializer1</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="s1">&#39;y&#39;</span><span class="p">,</span> <span class="n">json_return_type</span><span class="o">=</span><span class="s1">&#39;str&#39;</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">serializer1</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">v</span><span class="si">:</span><span class="s1">,</span><span class="si">}</span><span class="s1">&#39;</span>
 
-    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">json_return_type</span><span class="o">=</span><span class="s1">&#39;str&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">serializer2</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">v</span>
+        <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;x&#39;</span><span class="p">,</span> <span class="n">json_return_type</span><span class="o">=</span><span class="s1">&#39;str&#39;</span><span class="p">)</span>
+        <span class="k">def</span> <span class="nf">serializer2</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;multiple-field-serializers&#39;</span>
 </code></pre></div>
 <h2 id="invalid_annotated_type">Invalid annotated type<a class="headerlink" href="#invalid_annotated_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when an annotation cannot annotate a type.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FutureDate</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FutureDate</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
+<span class="k">try</span><span class="p">:</span>
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FutureDate</span><span class="p">()]</span>
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">foo</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FutureDate</span><span class="p">()]</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;invalid_annotated_type&#39;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">FutureDate</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">foo</span><span class="p">:</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">FutureDate</span><span class="p">()]</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;invalid_annotated_type&#39;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 
 
 
