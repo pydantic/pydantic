@@ -1183,7 +1183,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         warnings.warn('The private method `_iter` will be removed and should no longer be used.', DeprecationWarning)
         return _deprecated_copy_internals._iter(self, *args, **kwargs)  # type: ignore
 
-    @deprecated('The private method `_calculate_keys` will be removed and should no longer be used.')
+    @deprecated('The private method `_copy_and_set_values` will be removed and should no longer be used.')
     def _copy_and_set_values(self, *args: Any, **kwargs: Any) -> Any:
         warnings.warn(
             'The private method  `_copy_and_set_values` will be removed and should no longer be used.',
