@@ -11,7 +11,7 @@ import typing_extensions
 from annotated_types import Lt
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, Field, PositiveInt, PydanticUserError, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, PydanticUserError, ValidationError
 from pydantic.type_adapter import TypeAdapter
 
 from .conftest import Err
@@ -657,4 +657,27 @@ def test_recursive_generic_typeddict_in_function_rebuild_pass():
             'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
         },
+    ]
+
+
+def test_typeddict_alias_generator(TypedDict):
+    def alias_generator(name: str) -> str:
+        return 'alias_' + name
+
+    class MyDict(TypedDict):
+        foo: str
+
+    class Model(BaseModel):
+        d: MyDict
+
+    analyzed = TypeAdapter(MyDict, config=ConfigDict(alias_generator=alias_generator))
+    model = analyzed.validate_python({'alias_foo': 'bar'})
+
+    assert model['foo'] == 'bar'
+
+    with pytest.raises(ValidationError) as exc_info:
+        analyzed.validate_python({'foo': 'bar'})
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('alias_foo',), 'msg': 'Field required', 'input': {'foo': 'bar'}},
+        {'input': 'bar', 'loc': ('foo',), 'msg': 'Extra inputs are not permitted', 'type': 'extra_forbidden'},
     ]

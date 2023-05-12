@@ -626,6 +626,18 @@ class GenerateSchema:
             return {**handler(schema), **json_schema_updates}
 
         metadata = build_metadata_dict(js_functions=[json_schema_update_func])
+
+        # apply alias generator
+        alias_generator = self.config_wrapper.alias_generator
+        if alias_generator and (field_info.alias_priority is None or field_info.alias_priority <= 1):
+            alias = alias_generator(name)
+            if not isinstance(alias, str):
+                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+            field_info.alias = alias
+            field_info.validation_alias = alias
+            field_info.serialization_alias = alias
+            field_info.alias_priority = 1
+
         return _common_field(
             schema,
             serialization_exclude=True if field_info.exclude else None,
