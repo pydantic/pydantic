@@ -182,14 +182,6 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        if config_wrapper.undefined_types_warning:
-            config_warning_string = (
-                f'`{cls_name}` has an undefined annotation: `{e.name}`. '
-                f'It may be possible to resolve this by setting '
-                f'undefined_types_warning=False in the config for `{cls_name}`.'
-            )
-            # FIXME UserWarning should not be raised here, but rather warned!
-            raise UserWarning(config_warning_string)
         usage_warning_string = (
             f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call `{cls_name}.model_rebuild()` '
             f'before the first `{cls_name}` instance is created.'

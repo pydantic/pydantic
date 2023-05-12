@@ -1456,12 +1456,8 @@ def test_generic_recursive_models(create_module):
         class Model1(BaseModel, Generic[T]):
             ref: 'Model2[T]'
 
-            model_config = dict(undefined_types_warning=False)
-
         class Model2(BaseModel, Generic[T]):
             ref: Union[T, Model1[T]]
-
-            model_config = dict(undefined_types_warning=False)
 
         Model1.model_rebuild()
 
@@ -1509,14 +1505,10 @@ def test_generic_recursive_models_separate_parameters(create_module):
         class Model1(BaseModel, Generic[T]):
             ref: 'Model2[T]'
 
-            model_config = dict(undefined_types_warning=False)
-
         S = TypeVar('S')
 
         class Model2(BaseModel, Generic[S]):
             ref: Union[S, Model1[S]]
-
-            model_config = dict(undefined_types_warning=False)
 
         Model1.model_rebuild()
 
@@ -1574,15 +1566,11 @@ def test_generic_recursive_models_repeated_separate_parameters(create_module):
             ref: 'Model2[T]'
             ref2: Union['Model2[T]', None] = None
 
-            model_config = dict(undefined_types_warning=False)
-
         S = TypeVar('S')
 
         class Model2(BaseModel, Generic[S]):
             ref: Union[S, Model1[S]]
             ref2: Union[S, Model1[S], None] = None
-
-            model_config = dict(undefined_types_warning=False)
 
         Model1.model_rebuild()
 
@@ -1633,17 +1621,11 @@ def test_generic_recursive_models_triple(create_module):
         class A1(BaseModel, Generic[T1]):
             a1: 'A2[T1]'
 
-            model_config = dict(undefined_types_warning=False)
-
         class A2(BaseModel, Generic[T2]):
             a2: 'A3[T2]'
 
-            model_config = dict(undefined_types_warning=False)
-
         class A3(BaseModel, Generic[T3]):
             a3: Union['A1[T3]', T3]
-
-            model_config = dict(undefined_types_warning=False)
 
         A1.model_rebuild()
 
@@ -1679,12 +1661,8 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
             a: V1
             m: 'M2[V2]'
 
-            model_config = dict(undefined_types_warning=False)
-
         class M2(BaseModel, Generic[V3]):
             m: Union[M1[int, V3], V3]
-
-            model_config = dict(undefined_types_warning=False)
 
         M1.model_rebuild()
 
@@ -1716,17 +1694,11 @@ def test_generic_recursive_models_complicated(create_module):
         class A1(BaseModel, Generic[T1]):
             a1: 'A2[T1]'
 
-            model_config = dict(undefined_types_warning=False)
-
         class A2(BaseModel, Generic[T2]):
             a2: 'A3[T2]'
 
-            model_config = dict(undefined_types_warning=False)
-
         class A3(BaseModel, Generic[T3]):
             a3: Union[A1[T3], T3]
-
-            model_config = dict(undefined_types_warning=False)
 
         A1.model_rebuild()
 
@@ -1736,12 +1708,8 @@ def test_generic_recursive_models_complicated(create_module):
         class B1(BaseModel, Generic[S1]):
             a1: 'B2[S1]'
 
-            model_config = dict(undefined_types_warning=False)
-
         class B2(BaseModel, Generic[S2]):
             a2: 'B1[S2]'
-
-            model_config = dict(undefined_types_warning=False)
 
         B1.model_rebuild()
 
@@ -1754,12 +1722,8 @@ def test_generic_recursive_models_complicated(create_module):
             b: B1[V2]
             m: 'M2[V1]'
 
-            model_config = dict(undefined_types_warning=False)
-
         class M2(BaseModel, Generic[V3]):
             m: Union[M1[V3, int], V3]
-
-            model_config = dict(undefined_types_warning=False)
 
         M1.model_rebuild()
 

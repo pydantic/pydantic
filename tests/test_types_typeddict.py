@@ -500,7 +500,6 @@ def test_recursive_generic_typeddict_in_module(create_module):
 
         class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
             rec: 'RecursiveGenTypedDict[T]'
-            model_config = dict(undefined_types_warning=False)
 
         class RecursiveGenTypedDict(TypedDict, Generic[T]):
             foo: Optional['RecursiveGenTypedDict[T]']
@@ -538,7 +537,6 @@ def test_recursive_generic_typeddict_in_function_1():
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
 
     # Note: no model_rebuild() necessary here
     # RecursiveGenTypedDictModel.model_rebuild()
@@ -571,7 +569,6 @@ def test_recursive_generic_typeddict_in_function_2():
     # Second ordering: model first
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
 
     class RecursiveGenTypedDict(TypedDict, Generic[T]):
         foo: Optional['RecursiveGenTypedDict[T]']
@@ -604,7 +601,6 @@ def test_recursive_generic_typeddict_in_function_rebuild_error():
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
 
     IntModel = RecursiveGenTypedDictModel[int]
 
@@ -629,7 +625,6 @@ def test_recursive_generic_typeddict_in_function_rebuild_pass():
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
 
     IntModel = RecursiveGenTypedDictModel[int]
 

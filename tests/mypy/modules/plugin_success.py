@@ -49,8 +49,6 @@ InheritingModel.model_validate(model.__dict__)
 
 
 class ForwardReferencingModel(Model):
-    model_config = dict(undefined_types_warning=False)
-
     future: 'FutureModel'
 
 
