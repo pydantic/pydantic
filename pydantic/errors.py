@@ -34,7 +34,7 @@ PydanticErrorCodes = Literal[
     'model-field-missing-annotation',
     'model-not-fully-defined',
     'config-both',
-    'deprecated_kwargs',
+    'deprecated-kwargs',
     'invalid-for-json-schema',
     'json-schema-already-used',
     'base-model-instantiated',

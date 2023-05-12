@@ -332,7 +332,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'config-both'
 ```
 
-## Keyword arguments deprecated {#deprecated_kwargs}
+## Keyword arguments deprecated {#deprecated-kwargs}
 
 This error is raised when the keyword arguments are not available in Pydantic V2.
 
@@ -347,7 +347,7 @@ try:
         x: str = Field(regex='test')
 
 except PydanticUserError as exc_info:
-    assert exc_info.code == 'deprecated_kwargs'
+    assert exc_info.code == 'deprecated-kwargs'
 ```
 
 ## JSON Schema invalid type {#invalid-for-json-schema}
