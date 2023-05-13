@@ -1921,13 +1921,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <td><p>Whether to allow arbitrary types. Defaults to True.</p></td>
         </tr>
         <tr>
-          <td><code>undefined_types_warning</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td><p>Whether to show a warning for undefined types. Defaults to True.</p></td>
-        </tr>
-        <tr>
           <td><code>from_attributes</code></td>
           <td>
                 <code>bool</code>
@@ -2064,9 +2057,7 @@ Defaults to 'iso8601'.</p></td>
 <span class="normal">101</span>
 <span class="normal">102</span>
 <span class="normal">103</span>
-<span class="normal">104</span>
-<span class="normal">105</span>
-<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ConfigDict</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">104</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ConfigDict</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A dictionary-like class for configuring Pydantic models.</span>
 
 <span class="sd">    Attributes:</span>
@@ -2082,7 +2073,6 @@ Defaults to 'iso8601'.</p></td>
 <span class="sd">        use_enum_values (bool): Whether to use enum values. Defaults to False.</span>
 <span class="sd">        validate_assignment (bool): Whether to validate assignments. Defaults to False.</span>
 <span class="sd">        arbitrary_types_allowed (bool): Whether to allow arbitrary types. Defaults to True.</span>
-<span class="sd">        undefined_types_warning (bool): Whether to show a warning for undefined types. Defaults to True.</span>
 <span class="sd">        from_attributes (bool): Whether to set attributes from the configuration. Defaults to False.</span>
 <span class="sd">        loc_by_alias (bool): Whether to use the alias for error `loc`s. Defaults to True.</span>
 <span class="sd">        alias_generator (Optional[Callable[[str], str]]): A function to generate aliases. Defaults to None.</span>
@@ -2109,7 +2099,6 @@ Defaults to 'iso8601'.</p></td>
     <span class="n">use_enum_values</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">validate_assignment</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">arbitrary_types_allowed</span><span class="p">:</span> <span class="nb">bool</span>  <span class="c1"># TODO default True, or remove</span>
-    <span class="n">undefined_types_warning</span><span class="p">:</span> <span class="nb">bool</span>  <span class="c1"># TODO review docs</span>
     <span class="n">from_attributes</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="c1"># whether to use the used alias (or first alias for &quot;field required&quot; errors) instead of field_names</span>
     <span class="c1"># to construct error `loc`s, default True</span>

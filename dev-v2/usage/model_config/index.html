@@ -1855,10 +1855,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   checking if the value is an instance of the type). If <code>False</code>, <code>RuntimeError</code> will be
   raised on model declaration (default: <code>False</code>). See an example in
   <a href="../types/types/#arbitrary-types-allowed">Field Types</a>.</dd>
-<dt><strong><code>undefined_types_warning</code></strong></dt>
-<dd>whether to raise a warning if a type is undefined when a model is declared. This occurs when a type is defined in another model declared elsewhere in code which has not yet executed.
-  If <code>True</code>, <code>UserWarning</code> will be raised on model declaration (default: <code>True</code>).
-  See an example in <a href="../types/types/#undefined_types_warning">Field Types</a>.</dd>
 <dt><strong><code>from_attributes</code></strong></dt>
 <dd>whether to allow usage of <a href="../models/#orm-mode-aka-arbitrary-class-instances">ORM mode</a></dd>
 <dt><strong><code>getter_dict</code></strong></dt>

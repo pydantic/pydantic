@@ -2550,8 +2550,6 @@ by annotating it as a <code>ClassVar</code>:</p>
 <span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">UndefinedType</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;undefined_types_warning&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
-
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">Foobar</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -2564,7 +2562,7 @@ by annotating it as a <code>ClassVar</code>:</p>
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">undefined_types_warning</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 
@@ -2583,7 +2581,7 @@ by annotating it as a <code>ClassVar</code>:</p>
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">undefined_types_warning</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
 
 
@@ -2656,7 +2654,7 @@ You must create a new instance to generate a new JSON schema.'</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUndefinedAnnotation</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">undefined_types_warning</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">a</span><span class="p">:</span> <span class="s1">&#39;B&#39;</span>  <span class="c1"># noqa F821</span>
 
 

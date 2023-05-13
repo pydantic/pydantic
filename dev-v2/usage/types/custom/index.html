@@ -936,13 +936,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#undefined-types-warning" class="md-nav__link">
-    Undefined Types Warning
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#generic-classes-as-types" class="md-nav__link">
     Generic Classes as Types
   </a>
@@ -1685,13 +1678,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#undefined-types-warning" class="md-nav__link">
-    Undefined Types Warning
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#generic-classes-as-types" class="md-nav__link">
     Generic Classes as Types
   </a>
@@ -1852,54 +1838,6 @@ formatted with a space, the schema would just include the full pattern and the r
 <span class="c1">#&gt; 42</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="p">))</span>
 <span class="c1">#&gt; &lt;class &#39;__main__.Pet&#39;&gt;</span>
-</code></pre></div>
-<h3 id="undefined-types-warning">Undefined Types Warning<a class="headerlink" href="#undefined-types-warning" title="Permanent link">&para;</a></h3>
-<p>You can suppress the Undefined Types Warning by setting <code>undefined_types_warning</code> to <code>False</code> in the
-<a href="../../model_config/">Model Config</a>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-<span class="c1"># This example shows how Book and Person types reference each other.</span>
-<span class="c1"># We will demonstrate how to suppress the undefined types warning</span>
-<span class="c1"># when define such models.</span>
-
-
-<span class="k">class</span> <span class="nc">Book</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">title</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">author</span><span class="p">:</span> <span class="n">Person</span>  <span class="c1"># note the `Person` type is not yet defined</span>
-
-    <span class="c1"># Suppress undefined types warning so we can continue defining our models.</span>
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-        <span class="n">undefined_types_warning</span> <span class="o">=</span> <span class="kc">False</span>
-
-
-<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">books_read</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Book</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="c1"># Now, we can rebuild the `Book` model, since the `Person` model is now defined.</span>
-<span class="c1"># Note: there&#39;s no need to call `model_rebuild()` on `Person`,</span>
-<span class="c1"># it&#39;s already complete.</span>
-<span class="n">Book</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
-
-<span class="c1"># Let&#39;s create some instances of our models, to demonstrate that they work.</span>
-<span class="n">python_crash_course</span> <span class="o">=</span> <span class="n">Book</span><span class="p">(</span>
-    <span class="n">title</span><span class="o">=</span><span class="s1">&#39;Python Crash Course&#39;</span><span class="p">,</span>
-    <span class="n">author</span><span class="o">=</span><span class="n">Person</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Eric Matthes&#39;</span><span class="p">),</span>
-<span class="p">)</span>
-<span class="n">jane_doe</span> <span class="o">=</span> <span class="n">Person</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span> <span class="n">books_read</span><span class="o">=</span><span class="p">[</span><span class="n">python_crash_course</span><span class="p">])</span>
-
-<span class="k">assert</span> <span class="n">jane_doe</span><span class="o">.</span><span class="n">dict</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">==</span> <span class="p">{</span>
-    <span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Jane Doe&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;books_read&#39;</span><span class="p">:</span> <span class="p">[</span>
-        <span class="p">{</span>
-            <span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="s1">&#39;Python Crash Course&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;author&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;name&#39;</span><span class="p">:</span> <span class="s1">&#39;Eric Matthes&#39;</span><span class="p">},</span>
-        <span class="p">},</span>
-    <span class="p">],</span>
-<span class="p">}</span>
 </code></pre></div>
 <h3 id="generic-classes-as-types">Generic Classes as Types<a class="headerlink" href="#generic-classes-as-types" title="Permanent link">&para;</a></h3>
 <div class="admonition warning">
