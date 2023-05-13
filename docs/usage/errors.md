@@ -259,8 +259,6 @@ UndefinedType = ForwardRef('UndefinedType')
 class Foobar(BaseModel):
     a: UndefinedType
 
-    model_config = {'undefined_types_warning': False}
-
 
 try:
     Foobar(a=1)
@@ -276,7 +274,7 @@ from typing import Optional
 from pydantic import BaseModel, PydanticUserError
 
 
-class Foo(BaseModel, undefined_types_warning=False):
+class Foo(BaseModel):
     a: Optional['Bar'] = None
 
 
@@ -298,7 +296,7 @@ from typing import Optional
 from pydantic import BaseModel
 
 
-class Foo(BaseModel, undefined_types_warning=False):
+class Foo(BaseModel):
     a: Optional['Bar'] = None
 
 
@@ -395,7 +393,7 @@ This error is raised when handling undefined annotations during `CoreSchema` gen
 from pydantic import BaseModel, PydanticUndefinedAnnotation
 
 
-class Model(BaseModel, undefined_types_warning=False):
+class Model(BaseModel):
     a: 'B'  # noqa F821
 
 

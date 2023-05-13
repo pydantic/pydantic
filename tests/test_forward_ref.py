@@ -42,15 +42,19 @@ def test_forward_ref_auto_update_no_model(create_module):
     def module():
         from typing import Optional
 
-        from pydantic import BaseModel
+        import pytest
 
-        class Foo(BaseModel, undefined_types_warning=False):
+        from pydantic import BaseModel, PydanticUserError
+
+        class Foo(BaseModel):
             a: Optional['Bar'] = None
+
+        with pytest.raises(PydanticUserError, match='`Foo` is not fully defined; you should define `Bar`,'):
+            Foo(a={'b': {'a': {}}})
 
         class Bar(BaseModel):
             b: 'Foo'
 
-    assert module.Foo.__pydantic_model_complete__ is False
     assert module.Bar.__pydantic_model_complete__ is True
     assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
@@ -63,25 +67,19 @@ def test_forward_ref_auto_update_no_model(create_module):
         "FieldInfo(annotation=Union[ForwardRef('Bar'), NoneType], required=False)"
     )
 
-    # but Foo is not ready to use
-    with pytest.raises(PydanticUserError, match='`Foo` is not fully defined; you should define `Bar`,'):
-        module.Foo(a={'b': {'a': {}}})
-
-    assert module.Foo.model_rebuild() is True
-    assert module.Foo.__pydantic_model_complete__ is True
-
-    # now Foo is ready to use
+    assert module.Foo.__pydantic_model_complete__ is False
+    # Foo gets auto-rebuilt during the first attempt at validation
     f = module.Foo(a={'b': {'a': {'b': {'a': None}}}})
+    assert module.Foo.__pydantic_model_complete__ is True
     assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
 def test_forward_ref_one_of_fields_not_defined(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel, ConfigDict
+        from pydantic import BaseModel
 
         class Foo(BaseModel):
-            model_config = ConfigDict(undefined_types_warning=False)
             foo: 'Foo'
             bar: 'Bar'
 
@@ -334,8 +332,6 @@ def test_circular_reference_json_schema(create_module):
         class Owner(BaseModel):
             account: 'Account'
 
-            model_config = dict(undefined_types_warning=False)
-
         class Account(BaseModel):
             name: str
             owner: 'Owner'
@@ -380,8 +376,6 @@ from pydantic import BaseModel
 
 class Owner(BaseModel):
   account: Account
-
-  model_config=dict(undefined_types_warning=False)
 
 class Account(BaseModel):
   name: str
@@ -452,7 +446,6 @@ class Spec(BaseModel):
 
 
 class PSpec(Spec):
-    model_config = ConfigDict(undefined_types_warning = False)
     # FIXME investigate why this wasn't causing errors before
     g: Optional[GSpec] = None
 
@@ -527,24 +520,22 @@ def test_discriminated_union_forward_ref(create_module):
         class Pet(BaseModel):
             pet: Union['Cat', 'Dog'] = Field(discriminator='type')
 
-            model_config = dict(undefined_types_warning=False)
-
         class Cat(BaseModel):
             type: Literal['cat']
 
         class Dog(BaseModel):
             type: Literal['dog']
 
-    with pytest.raises(PydanticUserError, match='`Pet` is not fully defined; you should define `Cat`'):
-        module.Pet.model_validate({'pet': {'type': 'pika'}})
-
-    module.Pet.model_rebuild()
+    assert module.Pet.__pydantic_model_complete__ is False
 
     with pytest.raises(
         ValidationError,
         match="Input tag 'pika' found using 'type' does not match any of the expected tags: 'cat', 'dog'",
     ):
         module.Pet.model_validate({'pet': {'type': 'pika'}})
+
+    # Ensure the rebuild has happened automatically despite validation failure
+    assert module.Pet.__pydantic_model_complete__ is True
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
@@ -681,13 +672,11 @@ def test_pep585_recursive_generics(create_module):
     def module():
         from typing import ForwardRef
 
-        from pydantic import BaseModel, ConfigDict
+        from pydantic import BaseModel
 
         HeroRef = ForwardRef('Hero')
 
         class Team(BaseModel):
-            model_config = ConfigDict(undefined_types_warning=False)
-
             name: str
             heroes: list[HeroRef]
 
@@ -755,7 +744,6 @@ def test_rebuild_subclass_of_built_model():
 
     class FutureReferencingModel(Model):
         y: 'FutureModel'
-        model_config = dict(undefined_types_warning=False)
 
     class FutureModel(BaseModel):
         pass
@@ -791,7 +779,7 @@ def nested():
 def test_nested_more_annotation(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel, ConfigDict
+        from pydantic import BaseModel
 
         def nested():
             class Foo(BaseModel):
@@ -799,7 +787,6 @@ def test_nested_more_annotation(create_module):
 
             def more_nested():
                 class Bar(BaseModel):
-                    model_config = ConfigDict(undefined_types_warning=False)
                     b: 'Foo'
 
                 return Bar
@@ -839,11 +826,10 @@ def test_nested_annotation_priority(create_module):
 def test_nested_model_rebuild(create_module):
     @create_module
     def module():
-        from pydantic import BaseModel, ConfigDict
+        from pydantic import BaseModel
 
         def nested():
             class Bar(BaseModel):
-                model_config = ConfigDict(undefined_types_warning=False)
                 b: 'Foo'
 
             class Foo(BaseModel):
@@ -858,24 +844,25 @@ def test_nested_model_rebuild(create_module):
     assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
 
 
-def pytest_raises_undefined_types_warning(defining_class_name, missing_type_name):
-    """Returns a pytest.raises context manager that checks for the correct undefined types warning message.
-    usage: `with pytest_raises_undefined_types_warning(class_name='Foobar', missing_class_name='UndefinedType'):`
+def pytest_raises_user_error_for_undefined_type(defining_class_name, missing_type_name):
+    """
+    Returns a `pytest.raises` context manager that checks the error message when an undefined type is present.
+
+    usage: `with pytest_raises_user_error_for_undefined_type(class_name='Foobar', missing_class_name='UndefinedType'):`
     """
 
     return pytest.raises(
-        UserWarning,
+        PydanticUserError,
         match=re.escape(
-            f'`{defining_class_name}` has an undefined annotation: `{missing_type_name}`. '
-            'It may be possible to resolve this by setting undefined_types_warning=False '
-            f'in the config for `{defining_class_name}`.'
+            f'`{defining_class_name}` is not fully defined; you should define `{missing_type_name}`, then call'
+            f' `{defining_class_name}.model_rebuild()` before the first `{defining_class_name}` instance is created.'
         ),
     )
 
 
 #   NOTE: the `undefined_types_warning` tests below are "statically parameterized" (i.e. have Duplicate Code).
-#   The initial attempt to refactor them into a single parameterized test was not strateforward, due to the use of the
-#   `create_module` fixture and the need for `from __future__ import annotations` be the first line in a module.
+#   The initial attempt to refactor them into a single parameterized test was not straightforward due to the use of the
+#   `create_module` fixture and the requirement that `from __future__ import annotations` be the first line in a module.
 #
 #   Test Parameters:
 #     1. config setting: (1a) default behavior vs (1b) overriding with Config setting:
@@ -886,7 +873,7 @@ def pytest_raises_undefined_types_warning(defining_class_name, missing_type_name
 
 
 def test_undefined_types_warning_1a_raised_by_default_2a_future_annotations(create_module):
-    with pytest_raises_undefined_types_warning(defining_class_name='Foobar', missing_type_name='UndefinedType'):
+    with pytest_raises_user_error_for_undefined_type(defining_class_name='Foobar', missing_type_name='UndefinedType'):
         create_module(
             # language=Python
             """
@@ -895,12 +882,15 @@ from pydantic import BaseModel
 
 class Foobar(BaseModel):
     a: UndefinedType
+
+# Trigger the error for an undefined type:
+Foobar(a=1)
 """
         )
 
 
 def test_undefined_types_warning_1a_raised_by_default_2b_forward_ref(create_module):
-    with pytest_raises_undefined_types_warning(defining_class_name='Foobar', missing_type_name='UndefinedType'):
+    with pytest_raises_user_error_for_undefined_type(defining_class_name='Foobar', missing_type_name='UndefinedType'):
 
         @create_module
         def module():
@@ -913,6 +903,9 @@ def test_undefined_types_warning_1a_raised_by_default_2b_forward_ref(create_modu
             class Foobar(BaseModel):
                 a: UndefinedType
 
+            # Trigger the error for an undefined type
+            Foobar(a=1)
+
 
 def test_undefined_types_warning_1b_suppressed_via_config_2a_future_annotations(create_module):
     module = create_module(
@@ -921,12 +914,12 @@ def test_undefined_types_warning_1b_suppressed_via_config_2a_future_annotations(
 from __future__ import annotations
 from pydantic import BaseModel
 
-# Suppress the undefined_types_warning
-class Foobar(BaseModel, undefined_types_warning=False):
+# Because we don't instantiate the type, no error for an undefined type is raised
+class Foobar(BaseModel):
     a: UndefinedType
 """
     )
-    # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
+    # Since we're testing the absence of an error, it's important to confirm pydantic was actually run.
     # The presence of the `__pydantic_model_complete__` is a good indicator of this.
     assert module.Foobar.__pydantic_model_complete__ is False
 
@@ -940,8 +933,8 @@ def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_
 
         UndefinedType = ForwardRef('UndefinedType')
 
-        # Suppress the undefined_types_warning
-        class Foobar(BaseModel, undefined_types_warning=False):
+        # Because we don't instantiate the type, no error for an undefined type is raised
+        class Foobar(BaseModel):
             a: UndefinedType
 
     # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
@@ -950,13 +943,7 @@ def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_
 
 
 def test_undefined_types_warning_raised_by_usage(create_module):
-    with pytest.raises(
-        PydanticUserError,
-        match=re.escape(
-            '`Foobar` is not fully defined; you should define `UndefinedType`, '
-            'then call `Foobar.model_rebuild()` before the first `Foobar` instance is created.',
-        ),
-    ):
+    with pytest_raises_user_error_for_undefined_type('Foobar', 'UndefinedType'):
 
         @create_module
         def module():
@@ -968,7 +955,5 @@ def test_undefined_types_warning_raised_by_usage(create_module):
 
             class Foobar(BaseModel):
                 a: UndefinedType
-
-                model_config = {'undefined_types_warning': False}
 
             Foobar(a=1)

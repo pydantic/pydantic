@@ -35,7 +35,6 @@ class ConfigWrapper:
     use_enum_values: bool
     validate_assignment: bool
     arbitrary_types_allowed: bool
-    undefined_types_warning: bool
     from_attributes: bool
     # whether to use the used alias (or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default True
@@ -157,7 +156,6 @@ config_defaults = ConfigDict(
     use_enum_values=False,
     validate_assignment=False,
     arbitrary_types_allowed=False,
-    undefined_types_warning=True,
     from_attributes=False,
     loc_by_alias=True,
     alias_generator=None,

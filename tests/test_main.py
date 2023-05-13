@@ -1408,8 +1408,6 @@ def test_recursive_cycle_with_repeated_field():
     class A(BaseModel):
         b: 'B'
 
-        model_config = {'undefined_types_warning': False}
-
     class B(BaseModel):
         a1: Optional[A] = None
         a2: Optional[A] = None
@@ -1945,13 +1943,13 @@ def test_post_init_not_called_without_override():
 
 
 def test_deeper_recursive_model():
-    class A(BaseModel, undefined_types_warning=False):
+    class A(BaseModel):
         b: 'B'
 
-    class B(BaseModel, undefined_types_warning=False):
+    class B(BaseModel):
         c: 'C'
 
-    class C(BaseModel, undefined_types_warning=False):
+    class C(BaseModel):
         a: Optional['A']
 
     A.model_rebuild()
@@ -1963,10 +1961,10 @@ def test_deeper_recursive_model():
 
 
 def test_model_rebuild_localns():
-    class A(BaseModel, undefined_types_warning=False):
+    class A(BaseModel):
         x: int
 
-    class B(BaseModel, undefined_types_warning=False):
+    class B(BaseModel):
         a: 'Model'  # noqa F821
 
     B.model_rebuild(_types_namespace={'Model': A})
@@ -1975,7 +1973,7 @@ def test_model_rebuild_localns():
     assert m.model_dump() == {'a': {'x': 1}}
     assert isinstance(m.a, A)
 
-    class C(BaseModel, undefined_types_warning=False):
+    class C(BaseModel):
         a: 'Model'  # noqa F821
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Model' is not defined"):

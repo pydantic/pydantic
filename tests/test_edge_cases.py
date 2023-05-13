@@ -2402,8 +2402,6 @@ def test_generic_wrapped_forwardref():
     class Operation(BaseModel):
         callbacks: list['PathItem']
 
-        model_config = {'undefined_types_warning': False}
-
     class PathItem(BaseModel):
         pass
 
@@ -2450,13 +2448,10 @@ def test_invalid_forward_ref_model():
     with pytest.raises(error, **kwargs):
 
         class M(BaseModel):
-            model_config = {'undefined_types_warning': False}
             B: ForwardRef('B') = Field(default=None)
 
     # The solution:
     class A(BaseModel):
-        model_config = {'undefined_types_warning': False}
-
         B: ForwardRef('__types["B"]') = Field()  # F821
 
     assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # F821

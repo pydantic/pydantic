@@ -182,20 +182,19 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        if config_wrapper.undefined_types_warning:
-            config_warning_string = (
-                f'`{cls_name}` has an undefined annotation: `{e.name}`. '
-                f'It may be possible to resolve this by setting '
-                f'undefined_types_warning=False in the config for `{cls_name}`.'
-            )
-            # FIXME UserWarning should not be raised here, but rather warned!
-            raise UserWarning(config_warning_string)
         usage_warning_string = (
             f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call `{cls_name}.model_rebuild()` '
             f'before the first `{cls_name}` instance is created.'
         )
+
+        def attempt_rebuild() -> SchemaValidator | None:
+            if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=0):
+                return cls.__pydantic_validator__
+            else:
+                return None
+
         cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            usage_warning_string, code='model-not-fully-defined'
+            usage_warning_string, code='model-not-fully-defined', attempt_rebuild=attempt_rebuild
         )
         return False
 
@@ -294,14 +293,29 @@ class MockValidator:
     Mocker for `pydantic_core.SchemaValidator` which just raises an error when one of its methods is accessed.
     """
 
-    __slots__ = '_error_message', '_code'
+    __slots__ = '_error_message', '_code', '_attempt_rebuild'
 
-    def __init__(self, error_message: str, *, code: PydanticErrorCodes) -> None:
+    def __init__(
+        self,
+        error_message: str,
+        *,
+        code: PydanticErrorCodes,
+        attempt_rebuild: Callable[[], SchemaValidator | None] | None = None,
+    ) -> None:
+        """
+        Attempt rebuild
+        """
         self._error_message = error_message
         self._code: PydanticErrorCodes = code
+        self._attempt_rebuild = attempt_rebuild
 
     def __getattr__(self, item: str) -> None:
         __tracebackhide__ = True
+        if self._attempt_rebuild:
+            validator = self._attempt_rebuild()
+            if validator is not None:
+                return getattr(validator, item)
+
         # raise an AttributeError if `item` doesn't exist
         getattr(SchemaValidator, item)
         raise PydanticUserError(self._error_message, code=self._code)
