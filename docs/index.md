@@ -153,7 +153,7 @@ Hundreds of organisations and packages are using Pydantic, including:
   "getting integrated into the core Windows product and some Office products."
 
 **Amazon Web Services**
-: Uusing Pydantic in [gluon-ts](https://github.com/awslabs/gluon-ts), an open-source probabilistic time series
+: Using Pydantic in [gluon-ts](https://github.com/awslabs/gluon-ts), an open-source probabilistic time series
   modeling library.
 
 **The NSA**
