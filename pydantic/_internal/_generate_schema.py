@@ -930,18 +930,13 @@ class GenerateSchema:
 
         metadata = build_metadata_dict(js_functions=[json_schema_func])
 
-        is_instance_sequence_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
         list_schema = core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True)
-        if item_type == Any:
-            python_schema = is_instance_sequence_schema
-        else:
+        python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
+        if item_type != Any:
             from ._validators import sequence_validator
 
             python_schema = core_schema.chain_schema(
-                [
-                    is_instance_sequence_schema,
-                    core_schema.no_info_wrap_validator_function(sequence_validator, list_schema),
-                ],
+                [python_schema, core_schema.no_info_wrap_validator_function(sequence_validator, list_schema)],
             )
         return core_schema.json_or_python_schema(
             json_schema=list_schema, python_schema=python_schema, metadata=metadata
