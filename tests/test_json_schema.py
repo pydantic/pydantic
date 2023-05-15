@@ -1,6 +1,7 @@
 import json
 import math
 import re
+import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -3982,4 +3983,23 @@ def test_serialization_schema_with_exclude():
         'required': ['x'],
         'title': 'Model',
         'type': 'object',
+    }
+
+
+@pytest.mark.parametrize('mapping_type', [typing.Dict, typing.Mapping])
+def test_mappings_str_int_json_schema(mapping_type: Any):
+    class Model(BaseModel):
+        str_int_map: mapping_type[str, int]
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'str_int_map': {
+                'title': 'Str Int Map',
+                'type': 'object',
+                'additionalProperties': {'type': 'integer'},
+            }
+        },
+        'required': ['str_int_map'],
     }
