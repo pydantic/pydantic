@@ -64,6 +64,8 @@ def complete_dataclass(
     Finish building a pydantic dataclass.
 
     This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
+
+    This is somewhat analogous to `pydantic._internal._model_construction.complete_model_class`.
     """
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
@@ -103,7 +105,7 @@ def complete_dataclass(
         cls_name = cls.__name__
         if raise_errors:
             raise
-        usage_warning_string = (
+        undefined_type_error_message = (
             f'`{cls_name}` is not fully defined; you should define `{e.name}`,'
             f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`'
             f' before the first `{cls_name}` instance is created.'
@@ -116,7 +118,7 @@ def complete_dataclass(
                 return None
 
         cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            usage_warning_string, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
+            undefined_type_error_message, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
         )
         return False
 
@@ -184,9 +186,20 @@ def rebuild_dataclass(
     _types_namespace: dict[str, Any] | None = None,
 ) -> bool | None:
     """
-    Compare with BaseModel.model_rebuild
+    Try to rebuild or reconstruct the dataclass core schema.
 
-    TODO: Update this docstring
+    This is analogous to `BaseModel.model_rebuild`.
+
+    Args:
+        cls (type): The class to build the dataclass core schema for.
+        force (bool): Whether to force the rebuilding of the model schema, defaults to `False`.
+        raise_errors (bool): Whether to raise errors, defaults to `True`.
+        _parent_namespace_depth (int): The depth level of the parent namespace, defaults to 2.
+        _types_namespace (dict[str, Any] | None): The types namespace, defaults to `None`.
+
+    Returns:
+        bool or None: Returns `None` if model schema is complete and no rebuilding is required.
+            If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.
     """
     if not force and cls.__pydantic_complete__:
         return None
@@ -196,6 +209,9 @@ def rebuild_dataclass(
         else:
             if _parent_namespace_depth > 0:
                 frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+                # TODO: Should either add `__pydantic_parent_namespace__` as an attribute of pydantic dataclasses,
+                #   or remove the commented lines referencing the attribute. I have kept them around for now as I
+                #   think they _may_ be necessary to handle recursive generics.
                 # cls_parent_ns = cls.__pydantic_parent_namespace__ or {}
                 # cls.__pydantic_parent_namespace__ = {**cls_parent_ns, **frame_parent_ns}
                 types_namespace = frame_parent_ns

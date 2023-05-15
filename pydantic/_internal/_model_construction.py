@@ -182,7 +182,7 @@ def complete_model_class(
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise
-        usage_warning_string = (
+        undefined_type_error_message = (
             f'`{cls_name}` is not fully defined; you should define `{e.name}`, then call `{cls_name}.model_rebuild()` '
             f'before the first `{cls_name}` instance is created.'
         )
@@ -194,7 +194,7 @@ def complete_model_class(
                 return None
 
         cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            usage_warning_string, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
+            undefined_type_error_message, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
         )
         return False
 

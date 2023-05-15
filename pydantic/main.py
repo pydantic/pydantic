@@ -688,19 +688,18 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         _types_namespace: dict[str, Any] | None = None,
     ) -> bool | None:
         """
-        Try to rebuild or reconstruct the model schema.
+        Try to rebuild or reconstruct the model core schema
 
         Args:
-            cls (type): The class to build the model schema for.
-            force (bool): Whether or not to force the rebuilding of the model schema, defaults to `False`.
-            raise_errors (bool): Whether or not to raise errors, defaults to `True`.
+            cls (type): The class to build the model core schema for.
+            force (bool): Whether to force the rebuilding of the model schema, defaults to `False`.
+            raise_errors (bool): Whether to raise errors, defaults to `True`.
             _parent_namespace_depth (int): The depth level of the parent namespace, defaults to 2.
             _types_namespace (dict[str, Any] | None): The types namespace, defaults to `None`.
 
         Returns:
-            bool or None: Returns `None` if model schema is complete and no rebuilding is required, or `True` if
-                        rebuilding is successful, otherwise returns `False`.
-
+            bool or None: Returns `None` if model schema is complete and no rebuilding is required.
+                If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
         if not force and cls.__pydantic_complete__:
             return None

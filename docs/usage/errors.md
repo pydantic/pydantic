@@ -5,7 +5,7 @@ with some suggestions on how to fix them.
 ## Class not fully defined {#class-not-fully-defined}
 
 This error is raised when a type referenced in an annotation of a pydantic-validated type
-(such as a subclass of BaseModel, or a pydantic dataclass) is not defined:
+(such as a subclass of `BaseModel`, or a pydantic `dataclass`) is not defined:
 
 ```py
 from typing import ForwardRef
@@ -68,7 +68,7 @@ Foo.model_rebuild()
 foo = Foo(a={'b': {'a': None}})
 ```
 
-In other cases, the error message should indicate how to rebuild the model with the appropriate type definition.
+In other cases, the error message should indicate how to rebuild the class with the appropriate type defined.
 
 ## Decorator on missing field {#decorator-missing-field}
 

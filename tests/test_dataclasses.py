@@ -1447,7 +1447,7 @@ def test_self_reference_dataclass():
 
 
 def test_cyclic_reference_dataclass(create_module):
-    @pydantic.dataclasses.dataclass
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
     class D1:
         d2: Optional['D2'] = None
 
@@ -1457,7 +1457,7 @@ def test_cyclic_reference_dataclass(create_module):
 
         import pydantic
 
-        @pydantic.dataclasses.dataclass
+        @pydantic.dataclasses.dataclass(config=pydantic.ConfigDict(extra='forbid'))
         class D2:
             d1: Optional['D1'] = None
 
@@ -1490,9 +1490,20 @@ def test_cyclic_reference_dataclass(create_module):
         }
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        TypeAdapter(D1).validate_python(dict(d2=dict(d1=dict(d2=dict(d2=dict())))))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': {},
+            'loc': ('d2', 'd1', 'd2', 'd2'),
+            'msg': 'Unexpected keyword argument',
+            'type': 'unexpected_keyword_argument',
+        }
+    ]
+
 
 def test_cross_module_cyclic_reference_dataclass(create_module):
-    @pydantic.dataclasses.dataclass
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
     class D1:
         d2: Optional['D2'] = None  # noqa F821
 
@@ -1502,7 +1513,7 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
 
         import pydantic
 
-        @pydantic.dataclasses.dataclass
+        @pydantic.dataclasses.dataclass(config=pydantic.ConfigDict(extra='forbid'))
         class D2:
             d1: Optional['D1'] = None
 
@@ -1538,6 +1549,17 @@ def test_cross_module_cyclic_reference_dataclass(create_module):
             'loc': ('d1',),
             'msg': 'Input should be a dictionary or an instance of D1',
             'type': 'dataclass_type',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        TypeAdapter(D1).validate_python(dict(d2=dict(d1=dict(d2=dict(d2=dict())))))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': {},
+            'loc': ('d2', 'd1', 'd2', 'd2'),
+            'msg': 'Unexpected keyword argument',
+            'type': 'unexpected_keyword_argument',
         }
     ]
 

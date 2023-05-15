@@ -21,10 +21,7 @@ from .fields import Field
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
 
-__all__ = (
-    'dataclass',
-    'rebuild_dataclass',
-)
+__all__ = 'dataclass', 'rebuild_dataclass'
 
 _T = TypeVar('_T')
 
