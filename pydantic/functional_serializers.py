@@ -59,7 +59,7 @@ class WrapSerializer:
         func (core_schema.WrapSerializerFunction): The function to be wrapped.
         json_return_type (Optional[core_schema.JsonReturnTypes]): The JSON return type annotation of the function.
         when_used (Literal['always', 'unless-none', 'json', 'json-unless-none']): Determines the way the serialization
-            will go. This governs whether and when your function's return value will be serialized.
+            will go. This governs whether and when this function will be used during serialization.
     """
 
     func: core_schema.WrapSerializerFunction

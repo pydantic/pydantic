@@ -199,7 +199,7 @@ class GenerateJsonSchema:
             dict: A dictionary containing the mapping of `CoreSchemaOrFieldType` to a callable method.
 
         Raises:
-            TypeError: If no method exists for generating`JsonSchema` for a given `core_schema.type`.
+            TypeError: If no method has been defined for generating a JSON schema for a given pydantic core schema type. 
         """
         mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
         core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.all_literal_values(
@@ -221,14 +221,14 @@ class GenerateJsonSchema:
     ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef], dict[DefsRef, JsonSchemaValue]]:
         """
         Given a list of core_schema, generates all JSON schema definitions from a list of core schemas, and
-        returns the generated definitions.
+        returns the generated definitions paired with a mapping from the input keys to the definition references.
 
         Args:
             inputs (Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema]]): A sequence of tuples,
                 where:
 
                 - `JsonSchemaKeyT` is a JSON schema key type.
-                - `JsonSchemaMode` is a JSON schema mode, either 'model' or 'data'.
+                - `JsonSchemaMode` is a JSON schema mode, either 'validation' or 'serialization'.
                 - `core_schema.CoreSchema` is a Pydantic `core_schema`.
 
         Returns:
@@ -674,7 +674,7 @@ class GenerateJsonSchema:
 
     def generator_schema(self, schema: core_schema.GeneratorSchema) -> JsonSchemaValue:
         """
-        Returns a schema that matches a generator schema.
+        Returns a JSON schema that represents the provided GeneratorSchema.
 
         Args:
             schema (core_schema.GeneratorSchema): The schema.
@@ -682,6 +682,7 @@ class GenerateJsonSchema:
         Returns:
             JsonSchemaValue: The generated JSON schema.
         """
+        # TODO: make sure that GeneratorSchema accepts values from JSON, or this JSON schema should be changed..
         items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
