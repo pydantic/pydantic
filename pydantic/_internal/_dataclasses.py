@@ -12,16 +12,17 @@ from typing import Any, Callable, ClassVar
 from pydantic_core import ArgsKwargs, SchemaSerializer, SchemaValidator, core_schema
 from typing_extensions import TypeGuard
 
+from ..errors import PydanticUndefinedAnnotation
 from ..fields import FieldInfo
-from . import _decorators, _typing_extra
+from . import _config, _decorators, _typing_extra
 from ._core_utils import flatten_schema_defs, inline_schema_defs
 from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
+from ._model_construction import MockValidator
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
-    from ._config import ConfigWrapper
 
     class StandardDataclass(typing.Protocol):
         __dataclass_fields__: ClassVar[dict[str, Any]]
@@ -39,6 +40,7 @@ if typing.TYPE_CHECKING:
         """metadata for `@field_validator`, `@root_validator` and `@serializer` decorators"""
         __pydantic_fields__: typing.ClassVar[dict[str, FieldInfo]]
         __pydantic_config__: typing.ClassVar[ConfigDict]
+        __pydantic_complete__: typing.ClassVar[bool]
 
 
 def set_dataclass_fields(cls: type[StandardDataclass], types_namespace: dict[str, Any] | None = None) -> None:
@@ -53,10 +55,13 @@ def set_dataclass_fields(cls: type[StandardDataclass], types_namespace: dict[str
 
 def complete_dataclass(
     cls: type[Any],
-    config_wrapper: ConfigWrapper,
-) -> None:
+    config_wrapper: _config.ConfigWrapper,
+    *,
+    raise_errors: bool = True,
+    types_namespace: dict[str, Any] | None,
+) -> bool:
     """
-    Prepare a raw class to become a pydantic dataclass.
+    Finish building a pydantic dataclass.
 
     This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
     """
@@ -65,7 +70,11 @@ def complete_dataclass(
             'Support for `__post_init_post_parse__` has been dropped, the method will not be called', DeprecationWarning
         )
 
-    types_namespace = _typing_extra.get_cls_types_namespace(cls)
+    if types_namespace is None:
+        types_namespace = _typing_extra.get_cls_types_namespace(cls)
+
+    set_dataclass_fields(cls, types_namespace)
+
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(
         config_wrapper,
@@ -73,11 +82,43 @@ def complete_dataclass(
         typevars_map,
     )
 
+    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't be copied.
+
+    def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
+        __tracebackhide__ = True
+        s = __dataclass_self__
+        s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
+
+    __init__.__qualname__ = f'{cls.__qualname__}.__init__'
+    cls.__init__ = __init__  # type: ignore
+    cls.__pydantic_config__ = config_wrapper.config_dict  # type: ignore
+
     get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
-    if get_core_schema:
-        schema = get_core_schema(cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False))
-    else:
-        schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
+    try:
+        if get_core_schema:
+            schema = get_core_schema(cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False))
+        else:
+            schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
+    except PydanticUndefinedAnnotation as e:
+        cls_name = cls.__name__
+        if raise_errors:
+            raise
+        usage_warning_string = (
+            f'`{cls_name}` is not fully defined; you should define `{e.name}`,'
+            f' then call `pydantic.dataclasses.rebuild_dataclass({cls_name})`'
+            f' before the first `{cls_name}` instance is created.'
+        )
+
+        def attempt_rebuild() -> SchemaValidator | None:
+            if rebuild_dataclass(cls, raise_errors=False, _parent_namespace_depth=5):
+                return cls.__pydantic_validator__  # type: ignore
+            else:
+                return None
+
+        cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
+            usage_warning_string, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
+        )
+        return False
 
     core_config = config_wrapper.core_config(cls)
 
@@ -86,12 +127,9 @@ def complete_dataclass(
     cls = typing.cast('type[PydanticDataclass]', cls)
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-    schema = flatten_schema_defs(schema)
-    simplified_core_schema = inline_schema_defs(schema)
+    simplified_core_schema = inline_schema_defs(flatten_schema_defs(schema))
     cls.__pydantic_validator__ = validator = SchemaValidator(simplified_core_schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
-    # dataclasses only:
-    cls.__pydantic_config__ = config_wrapper.config_dict
 
     if config_wrapper.validate_assignment:
 
@@ -101,15 +139,7 @@ def complete_dataclass(
 
         cls.__setattr__ = validated_setattr.__get__(None, cls)  # type: ignore
 
-    # dataclass.__init__ must be defined here so its `__qualname__` can be changed since functions can't copied.
-
-    def __init__(__dataclass_self__: PydanticDataclass, *args: Any, **kwargs: Any) -> None:
-        __tracebackhide__ = True
-        s = __dataclass_self__
-        s.__pydantic_validator__.validate_python(ArgsKwargs(args, kwargs), self_instance=s)
-
-    __init__.__qualname__ = f'{cls.__qualname__}.__init__'
-    cls.__init__ = __init__  # type: ignore
+    return True
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
@@ -143,3 +173,41 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
 
 def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
     return dataclasses.is_dataclass(_cls) and hasattr(_cls, '__pydantic_validator__')
+
+
+def rebuild_dataclass(
+    cls: type[PydanticDataclass],
+    *,
+    force: bool = False,
+    raise_errors: bool = True,
+    _parent_namespace_depth: int = 2,
+    _types_namespace: dict[str, Any] | None = None,
+) -> bool | None:
+    """
+    Compare with BaseModel.model_rebuild
+
+    TODO: Update this docstring
+    """
+    if not force and cls.__pydantic_complete__:
+        return None
+    else:
+        if _types_namespace is not None:
+            types_namespace: dict[str, Any] | None = _types_namespace.copy()
+        else:
+            if _parent_namespace_depth > 0:
+                frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
+                # cls_parent_ns = cls.__pydantic_parent_namespace__ or {}
+                # cls.__pydantic_parent_namespace__ = {**cls_parent_ns, **frame_parent_ns}
+                types_namespace = frame_parent_ns
+            else:
+                types_namespace = {}
+
+            # types_namespace = cls.__pydantic_parent_namespace__
+
+            types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
+        return complete_dataclass(
+            cls,
+            _config.ConfigWrapper(cls.__pydantic_config__, check=False),
+            raise_errors=raise_errors,
+            types_namespace=types_namespace,
+        )

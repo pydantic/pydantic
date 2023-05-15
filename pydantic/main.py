@@ -176,7 +176,7 @@ class ModelMetaclass(ABCMeta):
                     'parameters': parameters,
                 }
 
-            cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
+            cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
 
             # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
             # for attributes not in `new_namespace` (e.g. private attributes)
@@ -273,7 +273,7 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
     model_config = ConfigDict()
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
     __doc__ = ''  # Null out the Representation docstring
-    __pydantic_model_complete__ = False
+    __pydantic_complete__ = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
         """
@@ -699,10 +699,10 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
         Returns:
             bool or None: Returns `None` if model schema is complete and no rebuilding is required, or `True` if
-                        rebuilding is successful, otherwise returns `None`.
+                        rebuilding is successful, otherwise returns `False`.
 
         """
-        if not force and cls.__pydantic_model_complete__:
+        if not force and cls.__pydantic_complete__:
             return None
         else:
             if _types_namespace is not None:

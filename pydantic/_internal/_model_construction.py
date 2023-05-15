@@ -194,7 +194,7 @@ def complete_model_class(
                 return None
 
         cls.__pydantic_validator__ = MockValidator(  # type: ignore[assignment]
-            usage_warning_string, code='model-not-fully-defined', attempt_rebuild=attempt_rebuild
+            usage_warning_string, code='class-not-fully-defined', attempt_rebuild=attempt_rebuild
         )
         return False
 
@@ -207,7 +207,7 @@ def complete_model_class(
     simplified_core_schema = inline_schema_defs(schema)
     cls.__pydantic_validator__ = SchemaValidator(simplified_core_schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
-    cls.__pydantic_model_complete__ = True
+    cls.__pydantic_complete__ = True
 
     # set __signature__ attr only for model class, but not for its instances
     cls.__signature__ = ClassAttribute(
