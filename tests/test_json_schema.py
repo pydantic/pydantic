@@ -3989,7 +3989,7 @@ def test_serialization_schema_with_exclude():
 def test_sequence_schema():
     class Model(BaseModel):
         int_sequence: Sequence[int]
-        int_list: list[int]
+        int_list: List[int]
 
     assert Model.model_json_schema() == {
         'properties': {
@@ -4002,7 +4002,7 @@ def test_sequence_schema():
     }
 
 
-@pytest.mark.parametrize(('sequence_type',), [pytest.param(list), pytest.param(Sequence)])
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
 def test_sequences_int_json_schema(sequence_type):
     class Model(BaseModel):
         int_seq: sequence_type[int]
