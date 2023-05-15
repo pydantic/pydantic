@@ -31,7 +31,7 @@ from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import FieldInfo
 
 from ..json_schema import JsonSchemaValue, update_json_schema
-from . import _known_annotated_metadata, _validators
+from . import _known_annotated_metadata, _typing_extra, _validators
 from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
@@ -673,7 +673,10 @@ def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable
         return allowed_default_types[values_type_origin]
 
     # Assume Annotated[..., Field(...)]
-    field_info = next((v for v in get_args(values_source_type) if isinstance(v, FieldInfo)), None)
+    if _typing_extra.is_annotated(values_source_type):
+        field_info = next((v for v in get_args(values_source_type) if isinstance(v, FieldInfo)), None)
+    else:
+        field_info = None
     if field_info and field_info.default_factory:
         default_default_factory = field_info.default_factory
     else:
