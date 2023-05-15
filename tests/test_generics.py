@@ -1104,7 +1104,6 @@ def test_replace_types():
 
 def test_replace_types_with_user_defined_generic_type_field():
     """Test that using user defined generic types as generic model fields are handled correctly."""
-
     T = TypeVar('T')
     KT = TypeVar('KT')
     VT = TypeVar('VT')
@@ -1115,7 +1114,12 @@ def test_replace_types_with_user_defined_generic_type_field():
             return core_schema.no_info_after_validator_function(cls, handler(Counter[get_args(source_type)[0]]))
 
     class CustomDefaultDict(DefaultDict[KT, VT]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            keys_type, values_type = get_args(source_type)
+            return core_schema.no_info_after_validator_function(
+                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
+            )
 
     class CustomDeque(Deque[T]):
         @classmethod
@@ -1123,7 +1127,10 @@ def test_replace_types_with_user_defined_generic_type_field():
             return core_schema.no_info_after_validator_function(cls, handler(Deque[get_args(source_type)[0]]))
 
     class CustomDict(Dict[KT, VT]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            keys_type, values_type = get_args(source_type)
+            return core_schema.no_info_after_validator_function(cls, handler(Dict[keys_type, values_type]))
 
     class CustomFrozenset(FrozenSet[T]):
         @classmethod
@@ -1139,10 +1146,16 @@ def test_replace_types_with_user_defined_generic_type_field():
             return core_schema.no_info_after_validator_function(cls, handler(List[get_args(source_type)[0]]))
 
     class CustomMapping(Mapping[KT, VT]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            keys_type, values_type = get_args(source_type)
+            return handler(Mapping[keys_type, values_type])
 
     class CustomOrderedDict(OrderedDict[KT, VT]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            keys_type, values_type = get_args(source_type)
+            return core_schema.no_info_after_validator_function(cls, handler(OrderedDict[keys_type, values_type]))
 
     class CustomSet(Set[T]):
         @classmethod
@@ -1186,14 +1199,14 @@ def test_replace_types_with_user_defined_generic_type_field():
     # The following assertions are just to document the current behavior, and should
     # be updated if/when we do a better job of respecting the exact annotated type
     assert type(m.counter_field) is CustomCounter
-    assert type(m.default_dict_field) is dict
+    # assert type(m.default_dict_field) is CustomDefaultDict
     assert type(m.deque_field) is CustomDeque
-    assert type(m.dict_field) is dict
+    assert type(m.dict_field) is CustomDict
     assert type(m.frozenset_field) is CustomFrozenset
     assert type(m.iterable_field).__name__ == 'ValidatorIterator'
     assert type(m.list_field) is CustomList
-    assert type(m.mapping_field) is dict
-    assert type(m.ordered_dict_field) is OrderedDict.__origin__
+    assert type(m.mapping_field) is dict  # this is determined in CustomMapping.__get_pydantic_core_schema__
+    assert type(m.ordered_dict_field) is CustomOrderedDict
     assert type(m.set_field) is CustomSet
     assert type(m.tuple_field) is tuple
 
