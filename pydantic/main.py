@@ -58,11 +58,6 @@ if typing.TYPE_CHECKING:
 __all__ = 'BaseModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
-# Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
-# (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
-# safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
-# the `BaseModel` class, since that's defined immediately after the metaclass.
-_base_class_defined = False
 
 
 class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
@@ -106,7 +101,10 @@ class ModelMetaclass(ABCMeta):
         Returns:
             type: the new class created by the metaclass
         """
-        if _base_class_defined:
+        # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we rely on the fact
+        # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine that the `__new__`
+        # call we're in the middle of is for the `BaseModel` class.
+        if bases:
             base_field_names, class_vars, base_private_attributes = _collect_bases_data(bases)
 
             config_wrapper = _config.ConfigWrapper.for_model(bases, namespace, kwargs)
@@ -1218,9 +1216,6 @@ class BaseModel(metaclass=ModelMetaclass):
         return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)  # type: ignore
 
 
-_base_class_defined = True
-
-
 @typing.overload
 def create_model(
     __model_name: str,
@@ -1337,7 +1332,7 @@ def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str
     class_vars: set[str] = set()
     private_attributes: dict[str, ModelPrivateAttr] = {}
     for base in bases:
-        if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
+        if issubclass(base, BaseModel) and base != BaseModel:
             # model_fields might not be defined yet in the case of generics, so we use getattr here:
             field_names.update(getattr(base, 'model_fields', {}).keys())
             class_vars.update(base.__class_vars__)
