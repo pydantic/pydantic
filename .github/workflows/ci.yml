@@ -113,7 +113,7 @@ jobs:
 
     - run: pdm info && pdm list
 
-    - run: ' pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
+    - run: 'pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
     - run: mkdir coverage
 
@@ -262,7 +262,7 @@ jobs:
       run: make test-fastapi
 
   test-pydantic-settings:
-    name: test Pydantic Settings
+    name: test pydantic settings
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -278,7 +278,7 @@ jobs:
 
     - run: pdm info && pdm list
 
-    - run: ' pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
+    - run: 'pdm run python -c "import pydantic.version; print(pydantic.version.version_info())"'
 
     - name: test
       run: make test-pydantic-settings
@@ -298,6 +298,7 @@ jobs:
       - test-memray
       - test-mypy
       - test-fastapi
+      - test-pydantic-settings
 
     runs-on: ubuntu-latest
 
