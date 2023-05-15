@@ -30,7 +30,8 @@ class PlainSerializer:
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        """Gets the Pydantic core schema.
+        """
+        Gets the Pydantic core schema.
 
         Args:
             source_type (Any): The source type.
@@ -52,8 +53,8 @@ class PlainSerializer:
 @slots_dataclass(frozen=True)
 class WrapSerializer:
     """
-    This class is used to wrap a serializer function and bind it with requested parameters for later use in
-    schema building.
+    Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization logic,
+    and can modify the resulting value before returning it as the final output of serialization.
 
     Attributes:
         func (core_schema.WrapSerializerFunction): The function to be wrapped.

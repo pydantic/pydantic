@@ -199,7 +199,7 @@ class GenerateJsonSchema:
             dict: A dictionary containing the mapping of `CoreSchemaOrFieldType` to a callable method.
 
         Raises:
-            TypeError: If no method has been defined for generating a JSON schema for a given pydantic core schema type. 
+            TypeError: If no method has been defined for generating a JSON schema for a given pydantic core schema type.
         """
         mapping: dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]] = {}
         core_schema_types: list[CoreSchemaOrFieldType] = _typing_extra.all_literal_values(
@@ -227,7 +227,8 @@ class GenerateJsonSchema:
             inputs (Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema]]): A sequence of tuples,
                 where:
 
-                - `JsonSchemaKeyT` is a JSON schema key type.
+                - `JsonSchemaKeyT` will be paired with `JsonSchemaMode` to form the keys of the first returned
+                    dictionary.
                 - `JsonSchemaMode` is a JSON schema mode, either 'validation' or 'serialization'.
                 - `core_schema.CoreSchema` is a Pydantic `core_schema`.
 
