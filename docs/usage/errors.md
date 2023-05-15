@@ -1,10 +1,11 @@
-Below are details on common errors developers can see when working with pydantic, together
-with some suggestions on how to fix them.
+Pydantic attempts to provide useful errors. The following sections provide details on common errors developers may
+encounter when working with Pydantic, along with suggestions for addressing the error condition.
 
+<!-- Note: raw tag is used to avoid rendering of jinja2 template tags in the docs. -->
 {% raw %}
 ## Decorator on missing field {#decorator-missing-field}
 
-This error is raised when you define a decorator with an invalid field.
+This error is raised when you define a decorator with a field that is not valid.
 
 ```py
 from typing import Any
@@ -106,7 +107,7 @@ except PydanticUserError as exc_info:
 
 ## Discriminator needs literal {#discriminator-needs-literal}
 
-This error is raised when you define a non-`Literal` type discriminator field.
+This error is raised when you define a non-`Literal` type on a discriminator field.
 
 ```py
 from typing import Union
