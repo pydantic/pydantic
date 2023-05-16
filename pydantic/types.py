@@ -28,6 +28,7 @@ from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, c
 from typing_extensions import Annotated, Literal, Protocol
 
 from ._internal import _fields, _internal_dataclass, _known_annotated_metadata, _validators
+from ._internal._generics import get_origin
 from ._internal._internal_dataclass import slots_dataclass
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
@@ -988,5 +989,25 @@ class EncodedStr(EncodedBytes):
 
 Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
 Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
+
+
+if TYPE_CHECKING:
+    SimpleIsInstance = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+
+else:
+
+    @_internal_dataclass.slots_dataclass
+    class SimpleIsInstance:
+        @classmethod
+        def __class_getitem__(cls, item: AnyType) -> AnyType:
+            return Annotated[item, cls()]
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            # use the generic _origin_ as the second argument to isinstance when appropriate
+            python_schema = core_schema.is_instance_schema(get_origin(source) or source)
+            json_schema = handler(source)
+            return core_schema.json_or_python_schema(python_schema=python_schema, json_schema=json_schema)
+
 
 __getattr__ = getattr_migration(__name__)
