@@ -10,20 +10,20 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/functional_validators/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/pydantic_core_init/">
       
       
-        <link rel="prev" href="../functional_serializers/">
+        <link rel="prev" href="../version/">
       
       
-        <link rel="next" href="../json_schema/">
+        <link rel="next" href="../pydantic_core_schema/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.2, mkdocs-material-9.1.8">
     
     
       
-        <title>pydantic.functional_validators - pydantic</title>
+        <title>pydantic_core.__init__ - pydantic</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pydantic.functional_validators" class="md-skip">
+        <a href="#pydantic_core" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +135,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              pydantic.functional_validators
+              pydantic_core.__init__
             
           </span>
         </div>
@@ -1496,64 +1496,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          pydantic.functional_validators
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../functional_validators/" class="md-nav__link">
         pydantic.functional_validators
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_validators" class="md-nav__link">
-    pydantic.functional_validators
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_validators.field_validator" class="md-nav__link">
-    field_validator()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_validators.model_validator" class="md-nav__link">
-    model_validator()
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1647,11 +1594,225 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../pydantic_core_init/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic_core.__init__
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         pydantic_core.__init__
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core" class="md-nav__link">
+    pydantic_core
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ArgsKwargs" class="md-nav__link">
+    ArgsKwargs
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.MultiHostUrl" class="md-nav__link">
+    MultiHostUrl
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticCustomError" class="md-nav__link">
+    PydanticCustomError
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticCustomError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticCustomError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticKnownError" class="md-nav__link">
+    PydanticKnownError
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticKnownError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticKnownError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticOmit" class="md-nav__link">
+    PydanticOmit
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticOmit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticOmit.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticSerializationError" class="md-nav__link">
+    PydanticSerializationError
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticSerializationError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticSerializationError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticSerializationUnexpectedValue" class="md-nav__link">
+    PydanticSerializationUnexpectedValue
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticSerializationUnexpectedValue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticSerializationUnexpectedValue.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaError" class="md-nav__link">
+    SchemaError
+  </a>
+  
+    <nav class="md-nav" aria-label="SchemaError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.SchemaError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaSerializer" class="md-nav__link">
+    SchemaSerializer
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaValidator" class="md-nav__link">
+    SchemaValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.Url" class="md-nav__link">
+    Url
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ValidationError" class="md-nav__link">
+    ValidationError
+  </a>
+  
+    <nav class="md-nav" aria-label="ValidationError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.ValidationError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1704,23 +1865,184 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pydantic.functional_validators" class="md-nav__link">
-    pydantic.functional_validators
+  <a href="#pydantic_core" class="md-nav__link">
+    pydantic_core
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.functional_validators.field_validator" class="md-nav__link">
-    field_validator()
+  <a href="#pydantic_core.ArgsKwargs" class="md-nav__link">
+    ArgsKwargs
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.functional_validators.model_validator" class="md-nav__link">
-    model_validator()
+  <a href="#pydantic_core.MultiHostUrl" class="md-nav__link">
+    MultiHostUrl
   </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticCustomError" class="md-nav__link">
+    PydanticCustomError
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticCustomError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticCustomError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticKnownError" class="md-nav__link">
+    PydanticKnownError
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticKnownError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticKnownError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticOmit" class="md-nav__link">
+    PydanticOmit
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticOmit">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticOmit.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticSerializationError" class="md-nav__link">
+    PydanticSerializationError
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticSerializationError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticSerializationError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.PydanticSerializationUnexpectedValue" class="md-nav__link">
+    PydanticSerializationUnexpectedValue
+  </a>
+  
+    <nav class="md-nav" aria-label="PydanticSerializationUnexpectedValue">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.PydanticSerializationUnexpectedValue.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaError" class="md-nav__link">
+    SchemaError
+  </a>
+  
+    <nav class="md-nav" aria-label="SchemaError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.SchemaError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaSerializer" class="md-nav__link">
+    SchemaSerializer
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaValidator" class="md-nav__link">
+    SchemaValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.Url" class="md-nav__link">
+    Url
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.ValidationError" class="md-nav__link">
+    ValidationError
+  </a>
+  
+    <nav class="md-nav" aria-label="ValidationError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.ValidationError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1743,13 +2065,114 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>pydantic.functional_validators</h1>
+  <h1>pydantic_core.__init__</h1>
 
 <div class="doc doc-object doc-module">
 
 
-<a id="pydantic.functional_validators"></a>
+<a id="pydantic_core"></a>
   <div class="doc doc-contents first">
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.ArgsKwargs" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ArgsKwargs</span>
+
+
+<a href="#pydantic_core.ArgsKwargs" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.MultiHostUrl" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">MultiHostUrl</span>
+
+
+<a href="#pydantic_core.MultiHostUrl" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticCustomError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticCustomError</span>
+
+
+<a href="#pydantic_core.PydanticCustomError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
 
   
 
@@ -1767,311 +2190,521 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 
-<h2 id="pydantic.functional_validators.field_validator" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">field_validator</span>
+<h3 id="pydantic_core._pydantic_core.PydanticCustomError.with_traceback" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">with_traceback</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-method descriptor"><code>method descriptor</code></small>
+  </span>
 
-<a href="#pydantic.functional_validators.field_validator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">field_validator</span><span class="p">(</span>
-    <span class="n">__field</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;after&quot;</span><span class="p">,</span> <span class="n">check_fields</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
+<a href="#pydantic_core._pydantic_core.PydanticCustomError.with_traceback" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">with_traceback</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Decorate methods on the class indicating that they should be used to validate fields.</p>
+      <p>Exception.with_traceback(tb) --
+set self.<strong>traceback</strong> to tb and return self.</p>
 
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>__field</code></td>
-          <td>
-                <code>str</code>
-          </td>
-          <td><p>The first field the field_validator should be called on; this is separate
-from <code>fields</code> to ensure an error is raised if you don't pass at least one.</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-        <tr>
-          <td><code>*fields</code></td>
-          <td>
-                <code>tuple</code>
-          </td>
-          <td><p>Additional field(s) the field_validator should be called on.</p></td>
-          <td>
-                <code>()</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>mode</code></td>
-          <td>
-                <code><span title="pydantic.functional_validators.FieldValidatorModes">FieldValidatorModes</span></code>
-          </td>
-          <td><p>Specifies whether to validate the fields before or after validation.
- Defaults to 'after'.</p></td>
-          <td>
-                <code>&#39;after&#39;</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>check_fields</code></td>
-          <td>
-                <code>bool | None</code>
-          </td>
-          <td><p>If set to True, checks that the fields actually exist on the model.
-Defaults to None.</p></td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-<th>Name</th>        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td><code>Callable</code></td>          <td>
-                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
-          </td>
-          <td><p>A decorator that can be used to decorate a function to be used as a field_validator.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
-    <span class="n">__field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="n">FieldValidatorModes</span> <span class="o">=</span> <span class="s1">&#39;after&#39;</span><span class="p">,</span>
-    <span class="n">check_fields</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decorate methods on the class indicating that they should be used to validate fields.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        __field (str): The first field the field_validator should be called on; this is separate</span>
-<span class="sd">            from `fields` to ensure an error is raised if you don&#39;t pass at least one.</span>
-<span class="sd">        *fields (tuple): Additional field(s) the field_validator should be called on.</span>
-<span class="sd">        mode (FieldValidatorModes): Specifies whether to validate the fields before or after validation.</span>
-<span class="sd">             Defaults to &#39;after&#39;.</span>
-<span class="sd">        check_fields (bool | None): If set to True, checks that the fields actually exist on the model.</span>
-<span class="sd">            Defaults to None.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        Callable: A decorator that can be used to decorate a function to be used as a field_validator.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">__field</span><span class="p">,</span> <span class="n">FunctionType</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-            <span class="s1">&#39;`@field_validator` should be used with fields and keyword arguments, not bare. &#39;</span>
-            <span class="s2">&quot;E.g. usage should be `@validator(&#39;&lt;field_name&gt;&#39;, ...)`&quot;</span><span class="p">,</span>
-            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-no-fields&#39;</span><span class="p">,</span>
-        <span class="p">)</span>
-    <span class="n">fields</span> <span class="o">=</span> <span class="n">__field</span><span class="p">,</span> <span class="o">*</span><span class="n">fields</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">):</span>  <span class="c1"># type: ignore</span>
-        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-            <span class="s1">&#39;`@field_validator` fields should be passed as separate string args. &#39;</span>
-            <span class="s2">&quot;E.g. usage should be `@validator(&#39;&lt;field_name_1&gt;&#39;, &#39;&lt;field_name_2&gt;&#39;, ...)`&quot;</span><span class="p">,</span>
-            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-invalid-fields&#39;</span><span class="p">,</span>
-        <span class="p">)</span>
-
-    <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span>
-        <span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">staticmethod</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">classmethod</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-        <span class="k">if</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">is_instance_method_from_sig</span><span class="p">(</span><span class="n">f</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
-                <span class="s1">&#39;`@field_validator` cannot be applied to instance methods&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;validator-instance-method&#39;</span>
-            <span class="p">)</span>
-
-        <span class="c1"># auto apply the @classmethod decorator</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_classmethod_based_on_signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-
-        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">FieldValidatorDecoratorInfo</span><span class="p">(</span><span class="n">fields</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">check_fields</span><span class="o">=</span><span class="n">check_fields</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">dec</span>
-</code></pre></div></td></tr></table></div>
-      </details>
   </div>
 
 </div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticKnownError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticKnownError</span>
+
+
+<a href="#pydantic_core.PydanticKnownError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
 
 <div class="doc doc-object doc-function">
 
 
 
-<h2 id="pydantic.functional_validators.model_validator" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">model_validator</span>
+<h3 id="pydantic_core._pydantic_core.PydanticKnownError.with_traceback" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">with_traceback</span>
 
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-method descriptor"><code>method descriptor</code></small>
+  </span>
 
-<a href="#pydantic.functional_validators.model_validator" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">model_validator</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">mode</span><span class="p">)</span>
+<a href="#pydantic_core._pydantic_core.PydanticKnownError.with_traceback" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">with_traceback</span><span class="p">()</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Decorate model methods for validation purposes.</p>
+      <p>Exception.with_traceback(tb) --
+set self.<strong>traceback</strong> to tb and return self.</p>
 
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>mode</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;wrap&#39;, &#39;before&#39;, &#39;after&#39;]</code>
-          </td>
-          <td><p>A required string literal that specifies the validation mode.
-It can be one of the following: 'wrap', 'before', or 'after'.</p></td>
-          <td>
-              <em>required</em>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-<th>Name</th>        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-<td><code>Any</code></td>          <td>
-                <code><span title="typing.Any">Any</span></code>
-          </td>
-          <td><p>A decorator that can be used to decorate a function to be used as a model validator.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">294</span>
-<span class="normal">295</span>
-<span class="normal">296</span>
-<span class="normal">297</span>
-<span class="normal">298</span>
-<span class="normal">299</span>
-<span class="normal">300</span>
-<span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decorate model methods for validation purposes.</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        mode (Literal[&#39;wrap&#39;, &#39;before&#39;, &#39;after&#39;]): A required string literal that specifies the validation mode.</span>
-<span class="sd">            It can be one of the following: &#39;wrap&#39;, &#39;before&#39;, or &#39;after&#39;.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        Any: A decorator that can be used to decorate a function to be used as a model validator.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-        <span class="c1"># auto apply the @classmethod decorator</span>
-        <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_classmethod_based_on_signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ModelValidatorDecoratorInfo</span><span class="p">(</span><span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">dec</span>
-</code></pre></div></td></tr></table></div>
-      </details>
   </div>
 
 </div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticOmit" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticOmit</span>
+
+
+<a href="#pydantic_core.PydanticOmit" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>Exception</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic_core._pydantic_core.PydanticOmit.with_traceback" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">with_traceback</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-method descriptor"><code>method descriptor</code></small>
+  </span>
+
+<a href="#pydantic_core._pydantic_core.PydanticOmit.with_traceback" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">with_traceback</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Exception.with_traceback(tb) --
+set self.<strong>traceback</strong> to tb and return self.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticSerializationError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticSerializationError</span>
+
+
+<a href="#pydantic_core.PydanticSerializationError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic_core._pydantic_core.PydanticSerializationError.with_traceback" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">with_traceback</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-method descriptor"><code>method descriptor</code></small>
+  </span>
+
+<a href="#pydantic_core._pydantic_core.PydanticSerializationError.with_traceback" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">with_traceback</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Exception.with_traceback(tb) --
+set self.<strong>traceback</strong> to tb and return self.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.PydanticSerializationUnexpectedValue" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PydanticSerializationUnexpectedValue</span>
+
+
+<a href="#pydantic_core.PydanticSerializationUnexpectedValue" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic_core._pydantic_core.PydanticSerializationUnexpectedValue.with_traceback" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">with_traceback</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-method descriptor"><code>method descriptor</code></small>
+  </span>
+
+<a href="#pydantic_core._pydantic_core.PydanticSerializationUnexpectedValue.with_traceback" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">with_traceback</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Exception.with_traceback(tb) --
+set self.<strong>traceback</strong> to tb and return self.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.SchemaError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">SchemaError</span>
+
+
+<a href="#pydantic_core.SchemaError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>Exception</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic_core._pydantic_core.SchemaError.with_traceback" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">with_traceback</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-method descriptor"><code>method descriptor</code></small>
+  </span>
+
+<a href="#pydantic_core._pydantic_core.SchemaError.with_traceback" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">with_traceback</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Exception.with_traceback(tb) --
+set self.<strong>traceback</strong> to tb and return self.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.SchemaSerializer" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">SchemaSerializer</span>
+
+
+<a href="#pydantic_core.SchemaSerializer" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.SchemaValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">SchemaValidator</span>
+
+
+<a href="#pydantic_core.SchemaValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.Url" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">Url</span>
+
+
+<a href="#pydantic_core.Url" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_core.ValidationError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">ValidationError</span>
+
+
+<a href="#pydantic_core.ValidationError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>ValueError</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic_core._pydantic_core.ValidationError.with_traceback" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">with_traceback</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-method descriptor"><code>method descriptor</code></small>
+  </span>
+
+<a href="#pydantic_core._pydantic_core.ValidationError.with_traceback" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">with_traceback</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Exception.with_traceback(tb) --
+set self.<strong>traceback</strong> to tb and return self.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
 
 
 
