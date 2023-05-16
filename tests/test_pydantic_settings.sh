@@ -3,10 +3,12 @@
 set -x
 set -e
 
-cd pydantic-settings
+pushd "$(dirname $0)/../pydantic-settings"
 
 python -m ensurepip --upgrade
 
 make install
 
 make test
+
+popd
