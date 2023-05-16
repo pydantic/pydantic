@@ -529,7 +529,7 @@ def test_set_of_ints_pyd_json(benchmark):
 def test_set_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
 
-    json_data = [json.dumps(list(d)) for d in set_of_ints_duplicates]
+    json_data = [json.dumps(list(d)) for d in set_of_ints_data]
 
     @benchmark
     def t():
@@ -541,7 +541,7 @@ def test_set_of_ints_core_json(benchmark):
 def test_set_of_ints_core_json_duplicates(benchmark):
     v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
 
-    json_data = [json.dumps(list(d)) for d in set_of_ints_data]
+    json_data = [json.dumps(list(d)) for d in set_of_ints_duplicates]
 
     @benchmark
     def t():
