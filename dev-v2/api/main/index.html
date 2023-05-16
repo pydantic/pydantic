@@ -6442,7 +6442,7 @@ This is useful if you want to do some validation that requires the entire model 
             <span class="n">parent_namespace</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="s1">&#39;__pydantic_parent_namespace__&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
             <span class="n">types_namespace</span> <span class="o">=</span> <span class="n">_typing_extra</span><span class="o">.</span><span class="n">get_cls_types_namespace</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">parent_namespace</span><span class="p">)</span>
-            <span class="n">_model_construction</span><span class="o">.</span><span class="n">set_model_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
+            <span class="n">_model_construction</span><span class="o">.</span><span class="n">set_model_fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">bases</span><span class="p">,</span> <span class="n">config_wrapper</span><span class="p">,</span> <span class="n">types_namespace</span><span class="p">)</span>
             <span class="n">_model_construction</span><span class="o">.</span><span class="n">complete_model_class</span><span class="p">(</span>
                 <span class="bp">cls</span><span class="p">,</span>
                 <span class="n">cls_name</span><span class="p">,</span>

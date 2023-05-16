@@ -989,6 +989,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#protected-namespaces" class="md-nav__link">
+    Protected Namespaces
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1710,6 +1717,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#protected-namespaces" class="md-nav__link">
+    Protected Namespaces
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1870,6 +1884,9 @@ and has a type that is not in this tuple (or otherwise recognized by pydantic), 
 <dd>whether to allow infinity (<code>+inf</code> an <code>-inf</code>) and NaN values to float fields, defaults to <code>True</code>,
   set to <code>False</code> for compatibility with <code>JSON</code>,
   see <a href="https://github.com/pydantic/pydantic/pull/3994">#3994</a> for more details, added in <strong>V1.10</strong></dd>
+<dt><strong><code>protected_namespaces</code></strong></dt>
+<dd>a <code>tuple</code> of strings that prevent model to have field which conflict with them (default: <code>('model_', )</code>).
+see <a href="#protected-namespaces">the dedicated section</a></dd>
 </dl>
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
 <p>If you wish to change the behaviour of <em>pydantic</em> globally, you can create your own custom <code>BaseModel</code>
@@ -2134,6 +2151,37 @@ This option will be improved further once a strict mode is added in <em>pydantic
 </div>
 </div>
 </div>
+<h2 id="protected-namespaces">Protected Namespaces<a class="headerlink" href="#protected-namespaces" title="Permanent link">&para;</a></h2>
+<p><em>Pydantic</em> prevents collisions between model attributes and <code>BaseModel</code>'s own methods by
+namespacing them with the prefix <code>model_</code>.
+This is customizable using the <code>protected_namespaces</code> option in the model's config so that
+you can allow overriding <code>model_</code> or add your own protected namespaces.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">model_prefixed_field</span><span class="p">:</span> <span class="nb">str</span>
+
+<span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="c1">#&gt; Field &quot;model_prefixed_field&quot; has conflict with protected namespace &quot;model_&quot;</span>
+</code></pre></div>
+<p>You can change it or define multiple value for it:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="n">model_prefixed_field</span><span class="p">:</span> <span class="nb">str</span>
+        <span class="n">also_protect_field</span><span class="p">:</span> <span class="nb">str</span>
+
+        <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">protected_namespaces</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;protect_me_&#39;</span><span class="p">,</span> <span class="s1">&#39;also_protect_&#39;</span><span class="p">))</span>
+
+<span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="c1">#&gt; Field &quot;also_protect_field&quot; has conflict with protected namespace &quot;also_protect_&quot;</span>
+</code></pre></div>
 
 
 
