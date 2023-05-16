@@ -220,7 +220,7 @@ class ModelMetaclass(ABCMeta):
         return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
 
 
-class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
+class BaseModel(metaclass=ModelMetaclass):
     """
     A base model class for creating Pydantic models.
 
@@ -272,7 +272,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     model_config = ConfigDict()
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
-    __doc__ = ''  # Null out the Representation docstring
     __pydantic_model_complete__ = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
@@ -822,6 +821,18 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         if pydantic_extra is not None:
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
+
+    # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
+    __repr_name__ = _repr.Representation.__repr_name__
+    __repr_str__ = _repr.Representation.__repr_str__
+    __pretty__ = _repr.Representation.__pretty__
+    __rich_repr__ = _repr.Representation.__rich_repr__
+
+    def __str__(self) -> str:
+        return self.__repr_str__(' ')
+
+    def __repr__(self) -> str:
+        return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
