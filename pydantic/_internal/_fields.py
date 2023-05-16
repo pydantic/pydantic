@@ -99,10 +99,9 @@ def collect_model_fields(  # noqa: C901
 
     class_vars: set[str] = set()
     for ann_name, ann_type in type_hints.items():
-        # check protected namespaces
-        for p in config_wrapper.protected_namespaces:
-            if ann_name.startswith(p):
-                raise NameError(f'Field "{ann_name}" has conflict with protected namespace "{p}"')
+        for protected_namespace in config_wrapper.protected_namespaces:
+            if ann_name.startswith(protected_namespace):
+                raise NameError(f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}"')
         if is_classvar(ann_type):
             class_vars.add(ann_name)
             continue

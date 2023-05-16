@@ -162,7 +162,7 @@ and has a type that is not in this tuple (or otherwise recognized by pydantic), 
   see [#3994](https://github.com/pydantic/pydantic/pull/3994) for more details, added in **V1.10**
 
 **`protected_namespaces`**
-: a `list` of strings that prevent model to have field which conflict with them (default: `['model_']`).
+: a `tuple` of strings that prevent model to have field which conflict with them (default: `('model_', )`).
 see [the dedicated section](#protected-namespaces)
 
 ## Change behaviour globally
@@ -355,7 +355,7 @@ print(Model(x=[1, 2]))
 ## Protected Namespaces
 
 Protected namespaces prevent model from having field that starts with them.
-It can be a list of strings and the default value is `['model_']`.
+It can be a list of strings and the default value is `('model_', )`.
 
 ```py
 from pydantic import BaseModel
@@ -363,11 +363,11 @@ from pydantic import BaseModel
 try:
 
     class Model(BaseModel):
-        model_x: str
+        model_prefixed_field: str
 
 except NameError as e:
     print(e)
-    #> Field "model_x" has conflict with protected namespace "model_"
+    #> Field "model_prefixed_field" has conflict with protected namespace "model_"
 ```
 
 You can change it or define multiple value for it:
@@ -378,12 +378,12 @@ from pydantic import BaseModel, ConfigDict
 try:
 
     class Model(BaseModel):
-        model_x: str
-        p2_x: str
+        model_prefixed_field: str
+        also_protect_field: str
 
-        model_config = ConfigDict(protected_namespaces=['p1_', 'p2_'])
+        model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
 
 except NameError as e:
     print(e)
-    #> Field "p2_x" has conflict with protected namespace "p2_"
+    #> Field "also_protect_field" has conflict with protected namespace "also_protect_"
 ```

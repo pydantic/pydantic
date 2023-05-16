@@ -69,7 +69,7 @@ class ConfigDict(TypedDict, total=False):
             Defaults to 'iso8601'.
         ser_json_bytes (Literal['utf8', 'base64']): The encoding of JSON serialized bytes. Defaults to 'utf8'.
         validate_default (bool): Whether to validate default values during validation. Defaults to False.
-        protected_namespaces (list[str]): A list of protected namespaces. Defaults to ['model_'].
+        protected_namespaces (tuple[str, ..]): A list of protected namespaces. Defaults to ('model_', ).
     """
 
     title: str | None
@@ -103,7 +103,7 @@ class ConfigDict(TypedDict, total=False):
     validate_default: bool
     # whether to validate the return value from call validator
     validate_return: bool
-    protected_namespaces: list[str]
+    protected_namespaces: tuple[str, ...]
 
 
 __getattr__ = getattr_migration(__name__)
