@@ -171,9 +171,16 @@ class SchemaError(Exception):
     def errors(self) -> 'list[ErrorDetails]': ...
 
 class ValidationError(ValueError):
-    def __init__(
-        self, title: str, errors: 'list[InitErrorDetails]', error_mode: Literal['python', 'json'] = 'python'
-    ) -> None: ...
+    @staticmethod
+    def from_exception_data(
+        title: str, errors: 'list[InitErrorDetails]', error_mode: Literal['python', 'json'] = 'python'
+    ) -> ValidationError:
+        """
+        Provisory constructor for a Validation Error.
+        This API will probably change and be deprecated in the the future; we will make it easier and more
+        powerful to construct and use ValidationErrors, but we cannot do that before our initial Pydantic V2 release.
+        So if you use this method please be aware that it may change or be removed before Pydantic V3.
+        """
     @property
     def title(self) -> str: ...
     def error_count(self) -> int: ...
