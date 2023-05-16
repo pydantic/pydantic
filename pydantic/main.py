@@ -190,7 +190,7 @@ class ModelMetaclass(ABCMeta):
             parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
 
             types_namespace = _typing_extra.get_cls_types_namespace(cls, parent_namespace)
-            _model_construction.set_model_fields(cls, bases, types_namespace)
+            _model_construction.set_model_fields(cls, bases, config_wrapper, types_namespace)
             _model_construction.complete_model_class(
                 cls,
                 cls_name,

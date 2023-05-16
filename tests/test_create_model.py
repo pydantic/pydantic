@@ -338,3 +338,18 @@ def test_create_model_tuple():
 def test_create_model_tuple_3():
     with pytest.raises(PydanticUserError, match=r'^Field definitions should either be a `\(<type>, <default>\)`\.\n'):
         create_model('FooModel', foo=(Tuple[int, int], (1, 2), 'more'))
+
+
+def test_create_model_protected_namespace_default():
+    with pytest.raises(NameError, match='Field "model_x" has conflict with protected namespace "model_"'):
+        create_model('Model', model_x=(str, ...))
+
+
+def test_create_model_custom_protected_namespace():
+    with pytest.raises(NameError, match='Field "test_x" has conflict with protected namespace "test_"'):
+        create_model('Model', __config__=ConfigDict(protected_namespaces=['test_']), test_x=(str, ...))
+
+
+def test_create_model_multiple_protected_namespace():
+    with pytest.raises(NameError, match='Field "p2_x" has conflict with protected namespace "p2_"'):
+        create_model('Model', __config__=ConfigDict(protected_namespaces=['p1_', 'p2_']), p2_x=(str, ...))

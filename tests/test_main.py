@@ -2190,3 +2190,28 @@ def test_recursion_loop_error():
         "{'type': 'recursion_loop', 'loc': ('x', 0, 'x', 0), 'msg': "
         "'Recursion error - cyclic reference detected', 'input': {'x': [{...}]}}"
     )
+
+
+def test_protected_namespace_default():
+    with pytest.raises(NameError, match='Field "model_x" has conflict with protected namespace "model_"'):
+
+        class Model(BaseModel):
+            model_x: str
+
+
+def test_custom_protected_namespace():
+    with pytest.raises(NameError, match='Field "test_x" has conflict with protected namespace "test_"'):
+
+        class Model(BaseModel):
+            test_x: str
+
+            model_config = ConfigDict(protected_namespaces=['test_'])
+
+
+def test_multiple_protected_namespace():
+    with pytest.raises(NameError, match='Field "p2_x" has conflict with protected namespace "p2_"'):
+
+        class Model(BaseModel):
+            p2_x: str
+
+            model_config = ConfigDict(protected_namespaces=['p1_', 'p2_'])
