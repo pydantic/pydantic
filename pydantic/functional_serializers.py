@@ -16,7 +16,7 @@ from .annotated import GetCoreSchemaHandler
 @slots_dataclass(frozen=True)
 class PlainSerializer:
     """
-    A plain serializer class.
+    Plain serializers use a function to modify the output of serialization.
 
     Attributes:
         func (core_schema.SerializerFunction): The serializer function.

@@ -56,8 +56,12 @@ GetJsonSchemaHandler = _schema_generation_shared.GetJsonSchemaHandler
 
 JsonSchemaMode = Literal['validation', 'serialization']
 """
-A type alias that represents the mode of a JSON schema.
-The mode can be either `validation` or `serialization`.
+A type alias that represents the mode of a JSON schema; either 'validation' or 'serialization'.
+
+For some types, the inputs to validation differ from the outputs of serialization. For example,
+computed fields will only be present when serializing, and should not be provided when
+validating. This flag provides a way to indicate whether you want the JSON schema required
+for validation inputs, or that will be matched by serialization outputs.
 """
 
 _MODE_TITLE_MAPPING: dict[JsonSchemaMode, str] = {'validation': 'Input', 'serialization': 'Output'}
@@ -82,11 +86,9 @@ def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> Json
     return schema
 
 
-# These are "kind" labels that can be used to control warnings. See `GenerateJsonSchema.render_warning_message`
 JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default']
 """
-A type alias that represents the kind of warning that can be raised. It is a Literal type that accepts two
-string options: `skipped-choice` and `non-serializable-default`.
+A type alias representing the kinds of warnings that can be emitted during JSON schema generation.
 
 See `GenerateJsonSchema.render_warning_message` for more details.
 """
