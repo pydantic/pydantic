@@ -3047,7 +3047,7 @@ deserialization. Defaults to False.</p></td>
         <tr>
           <td><code>__inputs</code></td>
           <td>
-                <code><span title="typing.Iterable">Iterable</span>[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <span title="pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</span>, <a class="autorefs autorefs-internal" title="pydantic.type_adapter.TypeAdapter" href="#pydantic.type_adapter.TypeAdapter">TypeAdapter</a>[<span title="typing.Any">Any</span>]]]</code>
+                <code><span title="typing.Iterable">Iterable</span>[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>, <a class="autorefs autorefs-internal" title="pydantic.type_adapter.TypeAdapter" href="#pydantic.type_adapter.TypeAdapter">TypeAdapter</a>[<span title="typing.Any">Any</span>]]]</code>
           </td>
           <td><p>Inputs to schema generation.
 The first two items will form the keys of the (first) output mapping; the type adapters will provide
@@ -3121,7 +3121,7 @@ schema (default: GenerateJsonSchema).</p></td>
     <tbody>
         <tr>
           <td>
-                <code>tuple[dict[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <span title="pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</span>], <span title="pydantic.json_schema.DefsRef">DefsRef</span>], <span title="pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</span>]</code>
+                <code>tuple[dict[tuple[<span title="pydantic.json_schema.JsonSchemaKeyT">JsonSchemaKeyT</span>, <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaMode" href="../json_schema/#pydantic.json_schema.JsonSchemaMode">JsonSchemaMode</a>], <span title="pydantic.json_schema.DefsRef">DefsRef</span>], <a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a>]</code>
           </td>
           <td><p>tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:
 The first item contains the mapping of key + mode to a definitions reference, which will be a key
