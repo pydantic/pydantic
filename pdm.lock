@@ -382,7 +382,7 @@ dependencies = [
 
 [[package]]
 name = "mkdocstrings-python"
-version = "0.9.0"
+version = "1.0.0"
 requires_python = ">=3.7"
 summary = "A Python handler for mkdocstrings."
 dependencies = [
@@ -1092,9 +1092,9 @@ content_hash = "sha256:bd1ba0838608cc5726e3831cf7600d2d310b2c54bd748179c65f6bf77
     {url = "https://files.pythonhosted.org/packages/04/ca/7630aa270d8af95eadccc13836e5471a0d639d41555ec894e78a83d1a4cd/mkdocstrings-0.21.2-py3-none-any.whl", hash = "sha256:949ef8da92df9d692ca07be50616459a6b536083a25520fd54b00e8814ce019b"},
     {url = "https://files.pythonhosted.org/packages/d2/a1/d08d776e8fa2508b299fad8165374317dc742a58880398ed2f9a7ecddefc/mkdocstrings-0.21.2.tar.gz", hash = "sha256:304e56a2e90595708a38a13a278e538a67ad82052dd5c8b71f77a604a4f3d911"},
 ]
-"mkdocstrings-python 0.9.0" = [
-    {url = "https://files.pythonhosted.org/packages/20/7a/1c21699cd4058264785c06804f3bfaa27e7e7b54ded1cf9e5857a8a5ffea/mkdocstrings_python-0.9.0-py3-none-any.whl", hash = "sha256:00e02b5d3d444f9abdec2398f9ba0c73e15deab78685f793f5801fd4d62a5b6f"},
-    {url = "https://files.pythonhosted.org/packages/28/a9/a09182a5cddb5b3b6b62b3b2af35f76ed3daf42ae43ef223d86eb876d1ea/mkdocstrings-python-0.9.0.tar.gz", hash = "sha256:da0a54d7d46523a25a5227f0ecc74b491291bd9d36fc71445bfb0ea64283e287"},
+"mkdocstrings-python 1.0.0" = [
+    {url = "https://files.pythonhosted.org/packages/78/87/47c8000e1664255c4d0b7868cdef575805a46363de018a7a7ee218def0ff/mkdocstrings_python-1.0.0-py3-none-any.whl", hash = "sha256:c59d67009a7a85172f4da990d8523e95606b6a1ff93a22a2351ad3b5f8cafed1"},
+    {url = "https://files.pythonhosted.org/packages/e0/95/a25fb66cc564b584e149982abe461d7cdb7847b6bc2a8a97162faf79e1e5/mkdocstrings_python-1.0.0.tar.gz", hash = "sha256:b89d849df990204f909d5452548b6936a185f912da06208a93909bebe25d6e67"},
 ]
 "mypy 1.1.1" = [
     {url = "https://files.pythonhosted.org/packages/2a/28/8485aad67750b3374443d28bad3eed947737cf425a640ea4be4ac70a7827/mypy-1.1.1-cp38-cp38-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:ce61663faf7a8e5ec6f456857bfbcec2901fbdb3ad958b778403f63b9e606a1b"},
