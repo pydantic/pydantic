@@ -4,7 +4,7 @@ may encounter when working with pydantic, together with some suggestions on how 
 ## `arguments_type`
 
 This error is raised when arguments passed to a function are not
-a `Tuple`, `List`, or dictionary.
+a tuple, list, or dictionary.
 
 ## `assertion_error`
 
@@ -37,7 +37,7 @@ This error is raised when the value type is not valid for a Boolean field.
 
 ## `bool_parsing`
 
-This error is raised when the value is a string that is not valid for coercion to a Boolean.
+This error is raised when the value is a string that is not valid for coercion to a boolean.
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -75,7 +75,7 @@ except ValidationError as exc_info:
 
 ## `bytes_too_long`
 
-This error is raised when the `bytes` value length is greater than `Field.max_length`.
+This error is raised when the length of a `bytes` value is greater than `Field.max_length`.
 
 ```py
 from pydantic import BaseModel, Field, ValidationError
@@ -93,7 +93,7 @@ except ValidationError as exc_info:
 
 ## `bytes_too_short`
 
-This error is raised when the `bytes` value length is less than `Field.min_length`.
+This error is raised when the length of a `bytes` value is less than `Field.min_length`.
 
 ```py
 from pydantic import BaseModel, Field, ValidationError
@@ -111,7 +111,7 @@ except ValidationError as exc_info:
 
 ## `bytes_type`
 
-This error is raised when the value type is not valid for a `bytes` field.
+This error is raised when the type of an input value is not valid for a `bytes` field.
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -210,7 +210,7 @@ Model(y=Nested(x=1))
 This error is raised when the `datetime` value provided for a `date` field
 has a nonzero time component.
 For a timestamp to parse into a field of type `date`, the time components
-must be all zero.
+must all be zero.
 
 ```py
 from datetime import date, datetime
@@ -396,7 +396,7 @@ except ValidationError as exc_info:
 
 ## `datetime_object_invalid`
 
-This error is raised when the `datetime` object is not valid.
+This error is raised when something about the `datetime` object is not valid.
 
 ```py
 from datetime import datetime, tzinfo
@@ -547,7 +547,7 @@ except ValidationError as exc_info:
 
 ## `extra_forbidden`
 
-This error is raised when the input values contain extra fields and `config.extra=forbid`.
+This error is raised when the input values contain extra fields and `model_config['extra'] == 'forbid'`.
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -731,7 +731,7 @@ except ValidationError as exc_info:
 
 ## `greater_than_equal`
 
-This error is raised when the value is not greater than or equal to `Field.ge`.
+This error is raised when the value is not greater than or equal to the specified constraint.
 
 ```py
 from pydantic import BaseModel, Field, ValidationError
@@ -803,7 +803,7 @@ except ValidationError as exc_info:
 
 ## `invalid_key`
 
-This error is raised when the key type is not valid.
+This error is raised when the type of a `dict` key is not valid.
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -934,7 +934,7 @@ except ValidationError as exc_info:
 
 ## `json_type`
 
-This error is raised when the input value type is not a JSON string.
+This error is raised when the input value is of a type that cannot be parsed as JSON.
 
 ```py
 from pydantic import BaseModel, Json, ValidationError
@@ -970,7 +970,7 @@ except ValidationError as exc_info:
 
 ## `less_than_equal`
 
-This error is raised when the value is not less than or equal to `Field.le`.
+This error is raised when the value is not less than or equal to the specified constraint.
 
 ```py
 from pydantic import BaseModel, Field, ValidationError
@@ -988,7 +988,7 @@ except ValidationError as exc_info:
 
 ## `list_type`
 
-This error is raised when the input value is not a `List`.
+This error is raised when the input value is not a `list`.
 
 ```py
 from typing import List
@@ -1142,7 +1142,7 @@ except ValidationError as exc_info:
 ## `model_class_type`
 
 This error is raised when you validate with `strict=True` and
-input value is not an instance of the model.
+the input value is not an instance of the model.
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -1193,7 +1193,7 @@ except ValidationError as exc_info:
 
 ## `multiple_of`
 
-This error is raised when the input is not a multiple of `Field.multiple_of`.
+This error is raised when the input is not a multiple of `FieldInfo.multiple_of`.
 
 ```py
 from pydantic import BaseModel, Field, ValidationError
@@ -1211,7 +1211,7 @@ except ValidationError as exc_info:
 
 ## `no_such_attribute`
 
-This error is raised when you assign value to an attribute that does not exist.
+This error is raised when you assign a value to an attribute that does not exist.
 
 ```py
 from pydantic import ConfigDict, ValidationError, dataclasses
@@ -1272,7 +1272,7 @@ except ValidationError as exc_info:
 
 ## `set_type`
 
-This error is raised when the value type is not `Set`.
+This error is raised when the value type is not `set`.
 
 ```py
 from typing import Set
@@ -1371,7 +1371,7 @@ except ValidationError as exc_info:
 
 ## `string_type`
 
-This error is raised when the value type is not a string.
+This error is raised when the value is not a string.
 
 ```py
 from pydantic import BaseModel, ValidationError
@@ -1527,7 +1527,7 @@ except ValidationError as exc_info:
 
 ## `tuple_type`
 
-This error is raised when the value type is not valid for a `Tuple` field.
+This error is raised when the value type is not valid for a `tuple` field.
 
 ```py
 from typing import Tuple
@@ -1617,7 +1617,7 @@ except ValidationError as exc_info:
 
 ## `union_tag_not_found`
 
-This error is raised when it is not possible to extract the tag using a discriminator.
+This error is raised when it is not possible to extract a tag using the discriminator.
 
 ```py
 from typing import Union
@@ -1665,7 +1665,7 @@ except ValidationError as exc_info:
 
 ## `url_scheme`
 
-This error is raised when the URL schema is not valid for the URL type.
+This error is raised when the URL scheme is not valid for the URL type of the field.
 
 ```py
 from pydantic import BaseModel, HttpUrl, ValidationError
@@ -1683,7 +1683,7 @@ except ValidationError as exc_info:
 
 ## `url_syntax_violation`
 
-This error is raised when the RUL syntax is not valid.
+This error is raised when the URL syntax is not valid.
 
 ```py
 from pydantic import BaseModel, Field, HttpUrl, ValidationError
