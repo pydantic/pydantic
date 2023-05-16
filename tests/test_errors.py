@@ -553,19 +553,21 @@ def test_error_json_loc():
 
 def test_raise_validation_error():
     with pytest.raises(ValidationError, match='1 validation error for Foobar\n') as exc_info:
-        raise ValidationError('Foobar', [{'type': 'greater_than', 'loc': ('a', 2), 'input': 4, 'ctx': {'gt': 5}}])
+        raise ValidationError.from_exception_data(
+            'Foobar', [{'type': 'greater_than', 'loc': ('a', 2), 'input': 4, 'ctx': {'gt': 5}}]
+        )
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'greater_than', 'loc': (2, 'a'), 'msg': 'Input should be greater than 5', 'input': 4, 'ctx': {'gt': 5}}
     ]
     with pytest.raises(TypeError, match='GreaterThan requires context: {gt: Number}'):
-        raise ValidationError('Foobar', [{'type': 'greater_than', 'loc': ('a', 2), 'input': 4}])
+        raise ValidationError.from_exception_data('Foobar', [{'type': 'greater_than', 'loc': ('a', 2), 'input': 4}])
 
 
 def test_raise_validation_error_json():
     with pytest.raises(ValidationError) as exc_info:
-        raise ValidationError('Foobar', [{'type': 'none_required', 'loc': [-42], 'input': 'x'}])
+        raise ValidationError.from_exception_data('Foobar', [{'type': 'none_required', 'loc': [-42], 'input': 'x'}])
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
@@ -573,7 +575,9 @@ def test_raise_validation_error_json():
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        raise ValidationError('Foobar', [{'type': 'none_required', 'loc': (), 'input': 'x'}], 'json')
+        raise ValidationError.from_exception_data(
+            'Foobar', [{'type': 'none_required', 'loc': (), 'input': 'x'}], 'json'
+        )
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
@@ -586,7 +590,7 @@ def test_raise_validation_error_custom():
         'my_error', 'this is a custom error {missed} {foo} {bar}', {'foo': 'X', 'bar': 42}
     )
     with pytest.raises(ValidationError) as exc_info:
-        raise ValidationError('Foobar', [{'type': custom_error, 'input': 'x'}])
+        raise ValidationError.from_exception_data('Foobar', [{'type': custom_error, 'input': 'x'}])
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
@@ -631,14 +635,3 @@ def test_loc_with_dots():
         "[type=int_parsing, input_value='x', input_type=str]\n"
         f'    For further information visit https://errors.pydantic.dev/{__version__}/v/int_parsing'
     )
-
-
-def subclass_validation_error():
-    class MyValidationError(ValidationError):
-        def __init__(self, title: str, errors, error_mode='python'):
-            self.body = 123
-            super().__init__(title, errors, error_mode)
-
-    e = MyValidationError('testing', [])
-    assert e.body == 123
-    assert e.title == 'testing'
