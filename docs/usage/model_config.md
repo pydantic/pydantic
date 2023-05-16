@@ -354,8 +354,10 @@ print(Model(x=[1, 2]))
 
 ## Protected Namespaces
 
-Protected namespaces prevent model from having field that starts with them.
-It can be a list of strings and the default value is `('model_', )`.
+_Pydantic_ prevents collisions between model attributes and `BaseModel`'s own methods by
+namespacing them with the prefix `model_`.
+This is customizable using the `protected_namespaces` option in the model's config so that
+you can allow overriding `model_` or add your own protected namespaces.
 
 ```py
 from pydantic import BaseModel
