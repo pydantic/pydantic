@@ -992,12 +992,12 @@ Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 
 
 if TYPE_CHECKING:
-    SimpleIsInstance = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+    IsInstance = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
 
 else:
 
     @_internal_dataclass.slots_dataclass
-    class SimpleIsInstance:
+    class IsInstance:
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]

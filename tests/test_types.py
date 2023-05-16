@@ -96,7 +96,7 @@ from pydantic import (
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, SecretField, SimpleIsInstance, Strict
+from pydantic.types import AllowInfNan, ImportString, IsInstance, SecretField, Strict
 
 try:
     import email_validator
@@ -4943,7 +4943,7 @@ def test_ordered_dict_from_dict(field_type):
 
 def test_simple_is_instance():
     class Model(BaseModel):
-        x: SimpleIsInstance[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
+        x: IsInstance[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
 
     class MyList(list):
         pass
