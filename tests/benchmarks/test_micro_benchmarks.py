@@ -476,6 +476,7 @@ def test_list_of_any_core_py(benchmark):
 
 
 set_of_ints_data = ({i for i in range(1000)}, {str(i) for i in range(1000)})
+set_of_ints_duplicates = ([i for i in range(100)] * 10, [str(i) for i in range(100)] * 10)
 
 
 @skip_pydantic
@@ -500,6 +501,16 @@ def test_set_of_ints_core(benchmark):
         v.validate_python(set_of_ints_data[1])
 
 
+@pytest.mark.benchmark(group='Set[int]')
+def test_set_of_ints_core_duplicates(benchmark):
+    v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
+
+    @benchmark
+    def t():
+        v.validate_python(set_of_ints_duplicates[0])
+        v.validate_python(set_of_ints_duplicates[1])
+
+
 @skip_pydantic
 @pytest.mark.benchmark(group='Set[int] JSON')
 def test_set_of_ints_pyd_json(benchmark):
@@ -518,6 +529,18 @@ def test_set_of_ints_pyd_json(benchmark):
 def test_set_of_ints_core_json(benchmark):
     v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
 
+    json_data = [json.dumps(list(d)) for d in set_of_ints_duplicates]
+
+    @benchmark
+    def t():
+        v.validate_json(json_data[0])
+        v.validate_json(json_data[1])
+
+
+@pytest.mark.benchmark(group='Set[int] JSON')
+def test_set_of_ints_core_json_duplicates(benchmark):
+    v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}})
+
     json_data = [json.dumps(list(d)) for d in set_of_ints_data]
 
     @benchmark
@@ -527,6 +550,7 @@ def test_set_of_ints_core_json(benchmark):
 
 
 frozenset_of_ints = frozenset({i for i in range(1000)})
+frozenset_of_ints_duplicates = [i for i in range(100)] * 10
 
 
 @skip_pydantic
@@ -543,6 +567,13 @@ def test_frozenset_of_ints_core(benchmark):
     v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
 
     benchmark(v.validate_python, frozenset_of_ints)
+
+
+@pytest.mark.benchmark(group='FrozenSet[int]')
+def test_frozenset_of_ints_duplicates_core(benchmark):
+    v = SchemaValidator({'type': 'frozenset', 'items_schema': {'type': 'int'}})
+
+    benchmark(v.validate_python, frozenset_of_ints_duplicates)
 
 
 dict_of_ints_data = ({str(i): i for i in range(1000)}, {str(i): str(i) for i in range(1000)})
