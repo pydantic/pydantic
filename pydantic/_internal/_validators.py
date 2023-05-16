@@ -8,39 +8,10 @@ from __future__ import annotations as _annotations
 
 import re
 import typing
-from collections import OrderedDict, defaultdict, deque
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any
 
 from pydantic_core import PydanticCustomError, core_schema
-
-
-def mapping_validator(
-    __input_value: typing.Mapping[Any, Any],
-    validator: core_schema.ValidatorFunctionWrapHandler,
-) -> typing.Mapping[Any, Any]:
-    """
-    Validator for `Mapping` types, if required `isinstance(v, Mapping)` has already been called.
-    """
-    v_dict = validator(__input_value)
-    value_type = type(__input_value)
-
-    # the rest of the logic is just re-creating the original type from `v_dict`
-    if value_type == dict:
-        return v_dict
-    elif issubclass(value_type, defaultdict):
-        default_factory = __input_value.default_factory  # type: ignore[attr-defined]
-        return value_type(default_factory, v_dict)
-    else:
-        # best guess at how to re-create the original type, more custom construction logic might be required
-        return value_type(v_dict)  # type: ignore[call-arg]
-
-
-def construct_counter(__input_value: typing.Mapping[Any, Any]) -> typing.Counter[Any]:
-    """
-    Validator for `Counter` types, if required `isinstance(v, Counter)` has already been called.
-    """
-    return typing.Counter(__input_value)
 
 
 def sequence_validator(
@@ -150,33 +121,6 @@ def compile_pattern(pattern: PatternType) -> typing.Pattern[PatternType]:
         return re.compile(pattern)
     except re.error:
         raise PydanticCustomError('pattern_regex', 'Input should be a valid regular expression')
-
-
-def deque_any_validator(__input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler) -> deque[Any]:
-    if isinstance(__input_value, deque):
-        return __input_value
-    else:
-        return deque(validator(__input_value))
-
-
-def deque_typed_validator(__input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler) -> deque[Any]:
-    if isinstance(__input_value, deque):
-        return deque(validator(__input_value), maxlen=__input_value.maxlen)
-    else:
-        return deque(validator(__input_value))
-
-
-def ordered_dict_any_validator(
-    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler
-) -> OrderedDict[Any, Any]:
-    if isinstance(__input_value, OrderedDict):
-        return __input_value
-    else:
-        return OrderedDict(validator(__input_value))
-
-
-def ordered_dict_typed_validator(__input_value: list[Any]) -> OrderedDict[Any, Any]:
-    return OrderedDict(__input_value)
 
 
 def ip_v4_address_validator(__input_value: Any) -> IPv4Address:
