@@ -1,10 +1,11 @@
-Below are details on common errors developers can see when working with pydantic, together
-with some suggestions on how to fix them.
+Pydantic attempts to provide useful errors. The following sections provide details on common errors developers may
+encounter when working with Pydantic, along with suggestions for addressing the error condition.
 
+<!-- Note: raw tag is used to avoid rendering of jinja2 template tags in the docs. -->
 {% raw %}
 ## Decorator on missing field {#decorator-missing-field}
 
-This error is raised when you define a decorator with an invalid field.
+This error is raised when you define a decorator with a field that is not valid.
 
 ```py
 from typing import Any
@@ -106,7 +107,7 @@ except PydanticUserError as exc_info:
 
 ## Discriminator needs literal {#discriminator-needs-literal}
 
-This error is raised when you define a non-`Literal` type discriminator field.
+This error is raised when you define a non-`Literal` type on a discriminator field.
 
 ```py
 from typing import Union
@@ -168,7 +169,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'discriminator-alias'
 ```
 
-## TypedDict version {#typed-dict-version}
+## `TypedDict` version {#typed-dict-version}
 
 This error is raised when you use `typing_extensions.TypedDict`
 instead of `typing.TypedDict` on Python < 3.11.
@@ -309,7 +310,7 @@ Foo.model_rebuild()
 foo = Foo(a={'b': {'a': None}})
 ```
 
-## Config and model_config both defined {#config-both}
+## `Config` and `model_config` both defined {#config-both}
 
 This error is raised when `class Config` and `model_config` are used together.
 
@@ -348,7 +349,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'deprecated-kwargs'
 ```
 
-## JSON Schema invalid type {#invalid-for-json-schema}
+## JSON schema invalid type {#invalid-for-json-schema}
 
 This error is raised when Pydantic fails to generate a JSON schema for some `CoreSchema`.
 
@@ -367,10 +368,10 @@ except PydanticUserError as exc_info:
 ```
 
 
-## JSON Schema already used {#json-schema-already-used}
+## JSON schema already used {#json-schema-already-used}
 
 This error is raised when the JSON schema generator has already been used to generate a JSON schema.
-You must create a new instance to generate a new JSON schema.'
+You must create a new instance to generate a new JSON schema.
 
 ## BaseModel instantiated {#base-model-instantiated}
 
@@ -421,11 +422,12 @@ except PydanticUserError as exc_info:
 
 ## Import error {#import-error}
 
-This error is raised when you try to import an object that was available in V1 but has been removed in V2.
+This error is raised when you try to import an object that was available in Pydantic V1, but has been removed in
+Pydantic V2.
 
-## create_model field definitions {#create-model-field-definitions}
+## `create_model` field definitions {#create-model-field-definitions}
 
-This error is raised when you provide invalid field definitions input in `create_model`.
+This error is raised when you provide field definitions input in `create_model` that is not valid.
 
 ```py
 from pydantic import PydanticUserError, create_model
@@ -436,7 +438,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'create-model-field-definitions'
 ```
 
-## create_model config base {#create-model-config-base}
+## `create_model` config base {#create-model-config-base}
 
 This error is raised when you use both `__config__` and `__base__` together in `create_model`.
 
@@ -454,7 +456,7 @@ except PydanticUserError as exc_info:
 
 ## Validator with no fields {#validator-no-fields}
 
-This error is raised when you use validator bare.
+This error is raised when you use validator bare (with no fields).
 
 ```py
 from pydantic import BaseModel, PydanticUserError, field_validator
@@ -472,7 +474,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-no-fields'
 ```
 
-Should be used with fields and keyword arguments.
+Validators should be used with fields and keyword arguments.
 
 ```py
 from pydantic import BaseModel, field_validator
@@ -488,7 +490,7 @@ class Model(BaseModel):
 
 ## Invalid validator fields {#validator-invalid-fields}
 
-This error is raised when you use validator with non-string fields.
+This error is raised when you use a validator with non-string fields.
 
 ```py
 from pydantic import BaseModel, PydanticUserError, field_validator
@@ -507,7 +509,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-invalid-fields'
 ```
 
-Fields should be passed as separate string args:
+Fields should be passed as separate string arguments:
 
 ```py
 from pydantic import BaseModel, field_validator
@@ -524,7 +526,7 @@ class Model(BaseModel):
 
 ## Validator on instance method {#validator-instance-method}
 
-This error is raised when you apply validator on an instance method.
+This error is raised when you apply a validator on an instance method.
 
 ```py
 from pydantic import BaseModel, PydanticUserError, field_validator
@@ -542,16 +544,17 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-instance-method'
 ```
 
-## Root Validator, pre, skip_on_failure {#root-validator-pre-skip}
+## Root validator, `pre`, `skip_on_failure` {#root-validator-pre-skip}
 
-If you use `@root_validator` with pre=False (the default) you MUST specify `skip_on_failure=True`.
+If you use `@root_validator` with `pre=False` (the default) you MUST specify `skip_on_failure=True`.
 The `skip_on_failure=False` option is no longer available.
-If you were not trying to set `skip_on_failure=False` you can safely set `skip_on_failure=True`.
+
+If you were not trying to set `skip_on_failure=False`, you can safely set `skip_on_failure=True`.
 If you do, this root validator will no longer be called if validation fails for any of the fields.
 
-Please see the migration guide for more details. TODO link
+Please see the [Migration Guide](../migration.md) for more details.
 
-## model_validator instance methods {#model-serializer-instance-method}
+## `model_validator` instance methods {#model-serializer-instance-method}
 
 `@model_serializer` must be applied to instance methods.
 
@@ -592,16 +595,19 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'model-serializer-instance-method'
 ```
 
-## validator, field, config and info {#validator-field-config-info}
+## `validator`, `field`, `config`, and `info` {#validator-field-config-info}
 
 The `field` and `config` parameters are not available in Pydantic V2.
-Please use the `info` parameter instead. You can access the configuration via `info.config`
+Please use the `info` parameter instead.
+
+You can access the configuration via `info.config`,
 but it is a dictionary instead of an object like it was in Pydantic V1.
+
 The `field` argument is no longer available.
 
-## V1 validator signature {#validator-v1-signature}
+## Pydantic V1 validator signature {#validator-v1-signature}
 
-This error is raised when you use an unsupported signature for V1 style validator.
+This error is raised when you use an unsupported signature for Pydantic V1-style validator.
 
 ```py
 import warnings
@@ -623,7 +629,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-v1-signature'
 ```
 
-## Unrecognized field_validator signature {#validator-signature}
+## Unrecognized `field_validator` signature {#validator-signature}
 
 This error is raised when a `field_validator` or `model_validator` function has the wrong signature.
 
@@ -644,9 +650,9 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'validator-signature'
 ```
 
-## Unrecognized field_serializer signature {#field-serializer-signature}
+## Unrecognized `field_serializer` signature {#field-serializer-signature}
 
-This error is raised when `field_serializer` function has the wrong signature.
+This error is raised when the `field_serializer` function has the wrong signature.
 
 ```py
 from pydantic import BaseModel, PydanticUserError, field_serializer
@@ -702,9 +708,9 @@ def ser_x(self, value: Any): ...
 def ser_x(self, value: Any, handler: pydantic.SerializerFunctionWrapHandler): ...
 ```
 
-## Unrecognized model_serializer signature {#model-serializer-signature}
+## Unrecognized `model_serializer` signature {#model-serializer-signature}
 
-This error is raised when `model_serializer` function has the wrong signature.
+This error is raised when the `model_serializer` function has the wrong signature.
 
 ```py
 from pydantic import BaseModel, PydanticUserError, model_serializer
