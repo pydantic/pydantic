@@ -339,8 +339,8 @@ jobs:
     - name: install
       run: make install-testing
 
-#    - name: test
-#      run: make test-fastapi
+    - name: test
+      run: make test-fastapi
 
   build:
     name: build py3.${{ matrix.python-version }} on ${{ matrix.platform || matrix.os }}
