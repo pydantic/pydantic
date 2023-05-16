@@ -157,7 +157,7 @@ class Model(BaseModel):
     x: ImportString[Callable[[Any], Any]]
 
 
-Model(x='math.cos')
+Model(x='math:cos')
 ```
 
 ## `dataclass_type`

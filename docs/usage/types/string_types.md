@@ -18,9 +18,9 @@ description: Useful types provided by Pydantic.
   For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
   for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
 
-`PyObject`
-: expects a string and loads the Python object importable at that dotted path;
-  e.g. if `'math.cos'` was provided, the resulting field value would be the function `cos`
+`ImportString`
+: expects a string and loads the Python object importable at that dotted path; attributes of modules should be separated
+  from the module by `:`.  e.g. if `'math:cos'` was provided, the resulting field value would be the function `cos`
 
 `constr`
 : type method for constraining strs;
@@ -42,7 +42,7 @@ description: Useful types provided by Pydantic.
 
 ## ImportString
 
-`ImportString` expects a string and loads the Python object importable at that dotted path; e.g. if `'math.cos'` was provided,
+`ImportString` expects a string and loads the Python object importable at that dotted path; e.g. if `'math:cos'` was provided,
 the resulting field value would be the function `cos`; see [ImportString](#importstring)
 
 On model instantiation, pointers will be evaluated and imported. There is
@@ -62,7 +62,7 @@ class ImportThings(BaseModel):
 
 
 # A string value will cause an automatic import
-my_cos = ImportThings(obj='math.cos')
+my_cos = ImportThings(obj='math:cos')
 
 # You can use the imported function as you would expect
 cos_of_0 = my_cos.obj(0)
@@ -99,7 +99,7 @@ except ValidationError as e:
 from math import cos  # noqa: E402
 
 my_cos = ImportThings(obj=cos)
-my_cos_2 = ImportThings(obj='math.cos')
+my_cos_2 = ImportThings(obj='math:cos')
 assert my_cos == my_cos_2
 ```
 
@@ -122,7 +122,7 @@ class WithCustomEncodersBad(BaseModel):
 
 
 # Create an instance
-m = WithCustomEncodersBad(obj='math.cos')
+m = WithCustomEncodersBad(obj='math:cos')
 
 try:
     m.json()
@@ -144,7 +144,7 @@ class WithCustomEncodersGood(BaseModel):
         json_encoders = {BuiltinFunctionType: lambda x: str(x)}
 
 
-m = WithCustomEncodersGood(obj='math.cos')
+m = WithCustomEncodersGood(obj='math:cos')
 print(m.json())
 ```
 

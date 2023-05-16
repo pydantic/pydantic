@@ -290,10 +290,12 @@ else:
         ) -> core_schema.CoreSchema:
             if cls is source:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-                return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
+                return core_schema.general_plain_validator_function(
+                    lambda v, _: _validators.import_string(v, require_colon_for_attributes=True)
+                )
             else:
                 return core_schema.general_before_validator_function(
-                    lambda v, _: _validators.import_string(v), handler(source)
+                    lambda v, _: _validators.import_string(v, require_colon_for_attributes=True), handler(source)
                 )
 
         def __repr__(self) -> str:

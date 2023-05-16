@@ -39,12 +39,12 @@ def test_import_module():
 
 
 def test_import_module_invalid():
-    with pytest.raises(PydanticCustomError, match='Invalid python path: "xx" doesn\'t look like a module path'):
+    with pytest.raises(PydanticCustomError, match="Invalid python path: No module named 'xx'"):
         import_string('xx')
 
 
 def test_import_no_attr():
-    with pytest.raises(PydanticCustomError, match='Module "os" does not define a "foobar" attribute'):
+    with pytest.raises(PydanticCustomError, match="cannot import name 'foobar' from 'os'"):
         import_string('os.foobar')
 
 

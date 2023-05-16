@@ -793,7 +793,7 @@ def test_string_import_callable(annotation):
     class PyObjectModel(BaseModel):
         callable: annotation
 
-    m = PyObjectModel(callable='math.cos')
+    m = PyObjectModel(callable='math:cos')
     assert m.callable == math.cos
 
     m = PyObjectModel(callable=math.cos)
@@ -806,9 +806,9 @@ def test_string_import_callable(annotation):
         {
             'type': 'import_error',
             'loc': ('callable',),
-            'msg': 'Invalid python path: "foobar" doesn\'t look like a module path',
+            'msg': "Invalid python path: No module named 'foobar'",
             'input': 'foobar',
-            'ctx': {'error': '"foobar" doesn\'t look like a module path'},
+            'ctx': {'error': "No module named 'foobar'"},
         }
     ]
 
@@ -819,9 +819,9 @@ def test_string_import_callable(annotation):
         {
             'type': 'import_error',
             'loc': ('callable',),
-            'msg': 'Invalid python path: Module "os" does not define a "missing" attribute',
+            'msg': "Invalid python path: No module named 'os.missing'",
             'input': 'os.missing',
-            'ctx': {'error': 'Module "os" does not define a "missing" attribute'},
+            'ctx': {'error': "No module named 'os.missing'"},
         }
     ]
 
@@ -844,7 +844,7 @@ def test_string_import_any():
     class PyObjectModel(BaseModel):
         thing: ImportString
 
-    assert PyObjectModel(thing='math.cos').model_dump() == {'thing': math.cos}
+    assert PyObjectModel(thing='math:cos').model_dump() == {'thing': math.cos}
     assert PyObjectModel(thing='os.path').model_dump() == {'thing': os.path}
     assert PyObjectModel(thing=[1, 2, 3]).model_dump() == {'thing': [1, 2, 3]}
 
@@ -860,9 +860,95 @@ def test_string_import_constraints(annotation):
     class PyObjectModel(BaseModel):
         thing: annotation
 
-    assert PyObjectModel(thing='math.pi').model_dump() == {'thing': pytest.approx(3.141592654)}
+    assert PyObjectModel(thing='math:pi').model_dump() == {'thing': pytest.approx(3.141592654)}
     with pytest.raises(ValidationError, match='type=greater_than_equal'):
-        PyObjectModel(thing='math.e')
+        PyObjectModel(thing='math:e')
+
+
+def test_string_import_examples():
+    import collections
+
+    adapter = TypeAdapter(ImportString)
+    assert adapter.validate_python('collections') is collections
+    assert adapter.validate_python('collections.abc') is collections.abc
+    assert adapter.validate_python('collections.abc:Mapping') is collections.abc.Mapping
+
+
+@pytest.mark.parametrize(
+    'import_string,errors',
+    [
+        (
+            'collections.abc.Mapping',
+            [
+                {
+                    'ctx': {
+                        'error': "No module named 'collections.abc.Mapping'; did you mean 'collections.abc:Mapping'?"
+                    },
+                    'input': 'collections.abc.Mapping',
+                    'loc': (),
+                    'msg': (
+                        "Invalid python path: No module named 'collections.abc.Mapping';"
+                        " did you mean 'collections.abc:Mapping'?"
+                    ),
+                    'type': 'import_error',
+                }
+            ],
+        ),
+        (
+            'collections.abc.def',
+            [
+                {
+                    'ctx': {'error': "No module named 'collections.abc.def'"},
+                    'input': 'collections.abc.def',
+                    'loc': (),
+                    'msg': "Invalid python path: No module named 'collections.abc.def'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+        (
+            'collections.abc:def',
+            [
+                {
+                    'ctx': {'error': "cannot import name 'def' from 'collections.abc'"},
+                    'input': 'collections.abc:def',
+                    'loc': (),
+                    'msg': "Invalid python path: cannot import name 'def' from 'collections.abc'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+        (
+            'collections:abc:Mapping',
+            [
+                {
+                    'ctx': {'error': "Import strings should have at most one ':'; received 'collections:abc:Mapping'"},
+                    'input': 'collections:abc:Mapping',
+                    'loc': (),
+                    'msg': "Invalid python path: Import strings should have at most one ':';"
+                    " received 'collections:abc:Mapping'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+        (
+            '123_collections:Mapping',
+            [
+                {
+                    'ctx': {'error': "No module named '123_collections'"},
+                    'input': '123_collections:Mapping',
+                    'loc': (),
+                    'msg': "Invalid python path: No module named '123_collections'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+    ],
+)
+def test_string_import_errors(import_string, errors):
+    with pytest.raises(ValidationError) as exc_info:
+        TypeAdapter(ImportString).validate_python(import_string)
+    assert exc_info.value.errors() == errors
 
 
 def test_decimal():
