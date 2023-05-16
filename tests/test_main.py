@@ -2203,6 +2203,8 @@ def test_custom_protected_namespace():
     with pytest.raises(NameError, match='Field "test_field" has conflict with protected namespace "test_"'):
 
         class Model(BaseModel):
+            # this field won't raise error because we changed the default value for the
+            # `protected_namespaces` config.
             model_prefixed_field: str
             test_field: str
 
