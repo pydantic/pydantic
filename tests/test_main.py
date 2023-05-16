@@ -2190,3 +2190,33 @@ def test_recursion_loop_error():
         "{'type': 'recursion_loop', 'loc': ('x', 0, 'x', 0), 'msg': "
         "'Recursion error - cyclic reference detected', 'input': {'x': [{...}]}}"
     )
+
+
+def test_protected_namespace_default():
+    with pytest.raises(NameError, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
+
+        class Model(BaseModel):
+            model_prefixed_field: str
+
+
+def test_custom_protected_namespace():
+    with pytest.raises(NameError, match='Field "test_field" has conflict with protected namespace "test_"'):
+
+        class Model(BaseModel):
+            # this field won't raise error because we changed the default value for the
+            # `protected_namespaces` config.
+            model_prefixed_field: str
+            test_field: str
+
+            model_config = ConfigDict(protected_namespaces=('test_',))
+
+
+def test_multiple_protected_namespace():
+    with pytest.raises(
+        NameError, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+    ):
+
+        class Model(BaseModel):
+            also_protect_field: str
+
+            model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
