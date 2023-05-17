@@ -1736,7 +1736,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="c1">#&gt; {&#39;width&#39;: 3, &#39;length&#39;: 2, &#39;area&#39;: 6}</span>
 </code></pre></div>
 <p>If the <code>computed_field</code> decorator is applied to a bare function
-(e.g. a function with the <code>@property</code> or <code>@cached_property</code> decorator)
+(e.g. a function without the <code>@property</code> or <code>@cached_property</code> decorator)
 it will wrap the function in <code>property</code> itself. Although this is more concise, you will lose IntelliSense in your IDE,
 and confuse static type checkers, thus explicit use of <code>@property</code> is recommended.</p>
 <div class="admonition warning">
