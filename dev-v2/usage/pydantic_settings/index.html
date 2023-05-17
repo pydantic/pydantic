@@ -1887,14 +1887,15 @@ will still be used if the matching environment variable is not set.)</p>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">AliasChoices</span><span class="p">,</span>
+    <span class="n">AmqpDsn</span><span class="p">,</span>
     <span class="n">BaseModel</span><span class="p">,</span>
     <span class="n">ConfigDict</span><span class="p">,</span>
-    <span class="n">ImportString</span><span class="p">,</span>
-    <span class="n">RedisDsn</span><span class="p">,</span>
-    <span class="n">PostgresDsn</span><span class="p">,</span>
-    <span class="n">AmqpDsn</span><span class="p">,</span>
     <span class="n">Field</span><span class="p">,</span>
+    <span class="n">ImportString</span><span class="p">,</span>
+    <span class="n">PostgresDsn</span><span class="p">,</span>
+    <span class="n">RedisDsn</span><span class="p">,</span>
 <span class="p">)</span>
+
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
@@ -1909,7 +1910,7 @@ will still be used if the matching environment variable is not set.)</p>
 
     <span class="n">redis_dsn</span><span class="p">:</span> <span class="n">RedisDsn</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span>
         <span class="s1">&#39;redis://user:pass@localhost:6379/1&#39;</span><span class="p">,</span>
-        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;service_redis_dsn&#39;</span><span class="p">,</span> <span class="s1">&#39;redis_url&#39;</span><span class="p">)</span>
+        <span class="n">validation_alias</span><span class="o">=</span><span class="n">AliasChoices</span><span class="p">(</span><span class="s1">&#39;service_redis_dsn&#39;</span><span class="p">,</span> <span class="s1">&#39;redis_url&#39;</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="n">pg_dsn</span><span class="p">:</span> <span class="n">PostgresDsn</span> <span class="o">=</span> <span class="s1">&#39;postgres://user:pass@localhost:5432/foobar&#39;</span>
     <span class="n">amqp_dsn</span><span class="p">:</span> <span class="n">AmqpDsn</span> <span class="o">=</span> <span class="s1">&#39;amqp://user:pass@localhost:5672/&#39;</span>
@@ -1924,7 +1925,8 @@ will still be used if the matching environment variable is not set.)</p>
     <span class="c1"># export my_prefix_more_settings=&#39;{&quot;foo&quot;: &quot;x&quot;, &quot;apple&quot;: 1}&#39;</span>
     <span class="n">more_settings</span><span class="p">:</span> <span class="n">SubModel</span> <span class="o">=</span> <span class="n">SubModel</span><span class="p">()</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">env_prefix</span> <span class="o">=</span> <span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>  <span class="c1"># defaults to no prefix, i.e. &quot;&quot;</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">env_prefix</span><span class="o">=</span><span class="s1">&#39;my_prefix_&#39;</span><span class="p">)</span>  <span class="c1"># defaults to no prefix, i.e. &quot;&quot;</span>
+
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">()</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="sd">&quot;&quot;&quot;</span>
@@ -1934,7 +1936,7 @@ will still be used if the matching environment variable is not set.)</p>
 <span class="sd">    &#39;redis_dsn&#39;: Url(&#39;redis://user:pass@localhost:6379/1&#39;),</span>
 <span class="sd">    &#39;pg_dsn&#39;: Url(&#39;postgres://user:pass@localhost:5432/foobar&#39;),</span>
 <span class="sd">    &#39;amqp_dsn&#39;: Url(&#39;amqp://user:pass@localhost:5672/&#39;),</span>
-<span class="sd">    &#39;special_function&#39;: &lt;built-in function cos&gt;,</span>
+<span class="sd">    &#39;special_function&#39;: math.cos,</span>
 <span class="sd">    &#39;domains&#39;: set(),</span>
 <span class="sd">    &#39;more_settings&#39;: {&#39;foo&#39;: &#39;bar&#39;, &#39;apple&#39;: 1},</span>
 <span class="sd">}</span>
@@ -1963,6 +1965,7 @@ will still be used if the matching environment variable is not set.)</p>
 </ul>
 <p>Case-sensitivity can be turned on through the <code>model_config</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
+
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
@@ -2005,6 +2008,7 @@ If you have multiple variables with the same structure they will be merged.</p>
 </code></pre></div></p>
 <p>You could load a settings module thus:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
 
 
@@ -2030,12 +2034,7 @@ If you have multiple variables with the same structure they will be merged.</p>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">{</span>
 <span class="sd">    &#39;v0&#39;: &#39;0&#39;,</span>
-<span class="sd">    &#39;sub_model&#39;: {</span>
-<span class="sd">        &#39;v1&#39;: &#39;json-1&#39;,</span>
-<span class="sd">        &#39;v2&#39;: b&#39;nested-2&#39;,</span>
-<span class="sd">        &#39;v3&#39;: 3,</span>
-<span class="sd">        &#39;deep&#39;: {&#39;v4&#39;: &#39;v4&#39;},</span>
-<span class="sd">    },</span>
+<span class="sd">    &#39;sub_model&#39;: {&#39;v1&#39;: &#39;json-1&#39;, &#39;v2&#39;: b&#39;nested-2&#39;, &#39;v3&#39;: 3, &#39;deep&#39;: {&#39;v4&#39;: &#39;v4&#39;}},</span>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
@@ -2051,11 +2050,18 @@ validators on those models.</p>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
 
 <span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">FieldInfo</span>
-<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">EnvSettingsSource</span><span class="p">,</span> <span class="n">PydanticBaseSettingsSource</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseSettings</span><span class="p">,</span>
+    <span class="n">EnvSettingsSource</span><span class="p">,</span>
+    <span class="n">PydanticBaseSettingsSource</span><span class="p">,</span>
+<span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">MyCustomSource</span><span class="p">(</span><span class="n">EnvSettingsSource</span><span class="p">):</span>
-    <span class="k">def</span> <span class="nf">prepare_field_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value_is_complex</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">prepare_field_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value_is_complex</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">field_name</span> <span class="o">==</span> <span class="s1">&#39;numbers&#39;</span><span class="p">:</span>
             <span class="k">return</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">value</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)]</span>
         <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -2099,15 +2105,15 @@ and looks something like:</p>
 <p>Once you have your <code>.env</code> file filled with variables, <em>pydantic</em> supports loading it in two ways:</p>
 <p><strong>1.</strong> setting <code>env_file</code> (and <code>env_file_encoding</code> if you don't want the default encoding of your OS) on <code>model_config</code>
 in a <code>BaseSettings</code> class:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="o">...</span>
-
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="n">env_file_encoding</span> <span class="o">=</span> <span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<p>```py test="skip" lint="skip"
+class Settings(BaseSettings):
+    ...</p>
+<div class="highlight"><pre><span></span><code>model_config = ConfigDict(env_file=&#39;.env&#39;, env_file_encoding = &#39;utf-8&#39;)
 </code></pre></div>
-<p><strong>2.</strong> instantiating a <code>BaseSettings</code> derived class with the <code>_env_file</code> keyword argument
-(and the <code>_env_file_encoding</code> if needed):</p>
-<div class="highlight"><pre><span></span><code><span class="n">settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="p">(</span><span class="n">_env_file</span><span class="o">=</span><span class="s1">&#39;prod.env&#39;</span><span class="p">,</span> <span class="n">_env_file_encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
-</code></pre></div>
+<p><code>**2.** instantiating a `BaseSettings` derived class with the `_env_file` keyword argument
+(and the `_env_file_encoding` if needed):</code>py test="skip" lint="skip"
+settings = Settings(_env_file='prod.env', _env_file_encoding='utf-8')
+```</p>
 <p>In either case, the value of the passed argument can be any valid path or filename, either absolute or relative to the
 current working directory. From there, <em>pydantic</em> will handle everything for you by loading in your variables and
 validating them.</p>
@@ -2123,12 +2129,18 @@ the value (if any) set on the <code>model_config</code> class. If the above snip
 while <code>.env</code> would be ignored.</p>
 <p>If you need to load multiple dotenv files, you can pass the file paths as a <code>list</code> or <code>tuple</code>.</p>
 <p>Later files in the list/tuple will take priority over earlier files.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span>
+
 
 <span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
     <span class="o">...</span>
 
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">env_file</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="s1">&#39;.env.prod&#39;</span><span class="p">))</span>  <span class="c1"># `.env.prod` takes priority over `.env`</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span>
+        <span class="c1"># `.env.prod` takes priority over `.env`</span>
+        <span class="n">env_file</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;.env&#39;</span><span class="p">,</span> <span class="s1">&#39;.env.prod&#39;</span><span class="p">)</span>
+    <span class="p">)</span>
 </code></pre></div>
 <p>You can also use the keyword argument override to tell Pydantic not to load any file at all (even if one is set in
 the <code>model_config</code> class) by passing <code>None</code> as the instantiation keyword argument, e.g. <code>settings = Settings(_env_file=None)</code>.</p>
@@ -2147,15 +2159,15 @@ is used as the key. A secret file will look like the following:</p>
 </code></pre></div></p>
 <p>Once you have your secret files, <em>pydantic</em> supports loading it in two ways:</p>
 <p><strong>1.</strong> setting <code>secrets_dir</code> on <code>model_config</code> in a <code>BaseSettings</code> class to the directory where your secret files are stored:</p>
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="o">...</span>
-    <span class="n">database_password</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">secrets_dir</span><span class="o">=</span><span class="s1">&#39;/var/run&#39;</span><span class="p">)</span>
+<p>```py test="skip" lint="skip"
+class Settings(BaseSettings):
+    ...
+    database_password: str</p>
+<div class="highlight"><pre><span></span><code>model_config = ConfigDict(secrets_dir=&#39;/var/run&#39;)
 </code></pre></div>
-<p><strong>2.</strong> instantiating a <code>BaseSettings</code> derived class with the <code>_secrets_dir</code> keyword argument:</p>
-<div class="highlight"><pre><span></span><code><span class="n">settings</span> <span class="o">=</span> <span class="n">Settings</span><span class="p">(</span><span class="n">_secrets_dir</span><span class="o">=</span><span class="s1">&#39;/var/run&#39;</span><span class="p">)</span>
-</code></pre></div>
+<p><code>**2.** instantiating a `BaseSettings` derived class with the `_secrets_dir` keyword argument:</code>py test="skip" lint="skip"
+settings = Settings(_secrets_dir='/var/run')
+```</p>
 <p>In either case, the value of the passed argument can be any valid directory, either absolute or relative to the
 current working directory. <strong>Note that a non existent directory will only generate a warning</strong>.
 From there, <em>pydantic</em> will handle everything for you by loading in your variables and validating them.</p>
@@ -2169,19 +2181,21 @@ To use these secrets in a <em>pydantic</em> application the process is simple. M
 and using secrets in Docker see the official
 <a href="https://docs.docker.com/engine/reference/commandline/secret/">Docker documentation</a>.</p>
 <p>First, define your Settings
-<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Settings</span><span class="p">(</span><span class="n">BaseSettings</span><span class="p">):</span>
-    <span class="n">my_secret_data</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">secrets_dir</span><span class="o">=</span><span class="s1">&#39;/run/secrets&#39;</span><span class="p">)</span>
-</code></pre></div></p>
+```py test="skip" lint="skip"
+class Settings(BaseSettings):
+    my_secret_data: str</p>
+<div class="highlight"><pre><span></span><code>model_config = ConfigDict(secrets_dir=&#39;/run/secrets&#39;)
+</code></pre></div>
+<p>```</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>By default Docker uses <code>/run/secrets</code> as the target mount point. If you want to use a different location, change
-<code>Config.secrets_dir</code> accordingly.</p>
+<code>Config.secrets_dir</code> accordingly.
+</p>
 </div>
 <p>Then, create your secret via the Docker CLI
-<div class="highlight"><pre><span></span><code><span class="nb">printf</span><span class="w"> </span><span class="s2">&quot;This is a secret&quot;</span><span class="w"> </span><span class="p">|</span><span class="w"> </span>docker<span class="w"> </span>secret<span class="w"> </span>create<span class="w"> </span>my_secret_data<span class="w"> </span>-
-</code></pre></div></p>
+<code>bash
+printf "This is a secret" | docker secret create my_secret_data -</code></p>
 <p>Last, run your application inside a Docker container and supply your newly created secret
 <div class="highlight"><pre><span></span><code>docker<span class="w"> </span>service<span class="w"> </span>create<span class="w"> </span>--name<span class="w"> </span>pydantic-with-secrets<span class="w"> </span>--secret<span class="w"> </span>my_secret_data<span class="w"> </span>pydantic-app:latest
 </code></pre></div></p>
@@ -2204,7 +2218,9 @@ In turn these callables are called to build the inputs to the fields of the sett
 <h3 id="changing-priority">Changing Priority<a class="headerlink" href="#changing-priority" title="Permanent link">&para;</a></h3>
 <p>The order of the returned callables decides the priority of inputs; first item is the highest priority.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">PostgresDsn</span>
+
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PydanticBaseSettingsSource</span>
 
 
@@ -2236,6 +2252,7 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
 <span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">FieldInfo</span>
+
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PydanticBaseSettingsSource</span>
 
 
@@ -2248,22 +2265,31 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 <span class="sd">    when reading `config.json`</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">def</span> <span class="nf">get_field_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
+    <span class="k">def</span> <span class="nf">get_field_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">bool</span><span class="p">]:</span>
         <span class="n">encoding</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;env_file_encoding&#39;</span><span class="p">)</span>
-        <span class="n">file_content_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="s1">&#39;config.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="p">))</span>
+        <span class="n">file_content_json</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span>
+            <span class="n">Path</span><span class="p">(</span><span class="s1">&#39;tests/example_test_config.json&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">(</span><span class="n">encoding</span><span class="p">)</span>
+        <span class="p">)</span>
         <span class="n">fiel_value</span> <span class="o">=</span> <span class="n">file_content_json</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field_name</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">fiel_value</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="kc">False</span>
 
-
-    <span class="k">def</span> <span class="nf">prepare_field_value</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value_is_complex</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">prepare_field_value</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">field_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">FieldInfo</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">value_is_complex</span><span class="p">:</span> <span class="nb">bool</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">value</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">d</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">for</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">field</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">settings_cls</span><span class="o">.</span><span class="n">model_fields</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-            <span class="n">field_value</span><span class="p">,</span> <span class="n">field_key</span><span class="p">,</span> <span class="n">value_is_complex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_field_value</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">field_name</span><span class="p">)</span>
-            <span class="n">field_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare_field_value</span><span class="p">(</span><span class="n">field_name</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">field_value</span><span class="p">,</span> <span class="n">value_is_complex</span><span class="p">)</span>
+            <span class="n">field_value</span><span class="p">,</span> <span class="n">field_key</span><span class="p">,</span> <span class="n">value_is_complex</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_field_value</span><span class="p">(</span>
+                <span class="n">field</span><span class="p">,</span> <span class="n">field_name</span>
+            <span class="p">)</span>
+            <span class="n">field_value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prepare_field_value</span><span class="p">(</span>
+                <span class="n">field_name</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">field_value</span><span class="p">,</span> <span class="n">value_is_complex</span>
+            <span class="p">)</span>
             <span class="k">if</span> <span class="n">field_value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">d</span><span class="p">[</span><span class="n">field_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">field_value</span>
 
@@ -2293,11 +2319,13 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
 
 
 <span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">())</span>
-<span class="c1">#&gt; foobar=&#39;spam&#39;</span>
+<span class="c1">#&gt; foobar=&#39;test&#39;</span>
 </code></pre></div>
 <h3 id="removing-sources">Removing sources<a class="headerlink" href="#removing-sources" title="Permanent link">&para;</a></h3>
 <p>You might also want to disable a source:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Type</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
 
 <span class="kn">from</span> <span class="nn">pydantic_settings</span> <span class="kn">import</span> <span class="n">BaseSettings</span><span class="p">,</span> <span class="n">PydanticBaseSettingsSource</span>
 
@@ -2318,8 +2346,16 @@ need to add your own custom sources, <code>settings_customise_sources</code> mak
         <span class="k">return</span> <span class="n">env_settings</span><span class="p">,</span> <span class="n">file_secret_settings</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">Settings</span><span class="p">(</span><span class="n">my_api_key</span><span class="o">=</span><span class="s1">&#39;this is ignored&#39;</span><span class="p">))</span>
-<span class="c1"># requires: `MY_API_KEY` env variable to be set, e.g. `export MY_API_KEY=xxx`</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Settings</span><span class="p">(</span><span class="n">my_api_key</span><span class="o">=</span><span class="s1">&#39;this is ignored&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">exc_info</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Settings</span>
+<span class="sd">    my_api_key</span>
+<span class="sd">      Field required [type=missing, input_value={}, input_type=dict]</span>
+<span class="sd">        For further information visit https://errors.pydantic.dev/2/v/missing</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 
 
