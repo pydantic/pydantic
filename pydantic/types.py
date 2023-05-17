@@ -31,7 +31,7 @@ from ._internal import _fields, _internal_dataclass, _known_annotated_metadata, 
 from ._internal._internal_dataclass import slots_dataclass
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
-from .errors import PydanticUserError
+from .errors import OmitJsonSchemaField, PydanticUserError
 
 __all__ = [
     'Strict',
@@ -990,3 +990,27 @@ Base64Bytes = Annotated[bytes, EncodedBytes(encoder=Base64Encoder)]
 Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 
 __getattr__ = getattr_migration(__name__)
+
+
+@_internal_dataclass.slots_dataclass
+class JsonSchema:
+    """
+    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
+
+    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
+    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
+    custom subclass of pydantic.json_schema.GenerateJsonSchema.
+
+    Note that any _modifications_ to the schema that would normally be made (such as setting the title for model fields)
+    will still be performed.
+    """
+
+    json_schema: JsonSchemaValue | None
+
+    def __get_pydantic_json_schema__(
+        self, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        if self.json_schema is None:
+            raise OmitJsonSchemaField
+        else:
+            return self.json_schema
