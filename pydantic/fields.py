@@ -14,6 +14,7 @@ from warnings import warn
 
 import annotated_types
 import typing_extensions
+from typing_extensions import Unpack
 
 from . import types
 from ._internal import _decorators, _fields, _forward_ref, _internal_dataclass, _repr, _typing_extra, _utils
@@ -532,6 +533,10 @@ class AliasChoices:
         return aliases
 
 
+class _EmptyKwargs(typing_extensions.TypedDict):
+    pass
+
+
 def Field(  # noqa C901
     default: Any = Undefined,
     *,
@@ -568,7 +573,7 @@ def Field(  # noqa C901
     unique_items: bool | None = None,
     allow_mutation: bool = True,
     regex: str | None = None,
-    **extra: Any,
+    **extra: Unpack[_EmptyKwargs],  # ensures type-checker errors are raised for unexpected arguments
 ) -> Any:
     """
     Create a field for objects that can be configured.
@@ -627,8 +632,8 @@ def Field(  # noqa C901
     Returns:
         Any: return the generated field object.
     """
-    # Check deprecated & removed params of V1.
-    # This has to be removed deprecation period over.
+    # Check deprecated and removed params from v1.
+    # Much of this logic should be removed when the deprecation period is over.
     if const:
         raise PydanticUserError('`const` is removed. use `Literal` instead', code='deprecated-kwargs')
     if min_items:
@@ -658,7 +663,7 @@ def Field(  # noqa C901
             DeprecationWarning,
         )
         if not json_schema_extra:
-            json_schema_extra = extra
+            json_schema_extra = extra  # type: ignore
 
     converted_validation_alias: str | list[str | int] | list[list[str | int]] | None = None
     if validation_alias:
