@@ -2879,13 +2879,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Validation Errors</h1>
 
-<p>Below are details on common validation errors users may encounter when working with pydantic, together
-with some suggestions on how to fix them.</p>
+<p>Pydantic attempts to provide useful validation errors. Below are details on common validation errors users
+may encounter when working with pydantic, together with some suggestions on how to fix them.</p>
 <h2 id="arguments_type"><code>arguments_type</code><a class="headerlink" href="#arguments_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when arguments passed to a function are not
-a tuple, list, or a dictionary.</p>
+a tuple, list, or dictionary.</p>
 <h2 id="assertion_error"><code>assertion_error</code><a class="headerlink" href="#assertion_error" title="Permanent link">&para;</a></h2>
-<p>This error is raised when a failing assert statement is encountered during validation.</p>
+<p>This error is raised when a failing <code>assert</code> statement is encountered during validation.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
 
 
@@ -2905,6 +2905,7 @@ a tuple, list, or a dictionary.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;assertion_error&#39;</span>
 </code></pre></div>
 <h2 id="bool"><code>bool</code><a class="headerlink" href="#bool" title="Permanent link">&para;</a></h2>
+<p>This error is raised when the value type is not valid for a Boolean field.</p>
 <h2 id="bool_parsing"><code>bool_parsing</code><a class="headerlink" href="#bool_parsing" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is a string that is not valid for coercion to a boolean.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -2922,7 +2923,7 @@ a tuple, list, or a dictionary.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bool_parsing&#39;</span>
 </code></pre></div>
 <h2 id="bool_type"><code>bool_type</code><a class="headerlink" href="#bool_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not valid for a boolean field.</p>
+<p>This error is raised when the value type is not valid for a Boolean field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -2936,7 +2937,7 @@ a tuple, list, or a dictionary.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bool_type&#39;</span>
 </code></pre></div>
 <h2 id="bytes_too_long"><code>bytes_too_long</code><a class="headerlink" href="#bytes_too_long" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the bytes value length is greater than <code>Field.max_length</code>.</p>
+<p>This error is raised when the length of a <code>bytes</code> value is greater than <code>Field.max_length</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -2950,7 +2951,7 @@ a tuple, list, or a dictionary.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bytes_too_long&#39;</span>
 </code></pre></div>
 <h2 id="bytes_too_short"><code>bytes_too_short</code><a class="headerlink" href="#bytes_too_short" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the bytes value length is less than <code>Field.min_length</code>.</p>
+<p>This error is raised when the length of a <code>bytes</code> value is less than <code>Field.min_length</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -2964,7 +2965,7 @@ a tuple, list, or a dictionary.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bytes_too_short&#39;</span>
 </code></pre></div>
 <h2 id="bytes_type"><code>bytes_type</code><a class="headerlink" href="#bytes_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not valid for a bytes field.</p>
+<p>This error is raised when the type of an input value is not valid for a <code>bytes</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -2978,7 +2979,7 @@ a tuple, list, or a dictionary.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;bytes_type&#39;</span>
 </code></pre></div>
 <h2 id="callable_type"><code>callable_type</code><a class="headerlink" href="#callable_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value is not a <code>callable</code>.</p>
+<p>This error is raised when the value is not a <code>Callable</code>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3049,7 +3050,7 @@ a tuple, list, or a dictionary.</p>
 </div>
 </div>
 <h2 id="dataclass_type"><code>dataclass_type</code><a class="headerlink" href="#dataclass_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value is not valid for a dataclass field.</p>
+<p>This error is raised when the value is not valid for a <code>dataclass</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">dataclasses</span>
 
 
@@ -3085,10 +3086,10 @@ a tuple, list, or a dictionary.</p>
 <span class="n">Model</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">Nested</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 </code></pre></div>
 <h2 id="date_from_datetime_inexact"><code>date_from_datetime_inexact</code><a class="headerlink" href="#date_from_datetime_inexact" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the datetime value provided for a date field
+<p>This error is raised when the <code>datetime</code> value provided for a <code>date</code> field
 has a nonzero time component.
-For a timestamp to parse into a field of type date, the time components
-must be all zero.</p>
+For a timestamp to parse into a field of type <code>date</code>, the time components
+must all be zero.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3107,7 +3108,7 @@ must be all zero.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;date_from_datetime_inexact&#39;</span>
 </code></pre></div>
 <h2 id="date_from_datetime_parsing"><code>date_from_datetime_parsing</code><a class="headerlink" href="#date_from_datetime_parsing" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value is a string that is not valid for coercion to a date.</p>
+<p>This error is raised when the value is a string that is not valid for coercion to a <code>date</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3139,7 +3140,7 @@ must be all zero.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;date_future&#39;</span>
 </code></pre></div>
 <h2 id="date_parsing"><code>date_parsing</code><a class="headerlink" href="#date_parsing" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value for is not a valid json value for a date field.</p>
+<p>This error is raised when the value for is not a valid JSON value for a <code>date</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
@@ -3172,7 +3173,7 @@ must be all zero.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;date_past&#39;</span>
 </code></pre></div>
 <h2 id="date_type"><code>date_type</code><a class="headerlink" href="#date_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not of type <code>date</code> for a strict date field.</p>
+<p>This error is raised when the value type is not of type <code>date</code> for a strict <code>date</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3188,8 +3189,8 @@ must be all zero.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;date_type&#39;</span>
 </code></pre></div>
 <h2 id="datetime_aware"><code>datetime_aware</code><a class="headerlink" href="#datetime_aware" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the datetime value provided for a timezone aware datetime field
-doesn't have timezone info.</p>
+<p>This error is raised when the <code>datetime</code> value provided for a timezone-aware <code>datetime</code> field
+doesn't have timezone information.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AwareDatetime</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3221,7 +3222,7 @@ doesn't have timezone info.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;datetime_future&#39;</span>
 </code></pre></div>
 <h2 id="datetime_naive"><code>datetime_naive</code><a class="headerlink" href="#datetime_naive" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the datetime value provided for a timezone naive datetime field
+<p>This error is raised when the <code>datetime</code> value provided for a timezone-naive <code>datetime</code> field
 has timezone info.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timezone</span>
 
@@ -3238,7 +3239,7 @@ has timezone info.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;datetime_naive&#39;</span>
 </code></pre></div>
 <h2 id="datetime_object_invalid"><code>datetime_object_invalid</code><a class="headerlink" href="#datetime_object_invalid" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the datetime object is invalid.</p>
+<p>This error is raised when something about the <code>datetime</code> object is not valid.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">tzinfo</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AwareDatetime</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3261,7 +3262,7 @@ has timezone info.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;datetime_object_invalid&#39;</span>
 </code></pre></div>
 <h2 id="datetime_parsing"><code>datetime_parsing</code><a class="headerlink" href="#datetime_parsing" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value provided for a datetime field can't be parsed as datetime.</p>
+<p>This error is raised when the value provided for a <code>datetime</code> field can't be parsed as <code>datetime</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3293,7 +3294,7 @@ has timezone info.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;datetime_past&#39;</span>
 </code></pre></div>
 <h2 id="datetime_type"><code>datetime_type</code><a class="headerlink" href="#datetime_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not datetime for a strict datetime field.</p>
+<p>This error is raised when the value type is not <code>datetime</code> for a strict <code>datetime</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -3309,7 +3310,7 @@ has timezone info.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;datetime_type&#39;</span>
 </code></pre></div>
 <h2 id="dict_attributes_type"><code>dict_attributes_type</code><a class="headerlink" href="#dict_attributes_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input is not a valid dict or instanec to extract fields from.</p>
+<p>This error is raised when the input is not a valid dictionary or instance to extract fields from.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="3:4"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><input id="__tabbed_3_4" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.8 and above</label><label for="__tabbed_3_3">Python 3.9 and above</label><label for="__tabbed_3_4">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3440,7 +3441,7 @@ has timezone info.</p>
 <span class="n">Model</span><span class="o">.</span><span class="n">model_validate</span><span class="p">({</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="s1">&#39;test&#39;</span><span class="p">})</span>
 </code></pre></div>
 <h2 id="dict_type"><code>dict_type</code><a class="headerlink" href="#dict_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not dict for dict field.</p>
+<p>This error is raised when the value type is not <code>dict</code> for a <code>dict</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3454,7 +3455,7 @@ has timezone info.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;dict_type&#39;</span>
 </code></pre></div>
 <h2 id="extra_forbidden"><code>extra_forbidden</code><a class="headerlink" href="#extra_forbidden" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input values contain extra field and <code>config.extra=forbid</code>.</p>
+<p>This error is raised when the input values contain extra fields and <code>model_config['extra'] == 'forbid'</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3484,7 +3485,7 @@ has timezone info.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;finite_number&#39;</span>
 </code></pre></div>
 <h2 id="float_parsing"><code>float_parsing</code><a class="headerlink" href="#float_parsing" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value can't be parsed as float.</p>
+<p>This error is raised when the value can't be parsed as <code>float</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3498,7 +3499,7 @@ has timezone info.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;float_parsing&#39;</span>
 </code></pre></div>
 <h2 id="float_type"><code>float_type</code><a class="headerlink" href="#float_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not float.</p>
+<p>This error is raised when the value type is not <code>float</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3548,7 +3549,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;frozen_instance&#39;</span>
 </code></pre></div>
 <h2 id="frozen_set_type"><code>frozen_set_type</code><a class="headerlink" href="#frozen_set_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not frozenset.</p>
+<p>This error is raised when the value type is not <code>frozenset</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3602,7 +3603,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;greater_than&#39;</span>
 </code></pre></div>
 <h2 id="greater_than_equal"><code>greater_than_equal</code><a class="headerlink" href="#greater_than_equal" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value is not greater than equal <code>Field.ge</code>.</p>
+<p>This error is raised when the value is not greater than or equal to the specified constraint.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3616,7 +3617,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;greater_than_equal&#39;</span>
 </code></pre></div>
 <h2 id="int_from_float"><code>int_from_float</code><a class="headerlink" href="#int_from_float" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you provide a float value for an int field.</p>
+<p>This error is raised when you provide a <code>float</code> value for an <code>int</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3630,7 +3631,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;int_from_float&#39;</span>
 </code></pre></div>
 <h2 id="int_parsing"><code>int_parsing</code><a class="headerlink" href="#int_parsing" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value can't be parsed as int.</p>
+<p>This error is raised when the value can't be parsed as <code>int</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3644,7 +3645,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;int_parsing&#39;</span>
 </code></pre></div>
 <h2 id="int_type"><code>int_type</code><a class="headerlink" href="#int_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not int.</p>
+<p>This error is raised when the value type is not <code>int</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3658,7 +3659,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;int_type&#39;</span>
 </code></pre></div>
 <h2 id="invalid_key"><code>invalid_key</code><a class="headerlink" href="#invalid_key" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the key type is invalid.</p>
+<p>This error is raised when the type of a <code>dict</code> key is not valid.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3674,7 +3675,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;invalid_key&#39;</span>
 </code></pre></div>
 <h2 id="is_instance_of"><code>is_instance_of</code><a class="headerlink" href="#is_instance_of" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input value is not an instance of expected type.</p>
+<p>This error is raised when the input value is not an instance of the expected type.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3694,7 +3695,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;is_instance_of&#39;</span>
 </code></pre></div>
 <h2 id="is_subclass_of"><code>is_subclass_of</code><a class="headerlink" href="#is_subclass_of" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input value is not a sub-class of expected type.</p>
+<p>This error is raised when the input value is not a subclass of expected type.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3822,7 +3823,7 @@ one of the fields.</p>
 </div>
 </div>
 <h2 id="json_invalid"><code>json_invalid</code><a class="headerlink" href="#json_invalid" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input value is an invalid json string.</p>
+<p>This error is raised when the input value is not a valid JSON string.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3836,7 +3837,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;json_invalid&#39;</span>
 </code></pre></div>
 <h2 id="json_type"><code>json_type</code><a class="headerlink" href="#json_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input value type is not json string.</p>
+<p>This error is raised when the input value is of a type that cannot be parsed as JSON.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Json</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3864,7 +3865,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;less_than&#39;</span>
 </code></pre></div>
 <h2 id="less_than_equal"><code>less_than_equal</code><a class="headerlink" href="#less_than_equal" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value is not less than equal <code>Field.le</code>.</p>
+<p>This error is raised when the value is not less than or equal to the specified constraint.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3878,7 +3879,7 @@ one of the fields.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;less_than_equal&#39;</span>
 </code></pre></div>
 <h2 id="list_type"><code>list_type</code><a class="headerlink" href="#list_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input value is not a list.</p>
+<p>This error is raised when the input value is not a <code>list</code>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4082,7 +4083,7 @@ a function decorated by <code>validate_call</code>.</p>
 </code></pre></div>
 <h2 id="model_class_type"><code>model_class_type</code><a class="headerlink" href="#model_class_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you validate with <code>strict=True</code> and
-input value is not an instance of model.</p>
+the input value is not an instance of the model.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4122,7 +4123,7 @@ in calling a function decorated by <code>validate_call</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;multiple_argument_values&#39;</span>
 </code></pre></div>
 <h2 id="multiple_of"><code>multiple_of</code><a class="headerlink" href="#multiple_of" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input is not multiple of <code>Field.multiple_of</code>.</p>
+<p>This error is raised when the input is not a multiple of <code>FieldInfo.multiple_of</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4136,7 +4137,7 @@ in calling a function decorated by <code>validate_call</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;multiple_of&#39;</span>
 </code></pre></div>
 <h2 id="no_such_attribute"><code>no_such_attribute</code><a class="headerlink" href="#no_such_attribute" title="Permanent link">&para;</a></h2>
-<p>This error is raised when you assign value to a non-existing attribute.</p>
+<p>This error is raised when you assign a value to an attribute that does not exist.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">dataclasses</span>
 
 
@@ -4167,7 +4168,7 @@ requires <code>None</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;none_required&#39;</span>
 </code></pre></div>
 <h2 id="recursion_loop"><code>recursion_loop</code><a class="headerlink" href="#recursion_loop" title="Permanent link">&para;</a></h2>
-<p>This error is raised when cyclic reference detected.</p>
+<p>This error is raised when a cyclic reference is detected.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="10:2"><input checked="checked" id="__tabbed_10_1" name="__tabbed_10" type="radio" /><input id="__tabbed_10_2" name="__tabbed_10" type="radio" /><div class="tabbed-labels"><label for="__tabbed_10_1">Python 3.7 and above</label><label for="__tabbed_10_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4207,7 +4208,7 @@ requires <code>None</code>.</p>
 </div>
 </div>
 <h2 id="set_type"><code>set_type</code><a class="headerlink" href="#set_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not set.</p>
+<p>This error is raised when the value type is not <code>set</code>.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="11:2"><input checked="checked" id="__tabbed_11_1" name="__tabbed_11" type="radio" /><input id="__tabbed_11_2" name="__tabbed_11" type="radio" /><div class="tabbed-labels"><label for="__tabbed_11_1">Python 3.7 and above</label><label for="__tabbed_11_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4306,7 +4307,7 @@ subclass of string when <code>Field.strict=True</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;string_too_short&#39;</span>
 </code></pre></div>
 <h2 id="string_type"><code>string_type</code><a class="headerlink" href="#string_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not string.</p>
+<p>This error is raised when the value is not a string.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4320,7 +4321,7 @@ subclass of string when <code>Field.strict=True</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;string_type&#39;</span>
 </code></pre></div>
 <h2 id="string_unicode"><code>string_unicode</code><a class="headerlink" href="#string_unicode" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value cannot be parsed as unicode string.</p>
+<p>This error is raised when the value cannot be parsed as a Unicode string.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4334,7 +4335,7 @@ subclass of string when <code>Field.strict=True</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;string_unicode&#39;</span>
 </code></pre></div>
 <h2 id="time_delta_parsing"><code>time_delta_parsing</code><a class="headerlink" href="#time_delta_parsing" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value provided for a timedelta field cannot be parsed.</p>
+<p>This error is raised when the value provided for a <code>timedelta</code> field cannot be parsed.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4350,7 +4351,7 @@ subclass of string when <code>Field.strict=True</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;time_delta_parsing&#39;</span>
 </code></pre></div>
 <h2 id="time_delta_type"><code>time_delta_type</code><a class="headerlink" href="#time_delta_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not valid for a timedelta field.</p>
+<p>This error is raised when the value type is not valid for a <code>timedelta</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">timedelta</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4366,7 +4367,7 @@ subclass of string when <code>Field.strict=True</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;time_delta_type&#39;</span>
 </code></pre></div>
 <h2 id="time_parsing"><code>time_parsing</code><a class="headerlink" href="#time_parsing" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value provided for a time field cannot be parsed.</p>
+<p>This error is raised when the value provided for a <code>time</code> field cannot be parsed.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">time</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4382,7 +4383,7 @@ subclass of string when <code>Field.strict=True</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;time_parsing&#39;</span>
 </code></pre></div>
 <h2 id="time_type"><code>time_type</code><a class="headerlink" href="#time_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not valid for a time field.</p>
+<p>This error is raised when the value type is not valid for a <code>time</code> field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">time</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
@@ -4470,7 +4471,7 @@ subclass of string when <code>Field.strict=True</code>.</p>
 </div>
 </div>
 <h2 id="tuple_type"><code>tuple_type</code><a class="headerlink" href="#tuple_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the value type is not valid for a tuple field.</p>
+<p>This error is raised when the value type is not valid for a <code>tuple</code> field.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.7 and above</label><label for="__tabbed_14_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4620,7 +4621,7 @@ argument in calling a function decorated by <code>validate_call</code>.</p>
 </div>
 </div>
 <h2 id="union_tag_not_found"><code>union_tag_not_found</code><a class="headerlink" href="#union_tag_not_found" title="Permanent link">&para;</a></h2>
-<p>This error is raised when it is not possible to extract tag using discriminator.</p>
+<p>This error is raised when it is not possible to extract a tag using the discriminator.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="16:3"><input checked="checked" id="__tabbed_16_1" name="__tabbed_16" type="radio" /><input id="__tabbed_16_2" name="__tabbed_16" type="radio" /><input id="__tabbed_16_3" name="__tabbed_16" type="radio" /><div class="tabbed-labels"><label for="__tabbed_16_1">Python 3.7 and above</label><label for="__tabbed_16_2">Python 3.8 and above</label><label for="__tabbed_16_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -4702,7 +4703,7 @@ argument in calling a function decorated by <code>validate_call</code>.</p>
 </div>
 </div>
 <h2 id="url_parsing"><code>url_parsing</code><a class="headerlink" href="#url_parsing" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input value cannot be parsed as a url.</p>
+<p>This error is raised when the input value cannot be parsed as a URL.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">AnyUrl</span><span class="p">,</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4716,7 +4717,7 @@ argument in calling a function decorated by <code>validate_call</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;url_parsing&#39;</span>
 </code></pre></div>
 <h2 id="url_scheme"><code>url_scheme</code><a class="headerlink" href="#url_scheme" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the url schema is not valid for the url type.</p>
+<p>This error is raised when the URL scheme is not valid for the URL type of the field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4730,7 +4731,7 @@ argument in calling a function decorated by <code>validate_call</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;url_scheme&#39;</span>
 </code></pre></div>
 <h2 id="url_syntax_violation"><code>url_syntax_violation</code><a class="headerlink" href="#url_syntax_violation" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the url syntax is invalid.</p>
+<p>This error is raised when the URL syntax is not valid.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4744,7 +4745,7 @@ argument in calling a function decorated by <code>validate_call</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;url_syntax_violation&#39;</span>
 </code></pre></div>
 <h2 id="url_too_long"><code>url_too_long</code><a class="headerlink" href="#url_too_long" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the url length is greater than 2083.</p>
+<p>This error is raised when the URL length is greater than 2083.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -4758,7 +4759,7 @@ argument in calling a function decorated by <code>validate_call</code>.</p>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;url_too_long&#39;</span>
 </code></pre></div>
 <h2 id="url_type"><code>url_type</code><a class="headerlink" href="#url_type" title="Permanent link">&para;</a></h2>
-<p>This error is raised when the input value type is not valid for a url field.</p>
+<p>This error is raised when the input value type is not valid for a URL field.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">HttpUrl</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
