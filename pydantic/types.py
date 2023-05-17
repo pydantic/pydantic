@@ -24,14 +24,14 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, PydanticOmit, core_schema
 from typing_extensions import Annotated, Literal, Protocol
 
 from ._internal import _fields, _internal_dataclass, _known_annotated_metadata, _validators
 from ._internal._internal_dataclass import slots_dataclass
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
-from .errors import OmitJsonSchemaField, PydanticUserError
+from .errors import PydanticUserError
 
 __all__ = [
     'Strict',
@@ -1011,6 +1011,7 @@ class JsonSchema:
         self, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         if self.json_schema is None:
-            raise OmitJsonSchemaField
+            # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
+            raise PydanticOmit
         else:
             return self.json_schema

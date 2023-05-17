@@ -150,14 +150,4 @@ class PydanticInvalidForJsonSchema(PydanticUserError):
         super().__init__(message, code='invalid-for-json-schema')
 
 
-class OmitJsonSchemaField(Exception):
-    """
-    An exception raised during generation of the JSON schema that is intended
-    specifically to indicate to the schema generator that the field should be excluded from
-    the JSON schema.
-
-    This exception should generally not be propagated outside of method calls on the GenerateJsonSchema class.
-    """
-
-
 __getattr__ = getattr_migration(__name__)

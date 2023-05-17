@@ -24,7 +24,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import CoreSchema, PydanticOmit, core_schema
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Literal, assert_never
 
@@ -33,7 +33,7 @@ from pydantic._internal._schema_generation_shared import GenerateJsonSchemaHandl
 from ._internal import _core_metadata, _core_utils, _schema_generation_shared, _typing_extra
 from ._internal._core_utils import CoreSchemaField, CoreSchemaOrField, is_core_schema, is_core_schema_field
 from .config import JsonSchemaExtraCallable
-from .errors import OmitJsonSchemaField, PydanticInvalidForJsonSchema, PydanticUserError
+from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
     from . import ConfigDict
@@ -923,7 +923,7 @@ class GenerateJsonSchema:
                 name = self._get_alias_name(field, name)
             try:
                 field_json_schema = self.generate_inner(field).copy()
-            except OmitJsonSchemaField:
+            except PydanticOmit:
                 continue
             if 'title' not in field_json_schema and self.field_title_should_be_set(field):
                 title = self.get_title_from_name(name)
