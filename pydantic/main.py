@@ -174,7 +174,7 @@ class ModelMetaclass(ABCMeta):
                     'parameters': parameters,
                 }
 
-            cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
+            cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
 
             # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
             # for attributes not in `new_namespace` (e.g. private attributes)
@@ -270,7 +270,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
     model_config = ConfigDict()
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
-    __pydantic_model_complete__ = False
+    __pydantic_complete__ = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
         """
@@ -685,21 +685,20 @@ class BaseModel(metaclass=ModelMetaclass):
         _types_namespace: dict[str, Any] | None = None,
     ) -> bool | None:
         """
-        Try to rebuild or reconstruct the model schema.
+        Try to rebuild or reconstruct the model core schema
 
         Args:
-            cls (type): The class to build the model schema for.
-            force (bool): Whether or not to force the rebuilding of the model schema, defaults to `False`.
-            raise_errors (bool): Whether or not to raise errors, defaults to `True`.
+            cls (type): The class to build the model core schema for.
+            force (bool): Whether to force the rebuilding of the model schema, defaults to `False`.
+            raise_errors (bool): Whether to raise errors, defaults to `True`.
             _parent_namespace_depth (int): The depth level of the parent namespace, defaults to 2.
             _types_namespace (dict[str, Any] | None): The types namespace, defaults to `None`.
 
         Returns:
-            bool or None: Returns `None` if model schema is complete and no rebuilding is required, or `True` if
-                        rebuilding is successful, otherwise returns `None`.
-
+            bool or None: Returns `None` if model schema is complete and no rebuilding is required.
+                If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
-        if not force and cls.__pydantic_model_complete__:
+        if not force and cls.__pydantic_complete__:
             return None
         else:
             if _types_namespace is not None:
