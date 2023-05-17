@@ -871,29 +871,13 @@ def test_string_import_examples():
     adapter = TypeAdapter(ImportString)
     assert adapter.validate_python('collections') is collections
     assert adapter.validate_python('collections.abc') is collections.abc
+    assert adapter.validate_python('collections.abc.Mapping') is collections.abc.Mapping
     assert adapter.validate_python('collections.abc:Mapping') is collections.abc.Mapping
 
 
 @pytest.mark.parametrize(
     'import_string,errors',
     [
-        (
-            'collections.abc.Mapping',
-            [
-                {
-                    'ctx': {
-                        'error': "No module named 'collections.abc.Mapping'; did you mean 'collections.abc:Mapping'?"
-                    },
-                    'input': 'collections.abc.Mapping',
-                    'loc': (),
-                    'msg': (
-                        "Invalid python path: No module named 'collections.abc.Mapping';"
-                        " did you mean 'collections.abc:Mapping'?"
-                    ),
-                    'type': 'import_error',
-                }
-            ],
-        ),
         (
             'collections.abc.def',
             [

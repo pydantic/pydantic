@@ -88,16 +88,11 @@ def _import_string_logic(dotted_path: str) -> Any:
         if '.' in module_path:
             # Check if it would be valid if the final item was separated from its module with a `:`
             maybe_module_path, maybe_attribute = dotted_path.strip().rsplit('.', 1)
-            maybe_corrected = f'{maybe_module_path}:{maybe_attribute}'
-            correction_message = ''
             try:
-                module = import_module(maybe_module_path)
-                if hasattr(module, maybe_attribute):
-                    # If the attribute exists, suggest the correction:
-                    correction_message = f'; did you mean {maybe_corrected!r}?'
-            except ModuleNotFoundError:
+                return _import_string_logic(f'{maybe_module_path}:{maybe_attribute}')
+            except ImportError:
                 pass
-            raise ImportError(f'No module named {module_path!r}{correction_message}') from e
+            raise ImportError(f'No module named {module_path!r}') from e
         raise e
 
     if len(components) > 1:
