@@ -428,6 +428,10 @@ impl BuildValidator for DataclassValidator {
         let py = schema.py();
 
         let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
+        let name = match schema.get_as_req::<String>(intern!(py, "cls_name")) {
+            Ok(name) => name,
+            Err(_) => class.getattr(intern!(py, "__name__"))?.extract()?,
+        };
         let sub_schema: &PyAny = schema.get_as_req(intern!(py, "schema"))?;
         let validator = build_validator(sub_schema, config, definitions)?;
 
@@ -447,9 +451,7 @@ impl BuildValidator for DataclassValidator {
                 config,
                 intern!(py, "revalidate_instances"),
             )?)?,
-            // as with model, get the class's `__name__`, not using `class.name()` since it uses `__qualname__`
-            // which is not what we want here
-            name: class.getattr(intern!(py, "__name__"))?.extract()?,
+            name,
             frozen: schema.get_as(intern!(py, "frozen"))?.unwrap_or(false),
         }
         .into())
