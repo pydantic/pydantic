@@ -189,7 +189,7 @@ class MyConf(BaseModel):
     callable_pyobject: ImportString[Type[date]] = Field(default=date)
 
 
-conf = MyConf(str_pyobject='datetime.date')
+conf = MyConf(str_pyobject='datetime:date')
 var1: date = conf.str_pyobject(2020, 12, 20)
 var2: date = conf.callable_pyobject(2111, 1, 1)
 
@@ -221,7 +221,7 @@ class PydanticTypes(BaseModel):
     my_strict_str: StrictStr = 'pika'
     # ImportString
     # TODO: Remove the parse_obj_as's below when we get `validate_all` (or similar) working
-    import_string_str: ImportString[Any] = parse_obj_as(ImportString[Any], 'datetime.date')  # type: ignore[misc]
+    import_string_str: ImportString[Any] = parse_obj_as(ImportString[Any], 'datetime:date')  # type: ignore[misc]
     import_string_callable: ImportString[Any] = date
     # UUID
     my_uuid1: UUID1 = UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
