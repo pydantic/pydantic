@@ -943,6 +943,19 @@ def test_string_import_examples():
                 }
             ],
         ),
+        (
+            ':Mapping',
+            [
+                {
+                    'ctx': {'error': "Import strings should have a nonempty module name; received ':Mapping'"},
+                    'input': ':Mapping',
+                    'loc': (),
+                    'msg': 'Invalid python path: Import strings should have a nonempty module '
+                    "name; received ':Mapping'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
     ],
 )
 def test_string_import_errors(import_string, errors):
