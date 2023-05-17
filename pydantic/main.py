@@ -102,7 +102,7 @@ class ModelMetaclass(ABCMeta):
             type: the new class created by the metaclass
         """
         # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we rely on the fact
-        # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine that the `__new__`
+        # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
         # call we're in the middle of is for the `BaseModel` class.
         if bases:
             base_field_names, class_vars, base_private_attributes = _collect_bases_data(bases)
