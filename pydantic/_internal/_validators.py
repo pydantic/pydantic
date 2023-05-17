@@ -45,10 +45,10 @@ def sequence_validator(
         return value_type(v_list)  # type: ignore[call-arg]
 
 
-def import_string(value: Any, require_colon_for_attributes: bool = False) -> Any:
+def import_string(value: Any) -> Any:
     if isinstance(value, str):
         try:
-            return _import_string_logic(value, require_colon_for_attributes)
+            return _import_string_logic(value)
         except ImportError as e:
             raise PydanticCustomError('import_error', 'Invalid python path: {error}', {'error': str(e)})
     else:
@@ -56,7 +56,7 @@ def import_string(value: Any, require_colon_for_attributes: bool = False) -> Any
         return value
 
 
-def _import_string_logic(dotted_path: str, require_colon_for_attributes: bool) -> Any:
+def _import_string_logic(dotted_path: str) -> Any:
     """
     Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
     (This is necessary to distinguish between a submodule and an attribute when there is a conflict.)
@@ -86,19 +86,18 @@ def _import_string_logic(dotted_path: str, require_colon_for_attributes: bool) -
         module = import_module(module_path)
     except ModuleNotFoundError as e:
         if '.' in module_path:
+            # Check if it would be valid if the final item was separated from its module with a `:`
             maybe_module_path, maybe_attribute = dotted_path.strip().rsplit('.', 1)
             maybe_corrected = f'{maybe_module_path}:{maybe_attribute}'
-            if require_colon_for_attributes:
-                correction_message = ''
-                try:
-                    module = import_module(maybe_module_path)
-                    if hasattr(module, maybe_attribute):
-                        correction_message = f'; did you mean {maybe_corrected!r}?'
-                except ModuleNotFoundError:
-                    pass
-                raise ImportError(f'No module named {module_path!r}{correction_message}') from e
-            else:
-                return _import_string_logic(maybe_corrected, False)
+            correction_message = ''
+            try:
+                module = import_module(maybe_module_path)
+                if hasattr(module, maybe_attribute):
+                    # If the attribute exists, suggest the correction:
+                    correction_message = f'; did you mean {maybe_corrected!r}?'
+            except ModuleNotFoundError:
+                pass
+            raise ImportError(f'No module named {module_path!r}{correction_message}') from e
         raise e
 
     if len(components) > 1:

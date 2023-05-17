@@ -45,7 +45,7 @@ def test_import_module_invalid():
 
 def test_import_no_attr():
     with pytest.raises(PydanticCustomError, match="cannot import name 'foobar' from 'os'"):
-        import_string('os.foobar')
+        import_string('os:foobar')
 
 
 def foobar(a, b, c=4):
