@@ -992,7 +992,8 @@ Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 
 
 if TYPE_CHECKING:
-    IsInstance = Annotated[AnyType, ...]  # Json[list[str]] will be recognized by type checkers as list[str]
+    # If we add configurable attributes to IsInstance, we'd probably need to stop hiding it from type checkers like this
+    IsInstance = Annotated[AnyType, ...]  # `IsInstance[Sequence]` will be recognized by type checkers as `Sequence`
 
 else:
 
