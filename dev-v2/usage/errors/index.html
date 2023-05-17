@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#decorator-missing-field" class="md-skip">
+        <a href="#class-not-fully-defined" class="md-skip">
           Skip to content
         </a>
       
@@ -1144,6 +1144,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#class-not-fully-defined" class="md-nav__link">
+    Class not fully defined
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#decorator-missing-field" class="md-nav__link">
     Decorator on missing field
   </a>
@@ -1195,13 +1202,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <li class="md-nav__item">
   <a href="#model-field-missing-annotation" class="md-nav__link">
     Model field missing annotation
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#model-not-fully-defined" class="md-nav__link">
-    Model not fully defined
   </a>
   
 </li>
@@ -1900,6 +1900,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#class-not-fully-defined" class="md-nav__link">
+    Class not fully defined
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#decorator-missing-field" class="md-nav__link">
     Decorator on missing field
   </a>
@@ -1951,13 +1958,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <li class="md-nav__item">
   <a href="#model-field-missing-annotation" class="md-nav__link">
     Model field missing annotation
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#model-not-fully-defined" class="md-nav__link">
-    Model not fully defined
   </a>
   
 </li>
@@ -2141,6 +2141,63 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 encounter when working with Pydantic, along with suggestions for addressing the error condition.</p>
 <!-- Note: raw tag is used to avoid rendering of jinja2 template tags in the docs. -->
 
+<h2 id="class-not-fully-defined">Class not fully defined<a class="headerlink" href="#class-not-fully-defined" title="Permanent link">&para;</a></h2>
+<p>This error is raised when a type referenced in an annotation of a pydantic-validated type
+(such as a subclass of <code>BaseModel</code>, or a pydantic <code>dataclass</code>) is not defined:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ForwardRef</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+<span class="n">UndefinedType</span> <span class="o">=</span> <span class="n">ForwardRef</span><span class="p">(</span><span class="s1">&#39;UndefinedType&#39;</span><span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">UndefinedType</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Foobar</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;class-not-fully-defined&#39;</span>
+</code></pre></div>
+<p>Or when the type has been defined after usage:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;Foo&#39;</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}})</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;class-not-fully-defined&#39;</span>
+</code></pre></div>
+<p>For BaseModel subclasses, it can be fixed by defining the type and then calling <code>.model_rebuild()</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;Foo&#39;</span>
+
+
+<span class="n">Foo</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
+
+<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}})</span>
+</code></pre></div>
+<p>In other cases, the error message should indicate how to rebuild the class with the appropriate type defined.</p>
 <h2 id="decorator-missing-field">Decorator on missing field<a class="headerlink" href="#decorator-missing-field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define a decorator with a field that is not valid.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
@@ -2581,61 +2638,6 @@ by annotating it as a <code>ClassVar</code>:</p>
     <span class="n">_b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">IgnoredType</span><span class="p">()</span>
     <span class="n">_c</span><span class="p">:</span> <span class="n">IgnoredType</span>
     <span class="n">_d</span><span class="p">:</span> <span class="n">IgnoredType</span> <span class="o">=</span> <span class="n">IgnoredType</span><span class="p">()</span>
-</code></pre></div>
-<h2 id="model-not-fully-defined">Model not fully defined<a class="headerlink" href="#model-not-fully-defined" title="Permanent link">&para;</a></h2>
-<p>This error is raised when a type is not defined:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">ForwardRef</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
-
-<span class="n">UndefinedType</span> <span class="o">=</span> <span class="n">ForwardRef</span><span class="p">(</span><span class="s1">&#39;UndefinedType&#39;</span><span class="p">)</span>
-
-
-<span class="k">class</span> <span class="nc">Foobar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="n">UndefinedType</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Foobar</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-not-fully-defined&#39;</span>
-</code></pre></div>
-<p>Or when the type has been defined after usage:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
-
-
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;Foo&#39;</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}})</span>
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;model-not-fully-defined&#39;</span>
-</code></pre></div>
-<p>It can be fixed by defining the type and then calling <code>.model_rebuild()</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">a</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="s1">&#39;Bar&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">b</span><span class="p">:</span> <span class="s1">&#39;Foo&#39;</span>
-
-
-<span class="n">Foo</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
-
-<span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}})</span>
 </code></pre></div>
 <h2 id="config-both"><code>Config</code> and <code>model_config</code> both defined<a class="headerlink" href="#config-both" title="Permanent link">&para;</a></h2>
 <p>This error is raised when <code>class Config</code> and <code>model_config</code> are used together.</p>

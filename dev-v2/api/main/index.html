@@ -3117,8 +3117,7 @@ and <code>@serializer</code> decorators.</p></td>
 <span class="normal">1212</span>
 <span class="normal">1213</span>
 <span class="normal">1214</span>
-<span class="normal">1215</span>
-<span class="normal">1216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A base model class for creating Pydantic models.</span>
 
@@ -3170,7 +3169,7 @@ and <code>@serializer</code> decorators.</p></td>
 
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">()</span>
     <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;__dict__&#39;</span><span class="p">,</span> <span class="s1">&#39;__pydantic_fields_set__&#39;</span><span class="p">,</span> <span class="s1">&#39;__pydantic_extra__&#39;</span>
-    <span class="n">__pydantic_model_complete__</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">__pydantic_complete__</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="n">__pydantic_self__</span><span class="p">,</span> <span class="o">**</span><span class="n">data</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># type: ignore</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
@@ -3585,21 +3584,20 @@ and <code>@serializer</code> decorators.</p></td>
         <span class="n">_types_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Try to rebuild or reconstruct the model schema.</span>
+<span class="sd">        Try to rebuild or reconstruct the model core schema</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            cls (type): The class to build the model schema for.</span>
-<span class="sd">            force (bool): Whether or not to force the rebuilding of the model schema, defaults to `False`.</span>
-<span class="sd">            raise_errors (bool): Whether or not to raise errors, defaults to `True`.</span>
+<span class="sd">            cls (type): The class to build the model core schema for.</span>
+<span class="sd">            force (bool): Whether to force the rebuilding of the model schema, defaults to `False`.</span>
+<span class="sd">            raise_errors (bool): Whether to raise errors, defaults to `True`.</span>
 <span class="sd">            _parent_namespace_depth (int): The depth level of the parent namespace, defaults to 2.</span>
 <span class="sd">            _types_namespace (dict[str, Any] | None): The types namespace, defaults to `None`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            bool or None: Returns `None` if model schema is complete and no rebuilding is required, or `True` if</span>
-<span class="sd">                        rebuilding is successful, otherwise returns `None`.</span>
-
+<span class="sd">            bool or None: Returns `None` if model schema is complete and no rebuilding is required.</span>
+<span class="sd">                If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_model_complete__</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_complete__</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">_types_namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -4277,7 +4275,8 @@ copied = self.model_validate(data)
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1096</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1095</span>
+<span class="normal">1096</span>
 <span class="normal">1097</span>
 <span class="normal">1098</span>
 <span class="normal">1099</span>
@@ -4325,8 +4324,7 @@ copied = self.model_validate(data)
 <span class="normal">1141</span>
 <span class="normal">1142</span>
 <span class="normal">1143</span>
-<span class="normal">1144</span>
-<span class="normal">1145</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">)</span>
+<span class="normal">1144</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -4633,7 +4631,8 @@ before creating the new model. You should trust this data.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">753</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">752</span>
+<span class="normal">753</span>
 <span class="normal">754</span>
 <span class="normal">755</span>
 <span class="normal">756</span>
@@ -4657,8 +4656,7 @@ before creating the new model. You should trust this data.</p></td>
 <span class="normal">774</span>
 <span class="normal">775</span>
 <span class="normal">776</span>
-<span class="normal">777</span>
-<span class="normal">778</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
+<span class="normal">777</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_copy</span><span class="p">(</span><span class="bp">self</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">update</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">deep</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Model</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns a copy of the Model.</span>
 
@@ -5574,7 +5572,8 @@ the value <code>(str, int)</code> would be passed to <code>params</code>.</p></t
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">899</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">898</span>
+<span class="normal">899</span>
 <span class="normal">900</span>
 <span class="normal">901</span>
 <span class="normal">902</span>
@@ -5599,8 +5598,7 @@ the value <code>(str, int)</code> would be passed to <code>params</code>.</p></t
 <span class="normal">921</span>
 <span class="normal">922</span>
 <span class="normal">923</span>
-<span class="normal">924</span>
-<span class="normal">925</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">924</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_parametrized_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute class name for parametrizations of generic classes.</span>
@@ -5693,7 +5691,7 @@ This is useful if you want to do some validation that requires the entire model 
 
   <div class="doc doc-contents ">
   
-      <p>Try to rebuild or reconstruct the model schema.</p>
+      <p>Try to rebuild or reconstruct the model core schema</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -5711,7 +5709,7 @@ This is useful if you want to do some validation that requires the entire model 
           <td>
                 <code>type</code>
           </td>
-          <td><p>The class to build the model schema for.</p></td>
+          <td><p>The class to build the model core schema for.</p></td>
           <td>
               <em>required</em>
           </td>
@@ -5721,7 +5719,7 @@ This is useful if you want to do some validation that requires the entire model 
           <td>
                 <code>bool</code>
           </td>
-          <td><p>Whether or not to force the rebuilding of the model schema, defaults to <code>False</code>.</p></td>
+          <td><p>Whether to force the rebuilding of the model schema, defaults to <code>False</code>.</p></td>
           <td>
                 <code>False</code>
           </td>
@@ -5731,7 +5729,7 @@ This is useful if you want to do some validation that requires the entire model 
           <td>
                 <code>bool</code>
           </td>
-          <td><p>Whether or not to raise errors, defaults to <code>True</code>.</p></td>
+          <td><p>Whether to raise errors, defaults to <code>True</code>.</p></td>
           <td>
                 <code>True</code>
           </td>
@@ -5772,8 +5770,8 @@ This is useful if you want to do some validation that requires the entire model 
           <td>
                 <code>bool | None</code>
           </td>
-          <td><p>bool or None: Returns <code>None</code> if model schema is complete and no rebuilding is required, or <code>True</code> if
-        rebuilding is successful, otherwise returns <code>None</code>.</p></td>
+          <td><p>bool or None: Returns <code>None</code> if model schema is complete and no rebuilding is required.
+If rebuilding <em>is</em> required, returns <code>True</code> if rebuilding was successful, otherwise <code>False</code>.</p></td>
         </tr>
     </tbody>
   </table>
@@ -5823,8 +5821,7 @@ This is useful if you want to do some validation that requires the entire model 
 <span class="normal">718</span>
 <span class="normal">719</span>
 <span class="normal">720</span>
-<span class="normal">721</span>
-<span class="normal">722</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">721</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">model_rebuild</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -5834,21 +5831,20 @@ This is useful if you want to do some validation that requires the entire model 
     <span class="n">_types_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Try to rebuild or reconstruct the model schema.</span>
+<span class="sd">    Try to rebuild or reconstruct the model core schema</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        cls (type): The class to build the model schema for.</span>
-<span class="sd">        force (bool): Whether or not to force the rebuilding of the model schema, defaults to `False`.</span>
-<span class="sd">        raise_errors (bool): Whether or not to raise errors, defaults to `True`.</span>
+<span class="sd">        cls (type): The class to build the model core schema for.</span>
+<span class="sd">        force (bool): Whether to force the rebuilding of the model schema, defaults to `False`.</span>
+<span class="sd">        raise_errors (bool): Whether to raise errors, defaults to `True`.</span>
 <span class="sd">        _parent_namespace_depth (int): The depth level of the parent namespace, defaults to 2.</span>
 <span class="sd">        _types_namespace (dict[str, Any] | None): The types namespace, defaults to `None`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        bool or None: Returns `None` if model schema is complete and no rebuilding is required, or `True` if</span>
-<span class="sd">                    rebuilding is successful, otherwise returns `None`.</span>
-
+<span class="sd">        bool or None: Returns `None` if model schema is complete and no rebuilding is required.</span>
+<span class="sd">            If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_model_complete__</span><span class="p">:</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_complete__</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">_types_namespace</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -6476,7 +6472,7 @@ This is useful if you want to do some validation that requires the entire model 
                     <span class="s1">&#39;parameters&#39;</span><span class="p">:</span> <span class="n">parameters</span><span class="p">,</span>
                 <span class="p">}</span>
 
-            <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_model_complete__</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Ensure this specific class gets completed</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_complete__</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Ensure this specific class gets completed</span>
 
             <span class="c1"># preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487</span>
             <span class="c1"># for attributes not in `new_namespace` (e.g. private attributes)</span>
@@ -6685,7 +6681,8 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1247</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1246</span>
+<span class="normal">1247</span>
 <span class="normal">1248</span>
 <span class="normal">1249</span>
 <span class="normal">1250</span>
@@ -6764,8 +6761,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 <span class="normal">1323</span>
 <span class="normal">1324</span>
 <span class="normal">1325</span>
-<span class="normal">1326</span>
-<span class="normal">1327</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1326</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
