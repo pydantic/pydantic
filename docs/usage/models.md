@@ -918,6 +918,12 @@ except ValidationError as e:
     """
 ```
 
+!!! note
+    To pickle a dynamically created model:
+
+    - the model must be defined globally
+    - it must provide `__module__`
+
 ## Using Pydantic without creating a `BaseModel`
 
 You may have types that are not `BaseModel`s that you want to validate data against.
