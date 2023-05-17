@@ -1801,9 +1801,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   and the output is a <code>NameEmail</code> object which has two properties: <code>name</code> and <code>email</code>.
   For <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code> the name would be <code>"Fred Bloggs"</code>;
   for <code>fred.bloggs@example.com</code> it would be <code>"fred.bloggs"</code>.</dd>
-<dt><code>PyObject</code></dt>
-<dd>expects a string and loads the Python object importable at that dotted path;
-  e.g. if <code>'math.cos'</code> was provided, the resulting field value would be the function <code>cos</code></dd>
+<dt><code>ImportString</code></dt>
+<dd>expects a string and loads the Python object importable at that dotted path; attributes of modules may be separated
+  from the module by <code>:</code> or <code>.</code>, e.g. if <code>'math:cos'</code> was provided, the resulting field value would be the function
+<code>cos</code>. If a <code>.</code> is used and both an attribute and submodule are present at the same path, the module will be preferred.</dd>
 <dt><code>constr</code></dt>
 <dd>type method for constraining strs;
   see <a href="#constrained-types">Constrained Types</a></dd>
@@ -1818,8 +1819,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   For <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code> the name would be <code>"Fred Bloggs"</code>;
   for <code>fred.bloggs@example.com</code> it would be <code>"fred.bloggs"</code>.</p>
 <h2 id="importstring">ImportString<a class="headerlink" href="#importstring" title="Permanent link">&para;</a></h2>
-<p><code>ImportString</code> expects a string and loads the Python object importable at that dotted path; e.g. if <code>'math.cos'</code> was provided,
-the resulting field value would be the function <code>cos</code>; see <a href="#importstring">ImportString</a></p>
+<p><code>ImportString</code> expects a string and loads the Python object importable at that dotted path; e.g. if <code>'math.cos'</code>
+was provided, the resulting field value would be the function <code>cos</code>; see <a href="#importstring">ImportString</a></p>
 <p>On model instantiation, pointers will be evaluated and imported. There is
 some nuance to this behavior, demonstrated in the examples below.</p>
 <blockquote>
@@ -1851,7 +1852,7 @@ being worked on.</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    1 validation error for ImportThings</span>
 <span class="sd">    obj</span>
-<span class="sd">      Invalid python path: No module named &#39;foo&#39; [type=import_error, input_value=&#39;foo.bar&#39;, input_type=str]</span>
+<span class="sd">      Invalid python path: No module named &#39;foo.bar&#39; [type=import_error, input_value=&#39;foo.bar&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 
@@ -1894,7 +1895,7 @@ the evaluated object:</strong>
 
 
 <span class="c1"># Create an instance</span>
-<span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncodersBad</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math.cos&#39;</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncodersBad</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math:cos&#39;</span><span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
@@ -1916,7 +1917,7 @@ the evaluated object:</strong>
         <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span><span class="n">BuiltinFunctionType</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)}</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncodersGood</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math.cos&#39;</span><span class="p">)</span>
+<span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncodersGood</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math:cos&#39;</span><span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
 </code></pre></div></p>
 <h2 id="constrained-types">Constrained Types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
