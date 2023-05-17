@@ -15,11 +15,31 @@ from .annotated import GetCoreSchemaHandler
 
 @slots_dataclass(frozen=True)
 class PlainSerializer:
+    """
+    Plain serializers use a function to modify the output of serialization.
+
+    Attributes:
+        func (core_schema.SerializerFunction): The serializer function.
+        json_return_type (core_schema.JsonReturnTypes | None, optional): The JSON return type. Defaults to `None`.
+        when_used (Literal['always', 'unless-none', 'json', 'json-unless-none'], optional): The serialization condition.
+            Defaults to 'always'.
+    """
+
     func: core_schema.SerializerFunction
     json_return_type: core_schema.JsonReturnTypes | None = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        """
+        Gets the Pydantic core schema.
+
+        Args:
+            source_type (Any): The source type.
+            handler (GetCoreSchemaHandler): The `GetCoreSchemaHandler` instance.
+
+        Returns:
+            core_schema.CoreSchema: The Pydantic core schema.
+        """
         schema = handler(source_type)
         schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
             function=self.func,
@@ -32,11 +52,32 @@ class PlainSerializer:
 
 @slots_dataclass(frozen=True)
 class WrapSerializer:
+    """
+    Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization logic,
+    and can modify the resulting value before returning it as the final output of serialization.
+
+    Attributes:
+        func (core_schema.WrapSerializerFunction): The function to be wrapped.
+        json_return_type (Optional[core_schema.JsonReturnTypes]): The JSON return type annotation of the function.
+        when_used (Literal['always', 'unless-none', 'json', 'json-unless-none']): Determines the way the serialization
+            will go. This governs whether and when this function will be used during serialization.
+    """
+
     func: core_schema.WrapSerializerFunction
     json_return_type: core_schema.JsonReturnTypes | None = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+        """
+        This method is used to get the Pydantic core schema of the class.
+
+        Args:
+            source_type (Any): Source type.
+            handler (GetCoreSchemaHandler): Core schema handler.
+
+        Returns:
+            The generated core schema of the class.
+        """
         schema = handler(source_type)
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=self.func,

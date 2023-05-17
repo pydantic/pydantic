@@ -69,6 +69,11 @@ test-fastapi: .pdm
 	git clone https://github.com/tiangolo/fastapi.git --single-branch
 	pdm run ./tests/test_fastapi.sh
 
+.PHONY: test-pydantic-settings  ## Run the pydantic-settings tests with this version of pydantic
+test-pydantic-settings: .pdm
+	git clone https://github.com/pydantic/pydantic-settings.git --single-branch
+	pdm run ./tests/test_pydantic_settings.sh
+
 .PHONY: all  ## Run the standard set of checks performed in CI
 all: lint typecheck codespell testcov
 

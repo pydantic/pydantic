@@ -23,7 +23,7 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import PydanticSerializationError, core_schema
+from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
 from typing_extensions import Annotated, get_args
 
 from pydantic import (
@@ -1897,7 +1897,6 @@ def test_required_any():
     }
 
 
-@pytest.mark.xfail(reason='need to modify loc of ValidationError')
 def test_custom_generic_validators():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
@@ -1921,12 +1920,24 @@ def test_custom_generic_validators():
             t1_f = TypeAdapter(args[0]).validate_python
             t2_f = TypeAdapter(args[1]).validate_python
 
-            def validate(v, info):
+            def convert_to_init_error(e: ErrorDetails, loc: str) -> InitErrorDetails:
+                init_e = {'type': e['type'], 'loc': e['loc'] + (loc,), 'input': e['input']}
+                if 'ctx' in e:
+                    init_e['ctx'] = e['ctx']
+                return init_e
+
+            def validate(v, _info):
                 if not args:
                     return v
-                # TODO: Collect these errors, rather than stopping early, and modify the loc to make the test pass
-                t1_f(v.t1)
-                t2_f(v.t2)
+                # TODO: Ideally we would collect these errors rather than stopping early
+                try:
+                    v.t1 = t1_f(v.t1)
+                except ValidationError as exc:
+                    raise ValidationError(exc.title, [convert_to_init_error(e, 't1') for e in exc.errors()]) from exc
+                try:
+                    v.t2 = t2_f(v.t2)
+                except ValidationError as exc:
+                    raise ValidationError(exc.title, [convert_to_init_error(e, 't2') for e in exc.errors()]) from exc
                 return v
 
             return core_schema.general_after_validator_function(validate, schema)

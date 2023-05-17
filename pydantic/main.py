@@ -58,11 +58,6 @@ if typing.TYPE_CHECKING:
 __all__ = 'BaseModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
-# Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we need to add this extra
-# (somewhat hacky) boolean to keep track of whether we've created the `BaseModel` class yet, and therefore whether it's
-# safe to refer to it. If it *hasn't* been created, we assume that the `__new__` call we're in the middle of is for
-# the `BaseModel` class, since that's defined immediately after the metaclass.
-_base_class_defined = False
 
 
 class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
@@ -106,7 +101,10 @@ class ModelMetaclass(ABCMeta):
         Returns:
             type: the new class created by the metaclass
         """
-        if _base_class_defined:
+        # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we rely on the fact
+        # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
+        # call we're in the middle of is for the `BaseModel` class.
+        if bases:
             base_field_names, class_vars, base_private_attributes = _collect_bases_data(bases)
 
             config_wrapper = _config.ConfigWrapper.for_model(bases, namespace, kwargs)
@@ -190,7 +188,7 @@ class ModelMetaclass(ABCMeta):
             parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
 
             types_namespace = _typing_extra.get_cls_types_namespace(cls, parent_namespace)
-            _model_construction.set_model_fields(cls, bases, types_namespace)
+            _model_construction.set_model_fields(cls, bases, config_wrapper, types_namespace)
             _model_construction.complete_model_class(
                 cls,
                 cls_name,
@@ -220,7 +218,7 @@ class ModelMetaclass(ABCMeta):
         return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
 
 
-class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
+class BaseModel(metaclass=ModelMetaclass):
     """
     A base model class for creating Pydantic models.
 
@@ -272,7 +270,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
 
     model_config = ConfigDict()
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
-    __doc__ = ''  # Null out the Representation docstring
     __pydantic_complete__ = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
@@ -822,6 +819,18 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
             yield from ((k, v) for k, v in pydantic_extra.items())
         yield from ((k, getattr(self, k)) for k, v in self.model_computed_fields.items() if v.repr)
 
+    # take logic from `_repr.Representation` without the side effects of inheritance, see #5740
+    __repr_name__ = _repr.Representation.__repr_name__
+    __repr_str__ = _repr.Representation.__repr_str__
+    __pretty__ = _repr.Representation.__pretty__
+    __rich_repr__ = _repr.Representation.__rich_repr__
+
+    def __str__(self) -> str:
+        return self.__repr_str__(' ')
+
+    def __repr__(self) -> str:
+        return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
+
     def __class_getitem__(
         cls, typevar_values: type[Any] | tuple[type[Any], ...]
     ) -> type[BaseModel] | _forward_ref.PydanticForwardRef | _forward_ref.PydanticRecursiveRef:
@@ -1206,9 +1215,6 @@ class BaseModel(_repr.Representation, metaclass=ModelMetaclass):
         return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)  # type: ignore
 
 
-_base_class_defined = True
-
-
 @typing.overload
 def create_model(
     __model_name: str,
@@ -1325,7 +1331,7 @@ def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str
     class_vars: set[str] = set()
     private_attributes: dict[str, ModelPrivateAttr] = {}
     for base in bases:
-        if _base_class_defined and issubclass(base, BaseModel) and base != BaseModel:
+        if issubclass(base, BaseModel) and base != BaseModel:
             # model_fields might not be defined yet in the case of generics, so we use getattr here:
             field_names.update(getattr(base, 'model_fields', {}).keys())
             class_vars.update(base.__class_vars__)

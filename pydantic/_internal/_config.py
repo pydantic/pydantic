@@ -53,6 +53,7 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
+    protected_namespaces: tuple[str, ...]
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -168,6 +169,7 @@ config_defaults = ConfigDict(
     ser_json_bytes='utf8',
     validate_default=False,
     validate_return=False,
+    protected_namespaces=('model_',),
 )
 
 

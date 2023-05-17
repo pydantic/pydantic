@@ -75,6 +75,7 @@ nav:
     - Unions: usage/types/unions.md
     - URLs: usage/types/urls.md
     - UUIDs: usage/types/uuids.md
+    - Encoded: usage/types/encoded.md
     - Custom Data Types: usage/types/custom.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
@@ -118,7 +119,8 @@ nav:
   - 'pydantic.types': api/types.md
   - 'pydantic.validate_call': api/validate_call.md
   - 'pydantic.version': api/version.md
-
+  - 'pydantic_core.__init__': api/pydantic_core_init.md
+  - 'pydantic_core.core_schema': api/pydantic_core_schema.md
 
 markdown_extensions:
 - tables

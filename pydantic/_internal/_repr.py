@@ -62,7 +62,7 @@ class Representation:
 
     def __pretty__(self, fmt: typing.Callable[[Any], Any], **kwargs: Any) -> typing.Generator[Any, None, None]:
         """
-        Used by devtools (https://python-devtools.helpmanual.io/) to provide a human-readable representations of objects
+        Used by devtools (https://python-devtools.helpmanual.io/) to pretty print objects.
         """
         yield self.__repr_name__() + '('
         yield 1
@@ -75,19 +75,21 @@ class Representation:
         yield -1
         yield ')'
 
-    def __str__(self) -> str:
-        return self.__repr_str__(' ')
-
-    def __repr__(self) -> str:
-        return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
-
     def __rich_repr__(self) -> RichReprResult:
-        """Get fields for Rich library"""
+        """
+        Used by Rich (https://rich.readthedocs.io/en/stable/pretty.html) to pretty print objects.
+        """
         for name, field_repr in self.__repr_args__():
             if name is None:
                 yield field_repr
             else:
                 yield name, field_repr
+
+    def __str__(self) -> str:
+        return self.__repr_str__(' ')
+
+    def __repr__(self) -> str:
+        return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
 
 
 def display_as_type(obj: Any) -> str:
