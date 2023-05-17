@@ -209,16 +209,11 @@ def rebuild_dataclass(
         else:
             if _parent_namespace_depth > 0:
                 frame_parent_ns = _typing_extra.parent_frame_namespace(parent_depth=_parent_namespace_depth) or {}
-                # TODO: Should either add `__pydantic_parent_namespace__` as an attribute of pydantic dataclasses,
-                #   or remove the commented lines referencing the attribute. I have kept them around for now as I
-                #   think they _may_ be necessary to handle recursive generics.
-                # cls_parent_ns = cls.__pydantic_parent_namespace__ or {}
-                # cls.__pydantic_parent_namespace__ = {**cls_parent_ns, **frame_parent_ns}
+                # Note: we may need to add something similar to cls.__pydantic_parent_namespace__ from BaseModel
+                #   here when implementing handling of recursive generics. See BaseModel.model_rebuild for reference.
                 types_namespace = frame_parent_ns
             else:
                 types_namespace = {}
-
-            # types_namespace = cls.__pydantic_parent_namespace__
 
             types_namespace = _typing_extra.get_cls_types_namespace(cls, types_namespace)
         return complete_dataclass(
