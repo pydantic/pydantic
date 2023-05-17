@@ -793,7 +793,7 @@ def test_string_import_callable(annotation):
     class PyObjectModel(BaseModel):
         callable: annotation
 
-    m = PyObjectModel(callable='math:cos')
+    m = PyObjectModel(callable='math.cos')
     assert m.callable == math.cos
 
     m = PyObjectModel(callable=math.cos)

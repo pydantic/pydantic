@@ -61,14 +61,17 @@ def _import_string_logic(dotted_path: str) -> Any:
     Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
     (This is necessary to distinguish between a submodule and an attribute when there is a conflict.)
 
+    If the dotted path does not include a colon and the final item is not a valid module, importing as an attribute
+    rather than a submodule will be attempted automatically.
+
     So, for example, the following values of `dotted_path` result in the following returned values:
     * 'collections': <module 'collections'>
     * 'collections.abc': <module 'collections.abc'>
     * 'collections.abc:Mapping': <class 'collections.abc.Mapping'>
+    * `collections.abc.Mapping`: <class 'collections.abc.Mapping'> (though this is a bit slower than the previous line)
 
     An error will be raised under any of the following scenarios:
     * `dotted_path` contains more than one colon (e.g., 'collections:abc:Mapping')
-    * `dotted_path` references a module attribute but does not use a ':' (e.g., 'collections.abc.Mapping')
     * the substring of `dotted_path` before the colon is not a valid module in the environment (e.g., '123:Mapping')
     * the substring of `dotted_path` after the colon is not an attribute of the module (e.g., 'collections:abc123')
     """

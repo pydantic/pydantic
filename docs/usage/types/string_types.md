@@ -19,8 +19,9 @@ description: Useful types provided by Pydantic.
   for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
 
 `ImportString`
-: expects a string and loads the Python object importable at that dotted path; attributes of modules should be separated
-  from the module by `:`.  e.g. if `'math:cos'` was provided, the resulting field value would be the function `cos`
+: expects a string and loads the Python object importable at that dotted path; attributes of modules may be separated
+  from the module by `:` or `.`, e.g. if `'math:cos'` was provided, the resulting field value would be the function
+`cos`. If a `.` is used and both an attribute and submodule are present at the same path, the module will be preferred.
 
 `constr`
 : type method for constraining strs;
@@ -42,8 +43,8 @@ description: Useful types provided by Pydantic.
 
 ## ImportString
 
-`ImportString` expects a string and loads the Python object importable at that dotted path; e.g. if `'math:cos'` was provided,
-the resulting field value would be the function `cos`; see [ImportString](#importstring)
+`ImportString` expects a string and loads the Python object importable at that dotted path; e.g. if `'math.cos'`
+was provided, the resulting field value would be the function `cos`; see [ImportString](#importstring)
 
 On model instantiation, pointers will be evaluated and imported. There is
 some nuance to this behavior, demonstrated in the examples below.
@@ -62,7 +63,7 @@ class ImportThings(BaseModel):
 
 
 # A string value will cause an automatic import
-my_cos = ImportThings(obj='math:cos')
+my_cos = ImportThings(obj='math.cos')
 
 # You can use the imported function as you would expect
 cos_of_0 = my_cos.obj(0)
@@ -99,7 +100,7 @@ except ValidationError as e:
 from math import cos  # noqa: E402
 
 my_cos = ImportThings(obj=cos)
-my_cos_2 = ImportThings(obj='math:cos')
+my_cos_2 = ImportThings(obj='math.cos')
 assert my_cos == my_cos_2
 ```
 
