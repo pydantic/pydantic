@@ -67,6 +67,7 @@ __all__ = [
     # main
     'BaseModel',
     'create_model',
+    'RootModel',
     # network
     'AnyUrl',
     'AnyHttpUrl',

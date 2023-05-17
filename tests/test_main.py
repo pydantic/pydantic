@@ -30,6 +30,7 @@ from pydantic import (
     PrivateAttr,
     PydanticUndefinedAnnotation,
     PydanticUserError,
+    RootModel,
     SecretStr,
     ValidationError,
     ValidationInfo,
@@ -2218,3 +2219,65 @@ def test_multiple_protected_namespace():
             also_protect_field: str
 
             model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+
+
+def parametrize_root_model():
+    class InnerModel(BaseModel):
+        int_field: int
+        str_field: str
+
+    return pytest.mark.parametrize(
+        ('root_type', 'root_value', 'dump_value'),
+        [
+            pytest.param(int, 42, 42, id='int'),
+            pytest.param(str, 'forty two', 'forty two', id='str'),
+            pytest.param(Dict[int, bool], {1: True, 2: False}, {1: True, 2: False}, id='dict[int, bool]'),
+            pytest.param(List[int], [4, 2, -1], [4, 2, -1], id='list[int]'),
+            pytest.param(
+                InnerModel,
+                InnerModel(int_field=42, str_field='forty two'),
+                {'int_field': 42, 'str_field': 'forty two'},
+                id='InnerModel',
+            ),
+        ],
+    )
+
+
+@parametrize_root_model()
+def test_root_model_specialized(root_type, root_value, dump_value):
+    Model = RootModel[root_type]
+
+    m = Model(root_value)
+
+    with pytest.warns(UserWarning, match='but got `dict` - serialized value may not be as expected'):
+        assert m.model_dump() == dump_value
+        assert dict(m) == {'__root__': dump_value}
+
+
+@parametrize_root_model()
+def test_root_model_inherited(root_type, root_value, dump_value):
+    class Model(RootModel[root_type]):
+        pass
+
+    m = Model(root_value)
+
+    with pytest.warns(UserWarning, match='but got `dict` - serialized value may not be as expected'):
+        assert m.model_dump() == dump_value
+        assert dict(m) == {'__root__': dump_value}
+
+
+def test_root_model_validation_error():
+    Model = RootModel[int]
+
+    with pytest.raises(ValidationError) as e:
+        Model('forty two')
+
+    assert e.value.errors() == [
+        {
+            'input': 'forty two',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
+            'type': 'int_parsing',
+            'url': 'https://errors.pydantic.dev/0.31.0/v/int_parsing',
+        },
+    ]
