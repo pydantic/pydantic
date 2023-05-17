@@ -3111,6 +3111,7 @@ class DataclassSchema(TypedDict, total=False):
     type: Required[Literal['dataclass']]
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
+    cls_name: str
     post_init: bool  # default: False
     revalidate_instances: Literal['always', 'never', 'subclass-instances']  # default: 'never'
     strict: bool  # default: False
@@ -3124,6 +3125,7 @@ def dataclass_schema(
     cls: Type[Any],
     schema: CoreSchema,
     *,
+    cls_name: str | None = None,
     post_init: bool | None = None,
     revalidate_instances: Literal['always', 'never', 'subclass-instances'] | None = None,
     strict: bool | None = None,
@@ -3139,6 +3141,7 @@ def dataclass_schema(
     Args:
         cls: The dataclass type, used to to perform subclass checks
         schema: The schema to use for the dataclass fields
+        cls_name: The name to use in error locs, etc; this is useful for generics (default: `cls.__name__`)
         post_init: Whether to call `__post_init__` after validation
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
             should re-validate defaults to config.revalidate_instances, else 'never'
@@ -3151,6 +3154,7 @@ def dataclass_schema(
     return dict_not_none(
         type='dataclass',
         cls=cls,
+        cls_name=cls_name,
         schema=schema,
         post_init=post_init,
         revalidate_instances=revalidate_instances,

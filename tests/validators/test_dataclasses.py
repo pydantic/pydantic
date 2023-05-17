@@ -1,6 +1,6 @@
 import dataclasses
 import re
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Optional, Union
 
 import pytest
 from dirty_equals import IsListOrTuple, IsStr
@@ -1137,3 +1137,56 @@ def test_function_validator_wrapping_args_schema_wrap() -> None:
     v.validate_assignment(instance, 'number', 2)
     assert instance.number == 2
     assert calls == [({'number': 1}, ({'number': 1}, None)), ({'number': 2}, ({'number': 2}, None))]
+
+
+@dataclasses.dataclass
+class FooParentDataclass:
+    foo: Optional[FooDataclass]
+
+
+def test_custom_dataclass_names():
+    # Note: normally you would use the same values for DataclassArgsSchema.dataclass_name and DataclassSchema.cls_name,
+    # but I have purposely made them different here to show which parts of the errors are affected by which.
+    # I have used square brackets in the names to hint that the most likely reason for using a value different from
+    # cls.__name__ is for use with generic types.
+    schema = core_schema.dataclass_schema(
+        FooParentDataclass,
+        core_schema.dataclass_args_schema(
+            'FooParentDataclass',
+            [
+                core_schema.dataclass_field(
+                    name='foo',
+                    schema=core_schema.union_schema(
+                        [
+                            core_schema.dataclass_schema(
+                                FooDataclass,
+                                core_schema.dataclass_args_schema(
+                                    'FooDataclass[dataclass_args_schema]',
+                                    [
+                                        core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+                                        core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
+                                    ],
+                                ),
+                                cls_name='FooDataclass[cls_name]',
+                            ),
+                            core_schema.none_schema(),
+                        ]
+                    ),
+                )
+            ],
+        ),
+    )
+
+    v = SchemaValidator(schema)
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python({'foo': 123})
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'dataclass_name': 'FooDataclass[dataclass_args_schema]'},
+            'input': 123,
+            'loc': ('foo', 'FooDataclass[cls_name]'),
+            'msg': 'Input should be a dictionary or an instance of FooDataclass[dataclass_args_schema]',
+            'type': 'dataclass_type',
+        },
+        {'input': 123, 'loc': ('foo', 'none'), 'msg': 'Input should be None', 'type': 'none_required'},
+    ]
