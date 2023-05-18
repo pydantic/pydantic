@@ -993,7 +993,7 @@ __getattr__ = getattr_migration(__name__)
 
 
 @_internal_dataclass.slots_dataclass
-class JsonSchema:
+class WithJsonSchema:
     """
     Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
 

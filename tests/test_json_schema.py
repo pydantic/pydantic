@@ -66,7 +66,6 @@ from pydantic.types import (
     DirectoryPath,
     FilePath,
     Json,
-    JsonSchema,
     NegativeFloat,
     NegativeInt,
     NewPath,
@@ -80,6 +79,7 @@ from pydantic.types import (
     SecretStr,
     StrictBool,
     StrictStr,
+    WithJsonSchema,
     conbytes,
     condate,
     condecimal,
@@ -1211,7 +1211,7 @@ def test_callable_type(type_, default_value, base_json_schema, properties):
         Model.model_json_schema()
 
     class ModelWithOverride(BaseModel):
-        callback: Annotated[type_, JsonSchema(base_json_schema)] = default_value
+        callback: Annotated[type_, WithJsonSchema(base_json_schema)] = default_value
         foo: int
 
     if default_value is Ellipsis or base_json_schema is None:
@@ -4081,6 +4081,6 @@ def test_arbitrary_type_json_schema(field_schema, model_schema):
     class Model(BaseModel):
         model_config = dict(arbitrary_types_allowed=True)
 
-        x: Annotated[ArbitraryClass, JsonSchema(field_schema)]
+        x: Annotated[ArbitraryClass, WithJsonSchema(field_schema)]
 
     assert Model.model_json_schema() == model_schema
