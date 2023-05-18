@@ -14,7 +14,7 @@ from typing import Any, Callable, Generic, Mapping, Tuple, cast
 
 import pydantic_core
 import typing_extensions
-from typing_extensions import deprecated
+from typing_extensions import Unpack, deprecated
 
 from ._internal import (
     _config,
@@ -334,6 +334,24 @@ class BaseModel(metaclass=ModelMetaclass):
             JsonSchemaValue: A JSON schema, as a Python object.
         """
         return __handler(__core_schema)
+
+    if typing.TYPE_CHECKING:
+
+        def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]):
+            """
+            This signature is included purely to help type-checkers check arguments to class declaration, which
+            provides a way to conveniently set model_config key/value pairs:
+
+                class MyModel(BaseModel, extra='allow'):
+                    ...
+
+            However, this may be deceiving, since the _actual_ calls to `__init_subclass__` will not receive any
+            of the config arguments, and will only receive any keyword arguments passed during class initialization
+            that are _not_ expected keys in ConfigDict. (This is due to the way `ModelMetaclass.__new__` works.)
+
+            Args:
+                **kwargs (Unpack[ConfigDict]): Keyword arguments passed to the class definition, which set model_config
+            """
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
