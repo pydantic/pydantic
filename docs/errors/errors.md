@@ -208,3 +208,12 @@ except ValidationError as e:
     ]
     """
 ```
+
+## Error messages
+
+Pydantic attempts to provide useful default error messages for validation and usage errors.
+
+We've provided documentation for default error codes in the following sections:
+
+- [Validation Errors](../usage/validation_errors.md)
+- [Usage Errors](../usage/errors.md)
