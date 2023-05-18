@@ -205,9 +205,11 @@ impl Serialize for Location {
 impl TryFrom<Option<&PyAny>> for Location {
     type Error = PyErr;
 
+    /// Only ever called by ValidationError -> PyLineError to convert user input to our internal Location
+    /// Thus this expects the location to *not* be reversed and reverses it before storing it.
     fn try_from(location: Option<&PyAny>) -> PyResult<Self> {
         if let Some(location) = location {
-            let loc_vec: Vec<LocItem> = if let Ok(tuple) = location.downcast::<PyTuple>() {
+            let mut loc_vec: Vec<LocItem> = if let Ok(tuple) = location.downcast::<PyTuple>() {
                 tuple.iter().map(LocItem::try_from).collect::<PyResult<_>>()?
             } else if let Ok(list) = location.downcast::<PyList>() {
                 list.iter().map(LocItem::try_from).collect::<PyResult<_>>()?
@@ -219,6 +221,9 @@ impl TryFrom<Option<&PyAny>> for Location {
             if loc_vec.is_empty() {
                 Ok(Self::Empty)
             } else {
+                // Don't force Python users to give use the location reversed
+                // just be we internally store it like that
+                loc_vec.reverse();
                 Ok(Self::List(loc_vec))
             }
         } else {

@@ -559,7 +559,7 @@ def test_raise_validation_error():
 
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'greater_than', 'loc': (2, 'a'), 'msg': 'Input should be greater than 5', 'input': 4, 'ctx': {'gt': 5}}
+        {'type': 'greater_than', 'loc': ('a', 2), 'msg': 'Input should be greater than 5', 'input': 4, 'ctx': {'gt': 5}}
     ]
     with pytest.raises(TypeError, match='GreaterThan requires context: {gt: Number}'):
         raise ValidationError.from_exception_data('Foobar', [{'type': 'greater_than', 'loc': ('a', 2), 'input': 4}])
