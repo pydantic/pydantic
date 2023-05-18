@@ -1640,6 +1640,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.types.WithJsonSchema" class="md-nav__link">
+    WithJsonSchema
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.types.conlist" class="md-nav__link">
     conlist()
   </a>
@@ -1794,6 +1801,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.types.WithJsonSchema" class="md-nav__link">
+    WithJsonSchema
+  </a>
   
 </li>
       
@@ -2339,6 +2353,98 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
   </div>
 
 </div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.types.WithJsonSchema" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">WithJsonSchema</span>
+
+
+<a href="#pydantic.types.WithJsonSchema" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.</p>
+<p>This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
+such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
+custom subclass of pydantic.json_schema.GenerateJsonSchema.</p>
+<p>Note that any <em>modifications</em> to the schema that would normally be made (such as setting the title for model fields)
+will still be performed.</p>
+
+
+        <details class="quote">
+          <summary>Source code in <code>pydantic/types.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 995</span>
+<span class="normal"> 996</span>
+<span class="normal"> 997</span>
+<span class="normal"> 998</span>
+<span class="normal"> 999</span>
+<span class="normal">1000</span>
+<span class="normal">1001</span>
+<span class="normal">1002</span>
+<span class="normal">1003</span>
+<span class="normal">1004</span>
+<span class="normal">1005</span>
+<span class="normal">1006</span>
+<span class="normal">1007</span>
+<span class="normal">1008</span>
+<span class="normal">1009</span>
+<span class="normal">1010</span>
+<span class="normal">1011</span>
+<span class="normal">1012</span>
+<span class="normal">1013</span>
+<span class="normal">1014</span>
+<span class="normal">1015</span>
+<span class="normal">1016</span>
+<span class="normal">1017</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
+<span class="k">class</span> <span class="nc">WithJsonSchema</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.</span>
+
+<span class="sd">    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,</span>
+<span class="sd">    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a</span>
+<span class="sd">    custom subclass of pydantic.json_schema.GenerateJsonSchema.</span>
+
+<span class="sd">    Note that any _modifications_ to the schema that would normally be made (such as setting the title for model fields)</span>
+<span class="sd">    will still be performed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span> <span class="o">|</span> <span class="kc">None</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">_core_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_schema</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema</span>
+            <span class="k">raise</span> <span class="n">PydanticOmit</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">json_schema</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
 
 
 
