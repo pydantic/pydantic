@@ -541,3 +541,31 @@ def test_config_defaults_match():
     config_defaults_keys = list(config_defaults.keys())
 
     assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'
+
+
+@pytest.mark.xfail(reason='requires changes in pydantic-core')
+def test_config_is_not_inherited_in_model_fields():
+    from typing import List
+
+    from pydantic import BaseModel, ConfigDict
+
+    class Inner(BaseModel):
+        a: str
+
+    class Outer(BaseModel):
+        # this cause the inner model incorrectly dumpped:
+        model_config = ConfigDict(str_to_lower=True)
+
+        x: List[str]  # should be converted to lower
+        inner: Inner  # should not have fields converted to lower
+
+    m = Outer.model_validate(dict(x=['Abc'], inner=dict(a='Def')))
+
+    # TODO: Remove the following comments before merging this PR
+    # print(m.model_dump())
+    # Current v2:
+    # > {'x': ['abc'], 'inner': {'a': 'def'}}
+    # Preferred in v2 (and current in v1):
+    # > {'x': ['abc'], 'inner': {'a': 'Def'}}
+
+    assert m.model_dump() == {'x': ['abc'], 'inner': {'a': 'Def'}}

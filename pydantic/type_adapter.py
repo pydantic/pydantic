@@ -114,7 +114,7 @@ class TypeAdapter(Generic[T]):
         core_schema = flatten_schema_defs(core_schema)
         simplified_core_schema = inline_schema_defs(core_schema)
 
-        core_config = config_wrapper.core_config()
+        core_config = config_wrapper.core_config(None)
         validator: SchemaValidator
         if hasattr(__type, '__pydantic_validator__') and config is None:
             validator = __type.__pydantic_validator__

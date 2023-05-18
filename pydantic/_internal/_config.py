@@ -109,17 +109,18 @@ class ConfigWrapper:
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
-    def core_config(self, obj: Any = None) -> core_schema.CoreConfig:
+    def core_config(self, obj: Any) -> core_schema.CoreConfig:
         """
         Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
 
+        Pass `obj=None` if you do not want to attempt to infer the `title`.
+
         We don't use getattr here since we don't want to populate with defaults.
         """
-        extra = self.config_dict.get('extra')
         core_config = core_schema.CoreConfig(
             **core_schema.dict_not_none(
                 title=self.config_dict.get('title') or (obj and obj.__name__),
-                extra_fields_behavior=extra,
+                extra_fields_behavior=self.config_dict.get('extra'),
                 allow_inf_nan=self.config_dict.get('allow_inf_nan'),
                 populate_by_name=self.config_dict.get('populate_by_name'),
                 str_strip_whitespace=self.config_dict.get('str_strip_whitespace'),

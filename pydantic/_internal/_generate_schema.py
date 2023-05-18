@@ -272,7 +272,7 @@ class GenerateSchema:
 
         inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
-        core_config = config_wrapper.core_config()
+        core_config = config_wrapper.core_config(cls)
         model_post_init = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
 
         metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls)])
