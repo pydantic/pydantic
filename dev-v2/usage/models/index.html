@@ -598,15 +598,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#error-handling" class="md-nav__link">
-    Error Handling
+    Error handling
   </a>
   
-    <nav class="md-nav" aria-label="Error Handling">
+    <nav class="md-nav" aria-label="Error handling">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#custom-errors" class="md-nav__link">
-    Custom Errors
+    Custom errors
   </a>
   
 </li>
@@ -618,10 +618,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#helper-functions" class="md-nav__link">
-    Helper Functions
+    Helper functions
   </a>
   
-    <nav class="md-nav" aria-label="Helper Functions">
+    <nav class="md-nav" aria-label="Helper functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -638,7 +638,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#generic-models" class="md-nav__link">
-    Generic Models
+    Generic models
   </a>
   
 </li>
@@ -659,28 +659,28 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#custom-root-types" class="md-nav__link">
-    Custom Root Types
+    Custom root types
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#faux-immutability" class="md-nav__link">
-    Faux Immutability
+    Faux immutability
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#abstract-base-classes" class="md-nav__link">
-    Abstract Base Classes
+    Abstract base classes
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#field-ordering" class="md-nav__link">
-    Field Ordering
+    Field ordering
   </a>
   
 </li>
@@ -735,7 +735,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#data-conversion" class="md-nav__link">
-    Data Conversion
+    Data conversion
   </a>
   
 </li>
@@ -1957,15 +1957,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#error-handling" class="md-nav__link">
-    Error Handling
+    Error handling
   </a>
   
-    <nav class="md-nav" aria-label="Error Handling">
+    <nav class="md-nav" aria-label="Error handling">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
   <a href="#custom-errors" class="md-nav__link">
-    Custom Errors
+    Custom errors
   </a>
   
 </li>
@@ -1977,10 +1977,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#helper-functions" class="md-nav__link">
-    Helper Functions
+    Helper functions
   </a>
   
-    <nav class="md-nav" aria-label="Helper Functions">
+    <nav class="md-nav" aria-label="Helper functions">
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
@@ -1997,7 +1997,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#generic-models" class="md-nav__link">
-    Generic Models
+    Generic models
   </a>
   
 </li>
@@ -2018,28 +2018,28 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#custom-root-types" class="md-nav__link">
-    Custom Root Types
+    Custom root types
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#faux-immutability" class="md-nav__link">
-    Faux Immutability
+    Faux immutability
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#abstract-base-classes" class="md-nav__link">
-    Abstract Base Classes
+    Abstract base classes
   </a>
   
 </li>
       
         <li class="md-nav__item">
   <a href="#field-ordering" class="md-nav__link">
-    Field Ordering
+    Field ordering
   </a>
   
 </li>
@@ -2094,7 +2094,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#data-conversion" class="md-nav__link">
-    Data Conversion
+    Data conversion
   </a>
   
 </li>
@@ -2202,24 +2202,28 @@ Models possess the following methods and attributes:</p>
 <li><code>model_construct()</code>: a class method for creating models without running validation. See
     <a href="#creating-models-without-validation">Creating models without validation</a>.</li>
 <li><code>model_copy()</code>: returns a copy (by default, shallow copy) of the model. See
-    <a href="../exporting_models/#modelcopy">exporting models</a>.</li>
+    <a href="../exporting_models/#modelcopy">Exporting models</a>.</li>
 <li><code>model_dump()</code>: returns a dictionary of the model's fields and values. See
-    <a href="../exporting_models/#modeldump">exporting models</a>.</li>
+    <a href="../exporting_models/#modeldump">Exporting models</a>.</li>
 <li><code>model_dump_json()</code>: returns a JSON string representation of <code>model_dump()</code>. See
-    <a href="../exporting_models/#modeldumpjson">exporting models</a>.</li>
+    <a href="../exporting_models/#modeldumpjson">Exporting models</a>.</li>
 <li><code>model_extra</code>: get extra fields set during validation.</li>
 <li><code>model_fields_set</code>: set of fields which were set when the model instance was initialised.</li>
-<li><code>model_json_schema()</code>: returns a dictionary representing the model as JSON Schema. See <a href="../schema/">schema</a>.</li>
+<li><code>model_json_schema()</code>: returns a dictionary representing the model as JSON Schema. See <a href="../schema/">Schema</a>.</li>
 <li><code>model_modify_json_schema()</code>: a method for how the "generic" properties of the JSON schema are populated.
-    See <a href="../schema/">schema</a>.</li>
+    See <a href="../schema/">Schema</a>.</li>
 <li><code>model_parameterized_name()</code>: compute the class name for parametrizations of generic classes.</li>
 <li><code>model_post_init()</code>: perform additional initialization after the model is initialised.</li>
 <li><code>model_rebuild()</code>: rebuild the model schema.</li>
 <li><code>model_validate()</code>: a utility for loading any object into a model with error handling if the object is not a
-    dictionary. See <a href="#helper-functions">helper functions</a>.</li>
+    dictionary. See <a href="#helper-functions">Helper functions</a>.</li>
 <li><code>model_validate_json()</code>: a utility for validating the given JSON data against the Pydantic model. See
-    <a href="#helper-functions">helper functions</a>.</li>
+    <a href="#helper-functions">Helper functions</a>.</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>See <a class="autorefs autorefs-internal" href="../../api/main/#pydantic.main.BaseModel"><code>BaseModel</code></a> for the class definition including a full list of methods and attributes.</p>
+</div>
 <h2 id="recursive-models">Recursive models<a class="headerlink" href="#recursive-models" title="Permanent link">&para;</a></h2>
 <p>More complex hierarchical data structures can be defined using models themselves as types in annotations.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
@@ -2589,7 +2593,7 @@ field population. Accessing <code>SQLModel</code>'s <code>metadata</code> attrib
 </div>
 </div>
 </div>
-<h2 id="error-handling">Error Handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
+<h2 id="error-handling">Error handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
 <p><em>pydantic</em> will raise <code>ValidationError</code> whenever it finds an error in the data it's validating.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
@@ -2818,7 +2822,7 @@ contain information about all the errors and how they happened.</p>
 </div>
 </div>
 </div>
-<h3 id="custom-errors">Custom Errors<a class="headerlink" href="#custom-errors" title="Permanent link">&para;</a></h3>
+<h3 id="custom-errors">Custom errors<a class="headerlink" href="#custom-errors" title="Permanent link">&para;</a></h3>
 <p>In your custom data types or validators you should use <code>ValueError</code>, <code>TypeError</code> or <code>AssertionError</code> to raise errors.</p>
 <p>See <a href="../validators/">validators</a> for more details on use of the <code>@validator</code> decorator.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
@@ -2888,7 +2892,7 @@ contain information about all the errors and how they happened.</p>
 <span class="sd">    ]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h2 id="helper-functions">Helper Functions<a class="headerlink" href="#helper-functions" title="Permanent link">&para;</a></h2>
+<h2 id="helper-functions">Helper functions<a class="headerlink" href="#helper-functions" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> provides three <code>classmethod</code> helper functions on models for parsing data:</p>
 <ul>
 <li><strong><code>model_validate</code></strong>: this is very similar to the <code>__init__</code> method of the model, except it takes a dict
@@ -2985,7 +2989,7 @@ which fields were originally set and which weren't. If it's omitted <code>model_
 of the data provided.</p>
 <p>For example, in the example above, if <code>_fields_set</code> was not provided,
 <code>new_user.model_fields_set</code> would be <code>{'id', 'age', 'name'}</code>.</p>
-<h2 id="generic-models">Generic Models<a class="headerlink" href="#generic-models" title="Permanent link">&para;</a></h2>
+<h2 id="generic-models">Generic models<a class="headerlink" href="#generic-models" title="Permanent link">&para;</a></h2>
 <p>Pydantic supports the creation of generic models to make it easier to reuse a common model structure.</p>
 <p>In order to declare a generic model, you perform the following steps:</p>
 <ul>
@@ -3381,7 +3385,7 @@ extending a base model with extra fields.</p>
 <span class="sd">      Assertion failed, must be alphanumeric [type=assertion_error, input_value=&#39;scolvi%n&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h2 id="using-pydantic-without-creating-a-basemodel">Using Pydantic without creating a BaseModel<a class="headerlink" href="#using-pydantic-without-creating-a-basemodel" title="Permanent link">&para;</a></h2>
+<h2 id="using-pydantic-without-creating-a-basemodel">Using Pydantic without creating a <code>BaseModel</code><a class="headerlink" href="#using-pydantic-without-creating-a-basemodel" title="Permanent link">&para;</a></h2>
 <p>You may have types that are not <code>BaseModel</code>s that you want to validate data against.
 Or you may want to validate a <code>List[SomeModel]</code>, or dump it to JSON.</p>
 <p>To do this Pydantic provides <code>TypeAdapter</code>. A <code>TypeAdapter</code> instance behaves nearly the same as a <code>BaseModel</code> instance, with the difference that <code>TypeAdapter</code> is not an actual type so you cannot use it in type annotations and such.</p>
@@ -3476,7 +3480,7 @@ Or you may want to validate a <code>List[SomeModel]</code>, or dump it to JSON.<
 </div>
 </div>
 <p>For many use cases <code>TypeAdapter</code> can replace BaseModels with a <code>__root__</code> field in Pydantic V1.</p>
-<h2 id="custom-root-types">Custom Root Types<a class="headerlink" href="#custom-root-types" title="Permanent link">&para;</a></h2>
+<h2 id="custom-root-types">Custom root types<a class="headerlink" href="#custom-root-types" title="Permanent link">&para;</a></h2>
 <p>Pydantic models can be defined with a custom root type by declaring the <code>__root__</code> field.</p>
 <p>The root type can be any type supported by pydantic, and is specified by the type hint on the <code>__root__</code> field.
 The root value can be passed to the model <code>__init__</code> via the <code>__root__</code> keyword argument, or as
@@ -3636,7 +3640,7 @@ is currently supported for backwards compatibility, but is not recommended and m
 </div>
 </div>
 </div>
-<h2 id="faux-immutability">Faux Immutability<a class="headerlink" href="#faux-immutability" title="Permanent link">&para;</a></h2>
+<h2 id="faux-immutability">Faux immutability<a class="headerlink" href="#faux-immutability" title="Permanent link">&para;</a></h2>
 <p>Models can be configured to be immutable via <code>allow_mutation = False</code>. When this is set, attempting to change the
 values of instance attributes will raise errors. See <a href="../model_config/">model config</a> for more details on <code>Config</code>.</p>
 <div class="admonition warning">
@@ -3675,7 +3679,7 @@ modify a so-called "immutable" object.</p>
 </code></pre></div>
 <p>Trying to change <code>a</code> caused an error, and <code>a</code> remains unchanged. However, the dict <code>b</code> is mutable, and the
 immutability of <code>foobar</code> doesn't stop <code>b</code> from being changed.</p>
-<h2 id="abstract-base-classes">Abstract Base Classes<a class="headerlink" href="#abstract-base-classes" title="Permanent link">&para;</a></h2>
+<h2 id="abstract-base-classes">Abstract base classes<a class="headerlink" href="#abstract-base-classes" title="Permanent link">&para;</a></h2>
 <p>Pydantic models can be used alongside Python's
 <a href="https://docs.python.org/3/library/abc.html">Abstract Base Classes</a> (ABCs).</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">abc</span>
@@ -3691,7 +3695,7 @@ immutability of <code>foobar</code> doesn't stop <code>b</code> from being chang
     <span class="k">def</span> <span class="nf">my_abstract_method</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">pass</span>
 </code></pre></div>
-<h2 id="field-ordering">Field Ordering<a class="headerlink" href="#field-ordering" title="Permanent link">&para;</a></h2>
+<h2 id="field-ordering">Field ordering<a class="headerlink" href="#field-ordering" title="Permanent link">&para;</a></h2>
 <p>Field order is important in models for the following reasons:</p>
 <ul>
 <li>validation is performed in the order fields are defined; <a href="../validators/">fields validators</a>
@@ -3940,7 +3944,7 @@ For example:</p>
 <p>This function is capable of parsing data into any of the types pydantic can handle as fields of a <code>BaseModel</code>.</p>
 <p>Pydantic also includes two similar standalone functions called <code>parse_file_as</code> and <code>parse_raw_as</code>,
 which are analogous to <code>BaseModel.parse_file</code> and <code>BaseModel.parse_raw</code>.</p>
-<h2 id="data-conversion">Data Conversion<a class="headerlink" href="#data-conversion" title="Permanent link">&para;</a></h2>
+<h2 id="data-conversion">Data conversion<a class="headerlink" href="#data-conversion" title="Permanent link">&para;</a></h2>
 <p><em>pydantic</em> may cast input data to force it to conform to model field types,
 and in some cases this may result in a loss of information.
 For example:</p>
