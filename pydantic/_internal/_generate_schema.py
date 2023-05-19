@@ -250,9 +250,9 @@ class GenerateSchema:
         decorators = cls.__pydantic_decorators__
         check_decorator_fields_exist(
             chain(
-                decorators.field_validator.values(),
-                decorators.field_serializer.values(),
-                decorators.validator.values(),
+                decorators.field_validators.values(),
+                decorators.field_serializers.values(),
+                decorators.validators.values(),
             ),
             fields.keys(),
         )
@@ -268,7 +268,7 @@ class GenerateSchema:
             )
         finally:
             self._config_wrapper_stack.pop()
-        inner_schema = apply_validators(fields_schema, decorators.root_validator.values())
+        inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
 
         inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
@@ -287,8 +287,8 @@ class GenerateSchema:
             custom_init=cls.__init__ is not BaseModel.__init__,
         )
         model_schema = consolidate_refs(model_schema)
-        schema = apply_model_serializers(model_schema, decorators.model_serializer.values())
-        return apply_model_validators(schema, decorators.model_validator.values())
+        schema = apply_model_serializers(model_schema, decorators.model_serializers.values())
+        return apply_model_validators(schema, decorators.model_validators.values())
 
     def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
         """
@@ -568,7 +568,7 @@ class GenerateSchema:
         # push down any `each_item=True` validators
         # note that this won't work for any Annotated types that get wrapped by a function validator
         # but that's okay because that didn't exist in V1
-        this_field_validators = filter_field_decorator_info_by_field(decorators.validator.values(), name)
+        this_field_validators = filter_field_decorator_info_by_field(decorators.validators.values(), name)
         if _validators_require_validate_default(this_field_validators):
             field_info.validate_default = True
         each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
@@ -577,7 +577,7 @@ class GenerateSchema:
 
         schema = apply_validators(schema, filter_field_decorator_info_by_field(this_field_validators, name))
         schema = apply_validators(
-            schema, filter_field_decorator_info_by_field(decorators.field_validator.values(), name)
+            schema, filter_field_decorator_info_by_field(decorators.field_validators.values(), name)
         )
 
         # the default validator needs to go outside of any other validators
@@ -587,7 +587,7 @@ class GenerateSchema:
             schema = wrap_default(field_info, schema)
 
         schema = apply_field_serializers(
-            schema, filter_field_decorator_info_by_field(decorators.field_serializer.values(), name)
+            schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
         )
         json_schema_updates = {
             'title': field_info.title,
@@ -957,10 +957,10 @@ class GenerateSchema:
             if config is not None:
                 self._config_wrapper_stack.pop()
 
-        inner_schema = apply_validators(args_schema, decorators.root_validator.values())
+        inner_schema = apply_validators(args_schema, decorators.root_validators.values())
         dc_schema = core_schema.dataclass_schema(dataclass, inner_schema, post_init=has_post_init, ref=dataclass_ref)
-        schema = apply_model_serializers(dc_schema, decorators.model_serializer.values())
-        return apply_model_validators(schema, decorators.model_validator.values())
+        schema = apply_model_serializers(dc_schema, decorators.model_serializers.values())
+        return apply_model_validators(schema, decorators.model_validators.values())
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
         """
