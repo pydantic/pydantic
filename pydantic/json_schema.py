@@ -80,8 +80,6 @@ def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> Json
     Returns:
         JsonSchemaValue: The updated JSON schema.
     """
-    # TODO: This is basically just a wrapper for dict.update that returns the dict.
-    #     Would it be better to just make this a less-"domain-specific" utility function?
     schema.update(updates)
     return schema
 
@@ -535,8 +533,8 @@ class GenerateJsonSchema:
             JsonSchemaValue: The generated JSON schema.
         """
         # It's weird that this schema has 'type': 'number' but also specifies a 'format'.
-        # Relevant issue: https://github.com/pydantic/pydantic/issues/5034
         # TODO: Probably should just change this to str (look at readme intro for speeddate)
+        #   Issue: https://github.com/pydantic/pydantic/issues/5034
         return {'type': 'number', 'format': 'time-delta'}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
@@ -578,7 +576,8 @@ class GenerateJsonSchema:
         Returns:
             JsonSchemaValue: The generated JSON schema.
         """
-        return {}  # TODO: This was for compatibility with V1 -- is this the right thing to do?
+        # Note: This is for compatibility with V1; you can override if you want different behavior.
+        return {}
 
     def callable_schema(self, schema: core_schema.CallableSchema) -> JsonSchemaValue:
         """
@@ -685,7 +684,6 @@ class GenerateJsonSchema:
         Returns:
             JsonSchemaValue: The generated JSON schema.
         """
-        # TODO: make sure that GeneratorSchema accepts values from JSON, or this JSON schema should be changed..
         items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)

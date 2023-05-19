@@ -711,7 +711,6 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 class ByteSize(int):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        # TODO better schema
         return core_schema.general_plain_validator_function(cls.validate)
 
     @classmethod

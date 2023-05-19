@@ -2309,7 +2309,10 @@ def test_generic_intenum_bound():
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason='requires python 3.11 or higher')
-@pytest.mark.xfail(reason='TODO: Variadic generic parametrization is not supported yet')
+@pytest.mark.xfail(
+    reason='TODO: Variadic generic parametrization is not supported yet;'
+    ' Issue: https://github.com/pydantic/pydantic/issues/5804'
+)
 def test_variadic_generic_init():
     class ComponentModel(BaseModel):
         pass
@@ -2342,7 +2345,9 @@ def test_variadic_generic_init():
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason='requires python 3.11 or higher')
-@pytest.mark.xfail(reason='TODO: Variadic fields are not supported yet')
+@pytest.mark.xfail(
+    reason='TODO: Variadic fields are not supported yet; Issue: https://github.com/pydantic/pydantic/issues/5804'
+)
 def test_variadic_generic_with_variadic_fields():
     class ComponentModel(BaseModel):
         pass

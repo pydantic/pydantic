@@ -37,7 +37,7 @@ Also, fields that require a `default_factory` can be specified by either a `pyda
 import dataclasses
 from typing import List, Optional
 
-from pydantic import Field
+from pydantic import Field, TypeAdapter
 from pydantic.dataclasses import dataclass
 
 
@@ -54,8 +54,38 @@ class User:
 
 
 user = User(id='42')
-# TODO use methods!
-# print(user.__pydantic_model__.model_json_schema())
+print(TypeAdapter(User).json_schema())
+"""
+{
+    'type': 'object',
+    'properties': {
+        'id': {'type': 'integer', 'title': 'Id'},
+        'name': {'type': 'string', 'default': 'John Doe', 'title': 'Name'},
+        'friends': {
+            'type': 'array',
+            'items': {'type': 'integer'},
+            'default': [0],
+            'title': 'Friends',
+        },
+        'age': {
+            'anyOf': [{'type': 'integer'}, {'type': 'null'}],
+            'default': None,
+            'title': 'The age of the user',
+            'description': 'do not lie!',
+        },
+        'height': {
+            'anyOf': [
+                {'type': 'integer', 'maximum': 300, 'minimum': 50},
+                {'type': 'null'},
+            ],
+            'default': None,
+            'title': 'The height in cm',
+        },
+    },
+    'required': ['id'],
+    'title': 'User',
+}
+"""
 ```
 
 `pydantic.dataclasses.dataclass`'s arguments are the same as the standard decorator, except one extra

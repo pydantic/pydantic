@@ -69,10 +69,7 @@ def inspect_namespace(  # noqa C901
 
     if '__root__' in raw_annotations or '__root__' in namespace:
         # TODO: Update error message with migration description and/or link to documentation
-        #   Needs to mention:
-        #   * Use root_validator to wrap input data in a dict
-        #   * Use model_serializer to extract wrapped data during dumping
-        #   * Use model_modify_json_schema (or whatever it becomes) to unwrap the JSON schema
+        #   Issue: https://github.com/pydantic/pydantic/issues/5498
         raise TypeError(
             '__root__ models are no longer supported in v2; a migration guide will be added in the near future'
         )
@@ -259,7 +256,6 @@ def generate_model_signature(
                     use_var_kw = True
                     continue
 
-            # TODO: replace annotation with actual expected types once #1055 solved
             kwargs = {} if field.is_required() else {'default': field.get_default(call_default_factory=False)}
             merged_params[param_name] = Parameter(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.rebuild_annotation(), **kwargs
