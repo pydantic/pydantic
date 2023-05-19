@@ -1979,7 +1979,6 @@ def test_multi_inheritance_generic_defaults():
     assert C(a=1, c=...).model_dump() == {'a': 1, 'b': None, 'c': ..., 'x': 'a', 'y': 'b', 'z': 'c'}
 
 
-@pytest.mark.xfail(reason="'Json type's JSON schema; see issue #5072")
 def test_parse_generic_json():
     T = TypeVar('T')
 
@@ -1993,15 +1992,28 @@ def test_parse_generic_json():
     record = MessageWrapper[Payload](message=raw)
     assert isinstance(record.message, Payload)
 
-    schema = record.model_json_schema()
-    # This seems appropriate if the goal is to represent the "serialization" schema, not the validation schema.
-    # We may need a better approach for types with different inputs and outputs; I opened an issue for this in #5072
-    assert schema['properties'] == {'message': {'$ref': '#/definitions/Payload'}}
-    assert schema['definitions']['Payload'] == {
-        'title': 'Payload',
+    validation_schema = record.model_json_schema(mode='validation')
+    assert validation_schema == {
+        'properties': {'message': {'format': 'json-string', 'title': 'Message', 'type': 'string'}},
+        'required': ['message'],
+        'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
         'type': 'object',
-        'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
-        'required': ['payload_field'],
+    }
+
+    serialization_schema = record.model_json_schema(mode='serialization')
+    assert serialization_schema == {
+        '$defs': {
+            'Payload': {
+                'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
+                'required': ['payload_field'],
+                'title': 'Payload',
+                'type': 'object',
+            }
+        },
+        'properties': {'message': {'allOf': [{'$ref': '#/$defs/Payload'}], 'title': 'Message'}},
+        'required': ['message'],
+        'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
+        'type': 'object',
     }
 
 
