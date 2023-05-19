@@ -3385,6 +3385,14 @@ extending a base model with extra fields.</p>
 <span class="sd">      Assertion failed, must be alphanumeric [type=assertion_error, input_value=&#39;scolvi%n&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>To pickle a dynamically created model:</p>
+<ul>
+<li>the model must be defined globally</li>
+<li>it must provide <code>__module__</code></li>
+</ul>
+</div>
 <h2 id="using-pydantic-without-creating-a-basemodel">Using Pydantic without creating a <code>BaseModel</code><a class="headerlink" href="#using-pydantic-without-creating-a-basemodel" title="Permanent link">&para;</a></h2>
 <p>You may have types that are not <code>BaseModel</code>s that you want to validate data against.
 Or you may want to validate a <code>List[SomeModel]</code>, or dump it to JSON.</p>
