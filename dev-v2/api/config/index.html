@@ -1960,7 +1960,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <td>
                 <code>bool</code>
           </td>
-          <td><p>Whether to allow arbitrary types. Defaults to True.</p></td>
+          <td><p>Whether to allow arbitrary types. Defaults to False.</p></td>
         </tr>
         <tr>
           <td><code>from_attributes</code></td>
@@ -2123,7 +2123,7 @@ Defaults to 'iso8601'.</p></td>
 <span class="sd">        populate_by_name (bool): Whether to populate fields by name. Defaults to False.</span>
 <span class="sd">        use_enum_values (bool): Whether to use enum values. Defaults to False.</span>
 <span class="sd">        validate_assignment (bool): Whether to validate assignments. Defaults to False.</span>
-<span class="sd">        arbitrary_types_allowed (bool): Whether to allow arbitrary types. Defaults to True.</span>
+<span class="sd">        arbitrary_types_allowed (bool): Whether to allow arbitrary types. Defaults to False.</span>
 <span class="sd">        from_attributes (bool): Whether to set attributes from the configuration. Defaults to False.</span>
 <span class="sd">        loc_by_alias (bool): Whether to use the alias for error `loc`s. Defaults to True.</span>
 <span class="sd">        alias_generator (Optional[Callable[[str], str]]): A function to generate aliases. Defaults to None.</span>
@@ -2150,7 +2150,7 @@ Defaults to 'iso8601'.</p></td>
     <span class="n">populate_by_name</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">use_enum_values</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">validate_assignment</span><span class="p">:</span> <span class="nb">bool</span>
-    <span class="n">arbitrary_types_allowed</span><span class="p">:</span> <span class="nb">bool</span>  <span class="c1"># TODO default True, or remove</span>
+    <span class="n">arbitrary_types_allowed</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">from_attributes</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="c1"># whether to use the used alias (or first alias for &quot;field required&quot; errors) instead of field_names</span>
     <span class="c1"># to construct error `loc`s, default True</span>

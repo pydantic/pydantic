@@ -1889,7 +1889,7 @@ Also, fields that require a <code>default_factory</code> can be specified by eit
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -1906,15 +1906,45 @@ Also, fields that require a <code>default_factory</code> can be specified by eit
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
-<span class="c1"># TODO use methods!</span>
-<span class="c1"># print(user.__pydantic_model__.model_json_schema())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;id&#39;: {&#39;type&#39;: &#39;integer&#39;, &#39;title&#39;: &#39;Id&#39;},</span>
+<span class="sd">        &#39;name&#39;: {&#39;type&#39;: &#39;string&#39;, &#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;},</span>
+<span class="sd">        &#39;friends&#39;: {</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;default&#39;: [0],</span>
+<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;age&#39;: {</span>
+<span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
+<span class="sd">            &#39;default&#39;: None,</span>
+<span class="sd">            &#39;title&#39;: &#39;The age of the user&#39;,</span>
+<span class="sd">            &#39;description&#39;: &#39;do not lie!&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;height&#39;: {</span>
+<span class="sd">            &#39;anyOf&#39;: [</span>
+<span class="sd">                {&#39;type&#39;: &#39;integer&#39;, &#39;maximum&#39;: 300, &#39;minimum&#39;: 50},</span>
+<span class="sd">                {&#39;type&#39;: &#39;null&#39;},</span>
+<span class="sd">            ],</span>
+<span class="sd">            &#39;default&#39;: None,</span>
+<span class="sd">            &#39;title&#39;: &#39;The height in cm&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;id&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -1931,14 +1961,44 @@ Also, fields that require a <code>default_factory</code> can be specified by eit
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
-<span class="c1"># TODO use methods!</span>
-<span class="c1"># print(user.__pydantic_model__.model_json_schema())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;id&#39;: {&#39;type&#39;: &#39;integer&#39;, &#39;title&#39;: &#39;Id&#39;},</span>
+<span class="sd">        &#39;name&#39;: {&#39;type&#39;: &#39;string&#39;, &#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;},</span>
+<span class="sd">        &#39;friends&#39;: {</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;default&#39;: [0],</span>
+<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;age&#39;: {</span>
+<span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
+<span class="sd">            &#39;default&#39;: None,</span>
+<span class="sd">            &#39;title&#39;: &#39;The age of the user&#39;,</span>
+<span class="sd">            &#39;description&#39;: &#39;do not lie!&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;height&#39;: {</span>
+<span class="sd">            &#39;anyOf&#39;: [</span>
+<span class="sd">                {&#39;type&#39;: &#39;integer&#39;, &#39;maximum&#39;: 300, &#39;minimum&#39;: 50},</span>
+<span class="sd">                {&#39;type&#39;: &#39;null&#39;},</span>
+<span class="sd">            ],</span>
+<span class="sd">            &#39;default&#39;: None,</span>
+<span class="sd">            &#39;title&#39;: &#39;The height in cm&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;id&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">dataclasses</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">Field</span><span class="p">,</span> <span class="n">TypeAdapter</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
@@ -1955,8 +2015,38 @@ Also, fields that require a <code>default_factory</code> can be specified by eit
 
 
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="nb">id</span><span class="o">=</span><span class="s1">&#39;42&#39;</span><span class="p">)</span>
-<span class="c1"># TODO use methods!</span>
-<span class="c1"># print(user.__pydantic_model__.model_json_schema())</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">TypeAdapter</span><span class="p">(</span><span class="n">User</span><span class="p">)</span><span class="o">.</span><span class="n">json_schema</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
+<span class="sd">    &#39;properties&#39;: {</span>
+<span class="sd">        &#39;id&#39;: {&#39;type&#39;: &#39;integer&#39;, &#39;title&#39;: &#39;Id&#39;},</span>
+<span class="sd">        &#39;name&#39;: {&#39;type&#39;: &#39;string&#39;, &#39;default&#39;: &#39;John Doe&#39;, &#39;title&#39;: &#39;Name&#39;},</span>
+<span class="sd">        &#39;friends&#39;: {</span>
+<span class="sd">            &#39;type&#39;: &#39;array&#39;,</span>
+<span class="sd">            &#39;items&#39;: {&#39;type&#39;: &#39;integer&#39;},</span>
+<span class="sd">            &#39;default&#39;: [0],</span>
+<span class="sd">            &#39;title&#39;: &#39;Friends&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;age&#39;: {</span>
+<span class="sd">            &#39;anyOf&#39;: [{&#39;type&#39;: &#39;integer&#39;}, {&#39;type&#39;: &#39;null&#39;}],</span>
+<span class="sd">            &#39;default&#39;: None,</span>
+<span class="sd">            &#39;title&#39;: &#39;The age of the user&#39;,</span>
+<span class="sd">            &#39;description&#39;: &#39;do not lie!&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        &#39;height&#39;: {</span>
+<span class="sd">            &#39;anyOf&#39;: [</span>
+<span class="sd">                {&#39;type&#39;: &#39;integer&#39;, &#39;maximum&#39;: 300, &#39;minimum&#39;: 50},</span>
+<span class="sd">                {&#39;type&#39;: &#39;null&#39;},</span>
+<span class="sd">            ],</span>
+<span class="sd">            &#39;default&#39;: None,</span>
+<span class="sd">            &#39;title&#39;: &#39;The height in cm&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    },</span>
+<span class="sd">    &#39;required&#39;: [&#39;id&#39;],</span>
+<span class="sd">    &#39;title&#39;: &#39;User&#39;,</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 </div>

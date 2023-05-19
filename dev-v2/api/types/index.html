@@ -1875,7 +1875,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/types.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">914</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">913</span>
+<span class="normal">914</span>
 <span class="normal">915</span>
 <span class="normal">916</span>
 <span class="normal">917</span>
@@ -1886,8 +1887,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">922</span>
 <span class="normal">923</span>
 <span class="normal">924</span>
-<span class="normal">925</span>
-<span class="normal">926</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EncoderProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="normal">925</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EncoderProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Can throw `PydanticCustomError`&quot;&quot;&quot;</span>
@@ -1937,10 +1937,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">915</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">914</span>
+<span class="normal">915</span>
 <span class="normal">916</span>
-<span class="normal">917</span>
-<span class="normal">918</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">917</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Can throw `PydanticCustomError`&quot;&quot;&quot;</span>
     <span class="o">...</span>
@@ -2386,7 +2386,8 @@ will still be performed.</p>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/types.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 999</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 998</span>
+<span class="normal"> 999</span>
 <span class="normal">1000</span>
 <span class="normal">1001</span>
 <span class="normal">1002</span>
@@ -2407,8 +2408,7 @@ will still be performed.</p>
 <span class="normal">1017</span>
 <span class="normal">1018</span>
 <span class="normal">1019</span>
-<span class="normal">1020</span>
-<span class="normal">1021</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
+<span class="normal">1020</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
 <span class="k">class</span> <span class="nc">WithJsonSchema</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.</span>
