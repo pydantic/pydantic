@@ -155,6 +155,12 @@ class Model(BaseModel):
 try:
     Model(foo='ber')
 except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    foo
+      Value error, value must be "bar" [type=value_error, input_value='ber', input_type=str]
+    """
     print(e.errors())
     """
     [
