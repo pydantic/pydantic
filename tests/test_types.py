@@ -36,7 +36,7 @@ from uuid import UUID
 import annotated_types
 import dirty_equals
 import pytest
-from dirty_equals import HasRepr, IsStr
+from dirty_equals import HasRepr, IsOneOf, IsStr
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import Annotated, Literal, TypedDict, get_args
@@ -1773,7 +1773,7 @@ def test_dict():
         ((1, 2, '3'), [1, 2, '3']),
         ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
         (deque([1, 2, 3]), [1, 2, 3]),
-        ({1, 2, '3'}, [1, 2, '3']),
+        ({1, '2'}, IsOneOf([1, '2'], ['2', 1])),
     ),
 )
 def test_list_success(value, result):
@@ -1823,7 +1823,7 @@ def test_ordered_dict():
         ((1, 2, '3'), (1, 2, '3')),
         ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
-        ({1, 2, '3'}, (1, 2, '3')),
+        ({1, '2'}, IsOneOf((1, '2'), ('2', 1))),
     ),
 )
 def test_tuple_success(value, result):
