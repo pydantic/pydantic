@@ -2247,7 +2247,6 @@ def parametrize_root_model():
 def test_root_model_specialized(root_type, root_value, dump_value):
     Model = RootModel[root_type]
 
-    print(Model.__pydantic_core_schema__)
     assert Model.__pydantic_core_schema__['type'] == 'model'
     assert Model.__pydantic_core_schema__['root_model'] is True
     assert Model.__pydantic_core_schema__['custom_init'] is False
@@ -2288,3 +2287,29 @@ def test_root_model_validation_error():
             'url': 'https://errors.pydantic.dev/0.31.0/v/int_parsing',
         },
     ]
+
+
+def test_root_model_repr():
+    SpecializedRootModel = RootModel[int]
+
+    class SubRootModel(RootModel):
+        pass
+
+    class SpecializedSubRootModel(RootModel[int]):
+        pass
+
+    assert repr(SpecializedRootModel(1)) == 'RootModel[int](root=1)'
+    assert repr(SubRootModel(1)) == 'SubRootModel(root=1)'
+    assert repr(SpecializedSubRootModel(1)) == 'SpecializedSubRootModel(root=1)'
+
+
+def test_root_model_recursive():
+    class A(RootModel[list['B']]):
+        def my_a_method(self):
+            pass
+
+    class B(RootModel[dict[str, A | None]]):
+        def my_b_method(self):
+            pass
+
+    assert repr(A.model_validate([{}])) == 'A(root=[B(root={})])'

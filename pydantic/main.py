@@ -1270,6 +1270,9 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
         """Mimics Pydantic v1 `dict(model)` behavior for RootModel"""
         yield ('__root__', self.model_dump())
 
+    def __repr_args__(self) -> _repr.ReprArgs:
+        yield ('root', self.root)
+
 
 @typing.overload
 def create_model(
