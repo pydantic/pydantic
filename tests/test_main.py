@@ -359,7 +359,7 @@ def test_extra_broken_via_pydantic_extra_interference():
     class BrokenExtraBaseModel(BaseModel):
         def model_post_init(self, __context: Any) -> None:
             super().model_post_init(__context)
-            self.__pydantic_extra__ = None
+            object.__setattr__(self, '__pydantic_extra__', None)
 
     class Model(BrokenExtraBaseModel):
         model_config = ConfigDict(extra='allow')
