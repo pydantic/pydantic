@@ -205,7 +205,7 @@ class TastingModel(Generic[AgedType, QualityType]):
         if error:
             errors.append(error)
         if errors:
-            raise ValidationError(errors, cls)
+            raise ValidationError.from_exception_data(errors, cls)
         # Validation passed without errors, return the same instance received
         return v
 

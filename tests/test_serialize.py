@@ -804,7 +804,6 @@ def test_invalid_field():
                 return v
 
 
-@pytest.mark.xfail(reason='requires changes to pydantic-core')
 def test_serialize_with_extra():
     class Inner(BaseModel):
         a: str = 'a'

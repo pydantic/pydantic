@@ -476,7 +476,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 'loc': (name,),
                 'input': value,
             }
-            raise pydantic_core.ValidationError(self.__class__.__name__, [error])
+            raise pydantic_core.ValidationError.from_exception_data(self.__class__.__name__, [error])
 
         attr = getattr(self.__class__, name, None)
         if isinstance(attr, property):
@@ -1056,7 +1056,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 'loc': ('__root__',),
                 'input': b,
             }
-            raise pydantic_core.ValidationError(cls.__name__, [error])
+            raise pydantic_core.ValidationError.from_exception_data(cls.__name__, [error])
         return cls.model_validate(obj)
 
     @classmethod

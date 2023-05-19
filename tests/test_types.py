@@ -1283,15 +1283,15 @@ class BoolCastable:
         ('list_check', ('1', '2'), ['1', '2']),
         ('list_check', {'1': 1, '2': 2}.keys(), ['1', '2']),
         ('list_check', {'1': '1', '2': '2'}.values(), ['1', '2']),
-        ('list_check', {'1', '2'}, ValidationError),
-        ('list_check', frozenset(['1', '2']), ValidationError),
+        ('list_check', {'1', '2'}, ['1', '2']),
+        ('list_check', frozenset(['1', '2']), ['1', '2']),
         ('list_check', {'1': 1, '2': 2}, ValidationError),
         ('tuple_check', ('1', '2'), ('1', '2')),
         ('tuple_check', ['1', '2'], ('1', '2')),
         ('tuple_check', {'1': 1, '2': 2}.keys(), ('1', '2')),
         ('tuple_check', {'1': '1', '2': '2'}.values(), ('1', '2')),
-        ('tuple_check', {'1', '2'}, ValidationError),
-        ('tuple_check', frozenset(['1', '2']), ValidationError),
+        ('tuple_check', {'1', '2'}, ('1', '2')),
+        ('tuple_check', frozenset(['1', '2']), ('1', '2')),
         ('tuple_check', {'1': 1, '2': 2}, ValidationError),
         ('set_check', {'1', '2'}, {'1', '2'}),
         ('set_check', ['1', '2', '1', '2'], {'1', '2'}),
@@ -1772,6 +1772,7 @@ def test_dict():
         ((1, 2, '3'), [1, 2, '3']),
         ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
         (deque([1, 2, 3]), [1, 2, 3]),
+        ({1, 2, '3'}, [1, 2, '3']),
     ),
 )
 def test_list_success(value, result):
@@ -1781,7 +1782,7 @@ def test_list_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}))
+@pytest.mark.parametrize('value', (123, '123'))
 def test_list_fails(value):
     class Model(BaseModel):
         v: list
@@ -1821,6 +1822,7 @@ def test_ordered_dict():
         ((1, 2, '3'), (1, 2, '3')),
         ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
+        ({1, 2, '3'}, (1, 2, '3')),
     ),
 )
 def test_tuple_success(value, result):
@@ -1830,7 +1832,7 @@ def test_tuple_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}))
+@pytest.mark.parametrize('value', (123, '123'))
 def test_tuple_fails(value):
     class Model(BaseModel):
         v: tuple
@@ -4168,6 +4170,16 @@ def test_deque_success():
             {1: 10, 2: 20, 3: 30}.items(),
             deque([(1, 10), (2, 20), (3, 30)]),
         ),
+        (
+            float,
+            {1, 2, 3},
+            deque([1, 2, 3]),
+        ),
+        (
+            float,
+            frozenset((1, 2, 3)),
+            deque([1, 2, 3]),
+        ),
     ),
 )
 def test_deque_generic_success(cls, value, result):
@@ -4196,26 +4208,6 @@ def test_deque_generic_success_strict(cls, value: Any, result):
 @pytest.mark.parametrize(
     'cls,value,expected_error',
     (
-        (
-            float,
-            {1, 2, 3},
-            {
-                'type': 'list_type',
-                'loc': ('v',),
-                'msg': 'Input should be a valid list',
-                'input': {1, 2, 3},
-            },
-        ),
-        (
-            float,
-            frozenset((1, 2, 3)),
-            {
-                'type': 'list_type',
-                'loc': ('v',),
-                'msg': 'Input should be a valid list',
-                'input': frozenset((1, 2, 3)),
-            },
-        ),
         (
             int,
             [1, 'a', 3],
