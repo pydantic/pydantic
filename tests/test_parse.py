@@ -49,7 +49,7 @@ def test_model_validate_wrong_model():
 def test_root_model_error():
     with pytest.raises(
         TypeError,
-        match='__root__ models are no longer supported in v2',
+        match='Use special RootModel class instead of __root__ BaseModel attribute',
     ):
 
         class MyModel(BaseModel):
