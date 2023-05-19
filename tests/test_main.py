@@ -2278,13 +2278,12 @@ def test_root_model_validation_error():
     with pytest.raises(ValidationError) as e:
         Model('forty two')
 
-    assert e.value.errors() == [
+    assert e.value.errors(include_url=False) == [
         {
             'input': 'forty two',
             'loc': (),
             'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
-            'url': 'https://errors.pydantic.dev/0.31.0/v/int_parsing',
         },
     ]
 
