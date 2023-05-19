@@ -68,9 +68,7 @@ def inspect_namespace(  # noqa C901
     raw_annotations = namespace.get('__annotations__', {})
 
     if '__root__' in raw_annotations or '__root__' in namespace:
-        raise TypeError(
-            'To define root models, use `pydantic.RootModel` rather than a field called '__root__''
-        )
+        raise TypeError("To define root models, use `pydantic.RootModel` rather than a field called '__root__'")
 
     ignored_names: set[str] = set()
     for var_name, value in list(namespace.items()):
