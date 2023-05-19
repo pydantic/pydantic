@@ -2254,9 +2254,8 @@ def test_root_model_specialized(root_type, root_value, dump_value):
 
     m = Model(root_value)
 
-    with pytest.warns(UserWarning, match='but got `dict` - serialized value may not be as expected'):
-        assert m.model_dump() == dump_value
-        assert dict(m) == {'__root__': dump_value}
+    assert m.model_dump() == dump_value
+    assert dict(m) == {'__root__': dump_value}
 
 
 @parametrize_root_model()
@@ -2270,9 +2269,8 @@ def test_root_model_inherited(root_type, root_value, dump_value):
 
     m = Model(root_value)
 
-    with pytest.warns(UserWarning, match='but got `dict` - serialized value may not be as expected'):
-        assert m.model_dump() == dump_value
-        assert dict(m) == {'__root__': dump_value}
+    assert m.model_dump() == dump_value
+    assert dict(m) == {'__root__': dump_value}
 
 
 def test_root_model_validation_error():

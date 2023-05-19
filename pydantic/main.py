@@ -1266,31 +1266,6 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     __init__.__pydantic_base_init__ = True  # type: ignore
 
-    def model_dump(
-        self,
-        *,
-        mode: str = 'python',
-        include: IncEx = None,
-        exclude: IncEx = None,
-        by_alias: bool = False,
-        exclude_unset: bool = False,
-        exclude_defaults: bool = False,
-        exclude_none: bool = False,
-        round_trip: bool = False,
-        warnings: bool = True,
-    ) -> dict[str, Any]:
-        return super().model_dump(
-            mode=mode,
-            include=include,
-            exclude=exclude,
-            by_alias=by_alias,
-            exclude_unset=exclude_unset,
-            exclude_defaults=exclude_defaults,
-            exclude_none=exclude_none,
-            round_trip=round_trip,
-            warnings=warnings,
-        )['root']
-
     def __iter__(self) -> TupleGenerator:
         yield ('__root__', self.model_dump())
 
