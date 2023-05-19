@@ -1938,7 +1938,7 @@ the <code>sub_fields</code> (from the generic class type parameters) and validat
         <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
             <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="n">ValidationError</span><span class="o">.</span><span class="n">from_exception_data</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span>
         <span class="c1"># Validation passed without errors, return the same instance received</span>
         <span class="k">return</span> <span class="n">v</span>
 

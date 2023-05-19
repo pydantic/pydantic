@@ -3393,7 +3393,7 @@ and <code>@serializer</code> decorators.</p></td>
                 <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="n">name</span><span class="p">,),</span>
                 <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="n">value</span><span class="p">,</span>
             <span class="p">}</span>
-            <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">[</span><span class="n">error</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">ValidationError</span><span class="o">.</span><span class="n">from_exception_data</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">[</span><span class="n">error</span><span class="p">])</span>
 
         <span class="n">attr</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attr</span><span class="p">,</span> <span class="nb">property</span><span class="p">):</span>
@@ -3973,7 +3973,7 @@ and <code>@serializer</code> decorators.</p></td>
                 <span class="s1">&#39;loc&#39;</span><span class="p">:</span> <span class="p">(</span><span class="s1">&#39;__root__&#39;</span><span class="p">,),</span>
                 <span class="s1">&#39;input&#39;</span><span class="p">:</span> <span class="n">b</span><span class="p">,</span>
             <span class="p">}</span>
-            <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">ValidationError</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">[</span><span class="n">error</span><span class="p">])</span>
+            <span class="k">raise</span> <span class="n">pydantic_core</span><span class="o">.</span><span class="n">ValidationError</span><span class="o">.</span><span class="n">from_exception_data</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="p">[</span><span class="n">error</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="o">.</span><span class="n">model_validate</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>

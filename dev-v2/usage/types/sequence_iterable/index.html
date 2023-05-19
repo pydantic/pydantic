@@ -2182,7 +2182,7 @@ consuming the infinite generator.</p>
             <span class="n">sub_field</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">sub_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">v</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">sub_field</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">first_value</span><span class="p">,</span> <span class="p">{},</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;first_value&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">([</span><span class="n">error</span><span class="p">],</span> <span class="bp">cls</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="o">.</span><span class="n">from_exception_data</span><span class="p">([</span><span class="n">error</span><span class="p">],</span> <span class="bp">cls</span><span class="p">)</span>
         <span class="c1"># This creates a new generator that returns the first value and then</span>
         <span class="c1"># the rest of the values from the (already started) iterable</span>
         <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">([</span><span class="n">first_value</span><span class="p">],</span> <span class="n">iterable</span><span class="p">)</span>
@@ -2231,7 +2231,7 @@ consuming the infinite generator.</p>
             <span class="n">sub_field</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">sub_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">v</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">sub_field</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">first_value</span><span class="p">,</span> <span class="p">{},</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;first_value&#39;</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="n">ValidationError</span><span class="p">([</span><span class="n">error</span><span class="p">],</span> <span class="bp">cls</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="n">ValidationError</span><span class="o">.</span><span class="n">from_exception_data</span><span class="p">([</span><span class="n">error</span><span class="p">],</span> <span class="bp">cls</span><span class="p">)</span>
         <span class="c1"># This creates a new generator that returns the first value and then</span>
         <span class="c1"># the rest of the values from the (already started) iterable</span>
         <span class="k">return</span> <span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">([</span><span class="n">first_value</span><span class="p">],</span> <span class="n">iterable</span><span class="p">)</span>
