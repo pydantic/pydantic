@@ -533,7 +533,6 @@ def test_config_defaults_match():
     assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'
 
 
-@pytest.mark.xfail(reason='requires changes in pydantic-core')
 def test_config_is_not_inherited_in_model_fields():
     from typing import List
 

@@ -200,7 +200,7 @@ class Model(BaseModel):
             sub_field = field.sub_fields[0]
             v, error = sub_field.validate(first_value, {}, loc='first_value')
             if error:
-                raise ValidationError([error], cls)
+                raise ValidationError.from_exception_data([error], cls)
         # This creates a new generator that returns the first value and then
         # the rest of the values from the (already started) iterable
         return itertools.chain([first_value], iterable)

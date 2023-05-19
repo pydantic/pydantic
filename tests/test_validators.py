@@ -273,11 +273,8 @@ def test_deque_validation():
             'input': 'a',
         }
     ]
-    with pytest.raises(ValidationError) as exc_info:
-        Model(a={'1'})
-    assert exc_info.value.errors(include_url=False) == [
-        {'type': 'list_type', 'loc': ('a',), 'msg': 'Input should be a valid list', 'input': {'1'}}
-    ]
+
+    assert Model(a={'1'}).a == deque([1])
     assert Model(a=[4, 5]).a == deque([4, 5])
     assert Model(a=(6,)).a == deque([6])
 
