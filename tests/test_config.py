@@ -65,8 +65,8 @@ def test_config_dict_missing_keys():
         ConfigDict()['missing_property']
 
 
-@pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
 class TestsBaseConfig:
+    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
     def test_base_config_equality_defaults_of_config_dict_class(self):
         for key, value in config_defaults.items():
             assert getattr(BaseConfig, key) == value
@@ -80,6 +80,7 @@ class TestsBaseConfig:
                 class Config:
                     title = 'MyTitleConfig'
 
+    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
     def test_base_config_properly_converted_to_dict(self):
         class MyConfig(BaseConfig):
             title = 'MyTitle'
@@ -315,8 +316,7 @@ class TestsBaseConfig:
         class Foo(BaseModel):
             bar_: int = Field(..., alias='bar')
 
-            class Config(BaseConfig):
-                populate_by_name = populate_by_name_config
+            model_config = dict(populate_by_name=populate_by_name_config)
 
         with expectation:
             if use_construct:
@@ -356,8 +356,13 @@ class TestsBaseConfig:
         ):
             assert BaseConfig().validate_assignment is False
 
-        class Config(BaseConfig):
-            pass
+        with pytest.warns(
+            DeprecationWarning,
+            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
+        ):
+
+            class Config(BaseConfig):
+                pass
 
         with pytest.warns(
             DeprecationWarning,
@@ -371,6 +376,7 @@ class TestsBaseConfig:
         ):
             assert Config().validate_assignment is False
 
+    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
     def test_config_class_missing_attributes(self):
         with pytest.raises(AttributeError, match="type object 'BaseConfig' has no attribute 'missing_attribute'"):
             BaseConfig.missing_attribute
