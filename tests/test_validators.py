@@ -1597,8 +1597,6 @@ def test_literal_validator_str_enum():
 
     my_foo = Foo.model_validate({'bar': 'fiz', 'barfiz': 'fiz', 'fizfuz': 'fiz'})
     assert my_foo.bar is Bar.FIZ
-    # TODO: this doesn't pass, `my_foo.barfiz == 'fiz'`
-    # Is this an intentional behavior change?
     assert my_foo.barfiz is Bar.FIZ
     assert my_foo.fizfuz is Bar.FIZ
 

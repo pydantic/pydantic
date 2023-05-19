@@ -1,6 +1,6 @@
 import sys
 from inspect import Parameter, Signature, signature
-from typing import Any, Iterable, Optional, Union
+from typing import Any, Generic, Iterable, Optional, TypeVar, Union
 
 import pytest
 from typing_extensions import Annotated
@@ -30,6 +30,18 @@ def test_model_signature():
     assert sig != signature(BaseModel)
     assert _equals(map(str, sig.parameters.values()), ('a: float', 'b: int = 10'))
     assert _equals(str(sig), '(*, a: float, b: int = 10) -> None')
+
+
+def test_generic_model_signature():
+    T = TypeVar('T')
+
+    class Model(BaseModel, Generic[T]):
+        a: T
+
+    sig = signature(Model[int])
+    assert sig != signature(BaseModel)
+    assert _equals(map(str, sig.parameters.values()), ('a: int',))
+    assert _equals(str(sig), '(*, a: int) -> None')
 
 
 def test_custom_init_signature():

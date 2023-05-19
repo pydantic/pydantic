@@ -86,8 +86,6 @@ def test_model_validate_root():
     assert m.root == 'a'
 
     # Serialization
-    # TODO: Possible concern — `model_dump` is annotated as returning dict[str, Any] — is that okay, given
-    #   model_serializer could change that? Should we try to reflect it in the mypy plugin?
     assert m.model_dump() == {'root': 'a'}
     assert m.model_dump_json() == '"a"'
 

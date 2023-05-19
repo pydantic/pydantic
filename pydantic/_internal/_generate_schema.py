@@ -124,7 +124,8 @@ def filter_field_decorator_info_by_field(
 def apply_each_item_validators(
     schema: core_schema.CoreSchema, each_item_validators: list[Decorator[ValidatorDecoratorInfo]]
 ) -> core_schema.CoreSchema:
-    # TODO: remove this V1 compatibility shim once it's deprecated
+    # This V1 compatibility shim should eventually be removed
+
     # push down any `each_item=True` validators
     # note that this won't work for any Annotated types that get wrapped by a function validator
     # but that's okay because that didn't exist in V1
@@ -256,9 +257,6 @@ class GenerateSchema:
             ),
             fields.keys(),
         )
-        # TODO: we need to do something similar to this for pydantic dataclasses
-        #   This should be straight forward once we expose the pydantic config on the dataclass;
-        #   I have done this in my PR for dataclasses JSON schema
         config_wrapper = ConfigWrapper(cls.model_config, check=False)
         self._config_wrapper_stack.append(config_wrapper)
         try:
@@ -376,6 +374,7 @@ class GenerateSchema:
                 # If you still have a PydanticForwardRef after resolving, it should be deeply nested enough that it will
                 # eventually be substituted out. So it is safe to return an invalid schema here.
                 # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+                #   Issue: https://github.com/pydantic/pydantic-core/issues/619
                 return core_schema.none_schema(
                     metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
                 )
@@ -425,10 +424,6 @@ class GenerateSchema:
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
 
-        # TODO: _std_types_schema iterates over the __mro__ looking for an expected schema.
-        #   This will catch subclasses of typing.Deque, preventing us from properly supporting user-defined
-        #   generic subclasses. (In principle this would also catch typing.OrderedDict, but that is currently
-        #   already getting caught in the `issubclass(obj, dict):` check above.
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:
             return std_schema
@@ -462,7 +457,6 @@ class GenerateSchema:
         elif issubclass(origin, Annotated):  # type: ignore[arg-type]
             return self._annotated_schema(obj)
         elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
-            # TODO: To support generic subclasses of typing.Tuple, we need to better-introspect the args to origin
             return self._tuple_schema(obj)
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
@@ -564,7 +558,7 @@ class GenerateSchema:
             annotations,
         )
 
-        # TODO: remove this V1 compatibility shim once it's deprecated
+        # This V1 compatibility shim should eventually be removed
         # push down any `each_item=True` validators
         # note that this won't work for any Annotated types that get wrapped by a function validator
         # but that's okay because that didn't exist in V1
@@ -850,8 +844,6 @@ class GenerateSchema:
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
         """
         Generate a schema for an `Iterable`.
-
-        TODO replace with pydantic-core's generator validator.
         """
         item_type = get_first_arg(type_)
 
