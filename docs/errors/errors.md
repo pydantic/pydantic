@@ -201,17 +201,11 @@ class Model(BaseModel):
 try:
     Model(foo='ber')
 except ValidationError as e:
-    print(e.errors())
+    print(e)
     """
-    [
-        {
-            'type': 'not_a_bar',
-            'loc': ('foo',),
-            'msg': 'value is not "bar", got "ber"',
-            'input': 'ber',
-            'ctx': {'wrong_value': 'ber'},
-        }
-    ]
+    1 validation error for Model
+    foo
+      value is not "bar", got "ber" [type=not_a_bar, input_value='ber', input_type=str]
     """
 ```
 
