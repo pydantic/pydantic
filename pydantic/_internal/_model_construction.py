@@ -69,7 +69,7 @@ def inspect_namespace(  # noqa C901
 
     if '__root__' in raw_annotations or '__root__' in namespace:
         raise TypeError(
-            'Use special RootModel class instead of __root__ BaseModel attribute in Pydantic V2 to define root models'
+            'To define root models, use `pydantic.RootModel` rather than a field called '__root__''
         )
 
     ignored_names: set[str] = set()
