@@ -2180,7 +2180,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <span class="n">core_schema</span> <span class="o">=</span> <span class="n">flatten_schema_defs</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
         <span class="n">simplified_core_schema</span> <span class="o">=</span> <span class="n">inline_schema_defs</span><span class="p">(</span><span class="n">core_schema</span><span class="p">)</span>
 
-        <span class="n">core_config</span> <span class="o">=</span> <span class="n">config_wrapper</span><span class="o">.</span><span class="n">core_config</span><span class="p">()</span>
+        <span class="n">core_config</span> <span class="o">=</span> <span class="n">config_wrapper</span><span class="o">.</span><span class="n">core_config</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span>
         <span class="n">validator</span><span class="p">:</span> <span class="n">SchemaValidator</span>
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">__type</span><span class="p">,</span> <span class="s1">&#39;__pydantic_validator__&#39;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">validator</span> <span class="o">=</span> <span class="n">__type</span><span class="o">.</span><span class="n">__pydantic_validator__</span>
