@@ -26,10 +26,6 @@ ExtraBehavior = Literal['allow', 'forbid', 'ignore']
 class CoreConfig(TypedDict, total=False):
     title: str
     strict: bool
-    # higher priority configs take precedence of over lower, if priority matches the two configs are merged, default 0
-    config_choose_priority: int
-    # if configs are merged, which should take precedence, default 0, default means child takes precedence
-    config_merge_priority: int
     # settings related to typed dicts, model fields, dataclass fields
     extra_fields_behavior: ExtraBehavior
     typed_dict_total: bool  # default: True

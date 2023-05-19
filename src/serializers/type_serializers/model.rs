@@ -6,7 +6,7 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{build_model_config, py_error_type, ExtraBehavior, SchemaDict};
+use crate::build_tools::{py_error_type, ExtraBehavior, SchemaDict};
 use crate::definitions::DefinitionsBuilder;
 
 use super::{
@@ -74,13 +74,13 @@ impl BuildSerializer for ModelSerializer {
 
     fn build(
         schema: &PyDict,
-        config: Option<&PyDict>,
+        _config: Option<&PyDict>,
         definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
         let py = schema.py();
 
         // models ignore the parent config and always use the config from this model
-        let config = build_model_config(py, schema, config)?;
+        let config = schema.get_as(intern!(py, "config"))?;
 
         let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
         let sub_schema: &PyDict = schema.get_as_req(intern!(py, "schema"))?;
