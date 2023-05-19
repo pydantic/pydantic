@@ -3,7 +3,7 @@ use pyo3::types::PyDict;
 
 use crate::build_tools::SchemaDict;
 use crate::errors::ValResult;
-use crate::input::{GenericCollection, Input};
+use crate::input::{GenericIterable, Input};
 use crate::recursion_guard::RecursionGuard;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
@@ -11,7 +11,6 @@ use super::{build_validator, BuildValidator, CombinedValidator, Definitions, Def
 #[derive(Debug, Clone)]
 pub struct ListValidator {
     strict: bool,
-    allow_any_iter: bool,
     item_validator: Option<Box<CombinedValidator>>,
     min_length: Option<usize>,
     max_length: Option<usize>,
@@ -69,6 +68,25 @@ macro_rules! length_check {
 }
 pub(crate) use length_check;
 
+macro_rules! min_length_check {
+    ($input:ident, $field_type:literal, $min_length:expr, $obj:ident) => {{
+        if let Some(min_length) = $min_length {
+            let actual_length = $obj.len();
+            if actual_length < min_length {
+                return Err(crate::errors::ValError::new(
+                    crate::errors::ErrorType::TooShort {
+                        field_type: $field_type.to_string(),
+                        min_length,
+                        actual_length,
+                    },
+                    $input,
+                ));
+            }
+        }
+    }};
+}
+pub(crate) use min_length_check;
+
 impl BuildValidator for ListValidator {
     const EXPECTED_TYPE: &'static str = "list";
 
@@ -83,7 +101,6 @@ impl BuildValidator for ListValidator {
         let name = format!("{}[{inner_name}]", Self::EXPECTED_TYPE);
         Ok(Self {
             strict: crate::build_tools::is_strict(schema, config)?,
-            allow_any_iter: schema.get_as(pyo3::intern!(py, "allow_any_iter"))?.unwrap_or(false),
             item_validator,
             min_length: schema.get_as(pyo3::intern!(py, "min_length"))?,
             max_length: schema.get_as(pyo3::intern!(py, "max_length"))?,
@@ -102,7 +119,7 @@ impl Validator for ListValidator {
         definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        let seq = input.validate_list(extra.strict.unwrap_or(self.strict), self.allow_any_iter)?;
+        let seq = input.validate_list(extra.strict.unwrap_or(self.strict))?;
 
         let output = match self.item_validator {
             Some(ref v) => seq.validate_to_vec(
@@ -110,21 +127,21 @@ impl Validator for ListValidator {
                 input,
                 self.max_length,
                 "List",
-                self.max_length,
                 v,
                 extra,
                 definitions,
                 recursion_guard,
             )?,
             None => match seq {
-                GenericCollection::List(list) => {
+                GenericIterable::List(list) => {
                     length_check!(input, "List", self.min_length, self.max_length, list);
-                    return Ok(list.into_py(py));
+                    let list_copy = list.get_slice(0, usize::MAX);
+                    return Ok(list_copy.into_py(py));
                 }
                 _ => seq.to_vec(py, input, "List", self.max_length)?,
             },
         };
-        length_check!(input, "List", self.min_length, self.max_length, output);
+        min_length_check!(input, "List", self.min_length, output);
         Ok(output.into_py(py))
     }
 

@@ -10,7 +10,7 @@ use super::datetime::{
 use super::parse_json::JsonArray;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection, GenericIterator, GenericMapping,
+    EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericIterable, GenericIterator, GenericMapping,
     Input, JsonArgs, JsonInput,
 };
 
@@ -187,51 +187,60 @@ impl<'a> Input<'a> for JsonInput {
         self.validate_dict(false)
     }
 
-    fn validate_list(&'a self, _strict: bool, _allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         match self {
-            JsonInput::Array(a) => Ok(a.into()),
+            JsonInput::Array(a) => Ok(GenericIterable::JsonArray(a)),
             _ => Err(ValError::new(ErrorType::ListType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
-        self.validate_list(false, false)
+    fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
+        self.validate_list(false)
     }
 
-    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         // just as in set's case, List has to be allowed
         match self {
-            JsonInput::Array(a) => Ok(a.into()),
+            JsonInput::Array(a) => Ok(GenericIterable::JsonArray(a)),
             _ => Err(ValError::new(ErrorType::TupleType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_tuple(false)
     }
 
-    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         // we allow a list here since otherwise it would be impossible to create a set from JSON
         match self {
-            JsonInput::Array(a) => Ok(a.into()),
+            JsonInput::Array(a) => Ok(GenericIterable::JsonArray(a)),
             _ => Err(ValError::new(ErrorType::SetType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_set(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_set(false)
     }
 
-    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         // we allow a list here since otherwise it would be impossible to create a frozenset from JSON
         match self {
-            JsonInput::Array(a) => Ok(a.into()),
+            JsonInput::Array(a) => Ok(GenericIterable::JsonArray(a)),
             _ => Err(ValError::new(ErrorType::FrozenSetType, self)),
         }
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_frozenset(false)
+    }
+
+    fn extract_generic_iterable(&self) -> ValResult<GenericIterable> {
+        match self {
+            JsonInput::Array(a) => Ok(GenericIterable::JsonArray(a)),
+            JsonInput::String(s) => Ok(GenericIterable::JsonString(s)),
+            JsonInput::Object(object) => Ok(GenericIterable::JsonObject(object)),
+            _ => Err(ValError::new(ErrorType::IterableType, self)),
+        }
     }
 
     fn validate_iter(&self) -> ValResult<GenericIterator> {
@@ -405,39 +414,43 @@ impl<'a> Input<'a> for String {
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_list(&'a self, _strict: bool, _allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_list(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         Err(ValError::new(ErrorType::ListType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
-        self.validate_list(false, false)
+    fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
+        self.validate_list(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_tuple(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         Err(ValError::new(ErrorType::TupleType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_tuple(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_set(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         Err(ValError::new(ErrorType::SetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_set(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_set(false)
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_frozenset(&'a self, _strict: bool) -> ValResult<GenericIterable<'a>> {
         Err(ValError::new(ErrorType::FrozenSetType, self))
     }
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn strict_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
         self.validate_frozenset(false)
+    }
+
+    fn extract_generic_iterable(&'a self) -> ValResult<GenericIterable<'a>> {
+        Ok(GenericIterable::JsonString(self))
     }
 
     fn validate_iter(&self) -> ValResult<GenericIterator> {

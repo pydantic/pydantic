@@ -511,6 +511,16 @@ def test_set_of_ints_core_duplicates(benchmark):
         v.validate_python(set_of_ints_duplicates[1])
 
 
+@pytest.mark.benchmark(group='Set[int]')
+def test_set_of_ints_core_length(benchmark):
+    v = SchemaValidator({'type': 'set', 'items_schema': {'type': 'int'}, 'max_length': 2000})
+
+    @benchmark
+    def t():
+        v.validate_python(set_of_ints_data[0])
+        v.validate_python(set_of_ints_data[1])
+
+
 @skip_pydantic
 @pytest.mark.benchmark(group='Set[int] JSON')
 def test_set_of_ints_pyd_json(benchmark):
