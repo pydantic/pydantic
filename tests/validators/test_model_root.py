@@ -125,3 +125,16 @@ def test_field_function():
         "ValidationInfo(config=None, context='call 1', field_name='root')",
         "ValidationInfo(config=None, context='assignment call', field_name='root')",
     ]
+
+
+def test_extra():
+    class RootModel:
+        __slots__ = 'root'
+        root: int
+
+    v = SchemaValidator(core_schema.model_schema(RootModel, core_schema.int_schema(), root_model=True))
+
+    m = v.validate_python(1)
+
+    with pytest.raises(AttributeError):
+        m.__pydantic_extra__
