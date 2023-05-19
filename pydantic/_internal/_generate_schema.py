@@ -557,7 +557,6 @@ class GenerateSchema:
             return schema
 
         source_type, annotations = field_info.annotation, field_info.metadata
-        source_type, annotations = self._prepare_annotations(source_type, annotations)
         schema = self._apply_annotations(
             CallbackGetCoreSchemaHandler(generate_schema, self.generate_schema),
             source_type,
@@ -1052,7 +1051,7 @@ class GenerateSchema:
 
     def _get_prepare_pydantic_annotations_for_known_type(
         self, obj: Any, annotations: tuple[Any, ...]
-    ) -> Iterable[Any] | None:
+    ) -> tuple[Any, list[Any]] | None:
         from . import _std_types_schema as std_types
 
         for gen in (
@@ -1077,27 +1076,16 @@ class GenerateSchema:
         `Annotated[source_type, *annotations]` -> `Annotated[new_source_type, *new_annotations]`
         """
 
-        def split_return(res: Iterable[Any]) -> tuple[Any, list[Any]]:
-            res = list(res)  # support generators
-            if not res:
-                raise PydanticSchemaGenerationError(
-                    f'The type {source_type} that implements `__prepare_pydantic_annotations__`'
-                    ' returned no annotations when called.'
-                    ' Custom types must return at least 1 item since the first item is the replacement source type.'
-                )
-            tp, *annotations = res
-            return tp, annotations
-
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
 
         annotations = tuple(annotations)  # make them immutable to avoid confusion over mutating them
 
         if prepare is not None:
-            source_type, annotations = split_return(prepare(source_type, tuple(annotations)))
+            source_type, annotations = prepare(source_type, tuple(annotations))
         else:
             res = self._get_prepare_pydantic_annotations_for_known_type(source_type, annotations)
             if res is not None:
-                source_type, annotations = split_return(res)
+                source_type, annotations = res
 
         return (source_type, list(annotations))
 
@@ -1116,6 +1104,14 @@ class GenerateSchema:
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
         idx = -1
+        prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
+        if prepare:
+            source_type, annotations = prepare(source_type, tuple(annotations))
+            annotations = list(annotations)
+        else:
+            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
+            if res is not None:
+                source_type, annotations = res
         while True:
             idx += 1
             if idx == len(annotations):
@@ -1126,9 +1122,16 @@ class GenerateSchema:
             prepare = getattr(annotation, '__prepare_pydantic_annotations__', None)
             if prepare is not None:
                 previous = annotations[:idx]
-                remaining = annotations[idx:]
-                remaining = list(prepare(source_type, tuple(remaining)))
+                remaining = annotations[idx + 1 :]
+                new_source_type, remaining = prepare(source_type, tuple(remaining))
                 annotations = previous + remaining
+                if new_source_type is not source_type:
+                    return self._apply_annotations(
+                        get_inner_schema,
+                        new_source_type,
+                        annotations,
+                        check_prepare_on_source=check_prepare_on_source,
+                    )
             annotation = annotations[idx]
             get_inner_schema = self._get_wrapped_inner_schema(get_inner_schema, annotation, self.definitions)
 

@@ -463,12 +463,16 @@ class SecretField(Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __prepare_pydantic_annotations__(cls, source: type[Any], annotations: Iterable[Any]) -> Iterable[Any]:
+    def __prepare_pydantic_annotations__(cls, source: type[Any], annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
         metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
         _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
-        yield cls
-        yield _SecretFieldValidator(source, **metadata)
-        yield from remaining_annotations
+        return (
+            source,
+            [
+                _SecretFieldValidator(source, **metadata),
+                remaining_annotations,
+            ],
+        )
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()

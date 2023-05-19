@@ -5015,3 +5015,26 @@ def test_ordered_dict_from_dict(field_type):
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
+    class PdDecimal(Decimal):
+        def ___repr__(self) -> str:
+            return f'PdDecimal({super().__repr__()})'
+
+    class PdDecimalMarker:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(PdDecimal, handler(source_type))
+
+        def __prepare_pydantic_annotations__(self, source: Any, annotations: List[Any]) -> Tuple[Any, List[Any]]:
+            return (Decimal, [self, *annotations])
+
+    class Model(BaseModel):
+        x: Annotated[PdDecimal, PdDecimalMarker(), annotated_types.Gt(0)]
+
+    assert isinstance(Model(x=1).x, PdDecimal)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=-1)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'greater_than', 'loc': ('x',), 'msg': 'Input should be greater than 0', 'input': -1, 'ctx': {'gt': 0}}
+    ]
