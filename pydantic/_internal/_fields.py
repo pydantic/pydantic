@@ -112,7 +112,10 @@ def collect_model_fields(  # noqa: C901
         if ann_name.startswith('_'):
             continue
         if cls.__pydantic_root_model__ and ann_name != 'root':
-            continue
+            raise NameError(
+                f'Field name "{ann_name}" cannot be used in a RootModel.'
+                ' You might want to use a "private" attribute with the name starting with "_"'
+            )
 
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
         # "... shadows an attribute" errors

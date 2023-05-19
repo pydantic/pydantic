@@ -4,7 +4,7 @@ from dataclasses import InitVar
 import pytest
 
 import pydantic.dataclasses
-from pydantic import fields
+from pydantic import RootModel, fields
 
 
 def test_field_info_annotation_keyword_argument():
@@ -29,3 +29,21 @@ def test_init_var_does_not_work():
             some_field: InitVar[str]
 
     assert e.value.args == ('InitVar is not supported in Python 3.7 as type information is lost',)
+
+
+def test_root_model_arbitrary_field_name_error():
+    with pytest.raises(NameError, match='Field name "a_field" cannot be used in a RootModel'):
+
+        class Model(RootModel[int]):
+            a_field: str
+
+
+def test_root_model_arbitrary_private_field_works():
+    class Model(RootModel[int]):
+        _a_field: str = 'value 1'
+
+    m = Model(1)
+    assert m._a_field == 'value 1'
+
+    m._a_field = 'value 2'
+    assert m._a_field == 'value 2'
