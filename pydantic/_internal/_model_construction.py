@@ -68,10 +68,8 @@ def inspect_namespace(  # noqa C901
     raw_annotations = namespace.get('__annotations__', {})
 
     if '__root__' in raw_annotations or '__root__' in namespace:
-        # TODO: Update error message with migration description and/or link to documentation
-        #   Issue: https://github.com/pydantic/pydantic/issues/5498
         raise TypeError(
-            '__root__ models are no longer supported in v2; a migration guide will be added in the near future'
+            'Use special RootModel class instead of __root__ BaseModel attribute in Pydantic V2 to define root models'
         )
 
     ignored_names: set[str] = set()
