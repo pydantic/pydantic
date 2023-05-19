@@ -857,5 +857,5 @@ def test_extra_config_nested_model():
     s = SchemaSerializer(schema)
     # debug(s)
     s_repr = plain_repr(s)
-    assert 'has_extra:true,name:"InnerModel"' in s_repr
-    assert 'has_extra:false,name:"OuterModel"' in s_repr
+    assert 'has_extra:true,root_model:false,name:"InnerModel"' in s_repr
+    assert 'has_extra:false,root_model:false,name:"OuterModel"' in s_repr

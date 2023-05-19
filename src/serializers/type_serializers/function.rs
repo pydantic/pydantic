@@ -140,7 +140,7 @@ impl FunctionPlainSerializer {
                         self.func.call1(py, (model, value))
                     }
                 } else {
-                    Err(PyRuntimeError::new_err("This serializer expected to be run inside the context of a model field but no model field was found"))
+                    Err(PyRuntimeError::new_err("Function plain serializer expected to be run inside the context of a model field but no model was found"))
                 }
             } else if self.info_arg {
                 let info = SerializationInfo::new(py, include, exclude, extra, self.is_field_serializer)?;
@@ -368,7 +368,7 @@ impl FunctionWrapSerializer {
                         self.func.call1(py, (model, value, serialize))
                     }
                 } else {
-                    Err(PyRuntimeError::new_err("This serializer expected to be run inside the context of a model field but no model field was found"))
+                    Err(PyRuntimeError::new_err("Function wrap serializer expected to be run inside the context of a model field but no model was found"))
                 }
             } else if self.info_arg {
                 let info = SerializationInfo::new(py, include, exclude, extra, self.is_field_serializer)?;
@@ -492,20 +492,20 @@ impl SerializationInfo {
     ) -> PyResult<Self> {
         if is_field_serializer {
             match extra.field_name {
-                Some(field_name) => Ok(
-                    Self {
-                        include: include.map(|i| i.into_py(py)),
-                        exclude: exclude.map(|e| e.into_py(py)),
-                        _mode: extra.mode.clone(),
-                        by_alias: extra.by_alias,
-                        exclude_unset: extra.exclude_unset,
-                        exclude_defaults: extra.exclude_defaults,
-                        exclude_none: extra.exclude_none,
-                        round_trip: extra.round_trip,
-                        field_name: Some(field_name.to_string()),
-                    }
-                ),
-                _ => Err(PyRuntimeError::new_err("This serializer expected to be run inside the context of a model field but no model field was found")),
+                Some(field_name) => Ok(Self {
+                    include: include.map(|i| i.into_py(py)),
+                    exclude: exclude.map(|e| e.into_py(py)),
+                    _mode: extra.mode.clone(),
+                    by_alias: extra.by_alias,
+                    exclude_unset: extra.exclude_unset,
+                    exclude_defaults: extra.exclude_defaults,
+                    exclude_none: extra.exclude_none,
+                    round_trip: extra.round_trip,
+                    field_name: Some(field_name.to_string()),
+                }),
+                _ => Err(PyRuntimeError::new_err(
+                    "Model field context expected for field serialization info but no model field was found",
+                )),
             }
         } else {
             Ok(Self {
