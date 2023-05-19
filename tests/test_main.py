@@ -348,14 +348,12 @@ def test_field_order_is_preserved_with_extra():
 
 
 def test_extra_broken_via_pydantic_extra_interference():
-    """At the time of writing this test there is `_model_construction.model_extra_getattr` being assigned to model's
+    """
+    At the time of writing this test there is `_model_construction.model_extra_getattr` being assigned to model's
     `__getattr__`. The method then expects `BaseModel.__pydantic_extra__` isn't `None`. Both this actions happen when
     `model_config.extra` is set to `True`. However, this behavior could be accidentally broken in a subclass of
     `BaseModel`. In that case `AttributeError` should be thrown when `__getattr__` is being accessed essentially
     disabling the `extra` functionality.
-
-    TODO: Should this be a specific exception different from a normal case of accessing an extra field that wasn't
-    populated?
     """
 
     class BrokenExtraBaseModel(BaseModel):

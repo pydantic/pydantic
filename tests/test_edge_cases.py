@@ -1929,7 +1929,6 @@ def test_custom_generic_validators():
             def validate(v, _info):
                 if not args:
                     return v
-                # TODO: Ideally we would collect these errors rather than stopping early
                 try:
                     v.t1 = t1_f(v.t1)
                 except ValidationError as exc:

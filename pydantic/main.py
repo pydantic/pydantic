@@ -903,7 +903,7 @@ class BaseModel(metaclass=ModelMetaclass):
                 except PydanticUndefinedAnnotation:
                     # It's okay if it fails, it just means there are still undefined types
                     # that could be evaluated later.
-                    # TODO: Presumably we should error if validation is attempted here?
+                    # TODO: Make sure validation fails if there are still undefined types, perhaps using MockValidator
                     pass
 
                 submodel = _generics.create_generic_submodel(model_name, origin, args, params)
@@ -981,8 +981,6 @@ class BaseModel(metaclass=ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        # TODO: What do we do about the following arguments?
-        #   Do they need to go on model_config now, and get used by the serializer?
         encoder: typing.Callable[[Any], Any] | None = Undefined,  # type: ignore[assignment]
         models_as_dict: bool = Undefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
