@@ -3133,9 +3133,7 @@ and <code>@serializer</code> decorators.</p></td>
 <span class="normal">1228</span>
 <span class="normal">1229</span>
 <span class="normal">1230</span>
-<span class="normal">1231</span>
-<span class="normal">1232</span>
-<span class="normal">1233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ModelMetaclass</span><span class="p">):</span>
+<span class="normal">1231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">ModelMetaclass</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A base model class for creating Pydantic models.</span>
 
@@ -3820,7 +3818,7 @@ and <code>@serializer</code> decorators.</p></td>
                 <span class="k">except</span> <span class="n">PydanticUndefinedAnnotation</span><span class="p">:</span>
                     <span class="c1"># It&#39;s okay if it fails, it just means there are still undefined types</span>
                     <span class="c1"># that could be evaluated later.</span>
-                    <span class="c1"># TODO: Presumably we should error if validation is attempted here?</span>
+                    <span class="c1"># TODO: Make sure validation fails if there are still undefined types, perhaps using MockValidator</span>
                     <span class="k">pass</span>
 
                 <span class="n">submodel</span> <span class="o">=</span> <span class="n">_generics</span><span class="o">.</span><span class="n">create_generic_submodel</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="n">origin</span><span class="p">,</span> <span class="n">args</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
@@ -3898,8 +3896,6 @@ and <code>@serializer</code> decorators.</p></td>
         <span class="n">exclude_unset</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">exclude_defaults</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">exclude_none</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="c1"># TODO: What do we do about the following arguments?</span>
-        <span class="c1">#   Do they need to go on model_config now, and get used by the serializer?</span>
         <span class="n">encoder</span><span class="p">:</span> <span class="n">typing</span><span class="o">.</span><span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span>  <span class="c1"># type: ignore[assignment]</span>
         <span class="n">models_as_dict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="n">Undefined</span><span class="p">,</span>  <span class="c1"># type: ignore[assignment]</span>
         <span class="o">**</span><span class="n">dumps_kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
@@ -4311,7 +4307,9 @@ copied = self.model_validate(data)
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1113</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1111</span>
+<span class="normal">1112</span>
+<span class="normal">1113</span>
 <span class="normal">1114</span>
 <span class="normal">1115</span>
 <span class="normal">1116</span>
@@ -4358,9 +4356,7 @@ copied = self.model_validate(data)
 <span class="normal">1157</span>
 <span class="normal">1158</span>
 <span class="normal">1159</span>
-<span class="normal">1160</span>
-<span class="normal">1161</span>
-<span class="normal">1162</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">)</span>
+<span class="normal">1160</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;The copy method is deprecated; use `model_copy` instead.&#39;</span><span class="p">)</span>
 <span class="k">def</span> <span class="nf">copy</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">:</span> <span class="n">Model</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -6717,7 +6713,9 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1264</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1262</span>
+<span class="normal">1263</span>
+<span class="normal">1264</span>
 <span class="normal">1265</span>
 <span class="normal">1266</span>
 <span class="normal">1267</span>
@@ -6795,9 +6793,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 <span class="normal">1339</span>
 <span class="normal">1340</span>
 <span class="normal">1341</span>
-<span class="normal">1342</span>
-<span class="normal">1343</span>
-<span class="normal">1344</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1342</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
