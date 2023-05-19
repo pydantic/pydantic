@@ -1267,6 +1267,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     __init__.__pydantic_base_init__ = True  # type: ignore
 
     def __iter__(self) -> TupleGenerator:
+        """Mimics Pydantic v1 `dict(model)` behavior for RootModel"""
         yield ('__root__', self.model_dump())
 
 
