@@ -2303,11 +2303,11 @@ def test_root_model_repr():
 
 
 def test_root_model_recursive():
-    class A(RootModel[list['B']]):
+    class A(RootModel[List['B']]):
         def my_a_method(self):
             pass
 
-    class B(RootModel[dict[str, A | None]]):
+    class B(RootModel[Dict[str, Optional[A]]]):
         def my_b_method(self):
             pass
 
