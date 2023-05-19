@@ -129,8 +129,10 @@ def collect_model_fields(  # noqa: C901
             if default is Undefined:
                 raise AttributeError
         except AttributeError:
-            if ann_name in annotations or isinstance(ann_type, PydanticForwardRef):
+            if ann_name in annotations:
                 field_info = FieldInfo.from_annotation(ann_type)
+            elif isinstance(ann_type, PydanticForwardRef):
+                field_info = FieldInfo.from_annotation(annotation=ann_type)  # type: ignore
             else:
                 # if field has no default value and is not in __annotations__ this means that it is
                 # defined in a base class and we can take it from there

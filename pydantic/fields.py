@@ -16,7 +16,7 @@ import annotated_types
 import typing_extensions
 
 from . import types
-from ._internal import _decorators, _fields, _forward_ref, _internal_dataclass, _repr, _typing_extra, _utils
+from ._internal import _decorators, _fields, _internal_dataclass, _repr, _typing_extra, _utils
 from ._internal._fields import Undefined
 from ._internal._generics import replace_types
 from .errors import PydanticUserError
@@ -30,7 +30,7 @@ class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
     This class exists solely to add typechecking for the `**kwargs` in `FieldInfo.from_field`.
     """
 
-    annotation: type[Any] | _forward_ref.PydanticForwardRef | None
+    annotation: type[Any] | None
     default_factory: typing.Callable[[], Any] | None
     alias: str | None
     alias_priority: int | None
@@ -78,7 +78,7 @@ class FieldInfo(_repr.Representation):
     `FieldInfo` is used for any field definition regardless of whether the `Field()` function is explicitly used.
 
     Attributes:
-        annotation (type[Any] | _forward_ref.PydanticForwardRef | None): The type annotation of the field.
+        annotation (type[Any] | None): The type annotation of the field.
         default (Any): The default value of the field.
         default_factory (Callable[[], Any] | None): The factory function used to construct the default for the field.
         alias (str | None): The alias name of the field.
@@ -101,7 +101,7 @@ class FieldInfo(_repr.Representation):
         metadata (list[Any]): List of metadata constraints.
     """
 
-    annotation: type[Any] | _forward_ref.PydanticForwardRef | None
+    annotation: type[Any] | None
     default: Any
     default_factory: typing.Callable[[], Any] | None
     alias: str | None
@@ -237,12 +237,12 @@ class FieldInfo(_repr.Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> typing_extensions.Self:
+    def from_annotation(cls, annotation: type[Any]) -> typing_extensions.Self:
         """
         Creates a `FieldInfo` instance from a bare annotation.
 
         Args:
-            annotation (Union[type[Any], _forward_ref.PydanticForwardRef]): An annotation object.
+            annotation (type[Any]): An annotation object.
 
         Returns:
             FieldInfo: An instance of the field metadata.
@@ -385,9 +385,7 @@ class FieldInfo(_repr.Representation):
         return field
 
     @classmethod
-    def _extract_metadata(
-        cls, annotation: type[Any] | _forward_ref.PydanticForwardRef | None
-    ) -> tuple[type[Any] | _forward_ref.PydanticForwardRef | None, list[Any]]:
+    def _extract_metadata(cls, annotation: type[Any] | None) -> tuple[type[Any] | None, list[Any]]:
         """Tries to extract metadata/constraints from an annotation if it uses `Annotated`.
 
         Args:
