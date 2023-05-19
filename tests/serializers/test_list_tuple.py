@@ -159,9 +159,6 @@ class RemovedContains(ImplicitContains):
         ({'a': 'dict'}, 'Input should be a valid set'),
         ({4.2}, 'Input should be a valid integer, got a number with a fractional part'),
         ({'a'}, 'Input should be a valid integer, unable to parse string as an integer'),
-        (ImplicitContains(), 'Input should be a valid set'),
-        (ExplicitContains(), re.compile('.*Invalid Schema:.*Input should be a valid set.*', re.DOTALL)),
-        (RemovedContains(), re.compile('.*Invalid Schema:.*Input should be a valid set.*', re.DOTALL)),
     ],
 )
 @pytest.mark.parametrize('schema_func', [core_schema.list_schema, core_schema.tuple_variable_schema])

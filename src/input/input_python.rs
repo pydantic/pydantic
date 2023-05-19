@@ -5,7 +5,7 @@ use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyInt, PyIterator, PyList,
-    PyMapping, PySet, PyString, PyTime, PyTuple, PyType,
+    PyMapping, PySequence, PySet, PyString, PyTime, PyTuple, PyType,
 };
 #[cfg(not(PyPy))]
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
@@ -22,48 +22,64 @@ use super::datetime::{
 };
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    py_string_str, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericCollection, GenericIterator,
+    py_string_str, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericIterable, GenericIterator,
     GenericMapping, Input, JsonInput, PyArgs,
 };
 
-/// Extract generators and deques into a `GenericCollection`
-macro_rules! extract_shared_iter {
-    ($type:ty, $obj:ident) => {
-        if $obj.downcast::<PyIterator>().is_ok() {
-            Some($obj.into())
-        } else if is_deque($obj) {
-            Some($obj.into())
-        } else {
-            None
-        }
-    };
-}
-
-/// Extract dict keys, values and items into a `GenericCollection`
 #[cfg(not(PyPy))]
-macro_rules! extract_dict_iter {
-    ($obj:ident) => {
-        if $obj.is_instance_of::<PyDictKeys>().unwrap_or(false) {
-            Some($obj.into())
-        } else if $obj.is_instance_of::<PyDictValues>().unwrap_or(false) {
-            Some($obj.into())
-        } else if $obj.is_instance_of::<PyDictItems>().unwrap_or(false) {
-            Some($obj.into())
-        } else {
-            None
-        }
+macro_rules! extract_dict_keys {
+    ($py:expr, $obj:ident) => {
+        $obj.downcast::<PyDictKeys>()
+            .ok()
+            .map(|v| PyIterator::from_object($py, v).unwrap())
     };
 }
 
 #[cfg(PyPy)]
-macro_rules! extract_dict_iter {
-    ($obj:ident) => {
+macro_rules! extract_dict_keys {
+    ($py:expr, $obj:ident) => {
         if is_dict_keys_type($obj) {
-            Some($obj.into())
-        } else if is_dict_values_type($obj) {
-            Some($obj.into())
-        } else if is_dict_items_type($obj) {
-            Some($obj.into())
+            Some(PyIterator::from_object($py, $obj).unwrap())
+        } else {
+            None
+        }
+    };
+}
+
+#[cfg(not(PyPy))]
+macro_rules! extract_dict_values {
+    ($py:expr, $obj:ident) => {
+        $obj.downcast::<PyDictValues>()
+            .ok()
+            .map(|v| PyIterator::from_object($py, v).unwrap())
+    };
+}
+
+#[cfg(PyPy)]
+macro_rules! extract_dict_values {
+    ($py:expr, $obj:ident) => {
+        if is_dict_values_type($obj) {
+            Some(PyIterator::from_object($py, $obj).unwrap())
+        } else {
+            None
+        }
+    };
+}
+
+#[cfg(not(PyPy))]
+macro_rules! extract_dict_items {
+    ($py:expr, $obj:ident) => {
+        $obj.downcast::<PyDictItems>()
+            .ok()
+            .map(|v| PyIterator::from_object($py, v).unwrap())
+    };
+}
+
+#[cfg(PyPy)]
+macro_rules! extract_dict_items {
+    ($py:expr, $obj:ident) => {
+        if is_dict_items_type($obj) {
+            Some(PyIterator::from_object($py, $obj).unwrap())
         } else {
             None
         }
@@ -375,101 +391,118 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_list(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
-        } else {
-            Err(ValError::new(ErrorType::ListType, self))
+    fn strict_list(&'a self) -> ValResult<GenericIterable<'a>> {
+        match self.lax_list()? {
+            GenericIterable::List(iter) => Ok(GenericIterable::List(iter)),
+            _ => Err(ValError::new(ErrorType::ListType, self)),
         }
     }
 
-    fn lax_list(&'a self, allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
-        if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
-        } else if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
-        } else if let Some(collection) = extract_dict_iter!(self) {
-            Ok(collection)
-        } else if allow_any_iter && self.iter().is_ok() {
-            Ok(self.into())
-        } else if let Some(collection) = extract_shared_iter!(PyList, self) {
-            Ok(collection)
-        } else {
-            Err(ValError::new(ErrorType::ListType, self))
+    fn lax_list(&'a self) -> ValResult<GenericIterable<'a>> {
+        match self
+            .extract_generic_iterable()
+            .map_err(|_| ValError::new(ErrorType::ListType, self))?
+        {
+            GenericIterable::PyString(_)
+            | GenericIterable::Bytes(_)
+            | GenericIterable::Dict(_)
+            | GenericIterable::Mapping(_) => Err(ValError::new(ErrorType::ListType, self)),
+            other => Ok(other),
         }
     }
 
-    fn strict_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
-        } else {
-            Err(ValError::new(ErrorType::TupleType, self))
+    fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
+        match self.lax_tuple()? {
+            GenericIterable::Tuple(iter) => Ok(GenericIterable::Tuple(iter)),
+            _ => Err(ValError::new(ErrorType::TupleType, self)),
         }
     }
 
-    fn lax_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
-        } else if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
-        } else if let Some(collection) = extract_dict_iter!(self) {
-            Ok(collection)
-        } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
-            Ok(collection)
-        } else {
-            Err(ValError::new(ErrorType::TupleType, self))
+    fn lax_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
+        match self
+            .extract_generic_iterable()
+            .map_err(|_| ValError::new(ErrorType::TupleType, self))?
+        {
+            GenericIterable::PyString(_)
+            | GenericIterable::Bytes(_)
+            | GenericIterable::Dict(_)
+            | GenericIterable::Mapping(_) => Err(ValError::new(ErrorType::TupleType, self)),
+            other => Ok(other),
         }
     }
 
-    fn strict_set(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(set) = self.downcast::<PySet>() {
-            Ok(set.into())
-        } else {
-            Err(ValError::new(ErrorType::SetType, self))
+    fn strict_set(&'a self) -> ValResult<GenericIterable<'a>> {
+        match self.lax_set()? {
+            GenericIterable::Set(iter) => Ok(GenericIterable::Set(iter)),
+            _ => Err(ValError::new(ErrorType::SetType, self)),
         }
     }
 
-    fn lax_set(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(set) = self.downcast::<PySet>() {
-            Ok(set.into())
-        } else if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
-        } else if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
-        } else if let Ok(frozen_set) = self.downcast::<PyFrozenSet>() {
-            Ok(frozen_set.into())
-        } else if let Some(collection) = extract_dict_iter!(self) {
-            Ok(collection)
-        } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
-            Ok(collection)
-        } else {
-            Err(ValError::new(ErrorType::SetType, self))
+    fn lax_set(&'a self) -> ValResult<GenericIterable<'a>> {
+        match self
+            .extract_generic_iterable()
+            .map_err(|_| ValError::new(ErrorType::SetType, self))?
+        {
+            GenericIterable::PyString(_)
+            | GenericIterable::Bytes(_)
+            | GenericIterable::Dict(_)
+            | GenericIterable::Mapping(_) => Err(ValError::new(ErrorType::SetType, self)),
+            other => Ok(other),
         }
     }
 
-    fn strict_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(set) = self.downcast::<PyFrozenSet>() {
-            Ok(set.into())
-        } else {
-            Err(ValError::new(ErrorType::FrozenSetType, self))
+    fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
+        match self.lax_frozenset()? {
+            GenericIterable::FrozenSet(iter) => Ok(GenericIterable::FrozenSet(iter)),
+            _ => Err(ValError::new(ErrorType::FrozenSetType, self)),
         }
     }
 
-    fn lax_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
-        if let Ok(frozen_set) = self.downcast::<PyFrozenSet>() {
-            Ok(frozen_set.into())
-        } else if let Ok(set) = self.downcast::<PySet>() {
-            Ok(set.into())
-        } else if let Ok(list) = self.downcast::<PyList>() {
-            Ok(list.into())
-        } else if let Ok(tuple) = self.downcast::<PyTuple>() {
-            Ok(tuple.into())
-        } else if let Some(collection) = extract_dict_iter!(self) {
-            Ok(collection)
-        } else if let Some(collection) = extract_shared_iter!(PyTuple, self) {
-            Ok(collection)
+    fn lax_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
+        match self
+            .extract_generic_iterable()
+            .map_err(|_| ValError::new(ErrorType::FrozenSetType, self))?
+        {
+            GenericIterable::PyString(_)
+            | GenericIterable::Bytes(_)
+            | GenericIterable::Dict(_)
+            | GenericIterable::Mapping(_) => Err(ValError::new(ErrorType::FrozenSetType, self)),
+            other => Ok(other),
+        }
+    }
+
+    fn extract_generic_iterable(&'a self) -> ValResult<GenericIterable<'a>> {
+        // Handle concrete non-overlapping types first, then abstract types
+        if let Ok(iterable) = self.downcast::<PyList>() {
+            Ok(GenericIterable::List(iterable))
+        } else if let Ok(iterable) = self.downcast::<PyTuple>() {
+            Ok(GenericIterable::Tuple(iterable))
+        } else if let Ok(iterable) = self.downcast::<PySet>() {
+            Ok(GenericIterable::Set(iterable))
+        } else if let Ok(iterable) = self.downcast::<PyFrozenSet>() {
+            Ok(GenericIterable::FrozenSet(iterable))
+        } else if let Ok(iterable) = self.downcast::<PyDict>() {
+            Ok(GenericIterable::Dict(iterable))
+        } else if let Some(iterable) = extract_dict_keys!(self.py(), self) {
+            Ok(GenericIterable::DictKeys(iterable))
+        } else if let Some(iterable) = extract_dict_values!(self.py(), self) {
+            Ok(GenericIterable::DictValues(iterable))
+        } else if let Some(iterable) = extract_dict_items!(self.py(), self) {
+            Ok(GenericIterable::DictItems(iterable))
+        } else if let Ok(iterable) = self.downcast::<PyMapping>() {
+            Ok(GenericIterable::Mapping(iterable))
+        } else if let Ok(iterable) = self.downcast::<PyString>() {
+            Ok(GenericIterable::PyString(iterable))
+        } else if let Ok(iterable) = self.downcast::<PyBytes>() {
+            Ok(GenericIterable::Bytes(iterable))
+        } else if let Ok(iterable) = self.downcast::<PyByteArray>() {
+            Ok(GenericIterable::PyByteArray(iterable))
+        } else if let Ok(iterable) = self.downcast::<PySequence>() {
+            Ok(GenericIterable::Sequence(iterable))
+        } else if let Ok(iterable) = self.iter() {
+            Ok(GenericIterable::Iterator(iterable))
         } else {
-            Err(ValError::new(ErrorType::FrozenSetType, self))
+            Err(ValError::new(ErrorType::IterableType, self))
         }
     }
 
@@ -621,21 +654,6 @@ fn maybe_as_string(v: &PyAny, unicode_error: ErrorType) -> ValResult<Option<Cow<
     } else {
         Ok(None)
     }
-}
-
-static DEQUE_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
-
-fn is_deque(v: &PyAny) -> bool {
-    let py = v.py();
-    let deque_type = DEQUE_TYPE
-        .get_or_init(py, || import_type(py, "collections", "deque").unwrap())
-        .as_ref(py);
-    v.is_instance(deque_type).unwrap_or(false)
-}
-
-fn import_type(py: Python, module: &str, attr: &str) -> PyResult<Py<PyType>> {
-    let obj = py.import(module)?.getattr(attr)?;
-    Ok(obj.downcast::<PyType>()?.into())
 }
 
 fn is_builtin_str(py_str: &PyString) -> bool {

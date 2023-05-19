@@ -8,7 +8,7 @@ use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
 use super::return_enums::{EitherBytes, EitherString};
-use super::{GenericArguments, GenericCollection, GenericIterator, GenericMapping, JsonInput};
+use super::{GenericArguments, GenericIterable, GenericIterator, GenericMapping, JsonInput};
 
 #[derive(Debug, Clone, Copy)]
 pub enum InputType {
@@ -166,57 +166,59 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.validate_dict(strict)
     }
 
-    fn validate_list(&'a self, strict: bool, allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
-        if strict && !allow_any_iter {
+    fn validate_list(&'a self, strict: bool) -> ValResult<GenericIterable<'a>> {
+        if strict {
             self.strict_list()
         } else {
-            self.lax_list(allow_any_iter)
+            self.lax_list()
         }
     }
-    fn strict_list(&'a self) -> ValResult<GenericCollection<'a>>;
+    fn strict_list(&'a self) -> ValResult<GenericIterable<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_list(&'a self, _allow_any_iter: bool) -> ValResult<GenericCollection<'a>> {
+    fn lax_list(&'a self) -> ValResult<GenericIterable<'a>> {
         self.strict_list()
     }
 
-    fn validate_tuple(&'a self, strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_tuple(&'a self, strict: bool) -> ValResult<GenericIterable<'a>> {
         if strict {
             self.strict_tuple()
         } else {
             self.lax_tuple()
         }
     }
-    fn strict_tuple(&'a self) -> ValResult<GenericCollection<'a>>;
+    fn strict_tuple(&'a self) -> ValResult<GenericIterable<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_tuple(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn lax_tuple(&'a self) -> ValResult<GenericIterable<'a>> {
         self.strict_tuple()
     }
 
-    fn validate_set(&'a self, strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_set(&'a self, strict: bool) -> ValResult<GenericIterable<'a>> {
         if strict {
             self.strict_set()
         } else {
             self.lax_set()
         }
     }
-    fn strict_set(&'a self) -> ValResult<GenericCollection<'a>>;
+    fn strict_set(&'a self) -> ValResult<GenericIterable<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_set(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn lax_set(&'a self) -> ValResult<GenericIterable<'a>> {
         self.strict_set()
     }
 
-    fn validate_frozenset(&'a self, strict: bool) -> ValResult<GenericCollection<'a>> {
+    fn validate_frozenset(&'a self, strict: bool) -> ValResult<GenericIterable<'a>> {
         if strict {
             self.strict_frozenset()
         } else {
             self.lax_frozenset()
         }
     }
-    fn strict_frozenset(&'a self) -> ValResult<GenericCollection<'a>>;
+    fn strict_frozenset(&'a self) -> ValResult<GenericIterable<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_frozenset(&'a self) -> ValResult<GenericCollection<'a>> {
+    fn lax_frozenset(&'a self) -> ValResult<GenericIterable<'a>> {
         self.strict_frozenset()
     }
+
+    fn extract_generic_iterable(&'a self) -> ValResult<GenericIterable<'a>>;
 
     fn validate_iter(&self) -> ValResult<GenericIterator>;
 

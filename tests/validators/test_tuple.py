@@ -3,7 +3,7 @@ from collections import deque
 from typing import Any, Dict, Type
 
 import pytest
-from dirty_equals import IsNonNegative
+from dirty_equals import IsNonNegative, IsTuple
 
 from pydantic_core import SchemaValidator, ValidationError
 
@@ -44,8 +44,8 @@ def test_any_no_copy():
     input_value = (1, '2', b'3')
     output = v.validate_python(input_value)
     assert output == input_value
-    assert output is input_value
-    assert id(output) == id(input_value)
+    assert output is not input_value
+    assert id(output) != id(input_value)
 
 
 @pytest.mark.parametrize(
@@ -144,8 +144,8 @@ def test_tuple_var_len_kwargs(kwargs: Dict[str, Any], input_value, expected):
         ({1: 10, 2: 20, '3': '30'}.keys(), (1, 2, 3)),
         ({1: 10, 2: 20, '3': '30'}.values(), (10, 20, 30)),
         ({1: 10, 2: 20, '3': '30'}, Err('Input should be a valid tuple [type=tuple_type,')),
-        ({1, 2, '3'}, Err('Input should be a valid tuple [type=tuple_type,')),
-        (frozenset([1, 2, '3']), Err('Input should be a valid tuple [type=tuple_type,')),
+        ({1, 2, '3'}, IsTuple(1, 2, 3, check_order=False)),
+        (frozenset([1, 2, '3']), IsTuple(1, 2, 3, check_order=False)),
     ],
     ids=repr,
 )
