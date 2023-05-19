@@ -58,21 +58,54 @@ def import_string(value: Any) -> Any:
 
 def _import_string_logic(dotted_path: str) -> Any:
     """
-    Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
-    last name in the path. Raise ImportError if the import fails.
+    Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
+    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.)
+
+    If the dotted path does not include a colon and the final item is not a valid module, importing as an attribute
+    rather than a submodule will be attempted automatically.
+
+    So, for example, the following values of `dotted_path` result in the following returned values:
+    * 'collections': <module 'collections'>
+    * 'collections.abc': <module 'collections.abc'>
+    * 'collections.abc:Mapping': <class 'collections.abc.Mapping'>
+    * `collections.abc.Mapping`: <class 'collections.abc.Mapping'> (though this is a bit slower than the previous line)
+
+    An error will be raised under any of the following scenarios:
+    * `dotted_path` contains more than one colon (e.g., 'collections:abc:Mapping')
+    * the substring of `dotted_path` before the colon is not a valid module in the environment (e.g., '123:Mapping')
+    * the substring of `dotted_path` after the colon is not an attribute of the module (e.g., 'collections:abc123')
     """
     from importlib import import_module
 
-    try:
-        module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
-    except ValueError as e:
-        raise ImportError(f'"{dotted_path}" doesn\'t look like a module path') from e
+    components = dotted_path.strip().split(':')
+    if len(components) > 2:
+        raise ImportError(f"Import strings should have at most one ':'; received {dotted_path!r}")
 
-    module = import_module(module_path)
+    module_path = components[0]
+    if not module_path:
+        raise ImportError(f'Import strings should have a nonempty module name; received {dotted_path!r}')
+
     try:
-        return getattr(module, class_name)
-    except AttributeError as e:
-        raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
+        module = import_module(module_path)
+    except ModuleNotFoundError as e:
+        if '.' in module_path:
+            # Check if it would be valid if the final item was separated from its module with a `:`
+            maybe_module_path, maybe_attribute = dotted_path.strip().rsplit('.', 1)
+            try:
+                return _import_string_logic(f'{maybe_module_path}:{maybe_attribute}')
+            except ImportError:
+                pass
+            raise ImportError(f'No module named {module_path!r}') from e
+        raise e
+
+    if len(components) > 1:
+        attribute = components[1]
+        try:
+            return getattr(module, attribute)
+        except AttributeError as e:
+            raise ImportError(f'cannot import name {attribute!r} from {module_path!r}') from e
+    else:
+        return module
 
 
 def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:

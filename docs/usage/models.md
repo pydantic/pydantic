@@ -87,23 +87,26 @@ Models possess the following methods and attributes:
 - `model_construct()`: a class method for creating models without running validation. See
     [Creating models without validation](#creating-models-without-validation).
 - `model_copy()`: returns a copy (by default, shallow copy) of the model. See
-    [exporting models](exporting_models.md#modelcopy).
+    [Exporting models](exporting_models.md#modelcopy).
 - `model_dump()`: returns a dictionary of the model's fields and values. See
-    [exporting models](exporting_models.md#modeldump).
+    [Exporting models](exporting_models.md#modeldump).
 - `model_dump_json()`: returns a JSON string representation of `model_dump()`. See
-    [exporting models](exporting_models.md#modeldumpjson).
+    [Exporting models](exporting_models.md#modeldumpjson).
 - `model_extra`: get extra fields set during validation.
 - `model_fields_set`: set of fields which were set when the model instance was initialised.
-- `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [schema](schema.md).
+- `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [Schema](schema.md).
 - `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
-    See [schema](schema.md).
+    See [Schema](schema.md).
 - `model_parameterized_name()`: compute the class name for parametrizations of generic classes.
 - `model_post_init()`: perform additional initialization after the model is initialised.
 - `model_rebuild()`: rebuild the model schema.
 - `model_validate()`: a utility for loading any object into a model with error handling if the object is not a
-    dictionary. See [helper functions](#helper-functions).
+    dictionary. See [Helper functions](#helper-functions).
 - `model_validate_json()`: a utility for validating the given JSON data against the Pydantic model. See
-    [helper functions](#helper-functions).
+    [Helper functions](#helper-functions).
+
+!!! note
+    See [`BaseModel`][pydantic.main.BaseModel] for the class definition including a full list of methods and attributes.
 
 ## Recursive models
 
@@ -434,7 +437,7 @@ of the data provided.
 For example, in the example above, if `_fields_set` was not provided,
 `new_user.model_fields_set` would be `{'id', 'age', 'name'}`.
 
-## Generic Models
+## Generic models
 
 Pydantic supports the creation of generic models to make it easier to reuse a common model structure.
 
@@ -739,7 +742,13 @@ except ValidationError as e:
     """
 ```
 
-## Using Pydantic without creating a BaseModel
+!!! note
+    To pickle a dynamically created model:
+
+    - the model must be defined globally
+    - it must provide `__module__`
+
+## Using Pydantic without creating a `BaseModel`
 
 You may have types that are not `BaseModel`s that you want to validate data against.
 Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
@@ -778,7 +787,7 @@ except ValidationError as e:
 
 For many use cases `TypeAdapter` can replace BaseModels with a `__root__` field in Pydantic V1.
 
-## Custom Root Types
+## Custom root types
 
 Pydantic models can be defined with a custom root type by declaring the `__root__` field.
 
@@ -869,7 +878,7 @@ print(pets[0])
 print([pet for pet in pets])
 ```
 
-## Faux Immutability
+## Faux immutability
 
 Models can be configured to be immutable via `allow_mutation = False`. When this is set, attempting to change the
 values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
@@ -912,7 +921,7 @@ print(foobar.b)
 Trying to change `a` caused an error, and `a` remains unchanged. However, the dict `b` is mutable, and the
 immutability of `foobar` doesn't stop `b` from being changed.
 
-## Abstract Base Classes
+## Abstract base classes
 
 Pydantic models can be used alongside Python's
 [Abstract Base Classes](https://docs.python.org/3/library/abc.html) (ABCs).
@@ -932,7 +941,7 @@ class FooBarModel(BaseModel, abc.ABC):
         pass
 ```
 
-## Field Ordering
+## Field ordering
 
 Field order is important in models for the following reasons:
 
@@ -1165,7 +1174,7 @@ This function is capable of parsing data into any of the types pydantic can hand
 Pydantic also includes two similar standalone functions called `parse_file_as` and `parse_raw_as`,
 which are analogous to `BaseModel.parse_file` and `BaseModel.parse_raw`.
 
-## Data Conversion
+## Data conversion
 
 *pydantic* may cast input data to force it to conform to model field types,
 and in some cases this may result in a loss of information.

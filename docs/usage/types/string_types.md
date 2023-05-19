@@ -18,9 +18,10 @@ description: Useful types provided by Pydantic.
   For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
   for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
 
-`PyObject`
-: expects a string and loads the Python object importable at that dotted path;
-  e.g. if `'math.cos'` was provided, the resulting field value would be the function `cos`
+`ImportString`
+: expects a string and loads the Python object importable at that dotted path; attributes of modules may be separated
+  from the module by `:` or `.`, e.g. if `'math:cos'` was provided, the resulting field value would be the function
+`cos`. If a `.` is used and both an attribute and submodule are present at the same path, the module will be preferred.
 
 `constr`
 : type method for constraining strs;
@@ -42,8 +43,8 @@ description: Useful types provided by Pydantic.
 
 ## ImportString
 
-`ImportString` expects a string and loads the Python object importable at that dotted path; e.g. if `'math.cos'` was provided,
-the resulting field value would be the function `cos`; see [ImportString](#importstring)
+`ImportString` expects a string and loads the Python object importable at that dotted path; e.g. if `'math.cos'`
+was provided, the resulting field value would be the function `cos`; see [ImportString](#importstring)
 
 On model instantiation, pointers will be evaluated and imported. There is
 some nuance to this behavior, demonstrated in the examples below.
@@ -77,7 +78,7 @@ except ValidationError as e:
     """
     1 validation error for ImportThings
     obj
-      Invalid python path: No module named 'foo' [type=import_error, input_value='foo.bar', input_type=str]
+      Invalid python path: No module named 'foo.bar' [type=import_error, input_value='foo.bar', input_type=str]
     """
 
 
@@ -122,7 +123,7 @@ class WithCustomEncodersBad(BaseModel):
 
 
 # Create an instance
-m = WithCustomEncodersBad(obj='math.cos')
+m = WithCustomEncodersBad(obj='math:cos')
 
 try:
     m.json()
@@ -144,7 +145,7 @@ class WithCustomEncodersGood(BaseModel):
         json_encoders = {BuiltinFunctionType: lambda x: str(x)}
 
 
-m = WithCustomEncodersGood(obj='math.cos')
+m = WithCustomEncodersGood(obj='math:cos')
 print(m.json())
 ```
 

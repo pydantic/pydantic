@@ -24,6 +24,7 @@ __all__ = (
 # 'u' refers to "user errors" - e.g. errors caused by developers using pydantic, as opposed to validation errors.
 DEV_ERROR_DOCS_URL = f'https://errors.pydantic.dev/{VERSION}/u/'
 PydanticErrorCodes = Literal[
+    'class-not-fully-defined',
     'decorator-missing-field',
     'discriminator-no-field',
     'discriminator-alias-type',
@@ -32,7 +33,6 @@ PydanticErrorCodes = Literal[
     'typed-dict-version',
     'model-field-overridden',
     'model-field-missing-annotation',
-    'model-not-fully-defined',
     'config-both',
     'deprecated-kwargs',
     'invalid-for-json-schema',

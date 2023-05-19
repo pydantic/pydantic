@@ -14,7 +14,7 @@ from typing import Any, Callable, Generic, Mapping, Tuple, cast
 
 import pydantic_core
 import typing_extensions
-from typing_extensions import deprecated
+from typing_extensions import Unpack, deprecated
 
 from ._internal import (
     _config,
@@ -174,7 +174,7 @@ class ModelMetaclass(ABCMeta):
                     'parameters': parameters,
                 }
 
-            cls.__pydantic_model_complete__ = False  # Ensure this specific class gets completed
+            cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
 
             # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
             # for attributes not in `new_namespace` (e.g. private attributes)
@@ -270,7 +270,7 @@ class BaseModel(metaclass=ModelMetaclass):
 
     model_config = ConfigDict()
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
-    __pydantic_model_complete__ = False
+    __pydantic_complete__ = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
         """
@@ -334,6 +334,24 @@ class BaseModel(metaclass=ModelMetaclass):
             JsonSchemaValue: A JSON schema, as a Python object.
         """
         return __handler(__core_schema)
+
+    if typing.TYPE_CHECKING:
+
+        def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]):
+            """
+            This signature is included purely to help type-checkers check arguments to class declaration, which
+            provides a way to conveniently set model_config key/value pairs:
+
+                class MyModel(BaseModel, extra='allow'):
+                    ...
+
+            However, this may be deceiving, since the _actual_ calls to `__init_subclass__` will not receive any
+            of the config arguments, and will only receive any keyword arguments passed during class initialization
+            that are _not_ expected keys in ConfigDict. (This is due to the way `ModelMetaclass.__new__` works.)
+
+            Args:
+                **kwargs (Unpack[ConfigDict]): Keyword arguments passed to the class definition, which set model_config
+            """
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
@@ -685,21 +703,20 @@ class BaseModel(metaclass=ModelMetaclass):
         _types_namespace: dict[str, Any] | None = None,
     ) -> bool | None:
         """
-        Try to rebuild or reconstruct the model schema.
+        Try to rebuild or reconstruct the model core schema
 
         Args:
-            cls (type): The class to build the model schema for.
-            force (bool): Whether or not to force the rebuilding of the model schema, defaults to `False`.
-            raise_errors (bool): Whether or not to raise errors, defaults to `True`.
+            cls (type): The class to build the model core schema for.
+            force (bool): Whether to force the rebuilding of the model schema, defaults to `False`.
+            raise_errors (bool): Whether to raise errors, defaults to `True`.
             _parent_namespace_depth (int): The depth level of the parent namespace, defaults to 2.
             _types_namespace (dict[str, Any] | None): The types namespace, defaults to `None`.
 
         Returns:
-            bool or None: Returns `None` if model schema is complete and no rebuilding is required, or `True` if
-                        rebuilding is successful, otherwise returns `None`.
-
+            bool or None: Returns `None` if model schema is complete and no rebuilding is required.
+                If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
-        if not force and cls.__pydantic_model_complete__:
+        if not force and cls.__pydantic_complete__:
             return None
         else:
             if _types_namespace is not None:

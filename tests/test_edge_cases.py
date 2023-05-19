@@ -2475,10 +2475,10 @@ def test_invalid_forward_ref_model():
     class C(BaseModel):
         pass
 
-    assert not A.__pydantic_model_complete__
+    assert not A.__pydantic_complete__
     types = {'B': B}
     A.model_rebuild(_types_namespace={'__types': types})
-    assert A.__pydantic_model_complete__
+    assert A.__pydantic_complete__
 
     assert A(B=B()).B == B()
     with pytest.raises(ValidationError) as exc_info:

@@ -187,29 +187,3 @@ def test_validate_json_context() -> None:
     validator.validate_json(json.dumps({'x': 1}), context=None)
     validator.validate_json(json.dumps({'x': 1}), context={'foo': 'bar'})
     assert contexts == []
-
-
-def test_merge_config() -> None:
-    class Model(BaseModel):
-        x: int
-        y: str
-
-        model_config = ConfigDict(strict=True, title='FooModel')
-
-    adapted = TypeAdapter(Model, config=ConfigDict(strict=False, str_max_length=20))
-
-    # strict=False gets applied to the outer Model but not to the inner typeddict validator
-    # so we're allowed to validate a dict but `x` still must be an int
-    adapted.validate_python({'x': 1, 'y': '2'})
-    assert adapted.json_schema()['title'] == 'FooModel'
-    with pytest.raises(ValidationError) as exc_info:
-        adapted.validate_python({'x': 1, 'y': 'x' * 21})
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'string_too_long',
-            'loc': ('y',),
-            'msg': 'String should have at most 20 characters',
-            'input': 'xxxxxxxxxxxxxxxxxxxxx',
-            'ctx': {'max_length': 20},
-        }
-    ]
