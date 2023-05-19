@@ -225,25 +225,22 @@ def test_dynamic_and_static():
         assert A.model_fields[field_name].default == DynamicA.model_fields[field_name].default
 
 
-def test_config_field_info_create_model():
-    # TODO fields doesn't exist anymore, remove test?
-    # class Config:
-    #     fields = {'a': {'description': 'descr'}}
-    ConfigDict()
-
-    m1 = create_model('M1', __config__={'title': 'abc'}, a=(str, ...))
-    assert m1.model_json_schema() == {
-        'properties': {'a': {'title': 'A', 'type': 'string'}},
+def test_create_model_field_and_model_title():
+    m = create_model('M', __config__=ConfigDict(title='abc'), a=(str, Field(title='field-title')))
+    assert m.model_json_schema() == {
+        'properties': {'a': {'title': 'field-title', 'type': 'string'}},
         'required': ['a'],
         'title': 'abc',
         'type': 'object',
     }
 
-    m2 = create_model('M2', __config__={}, a=(str, Field(description='descr')))
-    assert m2.model_json_schema() == {
+
+def test_create_model_field_description():
+    m = create_model('M', a=(str, Field(description='descr')))
+    assert m.model_json_schema() == {
         'properties': {'a': {'description': 'descr', 'title': 'A', 'type': 'string'}},
         'required': ['a'],
-        'title': 'M2',
+        'title': 'M',
         'type': 'object',
     }
 
