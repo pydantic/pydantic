@@ -185,7 +185,7 @@ def complete_model_class(
         )
 
         def attempt_rebuild() -> SchemaValidator | None:
-            if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=0):
+            if cls.model_rebuild(raise_errors=False, _parent_namespace_depth=5):
                 return cls.__pydantic_validator__
             else:
                 return None

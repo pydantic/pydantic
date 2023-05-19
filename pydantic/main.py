@@ -1257,6 +1257,7 @@ RootModelRootType = typing.TypeVar('RootModelRootType')
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     __pydantic_root_model__ = True
+    __pydantic_extra__ = None
 
     root: RootModelRootType
 
