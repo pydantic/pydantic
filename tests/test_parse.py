@@ -48,8 +48,7 @@ def test_model_validate_wrong_model():
 
 def test_root_model_error():
     with pytest.raises(
-        TypeError,
-        match='Use special RootModel class instead of __root__ BaseModel attribute',
+        TypeError, match="To define root models, use `pydantic.RootModel` rather than a field called '__root__"
     ):
 
         class MyModel(BaseModel):
