@@ -968,7 +968,8 @@ class GenerateJsonSchema:
         return self.generate_inner(schema['return_schema'])
 
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
-        # We do not use schema['model'].model_json_schema() because it could lead to inconsistent refs handling, etc.
+        # We do not use schema['model'].model_json_schema() here
+        # because it could lead to inconsistent refs handling, etc.
         json_schema = self.generate_inner(schema['schema'])
 
         cls = cast('type[BaseModel]', schema['cls'])
@@ -1071,9 +1072,6 @@ class GenerateJsonSchema:
         return self._named_required_fields_schema(named_required_fields)
 
     def dataclass_schema(self, schema: core_schema.DataclassSchema) -> JsonSchemaValue:
-        # TODO: Better-share this logic with model_schema
-        #   I'd prefer to clean this up _after_ we rework the approach to customizing dataclass JSON schema though
-
         json_schema = self.generate_inner(schema['schema']).copy()
 
         cls = schema['cls']

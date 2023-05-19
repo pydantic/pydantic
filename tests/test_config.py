@@ -550,11 +550,4 @@ def test_config_is_not_inherited_in_model_fields():
 
     m = Outer.model_validate(dict(x=['Abc'], inner=dict(a='Def')))
 
-    # TODO: Remove the following comments before merging this PR
-    # print(m.model_dump())
-    # Current v2:
-    # > {'x': ['abc'], 'inner': {'a': 'def'}}
-    # Preferred in v2 (and current in v1):
-    # > {'x': ['abc'], 'inner': {'a': 'Def'}}
-
     assert m.model_dump() == {'x': ['abc'], 'inner': {'a': 'Def'}}
