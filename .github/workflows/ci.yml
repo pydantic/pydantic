@@ -262,8 +262,6 @@ jobs:
       run: make test-fastapi
 
   test-pydantic-settings:
-    # FIXME: drop this comment and the if-clause once pydantic-settings works with pydantic again
-    if: false
     name: test pydantic settings
     runs-on: ubuntu-latest
     steps:
@@ -309,7 +307,8 @@ jobs:
         uses: re-actors/alls-green@release/v1
         id: all-green
         with:
-          allowed-skips: test-fastapi, test-pydantic-settings  # TODO: drop once re-enabled
+          allowed-failures: test-pydantic-settings  # TODO: drop once working
+          allowed-skips: test-fastapi  # TODO: drop once re-enabled
           jobs: ${{ toJSON(needs) }}
 
   publish_docs:
@@ -421,7 +420,7 @@ jobs:
           TWEET: |
             Pydantic version ${{needs.release.outputs.pydantic-version}} is out! 🎉
 
-            https://github.com/pydantic/pydantic-settings/releases/tag/v${{needs.release.outputs.pydantic-version}}
+            https://github.com/pydantic/pydantic/releases/tag/v${{needs.release.outputs.pydantic-version}}
           TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
           TWITTER_CONSUMER_SECRET: ${{ secrets.TWITTER_CONSUMER_SECRET }}
           TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
