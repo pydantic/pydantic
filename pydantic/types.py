@@ -28,6 +28,7 @@ from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, P
 from typing_extensions import Annotated, Literal, Protocol
 
 from ._internal import _fields, _internal_dataclass, _known_annotated_metadata, _validators
+from ._internal._core_metadata import build_metadata_dict
 from ._internal._internal_dataclass import slots_dataclass
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
@@ -85,6 +86,7 @@ __all__ = [
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
+    'SkipValidation',
 ]
 
 from ._internal._schema_generation_shared import GetJsonSchemaHandler
@@ -1018,3 +1020,31 @@ class WithJsonSchema:
             raise PydanticOmit
         else:
             return self.json_schema
+
+
+if TYPE_CHECKING:
+    SkipValidation = Annotated[AnyType, ...]  # SkipValidation[list[str]] will be treated by type checkers as list[str]
+else:
+
+    @_internal_dataclass.slots_dataclass
+    class SkipValidation:
+        """
+        If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be skipped.
+        You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
+
+        This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
+        and know that it is safe to skip validation for one or more of the fields.
+
+        Because this converts the validation schema to `any_schema`, subsequent annotation-applied transformations
+        may not have the expected effects. Therefore, when used, this annotation should generally be the final
+        annotation applied to a type.
+        """
+
+        def __class_getitem__(cls, item: Any) -> Any:
+            return Annotated[item, SkipValidation()]
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            original_schema = handler.generate_schema(source)
+            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
+            return core_schema.any_schema(metadata=metadata, serialization=original_schema)
