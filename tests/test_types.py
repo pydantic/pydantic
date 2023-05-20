@@ -34,8 +34,9 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
+import dirty_equals
 import pytest
-from dirty_equals import HasRepr, IsStr
+from dirty_equals import HasRepr, IsOneOf, IsStr
 from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
 from pydantic_core.core_schema import ValidationInfo
 from typing_extensions import Annotated, Literal, TypedDict, get_args
@@ -1283,15 +1284,15 @@ class BoolCastable:
         ('list_check', ('1', '2'), ['1', '2']),
         ('list_check', {'1': 1, '2': 2}.keys(), ['1', '2']),
         ('list_check', {'1': '1', '2': '2'}.values(), ['1', '2']),
-        ('list_check', {'1', '2'}, ValidationError),
-        ('list_check', frozenset(['1', '2']), ValidationError),
+        ('list_check', {'1', '2'}, dirty_equals.IsOneOf(['1', '2'], ['2', '1'])),
+        ('list_check', frozenset(['1', '2']), dirty_equals.IsOneOf(['1', '2'], ['2', '1'])),
         ('list_check', {'1': 1, '2': 2}, ValidationError),
         ('tuple_check', ('1', '2'), ('1', '2')),
         ('tuple_check', ['1', '2'], ('1', '2')),
         ('tuple_check', {'1': 1, '2': 2}.keys(), ('1', '2')),
         ('tuple_check', {'1': '1', '2': '2'}.values(), ('1', '2')),
-        ('tuple_check', {'1', '2'}, ValidationError),
-        ('tuple_check', frozenset(['1', '2']), ValidationError),
+        ('tuple_check', {'1', '2'}, dirty_equals.IsOneOf(('1', '2'), ('2', '1'))),
+        ('tuple_check', frozenset(['1', '2']), dirty_equals.IsOneOf(('1', '2'), ('2', '1'))),
         ('tuple_check', {'1': 1, '2': 2}, ValidationError),
         ('set_check', {'1', '2'}, {'1', '2'}),
         ('set_check', ['1', '2', '1', '2'], {'1', '2'}),
@@ -1772,6 +1773,7 @@ def test_dict():
         ((1, 2, '3'), [1, 2, '3']),
         ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
         (deque([1, 2, 3]), [1, 2, 3]),
+        ({1, '2'}, IsOneOf([1, '2'], ['2', 1])),
     ),
 )
 def test_list_success(value, result):
@@ -1781,7 +1783,7 @@ def test_list_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}))
+@pytest.mark.parametrize('value', (123, '123'))
 def test_list_fails(value):
     class Model(BaseModel):
         v: list
@@ -1821,6 +1823,7 @@ def test_ordered_dict():
         ((1, 2, '3'), (1, 2, '3')),
         ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
+        ({1, '2'}, IsOneOf((1, '2'), ('2', 1))),
     ),
 )
 def test_tuple_success(value, result):
@@ -1830,7 +1833,7 @@ def test_tuple_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}))
+@pytest.mark.parametrize('value', (123, '123'))
 def test_tuple_fails(value):
     class Model(BaseModel):
         v: tuple
@@ -4168,6 +4171,16 @@ def test_deque_success():
             {1: 10, 2: 20, 3: 30}.items(),
             deque([(1, 10), (2, 20), (3, 30)]),
         ),
+        (
+            float,
+            {1, 2, 3},
+            deque([1, 2, 3]),
+        ),
+        (
+            float,
+            frozenset((1, 2, 3)),
+            deque([1, 2, 3]),
+        ),
     ),
 )
 def test_deque_generic_success(cls, value, result):
@@ -4196,26 +4209,6 @@ def test_deque_generic_success_strict(cls, value: Any, result):
 @pytest.mark.parametrize(
     'cls,value,expected_error',
     (
-        (
-            float,
-            {1, 2, 3},
-            {
-                'type': 'list_type',
-                'loc': ('v',),
-                'msg': 'Input should be a valid list',
-                'input': {1, 2, 3},
-            },
-        ),
-        (
-            float,
-            frozenset((1, 2, 3)),
-            {
-                'type': 'list_type',
-                'loc': ('v',),
-                'msg': 'Input should be a valid list',
-                'input': frozenset((1, 2, 3)),
-            },
-        ),
         (
             int,
             [1, 'a', 3],
@@ -5022,3 +5015,26 @@ def test_ordered_dict_from_dict(field_type):
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
+    class PdDecimal(Decimal):
+        def ___repr__(self) -> str:
+            return f'PdDecimal({super().__repr__()})'
+
+    class PdDecimalMarker:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(PdDecimal, handler(source_type))
+
+        def __prepare_pydantic_annotations__(self, source: Any, annotations: List[Any]) -> Tuple[Any, List[Any]]:
+            return (Decimal, [self, *annotations])
+
+    class Model(BaseModel):
+        x: Annotated[PdDecimal, PdDecimalMarker(), annotated_types.Gt(0)]
+
+    assert isinstance(Model(x=1).x, PdDecimal)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=-1)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'greater_than', 'loc': ('x',), 'msg': 'Input should be greater than 0', 'input': -1, 'ctx': {'gt': 0}}
+    ]

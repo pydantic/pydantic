@@ -56,7 +56,7 @@ class ConfigDict(TypedDict, total=False):
         populate_by_name (bool): Whether to populate fields by name. Defaults to False.
         use_enum_values (bool): Whether to use enum values. Defaults to False.
         validate_assignment (bool): Whether to validate assignments. Defaults to False.
-        arbitrary_types_allowed (bool): Whether to allow arbitrary types. Defaults to True.
+        arbitrary_types_allowed (bool): Whether to allow arbitrary types. Defaults to False.
         from_attributes (bool): Whether to set attributes from the configuration. Defaults to False.
         loc_by_alias (bool): Whether to use the alias for error `loc`s. Defaults to True.
         alias_generator (Optional[Callable[[str], str]]): A function to generate aliases. Defaults to None.
@@ -83,7 +83,7 @@ class ConfigDict(TypedDict, total=False):
     populate_by_name: bool
     use_enum_values: bool
     validate_assignment: bool
-    arbitrary_types_allowed: bool  # TODO default True, or remove
+    arbitrary_types_allowed: bool
     from_attributes: bool
     # whether to use the used alias (or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default True

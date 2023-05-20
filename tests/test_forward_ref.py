@@ -446,7 +446,6 @@ class Spec(BaseModel):
 
 
 class PSpec(Spec):
-    # FIXME investigate why this wasn't causing errors before
     g: Optional[GSpec] = None
 
 

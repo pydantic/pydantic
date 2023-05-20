@@ -188,7 +188,6 @@ def test_typeddict_schema(TypedDict):
     class Data(BaseModel):
         a: int
 
-    # TODO: Need to make sure TypedDict's get their own schema
     class DataTD(TypedDict):
         a: int
 
@@ -411,25 +410,22 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
         assert Model(d=input_value).d == expected
 
 
-def test_recursive_typeddict(create_module):
-    @create_module
-    def module():
-        from typing import Optional
+def test_recursive_typeddict():
+    from typing import Optional
 
-        from typing_extensions import TypedDict
+    from typing_extensions import TypedDict
 
-        from pydantic import BaseModel
+    from pydantic import BaseModel
 
-        class RecursiveTypedDict(TypedDict):
-            # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
-            foo: Optional['RecursiveTypedDict']
+    class RecursiveTypedDict(TypedDict):
+        foo: Optional['RecursiveTypedDict']
 
-        class RecursiveTypedDictModel(BaseModel):
-            rec: RecursiveTypedDict
+    class RecursiveTypedDictModel(BaseModel):
+        rec: RecursiveTypedDict
 
-    assert module.RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
+    assert RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
     with pytest.raises(ValidationError) as exc_info:
-        module.RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
+        RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': 1,

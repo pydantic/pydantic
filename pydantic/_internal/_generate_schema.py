@@ -124,7 +124,8 @@ def filter_field_decorator_info_by_field(
 def apply_each_item_validators(
     schema: core_schema.CoreSchema, each_item_validators: list[Decorator[ValidatorDecoratorInfo]]
 ) -> core_schema.CoreSchema:
-    # TODO: remove this V1 compatibility shim once it's deprecated
+    # This V1 compatibility shim should eventually be removed
+
     # push down any `each_item=True` validators
     # note that this won't work for any Annotated types that get wrapped by a function validator
     # but that's okay because that didn't exist in V1
@@ -250,15 +251,12 @@ class GenerateSchema:
         decorators = cls.__pydantic_decorators__
         check_decorator_fields_exist(
             chain(
-                decorators.field_validator.values(),
-                decorators.field_serializer.values(),
-                decorators.validator.values(),
+                decorators.field_validators.values(),
+                decorators.field_serializers.values(),
+                decorators.validators.values(),
             ),
             fields.keys(),
         )
-        # TODO: we need to do something similar to this for pydantic dataclasses
-        #   This should be straight forward once we expose the pydantic config on the dataclass;
-        #   I have done this in my PR for dataclasses JSON schema
         config_wrapper = ConfigWrapper(cls.model_config, check=False)
         self._config_wrapper_stack.append(config_wrapper)
         try:
@@ -268,7 +266,7 @@ class GenerateSchema:
             )
         finally:
             self._config_wrapper_stack.pop()
-        inner_schema = apply_validators(fields_schema, decorators.root_validator.values())
+        inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
 
         inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
 
@@ -287,8 +285,8 @@ class GenerateSchema:
             custom_init=cls.__init__ is not BaseModel.__init__,
         )
         model_schema = consolidate_refs(model_schema)
-        schema = apply_model_serializers(model_schema, decorators.model_serializer.values())
-        return apply_model_validators(schema, decorators.model_validator.values())
+        schema = apply_model_serializers(model_schema, decorators.model_serializers.values())
+        return apply_model_validators(schema, decorators.model_validators.values())
 
     def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
         """
@@ -376,6 +374,7 @@ class GenerateSchema:
                 # If you still have a PydanticForwardRef after resolving, it should be deeply nested enough that it will
                 # eventually be substituted out. So it is safe to return an invalid schema here.
                 # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+                #   Issue: https://github.com/pydantic/pydantic-core/issues/619
                 return core_schema.none_schema(
                     metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
                 )
@@ -425,10 +424,6 @@ class GenerateSchema:
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
 
-        # TODO: _std_types_schema iterates over the __mro__ looking for an expected schema.
-        #   This will catch subclasses of typing.Deque, preventing us from properly supporting user-defined
-        #   generic subclasses. (In principle this would also catch typing.OrderedDict, but that is currently
-        #   already getting caught in the `issubclass(obj, dict):` check above.
         std_schema = self._std_types_schema(obj)
         if std_schema is not None:
             return std_schema
@@ -462,7 +457,6 @@ class GenerateSchema:
         elif issubclass(origin, Annotated):  # type: ignore[arg-type]
             return self._annotated_schema(obj)
         elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
-            # TODO: To support generic subclasses of typing.Tuple, we need to better-introspect the args to origin
             return self._tuple_schema(obj)
         elif is_typeddict(origin):
             return self._typed_dict_schema(obj, origin)
@@ -557,18 +551,17 @@ class GenerateSchema:
             return schema
 
         source_type, annotations = field_info.annotation, field_info.metadata
-        source_type, annotations = self._prepare_annotations(source_type, annotations)
         schema = self._apply_annotations(
             CallbackGetCoreSchemaHandler(generate_schema, self.generate_schema),
             source_type,
             annotations,
         )
 
-        # TODO: remove this V1 compatibility shim once it's deprecated
+        # This V1 compatibility shim should eventually be removed
         # push down any `each_item=True` validators
         # note that this won't work for any Annotated types that get wrapped by a function validator
         # but that's okay because that didn't exist in V1
-        this_field_validators = filter_field_decorator_info_by_field(decorators.validator.values(), name)
+        this_field_validators = filter_field_decorator_info_by_field(decorators.validators.values(), name)
         if _validators_require_validate_default(this_field_validators):
             field_info.validate_default = True
         each_item_validators = [v for v in this_field_validators if v.info.each_item is True]
@@ -577,7 +570,7 @@ class GenerateSchema:
 
         schema = apply_validators(schema, filter_field_decorator_info_by_field(this_field_validators, name))
         schema = apply_validators(
-            schema, filter_field_decorator_info_by_field(decorators.field_validator.values(), name)
+            schema, filter_field_decorator_info_by_field(decorators.field_validators.values(), name)
         )
 
         # the default validator needs to go outside of any other validators
@@ -587,7 +580,7 @@ class GenerateSchema:
             schema = wrap_default(field_info, schema)
 
         schema = apply_field_serializers(
-            schema, filter_field_decorator_info_by_field(decorators.field_serializer.values(), name)
+            schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
         )
         json_schema_updates = {
             'title': field_info.title,
@@ -840,7 +833,7 @@ class GenerateSchema:
 
         metadata = build_metadata_dict(js_functions=[json_schema_func])
 
-        list_schema = core_schema.list_schema(self.generate_schema(item_type), allow_any_iter=True)
+        list_schema = core_schema.list_schema(self.generate_schema(item_type))
         python_schema = core_schema.is_instance_schema(typing.Sequence, cls_repr='Sequence')
         if item_type != Any:
             from ._validators import sequence_validator
@@ -855,8 +848,6 @@ class GenerateSchema:
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
         """
         Generate a schema for an `Iterable`.
-
-        TODO replace with pydantic-core's generator validator.
         """
         item_type = get_first_arg(type_)
 
@@ -962,10 +953,10 @@ class GenerateSchema:
             if config is not None:
                 self._config_wrapper_stack.pop()
 
-        inner_schema = apply_validators(args_schema, decorators.root_validator.values())
+        inner_schema = apply_validators(args_schema, decorators.root_validators.values())
         dc_schema = core_schema.dataclass_schema(dataclass, inner_schema, post_init=has_post_init, ref=dataclass_ref)
-        schema = apply_model_serializers(dc_schema, decorators.model_serializer.values())
-        return apply_model_validators(schema, decorators.model_validator.values())
+        schema = apply_model_serializers(dc_schema, decorators.model_serializers.values())
+        return apply_model_validators(schema, decorators.model_validators.values())
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
         """
@@ -1057,7 +1048,7 @@ class GenerateSchema:
 
     def _get_prepare_pydantic_annotations_for_known_type(
         self, obj: Any, annotations: tuple[Any, ...]
-    ) -> Iterable[Any] | None:
+    ) -> tuple[Any, list[Any]] | None:
         from . import _std_types_schema as std_types
 
         for gen in (
@@ -1082,27 +1073,16 @@ class GenerateSchema:
         `Annotated[source_type, *annotations]` -> `Annotated[new_source_type, *new_annotations]`
         """
 
-        def split_return(res: Iterable[Any]) -> tuple[Any, list[Any]]:
-            res = list(res)  # support generators
-            if not res:
-                raise PydanticSchemaGenerationError(
-                    f'The type {source_type} that implements `__prepare_pydantic_annotations__`'
-                    ' returned no annotations when called.'
-                    ' Custom types must return at least 1 item since the first item is the replacement source type.'
-                )
-            tp, *annotations = res
-            return tp, annotations
-
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
 
         annotations = tuple(annotations)  # make them immutable to avoid confusion over mutating them
 
         if prepare is not None:
-            source_type, annotations = split_return(prepare(source_type, tuple(annotations)))
+            source_type, annotations = prepare(source_type, tuple(annotations))
         else:
             res = self._get_prepare_pydantic_annotations_for_known_type(source_type, annotations)
             if res is not None:
-                source_type, annotations = split_return(res)
+                source_type, annotations = res
 
         return (source_type, list(annotations))
 
@@ -1121,6 +1101,14 @@ class GenerateSchema:
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
         idx = -1
+        prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
+        if prepare:
+            source_type, annotations = prepare(source_type, tuple(annotations))
+            annotations = list(annotations)
+        else:
+            res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
+            if res is not None:
+                source_type, annotations = res
         while True:
             idx += 1
             if idx == len(annotations):
@@ -1131,9 +1119,16 @@ class GenerateSchema:
             prepare = getattr(annotation, '__prepare_pydantic_annotations__', None)
             if prepare is not None:
                 previous = annotations[:idx]
-                remaining = annotations[idx:]
-                remaining = list(prepare(source_type, tuple(remaining)))
+                remaining = annotations[idx + 1 :]
+                new_source_type, remaining = prepare(source_type, tuple(remaining))
                 annotations = previous + remaining
+                if new_source_type is not source_type:
+                    return self._apply_annotations(
+                        get_inner_schema,
+                        new_source_type,
+                        annotations,
+                        check_prepare_on_source=check_prepare_on_source,
+                    )
             annotation = annotations[idx]
             get_inner_schema = self._get_wrapped_inner_schema(get_inner_schema, annotation, self.definitions)
 

@@ -1929,15 +1929,18 @@ def test_custom_generic_validators():
             def validate(v, _info):
                 if not args:
                     return v
-                # TODO: Ideally we would collect these errors rather than stopping early
                 try:
                     v.t1 = t1_f(v.t1)
                 except ValidationError as exc:
-                    raise ValidationError(exc.title, [convert_to_init_error(e, 't1') for e in exc.errors()]) from exc
+                    raise ValidationError.from_exception_data(
+                        exc.title, [convert_to_init_error(e, 't1') for e in exc.errors()]
+                    ) from exc
                 try:
                     v.t2 = t2_f(v.t2)
                 except ValidationError as exc:
-                    raise ValidationError(exc.title, [convert_to_init_error(e, 't2') for e in exc.errors()]) from exc
+                    raise ValidationError.from_exception_data(
+                        exc.title, [convert_to_init_error(e, 't2') for e in exc.errors()]
+                    ) from exc
                 return v
 
             return core_schema.general_after_validator_function(validate, schema)

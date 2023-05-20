@@ -196,7 +196,7 @@ def collect_dataclass_fields(
 
         if not dataclass_field.init:
             # TODO: We should probably do something with this so that validate_assignment behaves properly
-            #   See https://github.com/pydantic/pydantic/issues/5470
+            #   Issue: https://github.com/pydantic/pydantic/issues/5470
             continue
 
         if isinstance(dataclass_field.default, FieldInfo):
