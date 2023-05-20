@@ -14,7 +14,7 @@ from typing import Any, Callable, Generic, Mapping, Tuple, cast
 
 import pydantic_core
 import typing_extensions
-from typing_extensions import Unpack, deprecated
+from typing_extensions import Literal, Unpack, deprecated
 
 from ._internal import (
     _config,
@@ -55,7 +55,7 @@ if typing.TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
     IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
 
-__all__ = 'BaseModel', 'create_model'
+__all__ = 'BaseModel', 'RootModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
 
@@ -105,7 +105,7 @@ class ModelMetaclass(ABCMeta):
         # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
         # call we're in the middle of is for the `BaseModel` class.
         if bases:
-            base_field_names, class_vars, base_private_attributes = _collect_bases_data(bases)
+            base_field_names, class_vars, base_private_attributes = mcs._collect_bases_data(bases)
 
             config_wrapper = _config.ConfigWrapper.for_model(bases, namespace, kwargs)
             namespace['model_config'] = config_wrapper.config_dict
@@ -145,6 +145,9 @@ class ModelMetaclass(ABCMeta):
                 namespace['__hash__'] = hash_func
 
             cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
+
+            cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
+            cls.__pydantic_post_init__ = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
 
             cls.__pydantic_decorators__ = _decorators.DecoratorInfos.build(cls)
 
@@ -217,6 +220,19 @@ class ModelMetaclass(ABCMeta):
         """
         return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
 
+    @staticmethod
+    def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
+        field_names: set[str] = set()
+        class_vars: set[str] = set()
+        private_attributes: dict[str, ModelPrivateAttr] = {}
+        for base in bases:
+            if issubclass(base, BaseModel) and base is not BaseModel:
+                # model_fields might not be defined yet in the case of generics, so we use getattr here:
+                field_names.update(getattr(base, 'model_fields', {}).keys())
+                class_vars.update(base.__class_vars__)
+                private_attributes.update(base.__private_attributes__)
+        return field_names, class_vars, private_attributes
+
 
 class BaseModel(metaclass=ModelMetaclass):
     """
@@ -258,6 +274,8 @@ class BaseModel(metaclass=ModelMetaclass):
         __pydantic_extra__: dict[str, Any] | None = None
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
+        __pydantic_custom_init__: typing.ClassVar[bool]
+        __pydantic_post_init__: typing.ClassVar[None | Literal['model_post_init']]
     else:
         # `model_fields` and `__pydantic_decorators__` must be set for
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
@@ -271,6 +289,7 @@ class BaseModel(metaclass=ModelMetaclass):
     model_config = ConfigDict()
     __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
     __pydantic_complete__ = False
+    __pydantic_root_model__: typing.ClassVar[bool] = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
         """
@@ -283,6 +302,8 @@ class BaseModel(metaclass=ModelMetaclass):
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
         __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+
+    __init__.__pydantic_base_init__ = True  # type: ignore
 
     @classmethod
     def __get_pydantic_core_schema__(
@@ -638,7 +659,7 @@ class BaseModel(metaclass=ModelMetaclass):
             _fields_set = set(values.keys())
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         _object_setattr(m, '__pydantic_extra__', _extra)
-        if type(m).model_post_init is not BaseModel.model_post_init:
+        if cls.__pydantic_post_init__:
             m.model_post_init(None)
         return m
 
@@ -1229,6 +1250,25 @@ class BaseModel(metaclass=ModelMetaclass):
             'The private method `_calculate_keys` will be removed and should no longer be used.', DeprecationWarning
         )
         return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)  # type: ignore
+
+
+RootModelRootType = typing.TypeVar('RootModelRootType')
+
+
+class RootModel(BaseModel, typing.Generic[RootModelRootType]):
+    __pydantic_root_model__ = True
+    __pydantic_extra__ = None
+
+    root: RootModelRootType
+
+    def __init__(__pydantic_self__, root: RootModelRootType) -> None:  # type: ignore
+        __tracebackhide__ = True
+        __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
+
+    __init__.__pydantic_base_init__ = True  # type: ignore
+
+    def __repr_args__(self) -> _repr.ReprArgs:
+        yield 'root', self.root
 
 
 @typing.overload

@@ -48,8 +48,7 @@ def test_model_validate_wrong_model():
 
 def test_root_model_error():
     with pytest.raises(
-        TypeError,
-        match='__root__ models are no longer supported in v2',
+        TypeError, match="To define root models, use `pydantic.RootModel` rather than a field called '__root__'"
     ):
 
         class MyModel(BaseModel):

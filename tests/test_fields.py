@@ -4,7 +4,7 @@ from dataclasses import InitVar
 import pytest
 
 import pydantic.dataclasses
-from pydantic import fields
+from pydantic import RootModel, ValidationError, fields
 
 
 def test_field_info_annotation_keyword_argument():
@@ -29,3 +29,58 @@ def test_init_var_does_not_work():
             some_field: InitVar[str]
 
     assert e.value.args == ('InitVar is not supported in Python 3.7 as type information is lost',)
+
+
+def test_root_model_arbitrary_field_name_error():
+    with pytest.raises(
+        NameError, match="Unexpected field with name 'a_field'; only 'root' is allowed as a field of a `RootModel`"
+    ):
+
+        class Model(RootModel[int]):
+            a_field: str
+
+
+def test_root_model_arbitrary_private_field_works():
+    class Model(RootModel[int]):
+        _a_field: str = 'value 1'
+
+    m = Model(1)
+    assert m._a_field == 'value 1'
+
+    m._a_field = 'value 2'
+    assert m._a_field == 'value 2'
+
+
+def test_root_model_field_override():
+    # Weird as this is, I think it's probably best to allow it to ensure it is possible to override
+    # the annotation in subclasses of RootModel subclasses. Basically, I think retaining the flexibility
+    # is worth the increased potential for weird/confusing "accidental" overrides.
+
+    # I'm mostly including this test now to document the behavior
+    class Model(RootModel[int]):
+        root: str
+
+    assert Model.model_validate('abc').root == 'abc'
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate(1)
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 1, 'loc': (), 'msg': 'Input should be a valid string', 'type': 'string_type'}
+    ]
+
+    class SubModel(Model):
+        root: float
+
+    with pytest.raises(ValidationError) as exc_info:
+        SubModel.model_validate('abc')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'abc',
+            'loc': (),
+            'msg': 'Input should be a valid number, unable to parse string as an number',
+            'type': 'float_parsing',
+        }
+    ]
+
+    validated = SubModel.model_validate_json('1').root
+    assert validated == 1.0
+    assert isinstance(validated, float)
