@@ -6,9 +6,8 @@ from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
 from pydantic_core import core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field, field_serializer, validate_call
+from pydantic import BaseModel, Field
 from pydantic.annotated import GetCoreSchemaHandler
-from pydantic.annotated_arguments import SkipValidation
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import Undefined
 
@@ -283,29 +282,3 @@ def test_get_pydantic_core_schema_source_type() -> None:
 
     assert types == {GenericModel[int]}
     types.clear()
-
-
-def test_skip_validation():
-    @validate_call
-    def my_function(x: int, y: Annotated[int, SkipValidation]):
-        return repr(x), repr(y)
-
-    assert my_function('1', '2') == ('1', "'2'")
-
-
-def test_skip_validation_schema():
-    class A(BaseModel):
-        x: SkipValidation[int]
-
-        @field_serializer('x')
-        def double_x(self, v):
-            return v * 2
-
-    assert A(x=1).model_dump() == {'x': 2}
-    assert A(x='abc').model_dump() == {'x': 'abcabc'}  # no validation :)
-    assert A.model_json_schema() == {
-        'properties': {'x': {'title': 'X', 'type': 'integer'}},
-        'required': ['x'],
-        'title': 'A',
-        'type': 'object',
-    }

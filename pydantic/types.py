@@ -86,6 +86,7 @@ __all__ = [
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
+    'SkipValidation',
 ]
 
 from ._internal._schema_generation_shared import GetJsonSchemaHandler
@@ -1043,10 +1044,7 @@ else:
             return Annotated[item, SkipValidation()]
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, _source: Any, _handler: Callable[[Any], core_schema.CoreSchema]
-        ) -> core_schema.CoreSchema:
-            original_schema = _handler(_source)
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            original_schema = handler.generate_schema(source)
             metadata = build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
-            # TODO: Need to copy the pattern used by `computed_field` to allow serialization to come from a full schema
-            return core_schema.any_schema(metadata=metadata, serialization=original_schema.get('serialization'))
+            return core_schema.any_schema(metadata=metadata, serialization=original_schema)

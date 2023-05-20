@@ -742,7 +742,7 @@ class GenerateSchema:
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-        source_type, annotations = annotation, field.metadata
+        source_type, annotations = field.annotation, field.metadata
         source_type, annotations = self._prepare_annotations(source_type, annotations)
         schema = self._apply_annotations(
             CallbackGetCoreSchemaHandler(self.generate_schema, self.generate_schema), source_type, annotations

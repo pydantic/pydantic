@@ -92,12 +92,14 @@ from pydantic import (
     conlist,
     conset,
     constr,
+    field_serializer,
     field_validator,
+    validate_call,
 )
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, SecretField, Strict
+from pydantic.types import AllowInfNan, ImportString, SecretField, SkipValidation, Strict
 
 try:
     import email_validator
@@ -5038,3 +5040,36 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'greater_than', 'loc': ('x',), 'msg': 'Input should be greater than 0', 'input': -1, 'ctx': {'gt': 0}}
     ]
+
+
+def test_skip_validation():
+    @validate_call
+    def my_function(y: Annotated[int, SkipValidation]):
+        return repr(y)
+
+    assert my_function('2') == "'2'"
+
+
+def test_skip_validation_serialization():
+    class A(BaseModel):
+        x: SkipValidation[int]
+
+        @field_serializer('x')
+        def double_x(self, v):
+            return v * 2
+
+    assert A(x=1).model_dump() == {'x': 2}
+    assert A(x='abc').model_dump() == {'x': 'abcabc'}  # no validation
+    assert A(x='abc').model_dump_json() == '{"x":"abcabc"}'
+
+
+def test_skip_validation_json_schema():
+    class A(BaseModel):
+        x: SkipValidation[int]
+
+    assert A.model_json_schema() == {
+        'properties': {'x': {'title': 'X', 'type': 'integer'}},
+        'required': ['x'],
+        'title': 'A',
+        'type': 'object',
+    }
