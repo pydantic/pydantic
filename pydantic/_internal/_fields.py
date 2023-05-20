@@ -112,7 +112,9 @@ def collect_model_fields(  # noqa: C901
         if ann_name.startswith('_'):
             continue
         if cls.__pydantic_root_model__ and ann_name != 'root':
-            raise NameError(f'Extra field with name {ann_name!r} cannot be used in a `RootModel`.')
+            raise NameError(
+                f"Unexpected field with name {ann_name!r}; only 'root' is allowed as a field of a `RootModel`"
+            )
 
         # when building a generic model with `MyModel[int]`, the generic_origin check makes sure we don't get
         # "... shadows an attribute" errors
