@@ -141,11 +141,6 @@ except ValidationError as e:
   raised on model declaration (default: `False`). See an example in
   [Field Types](types/types.md#arbitrary-types-allowed).
 
-**`undefined_types_warning`**
-: whether to raise a warning if a type is undefined when a model is declared. This occurs when a type is defined in another model declared elsewhere in code which has not yet executed.
-  If `True`, `UserWarning` will be raised on model declaration (default: `True`).
-  See an example in [Field Types](types/types.md#undefined_types_warning).
-
 **`from_attributes`**
 : whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
 
@@ -165,6 +160,10 @@ and has a type that is not in this tuple (or otherwise recognized by pydantic), 
 : whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields, defaults to `True`,
   set to `False` for compatibility with `JSON`,
   see [#3994](https://github.com/pydantic/pydantic/pull/3994) for more details, added in **V1.10**
+
+**`protected_namespaces`**
+: a `tuple` of strings that prevent model to have field which conflict with them (default: `('model_', )`).
+see [the dedicated section](#protected-namespaces)
 
 ## Change behaviour globally
 
@@ -350,4 +349,43 @@ print(Model(x=[1, '2']))
 # Unexpected coercion
 print(Model(x=[1, 2]))
 #> x=[1, 2]
+```
+
+
+## Protected Namespaces
+
+_Pydantic_ prevents collisions between model attributes and `BaseModel`'s own methods by
+namespacing them with the prefix `model_`.
+This is customizable using the `protected_namespaces` option in the model's config so that
+you can allow overriding `model_` or add your own protected namespaces.
+
+```py
+from pydantic import BaseModel
+
+try:
+
+    class Model(BaseModel):
+        model_prefixed_field: str
+
+except NameError as e:
+    print(e)
+    #> Field "model_prefixed_field" has conflict with protected namespace "model_"
+```
+
+You can change it or define multiple value for it:
+
+```py
+from pydantic import BaseModel, ConfigDict
+
+try:
+
+    class Model(BaseModel):
+        model_prefixed_field: str
+        also_protect_field: str
+
+        model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+
+except NameError as e:
+    print(e)
+    #> Field "also_protect_field" has conflict with protected namespace "also_protect_"
 ```

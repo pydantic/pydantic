@@ -41,8 +41,7 @@ def model_with_strict_config():
         c: Annotated[int, Field(strict=None)]
         d: Annotated[int, Field()]
 
-        class Config:
-            strict = True
+        model_config = ConfigDict(strict=True)
 
     return ModelWithStrictConfig
 
@@ -66,8 +65,8 @@ def test_config_dict_missing_keys():
         ConfigDict()['missing_property']
 
 
-@pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
 class TestsBaseConfig:
+    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
     def test_base_config_equality_defaults_of_config_dict_class(self):
         for key, value in config_defaults.items():
             assert getattr(BaseConfig, key) == value
@@ -81,6 +80,7 @@ class TestsBaseConfig:
                 class Config:
                     title = 'MyTitleConfig'
 
+    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
     def test_base_config_properly_converted_to_dict(self):
         class MyConfig(BaseConfig):
             title = 'MyTitle'
@@ -103,8 +103,7 @@ class TestsBaseConfig:
             name: str = 'John Doe'
             f__: str = Field(..., alias='foo')
 
-            class Config:
-                extra = 'allow'
+            model_config = ConfigDict(extra='allow')
 
             def __init__(self, id: int = 1, bar=2, *, baz: Any, **data):
                 super().__init__(id=id, **data)
@@ -127,8 +126,7 @@ class TestsBaseConfig:
             def __init__(self, a: float, b: int):
                 super().__init__(a=a, b=b, c=1)
 
-            class Config:
-                extra = 'allow'
+            model_config = ConfigDict(extra='allow')
 
         assert _equals(str(signature(Model)), '(a: float, b: int) -> None')
 
@@ -136,8 +134,7 @@ class TestsBaseConfig:
         class Foo(BaseModel):
             foo: str = Field(..., alias='this is invalid')
 
-            class Config:
-                populate_by_name = True
+            model_config = ConfigDict(populate_by_name=True)
 
         assert _equals(str(signature(Foo)), '(*, foo: str) -> None')
 
@@ -145,8 +142,7 @@ class TestsBaseConfig:
         class Foo(BaseModel):
             from_: str = Field(..., alias='from')
 
-            class Config:
-                populate_by_name = True
+            model_config = ConfigDict(populate_by_name=True)
 
         assert _equals(str(signature(Foo)), '(*, from_: str) -> None')
 
@@ -154,8 +150,7 @@ class TestsBaseConfig:
         class Model(BaseModel):
             spam: str
 
-            class Config:
-                extra = 'allow'
+            model_config = ConfigDict(extra='allow')
 
         assert _equals(str(signature(Model)), '(*, spam: str, **extra_data: Any) -> None')
 
@@ -164,8 +159,7 @@ class TestsBaseConfig:
             extra_data: str
             extra_data_: str
 
-            class Config:
-                extra = 'allow'
+            model_config = ConfigDict(extra='allow')
 
         assert _equals(str(signature(Model)), '(*, extra_data: str, extra_data_: str, **extra_data__: Any) -> None')
 
@@ -176,8 +170,7 @@ class TestsBaseConfig:
             def __init__(self, extra_data: int = 1, **foobar: Any):
                 super().__init__(extra_data=extra_data, **foobar)
 
-            class Config:
-                extra = 'allow'
+            model_config = ConfigDict(extra='allow')
 
         assert _equals(str(signature(Model)), '(extra_data: int = 1, **foobar: Any) -> None')
 
@@ -185,8 +178,7 @@ class TestsBaseConfig:
         class Model(BaseModel):
             _foo = PrivateAttr('private_attribute')
 
-            class Config:
-                extra = 'allow'
+            model_config = ConfigDict(extra='allow')
 
         assert Model.__slots__ == {'_foo'}
         m = Model(_foo='field')
@@ -204,8 +196,7 @@ class TestsBaseConfig:
         self, BaseConfigModelWithStrictConfig: Type[BaseModel]
     ) -> None:
         class Model(BaseConfigModelWithStrictConfig):
-            class Config:
-                strict = False
+            model_config = ConfigDict(strict=False)
 
         values = [
             Model(a='1', b=2, c=3, d=4),
@@ -220,8 +211,7 @@ class TestsBaseConfig:
         class Model(BaseModel):
             a: float
 
-            class Config:
-                allow_inf_nan = False
+            model_config = ConfigDict(allow_inf_nan=False)
 
         assert Model(a=42).a == 42
         with pytest.raises(ValidationError) as exc_info:
@@ -248,8 +238,7 @@ class TestsBaseConfig:
         class Model(BaseModel):
             str_check: str
 
-            class Config:
-                str_strip_whitespace = enabled
+            model_config = ConfigDict(str_strip_whitespace=enabled)
 
         m = Model(str_check=str_check)
         assert m.str_check == result_str_check
@@ -262,8 +251,7 @@ class TestsBaseConfig:
         class Model(BaseModel):
             str_check: str
 
-            class Config:
-                str_to_upper = enabled
+            model_config = ConfigDict(str_to_upper=enabled)
 
         m = Model(str_check=str_check)
 
@@ -277,8 +265,7 @@ class TestsBaseConfig:
         class Model(BaseModel):
             str_check: str
 
-            class Config:
-                str_to_lower = enabled
+            model_config = ConfigDict(str_to_lower=enabled)
 
         m = Model(str_check=str_check)
 
@@ -294,8 +281,7 @@ class TestsBaseConfig:
         class Model(BaseModel):
             x: Tup
 
-            class Config:
-                arbitrary_types_allowed = True
+            model_config = ConfigDict(arbitrary_types_allowed=True)
 
         data = {'x': Tup(c=CustomClass())}
         model = Model.model_validate(data)
@@ -330,8 +316,7 @@ class TestsBaseConfig:
         class Foo(BaseModel):
             bar_: int = Field(..., alias='bar')
 
-            class Config(BaseConfig):
-                populate_by_name = populate_by_name_config
+            model_config = dict(populate_by_name=populate_by_name_config)
 
         with expectation:
             if use_construct:
@@ -345,8 +330,7 @@ class TestsBaseConfig:
             a: int
             b: int
 
-            class Config:
-                frozen = True
+            model_config = ConfigDict(frozen=True)
 
         m = Model(a=40, b=10)
         assert m == m.model_copy()
@@ -372,8 +356,13 @@ class TestsBaseConfig:
         ):
             assert BaseConfig().validate_assignment is False
 
-        class Config(BaseConfig):
-            pass
+        with pytest.warns(
+            DeprecationWarning,
+            match='Support for class-based `config` is deprecated, use ConfigDict instead.',
+        ):
+
+            class Config(BaseConfig):
+                pass
 
         with pytest.warns(
             DeprecationWarning,
@@ -387,6 +376,7 @@ class TestsBaseConfig:
         ):
             assert Config().validate_assignment is False
 
+    @pytest.mark.filterwarnings('ignore:.* is deprecated.*:DeprecationWarning')
     def test_config_class_missing_attributes(self):
         with pytest.raises(AttributeError, match="type object 'BaseConfig' has no attribute 'missing_attribute'"):
             BaseConfig.missing_attribute
@@ -541,3 +531,23 @@ def test_config_defaults_match():
     config_defaults_keys = list(config_defaults.keys())
 
     assert config_dict_keys == config_defaults_keys, 'ConfigDict and config_defaults must have the same keys'
+
+
+def test_config_is_not_inherited_in_model_fields():
+    from typing import List
+
+    from pydantic import BaseModel, ConfigDict
+
+    class Inner(BaseModel):
+        a: str
+
+    class Outer(BaseModel):
+        # this cause the inner model incorrectly dumpped:
+        model_config = ConfigDict(str_to_lower=True)
+
+        x: List[str]  # should be converted to lower
+        inner: Inner  # should not have fields converted to lower
+
+    m = Outer.model_validate(dict(x=['Abc'], inner=dict(a='Def')))
+
+    assert m.model_dump() == {'x': ['abc'], 'inner': {'a': 'Def'}}

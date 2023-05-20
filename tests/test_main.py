@@ -2,15 +2,12 @@ import json
 import platform
 import re
 import sys
-from collections import defaultdict
 from copy import deepcopy
 from enum import Enum
 from typing import (
     Any,
     Callable,
     ClassVar,
-    Counter,
-    DefaultDict,
     Dict,
     Generic,
     List,
@@ -37,8 +34,8 @@ from pydantic import (
     ValidationError,
     ValidationInfo,
     constr,
+    field_validator,
 )
-from pydantic.decorators import field_validator
 
 
 def test_success():
@@ -350,6 +347,31 @@ def test_field_order_is_preserved_with_extra():
     assert str(model.model_dump_json()) == '{"a":1,"b":"2","c":3.0,"d":4}'
 
 
+def test_extra_broken_via_pydantic_extra_interference():
+    """
+    At the time of writing this test there is `_model_construction.model_extra_getattr` being assigned to model's
+    `__getattr__`. The method then expects `BaseModel.__pydantic_extra__` isn't `None`. Both this actions happen when
+    `model_config.extra` is set to `True`. However, this behavior could be accidentally broken in a subclass of
+    `BaseModel`. In that case `AttributeError` should be thrown when `__getattr__` is being accessed essentially
+    disabling the `extra` functionality.
+    """
+
+    class BrokenExtraBaseModel(BaseModel):
+        def model_post_init(self, __context: Any) -> None:
+            super().model_post_init(__context)
+            self.__pydantic_extra__ = None
+
+    class Model(BrokenExtraBaseModel):
+        model_config = ConfigDict(extra='allow')
+
+    m = Model(extra_field='some extra value')
+
+    with pytest.raises(AttributeError) as e:
+        m.extra_field
+
+    assert e.value.args == ("'Model' object has no attribute 'extra_field'",)
+
+
 def test_set_attr(UltraSimpleModel):
     m = UltraSimpleModel(a=10.2)
     assert m.model_dump() == {'a': 10.2, 'b': 10}
@@ -443,9 +465,11 @@ def test_frozen_model():
     m = FrozenModel()
 
     assert m.a == 10
-    with pytest.raises(TypeError) as exc_info:
+    with pytest.raises(ValidationError) as exc_info:
         m.a = 11
-    assert '"FrozenModel" is frozen and does not support item assignment' in exc_info.value.args[0]
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'frozen_instance', 'loc': ('a',), 'msg': 'Instance is frozen', 'input': 11}
+    ]
 
 
 def test_not_frozen_are_not_hashable():
@@ -1379,8 +1403,6 @@ def test_recursive_cycle_with_repeated_field():
     class A(BaseModel):
         b: 'B'
 
-        model_config = {'undefined_types_warning': False}
-
     class B(BaseModel):
         a1: Optional[A] = None
         a2: Optional[A] = None
@@ -1587,39 +1609,9 @@ def test_inherited_model_field_copy():
     assert id(image_2) in {id(image) for image in item.images}
 
 
-def test_mapping_retains_type_subclass():
+def test_mapping_subclass_as_input():
     class CustomMap(dict):
         pass
-
-    class Model(BaseModel):
-        x: Mapping[str, Mapping[str, int]]
-
-    m = Model(x=CustomMap(outer=CustomMap(inner=42)))
-    assert isinstance(m.x, CustomMap)
-    assert isinstance(m.x['outer'], CustomMap)
-    assert m.x['outer']['inner'] == 42
-
-
-def test_mapping_retains_type_defaultdict():
-    class Model(BaseModel):
-        x: Mapping[str, int]
-
-    d = defaultdict(int)
-    d['foo'] = '2'
-    d['bar']
-
-    m = Model(x=d)
-    assert isinstance(m.x, defaultdict)
-    assert m.x['foo'] == 2
-    assert m.x['bar'] == 0
-
-
-def test_mapping_retains_type_fallback_error():
-    class CustomMap(dict):
-        def __init__(self, *args, **kwargs):
-            if args or kwargs:
-                raise TypeError('test')
-            super().__init__(*args, **kwargs)
 
     class Model(BaseModel):
         x: Mapping[str, int]
@@ -1628,8 +1620,14 @@ def test_mapping_retains_type_fallback_error():
     d['one'] = 1
     d['two'] = 2
 
-    with pytest.raises(TypeError, match='test'):
-        Model(x=d)
+    v = Model(x=d).x
+    # we don't promise that this will or will not be a CustomMap
+    # all we promise is that it _will_ be a mapping
+    assert isinstance(v, Mapping)
+    # but the current behavior is that it will be a dict, not a CustomMap
+    # so document that here
+    assert not isinstance(v, CustomMap)
+    assert v == {'one': 1, 'two': 2}
 
 
 def test_typing_coercion_dict():
@@ -1647,59 +1645,6 @@ VT = TypeVar('VT')
 class MyDict(Dict[KT, VT]):
     def __repr__(self):
         return f'MyDict({super().__repr__()})'
-
-
-def test_dict_subclasses_bare():
-    class Model(BaseModel):
-        a: MyDict
-
-    assert repr(Model(a=MyDict({'a': 1})).a) == "MyDict({'a': 1})"
-    assert repr(Model(a=MyDict({b'x': (1, 2)})).a) == "MyDict({b'x': (1, 2)})"
-
-
-def test_dict_subclasses_typed():
-    class Model(BaseModel):
-        a: MyDict[str, int]
-
-    assert repr(Model(a=MyDict({'a': 1})).a) == "MyDict({'a': 1})"
-
-
-def test_typing_coercion_defaultdict():
-    class Model(BaseModel):
-        x: DefaultDict[int, str]
-
-    d = defaultdict(str)
-    d['1']
-    m = Model(x=d)
-    assert isinstance(m.x, defaultdict)
-    assert repr(m.x) == "defaultdict(<class 'str'>, {1: ''})"
-
-
-def test_typing_coercion_counter():
-    class Model(BaseModel):
-        x: Counter[str]
-
-    m = Model(x={'a': 10})
-    assert isinstance(m.x, Counter)
-    assert repr(m.x) == "Counter({'a': 10})"
-
-
-def test_typing_counter_value_validation():
-    class Model(BaseModel):
-        x: Counter[str]
-
-    with pytest.raises(ValidationError) as exc_info:
-        Model(x={'a': 'a'})
-
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'int_parsing',
-            'loc': ('x', 'a'),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'a',
-        }
-    ]
 
 
 def test_class_kwargs_config():
@@ -1916,13 +1861,13 @@ def test_post_init_not_called_without_override():
 
 
 def test_deeper_recursive_model():
-    class A(BaseModel, undefined_types_warning=False):
+    class A(BaseModel):
         b: 'B'
 
-    class B(BaseModel, undefined_types_warning=False):
+    class B(BaseModel):
         c: 'C'
 
-    class C(BaseModel, undefined_types_warning=False):
+    class C(BaseModel):
         a: Optional['A']
 
     A.model_rebuild()
@@ -1934,10 +1879,10 @@ def test_deeper_recursive_model():
 
 
 def test_model_rebuild_localns():
-    class A(BaseModel, undefined_types_warning=False):
+    class A(BaseModel):
         x: int
 
-    class B(BaseModel, undefined_types_warning=False):
+    class B(BaseModel):
         a: 'Model'  # noqa F821
 
     B.model_rebuild(_types_namespace={'Model': A})
@@ -1946,7 +1891,7 @@ def test_model_rebuild_localns():
     assert m.model_dump() == {'a': {'x': 1}}
     assert isinstance(m.a, A)
 
-    class C(BaseModel, undefined_types_warning=False):
+    class C(BaseModel):
         a: 'Model'  # noqa F821
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Model' is not defined"):
@@ -2229,3 +2174,47 @@ def test_equality_delegation():
         foo: str
 
     assert MyModel(foo='bar') == ANY
+
+
+def test_recursion_loop_error():
+    class Model(BaseModel):
+        x: List['Model']
+
+    data = {'x': []}
+    data['x'].append(data)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(**data)
+    assert repr(exc_info.value.errors(include_url=False)[0]) == (
+        "{'type': 'recursion_loop', 'loc': ('x', 0, 'x', 0), 'msg': "
+        "'Recursion error - cyclic reference detected', 'input': {'x': [{...}]}}"
+    )
+
+
+def test_protected_namespace_default():
+    with pytest.raises(NameError, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
+
+        class Model(BaseModel):
+            model_prefixed_field: str
+
+
+def test_custom_protected_namespace():
+    with pytest.raises(NameError, match='Field "test_field" has conflict with protected namespace "test_"'):
+
+        class Model(BaseModel):
+            # this field won't raise error because we changed the default value for the
+            # `protected_namespaces` config.
+            model_prefixed_field: str
+            test_field: str
+
+            model_config = ConfigDict(protected_namespaces=('test_',))
+
+
+def test_multiple_protected_namespace():
+    with pytest.raises(
+        NameError, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+    ):
+
+        class Model(BaseModel):
+            also_protect_field: str
+
+            model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))

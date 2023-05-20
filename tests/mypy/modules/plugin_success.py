@@ -25,7 +25,7 @@ SelfReferencingModel.model_rebuild()
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
 model.x = 2
-model.model_validate(model.__dict__)  # TODO: Change this to .model_validate(model) when possible
+model.model_validate(model)
 
 self_referencing_model = SelfReferencingModel(submodel=SelfReferencingModel(submodel=None))
 
@@ -49,8 +49,6 @@ InheritingModel.model_validate(model.__dict__)
 
 
 class ForwardReferencingModel(Model):
-    model_config = dict(undefined_types_warning=False)
-
     future: 'FutureModel'
 
 

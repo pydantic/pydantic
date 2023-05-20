@@ -5,23 +5,33 @@ Import of this module is deferred since it contains imports of many standard lib
 """
 from __future__ import annotations as _annotations
 
+import collections
+import collections.abc
+import decimal
 import inspect
+import os
 import typing
-from collections import OrderedDict, deque
-from datetime import date, datetime, time, timedelta
-from decimal import Decimal, DecimalException
 from enum import Enum
+from functools import partial
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
-from os import PathLike
-from pathlib import PurePath
-from typing import Any, Callable, Iterable
-from uuid import UUID
+from typing import Any, Callable, Iterable, TypeVar
 
-from pydantic_core import CoreSchema, MultiHostUrl, PydanticCustomError, PydanticKnownError, Url, core_schema
-from typing_extensions import get_args
+from pydantic_core import (
+    CoreSchema,
+    MultiHostUrl,
+    PydanticCustomError,
+    PydanticKnownError,
+    PydanticOmit,
+    Url,
+    core_schema,
+)
+from typing_extensions import get_args, get_origin
+
+from pydantic.errors import PydanticSchemaGenerationError
+from pydantic.fields import FieldInfo
 
 from ..json_schema import JsonSchemaValue, update_json_schema
-from . import _known_annotated_metadata, _serializers, _validators
+from . import _known_annotated_metadata, _typing_extra, _validators
 from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
@@ -44,26 +54,6 @@ def schema_function(type: type[Any]) -> Callable[[StdSchemaFunction], StdSchemaF
     return wrapper
 
 
-@schema_function(date)
-def date_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.DateSchema:
-    return core_schema.DateSchema(type='date')
-
-
-@schema_function(datetime)
-def datetime_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.DatetimeSchema:
-    return core_schema.DatetimeSchema(type='datetime')
-
-
-@schema_function(time)
-def time_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.TimeSchema:
-    return core_schema.TimeSchema(type='time')
-
-
-@schema_function(timedelta)
-def timedelta_schema(_schema_generator: GenerateSchema, _t: type[Any]) -> core_schema.TimedeltaSchema:
-    return core_schema.TimedeltaSchema(type='timedelta')
-
-
 @schema_function(Enum)
 def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> core_schema.CoreSchema:
     cases = list(enum_type.__members__.values())
@@ -81,7 +71,7 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     else:
         expected = ','.join([repr(case.value) for case in cases[:-1]]) + f' or {cases[-1].value!r}'
 
-    def to_enum(__input_value: Any, info: core_schema.ValidationInfo | None = None) -> Enum:
+    def to_enum(__input_value: Any) -> Enum:
         try:
             return enum_type(__input_value)
         except ValueError:
@@ -103,28 +93,36 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
 
     metadata = build_metadata_dict(js_functions=[update_schema])
 
-    to_enum_validator = core_schema.general_plain_validator_function(to_enum)
+    to_enum_validator = core_schema.no_info_plain_validator_function(to_enum)
     if issubclass(enum_type, int):
         # this handles `IntEnum`, and also `Foobar(int, Enum)`
         updates['type'] = 'integer'
         lax = core_schema.chain_schema([core_schema.int_schema(), to_enum_validator])
-        # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
         # Disallow float from JSON due to strict mode
-        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str'}, json_function=to_enum)
+        strict = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.int_schema()),
+            python_schema=core_schema.is_instance_schema(enum_type),
+        )
     elif issubclass(enum_type, str):
         # this handles `StrEnum` (3.11 only), and also `Foobar(str, Enum)`
         updates['type'] = 'string'
         lax = core_schema.chain_schema([core_schema.str_schema(), to_enum_validator])
-        # Allow all types from JSON to get better error messages (numeric types will still fail validation in to_enum)
-        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str', 'float'}, json_function=to_enum)
+        strict = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.str_schema()),
+            python_schema=core_schema.is_instance_schema(enum_type),
+        )
     elif issubclass(enum_type, float):
         updates['type'] = 'numeric'
         lax = core_schema.chain_schema([core_schema.float_schema(), to_enum_validator])
-        # Allow str from JSON to get better error messages (str will still fail validation in to_enum)
-        strict = core_schema.is_instance_schema(enum_type, json_types={'int', 'str', 'float'}, json_function=to_enum)
+        strict = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(to_enum, core_schema.float_schema()),
+            python_schema=core_schema.is_instance_schema(enum_type),
+        )
     else:
         lax = to_enum_validator
-        strict = core_schema.is_instance_schema(enum_type, json_types={'float', 'int', 'str'}, json_function=to_enum)
+        strict = core_schema.json_or_python_schema(
+            json_schema=to_enum_validator, python_schema=core_schema.is_instance_schema(enum_type)
+        )
     return core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=strict,
@@ -147,13 +145,13 @@ class MetadataApplier:
 
 @slots_dataclass
 class DecimalValidator:
-    gt: int | Decimal | None = None
-    ge: int | Decimal | None = None
-    lt: int | Decimal | None = None
-    le: int | Decimal | None = None
+    gt: int | decimal.Decimal | None = None
+    ge: int | decimal.Decimal | None = None
+    lt: int | decimal.Decimal | None = None
+    le: int | decimal.Decimal | None = None
     max_digits: int | None = None
     decimal_places: int | None = None
-    multiple_of: int | Decimal | None = None
+    multiple_of: int | decimal.Decimal | None = None
     allow_inf_nan: bool = False
     check_digits: bool = False
     strict: bool = False
@@ -164,46 +162,61 @@ class DecimalValidator:
             raise ValueError('allow_inf_nan=True cannot be used with max_digits or decimal_places')
 
     def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = core_schema.float_schema(
-            allow_inf_nan=self.allow_inf_nan,
-            multiple_of=None if self.multiple_of is None else float(self.multiple_of),
-            le=None if self.le is None else float(self.le),
-            ge=None if self.ge is None else float(self.ge),
-            lt=None if self.lt is None else float(self.lt),
-            gt=None if self.gt is None else float(self.gt),
-        )
-        return handler(json_schema)
+        string_schema = handler(core_schema.str_schema())
+
+        if handler.mode == 'validation':
+            float_schema = handler(
+                core_schema.float_schema(
+                    allow_inf_nan=self.allow_inf_nan,
+                    multiple_of=None if self.multiple_of is None else float(self.multiple_of),
+                    le=None if self.le is None else float(self.le),
+                    ge=None if self.ge is None else float(self.ge),
+                    lt=None if self.lt is None else float(self.lt),
+                    gt=None if self.gt is None else float(self.gt),
+                )
+            )
+            return {'anyOf': [float_schema, string_schema]}
+        else:
+            return string_schema
 
     def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
+        primitive_type_union = [
+            core_schema.int_schema(),
+            core_schema.float_schema(),
+            core_schema.str_schema(strip_whitespace=True),
+        ]
+        is_instance_schema = core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(
+                decimal.Decimal, core_schema.union_schema(primitive_type_union)
+            ),
+            python_schema=core_schema.is_instance_schema(decimal.Decimal),
+        )
         lax = core_schema.no_info_after_validator_function(
             self.validate,
             core_schema.union_schema(
-                [
-                    core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
-                    core_schema.int_schema(),
-                    core_schema.float_schema(),
-                    core_schema.str_schema(strip_whitespace=True),
-                ],
+                [is_instance_schema, *primitive_type_union],
                 strict=True,
             ),
         )
         strict = core_schema.custom_error_schema(
             core_schema.no_info_after_validator_function(
                 self.validate,
-                core_schema.is_instance_schema(Decimal, json_types={'int', 'float'}),
+                is_instance_schema,
             ),
             custom_error_type='decimal_type',
             custom_error_message='Input should be a valid Decimal instance or decimal string in JSON',
         )
-        return core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
+        return core_schema.lax_or_strict_schema(
+            lax_schema=lax, strict_schema=strict, serialization=core_schema.to_string_ser_schema()
+        )
 
-    def validate(self, __input_value: int | float | str) -> Decimal:  # noqa: C901 (ignore complexity)
-        if isinstance(__input_value, Decimal):
+    def validate(self, __input_value: int | float | str) -> decimal.Decimal:  # noqa: C901 (ignore complexity)
+        if isinstance(__input_value, decimal.Decimal):
             value = __input_value
         else:
             try:
-                value = Decimal(str(__input_value))
-            except DecimalException:
+                value = decimal.Decimal(str(__input_value))
+            except decimal.DecimalException:
                 raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
 
         if not self.allow_inf_nan or self.check_digits:
@@ -284,200 +297,509 @@ class DecimalValidator:
         return value
 
 
-def decimal_prepare_pydantic_annotations(_source: Any, annotations: Iterable[Any]) -> Iterable[Any]:
+def decimal_prepare_pydantic_annotations(source: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+    if source is not decimal.Decimal:
+        return None
+
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
     _known_annotated_metadata.check_metadata(
-        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, Decimal
+        metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
     )
-    yield Decimal
-    yield DecimalValidator(**metadata)
-    yield from remaining_annotations
+    return (source, [DecimalValidator(**metadata), *remaining_annotations])
 
 
-@schema_function(UUID)
-def uuid_schema(_schema_generator: GenerateSchema, uuid_type: type[UUID]) -> core_schema.LaxOrStrictSchema:
-    metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'uuid'}])
-    # TODO, is this actually faster than `function_after(union(is_instance, is_str, is_bytes))`?
-    lax = core_schema.union_schema(
-        [
-            core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-            core_schema.no_info_after_validator_function(
-                _validators.uuid_validator,
-                core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()]),
-            ),
-        ],
-        custom_error_type='uuid_type',
-        custom_error_message='Input should be a valid UUID, string, or bytes',
-        strict=True,
-        metadata=metadata,
+@slots_dataclass
+class InnerSchemaValidator:
+    """Use a fixed CoreSchema, avoiding interference from outward annotations"""
+
+    core_schema: CoreSchema
+    js_schema: JsonSchemaValue | None = None
+    js_core_schema: CoreSchema | None = None
+    js_schema_update: JsonSchemaValue | None = None
+
+    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        if self.js_schema is not None:
+            return self.js_schema
+        js_schema = handler(self.js_core_schema or self.core_schema)
+        if self.js_schema_update is not None:
+            js_schema.update(self.js_schema_update)
+        return js_schema
+
+    def __get_pydantic_core_schema__(self, source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
+        return self.core_schema
+
+
+def datetime_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+    import datetime
+
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+    if source_type is datetime.date:
+        sv = InnerSchemaValidator(core_schema.date_schema(**metadata))
+    elif source_type is datetime.datetime:
+        sv = InnerSchemaValidator(core_schema.datetime_schema(**metadata))
+    elif source_type is datetime.time:
+        sv = InnerSchemaValidator(core_schema.time_schema(**metadata))
+    elif source_type is datetime.timedelta:
+        sv = InnerSchemaValidator(core_schema.timedelta_schema(**metadata))
+    else:
+        return None
+    # check now that we know the source type is correct
+    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.DATE_TIME_CONSTRAINTS, source_type)
+    return (source_type, [sv, *remaining_annotations])
+
+
+def uuid_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+    # UUIDs have no constraints - they are fixed length, constructing a UUID instance checks the length
+
+    from uuid import UUID
+
+    if source_type is not UUID:
+        return None
+
+    def uuid_validator(input_value: str | bytes | UUID) -> UUID:
+        if isinstance(input_value, UUID):
+            return input_value
+        try:
+            if isinstance(input_value, str):
+                return UUID(input_value)
+            else:
+                try:
+                    return UUID(input_value.decode())
+                except ValueError:
+                    # 16 bytes in big-endian order as the bytes argument fail
+                    # the above check
+                    return UUID(bytes=input_value)
+        except ValueError:
+            raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
+
+    from_primitive_type_schema = core_schema.no_info_after_validator_function(
+        uuid_validator, core_schema.union_schema([core_schema.str_schema(), core_schema.bytes_schema()])
     )
-
-    return core_schema.lax_or_strict_schema(
-        lax_schema=lax,
-        strict_schema=core_schema.chain_schema(
-            [
-                core_schema.is_instance_schema(uuid_type, json_types={'str'}),
-                core_schema.union_schema(
-                    [
-                        core_schema.is_instance_schema(UUID),
-                        core_schema.chain_schema(
-                            [
-                                core_schema.str_schema(),
-                                core_schema.no_info_plain_validator_function(_validators.uuid_validator),
-                            ]
-                        ),
-                    ]
-                ),
-            ],
-            metadata=metadata,
+    lax = core_schema.json_or_python_schema(
+        json_schema=from_primitive_type_schema,
+        python_schema=core_schema.union_schema(
+            [core_schema.is_instance_schema(UUID), from_primitive_type_schema],
         ),
+    )
+
+    strict = core_schema.json_or_python_schema(
+        json_schema=from_primitive_type_schema,
+        python_schema=core_schema.is_instance_schema(UUID),
+    )
+
+    schema = core_schema.lax_or_strict_schema(
+        lax_schema=lax,
+        strict_schema=strict,
         serialization=core_schema.to_string_ser_schema(),
     )
 
+    return (
+        source_type,
+        [
+            InnerSchemaValidator(schema, js_core_schema=core_schema.str_schema(), js_schema_update={'format': 'uuid'}),
+            *annotations,
+        ],
+    )
 
-@schema_function(PurePath)
-@schema_function(PathLike)
-def path_schema(_schema_generator: GenerateSchema, path_type: type[PathLike]) -> core_schema.LaxOrStrictSchema:
-    construct_path = PurePath if path_type is PathLike else path_type
-    metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'path'}])
 
-    def path_validator(__input_value: str) -> PathLike:
+def path_schema_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any]
+) -> tuple[Any, list[Any]] | None:
+    import pathlib
+
+    if source_type not in {
+        os.PathLike,
+        pathlib.Path,
+        pathlib.PurePath,
+        pathlib.PosixPath,
+        pathlib.PurePosixPath,
+        pathlib.PureWindowsPath,
+    }:
+        return None
+
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.STR_CONSTRAINTS, source_type)
+
+    construct_path = pathlib.PurePath if source_type is os.PathLike else source_type
+
+    def path_validator(input_value: str) -> os.PathLike[Any]:
         try:
-            return construct_path(__input_value)  # type: ignore
+            return construct_path(input_value)  # type: ignore
         except TypeError as e:
             raise PydanticCustomError('path_type', 'Input is not a valid path') from e
 
-    instance_schema = core_schema.is_instance_schema(path_type, json_types={'str'}, json_function=path_validator)
+    constrained_str_schema = core_schema.str_schema(**metadata)
 
-    return core_schema.lax_or_strict_schema(
+    instance_schema = core_schema.json_or_python_schema(
+        json_schema=core_schema.no_info_after_validator_function(path_validator, constrained_str_schema),
+        python_schema=core_schema.is_instance_schema(source_type),
+    )
+
+    schema = core_schema.lax_or_strict_schema(
         lax_schema=core_schema.union_schema(
             [
                 instance_schema,
-                core_schema.no_info_after_validator_function(path_validator, core_schema.str_schema()),
+                core_schema.no_info_after_validator_function(path_validator, constrained_str_schema),
             ],
-            custom_error_type='path_type',
-            custom_error_message='Input is not a valid path',
-            strict=True,
+            # custom_error_type='path_type',
+            # custom_error_message='Input is not a valid path',
+            # strict=True,
         ),
         strict_schema=instance_schema,
         serialization=core_schema.to_string_ser_schema(),
-        metadata=metadata,
+    )
+
+    return (
+        source_type,
+        [
+            InnerSchemaValidator(schema, js_core_schema=constrained_str_schema, js_schema_update={'format': 'path'}),
+            *remaining_annotations,
+        ],
     )
 
 
-def _deque_ser_schema(
-    inner_schema: core_schema.CoreSchema | None = None,
-) -> core_schema.WrapSerializerFunctionSerSchema:
-    return core_schema.wrap_serializer_function_ser_schema(
-        _serializers.serialize_deque, info_arg=True, schema=inner_schema or core_schema.any_schema()
-    )
-
-
-def _deque_any_schema() -> core_schema.LaxOrStrictSchema:
-    metadata = build_metadata_dict(js_functions=[lambda _c, h: h(core_schema.list_schema(core_schema.any_schema()))])
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_wrap_validator_function(
-            _validators.deque_any_validator,
-            core_schema.list_schema(),
-        ),
-        strict_schema=core_schema.general_after_validator_function(
-            lambda x, _: x if isinstance(x, deque) else deque(x),
-            core_schema.is_instance_schema(deque, json_types={'list'}),
-        ),
-        serialization=_deque_ser_schema(),
-        metadata=metadata,
-    )
-
-
-@schema_function(deque)
-def deque_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.CoreSchema:
-    if obj == deque:
-        # bare `deque` type used as annotation
-        return _deque_any_schema()
-
-    try:
-        arg = get_args(obj)[0]
-    except IndexError:
-        # not argument bare `Deque` is equivalent to `Deque[Any]`
-        return _deque_any_schema()
-
-    if arg == typing.Any:
-        # `Deque[Any]`
-        return _deque_any_schema()
+def dequeue_validator(
+    input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, maxlen: None | int
+) -> collections.deque[Any]:
+    if isinstance(input_value, collections.deque):
+        maxlens = [v for v in (input_value.maxlen, maxlen) if v is not None]
+        if maxlens:
+            maxlen = min(maxlens)
+        return collections.deque(handler(input_value), maxlen=maxlen)
     else:
-        # `Deque[Something]`
-        inner_schema = schema_generator.generate_schema(arg)
-        # Use a lambda here so `apply_metadata` is called on the decimal_validator before the override is generated
-        metadata = build_metadata_dict(js_functions=[lambda _c, h: h(core_schema.list_schema(inner_schema))])
-        lax_schema = core_schema.no_info_wrap_validator_function(
-            _validators.deque_typed_validator,
-            core_schema.list_schema(inner_schema, strict=False),
-        )
-
-        return core_schema.lax_or_strict_schema(
-            lax_schema=lax_schema,
-            strict_schema=core_schema.chain_schema(
-                [core_schema.is_instance_schema(deque, json_types={'list'}), lax_schema],
-            ),
-            serialization=_deque_ser_schema(inner_schema),
-            metadata=metadata,
-        )
+        return collections.deque(handler(input_value), maxlen=maxlen)
 
 
-def _ordered_dict_any_schema() -> core_schema.LaxOrStrictSchema:
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_wrap_validator_function(
-            _validators.ordered_dict_any_validator, core_schema.dict_schema()
-        ),
-        strict_schema=core_schema.general_after_validator_function(
-            lambda x, _: OrderedDict(x),
-            core_schema.is_instance_schema(OrderedDict, json_types={'dict'}),
-        ),
-    )
+@slots_dataclass
+class SequenceValidator:
+    mapped_origin: type[Any]
+    item_source_type: type[Any]
+    min_length: int | None = None
+    max_length: int | None = None
+    strict: bool = False
+    js_core_schema: CoreSchema | None = None
+
+    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        assert self.js_core_schema is not None
+        return handler(self.js_core_schema)
+
+    def serialize_sequence_via_list(
+        self, v: Any, handler: core_schema.SerializerFunctionWrapHandler, info: core_schema.SerializationInfo
+    ) -> Any:
+        items: list[Any] = []
+        for index, item in enumerate(v):
+            try:
+                v = handler(item, index)
+            except PydanticOmit:
+                pass
+            else:
+                items.append(v)
+
+        if info.mode_is_json():
+            return items
+        else:
+            return self.mapped_origin(items)
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        if self.item_source_type is Any:
+            items_schema = None
+        else:
+            items_schema = handler.generate_schema(self.item_source_type)
+
+        metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
+
+        if self.mapped_origin in (list, set, frozenset):
+            if self.mapped_origin is list:
+                constrained_schema = core_schema.list_schema(items_schema, **metadata)
+            elif self.mapped_origin is set:
+                constrained_schema = core_schema.set_schema(items_schema, **metadata)
+            else:
+                assert self.mapped_origin is frozenset  # safety check in case we forget to add a case
+                constrained_schema = core_schema.frozenset_schema(items_schema, **metadata)
+
+            js_core_schema = constrained_schema
+
+            schema = constrained_schema
+        else:
+            # safety check in case we forget to add a case
+            assert self.mapped_origin in (collections.deque, collections.Counter)
+
+            if self.mapped_origin is collections.deque:
+                # if we have a MaxLen annotation might as well set that as the default maxlen on the deque
+                # this lets us re-use existing metadata annotations to let users set the maxlen on a dequeue
+                # that e.g. comes from JSON
+                coerce_instance_wrap = partial(
+                    core_schema.no_info_wrap_validator_function,
+                    partial(dequeue_validator, maxlen=metadata.get('max_length', None)),
+                )
+            else:
+                coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
+
+            constrained_schema = js_core_schema = core_schema.list_schema(items_schema, **metadata)
+
+            check_instance = core_schema.json_or_python_schema(
+                json_schema=core_schema.list_schema(),
+                python_schema=core_schema.is_instance_schema(self.mapped_origin),
+            )
+
+            serialization = core_schema.wrap_serializer_function_ser_schema(
+                self.serialize_sequence_via_list, schema=items_schema or core_schema.any_schema(), info_arg=True
+            )
+
+            strict = core_schema.chain_schema([check_instance, coerce_instance_wrap(constrained_schema)])
+
+            if metadata.get('strict', False):
+                schema = strict
+            else:
+                lax = coerce_instance_wrap(constrained_schema)
+                schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
+            schema['serialization'] = serialization
+
+        self.js_core_schema = js_core_schema
+
+        return schema
 
 
-@schema_function(OrderedDict)
-def ordered_dict_schema(schema_generator: GenerateSchema, obj: Any) -> core_schema.CoreSchema:
-    if obj == OrderedDict:
-        # bare `ordered_dict` type used as annotation
-        return _ordered_dict_any_schema()
+SEQUENCE_ORIGIN_MAP: dict[Any, Any] = {
+    typing.Deque: collections.deque,
+    collections.deque: collections.deque,
+    list: list,
+    typing.List: list,
+    set: set,
+    typing.AbstractSet: set,
+    typing.Set: set,
+    frozenset: frozenset,
+    typing.FrozenSet: frozenset,
+    typing.Sequence: list,
+    typing.MutableSequence: list,
+    typing.MutableSet: set,
+    # this doesn't handle subclasses of these
+    # parametrized typing.Set creates one of these
+    collections.abc.MutableSet: set,
+    collections.abc.Set: frozenset,
+}
 
-    try:
-        keys_arg, values_arg = get_args(obj)
-    except ValueError:
-        # not argument bare `OrderedDict` is equivalent to `OrderedDict[Any, Any]`
-        return _ordered_dict_any_schema()
 
-    if keys_arg == typing.Any and values_arg == typing.Any:
-        # `OrderedDict[Any, Any]`
-        return _ordered_dict_any_schema()
+def identity(s: CoreSchema) -> CoreSchema:
+    return s
+
+
+def sequence_like_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any]
+) -> tuple[Any, list[Any]] | None:
+    origin: Any = get_origin(source_type)
+
+    mapped_origin = SEQUENCE_ORIGIN_MAP.get(origin, None) if origin else SEQUENCE_ORIGIN_MAP.get(source_type, None)
+    if mapped_origin is None:
+        return None
+
+    args = get_args(source_type)
+
+    if not args:
+        args = (Any,)
+    elif len(args) != 1:
+        raise ValueError('Expected sequence to have exactly 1 generic parameter')
+
+    item_source_type = args[0]
+
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
+
+    return (source_type, [SequenceValidator(mapped_origin, item_source_type, **metadata), *remaining_annotations])
+
+
+MAPPING_ORIGIN_MAP: dict[Any, Any] = {
+    typing.DefaultDict: collections.defaultdict,
+    collections.defaultdict: collections.defaultdict,
+    collections.OrderedDict: collections.OrderedDict,
+    typing.OrderedDict: collections.OrderedDict,
+    dict: dict,
+    typing.Dict: dict,
+    collections.Counter: collections.Counter,
+    typing.Counter: collections.Counter,
+    # this doesn't handle subclasses of these
+    typing.Mapping: dict,
+    typing.MutableMapping: dict,
+    # parametrized typing.{Mutable}Mapping creates one of these
+    collections.abc.MutableMapping: dict,
+    collections.abc.Mapping: dict,
+}
+
+
+def defaultdict_validator(
+    input_value: Any, handler: core_schema.ValidatorFunctionWrapHandler, default_default_factory: Callable[[], Any]
+) -> collections.defaultdict[Any, Any]:
+    if isinstance(input_value, collections.defaultdict):
+        default_factory = input_value.default_factory
+        return collections.defaultdict(default_factory, handler(input_value))
     else:
-        inner_schema = core_schema.dict_schema(
-            schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
-        )
-        return core_schema.lax_or_strict_schema(
-            lax_schema=core_schema.no_info_after_validator_function(
-                _validators.ordered_dict_typed_validator,
-                core_schema.dict_schema(
-                    schema_generator.generate_schema(keys_arg), schema_generator.generate_schema(values_arg)
+        return collections.defaultdict(default_default_factory, handler(input_value))
+
+
+def get_defaultdict_default_default_factory(values_source_type: Any) -> Callable[[], Any]:
+    def infer_default() -> Callable[[], Any]:
+        allowed_default_types: dict[Any, Any] = {
+            typing.Tuple: tuple,
+            tuple: tuple,
+            collections.abc.Sequence: tuple,
+            collections.abc.MutableSequence: list,
+            typing.List: list,
+            list: list,
+            typing.Sequence: list,
+            typing.Set: set,
+            typing.MutableSet: set,
+            collections.abc.MutableSet: set,
+            collections.abc.Set: frozenset,
+            typing.MutableMapping: dict,
+            typing.Mapping: dict,
+            collections.abc.Mapping: dict,
+            collections.abc.MutableMapping: dict,
+            float: float,
+            int: int,
+            str: str,
+            bool: bool,
+        }
+        values_type_origin = get_origin(values_source_type) or values_source_type
+        instructions = 'set using `DefaultDict[..., Annotated[..., Field(default_factory=...)]]'
+        if isinstance(values_type_origin, TypeVar):
+
+            def type_var_default_factory() -> None:
+                raise RuntimeError(
+                    'Generic defaultdict cannot be used without a concrete value type or an'
+                    ' explicit default factory, ' + instructions
+                )
+
+            return type_var_default_factory
+        elif values_type_origin not in allowed_default_types:
+            # a somewhat subjective set of types that have reasonable default values
+            allowed_msg = ', '.join([t.__name__ for t in set(allowed_default_types.values())])
+            raise PydanticSchemaGenerationError(
+                f'Unable to infer a default factory for with keys of type {values_source_type}.'
+                f' Only {allowed_msg} are supported, other types require an explicit default factory'
+                ' ' + instructions
+            )
+        return allowed_default_types[values_type_origin]
+
+    # Assume Annotated[..., Field(...)]
+    if _typing_extra.is_annotated(values_source_type):
+        field_info = next((v for v in get_args(values_source_type) if isinstance(v, FieldInfo)), None)
+    else:
+        field_info = None
+    if field_info and field_info.default_factory:
+        default_default_factory = field_info.default_factory
+    else:
+        default_default_factory = infer_default()
+    return default_default_factory
+
+
+@slots_dataclass
+class MappingValidator:
+    mapped_origin: type[Any]
+    keys_source_type: type[Any]
+    values_source_type: type[Any]
+    min_length: int | None = None
+    max_length: int | None = None
+    strict: bool = False
+    js_core_schema: CoreSchema | None = None
+
+    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        assert self.js_core_schema is not None
+        return handler(self.js_core_schema)
+
+    def serialize_mapping_via_dict(self, v: Any, handler: core_schema.SerializerFunctionWrapHandler) -> Any:
+        return handler(v)
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        if self.keys_source_type is Any:
+            keys_schema = None
+        else:
+            keys_schema = handler.generate_schema(self.keys_source_type)
+        if self.values_source_type is Any:
+            values_schema = None
+        else:
+            values_schema = handler.generate_schema(self.values_source_type)
+
+        metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
+
+        if self.mapped_origin is dict:
+            schema = js_core_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
+        else:
+            constrained_schema = js_core_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
+            check_instance = core_schema.json_or_python_schema(
+                json_schema=core_schema.dict_schema(),
+                python_schema=core_schema.is_instance_schema(self.mapped_origin),
+            )
+
+            if self.mapped_origin is collections.defaultdict:
+                default_default_factory = get_defaultdict_default_default_factory(self.values_source_type)
+                coerce_instance_wrap = partial(
+                    core_schema.no_info_wrap_validator_function,
+                    partial(defaultdict_validator, default_default_factory=default_default_factory),
+                )
+            else:
+                coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
+
+            serialization = core_schema.wrap_serializer_function_ser_schema(
+                self.serialize_mapping_via_dict,
+                schema=core_schema.dict_schema(
+                    keys_schema or core_schema.any_schema(), values_schema or core_schema.any_schema()
                 ),
-            ),
-            strict_schema=core_schema.general_after_validator_function(
-                lambda x, _: OrderedDict(x),
-                core_schema.chain_schema(
-                    [
-                        core_schema.is_instance_schema(OrderedDict, json_types={'dict'}),
-                        core_schema.dict_schema(inner_schema),
-                    ],
-                ),
-            ),
-        )
+                info_arg=False,
+            )
+
+            strict = core_schema.chain_schema([check_instance, coerce_instance_wrap(constrained_schema)])
+
+            if metadata.get('strict', False):
+                schema = strict
+            else:
+                lax = coerce_instance_wrap(constrained_schema)
+                schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
+                schema['serialization'] = serialization
+
+        self.js_core_schema = js_core_schema
+
+        return schema
+
+
+def mapping_like_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any]
+) -> tuple[Any, list[Any]] | None:
+    origin: Any = get_origin(source_type)
+
+    mapped_origin = MAPPING_ORIGIN_MAP.get(origin, None) if origin else MAPPING_ORIGIN_MAP.get(source_type, None)
+    if mapped_origin is None:
+        return None
+
+    args = get_args(source_type)
+
+    if not args:
+        args = (Any, Any)
+    elif mapped_origin is collections.Counter:
+        # a single generic
+        if len(args) != 1:
+            raise ValueError('Expected Counter to have exactly 1 generic parameter')
+        args = (args[0], int)  # keys are always an int
+    elif len(args) != 2:
+        raise ValueError('Expected mapping to have exactly 2 generic parameters')
+
+    keys_source_type, values_source_type = args
+
+    metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+    _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
+
+    return (
+        source_type,
+        [
+            MappingValidator(mapped_origin, keys_source_type, values_source_type, **metadata),
+            *remaining_annotations,
+        ],
+    )
 
 
 def make_strict_ip_schema(tp: type[Any], metadata: Any) -> CoreSchema:
-    return core_schema.general_after_validator_function(
-        lambda x, _: tp(x),
-        core_schema.is_instance_schema(tp, json_types={'str'}),
+    return core_schema.json_or_python_schema(
+        json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
+        python_schema=core_schema.is_instance_schema(tp),
         metadata=metadata,
     )
 

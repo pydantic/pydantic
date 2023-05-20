@@ -22,8 +22,6 @@ from ._internal._generics import replace_types
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
-    from pydantic_core import core_schema as _core_schema
-
     from ._internal._repr import ReprArgs
 
 
@@ -136,7 +134,7 @@ class FieldInfo(_repr.Representation):
         self.kw_only = kwargs.get('kw_only', None)
 
     @classmethod
-    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> FieldInfo:
+    def from_field(cls, default: Any = Undefined, **kwargs: Any) -> typing_extensions.Self:
         """
         Create a new `FieldInfo` object with the `Field` function.
 
@@ -166,7 +164,7 @@ class FieldInfo(_repr.Representation):
         return cls(default=default, **kwargs)
 
     @classmethod
-    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> FieldInfo:
+    def from_annotation(cls, annotation: type[Any] | _forward_ref.PydanticForwardRef) -> typing_extensions.Self:
         """
         Creates a `FieldInfo` instance from a bare annotation.
 
@@ -218,7 +216,7 @@ class FieldInfo(_repr.Representation):
         return cls(annotation=annotation, final=final)
 
     @classmethod
-    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> FieldInfo:
+    def from_annotated_attribute(cls, annotation: type[Any], default: Any) -> typing_extensions.Self:
         """
         Create `FieldInfo` from an annotation with a default value.
 
@@ -284,7 +282,7 @@ class FieldInfo(_repr.Representation):
             return cls(annotation=annotation, default=default, final=final)
 
     @classmethod
-    def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> FieldInfo:
+    def _from_dataclass_field(cls, dc_field: DataclassField[Any]) -> typing_extensions.Self:
         """
         Return a new `FieldInfo` instance from a `dataclasses.Field` instance.
 
@@ -413,7 +411,13 @@ class FieldInfo(_repr.Representation):
 
     def rebuild_annotation(self) -> Any:
         """
-        Rebuild the original annotation for use in signatures.
+        Rebuilds the original annotation for use in function signatures.
+
+        If metadata is present, it adds it to the original annotation using an
+        `AnnotatedAlias`. Otherwise, it returns the original annotation as is.
+
+        Returns:
+            Any: The rebuilt annotation.
         """
         if not self.metadata:
             return self.annotation
@@ -422,11 +426,20 @@ class FieldInfo(_repr.Representation):
 
     def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
         """
-        Apply a typevars_map to the annotation.
+        Apply a `typevars_map` to the annotation.
 
-        This is used when analyzing parametrized generic types to replace typevars with their concrete types.
+        This method is used when analyzing parametrized generic types to replace typevars with their concrete types.
 
-        See pydantic._internal._generics.replace_types for more details.
+        Args:
+            typevars_map (dict | None): A dictionary mapping type variables to their concrete types.
+            types_namespace (dict | None): A dictionary containing related types to the annotated type.
+
+        Returns:
+            None. This method applies the `typevars_map` to the annotation in place.
+
+        See Also:
+            pydantic._internal._generics.replace_types: This function is used for replacing the typevars with
+                their concrete types.
         """
         annotation = _typing_extra.eval_type_lenient(self.annotation, types_namespace, None)
         self.annotation = replace_types(annotation, typevars_map)
@@ -460,23 +473,56 @@ class FieldInfo(_repr.Representation):
 
 @_internal_dataclass.slots_dataclass
 class AliasPath:
+    """
+    A data class used by `validation_alias` as a convenience to create aliases.
+
+    Attributes:
+        path (list[int | str]): A list of string or integer aliases.
+
+    Methods:
+        convert_to_aliases(self) -> list[str | int]: Converts arguments to a list of string or integer aliases.
+    """
+
     path: list[int | str]
 
     def __init__(self, first_arg: str, *args: str | int) -> None:
         self.path = [first_arg] + list(args)
 
     def convert_to_aliases(self) -> list[str | int]:
+        """
+        Converts arguments to a list of string or integer aliases.
+
+        Returns:
+            list[str | int]: The list of aliases.
+        """
         return self.path
 
 
 @_internal_dataclass.slots_dataclass
 class AliasChoices:
+    """
+    A data class used by `validation_alias` as a convenience to create aliases.
+
+    Attributes:
+        path (list[str | AliasPatch]): A list containing string or AliasPath.
+
+    Methods:
+        convert_to_aliases(self) -> list[str | int]: Converts arguments to a list of lists containing string or
+            integer aliases.
+    """
+
     choices: list[str | AliasPath]
 
     def __init__(self, *args: str | AliasPath) -> None:
         self.choices = list(args)
 
     def convert_to_aliases(self) -> list[list[str | int]]:
+        """
+        Converts arguments to a list of lists containing string or integer aliases.
+
+        Returns:
+            list[list[str | int]]: The list of aliases.
+        """
         aliases: list[list[str | int]] = []
         for c in self.choices:
             if isinstance(c, AliasPath):
@@ -584,7 +630,7 @@ def Field(  # noqa C901
     # Check deprecated & removed params of V1.
     # This has to be removed deprecation period over.
     if const:
-        raise PydanticUserError('`const` is removed. use `Literal` instead', code='deprecated_kwargs')
+        raise PydanticUserError('`const` is removed. use `Literal` instead', code='deprecated-kwargs')
     if min_items:
         warn('`min_items` is deprecated and will be removed. use `min_length` instead', DeprecationWarning)
         if min_length is None:
@@ -599,13 +645,13 @@ def Field(  # noqa C901
                 '`unique_items` is removed, use `Set` instead'
                 '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
             ),
-            code='deprecated_kwargs',
+            code='deprecated-kwargs',
         )
     if allow_mutation is False:
         warn('`allow_mutation` is deprecated and will be removed. use `frozen` instead', DeprecationWarning)
         frozen = True
     if regex:
-        raise PydanticUserError('`regex` is removed. use `Pattern` instead', code='deprecated_kwargs')
+        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='deprecated-kwargs')
     if extra:
         warn(
             'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead',
@@ -680,14 +726,13 @@ class ModelPrivateAttr(_repr.Representation):
         """
         preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
         """
-        if self.default is not Undefined:
-            try:
-                set_name = getattr(self.default, '__set_name__')
-            except AttributeError:
-                pass
-            else:
-                if callable(set_name):
-                    set_name(cls, name)
+        if self.default is Undefined:
+            return
+        if not hasattr(self.default, '__set_name__'):
+            return
+        set_name = self.default.__set_name__
+        if callable(set_name):
+            set_name(cls, name)
 
     def get_default(self) -> Any:
         """Returns the default value for the object.
@@ -743,13 +788,21 @@ def PrivateAttr(
 @_internal_dataclass.slots_dataclass
 class ComputedFieldInfo:
     """
-    A container for data from `@computed_field` so that we can access it
-    while building the pydantic-core schema.
+    A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr (typing.ClassVar[str]): A class variable representing the decorator string, '@computed_field'.
+        wrapped_property (property): The wrapped computed field property.
+        return_type (type[Any]): The type of the computed field property's return value.
+        alias (str|None): The alias of the property to be used during encoding and decoding.
+        title (str|None): Title of the computed field as in OpenAPI document, should be a short summary.
+        description (str|None): Description of the computed field as in OpenAPI document.
+        repr (bool): A boolean indicating whether or not to include the field in the __repr__ output.
     """
 
     decorator_repr: typing.ClassVar[str] = '@computed_field'
     wrapped_property: property
-    json_return_type: _core_schema.JsonReturnTypes | None
+    return_type: type[Any]
     alias: str | None
     title: str | None
     description: str | None
@@ -759,12 +812,30 @@ class ComputedFieldInfo:
 # this should really be `property[T], cached_proprety[T]` but property is not generic unlike cached_property
 # See https://github.com/python/typing/issues/985 and linked issues
 PropertyT = typing.TypeVar('PropertyT')
+"""
+`TypeVar` that can be used to specify the type of a property.
+
+This can be used in combination with the `@property` decorator to specify the type
+of the property.
+
+Example:
+    ```py
+    class MyClass:
+        @property
+        def my_property(self) -> PropertyT:
+            return self._my_property
+
+        @my_property.setter
+        def my_property(self, value: PropertyT) -> None:
+            self._my_property = value
+    ```
+"""
 
 
 @typing.overload
 def computed_field(
     *,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    return_type: Any = Any,
     alias: str | None = None,
     title: str | None = None,
     description: str | None = None,
@@ -778,6 +849,9 @@ def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
+_UNSET: Any = object()
+
+
 def computed_field(
     __f: PropertyT | None = None,
     *,
@@ -785,7 +859,7 @@ def computed_field(
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    return_type: Any = _UNSET,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """
     Decorate to include `property` and `cached_property` when serialising models.
@@ -800,21 +874,34 @@ def computed_field(
         description: Description to used when including this computed field in JSON Schema, defaults to the functions
             docstring, currently unused waiting for #4697
         repr: whether to include this computed field in model repr
-        json_return_type: optional return for serialization logic to expect when serialising to JSON, if included
-            this must be correct, otherwise a `TypeError` is raised
+        return_type: optional return for serialization logic to expect when serialising to JSON, if included
+            this must be correct, otherwise a `TypeError` is raised.
+            If you don't include a return type Any is used, which does runtime introspection to handle arbitrary
+            objects.
 
     Returns:
         A proxy wrapper for the property.
     """
 
     def dec(f: Any) -> Any:
-        nonlocal description
+        nonlocal description, return_type
         if description is None and f.__doc__:
             description = inspect.cleandoc(f.__doc__)
 
+        if return_type is _UNSET:
+            # try to get it from the type annotation
+            res = _typing_extra.get_type_hints(_decorators.unwrap_wrapped_function(f), include_extras=True)
+            return_type = res.get('return', _UNSET)
+            if return_type is _UNSET:
+                raise PydanticUserError(
+                    'Computed field is missing return type annotation or specifying `return_type`'
+                    ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)',
+                    code='model-field-missing-annotation',
+                )
+
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
-        dec_info = ComputedFieldInfo(f, json_return_type, alias, title, description, repr)
+        dec_info = ComputedFieldInfo(f, return_type, alias, title, description, repr)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:

@@ -1,11 +1,13 @@
+import collections
 import itertools
 import json
 import math
 import os
 import re
 import sys
+import typing
 import uuid
-from collections import OrderedDict, deque
+from collections import OrderedDict, defaultdict, deque
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -13,12 +15,13 @@ from pathlib import Path
 from typing import (
     Any,
     Callable,
+    Counter,
+    DefaultDict,
     Deque,
     Dict,
     FrozenSet,
     Iterable,
     List,
-    MutableSet,
     NewType,
     Optional,
     Pattern,
@@ -31,11 +34,12 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
+import dirty_equals
 import pytest
-from dirty_equals import HasRepr, IsStr
-from pydantic_core import PydanticCustomError, SchemaError, core_schema
+from dirty_equals import HasRepr, IsOneOf, IsStr
+from pydantic_core import CoreSchema, PydanticCustomError, SchemaError, core_schema
 from pydantic_core.core_schema import ValidationInfo
-from typing_extensions import Annotated, Literal, TypedDict
+from typing_extensions import Annotated, Literal, TypedDict, get_args
 
 from pydantic import (
     UUID1,
@@ -54,6 +58,7 @@ from pydantic import (
     FilePath,
     FiniteFloat,
     FutureDate,
+    FutureDatetime,
     Json,
     NaiveDatetime,
     NameEmail,
@@ -65,6 +70,7 @@ from pydantic import (
     NonPositiveFloat,
     NonPositiveInt,
     PastDate,
+    PastDatetime,
     PositiveFloat,
     PositiveInt,
     PydanticInvalidForJsonSchema,
@@ -86,8 +92,10 @@ from pydantic import (
     conlist,
     conset,
     constr,
+    field_validator,
 )
-from pydantic.decorators import field_validator
+from pydantic.annotated import GetCoreSchemaHandler
+from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 from pydantic.types import AllowInfNan, ImportString, SecretField, Strict
 
@@ -799,9 +807,9 @@ def test_string_import_callable(annotation):
         {
             'type': 'import_error',
             'loc': ('callable',),
-            'msg': 'Invalid python path: "foobar" doesn\'t look like a module path',
+            'msg': "Invalid python path: No module named 'foobar'",
             'input': 'foobar',
-            'ctx': {'error': '"foobar" doesn\'t look like a module path'},
+            'ctx': {'error': "No module named 'foobar'"},
         }
     ]
 
@@ -812,9 +820,9 @@ def test_string_import_callable(annotation):
         {
             'type': 'import_error',
             'loc': ('callable',),
-            'msg': 'Invalid python path: Module "os" does not define a "missing" attribute',
+            'msg': "Invalid python path: No module named 'os.missing'",
             'input': 'os.missing',
-            'ctx': {'error': 'Module "os" does not define a "missing" attribute'},
+            'ctx': {'error': "No module named 'os.missing'"},
         }
     ]
 
@@ -837,7 +845,7 @@ def test_string_import_any():
     class PyObjectModel(BaseModel):
         thing: ImportString
 
-    assert PyObjectModel(thing='math.cos').model_dump() == {'thing': math.cos}
+    assert PyObjectModel(thing='math:cos').model_dump() == {'thing': math.cos}
     assert PyObjectModel(thing='os.path').model_dump() == {'thing': os.path}
     assert PyObjectModel(thing=[1, 2, 3]).model_dump() == {'thing': [1, 2, 3]}
 
@@ -853,9 +861,92 @@ def test_string_import_constraints(annotation):
     class PyObjectModel(BaseModel):
         thing: annotation
 
-    assert PyObjectModel(thing='math.pi').model_dump() == {'thing': pytest.approx(3.141592654)}
+    assert PyObjectModel(thing='math:pi').model_dump() == {'thing': pytest.approx(3.141592654)}
     with pytest.raises(ValidationError, match='type=greater_than_equal'):
-        PyObjectModel(thing='math.e')
+        PyObjectModel(thing='math:e')
+
+
+def test_string_import_examples():
+    import collections
+
+    adapter = TypeAdapter(ImportString)
+    assert adapter.validate_python('collections') is collections
+    assert adapter.validate_python('collections.abc') is collections.abc
+    assert adapter.validate_python('collections.abc.Mapping') is collections.abc.Mapping
+    assert adapter.validate_python('collections.abc:Mapping') is collections.abc.Mapping
+
+
+@pytest.mark.parametrize(
+    'import_string,errors',
+    [
+        (
+            'collections.abc.def',
+            [
+                {
+                    'ctx': {'error': "No module named 'collections.abc.def'"},
+                    'input': 'collections.abc.def',
+                    'loc': (),
+                    'msg': "Invalid python path: No module named 'collections.abc.def'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+        (
+            'collections.abc:def',
+            [
+                {
+                    'ctx': {'error': "cannot import name 'def' from 'collections.abc'"},
+                    'input': 'collections.abc:def',
+                    'loc': (),
+                    'msg': "Invalid python path: cannot import name 'def' from 'collections.abc'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+        (
+            'collections:abc:Mapping',
+            [
+                {
+                    'ctx': {'error': "Import strings should have at most one ':'; received 'collections:abc:Mapping'"},
+                    'input': 'collections:abc:Mapping',
+                    'loc': (),
+                    'msg': "Invalid python path: Import strings should have at most one ':';"
+                    " received 'collections:abc:Mapping'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+        (
+            '123_collections:Mapping',
+            [
+                {
+                    'ctx': {'error': "No module named '123_collections'"},
+                    'input': '123_collections:Mapping',
+                    'loc': (),
+                    'msg': "Invalid python path: No module named '123_collections'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+        (
+            ':Mapping',
+            [
+                {
+                    'ctx': {'error': "Import strings should have a nonempty module name; received ':Mapping'"},
+                    'input': ':Mapping',
+                    'loc': (),
+                    'msg': 'Invalid python path: Import strings should have a nonempty module '
+                    "name; received ':Mapping'",
+                    'type': 'import_error',
+                }
+            ],
+        ),
+    ],
+)
+def test_string_import_errors(import_string, errors):
+    with pytest.raises(ValidationError) as exc_info:
+        TypeAdapter(ImportString).validate_python(import_string)
+    assert exc_info.value.errors() == errors
 
 
 def test_decimal():
@@ -1193,15 +1284,15 @@ class BoolCastable:
         ('list_check', ('1', '2'), ['1', '2']),
         ('list_check', {'1': 1, '2': 2}.keys(), ['1', '2']),
         ('list_check', {'1': '1', '2': '2'}.values(), ['1', '2']),
-        ('list_check', {'1', '2'}, ValidationError),
-        ('list_check', frozenset(['1', '2']), ValidationError),
+        ('list_check', {'1', '2'}, dirty_equals.IsOneOf(['1', '2'], ['2', '1'])),
+        ('list_check', frozenset(['1', '2']), dirty_equals.IsOneOf(['1', '2'], ['2', '1'])),
         ('list_check', {'1': 1, '2': 2}, ValidationError),
         ('tuple_check', ('1', '2'), ('1', '2')),
         ('tuple_check', ['1', '2'], ('1', '2')),
         ('tuple_check', {'1': 1, '2': 2}.keys(), ('1', '2')),
         ('tuple_check', {'1': '1', '2': '2'}.values(), ('1', '2')),
-        ('tuple_check', {'1', '2'}, ValidationError),
-        ('tuple_check', frozenset(['1', '2']), ValidationError),
+        ('tuple_check', {'1', '2'}, dirty_equals.IsOneOf(('1', '2'), ('2', '1'))),
+        ('tuple_check', frozenset(['1', '2']), dirty_equals.IsOneOf(('1', '2'), ('2', '1'))),
         ('tuple_check', {'1': 1, '2': 2}, ValidationError),
         ('set_check', {'1', '2'}, {'1', '2'}),
         ('set_check', ['1', '2', '1', '2'], {'1', '2'}),
@@ -1534,7 +1625,10 @@ def test_enum_from_json(enum_base, strict):
     ],
 )
 def test_invalid_schema_constraints(kwargs, type_):
-    with pytest.raises(SchemaError, match='Invalid Schema:\n.*\n  Extra inputs are not permitted'):
+    match = (
+        r'(:?Invalid Schema:\n.*\n  Extra inputs are not permitted)|(:?The following constraints cannot be applied to)'
+    )
+    with pytest.raises((SchemaError, TypeError), match=match):
 
         class Foo(BaseModel):
             a: type_ = Field('foo', title='A title', description='A description', **kwargs)
@@ -1679,6 +1773,7 @@ def test_dict():
         ((1, 2, '3'), [1, 2, '3']),
         ((i**2 for i in range(5)), [0, 1, 4, 9, 16]),
         (deque([1, 2, 3]), [1, 2, 3]),
+        ({1, '2'}, IsOneOf([1, '2'], ['2', 1])),
     ),
 )
 def test_list_success(value, result):
@@ -1688,7 +1783,7 @@ def test_list_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}))
+@pytest.mark.parametrize('value', (123, '123'))
 def test_list_fails(value):
     class Model(BaseModel):
         v: list
@@ -1728,6 +1823,7 @@ def test_ordered_dict():
         ((1, 2, '3'), (1, 2, '3')),
         ((i**2 for i in range(5)), (0, 1, 4, 9, 16)),
         (deque([1, 2, 3]), (1, 2, 3)),
+        ({1, '2'}, IsOneOf((1, '2'), ('2', 1))),
     ),
 )
 def test_tuple_success(value, result):
@@ -1737,7 +1833,7 @@ def test_tuple_success(value, result):
     assert Model(v=value).v == result
 
 
-@pytest.mark.parametrize('value', (123, '123', {1, 2, '3'}))
+@pytest.mark.parametrize('value', (123, '123'))
 def test_tuple_fails(value):
     class Model(BaseModel):
         v: tuple
@@ -2470,23 +2566,73 @@ def test_bool_unhashable_fails():
 
 
 def test_uuid_error():
-    class Model(BaseModel):
-        v: UUID
+    v = TypeAdapter(UUID)
+
+    valid = UUID('49fdfa1d856d4003a83e4b9236532ec6')
+
+    # sanity check
+    assert v.validate_python(valid) == valid
+    assert v.validate_python(valid.hex) == valid
 
     with pytest.raises(ValidationError) as exc_info:
-        Model(v='ebcdab58-6eb8-46fb-a190-d07a3')
+        v.validate_python('ebcdab58-6eb8-46fb-a190-d07a3')
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'uuid_type',
-            'loc': ('v',),
-            'msg': 'Input should be a valid UUID, string, or bytes',
+            'type': 'is_instance_of',
+            'loc': ('is-instance[UUID]',),
+            'msg': 'Input should be an instance of UUID',
             'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'uuid_parsing',
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]',),
+            'msg': 'Input should be a valid UUID, unable to parse string as an UUID',
+            'input': 'ebcdab58-6eb8-46fb-a190-d07a3',
+        },
+    ]
+
+    not_a_valid_input_type = object()
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(not_a_valid_input_type)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_instance_of',
+            'loc': ('is-instance[UUID]',),
+            'msg': 'Input should be an instance of UUID',
+            'input': not_a_valid_input_type,
+            'ctx': {'class': 'UUID'},
+        },
+        {
+            'type': 'string_type',
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'str'),
+            'msg': 'Input should be a valid string',
+            'input': not_a_valid_input_type,
+        },
+        {
+            'type': 'bytes_type',
+            'loc': ('function-after[uuid_validator(), union[str,bytes]]', 'bytes'),
+            'msg': 'Input should be a valid bytes',
+            'input': not_a_valid_input_type,
+        },
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_python(valid.hex, strict=True)
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'is_instance_of',
+            'loc': (),
+            'msg': 'Input should be an instance of UUID',
+            'input': '49fdfa1d856d4003a83e4b9236532ec6',
+            'ctx': {'class': 'UUID'},
         }
     ]
 
-    with pytest.raises(ValidationError, match='Input should be a valid UUID, string, or bytes'):
-        Model(v=None)
+    assert v.validate_json(json.dumps(valid.hex), strict=True) == valid
 
 
 def test_uuid_json():
@@ -2924,6 +3070,15 @@ def test_path_validation_success(value, result):
     assert Model.model_validate_json(json.dumps({'foo': str(value)})).foo == result
 
 
+def test_path_validation_constrained():
+    ta = TypeAdapter(Annotated[Path, Field(min_length=9, max_length=20)])
+    with pytest.raises(ValidationError):
+        ta.validate_python('/short')
+    with pytest.raises(ValidationError):
+        ta.validate_python('/' + 'long' * 100)
+    assert ta.validate_python('/just/right/enough') == Path('/just/right/enough')
+
+
 def test_path_like():
     class Model(BaseModel):
         foo: os.PathLike
@@ -2967,7 +3122,19 @@ def test_path_validation_fails():
         Model(foo=123)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'path_type', 'loc': ('foo',), 'msg': 'Input is not a valid path', 'input': 123}
+        {
+            'type': 'is_instance_of',
+            'loc': ('foo', 'json-or-python[json=function-after[path_validator(), str],python=is-instance[Path]]'),
+            'msg': 'Input should be an instance of Path',
+            'input': 123,
+            'ctx': {'class': 'Path'},
+        },
+        {
+            'type': 'string_type',
+            'loc': ('foo', 'function-after[path_validator(), str]'),
+            'msg': 'Input should be a valid string',
+            'input': 123,
+        },
     ]
 
 
@@ -3442,19 +3609,27 @@ def test_json_required():
         JsonRequired()
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
-def test_pattern(pattern_type):
+@pytest.mark.parametrize(
+    ('pattern_type', 'pattern_value', 'matching_value', 'non_matching_value'),
+    [
+        pytest.param(re.Pattern, r'^whatev.r\d$', 'whatever1', ' whatever1', id='re.Pattern'),
+        pytest.param(Pattern, r'^whatev.r\d$', 'whatever1', ' whatever1', id='Pattern'),
+        pytest.param(Pattern[str], r'^whatev.r\d$', 'whatever1', ' whatever1', id='Pattern[str]'),
+        pytest.param(Pattern[bytes], rb'^whatev.r\d$', b'whatever1', b' whatever1', id='Pattern[bytes]'),
+    ],
+)
+def test_pattern(pattern_type, pattern_value, matching_value, non_matching_value):
     class Foobar(BaseModel):
         pattern: pattern_type
 
-    f = Foobar(pattern=r'^whatev.r\d$')
+    f = Foobar(pattern=pattern_value)
     assert f.pattern.__class__.__name__ == 'Pattern'
     # check it's really a proper pattern
-    assert f.pattern.match('whatever1')
-    assert not f.pattern.match(' whatever1')
+    assert f.pattern.match(matching_value)
+    assert not f.pattern.match(non_matching_value)
 
     # Check that pre-compiled patterns are accepted unchanged
-    p = re.compile(r'^whatev.r\d$')
+    p = re.compile(pattern_value)
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
@@ -3466,21 +3641,72 @@ def test_pattern(pattern_type):
     # }
 
 
-@pytest.mark.parametrize('pattern_type', [re.Pattern, Pattern])
-def test_pattern_error(pattern_type):
+@pytest.mark.parametrize(
+    ('pattern_type', 'pattern_value', 'error_type', 'error_msg'),
+    [
+        pytest.param(
+            re.Pattern,
+            '[xx',
+            'pattern_regex',
+            'Input should be a valid regular expression',
+            id='re.Pattern-pattern_regex',
+        ),
+        pytest.param(
+            Pattern, '[xx', 'pattern_regex', 'Input should be a valid regular expression', id='re.Pattern-pattern_regex'
+        ),
+        pytest.param(
+            re.Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern-pattern_type'
+        ),
+        pytest.param(Pattern, (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern-pattern_type'),
+        pytest.param(
+            Pattern[str],
+            re.compile(b''),
+            'pattern_str_type',
+            'Input should be a string pattern',
+            id='typing.Pattern[str]-pattern_str_type-non_str',
+        ),
+        pytest.param(
+            Pattern[str],
+            b'',
+            'pattern_str_type',
+            'Input should be a string pattern',
+            id='typing.Pattern[str]-pattern_str_type-bytes',
+        ),
+        pytest.param(
+            Pattern[str], (), 'pattern_type', 'Input should be a valid pattern', id='typing.Pattern[str]-pattern_type'
+        ),
+        pytest.param(
+            Pattern[bytes],
+            re.compile(''),
+            'pattern_bytes_type',
+            'Input should be a bytes pattern',
+            id='typing.Pattern[bytes]-pattern_bytes_type-non_bytes',
+        ),
+        pytest.param(
+            Pattern[bytes],
+            '',
+            'pattern_bytes_type',
+            'Input should be a bytes pattern',
+            id='typing.Pattern[bytes]-pattern_bytes_type-str',
+        ),
+        pytest.param(
+            Pattern[bytes],
+            (),
+            'pattern_type',
+            'Input should be a valid pattern',
+            id='typing.Pattern[bytes]-pattern_type',
+        ),
+    ],
+)
+def test_pattern_error(pattern_type, pattern_value, error_type, error_msg):
     class Foobar(BaseModel):
         pattern: pattern_type
 
     with pytest.raises(ValidationError) as exc_info:
-        Foobar(pattern='[xx')
+        Foobar(pattern=pattern_value)
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'pattern_regex',
-            'loc': ('pattern',),
-            'msg': 'Input should be a valid regular expression',
-            'input': '[xx',
-        }
+        {'type': error_type, 'loc': ('pattern',), 'msg': error_msg, 'input': pattern_value}
     ]
 
 
@@ -3567,6 +3793,8 @@ def test_secretstr_idempotent():
         condate,
         PastDate,
         FutureDate,
+        PastDatetime,
+        FutureDatetime,
         AwareDatetime,
         NaiveDatetime,
     ],
@@ -3811,11 +4039,12 @@ def test_literal_multiple():
     ]
 
 
-def test_unsupported_field_type():
-    with pytest.raises(TypeError, match=r'Unable to generate pydantic-core schema MutableSet'):
-
-        class UnsupportedModel(BaseModel):
-            unsupported: MutableSet[int]
+def test_typing_mutable_set():
+    s1 = TypeAdapter(Set[int]).core_schema
+    s1.pop('metadata', None)
+    s2 = TypeAdapter(typing.MutableSet[int]).core_schema
+    s2.pop('metadata', None)
+    assert s1 == s2
 
 
 def test_frozenset_field():
@@ -3942,6 +4171,16 @@ def test_deque_success():
             {1: 10, 2: 20, 3: 30}.items(),
             deque([(1, 10), (2, 20), (3, 30)]),
         ),
+        (
+            float,
+            {1, 2, 3},
+            deque([1, 2, 3]),
+        ),
+        (
+            float,
+            frozenset((1, 2, 3)),
+            deque([1, 2, 3]),
+        ),
     ),
 )
 def test_deque_generic_success(cls, value, result):
@@ -3970,26 +4209,6 @@ def test_deque_generic_success_strict(cls, value: Any, result):
 @pytest.mark.parametrize(
     'cls,value,expected_error',
     (
-        (
-            float,
-            {1, 2, 3},
-            {
-                'type': 'list_type',
-                'loc': ('v',),
-                'msg': 'Input should be a valid list',
-                'input': {1, 2, 3},
-            },
-        ),
-        (
-            float,
-            frozenset((1, 2, 3)),
-            {
-                'type': 'list_type',
-                'loc': ('v',),
-                'msg': 'Input should be a valid list',
-                'input': frozenset((1, 2, 3)),
-            },
-        ),
         (
             int,
             [1, 'a', 3],
@@ -4106,6 +4325,38 @@ def test_deque_typed_maxlen():
     assert DequeModel3().field.maxlen == 5
     assert DequeModel3(field=deque()).field.maxlen is None
     assert DequeModel3(field=deque(maxlen=8)).field.maxlen == 8
+
+
+def test_deque_set_maxlen():
+    class DequeModel1(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)]
+
+    assert DequeModel1(field=deque()).field.maxlen == 10
+    assert DequeModel1(field=deque(maxlen=8)).field.maxlen == 8
+    assert DequeModel1(field=deque(maxlen=15)).field.maxlen == 10
+
+    class DequeModel2(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)] = deque()
+
+    assert DequeModel2().field.maxlen is None
+    assert DequeModel2(field=deque()).field.maxlen == 10
+    assert DequeModel2(field=deque(maxlen=8)).field.maxlen == 8
+    assert DequeModel2(field=deque(maxlen=15)).field.maxlen == 10
+
+    class DequeModel3(DequeModel2):
+        model_config = ConfigDict(validate_default=True)
+
+    assert DequeModel3().field.maxlen == 10
+
+    class DequeModel4(BaseModel):
+        field: Annotated[Deque[int], Field(max_length=10)] = deque(maxlen=5)
+
+    assert DequeModel4().field.maxlen == 5
+
+    class DequeModel5(DequeModel4):
+        model_config = ConfigDict(validate_default=True)
+
+    assert DequeModel4().field.maxlen == 5
 
 
 @pytest.mark.parametrize('value_type', (None, type(None), None.__class__))
@@ -4338,7 +4589,9 @@ def test_custom_generic_containers():
     T = TypeVar('T')
 
     class GenericList(List[T]):
-        pass
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
 
     class Model(BaseModel):
         field: GenericList[int]
@@ -4473,9 +4726,9 @@ def test_third_party_type_integration():
                 result.x = value
                 return result
 
-            instance_validation_schema = core_schema.is_instance_schema(
-                ThirdPartyType,
-                json_function=validate_from_int,
+            instance_validation_schema = core_schema.json_or_python_schema(
+                json_schema=core_schema.no_info_after_validator_function(validate_from_int, core_schema.int_schema()),
+                python_schema=core_schema.is_instance_schema(ThirdPartyType),
             )
             int_validation_schema = core_schema.chain_schema(
                 [core_schema.int_schema(), core_schema.general_plain_validator_function(validate_from_int)]
@@ -4521,17 +4774,20 @@ def test_third_party_type_integration():
         Model(third_party_type='a')
     assert exc_info.value.errors(include_url=False) == [
         {
-            'ctx': {'class': 'test_third_party_type_integration.<locals>.ThirdPartyType'},
-            'input': 'a',
-            'loc': ('third_party_type', 'is-instance[test_third_party_type_integration.<locals>.ThirdPartyType]'),
-            'msg': 'Input should be an instance of test_third_party_type_integration.<locals>.ThirdPartyType',
             'type': 'is_instance_of',
+            'loc': (
+                'third_party_type',
+                'json-or-python[json=function-after[validate_from_int(), int],python=is-instance[test_third_party_type_integration.<locals>.ThirdPartyType]]',  # noqa: E501
+            ),
+            'msg': 'Input should be an instance of test_third_party_type_integration.<locals>.ThirdPartyType',
+            'input': 'a',
+            'ctx': {'class': 'test_third_party_type_integration.<locals>.ThirdPartyType'},
         },
         {
-            'input': 'a',
-            'loc': ('third_party_type', 'chain[int,function-plain[validate_from_int()]]'),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
+            'loc': ('third_party_type', 'chain[int,function-plain[validate_from_int()]]'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
         },
     ]
 
@@ -4541,3 +4797,244 @@ def test_third_party_type_integration():
         'title': 'Model',
         'type': 'object',
     }
+
+
+def test_sequence_subclass_without_core_schema() -> None:
+    class MyList(List[int]):
+        # The point of this is that subclasses can do arbitrary things
+        # This is the reason why we don't try to handle them automatically
+        # TBD if we introspect `__init__` / `__new__`
+        # (which is the main thing that would mess us up if modified in a subclass)
+        # and automatically handle cases where the subclass doesn't override it.
+        # There's still edge cases (again, arbitrary behavior...)
+        # and it's harder to explain, but could lead to a better user experience in some cases
+        # It will depend on how the complaints (which have and will happen in both directions)
+        # balance out
+        def __init__(self, *args: Any, required: int, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+
+    with pytest.raises(
+        PydanticSchemaGenerationError, match='implement `__get_pydantic_core_schema__` on your type to fully support it'
+    ):
+
+        class _(BaseModel):
+            x: MyList
+
+
+def test_typing_coercion_defaultdict():
+    class Model(BaseModel):
+        x: DefaultDict[int, str]
+
+    d = defaultdict(str)
+    d['1']
+    m = Model(x=d)
+    assert isinstance(m.x, defaultdict)
+    assert repr(m.x) == "defaultdict(<class 'str'>, {1: ''})"
+
+
+def test_typing_coercion_counter():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    m = Model(x={'a': 10})
+    assert isinstance(m.x, Counter)
+    assert repr(m.x) == "Counter({'a': 10})"
+
+
+def test_typing_counter_value_validation():
+    class Model(BaseModel):
+        x: Counter[str]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x={'a': 'a'})
+
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': ('x', 'a'),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
+
+
+def test_mapping_subclass_without_core_schema() -> None:
+    class MyDict(Dict[int, int]):
+        # The point of this is that subclasses can do arbitrary things
+        # This is the reason why we don't try to handle them automatically
+        # TBD if we introspect `__init__` / `__new__`
+        # (which is the main thing that would mess us up if modified in a subclass)
+        # and automatically handle cases where the subclass doesn't override it.
+        # There's still edge cases (again, arbitrary behavior...)
+        # and it's harder to explain, but could lead to a better user experience in some cases
+        # It will depend on how the complaints (which have and will happen in both directions)
+        # balance out
+        def __init__(self, *args: Any, required: int, **kwargs: Any) -> None:
+            super().__init__(*args, **kwargs)
+
+    with pytest.raises(
+        PydanticSchemaGenerationError, match='implement `__get_pydantic_core_schema__` on your type to fully support it'
+    ):
+
+        class _(BaseModel):
+            x: MyDict
+
+
+def test_defaultdict_unknown_default_factory() -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/4687
+    """
+    with pytest.raises(
+        PydanticSchemaGenerationError,
+        match=r'Unable to infer a default factory for with keys of type typing.DefaultDict\[int, int\]',
+    ):
+
+        class Model(BaseModel):
+            d: DefaultDict[int, DefaultDict[int, int]]
+
+
+def test_defaultdict_infer_default_factory() -> None:
+    class Model(BaseModel):
+        a: DefaultDict[int, List[int]]
+        b: DefaultDict[int, int]
+
+    m = Model(a={}, b={})
+    assert m.a.default_factory is not None
+    assert m.a.default_factory() == []
+    assert m.b.default_factory is not None
+    assert m.b.default_factory() == 0
+
+
+def test_defaultdict_explicit_default_factory() -> None:
+    class MyList(List[int]):
+        pass
+
+    class Model(BaseModel):
+        a: DefaultDict[int, Annotated[List[int], Field(default_factory=lambda: MyList())]]
+
+    m = Model(a={})
+    assert m.a.default_factory is not None
+    assert isinstance(m.a.default_factory(), MyList)
+
+
+def test_defaultdict_default_factory_preserved() -> None:
+    class Model(BaseModel):
+        a: DefaultDict[int, List[int]]
+
+    class MyList(List[int]):
+        pass
+
+    m = Model(a=defaultdict(lambda: MyList()))
+    assert m.a.default_factory is not None
+    assert isinstance(m.a.default_factory(), MyList)
+
+
+def test_custom_default_dict() -> None:
+    KT = TypeVar('KT')
+    VT = TypeVar('VT')
+
+    class CustomDefaultDict(DefaultDict[KT, VT]):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            keys_type, values_type = get_args(source_type)
+            return core_schema.no_info_after_validator_function(
+                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
+            )
+
+    ta = TypeAdapter(CustomDefaultDict[str, int])
+
+    assert ta.validate_python({'a': 1}) == CustomDefaultDict(int, {'a': 1})
+
+
+@pytest.mark.parametrize('field_type', [typing.OrderedDict, collections.OrderedDict])
+def test_ordered_dict_from_ordered_dict(field_type):
+    class Model(BaseModel):
+        od_field: field_type
+
+    od_value = collections.OrderedDict([('a', 1), ('b', 2)])
+
+    m = Model(od_field=od_value)
+
+    assert isinstance(m.od_field, collections.OrderedDict)
+    assert m.od_field == od_value
+    # we don't make any promises about preserving instances
+    # at the moment we always copy them for consistency and predictability
+    # so this is more so documenting the current behavior than a promise
+    # we make to users
+    assert m.od_field is not od_value
+
+    assert m.model_json_schema() == {
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'required': ['od_field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_ordered_dict_from_ordered_dict_typed():
+    class Model(BaseModel):
+        od_field: typing.OrderedDict[str, int]
+
+    od_value = collections.OrderedDict([('a', 1), ('b', 2)])
+
+    m = Model(od_field=od_value)
+
+    assert isinstance(m.od_field, collections.OrderedDict)
+    assert m.od_field == od_value
+
+    assert m.model_json_schema() == {
+        'properties': {
+            'od_field': {
+                'additionalProperties': {'type': 'integer'},
+                'title': 'Od Field',
+                'type': 'object',
+            }
+        },
+        'required': ['od_field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize('field_type', [typing.OrderedDict, collections.OrderedDict])
+def test_ordered_dict_from_dict(field_type):
+    class Model(BaseModel):
+        od_field: field_type
+
+    od_value = {'a': 1, 'b': 2}
+
+    m = Model(od_field=od_value)
+
+    assert isinstance(m.od_field, collections.OrderedDict)
+    assert m.od_field == collections.OrderedDict(od_value)
+
+    assert m.model_json_schema() == {
+        'properties': {'od_field': {'title': 'Od Field', 'type': 'object'}},
+        'required': ['od_field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
+    class PdDecimal(Decimal):
+        def ___repr__(self) -> str:
+            return f'PdDecimal({super().__repr__()})'
+
+    class PdDecimalMarker:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(PdDecimal, handler(source_type))
+
+        def __prepare_pydantic_annotations__(self, source: Any, annotations: List[Any]) -> Tuple[Any, List[Any]]:
+            return (Decimal, [self, *annotations])
+
+    class Model(BaseModel):
+        x: Annotated[PdDecimal, PdDecimalMarker(), annotated_types.Gt(0)]
+
+    assert isinstance(Model(x=1).x, PdDecimal)
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=-1)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'greater_than', 'loc': ('x',), 'msg': 'Input should be greater than 0', 'input': -1, 'ctx': {'gt': 0}}
+    ]

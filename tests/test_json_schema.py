@@ -1,6 +1,7 @@
 import json
 import math
 import re
+import typing
 from datetime import date, datetime, time, timedelta
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -19,6 +20,7 @@ from typing import (
     NewType,
     Optional,
     Pattern,
+    Sequence,
     Set,
     Tuple,
     Type,
@@ -36,6 +38,7 @@ from pydantic import (
     Field,
     ImportString,
     ValidationError,
+    computed_field,
     field_validator,
 )
 from pydantic._internal._core_metadata import build_metadata_dict
@@ -76,6 +79,7 @@ from pydantic.types import (
     SecretStr,
     StrictBool,
     StrictStr,
+    WithJsonSchema,
     conbytes,
     condate,
     condecimal,
@@ -480,27 +484,40 @@ def test_enum_schema_cleandoc():
     }
 
 
-def test_json_schema():
+def test_decimal_json_schema():
     class Model(BaseModel):
         a: bytes = b'foobar'
         b: Decimal = Decimal('12.34')
-
-    # TODO: What do we want the generated schema to be for Decimal? I'm thinking 'integer', 'number', _or_ 'str'
-    #     Decision: What we have in v1 is not bad enough to be worth changing
-    #     (i.e., keep it as only 'number'; maybe add a comment that other things could be okay)
 
     with pytest.warns(
         DeprecationWarning,
         match=re.escape('The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.'),
     ):
         schema_json = Model.schema_json(indent=2)
-    assert json.loads(schema_json) == {
+        loaded_schema_json = json.loads(schema_json)
+    model_json_schema_validation = Model.model_json_schema(mode='validation')
+    model_json_schema_serialization = Model.model_json_schema(mode='serialization')
+
+    assert (
+        loaded_schema_json
+        == model_json_schema_validation
+        == {
+            'properties': {
+                'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+                'b': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'default': '12.34', 'title': 'B'},
+            },
+            'title': 'Model',
+            'type': 'object',
+        }
+    )
+    assert model_json_schema_serialization == {
+        'properties': {
+            'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+            'b': {'default': '12.34', 'title': 'B', 'type': 'string'},
+        },
+        'required': ['a', 'b'],
         'title': 'Model',
         'type': 'object',
-        'properties': {
-            'a': {'title': 'A', 'default': 'foobar', 'type': 'string', 'format': 'binary'},
-            'b': {'title': 'B', 'default': '12.34', 'type': 'number'},
-        },
     }
 
 
@@ -938,7 +955,6 @@ def test_special_int_types(field_type, expected_schema):
 @pytest.mark.parametrize(
     'field_type,expected_schema',
     [
-        # (ConstrainedFloat, {}),
         (confloat(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
         (confloat(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
         (confloat(multiple_of=5), {'multipleOf': 5}),
@@ -946,13 +962,6 @@ def test_special_int_types(field_type, expected_schema):
         (NegativeFloat, {'exclusiveMaximum': 0}),
         (NonNegativeFloat, {'minimum': 0}),
         (NonPositiveFloat, {'maximum': 0}),
-        # (ConstrainedDecimal, {}),
-        (
-            condecimal(gt=5, lt=10),
-            {'exclusiveMinimum': 5, 'exclusiveMaximum': 10},
-        ),
-        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
-        (condecimal(multiple_of=5), {'multipleOf': 5}),
     ],
 )
 def test_special_float_types(field_type, expected_schema):
@@ -966,6 +975,29 @@ def test_special_float_types(field_type, expected_schema):
         'required': ['a'],
     }
     base_schema['properties']['a'].update(expected_schema)
+
+    assert Model.model_json_schema() == base_schema
+
+
+@pytest.mark.parametrize(
+    'field_type,expected_schema',
+    [
+        (condecimal(gt=5, lt=10), {'exclusiveMinimum': 5, 'exclusiveMaximum': 10}),
+        (condecimal(ge=5, le=10), {'minimum': 5, 'maximum': 10}),
+        (condecimal(multiple_of=5), {'multipleOf': 5}),
+    ],
+)
+def test_special_decimal_types(field_type, expected_schema):
+    class Model(BaseModel):
+        a: field_type
+
+    base_schema = {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'title': 'A'}},
+        'required': ['a'],
+    }
+    base_schema['properties']['a']['anyOf'][0].update(expected_schema)
 
     assert Model.model_json_schema() == base_schema
 
@@ -1152,24 +1184,46 @@ def test_ipvanynetwork_type():
         (Callable[[int], int], lambda x: x),
     ),
 )
-def test_callable_type(type_, default_value):
-    # TODO: Is this still how we want to handle this?
-    #   With my current changes, it raises
-    #       InvalidForJsonSchema('Cannot generate a JsonSchema for core_schema.CallableSchema')
-    #   We could continue the practice of just not creating such fields,
-    #   but producing a UserWarning when a field is ignored
-    # TODO: If the default value is not JSON encodable, should we just not include it in the schema?
-    #   This seems preferable to me over erroring, but maybe we should also produce a UserWarning for that?
-
-    # Decision: Different user warning depending on if there's a default or not
-
+@pytest.mark.parametrize(
+    'base_json_schema,properties',
+    [
+        (
+            {'a': 'b'},
+            {
+                'callback': {'title': 'Callback', 'a': 'b'},
+                'foo': {'title': 'Foo', 'type': 'integer'},
+            },
+        ),
+        (
+            None,
+            {
+                'foo': {'title': 'Foo', 'type': 'integer'},
+            },
+        ),
+    ],
+)
+def test_callable_type(type_, default_value, base_json_schema, properties):
     class Model(BaseModel):
         callback: type_ = default_value
         foo: int
 
     with pytest.raises(PydanticInvalidForJsonSchema):
-        model_schema = Model.model_json_schema()
-        assert 'callback' not in model_schema['properties']
+        Model.model_json_schema()
+
+    class ModelWithOverride(BaseModel):
+        callback: Annotated[type_, WithJsonSchema(base_json_schema)] = default_value
+        foo: int
+
+    if default_value is Ellipsis or base_json_schema is None:
+        model_schema = ModelWithOverride.model_json_schema()
+    else:
+        with pytest.warns(
+            PydanticJsonSchemaWarning,
+            match='Default value .* is not JSON serializable; excluding'
+            r' default from JSON schema \[non-serializable-default]',
+        ):
+            model_schema = ModelWithOverride.model_json_schema()
+    assert model_schema['properties'] == properties
 
 
 @pytest.mark.parametrize(
@@ -1336,9 +1390,12 @@ def test_schema_from_models():
         name: str
         ingredients: List[Ingredient]
 
-    model_schema = models_json_schema(
-        [Model, Pizza], title='Multi-model schema', description='Single JSON Schema with multiple definitions'
+    keys_map, model_schema = models_json_schema(
+        [(Model, 'validation'), (Pizza, 'validation')],
+        title='Multi-model schema',
+        description='Single JSON Schema with multiple definitions',
     )
+    assert keys_map == {(Pizza, 'validation'): 'Pizza', (Model, 'validation'): 'Model'}
     assert model_schema == {
         'title': 'Multi-model schema',
         'description': 'Single JSON Schema with multiple definitions',
@@ -1402,7 +1459,8 @@ def test_schema_with_refs():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = models_json_schema([Bar, Baz], ref_template=ref_template)
+    keys_map, model_schema = models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template=ref_template)
+    assert keys_map == {(Bar, 'validation'): 'Bar', (Baz, 'validation'): 'Baz'}
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1437,7 +1495,10 @@ def test_schema_with_custom_ref_template():
     class Baz(BaseModel):
         c: Bar
 
-    model_schema = models_json_schema([Bar, Baz], ref_template='/schemas/{model}.json#/')
+    keys_map, model_schema = models_json_schema(
+        [(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{model}.json#/'
+    )
+    assert keys_map == {(Bar, 'validation'): 'Bar', (Baz, 'validation'): 'Baz'}
     assert model_schema == {
         '$defs': {
             'Baz': {
@@ -1473,11 +1534,12 @@ def test_schema_ref_template_key_error():
         c: Bar
 
     with pytest.raises(KeyError):
-        models_json_schema([Bar, Baz], ref_template='/schemas/{bad_name}.json#/')
+        models_json_schema([(Bar, 'validation'), (Baz, 'validation')], ref_template='/schemas/{bad_name}.json#/')
 
 
 def test_schema_no_definitions():
-    model_schema = models_json_schema([], title='Schema without definitions')
+    keys_map, model_schema = models_json_schema([], title='Schema without definitions')
+    assert keys_map == {}
     assert model_schema == {'title': 'Schema without definitions'}
 
 
@@ -1582,14 +1644,14 @@ def test_model_default():
         ({'ge': -math.inf}, float, {'type': 'number'}),
         ({'le': math.inf}, float, {'type': 'number'}),
         ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
-        ({'gt': 2}, Decimal, {'type': 'number', 'exclusiveMinimum': 2}),
-        ({'lt': 5}, Decimal, {'type': 'number', 'exclusiveMaximum': 5}),
-        ({'ge': 2}, Decimal, {'type': 'number', 'minimum': 2}),
-        ({'le': 5}, Decimal, {'type': 'number', 'maximum': 5}),
-        ({'multiple_of': 5}, Decimal, {'type': 'number', 'multipleOf': 5}),
+        ({'gt': 2}, Decimal, {'anyOf': [{'exclusiveMinimum': 2.0, 'type': 'number'}, {'type': 'string'}]}),
+        ({'lt': 5}, Decimal, {'anyOf': [{'type': 'number', 'exclusiveMaximum': 5}, {'type': 'string'}]}),
+        ({'ge': 2}, Decimal, {'anyOf': [{'type': 'number', 'minimum': 2}, {'type': 'string'}]}),
+        ({'le': 5}, Decimal, {'anyOf': [{'type': 'number', 'maximum': 5}, {'type': 'string'}]}),
+        ({'multiple_of': 5}, Decimal, {'anyOf': [{'type': 'number', 'multipleOf': 5}, {'type': 'string'}]}),
     ],
 )
-def test_constraints_schema(kwargs, type_, expected_extra):
+def test_constraints_schema_validation(kwargs, type_, expected_extra):
     class Foo(BaseModel):
         a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
@@ -1600,7 +1662,51 @@ def test_constraints_schema(kwargs, type_, expected_extra):
     }
 
     expected_schema['properties']['a'].update(expected_extra)
-    assert Foo.model_json_schema() == expected_schema
+    assert Foo.model_json_schema(mode='validation') == expected_schema
+
+
+@pytest.mark.parametrize(
+    'kwargs,type_,expected_extra',
+    [
+        ({'max_length': 5}, str, {'type': 'string', 'maxLength': 5}),
+        ({}, constr(max_length=6), {'type': 'string', 'maxLength': 6}),
+        ({'min_length': 2}, str, {'type': 'string', 'minLength': 2}),
+        ({'max_length': 5}, bytes, {'type': 'string', 'maxLength': 5, 'format': 'binary'}),
+        ({'pattern': '^foo$'}, str, {'type': 'string', 'pattern': '^foo$'}),
+        ({'gt': 2}, int, {'type': 'integer', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, int, {'type': 'integer', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, int, {'type': 'integer', 'minimum': 2}),
+        ({'le': 5}, int, {'type': 'integer', 'maximum': 5}),
+        ({'multiple_of': 5}, int, {'type': 'integer', 'multipleOf': 5}),
+        ({'gt': 2}, float, {'type': 'number', 'exclusiveMinimum': 2}),
+        ({'lt': 5}, float, {'type': 'number', 'exclusiveMaximum': 5}),
+        ({'ge': 2}, float, {'type': 'number', 'minimum': 2}),
+        ({'le': 5}, float, {'type': 'number', 'maximum': 5}),
+        ({'gt': -math.inf}, float, {'type': 'number'}),
+        ({'lt': math.inf}, float, {'type': 'number'}),
+        ({'ge': -math.inf}, float, {'type': 'number'}),
+        ({'le': math.inf}, float, {'type': 'number'}),
+        ({'multiple_of': 5}, float, {'type': 'number', 'multipleOf': 5}),
+        ({'gt': 2}, Decimal, {'type': 'string'}),
+        ({'lt': 5}, Decimal, {'type': 'string'}),
+        ({'ge': 2}, Decimal, {'type': 'string'}),
+        ({'le': 5}, Decimal, {'type': 'string'}),
+        ({'multiple_of': 5}, Decimal, {'type': 'string'}),
+    ],
+)
+def test_constraints_schema_serialization(kwargs, type_, expected_extra):
+    class Foo(BaseModel):
+        a: type_ = Field('foo', title='A title', description='A description', **kwargs)
+
+    expected_schema = {
+        'title': 'Foo',
+        'type': 'object',
+        'properties': {'a': {'title': 'A title', 'description': 'A description', 'default': 'foo'}},
+        'required': ['a'],
+    }
+
+    expected_schema['properties']['a'].update(expected_extra)
+    assert Foo.model_json_schema(mode='serialization') == expected_schema
 
 
 @pytest.mark.parametrize(
@@ -1635,7 +1741,7 @@ def test_constraints_schema(kwargs, type_, expected_extra):
         ({'le': 5}, Decimal, Decimal(5)),
     ],
 )
-def test_constraints_schema_validation(kwargs, type_, value):
+def test_constraints_schema_validation_passes(kwargs, type_, value):
     class Foo(BaseModel):
         a: type_ = Field('foo', title='A title', description='A description', **kwargs)
 
@@ -2051,16 +2157,19 @@ def test_dataclass():
     class Model:
         a: bool
 
-    assert models_json_schema([Model]) == {
-        '$defs': {
-            'Model': {
-                'title': 'Model',
-                'type': 'object',
-                'properties': {'a': {'title': 'A', 'type': 'boolean'}},
-                'required': ['a'],
+    assert models_json_schema([(Model, 'validation')]) == (
+        {(Model, 'validation'): 'Model'},
+        {
+            '$defs': {
+                'Model': {
+                    'title': 'Model',
+                    'type': 'object',
+                    'properties': {'a': {'title': 'A', 'type': 'boolean'}},
+                    'required': ['a'],
+                }
             }
-        }
-    }
+        },
+    )
 
     assert model_json_schema(Model) == {
         'title': 'Model',
@@ -2102,6 +2211,10 @@ def test_schema_attributes():
 
 def test_path_modify_schema():
     class MyPath(Path):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return handler(Path)
+
         @classmethod
         def __get_pydantic_json_schema__(
             cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
@@ -2205,14 +2318,43 @@ class NestedModel(BaseModel):
         """
     )
 
-    models = [module.ModelOne, module.ModelTwo, module.NestedModel]
-    model_names = set(models_json_schema(models)['$defs'].keys())
+    # All validation
+    keys_map, schema = models_json_schema(
+        [(module.ModelOne, 'validation'), (module.ModelTwo, 'validation'), (module.NestedModel, 'validation')]
+    )
+    model_names = set(schema['$defs'].keys())
     expected_model_names = {
         'ModelOne',
         'ModelTwo',
         f'{module.__name__}__ModelOne__NestedModel',
         f'{module.__name__}__ModelTwo__NestedModel',
         f'{module.__name__}__NestedModel',
+    }
+    assert model_names == expected_model_names
+
+    # Validation + serialization
+    keys_map, schema = models_json_schema(
+        [
+            (module.ModelOne, 'validation'),
+            (module.ModelTwo, 'validation'),
+            (module.NestedModel, 'validation'),
+            (module.ModelOne, 'serialization'),
+            (module.ModelTwo, 'serialization'),
+            (module.NestedModel, 'serialization'),
+        ]
+    )
+    model_names = set(schema['$defs'].keys())
+    expected_model_names = {
+        'ModelOneInput',
+        'ModelOneOutput',
+        'ModelTwoInput',
+        'ModelTwoOutput',
+        f'{module.__name__}__ModelOne__NestedModelInput',
+        f'{module.__name__}__ModelOne__NestedModelOutput',
+        f'{module.__name__}__ModelTwo__NestedModelInput',
+        f'{module.__name__}__ModelTwo__NestedModelOutput',
+        f'{module.__name__}__NestedModelInput',
+        f'{module.__name__}__NestedModelOutput',
     }
     assert model_names == expected_model_names
 
@@ -3440,8 +3582,8 @@ def test_secrets_schema(secret_cls, field_kw, schema_kw):
 
 def test_override_generate_json_schema():
     class MyGenerateJsonSchema(GenerateJsonSchema):
-        def generate(self, schema):
-            json_schema = super().generate(schema)
+        def generate(self, schema, mode='validation'):
+            json_schema = super().generate(schema, mode=mode)
             json_schema['$schema'] = self.schema_dialect
             return json_schema
 
@@ -3452,8 +3594,9 @@ def test_override_generate_json_schema():
             by_alias: bool = True,
             ref_template: str = DEFAULT_REF_TEMPLATE,
             schema_generator: Type[GenerateJsonSchema] = MyGenerateJsonSchema,
+            mode='validation',
         ) -> Dict[str, Any]:
-            return super().model_json_schema(by_alias, ref_template, schema_generator)
+            return super().model_json_schema(by_alias, ref_template, schema_generator, mode)
 
     class MyModel(MyBaseModel):
         x: int
@@ -3742,3 +3885,202 @@ def test_model_with_schema_extra_callable_instance_method():
                     assert model_class is Model
 
         assert Model.model_json_schema() == {'title': 'Model', 'type': 'override'}
+
+
+def test_serialization_validation_interaction():
+    class Inner(BaseModel):
+        x: Json[int]
+
+    class Outer(BaseModel):
+        inner: Inner
+
+    _, v_schema = models_json_schema([(Outer, 'validation')])
+    assert v_schema == {
+        '$defs': {
+            'Inner': {
+                'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'Outer': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
+
+    _, s_schema = models_json_schema([(Outer, 'serialization')])
+    assert s_schema == {
+        '$defs': {
+            'Inner': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'Outer': {
+                'properties': {'inner': {'$ref': '#/$defs/Inner'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
+
+    _, vs_schema = models_json_schema([(Outer, 'validation'), (Outer, 'serialization')])
+    assert vs_schema == {
+        '$defs': {
+            'InnerInput': {
+                'properties': {'x': {'format': 'json-string', 'title': 'X', 'type': 'string'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'InnerOutput': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'Inner',
+                'type': 'object',
+            },
+            'OuterInput': {
+                'properties': {'inner': {'$ref': '#/$defs/InnerInput'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+            'OuterOutput': {
+                'properties': {'inner': {'$ref': '#/$defs/InnerOutput'}},
+                'required': ['inner'],
+                'title': 'Outer',
+                'type': 'object',
+            },
+        }
+    }
+
+
+def test_computed_field():
+    class Model(BaseModel):
+        x: int
+
+        @computed_field
+        @property
+        def double_x(self) -> int:
+            return 2 * self.x
+
+    assert Model.model_json_schema(mode='validation') == {
+        'properties': {'x': {'title': 'X', 'type': 'integer'}},
+        'required': ['x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'double_x': {'title': 'Double X', 'type': 'integer'}, 'x': {'title': 'X', 'type': 'integer'}},
+        'required': ['x', 'double_x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_serialization_schema_with_exclude():
+    class MyGenerateJsonSchema(GenerateJsonSchema):
+        def field_is_present(self, field) -> bool:
+            # Always include fields in the JSON schema, even if excluded from serialization
+            return True
+
+    class Model(BaseModel):
+        x: int
+        y: int = Field(exclude=True)
+
+    assert Model(x=1, y=1).model_dump() == {'x': 1}
+
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'x': {'title': 'X', 'type': 'integer'}},
+        'required': ['x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization', schema_generator=MyGenerateJsonSchema) == {
+        'properties': {'x': {'title': 'X', 'type': 'integer'}, 'y': {'title': 'Y', 'type': 'integer'}},
+        'required': ['x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize('mapping_type', [typing.Dict, typing.Mapping])
+def test_mappings_str_int_json_schema(mapping_type: Any):
+    class Model(BaseModel):
+        str_int_map: mapping_type[str, int]
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'str_int_map': {
+                'title': 'Str Int Map',
+                'type': 'object',
+                'additionalProperties': {'type': 'integer'},
+            }
+        },
+        'required': ['str_int_map'],
+    }
+
+
+@pytest.mark.parametrize(('sequence_type'), [pytest.param(List), pytest.param(Sequence)])
+def test_sequence_schema(sequence_type):
+    class Model(BaseModel):
+        field: sequence_type[int]
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'field': {'items': {'type': 'integer'}, 'title': 'Field', 'type': 'array'},
+        },
+        'required': ['field'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+@pytest.mark.parametrize(('sequence_type',), [pytest.param(List), pytest.param(Sequence)])
+def test_sequences_int_json_schema(sequence_type):
+    class Model(BaseModel):
+        int_seq: sequence_type[int]
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'int_seq': {
+                'title': 'Int Seq',
+                'type': 'array',
+                'items': {'type': 'integer'},
+            },
+        },
+        'required': ['int_seq'],
+    }
+    assert Model.model_validate_json('{"int_seq": [1, 2, 3]}')
+
+
+@pytest.mark.parametrize(
+    'field_schema,model_schema',
+    [
+        (None, {'properties': {}, 'title': 'Model', 'type': 'object'}),
+        (
+            {'a': 'b'},
+            {'properties': {'x': {'a': 'b', 'title': 'X'}}, 'required': ['x'], 'title': 'Model', 'type': 'object'},
+        ),
+    ],
+)
+def test_arbitrary_type_json_schema(field_schema, model_schema):
+    class ArbitraryClass:
+        pass
+
+    class Model(BaseModel):
+        model_config = dict(arbitrary_types_allowed=True)
+
+        x: Annotated[ArbitraryClass, WithJsonSchema(field_schema)]
+
+    assert Model.model_json_schema() == model_schema

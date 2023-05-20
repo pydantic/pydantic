@@ -3,8 +3,7 @@ PYTEST_DONT_REWRITE
 """
 import pytest
 
-from pydantic import BaseModel, ValidationError
-from pydantic.decorators import field_validator
+from pydantic import BaseModel, ValidationError, field_validator
 
 
 def test_assert_raises_validation_error():

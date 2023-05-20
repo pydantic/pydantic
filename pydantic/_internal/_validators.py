@@ -8,40 +8,10 @@ from __future__ import annotations as _annotations
 
 import re
 import typing
-from collections import OrderedDict, defaultdict, deque
 from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6Interface, IPv6Network
 from typing import Any
-from uuid import UUID
 
 from pydantic_core import PydanticCustomError, core_schema
-
-
-def mapping_validator(
-    __input_value: typing.Mapping[Any, Any],
-    validator: core_schema.ValidatorFunctionWrapHandler,
-) -> typing.Mapping[Any, Any]:
-    """
-    Validator for `Mapping` types, if required `isinstance(v, Mapping)` has already been called.
-    """
-    v_dict = validator(__input_value)
-    value_type = type(__input_value)
-
-    # the rest of the logic is just re-creating the original type from `v_dict`
-    if value_type == dict:
-        return v_dict
-    elif issubclass(value_type, defaultdict):
-        default_factory = __input_value.default_factory  # type: ignore[attr-defined]
-        return value_type(default_factory, v_dict)
-    else:
-        # best guess at how to re-create the original type, more custom construction logic might be required
-        return value_type(v_dict)  # type: ignore[call-arg]
-
-
-def construct_counter(__input_value: typing.Mapping[Any, Any]) -> typing.Counter[Any]:
-    """
-    Validator for `Counter` types, if required `isinstance(v, Counter)` has already been called.
-    """
-    return typing.Counter(__input_value)
 
 
 def sequence_validator(
@@ -88,36 +58,54 @@ def import_string(value: Any) -> Any:
 
 def _import_string_logic(dotted_path: str) -> Any:
     """
-    Stolen approximately from django. Import a dotted module path and return the attribute/class designated by the
-    last name in the path. Raise ImportError if the import fails.
+    Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
+    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.)
+
+    If the dotted path does not include a colon and the final item is not a valid module, importing as an attribute
+    rather than a submodule will be attempted automatically.
+
+    So, for example, the following values of `dotted_path` result in the following returned values:
+    * 'collections': <module 'collections'>
+    * 'collections.abc': <module 'collections.abc'>
+    * 'collections.abc:Mapping': <class 'collections.abc.Mapping'>
+    * `collections.abc.Mapping`: <class 'collections.abc.Mapping'> (though this is a bit slower than the previous line)
+
+    An error will be raised under any of the following scenarios:
+    * `dotted_path` contains more than one colon (e.g., 'collections:abc:Mapping')
+    * the substring of `dotted_path` before the colon is not a valid module in the environment (e.g., '123:Mapping')
+    * the substring of `dotted_path` after the colon is not an attribute of the module (e.g., 'collections:abc123')
     """
     from importlib import import_module
 
-    try:
-        module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
-    except ValueError as e:
-        raise ImportError(f'"{dotted_path}" doesn\'t look like a module path') from e
+    components = dotted_path.strip().split(':')
+    if len(components) > 2:
+        raise ImportError(f"Import strings should have at most one ':'; received {dotted_path!r}")
 
-    module = import_module(module_path)
-    try:
-        return getattr(module, class_name)
-    except AttributeError as e:
-        raise ImportError(f'Module "{module_path}" does not define a "{class_name}" attribute') from e
+    module_path = components[0]
+    if not module_path:
+        raise ImportError(f'Import strings should have a nonempty module name; received {dotted_path!r}')
 
-
-def uuid_validator(__input_value: str | bytes) -> UUID:
     try:
-        if isinstance(__input_value, str):
-            return UUID(__input_value)
-        else:
+        module = import_module(module_path)
+    except ModuleNotFoundError as e:
+        if '.' in module_path:
+            # Check if it would be valid if the final item was separated from its module with a `:`
+            maybe_module_path, maybe_attribute = dotted_path.strip().rsplit('.', 1)
             try:
-                return UUID(__input_value.decode())
-            except ValueError:
-                # 16 bytes in big-endian order as the bytes argument fail
-                # the above check
-                return UUID(bytes=__input_value)
-    except ValueError:
-        raise PydanticCustomError('uuid_parsing', 'Input should be a valid UUID, unable to parse string as an UUID')
+                return _import_string_logic(f'{maybe_module_path}:{maybe_attribute}')
+            except ImportError:
+                pass
+            raise ImportError(f'No module named {module_path!r}') from e
+        raise e
+
+    if len(components) > 1:
+        attribute = components[1]
+        try:
+            return getattr(module, attribute)
+        except AttributeError as e:
+            raise ImportError(f'cannot import name {attribute!r} from {module_path!r}') from e
+    else:
+        return module
 
 
 def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:
@@ -132,8 +120,8 @@ def pattern_either_validator(__input_value: Any) -> typing.Pattern[Any]:
 
 def pattern_str_validator(__input_value: Any) -> typing.Pattern[str]:
     if isinstance(__input_value, typing.Pattern):
-        if isinstance(__input_value.pattern, str):  # type: ignore
-            return __input_value  # type: ignore
+        if isinstance(__input_value.pattern, str):
+            return __input_value
         else:
             raise PydanticCustomError('pattern_str_type', 'Input should be a string pattern')
     elif isinstance(__input_value, str):
@@ -144,7 +132,7 @@ def pattern_str_validator(__input_value: Any) -> typing.Pattern[str]:
         raise PydanticCustomError('pattern_type', 'Input should be a valid pattern')
 
 
-def pattern_bytes_validator(__input_value: Any) -> Any:
+def pattern_bytes_validator(__input_value: Any) -> typing.Pattern[bytes]:
     if isinstance(__input_value, typing.Pattern):
         if isinstance(__input_value.pattern, bytes):
             return __input_value
@@ -166,33 +154,6 @@ def compile_pattern(pattern: PatternType) -> typing.Pattern[PatternType]:
         return re.compile(pattern)
     except re.error:
         raise PydanticCustomError('pattern_regex', 'Input should be a valid regular expression')
-
-
-def deque_any_validator(__input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler) -> deque[Any]:
-    if isinstance(__input_value, deque):
-        return __input_value
-    else:
-        return deque(validator(__input_value))
-
-
-def deque_typed_validator(__input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler) -> deque[Any]:
-    if isinstance(__input_value, deque):
-        return deque(validator(__input_value), maxlen=__input_value.maxlen)
-    else:
-        return deque(validator(__input_value))
-
-
-def ordered_dict_any_validator(
-    __input_value: Any, validator: core_schema.ValidatorFunctionWrapHandler
-) -> OrderedDict[Any, Any]:
-    if isinstance(__input_value, OrderedDict):
-        return __input_value
-    else:
-        return OrderedDict(validator(__input_value))
-
-
-def ordered_dict_typed_validator(__input_value: list[Any]) -> OrderedDict[Any, Any]:
-    return OrderedDict(__input_value)
 
 
 def ip_v4_address_validator(__input_value: Any) -> IPv4Address:

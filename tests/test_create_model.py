@@ -2,8 +2,18 @@ from typing import Optional, Tuple
 
 import pytest
 
-from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, create_model, errors
-from pydantic.decorators import field_validator, validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    PydanticUserError,
+    ValidationError,
+    create_model,
+    errors,
+    field_validator,
+    validator,
+)
 from pydantic.fields import ModelPrivateAttr
 
 
@@ -14,10 +24,10 @@ def test_create_model():
     assert model.__name__ == 'FooModel'
     assert model.model_fields.keys() == {'foo', 'bar'}
 
-    assert not model.__pydantic_decorators__.validator
-    assert not model.__pydantic_decorators__.root_validator
-    assert not model.__pydantic_decorators__.field_validator
-    assert not model.__pydantic_decorators__.field_serializer
+    assert not model.__pydantic_decorators__.validators
+    assert not model.__pydantic_decorators__.root_validators
+    assert not model.__pydantic_decorators__.field_validators
+    assert not model.__pydantic_decorators__.field_serializers
 
     assert model.__module__ == 'pydantic.main'
 
@@ -92,7 +102,7 @@ def test_custom_config():
     m = model(**{'foo': '987'})
     assert m.foo == 987
     assert model.model_config == expected_config
-    with pytest.raises(TypeError):
+    with pytest.raises(ValidationError):
         m.foo = 654
 
 
@@ -215,29 +225,6 @@ def test_dynamic_and_static():
         assert A.model_fields[field_name].default == DynamicA.model_fields[field_name].default
 
 
-def test_config_field_info_create_model():
-    # TODO fields doesn't exist anymore, remove test?
-    # class Config:
-    #     fields = {'a': {'description': 'descr'}}
-    ConfigDict()
-
-    m1 = create_model('M1', __config__={'title': 'abc'}, a=(str, ...))
-    assert m1.model_json_schema() == {
-        'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
-        'title': 'abc',
-        'type': 'object',
-    }
-
-    m2 = create_model('M2', __config__={}, a=(str, Field(description='descr')))
-    assert m2.model_json_schema() == {
-        'properties': {'a': {'description': 'descr', 'title': 'A', 'type': 'string'}},
-        'required': ['a'],
-        'title': 'M2',
-        'type': 'object',
-    }
-
-
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
 def test_set_name(base):
     calls = []
@@ -271,6 +258,38 @@ def test_set_name(base):
         assert a._some_func == 2
 
 
+def test_private_attr_set_name():
+    class SetNameInt(int):
+        _owner_attr_name: Optional[str] = None
+
+        def __set_name__(self, owner, name):
+            self._owner_attr_name = f'{owner.__name__}.{name}'
+
+    _private_attr_default = SetNameInt(2)
+
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=_private_attr_default)
+
+    assert Model()._private_attr == 2
+    assert _private_attr_default._owner_attr_name == 'Model._private_attr'
+
+
+def test_private_attr_set_name_do_not_crash_if_not_callable():
+    class SetNameInt(int):
+        _owner_attr_name: Optional[str] = None
+        __set_name__ = None
+
+    _private_attr_default = SetNameInt(2)
+
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=_private_attr_default)
+
+    # Checks below are just to ensure that everything is the same as in `test_private_attr_set_name`
+    # The main check is that model class definition above doesn't crash
+    assert Model()._private_attr == 2
+    assert _private_attr_default._owner_attr_name is None
+
+
 def test_create_model_with_slots():
     field_definitions = {'__slots__': (Optional[Tuple[str, ...]], None), 'foobar': (Optional[int], None)}
     with pytest.warns(RuntimeWarning, match='__slots__ should not be passed to create_model'):
@@ -296,3 +315,29 @@ def test_create_model_tuple():
 def test_create_model_tuple_3():
     with pytest.raises(PydanticUserError, match=r'^Field definitions should either be a `\(<type>, <default>\)`\.\n'):
         create_model('FooModel', foo=(Tuple[int, int], (1, 2), 'more'))
+
+
+def test_create_model_protected_namespace_default():
+    with pytest.raises(NameError, match='Field "model_prefixed_field" has conflict with protected namespace "model_"'):
+        create_model('Model', model_prefixed_field=(str, ...))
+
+
+def test_create_model_custom_protected_namespace():
+    with pytest.raises(NameError, match='Field "test_field" has conflict with protected namespace "test_"'):
+        create_model(
+            'Model',
+            __config__=ConfigDict(protected_namespaces=('test_',)),
+            model_prefixed_field=(str, ...),
+            test_field=(str, ...),
+        )
+
+
+def test_create_model_multiple_protected_namespace():
+    with pytest.raises(
+        NameError, match='Field "also_protect_field" has conflict with protected namespace "also_protect_"'
+    ):
+        create_model(
+            'Model',
+            __config__=ConfigDict(protected_namespaces=('protect_me_', 'also_protect_')),
+            also_protect_field=(str, ...),
+        )

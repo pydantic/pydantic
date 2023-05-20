@@ -11,7 +11,7 @@ import typing_extensions
 from annotated_types import Lt
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, Field, PositiveInt, PydanticUserError, ValidationError
+from pydantic import BaseModel, ConfigDict, Field, PositiveInt, PydanticUserError, ValidationError
 from pydantic.type_adapter import TypeAdapter
 
 from .conftest import Err
@@ -188,7 +188,6 @@ def test_typeddict_schema(TypedDict):
     class Data(BaseModel):
         a: int
 
-    # TODO: Need to make sure TypedDict's get their own schema
     class DataTD(TypedDict):
         a: int
 
@@ -411,25 +410,22 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
         assert Model(d=input_value).d == expected
 
 
-def test_recursive_typeddict(create_module):
-    @create_module
-    def module():
-        from typing import Optional
+def test_recursive_typeddict():
+    from typing import Optional
 
-        from typing_extensions import TypedDict
+    from typing_extensions import TypedDict
 
-        from pydantic import BaseModel
+    from pydantic import BaseModel
 
-        class RecursiveTypedDict(TypedDict):
-            # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
-            foo: Optional['RecursiveTypedDict']
+    class RecursiveTypedDict(TypedDict):
+        foo: Optional['RecursiveTypedDict']
 
-        class RecursiveTypedDictModel(BaseModel):
-            rec: RecursiveTypedDict
+    class RecursiveTypedDictModel(BaseModel):
+        rec: RecursiveTypedDict
 
-    assert module.RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
+    assert RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
     with pytest.raises(ValidationError) as exc_info:
-        module.RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
+        RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': 1,
@@ -500,7 +496,6 @@ def test_recursive_generic_typeddict_in_module(create_module):
 
         class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
             rec: 'RecursiveGenTypedDict[T]'
-            model_config = dict(undefined_types_warning=False)
 
         class RecursiveGenTypedDict(TypedDict, Generic[T]):
             foo: Optional['RecursiveGenTypedDict[T]']
@@ -538,7 +533,6 @@ def test_recursive_generic_typeddict_in_function_1():
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
 
     # Note: no model_rebuild() necessary here
     # RecursiveGenTypedDictModel.model_rebuild()
@@ -571,7 +565,6 @@ def test_recursive_generic_typeddict_in_function_2():
     # Second ordering: model first
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
 
     class RecursiveGenTypedDict(TypedDict, Generic[T]):
         foo: Optional['RecursiveGenTypedDict[T]']
@@ -604,7 +597,6 @@ def test_recursive_generic_typeddict_in_function_rebuild_error():
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
 
     IntModel = RecursiveGenTypedDictModel[int]
 
@@ -629,7 +621,6 @@ def test_recursive_generic_typeddict_in_function_rebuild_pass():
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
         rec: 'RecursiveGenTypedDict[T]'
-        model_config = dict(undefined_types_warning=False)
 
     IntModel = RecursiveGenTypedDictModel[int]
 
@@ -657,4 +648,27 @@ def test_recursive_generic_typeddict_in_function_rebuild_pass():
             'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
             'type': 'int_parsing',
         },
+    ]
+
+
+def test_typeddict_alias_generator(TypedDict):
+    def alias_generator(name: str) -> str:
+        return 'alias_' + name
+
+    class MyDict(TypedDict):
+        foo: str
+
+    class Model(BaseModel):
+        d: MyDict
+
+    analyzed = TypeAdapter(MyDict, config=ConfigDict(alias_generator=alias_generator))
+    model = analyzed.validate_python({'alias_foo': 'bar'})
+
+    assert model['foo'] == 'bar'
+
+    with pytest.raises(ValidationError) as exc_info:
+        analyzed.validate_python({'foo': 'bar'})
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'missing', 'loc': ('alias_foo',), 'msg': 'Field required', 'input': {'foo': 'bar'}},
+        {'input': 'bar', 'loc': ('foo',), 'msg': 'Extra inputs are not permitted', 'type': 'extra_forbidden'},
     ]

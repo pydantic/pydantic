@@ -1,22 +1,22 @@
-The primary means of defining objects in *pydantic* is via models
-(models are simply classes which inherit from `BaseModel`).
+The primary means of defining objects in Pydantic is via models. Models are simply classes which inherit from
+`BaseModel`.
 
 You can think of models as similar to types in strictly typed languages, or as the requirements of a single endpoint
 in an API.
 
-Untrusted data can be passed to a model, and after parsing and validation *pydantic* guarantees that the fields
+Untrusted data can be passed to a model and, after parsing and validation, Pydantic guarantees that the fields
 of the resultant model instance will conform to the field types defined on the model.
 
 !!! note
-    *pydantic* is primarily a parsing library, **not a validation library**.
+    Pydantic is primarily a parsing and transformation library, **not a validation library**.
     Validation is a means to an end: building a model which conforms to the types and constraints provided.
 
-    In other words, *pydantic* guarantees the types and constraints of the output model, not the input data.
+    In other words, Pydantic guarantees the types and constraints of the output model, not the input data.
 
     This might sound like an esoteric distinction, but it is not. If you're unsure what this means or
     how it might affect your usage you should read the section about [Data Conversion](#data-conversion) below.
 
-    Although validation is not the main purpose of *pydantic*, you **can** use this library for custom [validation](validators.md).
+    Although validation is not the main purpose of Pydantic, you **can** use this library for custom [validation](validators.md).
 
 ## Basic model usage
 
@@ -29,33 +29,35 @@ class User(BaseModel):
     name: str = 'Jane Doe'
 ```
 
-`User` here is a model with two fields `id` which is an integer and is required,
-and `name` which is a string and is not required (it has a default value). The type of `name` is inferred from the
-default value, and so a type annotation is not required (however note [this](#field-ordering) warning about field
-order when some fields do not have type annotations).
+In this example, `User` is a model with two fields:
+
+* `id`, which is an integer and is required
+* `name`, which is a string and is not required (it has a default value).
+
 
 ```py group="basic-model"
 user = User(id='123')
 ```
 
-`user` here is an instance of `User`. Initialisation of the object will perform all parsing and validation,
-if no `ValidationError` is raised, you know the resulting model instance is valid.
+In this example, `user` is an instance of `User`.
+Initialisation of the object will perform all parsing and validation.
+If no `ValidationError` is raised, you know the resulting model instance is valid.
 
 ```py group="basic-model"
 assert user.id == 123
 assert isinstance(user.id, int)
-# Note that 123.45 was cast to an int and its value is 123
+# Note that '123' was coerced to an int and its value is 123
 ```
 
-More details on the casting in the case of `user_x` can be found in [Data Conversion](#data-conversion).
+More details on pydantic's coercion logic can be found in [Data Conversion](#data-conversion).
 Fields of a model can be accessed as normal attributes of the user object.
-The string '123' has been cast to an int as per the field type
+The string '123' has been cast to an int as per the field type.
 
 ```py group="basic-model"
 assert user.name == 'Jane Doe'
 ```
 
-`name` wasn't set when user was initialised, so it has the default value
+`name` wasn't set when `user` was initialised, so it has the default value.
 
 ```py group="basic-model"
 assert user.model_fields_set == {'id'}
@@ -76,55 +78,37 @@ assert user.id == 321
 
 This model is mutable so field values can be changed.
 
-### Model properties
+### Model methods and properties
 
 The example above only shows the tip of the iceberg of what models can do.
 Models possess the following methods and attributes:
 
-`model_dump()`
-: returns a dictionary of the model's fields and values;
-  cf. [exporting models](exporting_models.md#modeldict)
+- `model_computed_fields`: a dictionary of the computed fields of this model instance.
+- `model_construct()`: a class method for creating models without running validation. See
+    [Creating models without validation](#creating-models-without-validation).
+- `model_copy()`: returns a copy (by default, shallow copy) of the model. See
+    [Exporting models](exporting_models.md#modelcopy).
+- `model_dump()`: returns a dictionary of the model's fields and values. See
+    [Exporting models](exporting_models.md#modeldump).
+- `model_dump_json()`: returns a JSON string representation of `model_dump()`. See
+    [Exporting models](exporting_models.md#modeldumpjson).
+- `model_extra`: get extra fields set during validation.
+- `model_fields_set`: set of fields which were set when the model instance was initialised.
+- `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [Schema](schema.md).
+- `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
+    See [Schema](schema.md).
+- `model_parameterized_name()`: compute the class name for parametrizations of generic classes.
+- `model_post_init()`: perform additional initialization after the model is initialised.
+- `model_rebuild()`: rebuild the model schema.
+- `model_validate()`: a utility for loading any object into a model with error handling if the object is not a
+    dictionary. See [Helper functions](#helper-functions).
+- `model_validate_json()`: a utility for validating the given JSON data against the Pydantic model. See
+    [Helper functions](#helper-functions).
 
-`model_dump_json()`
-: returns a JSON string representation `model_dump()`;
-  cf. [exporting models](exporting_models.md#modeljson)
+!!! note
+    See [`BaseModel`][pydantic.main.BaseModel] for the class definition including a full list of methods and attributes.
 
-`copy()`
-: returns a copy (by default, shallow copy) of the model; cf. [exporting models](exporting_models.md#modelcopy)
-
-`model_validate()`
-: a utility for loading any object into a model with error handling if the object is not a dictionary;
-  cf. [helper functions](#helper-functions)
-
-`parse_raw()`
-: a utility for loading strings of numerous formats; cf. [helper functions](#helper-functions)
-
-`parse_file()`
-: like `parse_raw()` but for file paths; cf. [helper functions](#helper-functions)
-
-`from_orm()`
-: loads data into a model from an arbitrary class; cf. [ORM mode](#orm-mode-aka-arbitrary-class-instances)
-
-`model_json_schema()`
-: returns a dictionary representing the model as JSON Schema; cf. [schema](schema.md)
-
-`schema_json()`
-: returns a JSON string representation of `schema()`; cf. [schema](schema.md)
-
-`model_construct()`
-: a class method for creating models without running validation;
-  cf. [Creating models without validation](#creating-models-without-validation)
-
-`model_fields_set`
-: Set of names of fields which were set when the model instance was initialised
-
-`model_fields`
-: a dictionary of the model's fields
-
-`__config__`
-: the configuration class for the model, cf. [model config](model_config.md)
-
-## Recursive Models
+## Recursive models
 
 More complex hierarchical data structures can be defined using models themselves as types in annotations.
 
@@ -165,16 +149,18 @@ print(m.model_dump())
 
 For self-referencing models, see [postponed annotations](postponed_annotations.md#self-referencing-models).
 
-## "From Attributes" (aka ORM Mode/Arbitrary Class Instances)
+## Arbitrary class instances
 
-Pydantic models can be created from arbitrary class instances to support models that map to ORM objects.
+(Formerly known as "ORM Mode"/`from_orm`.)
 
-To do this:
+Pydantic models can also be created from arbitrary class instances by reading the instance attributes corresponding
+to the model field names. One common application of this functionality is integration with object-relational mappings
+(ORMs).
 
-1. The [Config](model_config.md) property `from_attributes` must be set to `True`.
-2. The special constructor `from_orm` must be used to create the model instance.
+To do this, use the `model_config` property on the model with `from_attributes` set to `True`. See
+[Model Config](model_config.md) and [ConfigDict](../api/config.md) for more information.
 
-The example here uses SQLAlchemy, but the same approach should work for any ORM.
+The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
 ```py
 from typing import List
@@ -219,7 +205,7 @@ print(co_model)
 
 ### Reserved names
 
-You may want to name a Column after a reserved SQLAlchemy field. In that case, Field aliases will be
+You may want to name a `Column` after a reserved SQLAlchemy field. In that case, `Field` aliases will be
 convenient:
 
 ```py
@@ -260,11 +246,11 @@ print(pydantic_model.model_dump(by_alias=True))
     The example above works because aliases have priority over field names for
     field population. Accessing `SQLModel`'s `metadata` attribute would lead to a `ValidationError`.
 
-### Recursive ORM models
+### Recursive models
 
-ORM instances will be parsed with `from_orm` recursively as well as at the top level.
+Model instances will be parsed recursively as well as at the top level.
 
-Here a vanilla class is used to demonstrate the principle, but any ORM class could be used instead.
+Here a vanilla class is used to demonstrate the principle, but any class could be used instead.
 
 ```py
 from typing import List
@@ -308,65 +294,7 @@ name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', s
 """
 ```
 
-
-### Data binding
-
-Arbitrary classes are processed by *pydantic* using the `GetterDict` class (see
-[utils.py](https://github.com/pydantic/pydantic/blob/main/pydantic/utils.py)), which attempts to
-provide a dictionary-like interface to any class. You can customise how this works by setting your own
-sub-class of `GetterDict` as the value of `Config.getter_dict` (see [config](model_config.md)).
-
-You can also customise class validation using [root_validators](validators.md#root-validators) with `pre=True`.
-In this case your validator function will be passed a `GetterDict` instance which you may copy and modify.
-
-The `GetterDict` instance will be called for each field with a sentinel as a fallback (if no other default
-value is set). Returning this sentinel means that the field is missing. Any other value will
-be interpreted as the value of the field.
-
-```py
-from collections.abc import Mapping
-from typing import Optional
-from xml.etree.ElementTree import fromstring
-
-from pydantic import BaseModel, Field
-
-xmlstring = """
-<User Id="2138">
-    <FirstName>John</FirstName>
-    <LastName>Foobar</LastName>
-</User>
-"""
-
-
-class XmlMapping(Mapping):
-    def __init__(self, xmlstring):
-        self._xml = fromstring(xmlstring)
-
-    def __getitem__(self, key):
-        if key in {'Id', 'Status'}:
-            return self._xml.attrib.get(key)
-        else:
-            return self._xml.find(key).text
-
-    def __len__(self):
-        return len(self._xml.attrib) + len(self._xml)
-
-    def __iter__(self):
-        ...
-
-
-class User(BaseModel):
-    id: int = Field(alias='Id')
-    first_name: Optional[str] = Field(None, alias='FirstName')
-    last_name: Optional[str] = Field(None, alias='LastName')
-
-
-print(User.model_validate(XmlMapping(xmlstring)))
-#> id=2138 first_name='John' last_name='Foobar'
-```
-
-
-## Error Handling
+## Error handling
 
 *pydantic* will raise `ValidationError` whenever it finds an error in the data it's validating.
 
@@ -504,7 +432,7 @@ except ValidationError as e:
     """
 ```
 
-### Custom Errors
+### Custom errors
 
 In your custom data types or validators you should use `ValueError`, `TypeError` or `AssertionError` to raise errors.
 
@@ -577,13 +505,12 @@ except ValidationError as e:
             'msg': 'value is not "bar", got "ber"',
             'input': 'ber',
             'ctx': {'wrong_value': 'ber'},
-            'url': 'https://errors.pydantic.dev/2/v/not_a_bar',
         }
     ]
     """
 ```
 
-## Helper Functions
+## Helper functions
 
 *Pydantic* provides three `classmethod` helper functions on models for parsing data:
 
@@ -686,7 +613,7 @@ of the data provided.
 For example, in the example above, if `_fields_set` was not provided,
 `new_user.model_fields_set` would be `{'id', 'age', 'name'}`.
 
-## Generic Models
+## Generic models
 
 Pydantic supports the creation of generic models to make it easier to reuse a common model structure.
 
@@ -991,7 +918,13 @@ except ValidationError as e:
     """
 ```
 
-## Using Pydantic without creating a BaseModel
+!!! note
+    To pickle a dynamically created model:
+
+    - the model must be defined globally
+    - it must provide `__module__`
+
+## Using Pydantic without creating a `BaseModel`
 
 You may have types that are not `BaseModel`s that you want to validate data against.
 Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
@@ -1030,7 +963,7 @@ except ValidationError as e:
 
 For many use cases `TypeAdapter` can replace BaseModels with a `__root__` field in Pydantic V1.
 
-## Custom Root Types
+## Custom root types
 
 Pydantic models can be defined with a custom root type by declaring the `__root__` field.
 
@@ -1121,7 +1054,7 @@ print(pets[0])
 print([pet for pet in pets])
 ```
 
-## Faux Immutability
+## Faux immutability
 
 Models can be configured to be immutable via `allow_mutation = False`. When this is set, attempting to change the
 values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
@@ -1131,7 +1064,7 @@ values of instance attributes will raise errors. See [model config](model_config
     modify a so-called "immutable" object.
 
 ```py
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 
 
 class FooBarModel(BaseModel):
@@ -1144,9 +1077,13 @@ foobar = FooBarModel(a='hello', b={'apple': 'pear'})
 
 try:
     foobar.a = 'different'
-except TypeError as e:
+except ValidationError as e:
     print(e)
-    #> "FooBarModel" is frozen and does not support item assignment
+    """
+    1 validation error for FooBarModel
+    a
+      Instance is frozen [type=frozen_instance, input_value='different', input_type=str]
+    """
 
 print(foobar.a)
 #> hello
@@ -1160,7 +1097,7 @@ print(foobar.b)
 Trying to change `a` caused an error, and `a` remains unchanged. However, the dict `b` is mutable, and the
 immutability of `foobar` doesn't stop `b` from being changed.
 
-## Abstract Base Classes
+## Abstract base classes
 
 Pydantic models can be used alongside Python's
 [Abstract Base Classes](https://docs.python.org/3/library/abc.html) (ABCs).
@@ -1180,7 +1117,7 @@ class FooBarModel(BaseModel, abc.ABC):
         pass
 ```
 
-## Field Ordering
+## Field ordering
 
 Field order is important in models for the following reasons:
 
@@ -1413,7 +1350,7 @@ This function is capable of parsing data into any of the types pydantic can hand
 Pydantic also includes two similar standalone functions called `parse_file_as` and `parse_raw_as`,
 which are analogous to `BaseModel.parse_file` and `BaseModel.parse_raw`.
 
-## Data Conversion
+## Data conversion
 
 *pydantic* may cast input data to force it to conform to model field types,
 and in some cases this may result in a loss of information.

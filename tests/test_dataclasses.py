@@ -9,11 +9,21 @@ from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Opti
 
 import pytest
 from dirty_equals import HasRepr
+from pydantic_core import ArgsKwargs, SchemaValidator
 from typing_extensions import Literal
 
 import pydantic
-from pydantic import BaseModel, ConfigDict, FieldValidationInfo, TypeAdapter, ValidationError
-from pydantic.decorators import field_validator
+from pydantic import (
+    BaseModel,
+    ConfigDict,
+    FieldValidationInfo,
+    PydanticUserError,
+    TypeAdapter,
+    ValidationError,
+    field_validator,
+)
+from pydantic._internal._model_construction import MockValidator
+from pydantic.dataclasses import rebuild_dataclass
 from pydantic.fields import Field, FieldInfo
 from pydantic.json_schema import model_json_schema
 
@@ -1410,13 +1420,10 @@ def test_forbid_extra():
         Foo(**{'x': '1', 'y': '2'})
 
 
-@pytest.mark.xfail(reason='need to make it possible to rebuild dataclasses')
 def test_self_reference_dataclass():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
         self_reference: Optional['MyDataclass'] = None
-
-    # rebuild_pydantic_dataclass(MyDataclass)
 
     assert MyDataclass.__pydantic_fields__['self_reference'].annotation == Optional[MyDataclass]
 
@@ -1426,7 +1433,7 @@ def test_self_reference_dataclass():
     }
 
     with pytest.raises(ValidationError) as exc_info:
-        MyDataclass(self_reference=MyDataclass(self_reference=1))
+        MyDataclass(self_reference=1)
 
     assert exc_info.value.errors(include_url=False) == [
         {
@@ -1439,25 +1446,122 @@ def test_self_reference_dataclass():
     ]
 
 
-@pytest.mark.xfail(reason='need to make it possible to rebuild dataclasses')
-def test_cyclic_reference_dataclass():
-    @pydantic.dataclasses.dataclass
+def test_cyclic_reference_dataclass(create_module):
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
     class D1:
         d2: Optional['D2'] = None
 
-    @pydantic.dataclasses.dataclass
-    class D2:
-        d1: Optional[D1] = None
+    @create_module
+    def module():
+        from typing import Optional
 
-    # rebuild_pydantic_dataclass(D1)
+        import pydantic
 
+        @pydantic.dataclasses.dataclass(config=pydantic.ConfigDict(extra='forbid'))
+        class D2:
+            d1: Optional['D1'] = None
+
+    # Ensure D2 is in the local namespace; note everything works even though it wasn't _defined_ in this namespace
+    D2 = module.D2
+
+    # Confirm D1 and D2 require rebuilding
+    assert isinstance(D1.__pydantic_validator__, MockValidator)
+    assert isinstance(D2.__pydantic_validator__, MockValidator)
+
+    # Note: the rebuilds of D1 and D2 happen automatically, and works since it grabs the locals here as the namespace,
+    # which contains D1 and D2
     instance = D1(d2=D2(d1=D1(d2=D2(d1=D1()))))
 
-    assert TypeAdapter(D1).dump_python(instance) == {...}
+    # Confirm D1 and D2 have been rebuilt
+    assert isinstance(D1.__pydantic_validator__, SchemaValidator)
+    assert isinstance(D2.__pydantic_validator__, SchemaValidator)
+
+    assert TypeAdapter(D1).dump_python(instance) == {'d2': {'d1': {'d2': {'d1': {'d2': None}}}}}
 
     with pytest.raises(ValidationError) as exc_info:
-        D1(d2=D2(d1=D1(d2=D2(d1=D2()))))
-    assert exc_info.value.errors(include_url=False) == [...]
+        D2(d1=D2())
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'dataclass_name': 'D1'},
+            'input': D2(d1=None),
+            'loc': ('d1',),
+            'msg': 'Input should be a dictionary or an instance of D1',
+            'type': 'dataclass_type',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        TypeAdapter(D1).validate_python(dict(d2=dict(d1=dict(d2=dict(d2=dict())))))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': {},
+            'loc': ('d2', 'd1', 'd2', 'd2'),
+            'msg': 'Unexpected keyword argument',
+            'type': 'unexpected_keyword_argument',
+        }
+    ]
+
+
+def test_cross_module_cyclic_reference_dataclass(create_module):
+    @pydantic.dataclasses.dataclass(config=ConfigDict(extra='forbid'))
+    class D1:
+        d2: Optional['D2'] = None  # noqa F821
+
+    @create_module
+    def module():
+        from typing import Optional
+
+        import pydantic
+
+        @pydantic.dataclasses.dataclass(config=pydantic.ConfigDict(extra='forbid'))
+        class D2:
+            d1: Optional['D1'] = None
+
+    # Since D2 is not in locals, it will not be picked up by the auto-rebuild:
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            '`D1` is not fully defined; you should define `D2`, then call'
+            ' `pydantic.dataclasses.rebuild_dataclass(D1)` before the first `D1` instance is created.'
+        ),
+    ):
+        D1()
+
+    # Explicitly rebuild D1, specifying the appropriate types namespace
+    rebuild_dataclass(D1, _types_namespace={'D2': module.D2, 'D1': D1})
+
+    # Confirm D2 still requires a rebuild (it will happen automatically)
+    assert isinstance(module.D2.__pydantic_validator__, MockValidator)
+
+    instance = D1(d2=module.D2(d1=D1(d2=module.D2(d1=D1()))))
+
+    # Confirm auto-rebuild of D2 has now happened
+    assert isinstance(module.D2.__pydantic_validator__, SchemaValidator)
+
+    assert TypeAdapter(D1).dump_python(instance) == {'d2': {'d1': {'d2': {'d1': {'d2': None}}}}}
+
+    with pytest.raises(ValidationError) as exc_info:
+        module.D2(d1=module.D2())
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'dataclass_name': 'D1'},
+            'input': module.D2(d1=None),
+            'loc': ('d1',),
+            'msg': 'Input should be a dictionary or an instance of D1',
+            'type': 'dataclass_type',
+        }
+    ]
+
+    with pytest.raises(ValidationError) as exc_info:
+        TypeAdapter(D1).validate_python(dict(d2=dict(d1=dict(d2=dict(d2=dict())))))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': {},
+            'loc': ('d2', 'd1', 'd2', 'd2'),
+            'msg': 'Unexpected keyword argument',
+            'type': 'unexpected_keyword_argument',
+        }
+    ]
 
 
 @pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
@@ -1869,3 +1973,34 @@ def test_recursive_dataclasses_gh_4509(create_module) -> None:
     me = module.Foo([burger])
 
     assert me.recipes == [burger]
+
+
+def test_dataclass_alias_generator():
+    def alias_generator(name: str) -> str:
+        return 'alias_' + name
+
+    @pydantic.dataclasses.dataclass(config=ConfigDict(alias_generator=alias_generator))
+    class User:
+        name: str
+        score: int = Field(alias='my_score')
+
+    user = User(**{'alias_name': 'test name', 'my_score': 2})
+    assert user.name == 'test name'
+    assert user.score == 2
+
+    with pytest.raises(ValidationError) as exc_info:
+        User(name='test name', score=2)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'missing',
+            'loc': ('alias_name',),
+            'msg': 'Field required',
+            'input': ArgsKwargs((), {'name': 'test name', 'score': 2}),
+        },
+        {
+            'type': 'missing',
+            'loc': ('my_score',),
+            'msg': 'Field required',
+            'input': ArgsKwargs((), {'name': 'test name', 'score': 2}),
+        },
+    ]

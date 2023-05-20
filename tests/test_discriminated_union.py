@@ -306,9 +306,7 @@ def test_discriminated_union_basemodel_instance_value_with_alias():
 
     with pytest.raises(ValidationError) as exc_info:
         Top(sub=A(literal='a'))
-    # TODO: Adding this note here that we should make sure the produced error messages for DiscriminatedUnion
-    #   have the same behavior as elsewhere when aliases are involved.
-    #   (I.e., possibly using the alias value as the 'loc')
+
     assert exc_info.value.errors(include_url=False) == [
         {'input': {'literal': 'a'}, 'loc': ('lit',), 'msg': 'Field required', 'type': 'missing'}
     ]

@@ -23,7 +23,7 @@ from typing import (
 
 import pytest
 from dirty_equals import HasRepr, IsStr
-from pydantic_core import PydanticSerializationError, core_schema
+from pydantic_core import ErrorDetails, InitErrorDetails, PydanticSerializationError, core_schema
 from typing_extensions import Annotated, get_args
 
 from pydantic import (
@@ -35,21 +35,21 @@ from pydantic import (
     ValidationError,
     constr,
     errors,
-)
-from pydantic.decorators import (
-    field_serializer,
     field_validator,
-    model_serializer,
     model_validator,
     root_validator,
     validator,
 )
 from pydantic.fields import Field, computed_field
+from pydantic.functional_serializers import (
+    field_serializer,
+    model_serializer,
+)
 
 
 def test_str_bytes():
     class Model(BaseModel):
-        v: Union[str, bytes] = ...
+        v: Union[str, bytes]
 
     m = Model(v='s')
     assert m.v == 's'
@@ -1237,7 +1237,7 @@ def test_multiple_errors():
             'type': 'decimal_parsing',
             'loc': (
                 'a',
-                'lax-or-strict[lax=function-after[validate(), union[is-instance[Decimal],int,float,constrained-str]],strict=custom-error[function-after[validate(), is-instance[Decimal]]]]',  # noqa: E501
+                'lax-or-strict[lax=function-after[validate(), union[json-or-python[json=function-after[Decimal(), union[int,float,constrained-str]],python=is-instance[Decimal]],int,float,constrained-str]],strict=custom-error[function-after[validate(), json-or-python[json=function-after[Decimal(), union[int,float,constrained-str]],python=is-instance[Decimal]]]]]',  # noqa: E501
             ),
             'msg': 'Input should be a valid decimal',
             'input': 'foobar',
@@ -1315,8 +1315,24 @@ def test_self_recursive():
     assert m.model_dump() == {'sm': {'self': 123}}
 
 
-@pytest.mark.xfail(reason='need to detect and error if you override __init__; need to suggest a migration path')
-def test_nested_init():
+def test_custom_init():
+    class Model(BaseModel):
+        x: int
+
+        def __init__(self, x: int, y: int):
+            if isinstance(y, str):
+                y = len(y)
+            super().__init__(x=x + int(y))
+
+    assert Model(x=1, y=1).x == 2
+    assert Model.model_validate({'x': 1, 'y': 1}).x == 2
+    assert Model.model_validate_json('{"x": 1, "y": 2}').x == 3
+
+    # For documentation purposes: type hints on __init__ are not currently used for validation:
+    assert Model.model_validate({'x': 1, 'y': 'abc'}).x == 4
+
+
+def test_nested_custom_init():
     class NestedModel(BaseModel):
         self: str
         modified_number: int = 1
@@ -1329,12 +1345,6 @@ def test_nested_init():
         self: str
         nest: NestedModel
 
-    # TODO: Do we want any changes to this behavior in v2? (Currently the __init__-override is not called)
-    #   "I guess this should be an error or warning. If you want to do stuff on init, you should use model_post_init"
-    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130684097
-    #   -
-    #   I think we can detect and warn/error if you override `__init__`. If we do that,
-    #   we'll need to add a note to the migration guide about it.
     m = TopModel.model_validate(dict(self='Top Model', nest=dict(self='Nested Model', modified_number=0)))
     assert m.self == 'Top Model'
     assert m.nest.self == 'Nested Model'
@@ -1342,15 +1352,21 @@ def test_nested_init():
 
 
 def test_init_inspection():
+    calls = []
+
     class Foobar(BaseModel):
         x: int
 
         def __init__(self, **data) -> None:
             with pytest.raises(AttributeError):
+                calls.append(data)
                 assert self.x
             super().__init__(**data)
 
     Foobar(x=1)
+    Foobar.model_validate({'x': 2})
+    Foobar.model_validate_json('{"x": 3}')
+    assert calls == [{'x': 1}, {'x': 2}, {'x': 3}]
 
 
 def test_type_on_annotation():
@@ -1881,7 +1897,6 @@ def test_required_any():
     }
 
 
-@pytest.mark.xfail(reason='need to modify loc of ValidationError')
 def test_custom_generic_validators():
     T1 = TypeVar('T1')
     T2 = TypeVar('T2')
@@ -1905,12 +1920,27 @@ def test_custom_generic_validators():
             t1_f = TypeAdapter(args[0]).validate_python
             t2_f = TypeAdapter(args[1]).validate_python
 
-            def validate(v, info):
+            def convert_to_init_error(e: ErrorDetails, loc: str) -> InitErrorDetails:
+                init_e = {'type': e['type'], 'loc': e['loc'] + (loc,), 'input': e['input']}
+                if 'ctx' in e:
+                    init_e['ctx'] = e['ctx']
+                return init_e
+
+            def validate(v, _info):
                 if not args:
                     return v
-                # TODO: Collect these errors, rather than stopping early, and modify the loc to make the test pass
-                t1_f(v.t1)
-                t2_f(v.t2)
+                try:
+                    v.t1 = t1_f(v.t1)
+                except ValidationError as exc:
+                    raise ValidationError.from_exception_data(
+                        exc.title, [convert_to_init_error(e, 't1') for e in exc.errors()]
+                    ) from exc
+                try:
+                    v.t2 = t2_f(v.t2)
+                except ValidationError as exc:
+                    raise ValidationError.from_exception_data(
+                        exc.title, [convert_to_init_error(e, 't2') for e in exc.errors()]
+                    ) from exc
                 return v
 
             return core_schema.general_after_validator_function(validate, schema)
@@ -2010,7 +2040,7 @@ def test_custom_generic_disallowed():
 
     match = (
         r'Unable to generate pydantic-core schema for (.*)MyGen\[str, bool\](.*). '
-        r'Setting `arbitrary_types_allowed=True` in the model_config may prevent this error.'
+        r'Set `arbitrary_types_allowed=True` in the model_config ignore this error'
     )
     with pytest.raises(TypeError, match=match):
 
@@ -2330,11 +2360,13 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         def my_model_validator(cls, values, handler, info):
             raise NotImplementedError
 
-        @root_validator(skip_on_failure=True)
-        @classmethod
-        @abstractmethod
-        def my_root_validator(cls, values):
-            raise NotImplementedError
+        with pytest.warns(DeprecationWarning):
+
+            @root_validator(skip_on_failure=True)
+            @classmethod
+            @abstractmethod
+            def my_root_validator(cls, values):
+                raise NotImplementedError
 
         with pytest.warns(DeprecationWarning):
 
@@ -2357,7 +2389,7 @@ def test_abstractmethod_missing_for_all_decorators(bases):
         @computed_field
         @property
         @abstractmethod
-        def my_computed_field(self):
+        def my_computed_field(self) -> Any:
             raise NotImplementedError
 
     class Square(AbstractSquare):
@@ -2383,8 +2415,6 @@ def test_abstractmethod_missing_for_all_decorators(bases):
 def test_generic_wrapped_forwardref():
     class Operation(BaseModel):
         callbacks: list['PathItem']
-
-        model_config = {'undefined_types_warning': False}
 
     class PathItem(BaseModel):
         pass
@@ -2432,13 +2462,10 @@ def test_invalid_forward_ref_model():
     with pytest.raises(error, **kwargs):
 
         class M(BaseModel):
-            model_config = {'undefined_types_warning': False}
             B: ForwardRef('B') = Field(default=None)
 
     # The solution:
     class A(BaseModel):
-        model_config = {'undefined_types_warning': False}
-
         B: ForwardRef('__types["B"]') = Field()  # F821
 
     assert A.model_fields['B'].annotation == ForwardRef('__types["B"]')  # F821
@@ -2451,10 +2478,10 @@ def test_invalid_forward_ref_model():
     class C(BaseModel):
         pass
 
-    assert not A.__pydantic_model_complete__
+    assert not A.__pydantic_complete__
     types = {'B': B}
     A.model_rebuild(_types_namespace={'__types': types})
-    assert A.__pydantic_model_complete__
+    assert A.__pydantic_complete__
 
     assert A(B=B()).B == B()
     with pytest.raises(ValidationError) as exc_info:

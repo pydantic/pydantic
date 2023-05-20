@@ -35,7 +35,6 @@ class ConfigWrapper:
     use_enum_values: bool
     validate_assignment: bool
     arbitrary_types_allowed: bool
-    undefined_types_warning: bool
     from_attributes: bool
     # whether to use the used alias (or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default True
@@ -54,6 +53,7 @@ class ConfigWrapper:
     # whether to validate default values during validation, default False
     validate_default: bool
     validate_return: bool
+    protected_namespaces: tuple[str, ...]
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -109,17 +109,18 @@ class ConfigWrapper:
                 except KeyError:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
-    def core_config(self, obj: Any = None) -> core_schema.CoreConfig:
+    def core_config(self, obj: Any) -> core_schema.CoreConfig:
         """
         Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
 
+        Pass `obj=None` if you do not want to attempt to infer the `title`.
+
         We don't use getattr here since we don't want to populate with defaults.
         """
-        extra = self.config_dict.get('extra')
         core_config = core_schema.CoreConfig(
             **core_schema.dict_not_none(
                 title=self.config_dict.get('title') or (obj and obj.__name__),
-                extra_fields_behavior=extra,
+                extra_fields_behavior=self.config_dict.get('extra'),
                 allow_inf_nan=self.config_dict.get('allow_inf_nan'),
                 populate_by_name=self.config_dict.get('populate_by_name'),
                 str_strip_whitespace=self.config_dict.get('str_strip_whitespace'),
@@ -157,7 +158,6 @@ config_defaults = ConfigDict(
     use_enum_values=False,
     validate_assignment=False,
     arbitrary_types_allowed=False,
-    undefined_types_warning=True,
     from_attributes=False,
     loc_by_alias=True,
     alias_generator=None,
@@ -170,6 +170,7 @@ config_defaults = ConfigDict(
     ser_json_bytes='utf8',
     validate_default=False,
     validate_return=False,
+    protected_namespaces=('model_',),
 )
 
 

@@ -56,8 +56,7 @@ class ConfigDict(TypedDict, total=False):
         populate_by_name (bool): Whether to populate fields by name. Defaults to False.
         use_enum_values (bool): Whether to use enum values. Defaults to False.
         validate_assignment (bool): Whether to validate assignments. Defaults to False.
-        arbitrary_types_allowed (bool): Whether to allow arbitrary types. Defaults to True.
-        undefined_types_warning (bool): Whether to show a warning for undefined types. Defaults to True.
+        arbitrary_types_allowed (bool): Whether to allow arbitrary types. Defaults to False.
         from_attributes (bool): Whether to set attributes from the configuration. Defaults to False.
         loc_by_alias (bool): Whether to use the alias for error `loc`s. Defaults to True.
         alias_generator (Optional[Callable[[str], str]]): A function to generate aliases. Defaults to None.
@@ -70,6 +69,7 @@ class ConfigDict(TypedDict, total=False):
             Defaults to 'iso8601'.
         ser_json_bytes (Literal['utf8', 'base64']): The encoding of JSON serialized bytes. Defaults to 'utf8'.
         validate_default (bool): Whether to validate default values during validation. Defaults to False.
+        protected_namespaces (tuple[str, ..]): A list of protected namespaces. Defaults to ('model_', ).
     """
 
     title: str | None
@@ -83,8 +83,7 @@ class ConfigDict(TypedDict, total=False):
     populate_by_name: bool
     use_enum_values: bool
     validate_assignment: bool
-    arbitrary_types_allowed: bool  # TODO default True, or remove
-    undefined_types_warning: bool  # TODO review docs
+    arbitrary_types_allowed: bool
     from_attributes: bool
     # whether to use the used alias (or first alias for "field required" errors) instead of field_names
     # to construct error `loc`s, default True
@@ -104,6 +103,7 @@ class ConfigDict(TypedDict, total=False):
     validate_default: bool
     # whether to validate the return value from call validator
     validate_return: bool
+    protected_namespaces: tuple[str, ...]
 
 
 __getattr__ = getattr_migration(__name__)

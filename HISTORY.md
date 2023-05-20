@@ -1,3 +1,9 @@
+## v2.0a4 (2023-05-05)
+
+Fourth pre-release of Pydantic V2
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0a4)
+
 ## v2.0a3 (2023-04-20)
 
 Third pre-release of Pydantic V2
