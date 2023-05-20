@@ -144,6 +144,7 @@ __all__ = [
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
+    'SkipValidation',
     # type_adapter
     'TypeAdapter',
     # version
