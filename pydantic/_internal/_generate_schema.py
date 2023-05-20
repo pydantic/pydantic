@@ -1371,7 +1371,7 @@ class _CommonField(TypedDict):
     serialization_alias: str | None
     serialization_exclude: bool | None
     frozen: bool | None
-    metadata: Any
+    metadata: dict[str, Any]
 
 
 def _common_field(

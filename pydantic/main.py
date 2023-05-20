@@ -1261,18 +1261,14 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     root: RootModelRootType
 
-    def __init__(__pydantic_self__, data: RootModelRootType) -> None:  # type: ignore
+    def __init__(__pydantic_self__, root: RootModelRootType) -> None:  # type: ignore
         __tracebackhide__ = True
-        __pydantic_self__.__pydantic_validator__.validate_python(data, self_instance=__pydantic_self__)
+        __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 
     __init__.__pydantic_base_init__ = True  # type: ignore
 
-    def __iter__(self) -> TupleGenerator:
-        """Mimics Pydantic v1 `dict(model)` behavior for RootModel"""
-        yield ('__root__', self.model_dump())
-
     def __repr_args__(self) -> _repr.ReprArgs:
-        yield ('root', self.root)
+        yield 'root', self.root
 
 
 @typing.overload

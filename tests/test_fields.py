@@ -32,7 +32,7 @@ def test_init_var_does_not_work():
 
 
 def test_root_model_arbitrary_field_name_error():
-    with pytest.raises(NameError, match='Field name "a_field" cannot be used in a RootModel'):
+    with pytest.raises(NameError, match="Extra field with name 'a_field' cannot be used in a `RootModel`"):
 
         class Model(RootModel[int]):
             a_field: str

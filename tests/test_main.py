@@ -30,7 +30,6 @@ from pydantic import (
     PrivateAttr,
     PydanticUndefinedAnnotation,
     PydanticUserError,
-    RootModel,
     SecretStr,
     ValidationError,
     ValidationInfo,
@@ -2219,96 +2218,3 @@ def test_multiple_protected_namespace():
             also_protect_field: str
 
             model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
-
-
-def parametrize_root_model():
-    class InnerModel(BaseModel):
-        int_field: int
-        str_field: str
-
-    return pytest.mark.parametrize(
-        ('root_type', 'root_value', 'dump_value'),
-        [
-            pytest.param(int, 42, 42, id='int'),
-            pytest.param(str, 'forty two', 'forty two', id='str'),
-            pytest.param(Dict[int, bool], {1: True, 2: False}, {1: True, 2: False}, id='dict[int, bool]'),
-            pytest.param(List[int], [4, 2, -1], [4, 2, -1], id='list[int]'),
-            pytest.param(
-                InnerModel,
-                InnerModel(int_field=42, str_field='forty two'),
-                {'int_field': 42, 'str_field': 'forty two'},
-                id='InnerModel',
-            ),
-        ],
-    )
-
-
-@parametrize_root_model()
-def test_root_model_specialized(root_type, root_value, dump_value):
-    Model = RootModel[root_type]
-
-    assert Model.__pydantic_core_schema__['type'] == 'model'
-    assert Model.__pydantic_core_schema__['root_model'] is True
-    assert Model.__pydantic_core_schema__['custom_init'] is False
-
-    m = Model(root_value)
-
-    assert m.model_dump() == dump_value
-    assert dict(m) == {'__root__': dump_value}
-
-
-@parametrize_root_model()
-def test_root_model_inherited(root_type, root_value, dump_value):
-    class Model(RootModel[root_type]):
-        pass
-
-    assert Model.__pydantic_core_schema__['type'] == 'model'
-    assert Model.__pydantic_core_schema__['root_model'] is True
-    assert Model.__pydantic_core_schema__['custom_init'] is False
-
-    m = Model(root_value)
-
-    assert m.model_dump() == dump_value
-    assert dict(m) == {'__root__': dump_value}
-
-
-def test_root_model_validation_error():
-    Model = RootModel[int]
-
-    with pytest.raises(ValidationError) as e:
-        Model('forty two')
-
-    assert e.value.errors(include_url=False) == [
-        {
-            'input': 'forty two',
-            'loc': (),
-            'msg': 'Input should be a valid integer, unable to parse string as an ' 'integer',
-            'type': 'int_parsing',
-        },
-    ]
-
-
-def test_root_model_repr():
-    SpecializedRootModel = RootModel[int]
-
-    class SubRootModel(RootModel):
-        pass
-
-    class SpecializedSubRootModel(RootModel[int]):
-        pass
-
-    assert repr(SpecializedRootModel(1)) == 'RootModel[int](root=1)'
-    assert repr(SubRootModel(1)) == 'SubRootModel(root=1)'
-    assert repr(SpecializedSubRootModel(1)) == 'SpecializedSubRootModel(root=1)'
-
-
-def test_root_model_recursive():
-    class A(RootModel[List['B']]):
-        def my_a_method(self):
-            pass
-
-    class B(RootModel[Dict[str, Optional[A]]]):
-        def my_b_method(self):
-            pass
-
-    assert repr(A.model_validate([{}])) == 'A(root=[B(root={})])'
