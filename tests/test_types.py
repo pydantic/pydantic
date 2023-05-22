@@ -28,6 +28,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
@@ -5080,8 +5081,8 @@ def test_transform_schema_for_first_party_class():
     class LowercaseStr(str):
         @classmethod
         def __prepare_pydantic_annotations__(
-            cls, _source: type[Any], annotations: Iterable[Any]
-        ) -> tuple[Any, list[Any]]:
+            cls, _source: Type[Any], annotations: Iterable[Any]
+        ) -> Tuple[Any, List[Any]]:
             def transform_schema(schema: CoreSchema) -> CoreSchema:
                 return core_schema.no_info_after_validator_function(lambda v: v.lower(), schema)
 
@@ -5120,8 +5121,8 @@ def test_transform_schema_for_third_party_class():
         # ensures pydantic can produce a valid schema.
         @classmethod
         def __prepare_pydantic_annotations__(
-            cls, _source: type[Any], annotations: Iterable[Any]
-        ) -> tuple[Any, list[Any]]:
+            cls, _source: Type[Any], annotations: Iterable[Any]
+        ) -> Tuple[Any, List[Any]]:
             def transform(schema: CoreSchema) -> CoreSchema:
                 return core_schema.no_info_after_validator_function(lambda v: DatetimeWrapper(v), schema)
 
