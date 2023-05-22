@@ -515,6 +515,7 @@ class BaseModel(metaclass=ModelMetaclass):
         private_attrs = ((k, getattr(self, k, Undefined)) for k in self.__private_attributes__)
         return {
             '__dict__': self.__dict__,
+            '__pydantic_extra__': self.__pydantic_extra__,
             '__pydantic_fields_set__': self.__pydantic_fields_set__,
             '__private_attribute_values__': {k: v for k, v in private_attrs if v is not Undefined},
         }
@@ -522,6 +523,7 @@ class BaseModel(metaclass=ModelMetaclass):
     def __setstate__(self, state: dict[Any, Any]) -> None:
         _object_setattr(self, '__dict__', state['__dict__'])
         _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
+        _object_setattr(self, '__pydantic_extra__', state['__pydantic_extra__'])
         for name, value in state.get('__private_attribute_values__', {}).items():
             _object_setattr(self, name, value)
 
@@ -777,6 +779,9 @@ class BaseModel(metaclass=ModelMetaclass):
                 return False
 
             if self.__dict__ != other.__dict__:
+                return False
+
+            if self.__pydantic_extra__ != other.__pydantic_extra__:
                 return False
 
             # If the types and field values match, check for equality of private attributes
