@@ -59,8 +59,8 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
         (Decimal('1'), 1),
         (Decimal('1.0'), 1),
         (i64_max, i64_max),
-        (i64_max + 1, i64_max),
-        (i64_max * 2, i64_max),
+        (i64_max + 1, i64_max + 1),
+        (i64_max * 2, i64_max * 2),
         pytest.param(
             Decimal('1.001'),
             Err(
@@ -78,6 +78,54 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
 )
 def test_int(input_value, expected):
     v = SchemaValidator({'type': 'int'})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        output = v.validate_python(input_value)
+        assert output == expected
+        assert isinstance(output, int)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        (Decimal('1'), 1),
+        (Decimal('1.0'), 1),
+        (i64_max, i64_max),
+        (
+            i64_max + 1,
+            Err(
+                'Input integer too large to convert to 64-bit integer '
+                '[type=int_overflow, input_value=9223372036854775808, input_type=int]'
+            ),
+        ),
+        (
+            i64_max * 2,
+            Err(
+                'Input integer too large to convert to 64-bit integer '
+                '[type=int_overflow, input_value=18446744073709551614, input_type=int]'
+            ),
+        ),
+        # (0, Err('Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]')),
+        (-1, Err('Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]')),
+        pytest.param(
+            Decimal('1.001'),
+            Err(
+                'Input should be a valid integer, got a number with a fractional part '
+                "[type=int_from_float, input_value=Decimal('1.001'), input_type=Decimal]"
+            ),
+            id='decimal-remainder',
+        ),
+        pytest.param(
+            (1, 2),
+            Err('Input should be a valid integer [type=int_type, input_value=(1, 2), input_type=tuple]'),
+            id='tuple',
+        ),
+    ],
+)
+def test_positive_int(input_value, expected):
+    v = SchemaValidator({'type': 'int', 'gt': 0})
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             v.validate_python(input_value)

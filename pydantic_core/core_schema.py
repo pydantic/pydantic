@@ -3761,6 +3761,7 @@ ErrorType = Literal[
     'int_type',
     'int_parsing',
     'int_from_float',
+    'int_overflow',
     'float_type',
     'float_parsing',
     'bytes_type',

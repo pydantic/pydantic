@@ -6,7 +6,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::{py_err, py_error_type, SchemaDict};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
@@ -47,9 +47,15 @@ impl BuildValidator for LiteralValidator {
         let mut repr_args: Vec<String> = Vec::new();
         for item in expected.iter() {
             repr_args.push(item.repr()?.extract()?);
-            if let Some(int) = item.as_int_strict() {
+            if let Ok(either_int) = item.strict_int() {
+                let int = either_int
+                    .try_into()
+                    .map_err(|_| py_error_type!("error extracting int {:?}", item))?;
                 expected_int.insert(int);
-            } else if let Some(str) = item.as_str_strict() {
+            } else if let Ok(either_str) = item.strict_str() {
+                let str = either_str
+                    .as_cow()
+                    .map_err(|_| py_error_type!("error extracting str {:?}", item))?;
                 expected_str.insert(str.to_string());
             } else {
                 expected_py.set_item(item, item)?;
@@ -76,15 +82,17 @@ impl Validator for LiteralValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         if let Some(expected_ints) = &self.expected_int {
-            if let Some(int) = input.as_int_strict() {
+            if let Ok(either_int) = input.strict_int() {
+                let int = either_int.try_into()?;
                 if expected_ints.contains(&int) {
                     return Ok(input.to_object(py));
                 }
             }
         }
         if let Some(expected_strings) = &self.expected_str {
-            if let Some(str) = input.as_str_strict() {
-                if expected_strings.contains(str) {
+            if let Ok(either_str) = input.strict_str() {
+                let cow = either_str.as_cow()?;
+                if expected_strings.contains(cow.as_ref()) {
                     return Ok(input.to_object(py));
                 }
             }

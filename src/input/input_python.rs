@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::str::from_utf8;
 
-use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{
     PyBool, PyByteArray, PyBytes, PyDate, PyDateTime, PyDelta, PyDict, PyFrozenSet, PyInt, PyIterator, PyList,
@@ -22,8 +21,8 @@ use super::datetime::{
 };
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    py_string_str, EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericIterable, GenericIterator,
-    GenericMapping, Input, JsonInput, PyArgs,
+    py_string_str, EitherBytes, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable,
+    GenericIterator, GenericMapping, Input, JsonInput, PyArgs,
 };
 
 #[cfg(not(PyPy))]
@@ -227,14 +226,6 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn as_str_strict(&self) -> Option<&str> {
-        if self.get_type().is(get_py_str_type(self.py())) {
-            self.extract().ok()
-        } else {
-            None
-        }
-    }
-
     fn strict_bytes(&'a self) -> ValResult<EitherBytes<'a>> {
         if let Ok(py_bytes) = self.downcast::<PyBytes>() {
             Ok(py_bytes.into())
@@ -281,34 +272,31 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
-    fn strict_int(&self) -> ValResult<i64> {
-        // bool check has to come before int check as bools would be cast to ints below
-        if self.extract::<bool>().is_ok() {
-            Err(ValError::new(ErrorType::IntType, self))
-        } else if let Ok(int) = self.extract::<i64>() {
-            Ok(int)
+    fn strict_int(&'a self) -> ValResult<EitherInt<'a>> {
+        if PyInt::is_exact_type_of(self) {
+            Ok(EitherInt::Py(self))
+        } else if PyInt::is_type_of(self) {
+            // bools are a subclass of int, so check for bool type in this specific case
+            if PyBool::is_exact_type_of(self) {
+                Err(ValError::new(ErrorType::IntType, self))
+            } else {
+                Ok(EitherInt::Py(self))
+            }
         } else {
             Err(ValError::new(ErrorType::IntType, self))
         }
     }
 
-    fn lax_int(&self) -> ValResult<i64> {
-        if let Ok(int) = self.extract::<i64>() {
-            Ok(int)
+    fn lax_int(&'a self) -> ValResult<EitherInt<'a>> {
+        if PyInt::is_exact_type_of(self) {
+            Ok(EitherInt::Py(self))
         } else if let Some(cow_str) = maybe_as_string(self, ErrorType::IntParsing)? {
-            str_as_int(self, &cow_str)
+            let int = str_as_int(self, &cow_str)?;
+            Ok(EitherInt::Rust(int))
         } else if let Ok(float) = self.extract::<f64>() {
-            float_as_int(self, float)
+            Ok(EitherInt::Rust(float_as_int(self, float)?))
         } else {
             Err(ValError::new(ErrorType::IntType, self))
-        }
-    }
-
-    fn as_int_strict(&self) -> Option<i64> {
-        if self.get_type().is(get_py_int_type(self.py())) {
-            self.extract().ok()
-        } else {
-            None
         }
     }
 
@@ -322,10 +310,13 @@ impl<'a> Input<'a> for PyAny {
         }
     }
     fn strict_float(&self) -> ValResult<f64> {
-        if self.extract::<bool>().is_ok() {
-            Err(ValError::new(ErrorType::FloatType, self))
-        } else if let Ok(float) = self.extract::<f64>() {
-            Ok(float)
+        if let Ok(float) = self.extract::<f64>() {
+            // bools are cast to floats as either 0.0 or 1.0, so check for bool type in this specific case
+            if (float == 0.0 || float == 1.0) && PyBool::is_exact_type_of(self) {
+                Err(ValError::new(ErrorType::FloatType, self))
+            } else {
+                Ok(float)
+            }
         } else {
             Err(ValError::new(ErrorType::FloatType, self))
         }
@@ -515,7 +506,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn strict_date(&self) -> ValResult<EitherDate> {
-        if self.downcast::<PyDateTime>().is_ok() {
+        if PyDateTime::is_type_of(self) {
             // have to check if it's a datetime first, otherwise the line below converts to a date
             Err(ValError::new(ErrorType::DateType, self))
         } else if let Ok(date) = self.downcast::<PyDate>() {
@@ -526,7 +517,7 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn lax_date(&self) -> ValResult<EitherDate> {
-        if self.downcast::<PyDateTime>().is_ok() {
+        if PyDateTime::is_type_of(self) {
             // have to check if it's a datetime first, otherwise the line below converts to a date
             // even if we later try coercion from a datetime, we don't want to return a datetime now
             Err(ValError::new(ErrorType::DateType, self))
@@ -558,7 +549,7 @@ impl<'a> Input<'a> for PyAny {
             bytes_as_time(self, str.as_bytes())
         } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
             bytes_as_time(self, py_bytes.as_bytes())
-        } else if self.downcast::<PyBool>().is_ok() {
+        } else if PyBool::is_exact_type_of(self) {
             Err(ValError::new(ErrorType::TimeType, self))
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_time(self, int, 0)
@@ -585,7 +576,7 @@ impl<'a> Input<'a> for PyAny {
             bytes_as_datetime(self, str.as_bytes())
         } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
             bytes_as_datetime(self, py_bytes.as_bytes())
-        } else if self.downcast::<PyBool>().is_ok() {
+        } else if PyBool::is_exact_type_of(self) {
             Err(ValError::new(ErrorType::DatetimeType, self))
         } else if let Ok(int) = self.extract::<i64>() {
             int_as_datetime(self, int, 0)
@@ -661,7 +652,7 @@ fn is_builtin_str(py_str: &PyString) -> bool {
 }
 
 #[cfg(PyPy)]
-static DICT_KEYS_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+static DICT_KEYS_TYPE: pyo3::once_cell::GILOnceCell<Py<PyType>> = pyo3::once_cell::GILOnceCell::new();
 
 #[cfg(PyPy)]
 fn is_dict_keys_type(v: &PyAny) -> bool {
@@ -679,7 +670,7 @@ fn is_dict_keys_type(v: &PyAny) -> bool {
 }
 
 #[cfg(PyPy)]
-static DICT_VALUES_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+static DICT_VALUES_TYPE: pyo3::once_cell::GILOnceCell<Py<PyType>> = pyo3::once_cell::GILOnceCell::new();
 
 #[cfg(PyPy)]
 fn is_dict_values_type(v: &PyAny) -> bool {
@@ -697,7 +688,7 @@ fn is_dict_values_type(v: &PyAny) -> bool {
 }
 
 #[cfg(PyPy)]
-static DICT_ITEMS_TYPE: GILOnceCell<Py<PyType>> = GILOnceCell::new();
+static DICT_ITEMS_TYPE: pyo3::once_cell::GILOnceCell<Py<PyType>> = pyo3::once_cell::GILOnceCell::new();
 
 #[cfg(PyPy)]
 fn is_dict_items_type(v: &PyAny) -> bool {
@@ -721,16 +712,4 @@ pub fn list_as_tuple(list: &PyList) -> &PyTuple {
         Py::from_owned_ptr(list.py(), tuple_ptr)
     };
     py_tuple.into_ref(list.py())
-}
-
-static PY_INT_TYPE: GILOnceCell<PyObject> = GILOnceCell::new();
-
-fn get_py_int_type(py: Python) -> &PyObject {
-    PY_INT_TYPE.get_or_init(py, || PyInt::type_object(py).into())
-}
-
-static PY_STR_TYPE: GILOnceCell<PyObject> = GILOnceCell::new();
-
-fn get_py_str_type(py: Python) -> &PyObject {
-    PY_STR_TYPE.get_or_init(py, || PyString::type_object(py).into())
 }
