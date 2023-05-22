@@ -19,7 +19,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
-from ..fields import FieldInfo
+from ..fields import AliasChoices, AliasPath, FieldInfo
 from . import _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper
 from ._core_metadata import (
@@ -617,10 +617,15 @@ class GenerateSchema:
             field_info.serialization_alias = alias
             field_info.alias_priority = 1
 
+        if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
+            validation_alias = field_info.validation_alias.convert_to_aliases()
+        else:
+            validation_alias = field_info.validation_alias
+
         return _common_field(
             schema,
             serialization_exclude=True if field_info.exclude else None,
-            validation_alias=field_info.validation_alias,
+            validation_alias=validation_alias,
             serialization_alias=field_info.serialization_alias,
             frozen=field_info.frozen or field_info.final,
             metadata=metadata,
