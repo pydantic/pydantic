@@ -1380,3 +1380,10 @@ def test_v1_root_model(benchmark):
     input_data = list(range(100))
 
     benchmark(MyModel.parse_obj, input_data)
+
+
+@pytest.mark.benchmark(group='strict_int')
+def test_strict_int(benchmark):
+    v = SchemaValidator(core_schema.int_schema(strict=True))
+
+    benchmark(v.validate_python, 42)

@@ -10,8 +10,8 @@ use super::datetime::{
 use super::parse_json::JsonArray;
 use super::shared::{float_as_int, int_as_bool, map_json_err, str_as_bool, str_as_int};
 use super::{
-    EitherBytes, EitherString, EitherTimedelta, GenericArguments, GenericIterable, GenericIterator, GenericMapping,
-    Input, JsonArgs, JsonInput,
+    EitherBytes, EitherInt, EitherString, EitherTimedelta, GenericArguments, GenericIterable, GenericIterator,
+    GenericMapping, Input, JsonArgs, JsonInput,
 };
 
 impl<'a> Input<'a> for JsonInput {
@@ -84,13 +84,6 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
-    fn as_str_strict(&self) -> Option<&str> {
-        match self {
-            JsonInput::String(s) => Some(s.as_str()),
-            _ => None,
-        }
-    }
-
     fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
         match self {
             JsonInput::String(s) => Ok(s.as_bytes().into()),
@@ -121,14 +114,14 @@ impl<'a> Input<'a> for JsonInput {
         }
     }
 
-    fn strict_int(&self) -> ValResult<i64> {
+    fn strict_int(&'a self) -> ValResult<EitherInt<'a>> {
         match self {
-            JsonInput::Int(i) => Ok(*i),
+            JsonInput::Int(i) => Ok(EitherInt::Rust(*i)),
             _ => Err(ValError::new(ErrorType::IntType, self)),
         }
     }
-    fn lax_int(&self) -> ValResult<i64> {
-        match self {
+    fn lax_int(&'a self) -> ValResult<EitherInt<'a>> {
+        let int_result = match self {
             JsonInput::Bool(b) => match *b {
                 true => Ok(1),
                 false => Ok(0),
@@ -137,14 +130,8 @@ impl<'a> Input<'a> for JsonInput {
             JsonInput::Float(f) => float_as_int(self, *f),
             JsonInput::String(str) => str_as_int(self, str),
             _ => Err(ValError::new(ErrorType::IntType, self)),
-        }
-    }
-
-    fn as_int_strict(&self) -> Option<i64> {
-        match self {
-            JsonInput::Int(i) => Some(*i),
-            _ => None,
-        }
+        };
+        int_result.map(EitherInt::Rust)
     }
 
     fn ultra_strict_float(&self) -> ValResult<f64> {
@@ -356,10 +343,6 @@ impl<'a> Input<'a> for String {
         self.validate_str(false)
     }
 
-    fn as_str_strict(&self) -> Option<&str> {
-        Some(self.as_str())
-    }
-
     fn validate_bytes(&'a self, _strict: bool) -> ValResult<EitherBytes<'a>> {
         Ok(self.as_bytes().into())
     }
@@ -375,18 +358,14 @@ impl<'a> Input<'a> for String {
         str_as_bool(self, self)
     }
 
-    fn strict_int(&self) -> ValResult<i64> {
+    fn strict_int(&'a self) -> ValResult<EitherInt<'a>> {
         Err(ValError::new(ErrorType::IntType, self))
     }
-    fn lax_int(&self) -> ValResult<i64> {
+    fn lax_int(&'a self) -> ValResult<EitherInt<'a>> {
         match self.parse() {
-            Ok(i) => Ok(i),
+            Ok(i) => Ok(EitherInt::Rust(i)),
             Err(_) => Err(ValError::new(ErrorType::IntParsing, self)),
         }
-    }
-
-    fn as_int_strict(&self) -> Option<i64> {
-        None
     }
 
     #[cfg_attr(has_no_coverage, no_coverage)]

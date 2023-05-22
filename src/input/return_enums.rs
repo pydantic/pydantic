@@ -817,3 +817,29 @@ impl<'a> IntoPy<PyObject> for EitherBytes<'a> {
         }
     }
 }
+
+#[cfg_attr(debug_assertions, derive(Debug))]
+pub enum EitherInt<'a> {
+    Rust(i64),
+    Py(&'a PyAny),
+}
+
+impl<'a> TryInto<i64> for EitherInt<'a> {
+    type Error = ValError<'a>;
+
+    fn try_into(self) -> ValResult<'a, i64> {
+        match self {
+            EitherInt::Rust(i) => Ok(i),
+            EitherInt::Py(i) => i.extract().map_err(|_| ValError::new(ErrorType::IntOverflow, i)),
+        }
+    }
+}
+
+impl<'a> IntoPy<PyObject> for EitherInt<'a> {
+    fn into_py(self, py: Python<'_>) -> PyObject {
+        match self {
+            Self::Rust(int) => int.into_py(py),
+            Self::Py(int) => int.into_py(py),
+        }
+    }
+}
