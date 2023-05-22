@@ -1314,6 +1314,7 @@ class SomeStrEnum(str, Enum):
 LARGE_STR_PREFIX = 'a' * 50
 
 
+@pytest.mark.benchmark(group='validate_literal')
 @pytest.mark.parametrize(
     'allowed_values,input,expected_val_res',
     [
