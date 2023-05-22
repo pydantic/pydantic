@@ -7,7 +7,7 @@ use crate::errors::{InputValue, LocItem, ValResult};
 use crate::{PyMultiHostUrl, PyUrl};
 
 use super::datetime::{EitherDate, EitherDateTime, EitherTime, EitherTimedelta};
-use super::return_enums::{EitherBytes, EitherString};
+use super::return_enums::{EitherBytes, EitherInt, EitherString};
 use super::{GenericArguments, GenericIterable, GenericIterator, GenericMapping, JsonInput};
 
 #[derive(Debug, Clone, Copy)]
@@ -90,8 +90,6 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.strict_str()
     }
 
-    fn as_str_strict(&self) -> Option<&str>;
-
     fn validate_bytes(&'a self, strict: bool) -> ValResult<EitherBytes<'a>> {
         if strict {
             self.strict_bytes()
@@ -118,20 +116,18 @@ pub trait Input<'a>: fmt::Debug + ToPyObject {
         self.strict_bool()
     }
 
-    fn validate_int(&self, strict: bool) -> ValResult<i64> {
+    fn validate_int(&'a self, strict: bool) -> ValResult<EitherInt<'a>> {
         if strict {
             self.strict_int()
         } else {
             self.lax_int()
         }
     }
-    fn strict_int(&self) -> ValResult<i64>;
+    fn strict_int(&'a self) -> ValResult<EitherInt<'a>>;
     #[cfg_attr(has_no_coverage, no_coverage)]
-    fn lax_int(&self) -> ValResult<i64> {
+    fn lax_int(&'a self) -> ValResult<EitherInt<'a>> {
         self.strict_int()
     }
-
-    fn as_int_strict(&self) -> Option<i64>;
 
     fn validate_float(&self, strict: bool, ultra_strict: bool) -> ValResult<f64> {
         if ultra_strict {

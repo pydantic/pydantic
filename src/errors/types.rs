@@ -175,6 +175,7 @@ pub enum ErrorType {
     IntType,
     IntParsing,
     IntFromFloat,
+    IntOverflow,
     // ---------------------
     // float errors
     FloatType,
@@ -488,6 +489,7 @@ impl ErrorType {
             Self::IntType => "Input should be a valid integer",
             Self::IntParsing => "Input should be a valid integer, unable to parse string as an integer",
             Self::IntFromFloat => "Input should be a valid integer, got a number with a fractional part",
+            Self::IntOverflow => "Input integer too large to convert to 64-bit integer",
             Self::FloatType => "Input should be a valid number",
             Self::FloatParsing => "Input should be a valid number, unable to parse string as an number",
             Self::BytesType => "Input should be a valid bytes",
