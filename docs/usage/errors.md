@@ -3,6 +3,74 @@ encounter when working with Pydantic, along with suggestions for addressing the 
 
 <!-- Note: raw tag is used to avoid rendering of jinja2 template tags in the docs. -->
 {% raw %}
+## Class not fully defined {#class-not-fully-defined}
+
+This error is raised when a type referenced in an annotation of a pydantic-validated type
+(such as a subclass of `BaseModel`, or a pydantic `dataclass`) is not defined:
+
+```py
+from typing import ForwardRef
+
+from pydantic import BaseModel, PydanticUserError
+
+UndefinedType = ForwardRef('UndefinedType')
+
+
+class Foobar(BaseModel):
+    a: UndefinedType
+
+
+try:
+    Foobar(a=1)
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'class-not-fully-defined'
+```
+
+Or when the type has been defined after usage:
+
+```py
+from typing import Optional
+
+from pydantic import BaseModel, PydanticUserError
+
+
+class Foo(BaseModel):
+    a: Optional['Bar'] = None
+
+
+class Bar(BaseModel):
+    b: 'Foo'
+
+
+try:
+    foo = Foo(a={'b': {'a': None}})
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'class-not-fully-defined'
+```
+
+For BaseModel subclasses, it can be fixed by defining the type and then calling `.model_rebuild()`:
+
+```py
+from typing import Optional
+
+from pydantic import BaseModel
+
+
+class Foo(BaseModel):
+    a: Optional['Bar'] = None
+
+
+class Bar(BaseModel):
+    b: 'Foo'
+
+
+Foo.model_rebuild()
+
+foo = Foo(a={'b': {'a': None}})
+```
+
+In other cases, the error message should indicate how to rebuild the class with the appropriate type defined.
+
 ## Decorator on missing field {#decorator-missing-field}
 
 This error is raised when you define a decorator with a field that is not valid.
@@ -243,71 +311,6 @@ class MyModel(BaseModel):
     _b: int = IgnoredType()
     _c: IgnoredType
     _d: IgnoredType = IgnoredType()
-```
-
-## Model not fully defined {#model-not-fully-defined}
-
-This error is raised when a type is not defined:
-
-```py
-from typing import ForwardRef
-
-from pydantic import BaseModel, PydanticUserError
-
-UndefinedType = ForwardRef('UndefinedType')
-
-
-class Foobar(BaseModel):
-    a: UndefinedType
-
-
-try:
-    Foobar(a=1)
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'model-not-fully-defined'
-```
-
-Or when the type has been defined after usage:
-
-```py
-from typing import Optional
-
-from pydantic import BaseModel, PydanticUserError
-
-
-class Foo(BaseModel):
-    a: Optional['Bar'] = None
-
-
-class Bar(BaseModel):
-    b: 'Foo'
-
-
-try:
-    foo = Foo(a={'b': {'a': None}})
-except PydanticUserError as exc_info:
-    assert exc_info.code == 'model-not-fully-defined'
-```
-
-It can be fixed by defining the type and then calling `.model_rebuild()`:
-
-```py
-from typing import Optional
-
-from pydantic import BaseModel
-
-
-class Foo(BaseModel):
-    a: Optional['Bar'] = None
-
-
-class Bar(BaseModel):
-    b: 'Foo'
-
-
-Foo.model_rebuild()
-
-foo = Foo(a={'b': {'a': None}})
 ```
 
 ## `Config` and `model_config` both defined {#config-both}

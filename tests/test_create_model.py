@@ -24,10 +24,10 @@ def test_create_model():
     assert model.__name__ == 'FooModel'
     assert model.model_fields.keys() == {'foo', 'bar'}
 
-    assert not model.__pydantic_decorators__.validator
-    assert not model.__pydantic_decorators__.root_validator
-    assert not model.__pydantic_decorators__.field_validator
-    assert not model.__pydantic_decorators__.field_serializer
+    assert not model.__pydantic_decorators__.validators
+    assert not model.__pydantic_decorators__.root_validators
+    assert not model.__pydantic_decorators__.field_validators
+    assert not model.__pydantic_decorators__.field_serializers
 
     assert model.__module__ == 'pydantic.main'
 
@@ -223,29 +223,6 @@ def test_dynamic_and_static():
 
     for field_name in ('x', 'y', 'z'):
         assert A.model_fields[field_name].default == DynamicA.model_fields[field_name].default
-
-
-def test_config_field_info_create_model():
-    # TODO fields doesn't exist anymore, remove test?
-    # class Config:
-    #     fields = {'a': {'description': 'descr'}}
-    ConfigDict()
-
-    m1 = create_model('M1', __config__={'title': 'abc'}, a=(str, ...))
-    assert m1.model_json_schema() == {
-        'properties': {'a': {'title': 'A', 'type': 'string'}},
-        'required': ['a'],
-        'title': 'abc',
-        'type': 'object',
-    }
-
-    m2 = create_model('M2', __config__={}, a=(str, Field(description='descr')))
-    assert m2.model_json_schema() == {
-        'properties': {'a': {'description': 'descr', 'title': 'A', 'type': 'string'}},
-        'required': ['a'],
-        'title': 'M2',
-        'type': 'object',
-    }
 
 
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])

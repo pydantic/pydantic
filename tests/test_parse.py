@@ -48,8 +48,7 @@ def test_model_validate_wrong_model():
 
 def test_root_model_error():
     with pytest.raises(
-        TypeError,
-        match='__root__ models are no longer supported in v2',
+        TypeError, match="To define root models, use `pydantic.RootModel` rather than a field called '__root__'"
     ):
 
         class MyModel(BaseModel):
@@ -86,8 +85,6 @@ def test_model_validate_root():
     assert m.root == 'a'
 
     # Serialization
-    # TODO: Possible concern — `model_dump` is annotated as returning dict[str, Any] — is that okay, given
-    #   model_serializer could change that? Should we try to reflect it in the mypy plugin?
     assert m.model_dump() == {'root': 'a'}
     assert m.model_dump_json() == '"a"'
 

@@ -13,6 +13,7 @@ from typing_extensions import Literal, dataclass_transform
 from ._internal import _config, _decorators
 from ._internal import _dataclasses as _pydantic_dataclasses
 from ._internal._dataclasses import is_builtin_dataclass
+from ._internal._dataclasses import rebuild_dataclass as rebuild_dataclass
 from ._migration import getattr_migration
 from .config import ConfigDict
 from .fields import Field
@@ -20,7 +21,7 @@ from .fields import Field
 if TYPE_CHECKING:
     from ._internal._dataclasses import PydanticDataclass
 
-__all__ = ('dataclass',)
+__all__ = 'dataclass', 'rebuild_dataclass'
 
 _T = TypeVar('_T')
 
@@ -197,8 +198,10 @@ def dataclass(
         cls.__doc__ = original_doc
         cls.__module__ = original_cls.__module__
         cls.__qualname__ = original_cls.__qualname__
-        _pydantic_dataclasses.set_dataclass_fields(cls)
-        _pydantic_dataclasses.complete_dataclass(cls, config_wrapper)
+        pydantic_complete = _pydantic_dataclasses.complete_dataclass(
+            cls, config_wrapper, raise_errors=False, types_namespace=None
+        )
+        cls.__pydantic_complete__ = pydantic_complete  # type: ignore
         return cls
 
     if _cls is None:

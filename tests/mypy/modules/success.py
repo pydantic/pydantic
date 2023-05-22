@@ -39,8 +39,8 @@ from pydantic import (
     StrictInt,
     StrictStr,
     UrlConstraints,
+    create_model,
     field_validator,
-    parse_obj_as,
     root_validator,
     validate_call,
 )
@@ -199,7 +199,7 @@ class MyPrivateAttr(BaseModel):
 
 
 class PydanticTypes(BaseModel):
-    model_config = ConfigDict()  # TODO: add validate_all=True or equivalent if/when possible
+    model_config = ConfigDict(validate_default=True)
 
     # Boolean
     my_strict_bool: StrictBool = True
@@ -220,20 +220,19 @@ class PydanticTypes(BaseModel):
     # String
     my_strict_str: StrictStr = 'pika'
     # ImportString
-    # TODO: Remove the parse_obj_as's below when we get `validate_all` (or similar) working
-    import_string_str: ImportString[Any] = parse_obj_as(ImportString[Any], 'datetime.date')  # type: ignore[misc]
+    import_string_str: ImportString[Any] = 'datetime.date'  # type: ignore[misc]
     import_string_callable: ImportString[Any] = date
     # UUID
     my_uuid1: UUID1 = UUID('a8098c1a-f86e-11da-bd1a-00112444be1e')
-    my_uuid1_str: UUID1 = parse_obj_as(UUID1, 'a8098c1a-f86e-11da-bd1a-00112444be1e')
+    my_uuid1_str: UUID1 = 'a8098c1a-f86e-11da-bd1a-00112444be1e'
     # Path
     my_file_path: FilePath = Path(__file__)
-    my_file_path_str: FilePath = parse_obj_as(Path, __file__)
+    my_file_path_str: FilePath = __file__
     my_dir_path: DirectoryPath = Path('.')
-    my_dir_path_str: DirectoryPath = parse_obj_as(DirectoryPath, '.')
+    my_dir_path_str: DirectoryPath = '.'
     # Json
-    my_json: Json[Dict[str, str]] = parse_obj_as(Json[Dict[str, str]], '{"hello": "world"}')
-    my_json_list: Json[List[str]] = parse_obj_as(Json[List[str]], '["hello", "world"]')
+    my_json: Json[Dict[str, str]] = '{"hello": "world"}'
+    my_json_list: Json[List[str]] = '["hello", "world"]'
     # Date
     my_past_date: PastDate = date.today() - timedelta(1)
     my_future_date: FutureDate = date.today() + timedelta(1)
@@ -288,5 +287,4 @@ class CustomPath(PurePath):
         return f'a/custom/{self.path}'
 
 
-# TODO:
-# DynamicModel = create_model('DynamicModel')
+DynamicModel = create_model('DynamicModel')

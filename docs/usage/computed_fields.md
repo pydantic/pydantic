@@ -21,7 +21,7 @@ print(Rectangle(width=3, length=2).model_dump())
 ```
 
 If the `computed_field` decorator is applied to a bare function
-(e.g. a function with the `@property` or `@cached_property` decorator)
+(e.g. a function without the `@property` or `@cached_property` decorator)
 it will wrap the function in `property` itself. Although this is more concise, you will lose IntelliSense in your IDE,
 and confuse static type checkers, thus explicit use of `@property` is recommended.
 

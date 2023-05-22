@@ -55,7 +55,7 @@ def test_forward_ref_auto_update_no_model(create_module):
         class Bar(BaseModel):
             b: 'Foo'
 
-    assert module.Bar.__pydantic_model_complete__ is True
+    assert module.Bar.__pydantic_complete__ is True
     assert repr(module.Bar.model_fields['b']) == 'FieldInfo(annotation=Foo, required=True)'
 
     # Bar should be complete and ready to use
@@ -67,10 +67,10 @@ def test_forward_ref_auto_update_no_model(create_module):
         "FieldInfo(annotation=Union[ForwardRef('Bar'), NoneType], required=False)"
     )
 
-    assert module.Foo.__pydantic_model_complete__ is False
+    assert module.Foo.__pydantic_complete__ is False
     # Foo gets auto-rebuilt during the first attempt at validation
     f = module.Foo(a={'b': {'a': {'b': {'a': None}}}})
-    assert module.Foo.__pydantic_model_complete__ is True
+    assert module.Foo.__pydantic_complete__ is True
     assert f.model_dump() == {'a': {'b': {'a': {'b': {'a': None}}}}}
 
 
@@ -446,7 +446,6 @@ class Spec(BaseModel):
 
 
 class PSpec(Spec):
-    # FIXME investigate why this wasn't causing errors before
     g: Optional[GSpec] = None
 
 
@@ -526,7 +525,7 @@ def test_discriminated_union_forward_ref(create_module):
         class Dog(BaseModel):
             type: Literal['dog']
 
-    assert module.Pet.__pydantic_model_complete__ is False
+    assert module.Pet.__pydantic_complete__ is False
 
     with pytest.raises(
         ValidationError,
@@ -535,7 +534,7 @@ def test_discriminated_union_forward_ref(create_module):
         module.Pet.model_validate({'pet': {'type': 'pika'}})
 
     # Ensure the rebuild has happened automatically despite validation failure
-    assert module.Pet.__pydantic_model_complete__ is True
+    assert module.Pet.__pydantic_complete__ is True
 
     assert module.Pet.model_json_schema() == {
         'title': 'Pet',
@@ -733,7 +732,7 @@ def test_force_rebuild():
     class Foobar(BaseModel):
         b: int
 
-    assert Foobar.__pydantic_model_complete__ is True
+    assert Foobar.__pydantic_complete__ is True
     assert Foobar.model_rebuild() is None
     assert Foobar.model_rebuild(force=True) is True
 
@@ -772,7 +771,7 @@ def nested():
     )
 
     bar_model = module.nested()
-    assert bar_model.__pydantic_model_complete__ is True
+    assert bar_model.__pydantic_complete__ is True
     assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
 
 
@@ -795,7 +794,7 @@ def test_nested_more_annotation(create_module):
 
     bar_model = module.nested()
     # this does not work because Foo is in a parent scope
-    assert bar_model.__pydantic_model_complete__ is False
+    assert bar_model.__pydantic_complete__ is False
 
 
 def test_nested_annotation_priority(create_module):
@@ -835,12 +834,12 @@ def test_nested_model_rebuild(create_module):
             class Foo(BaseModel):
                 a: int
 
-            assert Bar.__pydantic_model_complete__ is False
+            assert Bar.__pydantic_complete__ is False
             Bar.model_rebuild()
             return Bar
 
     bar_model = module.nested()
-    assert bar_model.__pydantic_model_complete__ is True
+    assert bar_model.__pydantic_complete__ is True
     assert bar_model(b={'a': 1}).model_dump() == {'b': {'a': 1}}
 
 
@@ -920,8 +919,8 @@ class Foobar(BaseModel):
 """
     )
     # Since we're testing the absence of an error, it's important to confirm pydantic was actually run.
-    # The presence of the `__pydantic_model_complete__` is a good indicator of this.
-    assert module.Foobar.__pydantic_model_complete__ is False
+    # The presence of the `__pydantic_complete__` is a good indicator of this.
+    assert module.Foobar.__pydantic_complete__ is False
 
 
 def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_module):
@@ -938,8 +937,8 @@ def test_undefined_types_warning_1b_suppressed_via_config_2b_forward_ref(create_
             a: UndefinedType
 
     # Since we're testing the absence of a warning, it's important to confirm pydantic was actually run.
-    # The presence of the `__pydantic_model_complete__` is a good indicator of this.
-    assert module.Foobar.__pydantic_model_complete__ is False
+    # The presence of the `__pydantic_complete__` is a good indicator of this.
+    assert module.Foobar.__pydantic_complete__ is False
 
 
 def test_undefined_types_warning_raised_by_usage(create_module):

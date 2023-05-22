@@ -802,3 +802,17 @@ def test_invalid_field():
             @field_serializer('b')
             def customise_b_serialisation(v):
                 return v
+
+
+def test_serialize_with_extra():
+    class Inner(BaseModel):
+        a: str = 'a'
+
+    class Outer(BaseModel):
+        # this cause the inner model incorrectly dumpped:
+        model_config = ConfigDict(extra='allow')
+        inner: Inner = Field(default_factory=Inner)
+
+    m = Outer.model_validate({})
+
+    assert m.model_dump() == {'inner': {'a': 'a'}}

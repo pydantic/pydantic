@@ -237,7 +237,6 @@ def get_cls_type_hints_lenient(obj: Any, globalns: dict[str, Any] | None = None)
 
     Unlike `typing.get_type_hints`, this function will not error if a forward reference is not resolvable.
     """
-    # TODO: Try handling typevars_map here
     hints = {}
     for base in reversed(obj.__mro__):
         ann = base.__dict__.get('__annotations__')

@@ -266,6 +266,20 @@ def test_copy_update_unset(copy_method):
     )
 
 
+class ExtraModel(BaseModel, extra='allow'):
+    pass
+
+
+def test_copy_deep_extra(copy_method):
+    class Foo(BaseModel, extra='allow'):
+        pass
+
+    m = Foo(extra=[])
+    assert copy_method(m).extra is m.extra
+    assert copy_method(m, deep=True).extra == m.extra
+    assert copy_method(m, deep=True).extra is not m.extra
+
+
 def test_copy_set_fields(ModelTwo, copy_method):
     m = ModelTwo(a=24, d=Model(a='12'))
     m2 = copy_method(m)
@@ -371,6 +385,13 @@ def test_pickle_fields_set():
     assert m.model_dump(exclude_unset=True) == {'a': 24}
     m2 = pickle.loads(pickle.dumps(m))
     assert m2.model_dump(exclude_unset=True) == {'a': 24}
+
+
+def test_pickle_preserves_extra():
+    m = ExtraModel(a=24)
+    assert m.model_extra == {'a': 24}
+    m2 = pickle.loads(pickle.dumps(m))
+    assert m2.model_extra == {'a': 24}
 
 
 def test_copy_update_exclude():

@@ -37,6 +37,7 @@ from pydantic import (
     BaseModel,
     Field,
     ImportString,
+    RootModel,
     ValidationError,
     computed_field,
     field_validator,
@@ -79,6 +80,7 @@ from pydantic.types import (
     SecretStr,
     StrictBool,
     StrictStr,
+    WithJsonSchema,
     conbytes,
     condate,
     condecimal,
@@ -1183,24 +1185,46 @@ def test_ipvanynetwork_type():
         (Callable[[int], int], lambda x: x),
     ),
 )
-def test_callable_type(type_, default_value):
-    # TODO: Is this still how we want to handle this?
-    #   With my current changes, it raises
-    #       InvalidForJsonSchema('Cannot generate a JsonSchema for core_schema.CallableSchema')
-    #   We could continue the practice of just not creating such fields,
-    #   but producing a UserWarning when a field is ignored
-    # TODO: If the default value is not JSON encodable, should we just not include it in the schema?
-    #   This seems preferable to me over erroring, but maybe we should also produce a UserWarning for that?
-
-    # Decision: Different user warning depending on if there's a default or not
-
+@pytest.mark.parametrize(
+    'base_json_schema,properties',
+    [
+        (
+            {'a': 'b'},
+            {
+                'callback': {'title': 'Callback', 'a': 'b'},
+                'foo': {'title': 'Foo', 'type': 'integer'},
+            },
+        ),
+        (
+            None,
+            {
+                'foo': {'title': 'Foo', 'type': 'integer'},
+            },
+        ),
+    ],
+)
+def test_callable_type(type_, default_value, base_json_schema, properties):
     class Model(BaseModel):
         callback: type_ = default_value
         foo: int
 
     with pytest.raises(PydanticInvalidForJsonSchema):
-        model_schema = Model.model_json_schema()
-        assert 'callback' not in model_schema['properties']
+        Model.model_json_schema()
+
+    class ModelWithOverride(BaseModel):
+        callback: Annotated[type_, WithJsonSchema(base_json_schema)] = default_value
+        foo: int
+
+    if default_value is Ellipsis or base_json_schema is None:
+        model_schema = ModelWithOverride.model_json_schema()
+    else:
+        with pytest.warns(
+            PydanticJsonSchemaWarning,
+            match='Default value .* is not JSON serializable; excluding'
+            r' default from JSON schema \[non-serializable-default]',
+        ):
+            model_schema = ModelWithOverride.model_json_schema()
+    assert model_schema['properties'] == properties
 
 
 @pytest.mark.parametrize(
@@ -4039,3 +4063,37 @@ def test_sequences_int_json_schema(sequence_type):
         'required': ['int_seq'],
     }
     assert Model.model_validate_json('{"int_seq": [1, 2, 3]}')
+
+
+@pytest.mark.parametrize(
+    'field_schema,model_schema',
+    [
+        (None, {'properties': {}, 'title': 'Model', 'type': 'object'}),
+        (
+            {'a': 'b'},
+            {'properties': {'x': {'a': 'b', 'title': 'X'}}, 'required': ['x'], 'title': 'Model', 'type': 'object'},
+        ),
+    ],
+)
+def test_arbitrary_type_json_schema(field_schema, model_schema):
+    class ArbitraryClass:
+        pass
+
+    class Model(BaseModel):
+        model_config = dict(arbitrary_types_allowed=True)
+
+        x: Annotated[ArbitraryClass, WithJsonSchema(field_schema)]
+
+    assert Model.model_json_schema() == model_schema
+
+
+def test_root_model():
+    class A(RootModel[int]):
+        pass
+
+    assert A.model_json_schema() == {'type': 'integer'}
+
+    class B(RootModel[A]):
+        pass
+
+    assert B.model_json_schema() == {'type': 'integer'}

@@ -24,10 +24,11 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
-from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, core_schema
+from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, PydanticOmit, core_schema
 from typing_extensions import Annotated, Literal, Protocol
 
 from ._internal import _fields, _internal_dataclass, _known_annotated_metadata, _validators
+from ._internal._core_metadata import build_metadata_dict
 from ._internal._generics import get_origin
 from ._internal._internal_dataclass import slots_dataclass
 from ._migration import getattr_migration
@@ -86,6 +87,7 @@ __all__ = [
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
+    'SkipValidation',
 ]
 
 from ._internal._schema_generation_shared import GetJsonSchemaHandler
@@ -464,12 +466,16 @@ class SecretField(Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __prepare_pydantic_annotations__(cls, source: type[Any], annotations: Iterable[Any]) -> Iterable[Any]:
+    def __prepare_pydantic_annotations__(cls, source: type[Any], annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
         metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
         _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
-        yield cls
-        yield _SecretFieldValidator(source, **metadata)
-        yield from remaining_annotations
+        return (
+            source,
+            [
+                _SecretFieldValidator(source, **metadata),
+                remaining_annotations,
+            ],
+        )
 
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
@@ -708,7 +714,6 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 class ByteSize(int):
     @classmethod
     def __get_pydantic_core_schema__(cls, source: type[Any], handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        # TODO better schema
         return core_schema.general_plain_validator_function(cls.validate)
 
     @classmethod
@@ -1012,3 +1017,56 @@ else:
 
 
 __getattr__ = getattr_migration(__name__)
+
+
+@_internal_dataclass.slots_dataclass
+class WithJsonSchema:
+    """
+    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
+
+    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
+    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
+    custom subclass of pydantic.json_schema.GenerateJsonSchema.
+
+    Note that any _modifications_ to the schema that would normally be made (such as setting the title for model fields)
+    will still be performed.
+    """
+
+    json_schema: JsonSchemaValue | None
+
+    def __get_pydantic_json_schema__(
+        self, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        if self.json_schema is None:
+            # This exception is handled in pydantic.json_schema.GenerateJsonSchema._named_required_fields_schema
+            raise PydanticOmit
+        else:
+            return self.json_schema
+
+
+if TYPE_CHECKING:
+    SkipValidation = Annotated[AnyType, ...]  # SkipValidation[list[str]] will be treated by type checkers as list[str]
+else:
+
+    @_internal_dataclass.slots_dataclass
+    class SkipValidation:
+        """
+        If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be skipped.
+        You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
+
+        This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
+        and know that it is safe to skip validation for one or more of the fields.
+
+        Because this converts the validation schema to `any_schema`, subsequent annotation-applied transformations
+        may not have the expected effects. Therefore, when used, this annotation should generally be the final
+        annotation applied to a type.
+        """
+
+        def __class_getitem__(cls, item: Any) -> Any:
+            return Annotated[item, SkipValidation()]
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            original_schema = handler.generate_schema(source)
+            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
+            return core_schema.any_schema(metadata=metadata, serialization=original_schema)

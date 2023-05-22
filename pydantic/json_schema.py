@@ -24,7 +24,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreSchema, core_schema
+from pydantic_core import CoreSchema, PydanticOmit, core_schema
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Literal, assert_never
 
@@ -80,8 +80,6 @@ def update_json_schema(schema: JsonSchemaValue, updates: dict[str, Any]) -> Json
     Returns:
         JsonSchemaValue: The updated JSON schema.
     """
-    # TODO: This is basically just a wrapper for dict.update that returns the dict.
-    #     Would it be better to just make this a less-"domain-specific" utility function?
     schema.update(updates)
     return schema
 
@@ -535,8 +533,8 @@ class GenerateJsonSchema:
             JsonSchemaValue: The generated JSON schema.
         """
         # It's weird that this schema has 'type': 'number' but also specifies a 'format'.
-        # Relevant issue: https://github.com/pydantic/pydantic/issues/5034
         # TODO: Probably should just change this to str (look at readme intro for speeddate)
+        #   Issue: https://github.com/pydantic/pydantic/issues/5034
         return {'type': 'number', 'format': 'time-delta'}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
@@ -578,7 +576,8 @@ class GenerateJsonSchema:
         Returns:
             JsonSchemaValue: The generated JSON schema.
         """
-        return {}  # TODO: This was for compatibility with V1 -- is this the right thing to do?
+        # Note: This is for compatibility with V1; you can override if you want different behavior.
+        return {}
 
     def callable_schema(self, schema: core_schema.CallableSchema) -> JsonSchemaValue:
         """
@@ -685,7 +684,6 @@ class GenerateJsonSchema:
         Returns:
             JsonSchemaValue: The generated JSON schema.
         """
-        # TODO: make sure that GeneratorSchema accepts values from JSON, or this JSON schema should be changed..
         items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
@@ -921,7 +919,10 @@ class GenerateJsonSchema:
         for name, required, field in named_required_fields:
             if self.by_alias:
                 name = self._get_alias_name(field, name)
-            field_json_schema = self.generate_inner(field).copy()
+            try:
+                field_json_schema = self.generate_inner(field).copy()
+            except PydanticOmit:
+                continue
             if 'title' not in field_json_schema and self.field_title_should_be_set(field):
                 title = self.get_title_from_name(name)
                 field_json_schema['title'] = title
@@ -967,7 +968,8 @@ class GenerateJsonSchema:
         return self.generate_inner(schema['return_schema'])
 
     def model_schema(self, schema: core_schema.ModelSchema) -> JsonSchemaValue:
-        # We do not use schema['model'].model_json_schema() because it could lead to inconsistent refs handling, etc.
+        # We do not use schema['model'].model_json_schema() here
+        # because it could lead to inconsistent refs handling, etc.
         json_schema = self.generate_inner(schema['schema'])
 
         cls = cast('type[BaseModel]', schema['cls'])
@@ -1070,9 +1072,6 @@ class GenerateJsonSchema:
         return self._named_required_fields_schema(named_required_fields)
 
     def dataclass_schema(self, schema: core_schema.DataclassSchema) -> JsonSchemaValue:
-        # TODO: Better-share this logic with model_schema
-        #   I'd prefer to clean this up _after_ we rework the approach to customizing dataclass JSON schema though
-
         json_schema = self.generate_inner(schema['schema']).copy()
 
         cls = schema['cls']

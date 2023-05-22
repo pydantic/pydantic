@@ -7,9 +7,12 @@ from pydantic.errors import PydanticImportError
 
 
 def import_from(dotted_path: str):
-    module, obj_name = dotted_path.rsplit('.', 1)
-    module = importlib.import_module(module)
-    return getattr(module, obj_name)
+    if ':' in dotted_path:
+        module, obj_name = dotted_path.rsplit(':', 1)
+        module = importlib.import_module(module)
+        return getattr(module, obj_name)
+    else:
+        return importlib.import_module(dotted_path)
 
 
 @pytest.mark.filterwarnings('ignore::UserWarning')

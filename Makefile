@@ -24,13 +24,13 @@ rebuild-lockfiles: .pdm
 
 .PHONY: format  ## Auto-format python source files
 format: .pdm
-	pdm run black $(sources)
+	pdm run black --exclude 'pydantic/v1' $(sources)
 	pdm run ruff --fix $(sources)
 
 .PHONY: lint  ## Lint python source files
 lint: .pdm
 	pdm run ruff $(sources)
-	pdm run black $(sources) --check --diff
+	pdm run black --exclude 'pydantic/v1' $(sources) --check --diff
 
 .PHONY: codespell  ## Use Codespell to do spellchecking
 codespell: .pre-commit
@@ -108,3 +108,7 @@ help:
 		'^.PHONY: .*?## .*$$' $(MAKEFILE_LIST) | \
 		sort | \
 		awk 'BEGIN {FS = ".PHONY: |## "}; {printf "\033[36m%-19s\033[0m %s\n", $$2, $$3}'
+
+.PHONY: update-v1  ## Update V1 namespace
+update-v1:
+	pdm run ./update_v1.sh

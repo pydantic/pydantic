@@ -1,15 +1,13 @@
 from dataclasses import dataclass
-from typing import Any, Iterator, List, Sequence
+from typing import Any, List, Sequence, Tuple
 
 import dirty_equals as de
-import pytest
 from annotated_types import Gt, Lt
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated
 
 from pydantic import TypeAdapter
 from pydantic.annotated import GetCoreSchemaHandler
-from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 
@@ -33,7 +31,7 @@ class MyDecimal(float):
     """
 
     @classmethod
-    def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> Sequence[Any]:
+    def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> Tuple[Any, List[Any]]:
         assert source_type is MyDecimal
         metadata: dict[str, Any] = {}
         remaining_annotations: list[Any] = []
@@ -45,11 +43,10 @@ class MyDecimal(float):
         inner_schema = core_schema.float_schema(**metadata)
         outer_schema = core_schema.no_info_after_validator_function(MyDecimal, inner_schema)
         new_annotations = [
-            source_type,
             MetadataApplier(inner_core_schema=inner_schema, outer_core_schema=outer_schema),
             *remaining_annotations,
         ]
-        return new_annotations
+        return (source_type, new_annotations)
 
 
 def test_decimal_like_in_annotated() -> None:
@@ -90,75 +87,16 @@ def test_decimal_like_outside_of_annotated() -> None:
     assert a.core_schema == expected
 
 
-def test_return_no_annotations_in_annotated() -> None:
-    class MyType(int):
-        @classmethod
-        def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> List[Any]:
-            return []
-
-    msg = 'Custom types must return at least 1 item since the first item is the replacement source type'
-
-    with pytest.raises(PydanticSchemaGenerationError, match=msg):
-        TypeAdapter(Annotated[MyType, Gt(0)])
-
-    with pytest.raises(PydanticSchemaGenerationError, match=msg):
-        TypeAdapter(MyType)
-
-
 def test_generator_custom_type() -> None:
     class MyType(int):
         @classmethod
-        def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> Iterator[Any]:
-            assert source_type is MyType
-            yield int
-            yield Gt(123)
-            yield from annotations
+        def __prepare_pydantic_annotations__(
+            cls, source_type: Any, annotations: Sequence[Any]
+        ) -> Tuple[Any, List[Any]]:
+            return (int, [Gt(123), *annotations])
 
     a = TypeAdapter(MyType)
     assert a.core_schema == de.IsPartialDict(core_schema.int_schema(gt=123))
 
     a = TypeAdapter(Annotated[MyType, Lt(420)])
     assert a.core_schema == de.IsPartialDict(core_schema.int_schema(gt=123, lt=420))
-
-
-def test_returns_itself_called_only_once() -> None:
-    """
-    If `__prepare_pydantic_annotations__` returns something that implements `__prepare_pydantic_annotations__`
-    (including itself) we don't recurse infinitely.
-    """
-    calls: list[Any] = []
-
-    class MyType(int):
-        @classmethod
-        def __prepare_pydantic_annotations__(cls, source_type: Any, annotations: Sequence[Any]) -> Iterator[Any]:
-            calls.append(cls.__prepare_pydantic_annotations__)
-            # we return ourselves as the first annotation
-            # this may be fine if the thing implements `__get_pydantic_core_schema__` as well
-            # (although I'm not sure why you'd want to do that)
-            # but at the very least we should _not_ fail with a recursion error
-            # which is easy to have happen because we'd just call this method again in GenerateSchema's
-            # next iteration
-            yield cls
-            yield from annotations
-
-    msg = (
-        'Unable to generate pydantic-core schema for'
-        f" <class '{__name__}.test_returns_itself_called_only_once.<locals>.MyType'>"
-    )
-    with pytest.raises(PydanticSchemaGenerationError, match=msg):
-        TypeAdapter(MyType)
-
-    assert calls == [MyType.__prepare_pydantic_annotations__]
-    calls.clear()
-
-    class MyTypeGood(MyType):
-        @classmethod
-        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            calls.append(cls.__get_pydantic_core_schema__)
-            assert source_type == MyTypeGood
-            return handler(int)
-
-    a = TypeAdapter(MyTypeGood)
-    assert a.core_schema == core_schema.int_schema()
-
-    assert calls == [MyTypeGood.__prepare_pydantic_annotations__, MyTypeGood.__get_pydantic_core_schema__]

@@ -297,7 +297,7 @@ class DecimalValidator:
         return value
 
 
-def decimal_prepare_pydantic_annotations(source: Any, annotations: Iterable[Any]) -> list[Any] | None:
+def decimal_prepare_pydantic_annotations(source: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
     if source is not decimal.Decimal:
         return None
 
@@ -305,7 +305,7 @@ def decimal_prepare_pydantic_annotations(source: Any, annotations: Iterable[Any]
     _known_annotated_metadata.check_metadata(
         metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
     )
-    return [decimal.Decimal, DecimalValidator(**metadata), *remaining_annotations]
+    return (source, [DecimalValidator(**metadata), *remaining_annotations])
 
 
 @slots_dataclass
@@ -329,7 +329,7 @@ class InnerSchemaValidator:
         return self.core_schema
 
 
-def datetime_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> list[Any] | None:
+def datetime_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
     import datetime
 
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
@@ -345,10 +345,10 @@ def datetime_prepare_pydantic_annotations(source_type: Any, annotations: Iterabl
         return None
     # check now that we know the source type is correct
     _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.DATE_TIME_CONSTRAINTS, source_type)
-    return [source_type, sv, *remaining_annotations]
+    return (source_type, [sv, *remaining_annotations])
 
 
-def uuid_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> list[Any] | None:
+def uuid_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
     # UUIDs have no constraints - they are fixed length, constructing a UUID instance checks the length
 
     from uuid import UUID
@@ -393,14 +393,18 @@ def uuid_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[An
         serialization=core_schema.to_string_ser_schema(),
     )
 
-    return [
+    return (
         source_type,
-        InnerSchemaValidator(schema, js_core_schema=core_schema.str_schema(), js_schema_update={'format': 'uuid'}),
-        *annotations,
-    ]
+        [
+            InnerSchemaValidator(schema, js_core_schema=core_schema.str_schema(), js_schema_update={'format': 'uuid'}),
+            *annotations,
+        ],
+    )
 
 
-def path_schema_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> list[Any] | None:
+def path_schema_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any]
+) -> tuple[Any, list[Any]] | None:
     import pathlib
 
     if source_type not in {
@@ -445,11 +449,13 @@ def path_schema_prepare_pydantic_annotations(source_type: Any, annotations: Iter
         serialization=core_schema.to_string_ser_schema(),
     )
 
-    return [
+    return (
         source_type,
-        InnerSchemaValidator(schema, js_core_schema=constrained_str_schema, js_schema_update={'format': 'path'}),
-        *remaining_annotations,
-    ]
+        [
+            InnerSchemaValidator(schema, js_core_schema=constrained_str_schema, js_schema_update={'format': 'path'}),
+            *remaining_annotations,
+        ],
+    )
 
 
 def dequeue_validator(
@@ -578,7 +584,9 @@ def identity(s: CoreSchema) -> CoreSchema:
     return s
 
 
-def sequence_like_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> list[Any] | None:
+def sequence_like_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any]
+) -> tuple[Any, list[Any]] | None:
     origin: Any = get_origin(source_type)
 
     mapped_origin = SEQUENCE_ORIGIN_MAP.get(origin, None) if origin else SEQUENCE_ORIGIN_MAP.get(source_type, None)
@@ -597,7 +605,7 @@ def sequence_like_prepare_pydantic_annotations(source_type: Any, annotations: It
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
     _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
 
-    return [source_type, SequenceValidator(mapped_origin, item_source_type, **metadata), *remaining_annotations]
+    return (source_type, [SequenceValidator(mapped_origin, item_source_type, **metadata), *remaining_annotations])
 
 
 MAPPING_ORIGIN_MAP: dict[Any, Any] = {
@@ -753,7 +761,9 @@ class MappingValidator:
         return schema
 
 
-def mapping_like_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> list[Any] | None:
+def mapping_like_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any]
+) -> tuple[Any, list[Any]] | None:
     origin: Any = get_origin(source_type)
 
     mapped_origin = MAPPING_ORIGIN_MAP.get(origin, None) if origin else MAPPING_ORIGIN_MAP.get(source_type, None)
@@ -777,11 +787,13 @@ def mapping_like_prepare_pydantic_annotations(source_type: Any, annotations: Ite
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
     _known_annotated_metadata.check_metadata(metadata, _known_annotated_metadata.SEQUENCE_CONSTRAINTS, source_type)
 
-    return [
+    return (
         source_type,
-        MappingValidator(mapped_origin, keys_source_type, values_source_type, **metadata),
-        *remaining_annotations,
-    ]
+        [
+            MappingValidator(mapped_origin, keys_source_type, values_source_type, **metadata),
+            *remaining_annotations,
+        ],
+    )
 
 
 def make_strict_ip_schema(tp: type[Any], metadata: Any) -> CoreSchema:

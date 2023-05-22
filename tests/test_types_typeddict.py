@@ -1,7 +1,6 @@
 """
 Tests for TypedDict
 """
-import re
 import sys
 import typing
 from typing import Generic, List, Optional, TypeVar
@@ -188,7 +187,6 @@ def test_typeddict_schema(TypedDict):
     class Data(BaseModel):
         a: int
 
-    # TODO: Need to make sure TypedDict's get their own schema
     class DataTD(TypedDict):
         a: int
 
@@ -411,25 +409,22 @@ def test_typeddict_annotated(TypedDict, input_value, expected):
         assert Model(d=input_value).d == expected
 
 
-def test_recursive_typeddict(create_module):
-    @create_module
-    def module():
-        from typing import Optional
+def test_recursive_typeddict():
+    from typing import Optional
 
-        from typing_extensions import TypedDict
+    from typing_extensions import TypedDict
 
-        from pydantic import BaseModel
+    from pydantic import BaseModel
 
-        class RecursiveTypedDict(TypedDict):
-            # TODO: See if we can get this working if defined in a function (right now, needs to be module-level)
-            foo: Optional['RecursiveTypedDict']
+    class RecursiveTypedDict(TypedDict):
+        foo: Optional['RecursiveTypedDict']
 
-        class RecursiveTypedDictModel(BaseModel):
-            rec: RecursiveTypedDict
+    class RecursiveTypedDictModel(BaseModel):
+        rec: RecursiveTypedDict
 
-    assert module.RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
+    assert RecursiveTypedDictModel(rec={'foo': {'foo': None}}).rec == {'foo': {'foo': None}}
     with pytest.raises(ValidationError) as exc_info:
-        module.RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
+        RecursiveTypedDictModel(rec={'foo': {'foo': {'foo': 1}}})
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': 1,
@@ -596,7 +591,7 @@ def test_recursive_generic_typeddict_in_function_2():
     ]
 
 
-def test_recursive_generic_typeddict_in_function_rebuild_error():
+def test_recursive_generic_typeddict_in_function_3():
     T = TypeVar('T')
 
     class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
@@ -609,31 +604,6 @@ def test_recursive_generic_typeddict_in_function_rebuild_error():
         ls: List[T]
 
     int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
-    with pytest.raises(
-        PydanticUserError,
-        match=re.escape(
-            '`RecursiveGenTypedDictModel[int]` is not fully defined; you should define `RecursiveGenTypedDict`,'
-            ' then call `RecursiveGenTypedDictModel[int].model_rebuild()` before the first'
-            ' `RecursiveGenTypedDictModel[int]` instance is created.'
-        ),
-    ):
-        IntModel(rec=int_data).rec
-
-
-def test_recursive_generic_typeddict_in_function_rebuild_pass():
-    T = TypeVar('T')
-
-    class RecursiveGenTypedDictModel(BaseModel, Generic[T]):
-        rec: 'RecursiveGenTypedDict[T]'
-
-    IntModel = RecursiveGenTypedDictModel[int]
-
-    class RecursiveGenTypedDict(TypedDict, Generic[T]):
-        foo: Optional['RecursiveGenTypedDict[T]']
-        ls: List[T]
-
-    int_data: RecursiveGenTypedDict[int] = {'foo': {'foo': None, 'ls': [1]}, 'ls': [1]}
-    IntModel.model_rebuild()
     assert IntModel(rec=int_data).rec == int_data
 
     str_data: RecursiveGenTypedDict[str] = {'foo': {'foo': None, 'ls': ['a']}, 'ls': ['a']}
