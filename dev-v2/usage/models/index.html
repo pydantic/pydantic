@@ -273,7 +273,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="../validation_errors/" class="md-tabs__link">
+      <a href="../../errors/errors/" class="md-tabs__link">
         Error Messages
       </a>
     </li>
@@ -600,19 +600,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   <a href="#error-handling" class="md-nav__link">
     Error handling
   </a>
-  
-    <nav class="md-nav" aria-label="Error handling">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#custom-errors" class="md-nav__link">
-    Custom errors
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -1349,6 +1336,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
+      <a href="../../errors/errors/" class="md-nav__link">
+        Error Handling
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
       <a href="../validation_errors/" class="md-nav__link">
         Validation Errors
       </a>
@@ -1959,19 +1960,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   <a href="#error-handling" class="md-nav__link">
     Error handling
   </a>
-  
-    <nav class="md-nav" aria-label="Error handling">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#custom-errors" class="md-nav__link">
-    Custom errors
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2594,64 +2582,27 @@ field population. Accessing <code>SQLModel</code>'s <code>metadata</code> attrib
 </div>
 </div>
 <h2 id="error-handling">Error handling<a class="headerlink" href="#error-handling" title="Permanent link">&para;</a></h2>
-<p><em>pydantic</em> will raise <code>ValidationError</code> whenever it finds an error in the data it's validating.</p>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>Validation code should not raise <code>ValidationError</code> itself, but rather raise <code>ValueError</code>, <code>TypeError</code> or
-<code>AssertionError</code> (or subclasses of <code>ValueError</code> or <code>TypeError</code>) which will be caught and used to populate
-<code>ValidationError</code>.</p>
-</div>
+<p>Pydantic will raise <code>ValidationError</code> whenever it finds an error in the data it's validating.</p>
 <p>One exception will be raised regardless of the number of errors found, that <code>ValidationError</code> will
 contain information about all the errors and how they happened.</p>
-<p>You can access these errors in several ways:</p>
-<dl>
-<dt><code>e.errors()</code></dt>
-<dd>method will return list of errors found in the input data.</dd>
-<dt><code>e.json()</code></dt>
-<dd>method will return a JSON representation of <code>errors</code>.</dd>
-<dt><code>str(e)</code></dt>
-<dd>method will return a human readable representation of the errors.</dd>
-</dl>
-<p>Each error object contains:</p>
-<dl>
-<dt><code>loc</code></dt>
-<dd>the error's location as a list. The first item in the list will be the field where the error occurred,
-  and if the field is a <a href="./#recursive-models">sub-model</a>, subsequent items will be present to indicate
-  the nested location of the error.</dd>
-<dt><code>type</code></dt>
-<dd>a computer-readable identifier of the error type.</dd>
-<dt><code>msg</code></dt>
-<dd>a human readable explanation of the error.</dd>
-<dt><code>ctx</code></dt>
-<dd>an optional object which contains values required to render the error message.</dd>
-</dl>
+<p>See <a href="../../errors/errors/">Error Handling</a> for details on standard and custom errors.</p>
 <p>As a demonstration:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">conint</span>
-
-
-<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">lat</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
-    <span class="n">lng</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.1</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">is_required</span><span class="p">:</span> <span class="nb">float</span>
-    <span class="n">gt_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
     <span class="n">list_of_ints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">a_float</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">recursive_model</span><span class="p">:</span> <span class="n">Location</span> <span class="o">=</span> <span class="kc">None</span>
 
 
 <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
     <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;bad&#39;</span><span class="p">],</span>
     <span class="n">a_float</span><span class="o">=</span><span class="s1">&#39;not a float&#39;</span><span class="p">,</span>
-    <span class="n">recursive_model</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;lat&#39;</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">,</span> <span class="s1">&#39;lng&#39;</span><span class="p">:</span> <span class="s1">&#39;New York&#39;</span><span class="p">},</span>
-    <span class="n">gt_int</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
@@ -2659,94 +2610,26 @@ contain information about all the errors and how they happened.</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    5 validation errors for Model</span>
-<span class="sd">    is_required</span>
-<span class="sd">      Field required [type=missing, input_value={&#39;list_of_ints&#39;: [&#39;1&#39;, 2,...ew York&#39;}, &#39;gt_int&#39;: 21}, input_type=dict]</span>
-<span class="sd">    gt_int</span>
-<span class="sd">      Input should be greater than 42 [type=greater_than, input_value=21, input_type=int]</span>
+<span class="sd">    2 validation errors for Model</span>
 <span class="sd">    list_of_ints.2</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
 <span class="sd">    a_float</span>
 <span class="sd">      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
-<span class="sd">    recursive_model.lng</span>
-<span class="sd">      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value=&#39;New York&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="c1"># print(e.json())</span>
-    <span class="c1"># TODO set back to .json() once we add it</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    [</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;is_required&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
-<span class="sd">            &#39;input&#39;: {</span>
-<span class="sd">                &#39;list_of_ints&#39;: [&#39;1&#39;, 2, &#39;bad&#39;],</span>
-<span class="sd">                &#39;a_float&#39;: &#39;not a float&#39;,</span>
-<span class="sd">                &#39;recursive_model&#39;: {&#39;lat&#39;: 4.2, &#39;lng&#39;: &#39;New York&#39;},</span>
-<span class="sd">                &#39;gt_int&#39;: 21,</span>
-<span class="sd">            },</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;greater_than&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;gt_int&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be greater than 42&#39;,</span>
-<span class="sd">            &#39;input&#39;: 21,</span>
-<span class="sd">            &#39;ctx&#39;: {&#39;gt&#39;: 42},</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/greater_than&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;int_parsing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;list_of_ints&#39;, 2),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid integer, unable to parse string as an integer&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;bad&#39;,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;float_parsing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;a_float&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid number, unable to parse string as an number&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;not a float&#39;,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/float_parsing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;float_parsing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;recursive_model&#39;, &#39;lng&#39;),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid number, unable to parse string as an number&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;New York&#39;,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/float_parsing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">    ]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">conint</span>
-
-
-<span class="k">class</span> <span class="nc">Location</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">lat</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
-    <span class="n">lng</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">10.1</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">is_required</span><span class="p">:</span> <span class="nb">float</span>
-    <span class="n">gt_int</span><span class="p">:</span> <span class="n">conint</span><span class="p">(</span><span class="n">gt</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
     <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="n">a_float</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">recursive_model</span><span class="p">:</span> <span class="n">Location</span> <span class="o">=</span> <span class="kc">None</span>
 
 
 <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
     <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;bad&#39;</span><span class="p">],</span>
     <span class="n">a_float</span><span class="o">=</span><span class="s1">&#39;not a float&#39;</span><span class="p">,</span>
-    <span class="n">recursive_model</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;lat&#39;</span><span class="p">:</span> <span class="mf">4.2</span><span class="p">,</span> <span class="s1">&#39;lng&#39;</span><span class="p">:</span> <span class="s1">&#39;New York&#39;</span><span class="p">},</span>
-    <span class="n">gt_int</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="k">try</span><span class="p">:</span>
@@ -2754,144 +2637,16 @@ contain information about all the errors and how they happened.</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    5 validation errors for Model</span>
-<span class="sd">    is_required</span>
-<span class="sd">      Field required [type=missing, input_value={&#39;list_of_ints&#39;: [&#39;1&#39;, 2,...ew York&#39;}, &#39;gt_int&#39;: 21}, input_type=dict]</span>
-<span class="sd">    gt_int</span>
-<span class="sd">      Input should be greater than 42 [type=greater_than, input_value=21, input_type=int]</span>
+<span class="sd">    2 validation errors for Model</span>
 <span class="sd">    list_of_ints.2</span>
 <span class="sd">      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value=&#39;bad&#39;, input_type=str]</span>
 <span class="sd">    a_float</span>
 <span class="sd">      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value=&#39;not a float&#39;, input_type=str]</span>
-<span class="sd">    recursive_model.lng</span>
-<span class="sd">      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value=&#39;New York&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="o">**</span><span class="n">data</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="c1"># print(e.json())</span>
-    <span class="c1"># TODO set back to .json() once we add it</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    [</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;is_required&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
-<span class="sd">            &#39;input&#39;: {</span>
-<span class="sd">                &#39;list_of_ints&#39;: [&#39;1&#39;, 2, &#39;bad&#39;],</span>
-<span class="sd">                &#39;a_float&#39;: &#39;not a float&#39;,</span>
-<span class="sd">                &#39;recursive_model&#39;: {&#39;lat&#39;: 4.2, &#39;lng&#39;: &#39;New York&#39;},</span>
-<span class="sd">                &#39;gt_int&#39;: 21,</span>
-<span class="sd">            },</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;greater_than&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;gt_int&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be greater than 42&#39;,</span>
-<span class="sd">            &#39;input&#39;: 21,</span>
-<span class="sd">            &#39;ctx&#39;: {&#39;gt&#39;: 42},</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/greater_than&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;int_parsing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;list_of_ints&#39;, 2),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid integer, unable to parse string as an integer&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;bad&#39;,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;float_parsing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;a_float&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid number, unable to parse string as an number&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;not a float&#39;,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/float_parsing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;float_parsing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;recursive_model&#39;, &#39;lng&#39;),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid number, unable to parse string as an number&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;New York&#39;,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/float_parsing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">    ]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 </div>
 </div>
-<h3 id="custom-errors">Custom errors<a class="headerlink" href="#custom-errors" title="Permanent link">&para;</a></h3>
-<p>In your custom data types or validators you should use <code>ValueError</code>, <code>TypeError</code> or <code>AssertionError</code> to raise errors.</p>
-<p>See <a href="../validators/">validators</a> for more details on use of the <code>@validator</code> decorator.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">value_must_equal_bar</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;bar&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s1">&#39;value must be &quot;bar&quot;&#39;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;ber&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    [</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;value_error&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;foo&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Value error, value must be &quot;bar&quot;&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;ber&#39;,</span>
-<span class="sd">            &#39;ctx&#39;: {&#39;error&#39;: &#39;value must be &quot;bar&quot;&#39;},</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/value_error&#39;,</span>
-<span class="sd">        }</span>
-<span class="sd">    ]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
-<p>You can also define your own error classes, which can specify a custom error code, message template, and context:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">PydanticCustomError</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">field_validator</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
-
-    <span class="nd">@field_validator</span><span class="p">(</span><span class="s1">&#39;foo&#39;</span><span class="p">)</span>
-    <span class="k">def</span> <span class="nf">value_must_equal_bar</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
-        <span class="k">if</span> <span class="n">v</span> <span class="o">!=</span> <span class="s1">&#39;bar&#39;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
-                <span class="s1">&#39;not_a_bar&#39;</span><span class="p">,</span>
-                <span class="s1">&#39;value is not &quot;bar&quot;, got &quot;</span><span class="si">{wrong_value}</span><span class="s1">&quot;&#39;</span><span class="p">,</span>
-                <span class="nb">dict</span><span class="p">(</span><span class="n">wrong_value</span><span class="o">=</span><span class="n">v</span><span class="p">),</span>
-            <span class="p">)</span>
-        <span class="k">return</span> <span class="n">v</span>
-
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;ber&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    [</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;not_a_bar&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;foo&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;value is not &quot;bar&quot;, got &quot;ber&quot;&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;ber&#39;,</span>
-<span class="sd">            &#39;ctx&#39;: {&#39;wrong_value&#39;: &#39;ber&#39;},</span>
-<span class="sd">        }</span>
-<span class="sd">    ]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-</code></pre></div>
 <h2 id="helper-functions">Helper functions<a class="headerlink" href="#helper-functions" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> provides three <code>classmethod</code> helper functions on models for parsing data:</p>
 <ul>
