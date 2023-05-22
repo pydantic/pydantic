@@ -88,6 +88,7 @@ nav:
   - usage/conversion_table.md
   - usage/pydantic_settings.md
 - Error Messages:
+  - Error Handling: errors/errors.md
   - Validation Errors: usage/validation_errors.md
   - Usage Errors: usage/errors.md
 - Integrations:
