@@ -245,8 +245,6 @@ class GenerateSchema:
         if schema is not None:
             return schema
 
-        from ..main import BaseModel
-
         fields = cls.model_fields
         decorators = cls.__pydantic_decorators__
         check_decorator_fields_exist(
@@ -258,32 +256,45 @@ class GenerateSchema:
             fields.keys(),
         )
         config_wrapper = ConfigWrapper(cls.model_config, check=False)
-        self._config_wrapper_stack.append(config_wrapper)
-        try:
-            fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
-                {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
-                computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
-            )
-        finally:
-            self._config_wrapper_stack.pop()
-        inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
-
-        inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
-
         core_config = config_wrapper.core_config(cls)
-        model_post_init = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
-
         metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=cls)])
 
-        model_schema = core_schema.model_schema(
-            cls,
-            inner_schema,
-            ref=model_ref,
-            config=core_config,
-            post_init=model_post_init,
-            metadata=metadata,
-            custom_init=cls.__init__ is not BaseModel.__init__,
-        )
+        if cls.__pydantic_root_model__:
+            root_field = self._common_field_schema('root', fields['root'], decorators)
+            model_schema = core_schema.model_schema(
+                cls,
+                root_field['schema'],
+                custom_init=getattr(cls, '__pydantic_custom_init__', None),
+                root_model=True,
+                post_init=getattr(cls, '__pydantic_post_init__', None),
+                config=core_config,
+                ref=model_ref,
+                metadata={**metadata, **root_field['metadata']},
+            )
+        else:
+            self._config_wrapper_stack.append(config_wrapper)
+            try:
+                fields_schema: core_schema.CoreSchema = core_schema.model_fields_schema(
+                    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+                    computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
+                )
+            finally:
+                self._config_wrapper_stack.pop()
+
+            inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
+            inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
+
+            model_schema = core_schema.model_schema(
+                cls,
+                inner_schema,
+                custom_init=getattr(cls, '__pydantic_custom_init__', None),
+                root_model=False,
+                post_init=getattr(cls, '__pydantic_post_init__', None),
+                config=core_config,
+                ref=model_ref,
+                metadata=metadata,
+            )
+
         model_schema = consolidate_refs(model_schema)
         schema = apply_model_serializers(model_schema, decorators.model_serializers.values())
         return apply_model_validators(schema, decorators.model_validators.values())
@@ -747,7 +758,7 @@ class GenerateSchema:
         else:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
-        source_type, annotations = annotation, field.metadata
+        source_type, annotations = field.annotation, field.metadata
         source_type, annotations = self._prepare_annotations(source_type, annotations)
         schema = self._apply_annotations(
             CallbackGetCoreSchemaHandler(self.generate_schema, self.generate_schema), source_type, annotations
@@ -1365,7 +1376,7 @@ class _CommonField(TypedDict):
     serialization_alias: str | None
     serialization_exclude: bool | None
     frozen: bool | None
-    metadata: Any
+    metadata: dict[str, Any]
 
 
 def _common_field(

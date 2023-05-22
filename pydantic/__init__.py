@@ -67,6 +67,7 @@ __all__ = [
     # main
     'BaseModel',
     'create_model',
+    'RootModel',
     # network
     'AnyUrl',
     'AnyHttpUrl',
@@ -144,6 +145,7 @@ __all__ = [
     'Base64Encoder',
     'Base64Bytes',
     'Base64Str',
+    'SkipValidation',
     # type_adapter
     'TypeAdapter',
     # version

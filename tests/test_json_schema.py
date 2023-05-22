@@ -37,6 +37,7 @@ from pydantic import (
     BaseModel,
     Field,
     ImportString,
+    RootModel,
     ValidationError,
     computed_field,
     field_validator,
@@ -4084,3 +4085,15 @@ def test_arbitrary_type_json_schema(field_schema, model_schema):
         x: Annotated[ArbitraryClass, WithJsonSchema(field_schema)]
 
     assert Model.model_json_schema() == model_schema
+
+
+def test_root_model():
+    class A(RootModel[int]):
+        pass
+
+    assert A.model_json_schema() == {'type': 'integer'}
+
+    class B(RootModel[A]):
+        pass
+
+    assert B.model_json_schema() == {'type': 'integer'}

@@ -359,7 +359,7 @@ def test_extra_broken_via_pydantic_extra_interference():
     class BrokenExtraBaseModel(BaseModel):
         def model_post_init(self, __context: Any) -> None:
             super().model_post_init(__context)
-            self.__pydantic_extra__ = None
+            object.__setattr__(self, '__pydantic_extra__', None)
 
     class Model(BrokenExtraBaseModel):
         model_config = ConfigDict(extra='allow')
@@ -2165,10 +2165,15 @@ def test_model_validate_with_context():
     assert OuterModel.model_validate({'inner': {'x': 2}}, context={'multiplier': 3}).inner.x == 6
 
 
+def test_extra_equality():
+    class MyModel(BaseModel, extra='allow'):
+        pass
+
+    assert MyModel(x=1) != MyModel()
+
+
 def test_equality_delegation():
     from unittest.mock import ANY
-
-    from pydantic import BaseModel
 
     class MyModel(BaseModel):
         foo: str
