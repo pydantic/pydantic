@@ -25,8 +25,8 @@ if TYPE_CHECKING:
 
 GenericTypesCacheKey = Tuple[Any, Any, Tuple[Any, ...]]
 
-# TODO: We want to remove LimitedDict, but to do this, we'll need to improve the handling of generics caching
-#   Right now, to handle recursive generics, we some types must remain cached for brief periods without references
+# Note: We want to remove LimitedDict, but to do this, we'd need to improve the handling of generics caching.
+#   Right now, to handle recursive generics, we some types must remain cached for brief periods without references.
 #   By chaining the WeakValuesDict with a LimitedDict, we have a way to retain caching for all types with references,
 #   while also retaining a limited number of types even without references. This is generally enough to build
 #   specific recursive generic models without losing required items out of the cache.

@@ -1,5 +1,3 @@
-# TODO: Should we move WalkAndApply into pydantic_core proper?
-
 from __future__ import annotations
 
 from collections import defaultdict
@@ -203,6 +201,7 @@ def define_expected_missing_refs(
     if expected_missing_refs:
         definitions: list[core_schema.CoreSchema] = [
             # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
+            #   Issue: https://github.com/pydantic/pydantic-core/issues/619
             core_schema.none_schema(ref=ref, metadata={'pydantic_debug_missing_ref': True, 'invalid': True})
             for ref in expected_missing_refs
         ]
@@ -227,6 +226,9 @@ T = TypeVar('T')
 
 Recurse = Callable[[core_schema.CoreSchema, 'Walk'], core_schema.CoreSchema]
 Walk = Callable[[core_schema.CoreSchema, Recurse], core_schema.CoreSchema]
+
+# TODO: Should we move _WalkCoreSchema into pydantic_core proper?
+#   Issue: https://github.com/pydantic/pydantic-core/issues/615
 
 
 class _WalkCoreSchema:

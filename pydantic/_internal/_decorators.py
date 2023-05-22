@@ -213,13 +213,12 @@ class DecoratorInfos:
     # mapping of name in the class namespace to decorator info
     # note that the name in the class namespace is the function or attribute name
     # not the field name!
-    # TODO these all need to be renamed to plural
-    validator: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
-    field_validator: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
-    root_validator: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
-    field_serializer: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
-    model_serializer: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
-    model_validator: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
+    validators: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
+    field_validators: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
+    root_validators: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
+    field_serializers: dict[str, Decorator[FieldSerializerDecoratorInfo]] = field(default_factory=dict)
+    model_serializers: dict[str, Decorator[ModelSerializerDecoratorInfo]] = field(default_factory=dict)
+    model_validators: dict[str, Decorator[ModelValidatorDecoratorInfo]] = field(default_factory=dict)
     computed_fields: dict[str, Decorator[ComputedFieldInfo]] = field(default_factory=dict)
 
     @staticmethod
@@ -243,32 +242,36 @@ class DecoratorInfos:
         for base in model_dc.__bases__[::-1]:
             existing = cast(Union[DecoratorInfos, None], getattr(base, '__pydantic_decorators__', None))
             if existing is not None:
-                res.validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.validator.items()})
-                res.field_validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_validator.items()})
-                res.root_validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validator.items()})
-                res.field_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_serializer.items()})
-                res.model_serializer.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_serializer.items()})
-                res.model_validator.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_validator.items()})
+                res.validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.validators.items()})
+                res.field_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_validators.items()})
+                res.root_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validators.items()})
+                res.field_serializers.update(
+                    {k: v.bind_to_cls(model_dc) for k, v in existing.field_serializers.items()}
+                )
+                res.model_serializers.update(
+                    {k: v.bind_to_cls(model_dc) for k, v in existing.model_serializers.items()}
+                )
+                res.model_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_validators.items()})
                 res.computed_fields.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_fields.items()})
 
         for var_name, var_value in vars(model_dc).items():
             if isinstance(var_value, PydanticDescriptorProxy):
                 info = var_value.decorator_info
                 if isinstance(info, ValidatorDecoratorInfo):
-                    res.validator[var_name] = Decorator.build(
+                    res.validators[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 elif isinstance(info, FieldValidatorDecoratorInfo):
-                    res.field_validator[var_name] = Decorator.build(
+                    res.field_validators[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 elif isinstance(info, RootValidatorDecoratorInfo):
-                    res.root_validator[var_name] = Decorator.build(
+                    res.root_validators[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 elif isinstance(info, FieldSerializerDecoratorInfo):
                     # check whether a serializer function is already registered for fields
-                    for field_serializer_decorator in res.field_serializer.values():
+                    for field_serializer_decorator in res.field_serializers.values():
                         # check that each field has at most one serializer function.
                         # serializer functions for the same field in subclasses are allowed,
                         # and are treated as overrides
@@ -281,15 +284,15 @@ class DecoratorInfos:
                                     f'for field {f!r}, this is not allowed.',
                                     code='multiple-field-serializers',
                                 )
-                    res.field_serializer[var_name] = Decorator.build(
+                    res.field_serializers[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 elif isinstance(info, ModelValidatorDecoratorInfo):
-                    res.model_validator[var_name] = Decorator.build(
+                    res.model_validators[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 elif isinstance(info, ModelSerializerDecoratorInfo):
-                    res.model_serializer[var_name] = Decorator.build(
+                    res.model_serializers[var_name] = Decorator.build(
                         model_dc, cls_var_name=var_name, shim=var_value.shim, info=info
                     )
                 else:

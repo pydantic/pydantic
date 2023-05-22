@@ -28,7 +28,7 @@ SelfReferencingModel.model_rebuild()
 model = Model(x=1, y='y')
 Model(x=1, y='y', z='z')
 model.x = 2
-model.model_validate(model.__dict__)  # TODO: Change to .model_validate(model) when possible
+model.model_validate(model)
 
 self_referencing_model = SelfReferencingModel(submodel=SelfReferencingModel(submodel=None))
 

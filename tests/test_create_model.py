@@ -24,10 +24,10 @@ def test_create_model():
     assert model.__name__ == 'FooModel'
     assert model.model_fields.keys() == {'foo', 'bar'}
 
-    assert not model.__pydantic_decorators__.validator
-    assert not model.__pydantic_decorators__.root_validator
-    assert not model.__pydantic_decorators__.field_validator
-    assert not model.__pydantic_decorators__.field_serializer
+    assert not model.__pydantic_decorators__.validators
+    assert not model.__pydantic_decorators__.root_validators
+    assert not model.__pydantic_decorators__.field_validators
+    assert not model.__pydantic_decorators__.field_serializers
 
     assert model.__module__ == 'pydantic.main'
 

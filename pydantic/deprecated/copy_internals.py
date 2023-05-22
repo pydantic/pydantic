@@ -107,6 +107,7 @@ def _copy_and_set_values(
     if deep:
         # chances of having empty dict here are quite low for using smart_deepcopy
         values = deepcopy(values)
+        extra = deepcopy(extra)
 
     cls = self.__class__
     m = cls.__new__(cls)

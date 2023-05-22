@@ -296,69 +296,29 @@ name='Anna' age=20.0 pets=[Pet(name='Bones', species='dog'), Pet(name='Orion', s
 
 ## Error handling
 
-*pydantic* will raise `ValidationError` whenever it finds an error in the data it's validating.
-
-!!! note
-    Validation code should not raise `ValidationError` itself, but rather raise `ValueError`, `TypeError` or
-    `AssertionError` (or subclasses of `ValueError` or `TypeError`) which will be caught and used to populate
-    `ValidationError`.
+Pydantic will raise `ValidationError` whenever it finds an error in the data it's validating.
 
 One exception will be raised regardless of the number of errors found, that `ValidationError` will
 contain information about all the errors and how they happened.
 
-You can access these errors in several ways:
-
-`e.errors()`
-: method will return list of errors found in the input data.
-
-`e.json()`
-: method will return a JSON representation of `errors`.
-
-`str(e)`
-: method will return a human readable representation of the errors.
-
-Each error object contains:
-
-`loc`
-: the error's location as a list. The first item in the list will be the field where the error occurred,
-  and if the field is a [sub-model](models.md#recursive-models), subsequent items will be present to indicate
-  the nested location of the error.
-
-`type`
-: a computer-readable identifier of the error type.
-
-`msg`
-: a human readable explanation of the error.
-
-`ctx`
-: an optional object which contains values required to render the error message.
+See [Error Handling](../errors/errors.md) for details on standard and custom errors.
 
 As a demonstration:
 
 ```py
 from typing import List
 
-from pydantic import BaseModel, ValidationError, conint
-
-
-class Location(BaseModel):
-    lat: float = 0.1
-    lng: float = 10.1
+from pydantic import BaseModel, ValidationError
 
 
 class Model(BaseModel):
-    is_required: float
-    gt_int: conint(gt=42)
     list_of_ints: List[int] = None
     a_float: float = None
-    recursive_model: Location = None
 
 
 data = dict(
     list_of_ints=['1', 2, 'bad'],
     a_float='not a float',
-    recursive_model={'lat': 4.2, 'lng': 'New York'},
-    gt_int=21,
 )
 
 try:
@@ -366,147 +326,11 @@ try:
 except ValidationError as e:
     print(e)
     """
-    5 validation errors for Model
-    is_required
-      Field required [type=missing, input_value={'list_of_ints': ['1', 2,...ew York'}, 'gt_int': 21}, input_type=dict]
-    gt_int
-      Input should be greater than 42 [type=greater_than, input_value=21, input_type=int]
+    2 validation errors for Model
     list_of_ints.2
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='bad', input_type=str]
     a_float
       Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='not a float', input_type=str]
-    recursive_model.lng
-      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='New York', input_type=str]
-    """
-
-try:
-    Model(**data)
-except ValidationError as e:
-    # print(e.json())
-    # TODO set back to .json() once we add it
-    print(e.errors())
-    """
-    [
-        {
-            'type': 'missing',
-            'loc': ('is_required',),
-            'msg': 'Field required',
-            'input': {
-                'list_of_ints': ['1', 2, 'bad'],
-                'a_float': 'not a float',
-                'recursive_model': {'lat': 4.2, 'lng': 'New York'},
-                'gt_int': 21,
-            },
-            'url': 'https://errors.pydantic.dev/2/v/missing',
-        },
-        {
-            'type': 'greater_than',
-            'loc': ('gt_int',),
-            'msg': 'Input should be greater than 42',
-            'input': 21,
-            'ctx': {'gt': 42},
-            'url': 'https://errors.pydantic.dev/2/v/greater_than',
-        },
-        {
-            'type': 'int_parsing',
-            'loc': ('list_of_ints', 2),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'bad',
-            'url': 'https://errors.pydantic.dev/2/v/int_parsing',
-        },
-        {
-            'type': 'float_parsing',
-            'loc': ('a_float',),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
-            'input': 'not a float',
-            'url': 'https://errors.pydantic.dev/2/v/float_parsing',
-        },
-        {
-            'type': 'float_parsing',
-            'loc': ('recursive_model', 'lng'),
-            'msg': 'Input should be a valid number, unable to parse string as an number',
-            'input': 'New York',
-            'url': 'https://errors.pydantic.dev/2/v/float_parsing',
-        },
-    ]
-    """
-```
-
-### Custom errors
-
-In your custom data types or validators you should use `ValueError`, `TypeError` or `AssertionError` to raise errors.
-
-See [validators](validators.md) for more details on use of the `@validator` decorator.
-
-```py
-from pydantic import BaseModel, ValidationError, field_validator
-
-
-class Model(BaseModel):
-    foo: str
-
-    @field_validator('foo')
-    def value_must_equal_bar(cls, v):
-        if v != 'bar':
-            raise ValueError('value must be "bar"')
-
-        return v
-
-
-try:
-    Model(foo='ber')
-except ValidationError as e:
-    print(e.errors())
-    """
-    [
-        {
-            'type': 'value_error',
-            'loc': ('foo',),
-            'msg': 'Value error, value must be "bar"',
-            'input': 'ber',
-            'ctx': {'error': 'value must be "bar"'},
-            'url': 'https://errors.pydantic.dev/2/v/value_error',
-        }
-    ]
-    """
-```
-
-You can also define your own error classes, which can specify a custom error code, message template, and context:
-
-```py
-from pydantic_core import PydanticCustomError
-
-from pydantic import BaseModel, ValidationError, field_validator
-
-
-class Model(BaseModel):
-    foo: str
-
-    @field_validator('foo')
-    def value_must_equal_bar(cls, v):
-        if v != 'bar':
-            raise PydanticCustomError(
-                'not_a_bar',
-                'value is not "bar", got "{wrong_value}"',
-                dict(wrong_value=v),
-            )
-        return v
-
-
-try:
-    Model(foo='ber')
-except ValidationError as e:
-    print(e.errors())
-    """
-    [
-        {
-            'type': 'not_a_bar',
-            'loc': ('foo',),
-            'msg': 'value is not "bar", got "ber"',
-            'input': 'ber',
-            'ctx': {'wrong_value': 'ber'},
-        }
-    ]
     """
 ```
 

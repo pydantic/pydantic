@@ -643,7 +643,7 @@ def test_nested():
     OuterT_SameType[int](i=inner_int)
     OuterT_SameType[str](i=inner_str)
     # TODO: The next line is failing, but passes in v1.
-    #   Might need to do something smart for Any, or re-parse-from-dict if the pydantic_generic_origin is the same..
+    #   Should re-parse-from-dict if the pydantic_generic_origin is the same
     # OuterT_SameType[str](i=inner_int_any)
     OuterT_SameType[int](i=inner_int_any.model_dump())
 
@@ -1687,7 +1687,7 @@ def test_generic_recursive_models_with_a_concrete_parameter(create_module):
 
 def test_generic_recursive_models_complicated(create_module):
     """
-    TODO: If we drop the use of LimitedDict and use WeakValueDictionary only, this test will fail if run by itself.
+    Note: If we drop the use of LimitedDict and use WeakValueDictionary only, this test will fail if run by itself.
         This is due to weird behavior with the WeakValueDictionary used for caching.
         As part of the next batch of generics work, we should attempt to fix this if possible.
         In the meantime, if this causes issues, or the test otherwise starts failing, please make it xfail
@@ -1979,7 +1979,6 @@ def test_multi_inheritance_generic_defaults():
     assert C(a=1, c=...).model_dump() == {'a': 1, 'b': None, 'c': ..., 'x': 'a', 'y': 'b', 'z': 'c'}
 
 
-@pytest.mark.xfail(reason="'Json type's JSON schema; see issue #5072")
 def test_parse_generic_json():
     T = TypeVar('T')
 
@@ -1993,15 +1992,28 @@ def test_parse_generic_json():
     record = MessageWrapper[Payload](message=raw)
     assert isinstance(record.message, Payload)
 
-    schema = record.model_json_schema()
-    # This seems appropriate if the goal is to represent the "serialization" schema, not the validation schema.
-    # We may need a better approach for types with different inputs and outputs; I opened an issue for this in #5072
-    assert schema['properties'] == {'message': {'$ref': '#/definitions/Payload'}}
-    assert schema['definitions']['Payload'] == {
-        'title': 'Payload',
+    validation_schema = record.model_json_schema(mode='validation')
+    assert validation_schema == {
+        'properties': {'message': {'format': 'json-string', 'title': 'Message', 'type': 'string'}},
+        'required': ['message'],
+        'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
         'type': 'object',
-        'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
-        'required': ['payload_field'],
+    }
+
+    serialization_schema = record.model_json_schema(mode='serialization')
+    assert serialization_schema == {
+        '$defs': {
+            'Payload': {
+                'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
+                'required': ['payload_field'],
+                'title': 'Payload',
+                'type': 'object',
+            }
+        },
+        'properties': {'message': {'allOf': [{'$ref': '#/$defs/Payload'}], 'title': 'Message'}},
+        'required': ['message'],
+        'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
+        'type': 'object',
     }
 
 
@@ -2309,7 +2321,10 @@ def test_generic_intenum_bound():
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason='requires python 3.11 or higher')
-@pytest.mark.xfail(reason='TODO: Variadic generic parametrization is not supported yet')
+@pytest.mark.xfail(
+    reason='TODO: Variadic generic parametrization is not supported yet;'
+    ' Issue: https://github.com/pydantic/pydantic/issues/5804'
+)
 def test_variadic_generic_init():
     class ComponentModel(BaseModel):
         pass
@@ -2342,7 +2357,9 @@ def test_variadic_generic_init():
 
 
 @pytest.mark.skipif(sys.version_info < (3, 11), reason='requires python 3.11 or higher')
-@pytest.mark.xfail(reason='TODO: Variadic fields are not supported yet')
+@pytest.mark.xfail(
+    reason='TODO: Variadic fields are not supported yet; Issue: https://github.com/pydantic/pydantic/issues/5804'
+)
 def test_variadic_generic_with_variadic_fields():
     class ComponentModel(BaseModel):
         pass

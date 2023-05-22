@@ -18,7 +18,6 @@ __all__ = (
     'PydanticInvalidForJsonSchema',
 )
 
-# TODO set up a cloudflare worker to redirect to the correct page
 # We use this URL to allow for future flexibility about how we host the docs, while allowing for Pydantic
 # code in the while with "old" URLs to still work.
 # 'u' refers to "user errors" - e.g. errors caused by developers using pydantic, as opposed to validation errors.
