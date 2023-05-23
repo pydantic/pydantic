@@ -5151,3 +5151,23 @@ def test_transform_schema_for_third_party_class():
             'type': 'greater_than',
         }
     ]
+
+
+def test_iterable_arbitrary_type():
+    class CustomIterable(Iterable):
+        def __init__(self, iterable):
+            self.iterable = iterable
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            return next(self.iterable)
+
+    with pytest.raises(
+        PydanticSchemaGenerationError,
+        match='Unable to generate pydantic-core schema for .*CustomIterable.*. Set `arbitrary_types_allowed=True`',
+    ):
+
+        class Model(BaseModel):
+            x: CustomIterable
