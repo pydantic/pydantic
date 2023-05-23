@@ -23,7 +23,6 @@ from typing import (  # type: ignore
     TypeVar,
     Union,
     _eval_type,
-    _SpecialForm as TypingSpecialForm,
     cast,
     get_type_hints,
 )
@@ -34,7 +33,6 @@ from typing_extensions import (
     Literal,
     NotRequired as TypedDictNotRequired,
     Required as TypedDictRequired,
-    _SpecialForm as TypingExtensionSpecialForm,
 )
 
 try:
@@ -94,7 +92,7 @@ AnyArgTCallable = TypingCallable[..., _T]
 AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
 
 
-LITERAL_TYPES: Set[Union[TypingSpecialForm, TypingExtensionSpecialForm]] = {Literal}
+LITERAL_TYPES: Set[Any] = {Literal}
 if hasattr(typing, 'Literal'):
     LITERAL_TYPES.add(typing.Literal)
 
