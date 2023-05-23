@@ -1533,12 +1533,7 @@ class GenerateJsonSchema:
         return json_refs
 
     def handle_invalid_for_json_schema(self, schema: CoreSchemaOrField, error_info: str) -> JsonSchemaValue:
-        if _core_metadata.CoreMetadataHandler(schema).metadata.get('pydantic_js_functions') is not None:
-            # Since there is a json schema modify function, assume that this type is meant to be handled,
-            # and the modify function will set all properties as appropriate
-            return {}
-        else:
-            raise PydanticInvalidForJsonSchema(f'Cannot generate a JsonSchema for {error_info}')
+        raise PydanticInvalidForJsonSchema(f'Cannot generate a JsonSchema for {error_info}')
 
     def emit_warning(self, kind: JsonSchemaWarningKind, detail: str) -> None:
         """

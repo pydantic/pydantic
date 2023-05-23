@@ -286,6 +286,8 @@ def test_enum_modify_schema():
     class Model(BaseModel):
         spam: Optional[SpamEnum] = Field(None)
 
+    Model.model_json_schema()
+
     assert Model.model_json_schema() == {
         '$defs': {
             'SpamEnum': {
