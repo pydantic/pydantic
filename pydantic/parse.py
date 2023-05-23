@@ -2,7 +2,7 @@ import json
 import pickle
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Union
+from typing import Any, Callable, Optional, Union
 
 from .types import StrBytes
 
@@ -15,9 +15,9 @@ class Protocol(str, Enum):
 def load_str_bytes(
     b: StrBytes,
     *,
-    content_type: str = None,
+    content_type: Optional[str] = None,
     encoding: str = 'utf8',
-    proto: Protocol = None,
+    proto: Optional[Protocol] = None,
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:
@@ -47,9 +47,9 @@ def load_str_bytes(
 def load_file(
     path: Union[str, Path],
     *,
-    content_type: str = None,
+    content_type: Optional[str] = None,
     encoding: str = 'utf8',
-    proto: Protocol = None,
+    proto: Optional[Protocol] = None,
     allow_pickle: bool = False,
     json_loads: Callable[[str], Any] = json.loads,
 ) -> Any:

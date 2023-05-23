@@ -306,11 +306,11 @@ class ConstrainedFloat(float, metaclass=ConstrainedNumberMeta):
 def confloat(
     *,
     strict: bool = False,
-    gt: float = None,
-    ge: float = None,
-    lt: float = None,
-    le: float = None,
-    multiple_of: float = None,
+    gt: Optional[float] = None,
+    ge: Optional[float] = None,
+    lt: Optional[float] = None,
+    le: Optional[float] = None,
+    multiple_of: Optional[float] = None,
     allow_inf_nan: Optional[bool] = None,
 ) -> Type[float]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
@@ -619,7 +619,11 @@ class ConstrainedList(list):  # type: ignore
 
 
 def conlist(
-    item_type: Type[T], *, min_items: Optional[int] = None, max_items: Optional[int] = None, unique_items: bool = None
+    item_type: Type[T],
+    *,
+    min_items: Optional[int] = None,
+    max_items: Optional[int] = None,
+    unique_items: Optional[bool] = None,
 ) -> Type[List[T]]:
     # __args__ is needed to conform to typing generics api
     namespace = dict(
@@ -728,13 +732,13 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
 def condecimal(
     *,
-    gt: Decimal = None,
-    ge: Decimal = None,
-    lt: Decimal = None,
-    le: Decimal = None,
+    gt: Optional[Decimal] = None,
+    ge: Optional[Decimal] = None,
+    lt: Optional[Decimal] = None,
+    le: Optional[Decimal] = None,
     max_digits: Optional[int] = None,
     decimal_places: Optional[int] = None,
-    multiple_of: Decimal = None,
+    multiple_of: Optional[Decimal] = None,
 ) -> Type[Decimal]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(
@@ -1192,10 +1196,10 @@ class ConstrainedDate(date, metaclass=ConstrainedNumberMeta):
 
 def condate(
     *,
-    gt: date = None,
-    ge: date = None,
-    lt: date = None,
-    le: date = None,
+    gt: Optional[date] = None,
+    ge: Optional[date] = None,
+    lt: Optional[date] = None,
+    le: Optional[date] = None,
 ) -> Type[date]:
     # use kwargs then define conf in a dict to aid with IDE type hinting
     namespace = dict(gt=gt, ge=ge, lt=lt, le=le)

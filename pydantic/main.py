@@ -531,9 +531,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         cls: Type['Model'],
         b: StrBytes,
         *,
-        content_type: str = None,
+        content_type: Optional[str] = None,
         encoding: str = 'utf8',
-        proto: Protocol = None,
+        proto: Optional[Protocol] = None,
         allow_pickle: bool = False,
     ) -> 'Model':
         try:
@@ -554,9 +554,9 @@ class BaseModel(Representation, metaclass=ModelMetaclass):
         cls: Type['Model'],
         path: Union[str, Path],
         *,
-        content_type: str = None,
+        content_type: Optional[str] = None,
         encoding: str = 'utf8',
-        proto: Protocol = None,
+        proto: Optional[Protocol] = None,
         allow_pickle: bool = False,
     ) -> 'Model':
         obj = load_file(
@@ -929,8 +929,8 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: None = None,
     __module__: str = __name__,
-    __validators__: Dict[str, 'AnyClassMethod'] = None,
-    __cls_kwargs__: Dict[str, Any] = None,
+    __validators__: Optional[Dict[str, 'AnyClassMethod']] = None,
+    __cls_kwargs__: Optional[Dict[str, Any]] = None,
     **field_definitions: Any,
 ) -> Type['BaseModel']:
     ...
@@ -943,8 +943,8 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: Union[Type['Model'], Tuple[Type['Model'], ...]],
     __module__: str = __name__,
-    __validators__: Dict[str, 'AnyClassMethod'] = None,
-    __cls_kwargs__: Dict[str, Any] = None,
+    __validators__: Optional[Dict[str, 'AnyClassMethod']] = None,
+    __cls_kwargs__: Optional[Dict[str, Any]] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
     ...
@@ -956,8 +956,8 @@ def create_model(
     __config__: Optional[Type[BaseConfig]] = None,
     __base__: Union[None, Type['Model'], Tuple[Type['Model'], ...]] = None,
     __module__: str = __name__,
-    __validators__: Dict[str, 'AnyClassMethod'] = None,
-    __cls_kwargs__: Dict[str, Any] = None,
+    __validators__: Optional[Dict[str, 'AnyClassMethod']] = None,
+    __cls_kwargs__: Optional[Dict[str, Any]] = None,
     __slots__: Optional[Tuple[str, ...]] = None,
     **field_definitions: Any,
 ) -> Type['Model']:
@@ -1031,7 +1031,7 @@ _missing = object()
 
 
 def validate_model(  # noqa: C901 (ignore complexity)
-    model: Type[BaseModel], input_data: 'DictStrAny', cls: 'ModelOrDc' = None
+    model: Type[BaseModel], input_data: 'DictStrAny', cls: 'Optional[ModelOrDc]' = None
 ) -> Tuple['DictStrAny', 'SetStr', Optional[ValidationError]]:
     """
     validate data against a model.
