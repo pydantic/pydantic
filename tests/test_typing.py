@@ -126,7 +126,7 @@ def test_convert_generics_pep604():
     )
 
 
-def test_is_literal__with_typing_extension_literal():
+def test_is_literal_with_typing_extension_literal():
     from typing_extensions import Literal
 
     assert is_literal_type(Literal) is False
