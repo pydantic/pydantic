@@ -10,8 +10,8 @@ python3 -V
 
 python3 -m pip install --user pdm
 
-python3 -m install -G docs
+python3 -m pdm install -G docs
 
-python3 -m run python -c 'import docs.plugins.main'
+python3 -m pdm run python -c 'import docs.plugins.main'
 
-python3 -m run mkdocs build
+python3 -m pdm run mkdocs build
