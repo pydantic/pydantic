@@ -77,7 +77,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#v20a1-2023-04-03" class="md-skip">
+        <a href="#v1108-2023-05-23" class="md-skip">
           Skip to content
         </a>
       
@@ -689,6 +689,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       Table of contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#v1108-2023-05-23" class="md-nav__link">
+    v1.10.8 (2023-05-23)
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#v20a1-2023-04-03" class="md-nav__link">
@@ -1420,6 +1427,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#v1108-2023-05-23" class="md-nav__link">
+    v1.10.8 (2023-05-23)
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v20a1-2023-04-03" class="md-nav__link">
     v2.0a1 (2023-04-03)
   </a>
@@ -2138,6 +2152,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Changelog</h1>
 
+<h2 id="v1108-2023-05-23">v1.10.8 (2023-05-23)<a class="headerlink" href="#v1108-2023-05-23" title="Permanent link">&para;</a></h2>
+<ul>
+<li>Fix a bug in <code>Literal</code> usage with <code>typing-extension==4.6.0</code>, <a href="https://github.com/pydantic/pydantic/issues/5826">#5826</a> by <a href="https://github.com/hramezani">@hramezani</a></li>
+<li>This solves the (closed) issue <a href="https://github.com/pydantic/pydantic/issues/3849">#3849</a> where aliased fields that use discriminated union fail to validate when the data contains the non-aliased field name, <a href="https://github.com/pydantic/pydantic/issues/5736">#5736</a> by <a href="https://github.com/benwah">@benwah</a></li>
+<li>Update email-validator dependency to &gt;=2.0.0post2, <a href="https://github.com/pydantic/pydantic/issues/5627">#5627</a> by <a href="https://github.com/adriangb">@adriangb</a></li>
+<li>update <code>AnyClassMethod</code> for changes in <a href="https://github.com/python/typeshed/issues/9771">python/typeshed#9771</a>, <a href="https://github.com/pydantic/pydantic/issues/5505">#5505</a> by <a href="https://github.com/ITProKyle">@ITProKyle</a></li>
+</ul>
 <h2 id="v20a1-2023-04-03">v2.0a1 (2023-04-03)<a class="headerlink" href="#v20a1-2023-04-03" title="Permanent link">&para;</a></h2>
 <p>First pre-release of Pydantic V2!</p>
 <p>See <a href="https://docs.pydantic.dev/blog/pydantic-v2-alpha/">this post</a> for more details.</p>
