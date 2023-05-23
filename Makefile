@@ -2,7 +2,7 @@
 sources = pydantic tests docs/build
 isort = isort $(sources)
 black = black -S -l 120 --target-version py38 $(sources)
-mypy = mypy --no-warn-unused-ignores
+mypy = mypy
 
 .PHONY: install-linting
 install-linting:
