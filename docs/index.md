@@ -1,25 +1,41 @@
 [![CI](https://github.com/pydantic/pydantic/workflows/CI/badge.svg?event=push)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
-[![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)
+[![Coverage](https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI)<br>
 [![pypi](https://img.shields.io/pypi/v/pydantic.svg)](https://pypi.python.org/pypi/pydantic)
 [![CondaForge](https://img.shields.io/conda/v/conda-forge/pydantic.svg)](https://anaconda.org/conda-forge/pydantic)
-[![downloads](https://pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)
+[![downloads](https://pepy.tech/badge/pydantic/month)](https://pepy.tech/project/pydantic)<br>
 [![license](https://img.shields.io/github/license/pydantic/pydantic.svg)](https://github.com/pydantic/pydantic/blob/main/LICENSE)
 
 {{ version }}.
 
-Pydantic is the most widely used data validation library for Python.
+Pydantic is the most widely used Python library for data validation and settings management using Python type annotations.
 
-With Pydantic, Python type annotations become more than tools for documentation and type checking. Pydantic **enforces type hints** at runtime, and provides **user-friendly errors** when data is invalid.
+Pydantic enables you to convert input data to Python data structures in a controlled manner, ensuring they meet the specifications you've provided. This eliminates a significant amount of manual data validation and transformation code, making your program more robust and less prone to errors. It's particularly helpful when dealing with untrusted user input such as form data, JSON documents, and other data types.
+
+Some of the main features of Pydantic include:
+
+- **Data validation**: Pydantic validates data as it is assigned to ensure it meets the requirements. It automatically handles a broad range of data types, including custom types and custom validators.
+- **Conversion types**: Pydantic will not only validate data, but also convert it to the appropriate type if possible. For instance, a string containing a number will be converted to the proper numerical type.
+- **Nested models**: You can define models (similar to classes) that contain other models, allowing for complex data structures to be neatly and efficiently represented.
+- **JSON support**: Models can be immediately converted to or from JSON.
+- **Error handling**: Pydantic models raise informative errors when invalid data is provided.
+- **Settings management**: The `BaseSettings` class from [pydantic-settings](https://github.com/pydantic/pydantic-settings) provides a way to validate, document, and provide default values for environment variables.
+- **Generic models**: Pydantic supports generic models, which allow the declaration of models that are "parameterized" on one or more fields.
+- **Custom data types**: You can define custom data types and specify how they should be validated and cleaned.
+- **Model schema generation**: Pydantic models can be converted into a JSON Schema, which can be useful for documentation, code generation, or other purposes.
+
+By providing a simple, declarative way of defining how data should be shaped, Pydantic helps you write cleaner, safer, and more reliable code.
 
 Pydantic is simple to use, even when doing complex things, and enables you to define and validate data in pure, canonical Python.
 
-Try Pydantic today! [Installation](/install/) is as simple as: [`pip install pydantic`](/install/).
+[Installing Pydantic](/install/) is as simple as: [`pip install pydantic`](/install/).
 
 ## Example
 
+
+
 ```py
 from datetime import datetime
-from typing import List, Optional
+from typing import Optional
 
 from pydantic import BaseModel
 
@@ -28,52 +44,44 @@ class User(BaseModel):
     id: int
     name: str = 'John Doe'
     signup_ts: Optional[datetime] = None
-    friends: List[int] = []
 
 
 external_data = {
     'id': '123',
     'signup_ts': '2019-06-01 12:22',
-    'friends': [1, 2, '3'],
 }
+
 user = User(**external_data)
-print(user.id)
-#> 123
-print(repr(user.signup_ts))
-#> datetime.datetime(2019, 6, 1, 12, 22)
-print(user.friends)
-#> [1, 2, 3]
+
 print(user.model_dump())
-"""
-{
-    'id': 123,
-    'name': 'John Doe',
-    'signup_ts': datetime.datetime(2019, 6, 1, 12, 22),
-    'friends': [1, 2, 3],
-}
-"""
+#> {'id': 123, 'name': 'John Doe', 'signup_ts': datetime.datetime(2019, 6, 1, 12, 22)}
 ```
 
 What's going on here:
 
-* `id` is of type int; the annotation-only declaration tells Pydantic that this field is required. Strings,
+* `id` is of type `int`; the annotation-only declaration tells Pydantic that this field is required. Strings,
   bytes, or floats will be coerced to ints if possible; otherwise an exception will be raised.
 * `name` is inferred as a string from the provided default; because it has a default, it is not required.
-* `signup_ts` is a datetime field that is not required (and takes the value ``None`` if it's not supplied).
+* `signup_ts` is a `datetime` field that is not required (and takes the value `None` if a value is not supplied).
   Pydantic will process either a unix timestamp int (e.g. `1496498400`) or a string representing the date and time.
-* `friends` uses Python's typing system, and requires a list of integers. As with `id`, integer-like objects
-  will be converted to integers.
 
 If validation fails, Pydantic will raise an error with a breakdown of what was wrong:
 
 ```py
-from index_main import User
+from datetime import datetime
+from typing import Optional
 
-# ignore-above
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
+
+
+class User(BaseModel):
+    id: int
+    name: str = 'John Doe'
+    signup_ts: Optional[datetime] = None
+
 
 try:
-    User(signup_ts='broken', friends=[1, 2, 'not number'])
+    User(name=1234)
 except ValidationError as e:
     print(e.errors())
     """
@@ -82,30 +90,22 @@ except ValidationError as e:
             'type': 'missing',
             'loc': ('id',),
             'msg': 'Field required',
-            'input': {'signup_ts': 'broken', 'friends': [1, 2, 'not number']},
+            'input': {'name': 1234},
             'url': 'https://errors.pydantic.dev/2/v/missing',
         },
         {
-            'type': 'datetime_parsing',
-            'loc': ('signup_ts',),
-            'msg': 'Input should be a valid datetime, input is too short',
-            'input': 'broken',
-            'ctx': {'error': 'input is too short'},
-            'url': 'https://errors.pydantic.dev/2/v/datetime_parsing',
-        },
-        {
-            'type': 'int_parsing',
-            'loc': ('friends', 2),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
-            'input': 'not number',
-            'url': 'https://errors.pydantic.dev/2/v/int_parsing',
+            'type': 'string_type',
+            'loc': ('name',),
+            'msg': 'Input should be a valid string',
+            'input': 1234,
+            'url': 'https://errors.pydantic.dev/2/v/string_type',
         },
     ]
     """
 ```
 
 
-## Rationale
+## Why Pydantic?
 
 Pydantic uses some cool new language features, but why should I actually go and use it?
 
@@ -184,7 +184,7 @@ Hundreds of organisations and packages are using Pydantic, including:
 For a more comprehensive list of open-source projects using Pydantic see the
 [list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), or you can find some awesome projects using Pydantic in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
 
-## Discussion of Pydantic
+<!-- ## Discussion of Pydantic
 
 Podcasts and videos discussing Pydantic.
 
@@ -202,4 +202,4 @@ Podcasts and videos discussing Pydantic.
 
 [Python Pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
 : A talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to Pydantic and walking
-  through the core features of Pydantic.
+  through the core features of Pydantic. -->
