@@ -125,15 +125,15 @@ In general, documentation should be written in a friendly, approachable style. I
 
 Code examples are encouraged, but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.
 
-Pydanitic's test coverage will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use `pytest --update-examples` to update the output and create Python version-specific examples when appropriate.
+Pydantic's test coverage will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use `pytest --update-examples` to update the output and create Python version-specific examples when appropriate.
 
 ```bash
 # Run tests and update code examples
-'pytest --update-examples'
+pytest --update-examples
 ```
 
 ### Code documentation
 
 Modules, classes, functions, and module-level variables should be documented using docstrings formatted according to [PEP 257](https://www.python.org/dev/peps/pep-0257/). Type annotations should be used wherever possible.
 
-We use [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) for all docstrings. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) for further examples.)
+Pydantic uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) for all docstrings. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) for further examples.)
