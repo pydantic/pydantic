@@ -8,12 +8,10 @@ set -x
 
 python3 -V
 
-python3 -m pip install pdm
+python3 -m pip install --user pdm
 
-export PATH=/opt/buildhome/.local/bin:$PATH
+python3 -m pdm install -G docs
 
-pdm install -G docs
+python3 -m pdm run python -c 'import docs.plugins.main'
 
-pdm run python -c 'import docs.plugins.main'
-
-pdm run mkdocs build
+python3 -m pdm run mkdocs build
