@@ -536,7 +536,7 @@ def validate_json(v: Any, config: 'BaseConfig') -> Any:
         # pass None through to other validators
         return v
     try:
-        return config.json_loads(v)  # type: ignore
+        return config.json_loads(v)
     except ValueError:
         raise errors.JsonError()
     except TypeError:

@@ -234,7 +234,7 @@ class AnyUrl(str):
             path=path,
             query=query,
             fragment=fragment,
-            **_kwargs,  # type: ignore[misc]
+            **_kwargs,
         )
 
         url = scheme + '://'
