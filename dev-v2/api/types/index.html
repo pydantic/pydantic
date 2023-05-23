@@ -1661,6 +1661,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.types.TransformSchema" class="md-nav__link">
+    TransformSchema
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.types.WithJsonSchema" class="md-nav__link">
     WithJsonSchema
   </a>
@@ -1828,6 +1835,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <li class="md-nav__item">
   <a href="#pydantic.types.SkipValidation" class="md-nav__link">
     SkipValidation
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.types.TransformSchema" class="md-nav__link">
+    TransformSchema
   </a>
   
 </li>
@@ -2458,6 +2472,67 @@ annotation applied to a type.</p>
         <span class="n">original_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">source</span><span class="p">)</span>
         <span class="n">metadata</span> <span class="o">=</span> <span class="n">build_metadata_dict</span><span class="p">(</span><span class="n">js_functions</span><span class="o">=</span><span class="p">[</span><span class="k">lambda</span> <span class="n">_c</span><span class="p">,</span> <span class="n">h</span><span class="p">:</span> <span class="n">h</span><span class="p">(</span><span class="n">original_schema</span><span class="p">)])</span>
         <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">any_schema</span><span class="p">(</span><span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">original_schema</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.types.TransformSchema" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">TransformSchema</span>
+
+
+<a href="#pydantic.types.TransformSchema" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>An annotation that can be used to apply a transform to a core schema.</p>
+
+
+        <details class="quote">
+          <summary>Source code in <code>pydantic/types.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1053</span>
+<span class="normal">1054</span>
+<span class="normal">1055</span>
+<span class="normal">1056</span>
+<span class="normal">1057</span>
+<span class="normal">1058</span>
+<span class="normal">1059</span>
+<span class="normal">1060</span>
+<span class="normal">1061</span>
+<span class="normal">1062</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
+<span class="k">class</span> <span class="nc">TransformSchema</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An annotation that can be used to apply a transform to a core schema.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">transform</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">CoreSchema</span><span class="p">],</span> <span class="n">CoreSchema</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
         </details>
 
