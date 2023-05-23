@@ -439,18 +439,9 @@ class GenerateSchema:
         if std_schema is not None:
             return std_schema
 
-        unsupported_err = PydanticSchemaGenerationError(
-            f'Unable to generate pydantic-core schema for {obj!r}. '
-            f'Set `arbitrary_types_allowed=True` in the model_config ignore this error'
-            f' or implement `__get_pydantic_core_schema__` on your type to fully support it.'
-        )
-
         origin = get_origin(obj)
         if origin is None:
-            if self.arbitrary_types:
-                return core_schema.is_instance_schema(obj)
-            else:
-                raise unsupported_err
+            return self._arbitrary_type_schema(obj, obj)
 
         # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
         # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
@@ -476,17 +467,28 @@ class GenerateSchema:
         elif issubclass(origin, typing.Sequence):
             if origin in {typing.Sequence, collections.abc.Sequence}:
                 return self._sequence_schema(obj)
-            raise unsupported_err
+            else:
+                return self._arbitrary_type_schema(obj, origin)
         elif issubclass(origin, (typing.Iterable, collections.abc.Iterable)):
             # Because typing.Iterable does not have a specified `__init__` signature, we don't validate into subclasses
-            return self._iterable_schema(obj)
+            if origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
+                return self._iterable_schema(obj)
+            else:
+                return self._arbitrary_type_schema(obj, origin)
         elif issubclass(origin, (re.Pattern, typing.Pattern)):
             return self._pattern_schema(obj)
         else:
-            if self.arbitrary_types and isinstance(origin, type):
-                return core_schema.is_instance_schema(origin)
-            else:
-                raise unsupported_err
+            return self._arbitrary_type_schema(obj, origin)
+
+    def _arbitrary_type_schema(self, obj: Any, type_: Any) -> CoreSchema:
+        if self.arbitrary_types and isinstance(type_, type):
+            return core_schema.is_instance_schema(type_)
+        else:
+            raise PydanticSchemaGenerationError(
+                f'Unable to generate pydantic-core schema for {obj!r}. '
+                f'Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
+                f' or implement `__get_pydantic_core_schema__` on your type to fully support it.'
+            )
 
     def _generate_td_field_schema(
         self,

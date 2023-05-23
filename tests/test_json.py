@@ -14,6 +14,7 @@ import pytest
 from pydantic_core import CoreSchema, SchemaSerializer, core_schema
 
 from pydantic import BaseModel, ConfigDict, NameEmail
+from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
@@ -76,7 +77,8 @@ class MyModel(BaseModel):
     ],
 )
 def test_json_serialization(ser_type, gen_value, json_output):
-    gen = GenerateSchema(False, None)
+    config_wrapper = ConfigWrapper({'arbitrary_types_allowed': False})
+    gen = GenerateSchema(config_wrapper, None)
     schema = gen.generate_schema(ser_type)
     serializer = SchemaSerializer(schema)
     assert serializer.to_json(gen_value()) == json_output
@@ -84,7 +86,8 @@ def test_json_serialization(ser_type, gen_value, json_output):
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
 def test_json_serialization_email():
-    gen = GenerateSchema(False, None)
+    config_wrapper = ConfigWrapper({'arbitrary_types_allowed': False})
+    gen = GenerateSchema(config_wrapper, None)
     schema = gen.generate_schema(NameEmail)
     serializer = SchemaSerializer(schema)
     assert serializer.to_json(NameEmail('foo bar', 'foobaR@example.com')) == b'"foo bar <foobaR@example.com>"'
