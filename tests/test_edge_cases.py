@@ -2040,7 +2040,7 @@ def test_custom_generic_disallowed():
 
     match = (
         r'Unable to generate pydantic-core schema for (.*)MyGen\[str, bool\](.*). '
-        r'Set `arbitrary_types_allowed=True` in the model_config ignore this error'
+        r'Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
     )
     with pytest.raises(TypeError, match=match):
 
