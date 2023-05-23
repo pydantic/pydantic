@@ -998,12 +998,12 @@ Base64Str = Annotated[str, EncodedStr(encoder=Base64Encoder)]
 
 if TYPE_CHECKING:
     # If we add configurable attributes to IsInstance, we'd probably need to stop hiding it from type checkers like this
-    IsInstance = Annotated[AnyType, ...]  # `IsInstance[Sequence]` will be recognized by type checkers as `Sequence`
+    InstanceOf = Annotated[AnyType, ...]  # `IsInstance[Sequence]` will be recognized by type checkers as `Sequence`
 
 else:
 
     @_internal_dataclass.slots_dataclass
-    class IsInstance:
+    class InstanceOf:
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]

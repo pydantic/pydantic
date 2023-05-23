@@ -100,7 +100,7 @@ from pydantic import (
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, IsInstance, SecretField, SkipValidation, Strict, TransformSchema
+from pydantic.types import AllowInfNan, ImportString, InstanceOf, SecretField, SkipValidation, Strict, TransformSchema
 
 try:
     import email_validator
@@ -5175,7 +5175,7 @@ def test_iterable_arbitrary_type():
 
 def test_is_instance_annotation():
     class Model(BaseModel):
-        x: IsInstance[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
+        x: InstanceOf[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
 
     class MyList(list):
         pass
