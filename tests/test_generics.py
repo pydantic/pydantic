@@ -29,7 +29,7 @@ from typing import (
 )
 
 import pytest
-from dirty_equals import HasRepr
+from dirty_equals import HasRepr, IsStr
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Literal, OrderedDict, TypeVarTuple, Unpack, get_args
 
@@ -1138,7 +1138,18 @@ def test_replace_types_with_user_defined_generic_type_field():
             return core_schema.no_info_after_validator_function(cls, handler(FrozenSet[get_args(source_type)[0]]))
 
     class CustomIterable(Iterable[T]):
-        pass
+        def __init__(self, iterable):
+            self.iterable = iterable
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            return next(self.iterable)
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(cls, handler(Iterable[get_args(source_type)[0]]))
 
     class CustomList(List[T]):
         @classmethod
@@ -1203,7 +1214,7 @@ def test_replace_types_with_user_defined_generic_type_field():
     assert type(m.deque_field) is CustomDeque
     assert type(m.dict_field) is CustomDict
     assert type(m.frozenset_field) is CustomFrozenset
-    assert type(m.iterable_field).__name__ == 'ValidatorIterator'
+    assert type(m.iterable_field) is CustomIterable
     assert type(m.list_field) is CustomList
     assert type(m.mapping_field) is dict  # this is determined in CustomMapping.__get_pydantic_core_schema__
     assert type(m.ordered_dict_field) is CustomOrderedDict
@@ -1216,10 +1227,7 @@ def test_replace_types_with_user_defined_generic_type_field():
         'deque_field': deque([True, False]),
         'dict_field': {'a': 1},
         'frozenset_field': frozenset({False, True}),
-        'iterable_field': HasRepr(
-            'SerializationIterator(index=0, '
-            'iterator=ValidatorIterator(index=0, schema=Some(Bool(BoolValidator { strict: false }))))'
-        ),
+        'iterable_field': HasRepr(IsStr(regex=r'SerializationIterator\(index=0, iterator=.*CustomIterable.*')),
         'list_field': [True, False],
         'mapping_field': {'a': 2},
         'ordered_dict_field': {'a': 1},
@@ -1238,7 +1246,7 @@ def test_custom_sequence_behavior():
         PydanticSchemaGenerationError,
         match=(
             r'Unable to generate pydantic-core schema for .*'
-            ' Set `arbitrary_types_allowed=True` in the model_config ignore this error'
+            ' Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
             ' or implement `__get_pydantic_core_schema__` on your type to fully support it'
         ),
     ):
@@ -1979,7 +1987,6 @@ def test_multi_inheritance_generic_defaults():
     assert C(a=1, c=...).model_dump() == {'a': 1, 'b': None, 'c': ..., 'x': 'a', 'y': 'b', 'z': 'c'}
 
 
-@pytest.mark.xfail(reason="'Json type's JSON schema; see issue #5072")
 def test_parse_generic_json():
     T = TypeVar('T')
 
@@ -1993,15 +2000,28 @@ def test_parse_generic_json():
     record = MessageWrapper[Payload](message=raw)
     assert isinstance(record.message, Payload)
 
-    schema = record.model_json_schema()
-    # This seems appropriate if the goal is to represent the "serialization" schema, not the validation schema.
-    # We may need a better approach for types with different inputs and outputs; I opened an issue for this in #5072
-    assert schema['properties'] == {'message': {'$ref': '#/definitions/Payload'}}
-    assert schema['definitions']['Payload'] == {
-        'title': 'Payload',
+    validation_schema = record.model_json_schema(mode='validation')
+    assert validation_schema == {
+        'properties': {'message': {'format': 'json-string', 'title': 'Message', 'type': 'string'}},
+        'required': ['message'],
+        'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
         'type': 'object',
-        'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
-        'required': ['payload_field'],
+    }
+
+    serialization_schema = record.model_json_schema(mode='serialization')
+    assert serialization_schema == {
+        '$defs': {
+            'Payload': {
+                'properties': {'payload_field': {'title': 'Payload Field', 'type': 'string'}},
+                'required': ['payload_field'],
+                'title': 'Payload',
+                'type': 'object',
+            }
+        },
+        'properties': {'message': {'allOf': [{'$ref': '#/$defs/Payload'}], 'title': 'Message'}},
+        'required': ['message'],
+        'title': 'MessageWrapper[test_parse_generic_json.<locals>.Payload]',
+        'type': 'object',
     }
 
 

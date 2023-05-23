@@ -225,6 +225,26 @@ def test_dynamic_and_static():
         assert A.model_fields[field_name].default == DynamicA.model_fields[field_name].default
 
 
+def test_create_model_field_and_model_title():
+    m = create_model('M', __config__=ConfigDict(title='abc'), a=(str, Field(title='field-title')))
+    assert m.model_json_schema() == {
+        'properties': {'a': {'title': 'field-title', 'type': 'string'}},
+        'required': ['a'],
+        'title': 'abc',
+        'type': 'object',
+    }
+
+
+def test_create_model_field_description():
+    m = create_model('M', a=(str, Field(description='descr')))
+    assert m.model_json_schema() == {
+        'properties': {'a': {'description': 'descr', 'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'title': 'M',
+        'type': 'object',
+    }
+
+
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
 def test_set_name(base):
     calls = []
