@@ -320,7 +320,7 @@ class SecretsSettingsSource:
 
 
 def read_env_file(
-    file_path: StrPath, *, encoding: str = None, case_sensitive: bool = False
+    file_path: StrPath, *, encoding: Optional[str] = None, case_sensitive: bool = False
 ) -> Dict[str, Optional[str]]:
     try:
         from dotenv import dotenv_values
