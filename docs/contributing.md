@@ -91,7 +91,8 @@ make format
 # Run tests and linting
 make
 # There are a few sub-commands in Makefile like `test`, `testcov` and `lint`
-# which you might want to use, but generally just `make` should be all you need
+# which you might want to use, but generally just `make` should be all you need.
+# You can run `make help` to see more options.
 ```
 
 ### Build documentation
@@ -101,8 +102,8 @@ If you've made any changes to the documentation (including changes to function s
 ```bash
 # Build documentation
 make docs
-# If you have changed the documentation make sure it builds successfully
-# you can also use `make docs-serve` to serve the documentation at localhost:8000
+# If you have changed the documentation, make sure it builds successfully.
+# You can also use `make docs-serve` to serve the documentation at localhost:8000
 ```
 
 ### Commit and push your changes
