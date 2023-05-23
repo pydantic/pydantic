@@ -1,4 +1,5 @@
 import sys
+import typing
 from collections.abc import Callable
 from os import PathLike
 from typing import (  # type: ignore
@@ -22,6 +23,7 @@ from typing import (  # type: ignore
     TypeVar,
     Union,
     _eval_type,
+    _SpecialForm as TypingSpecialForm,
     cast,
     get_type_hints,
 )
@@ -32,6 +34,7 @@ from typing_extensions import (
     Literal,
     NotRequired as TypedDictNotRequired,
     Required as TypedDictRequired,
+    _SpecialForm as TypingExtensionSpecialForm,
 )
 
 try:
@@ -89,6 +92,11 @@ AnyArgTCallable = TypingCallable[..., _T]
 # Annotated[...] is implemented by returning an instance of one of these classes, depending on
 # python/typing_extensions version.
 AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
+
+
+LITERAL_TYPES: Set[Union[TypingSpecialForm, TypingExtensionSpecialForm]] = {Literal}
+if hasattr(typing, 'Literal'):
+    LITERAL_TYPES.add(typing.Literal)
 
 
 if sys.version_info < (3, 8):
@@ -415,7 +423,7 @@ def is_callable_type(type_: Type[Any]) -> bool:
 
 
 def is_literal_type(type_: Type[Any]) -> bool:
-    return Literal is not None and get_origin(type_) is Literal
+    return Literal is not None and get_origin(type_) in LITERAL_TYPES
 
 
 def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:
