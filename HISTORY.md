@@ -1,3 +1,10 @@
+## v1.10.8 (2023-05-23)
+
+* Fix a bug in `Literal` usage with `typing-extension==4.6.0`, #5826 by @hramezani
+* This solves the (closed) issue #3849 where aliased fields that use discriminated union fail to validate when the data contains the non-aliased field name, #5736 by @benwah
+* Update email-validator dependency to >=2.0.0post2, #5627 by @adriangb
+* update `AnyClassMethod` for changes in [python/typeshed#9771](https://github.com/python/typeshed/issues/9771), #5505 by @ITProKyle
+
 ## v2.0a1 (2023-04-03)
 
 First pre-release of Pydantic V2!
