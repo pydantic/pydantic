@@ -360,10 +360,7 @@ elif sys.version_info[:2] == (3, 8):
 else:
 
     def is_none_type(type_: Any) -> bool:
-        for none_type in NONE_TYPES:
-            if type_ is none_type:
-                return True
-        return False
+        return type_ in NONE_TYPES
 
 
 def display_as_type(v: Type[Any]) -> str:
