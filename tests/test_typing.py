@@ -6,7 +6,7 @@ import pytest
 from typing_extensions import Annotated  # noqa: F401
 
 from pydantic import Field  # noqa: F401
-from pydantic.typing import Literal, convert_generics, is_namedtuple, is_none_type, is_typeddict
+from pydantic.typing import Literal, convert_generics, is_literal_type, is_namedtuple, is_none_type, is_typeddict
 
 try:
     from typing import TypedDict as typing_TypedDict
@@ -124,3 +124,18 @@ def test_convert_generics_pep604():
     assert (
         convert_generics(dict['Hero', list['Team']] | int) == dict[ForwardRef('Hero'), list[ForwardRef('Team')]] | int
     )
+
+
+def test_is_literal_with_typing_extension_literal():
+    from typing_extensions import Literal
+
+    assert is_literal_type(Literal) is False
+    assert is_literal_type(Literal['foo']) is True
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='`typing.Literal` is available for python 3.8 and above.')
+def test_is_literal_with_typing_literal():
+    from typing import Literal
+
+    assert is_literal_type(Literal) is False
+    assert is_literal_type(Literal['foo']) is True
