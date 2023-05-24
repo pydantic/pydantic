@@ -2025,3 +2025,14 @@ def test_init_vars_inheritance():
     bar = Bar(init=1, arg=2)
     assert TypeAdapter(Bar).dump_python(bar) == {'arg': 2}
     assert init_vars == [1]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Bar(init='a', arg=2)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('init',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
