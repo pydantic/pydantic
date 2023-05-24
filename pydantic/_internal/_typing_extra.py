@@ -63,6 +63,9 @@ else:
 
 NONE_TYPES: tuple[Any, Any, Any] = (None, NoneType, Literal[None])
 
+LITERAL_TYPES: set[Any] = {Literal}
+if hasattr(typing, 'Literal'):
+    LITERAL_TYPES.add(typing.Literal)  # type: ignore[attr-defined]
 
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
@@ -93,10 +96,7 @@ elif sys.version_info[:2] == (3, 8):
 else:
 
     def is_none_type(type_: Any) -> bool:
-        for none_type in NONE_TYPES:
-            if type_ is none_type:
-                return True
-        return False
+        return type_ in NONE_TYPES
 
 
 def is_callable_type(type_: type[Any]) -> bool:
@@ -104,7 +104,7 @@ def is_callable_type(type_: type[Any]) -> bool:
 
 
 def is_literal_type(type_: type[Any]) -> bool:
-    return Literal is not None and get_origin(type_) is Literal
+    return Literal is not None and get_origin(type_) in LITERAL_TYPES
 
 
 def literal_values(type_: type[Any]) -> tuple[Any, ...]:
