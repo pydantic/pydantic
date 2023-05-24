@@ -1731,7 +1731,7 @@ def test_validator_info_field_name_data_before():
             ['parent before', 'parent', 'parent after'],
             ['parent before', 'child', 'parent after', 'child before', 'child after'],
         ),
-        (dataclasses.dataclass, [], ['child before', 'child', 'child after']),
+        (dataclasses.dataclass, [], ['parent before', 'child', 'parent after', 'child before', 'child after']),
     ],
     ids=['pydantic', 'stdlib'],
 )
@@ -2004,3 +2004,49 @@ def test_dataclass_alias_generator():
             'input': ArgsKwargs((), {'name': 'test name', 'score': 2}),
         },
     ]
+
+
+def test_vanilla_dataclass_validators_in_model_field():
+    @dataclasses.dataclass
+    class Demo1:
+        int1: int
+
+        @field_validator('int1', mode='before')
+        def set_int_1(cls, v):
+            return v + 100
+
+    @dataclasses.dataclass
+    class Demo2(Demo1):
+        int2: int
+
+        @field_validator('int2', mode='before')
+        def set_int_2(cls, v):
+            return v + 200
+
+    class Model(BaseModel):
+        x: Demo2
+
+    assert Model.model_validate(dict(x=dict(int1=1, int2=2))).model_dump() == {'x': {'int1': 101, 'int2': 202}}
+
+
+def test_vanilla_dataclass_validators_in_type_adapter():
+    @dataclasses.dataclass
+    class Demo1:
+        int1: int
+
+        @field_validator('int1', mode='before')
+        def set_int_1(cls, v):
+            return v + 100
+
+    @dataclasses.dataclass
+    class Demo2(Demo1):
+        int2: int
+
+        @field_validator('int2', mode='before')
+        def set_int_2(cls, v):
+            return v + 200
+
+    adapter = TypeAdapter(Demo2)
+
+    m = adapter.validate_python(dict(int1=1, int2=2))
+    assert adapter.dump_python(m) == {'int1': 101, 'int2': 202}

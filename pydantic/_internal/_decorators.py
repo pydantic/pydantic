@@ -241,18 +241,15 @@ class DecoratorInfos:
         res = DecoratorInfos()
         for base in model_dc.__bases__[::-1]:
             existing = cast(Union[DecoratorInfos, None], getattr(base, '__pydantic_decorators__', None))
-            if existing is not None:
-                res.validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.validators.items()})
-                res.field_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_validators.items()})
-                res.root_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validators.items()})
-                res.field_serializers.update(
-                    {k: v.bind_to_cls(model_dc) for k, v in existing.field_serializers.items()}
-                )
-                res.model_serializers.update(
-                    {k: v.bind_to_cls(model_dc) for k, v in existing.model_serializers.items()}
-                )
-                res.model_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_validators.items()})
-                res.computed_fields.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_fields.items()})
+            if existing is None:
+                existing = DecoratorInfos.build(base)
+            res.validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.validators.items()})
+            res.field_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_validators.items()})
+            res.root_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.root_validators.items()})
+            res.field_serializers.update({k: v.bind_to_cls(model_dc) for k, v in existing.field_serializers.items()})
+            res.model_serializers.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_serializers.items()})
+            res.model_validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.model_validators.items()})
+            res.computed_fields.update({k: v.bind_to_cls(model_dc) for k, v in existing.computed_fields.items()})
 
         for var_name, var_value in vars(model_dc).items():
             if isinstance(var_value, PydanticDescriptorProxy):
