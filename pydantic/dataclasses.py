@@ -211,3 +211,8 @@ def dataclass(
 
 
 __getattr__ = getattr_migration(__name__)
+
+if sys.version_info <= (3, 10):
+    # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints
+    # This is not necessary in 3.11
+    dataclasses.InitVar.__call__ = lambda: None
