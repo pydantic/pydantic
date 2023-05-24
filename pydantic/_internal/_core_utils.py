@@ -4,7 +4,7 @@ from collections import defaultdict
 from typing import Any, Callable, Iterable, TypeVar, Union, cast
 
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args  # type: ignore
+from typing_extensions import TypeGuard, get_args
 
 from . import _repr
 
@@ -81,11 +81,8 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
         args = generic_metadata['args'] or args
 
     module_name = getattr(origin, '__module__', '<No __module__>')
-    if isinstance(origin, TypeAliasType):
-        type_ref = f'{module_name}.{origin.__name__}'
-    else:
-        qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
-        type_ref = f'{module_name}.{qualname}:{id(origin)}'
+    qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
+    type_ref = f'{module_name}.{qualname}:{id(origin)}'
 
     arg_refs: list[str] = []
     for arg in args:
