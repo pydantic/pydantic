@@ -226,3 +226,47 @@ def ip_v6_interface_validator(__input_value: Any) -> IPv6Interface:
         return IPv6Interface(__input_value)
     except ValueError:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
+
+
+def greater_than_validator(x: Any, gt: Any) -> Any:
+    if not (x > gt):
+        raise PydanticCustomError('greater_than', 'Input should be greater than {gt}', {'gt': gt})
+    return x
+
+
+def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
+    if not (x >= ge):
+        raise PydanticCustomError('greater_than_equal', 'Input should be greater than or equal to {ge}', {'le': ge})
+    return x
+
+
+def less_than_validator(x: Any, lt: Any) -> Any:
+    if not (x < lt):
+        raise PydanticCustomError('less_than', 'Input should be less than {lt}', {'lt': lt})
+    return x
+
+
+def less_than_or_equal_validator(x: Any, le: Any) -> Any:
+    if not (x <= le):
+        raise PydanticCustomError('less_than_equal', 'Input should be less than or equal to {le}', {'le': le})
+    return x
+
+
+def min_length_validator(x: Any, min_length: Any) -> Any:
+    if not (len(x) >= min_length):
+        raise PydanticCustomError(
+            'too_short',
+            'Should have at least {min_length} item after validation, not {actual_length}',
+            {'min_length': min_length, 'actual_length': len(x)},
+        )
+    return x
+
+
+def max_length_validator(x: Any, max_length: Any) -> Any:
+    if not (len(x) < max_length):
+        raise PydanticCustomError(
+            'too_long',
+            'Should have at most {min_length} item after validation, not {actual_length}',
+            {'max_length': max_length, 'actual_length': len(x)},
+        )
+    return x

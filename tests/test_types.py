@@ -1654,6 +1654,7 @@ def test_string_success():
         str_min_length: constr(min_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
+        str_gt: Annotated[str, annotated_types.Gt('a')]
 
     m = MoreStringsModel(
         str_strip_enabled='   xxx123   ',
@@ -1662,6 +1663,7 @@ def test_string_success():
         str_min_length='12345',
         str_email='foobar@example.com  ',
         name_email='foo bar  <foobaR@example.com>',
+        str_gt='b',
     )
     assert m.str_strip_enabled == 'xxx123'
     assert m.str_strip_disabled == '   xxx123   '
@@ -1671,6 +1673,7 @@ def test_string_success():
     assert str(m.name_email) == 'foo bar <foobaR@example.com>'
     assert m.name_email.name == 'foo bar'
     assert m.name_email.email == 'foobaR@example.com'
+    assert m.str_gt == 'b'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -5248,3 +5251,52 @@ def test_is_instance_annotation():
     assert exc_info.value.errors(include_url=False) == [
         {'input': 'abc', 'loc': ('x',), 'msg': 'Input should be a valid array', 'type': 'list_type'}
     ]
+
+
+def test_constraints_arbitrary_type() -> None:
+    class CustomType:
+        def __init__(self, v: Any) -> None:
+            self.v = v
+
+        def __eq__(self, o: object) -> bool:
+            return self.v == o
+
+        def __le__(self, o: object) -> bool:
+            return self.v <= o
+
+        def __lt__(self, o: object) -> bool:
+            return self.v < o
+
+        def __ge__(self, o: object) -> bool:
+            return self.v >= o
+
+        def __gt__(self, o: object) -> bool:
+            return self.v > o
+
+        def __mul__(self, o: Any) -> Any:
+            self.v * o
+
+        def __len__(self) -> int:
+            return len(self.v)
+
+        def __repr__(self) -> str:
+            return f'CustomType({self.v})'
+
+    class Model(BaseModel):
+        gt: Annotated[CustomType, annotated_types.Gt(CustomType(0))]
+        ge: Annotated[CustomType, annotated_types.Ge(CustomType(0))]
+        lt: Annotated[CustomType, annotated_types.Lt(CustomType(0))]
+        le: Annotated[CustomType, annotated_types.Le(CustomType(0))]
+        min_length: Annotated[CustomType, annotated_types.MinLen(1)]
+        max_length: Annotated[CustomType, annotated_types.MaxLen(1)]
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    Model(
+        gt=CustomType(1),
+        ge=CustomType(0),
+        lt=CustomType(-1),
+        le=CustomType(0),
+        min_length=CustomType([1, 2]),
+        max_length=CustomType([]),
+    )

@@ -1,10 +1,14 @@
 from __future__ import annotations
 
 import dataclasses
+from functools import partial
 from typing import Any, Iterable
 
 import annotated_types as at
+from pydantic_core import CoreSchema
+from pydantic_core import core_schema as cs
 
+from . import _validators
 from ._fields import PydanticGeneralMetadata, PydanticMetadata
 
 STRICT = {'strict'}
@@ -27,6 +31,72 @@ INT_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 DATE_TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIMEDELTA_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
 TIME_CONSTRAINTS = {*NUMERIC_CONSTRAINTS, *STRICT}
+
+TEXT_SCHEMA_TYPES = ('str', 'bytes', 'url', 'multi-host-url')
+SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT_SCHEMA_TYPES)
+NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
+
+
+def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | None:
+    """
+    Apply `annotation` to `schema` if it is an annotation we know about (Gt, Le, etc.).
+    Otherwise return `None`.
+
+    This does not handle all known annotations. If / when it does, it can always
+    return a CoreSchema and return the unmodified schema if the annotation should be ignored.
+    """
+    schema = schema.copy()
+    schema_update, _ = collect_known_metadata([annotation])
+    if isinstance(annotation, at.Gt):
+        if schema['type'] in NUMERIC_SCHEMA_TYPES:
+            schema.update(schema_update)
+        else:
+            return cs.no_info_after_validator_function(
+                partial(_validators.greater_than_validator, gt=annotation.gt),
+                schema,
+            )
+    elif isinstance(annotation, at.Ge):
+        if schema['type'] in NUMERIC_SCHEMA_TYPES:
+            schema.update(schema_update)
+        else:
+            return cs.no_info_after_validator_function(
+                partial(_validators.greater_than_or_equal_validator, ge=annotation.ge),
+                schema,
+            )
+    elif isinstance(annotation, at.Lt):
+        if schema['type'] in NUMERIC_SCHEMA_TYPES:
+            schema.update(schema_update)
+        else:
+            return cs.no_info_after_validator_function(
+                partial(_validators.less_than_validator, lt=annotation.lt),
+                schema,
+            )
+    elif isinstance(annotation, at.Le):
+        if schema['type'] in NUMERIC_SCHEMA_TYPES:
+            schema.update(schema_update)
+        else:
+            return cs.no_info_after_validator_function(
+                partial(_validators.less_than_or_equal_validator, le=annotation.le),
+                schema,
+            )
+    elif isinstance(annotation, at.MinLen):
+        if schema['type'] in SEQUENCE_SCHEMA_TYPES:
+            schema.update(schema_update)
+        else:
+            return cs.no_info_after_validator_function(
+                partial(_validators.min_length_validator, min_length=annotation.min_length),
+                schema,
+            )
+    elif isinstance(annotation, at.MaxLen):
+        if schema['type'] in SEQUENCE_SCHEMA_TYPES:
+            schema.update(schema_update)
+        else:
+            return cs.no_info_after_validator_function(
+                partial(_validators.max_length_validator, max_length=annotation.max_length),
+                schema,
+            )
+
+    return None
 
 
 def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], list[Any]]:
