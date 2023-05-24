@@ -230,7 +230,7 @@ def Field(
     include: Optional[Union['AbstractSetIntStr', 'MappingIntStrAny', Any]] = None,
     const: Optional[bool] = None,
     gt: Optional[float] = None,
-    ge: Optional[float] = None,
+    ge: Optional[Union[float, int]] = None,
     lt: Optional[float] = None,
     le: Optional[float] = None,
     multiple_of: Optional[float] = None,

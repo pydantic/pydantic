@@ -1,6 +1,7 @@
 import warnings
 from collections import ChainMap
 from functools import partial, partialmethod, wraps
+from inspect import Signature
 from itertools import chain
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, Dict, Iterable, List, Optional, Set, Tuple, Type, Union, overload
@@ -34,7 +35,6 @@ class Validator:
 
 
 if TYPE_CHECKING:
-    from inspect import Signature
 
     from .config import BaseConfig
     from .fields import ModelField

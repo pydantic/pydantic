@@ -3,6 +3,7 @@ import warnings
 import weakref
 from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
+from inspect import Signature
 from itertools import islice, zip_longest
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import (
@@ -42,7 +43,6 @@ from .typing import (
 from .version import version_info
 
 if TYPE_CHECKING:
-    from inspect import Signature
     from pathlib import Path
 
     from .config import BaseConfig
@@ -158,7 +158,7 @@ def sequence_like(v: Any) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
-def validate_field_name(bases: List[Type['BaseModel']], field_name: str) -> None:
+def validate_field_name(bases: Tuple[Type['BaseModel']], field_name: str) -> None:
     """
     Ensure that the field's name does not shadow an existing attribute of the model.
     """

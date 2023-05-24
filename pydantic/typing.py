@@ -263,13 +263,13 @@ else:
     # StrPath = Union[str, PathLike[str]]
 
 
+DictAny = Dict[Any, Any]
+SetStr = Set[str]
 if TYPE_CHECKING:
     from .fields import ModelField
 
     TupleGenerator = Generator[Tuple[str, Any], None, None]
     DictStrAny = Dict[str, Any]
-    DictAny = Dict[Any, Any]
-    SetStr = Set[str]
     ListStr = List[str]
     IntStr = Union[int, str]
     AbstractSetIntStr = AbstractSet[IntStr]

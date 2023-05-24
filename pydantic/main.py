@@ -3,6 +3,7 @@ from abc import ABCMeta
 from copy import deepcopy
 from enum import Enum
 from functools import partial
+from inspect import Signature
 from pathlib import Path
 from types import FunctionType, prepare_class, resolve_bases
 from typing import (
@@ -45,6 +46,8 @@ from .schema import default_ref_template, model_schema
 from .types import PyObject, StrBytes
 from .typing import (
     AnyCallable,
+    DictAny,
+    SetStr,
     get_args,
     get_origin,
     is_classvar,
@@ -71,7 +74,6 @@ from .utils import (
 )
 
 if TYPE_CHECKING:
-    from inspect import Signature
 
     from .class_validators import ValidatorListDict
     from .types import ModelOrDc
@@ -79,11 +81,9 @@ if TYPE_CHECKING:
         AbstractSetIntStr,
         AnyClassMethod,
         CallableGenerator,
-        DictAny,
         DictStrAny,
         MappingIntStrAny,
         ReprArgs,
-        SetStr,
         TupleGenerator,
     )
 
