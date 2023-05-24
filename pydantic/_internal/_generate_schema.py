@@ -424,6 +424,9 @@ class GenerateSchema:
         elif obj is collections.abc.Hashable or obj is typing.Hashable:
             return self._hashable_schema()
         elif isinstance(obj, typing.TypeVar):
+            if self.typevars_map and obj in self.typevars_map:
+                if self.typevars_map[obj] != obj:
+                    return self.generate_schema(self.typevars_map[obj])
             return self._unsubstituted_typevar_schema(obj)
         elif is_finalvar(obj):
             if obj is Final:
@@ -440,6 +443,46 @@ class GenerateSchema:
             return std_schema
 
         origin = get_origin(obj)
+
+        if origin is not None and _typing_extra.origin_is_type_alias_type(origin):  # type: ignore
+            if obj in self.recursion_cache:
+                return self.recursion_cache[obj]
+            ref = get_type_ref(origin) + f'[{",".join([repr(t) for t in get_args(obj)])}]'
+            placeholder = {
+                'ref': ref,
+                'type': 'none',
+                'metadata': {'invalid': True},
+            }
+            self.recursion_cache[obj] = placeholder
+            namespace = (self.types_namespace or {}).copy()
+            new_namespace = {**_typing_extra.get_cls_types_namespace(origin), **namespace}
+            self.types_namespace = new_namespace
+            typevars_map = (self.typevars_map or {}).copy()
+            new_typevars_map = {**dict(zip(origin.__parameters__, get_args(obj))), **typevars_map}
+            self.typevars_map = new_typevars_map
+            generic_schema = self.generate_schema(origin.__value__)
+            self.typevars_map = typevars_map
+            self.types_namespace = namespace
+            placeholder.update(generic_schema)
+            placeholder['ref'] = ref
+            placeholder.get('metadata', {}).pop('invalid', None)
+            return placeholder  # type: ignore
+        elif _typing_extra.origin_is_type_alias_type(obj):  # type: ignore
+            if obj in self.recursion_cache:
+                return self.recursion_cache[obj]
+            ref = get_type_ref(obj)
+            placeholder = {'ref': ref, 'type': 'none', 'metadata': {'invalid': True}}
+            self.recursion_cache[obj] = placeholder
+            namespace = (self.types_namespace or {}).copy()
+            new_namespace = {**_typing_extra.get_cls_types_namespace(obj), **namespace}
+            self.types_namespace = new_namespace
+            generic_schema = self.generate_schema(obj.__value__)
+            self.types_namespace = namespace
+            placeholder.update(generic_schema)
+            placeholder['ref'] = ref
+            placeholder.get('metadata', {}).pop('invalid', None)
+            return placeholder  # type: ignore
+
         if origin is None:
             return self._arbitrary_type_schema(obj, obj)
 

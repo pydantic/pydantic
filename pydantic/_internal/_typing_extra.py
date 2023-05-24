@@ -12,7 +12,7 @@ from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, ForwardRef
 
-from typing_extensions import Annotated, Final, Literal, TypeGuard, get_args, get_origin
+from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypeGuard, get_args, get_origin  # type: ignore
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -61,42 +61,18 @@ else:
     from types import NoneType as NoneType
 
 
-NONE_TYPES: tuple[Any, Any, Any] = (None, NoneType, Literal[None])
+LITERAL_TYPES: set[Any] = {Literal}
+if hasattr(typing, 'Literal'):
+    LITERAL_TYPES.add(typing.Literal)
+
+NONE_TYPES: tuple[Any, ...] = (None, NoneType, *(tp[None] for tp in LITERAL_TYPES))
 
 
 TypeVarType = Any  # since mypy doesn't allow the use of TypeVar as a type
 
 
-if sys.version_info < (3, 8):
-    # Even though this implementation is slower, we need it for python 3.7:
-    # In python 3.7 "Literal" is not a builtin type and uses a different
-    # mechanism.
-    # for this reason `Literal[None] is Literal[None]` evaluates to `False`,
-    # breaking the faster implementation used for the other python versions.
-
-    def is_none_type(type_: Any) -> bool:
-        return type_ in NONE_TYPES
-
-elif sys.version_info[:2] == (3, 8):
-
-    def is_none_type(type_: Any) -> bool:
-        for none_type in NONE_TYPES:
-            if type_ is none_type:
-                return True
-        # With python 3.8, specifically 3.8.10, Literal "is" checks are very flakey
-        # can change on very subtle changes like use of types in other modules,
-        # hopefully this check avoids that issue.
-        if is_literal_type(type_):  # pragma: no cover
-            return all_literal_values(type_) == [None]
-        return False
-
-else:
-
-    def is_none_type(type_: Any) -> bool:
-        for none_type in NONE_TYPES:
-            if type_ is none_type:
-                return True
-        return False
+def is_none_type(type_: Any) -> bool:
+    return type_ in NONE_TYPES
 
 
 def is_callable_type(type_: type[Any]) -> bool:
@@ -104,7 +80,7 @@ def is_callable_type(type_: type[Any]) -> bool:
 
 
 def is_literal_type(type_: type[Any]) -> bool:
-    return Literal is not None and get_origin(type_) is Literal
+    return get_origin(type_) in LITERAL_TYPES
 
 
 def literal_values(type_: type[Any]) -> tuple[Any, ...]:
@@ -468,3 +444,7 @@ def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     # The dataclasses.is_dataclass function doesn't seem to provide TypeGuard functionality,
     # so I created this convenience function
     return dataclasses.is_dataclass(_cls)
+
+
+def origin_is_type_alias_type(origin: Any) -> TypeGuard[TypeAliasType]:
+    return isinstance(origin, TypeAliasType)
