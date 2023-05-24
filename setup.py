@@ -118,6 +118,7 @@ setup(
         'Environment :: Console',
         'Environment :: MacOS X',
         'Framework :: Hypothesis',
+        'Framework :: Pydantic',
         'Topic :: Software Development :: Libraries :: Python Modules',
         'Topic :: Internet',
     ],
