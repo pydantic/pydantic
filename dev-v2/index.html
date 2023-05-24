@@ -21,7 +21,7 @@
     
     
       
-        <title>Welcome to pydantic - pydantic</title>
+        <title>Welcome to Pydantic - pydantic</title>
       
     
     
@@ -79,7 +79,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#example" class="md-skip">
+        <a href="#why-use-pydantic" class="md-skip">
           Skip to content
         </a>
       
@@ -133,7 +133,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Welcome to pydantic
+              Welcome to Pydantic
             
           </span>
         </div>
@@ -426,12 +426,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
       
         <label class="md-nav__link md-nav__link--active" for="__toc">
-          Welcome to pydantic
+          Welcome to Pydantic
           <span class="md-nav__icon md-icon"></span>
         </label>
       
       <a href="." class="md-nav__link md-nav__link--active">
-        Welcome to pydantic
+        Welcome to Pydantic
       </a>
       
         
@@ -450,29 +450,29 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
+  <a href="#why-use-pydantic" class="md-nav__link">
+    Why use Pydantic?
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#rationale" class="md-nav__link">
-    Rationale
+  <a href="#features-of-pydantic" class="md-nav__link">
+    Features of Pydantic
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-pydantic" class="md-nav__link">
-    Using Pydantic
+  <a href="#pydantic-examples" class="md-nav__link">
+    Pydantic examples
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#discussion-of-pydantic" class="md-nav__link">
-    Discussion of Pydantic
+  <a href="#who-is-using-pydantic" class="md-nav__link">
+    Who is using Pydantic?
   </a>
   
 </li>
@@ -1723,29 +1723,29 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#example" class="md-nav__link">
-    Example
+  <a href="#why-use-pydantic" class="md-nav__link">
+    Why use Pydantic?
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#rationale" class="md-nav__link">
-    Rationale
+  <a href="#features-of-pydantic" class="md-nav__link">
+    Features of Pydantic
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#using-pydantic" class="md-nav__link">
-    Using Pydantic
+  <a href="#pydantic-examples" class="md-nav__link">
+    Pydantic examples
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#discussion-of-pydantic" class="md-nav__link">
-    Discussion of Pydantic
+  <a href="#who-is-using-pydantic" class="md-nav__link">
+    Who is using Pydantic?
   </a>
   
 </li>
@@ -1769,59 +1769,41 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>Welcome to pydantic</h1>
+  <h1>Welcome to Pydantic</h1>
 
 <p><a href="https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI"><img alt="CI" src="https://github.com/pydantic/pydantic/workflows/CI/badge.svg?event=push" /></a>
-<a href="https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI"><img alt="Coverage" src="https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg" /></a>
+<a href="https://github.com/pydantic/pydantic/actions?query=event%3Apush+branch%3Amain+workflow%3ACI"><img alt="Coverage" src="https://coverage-badge.samuelcolvin.workers.dev/pydantic/pydantic.svg" /></a><br>
 <a href="https://pypi.python.org/pypi/pydantic"><img alt="pypi" src="https://img.shields.io/pypi/v/pydantic.svg" /></a>
 <a href="https://anaconda.org/conda-forge/pydantic"><img alt="CondaForge" src="https://img.shields.io/conda/v/conda-forge/pydantic.svg" /></a>
-<a href="https://pepy.tech/project/pydantic"><img alt="downloads" src="https://pepy.tech/badge/pydantic/month" /></a>
+<a href="https://pepy.tech/project/pydantic"><img alt="downloads" src="https://pepy.tech/badge/pydantic/month" /></a><br>
 <a href="https://github.com/pydantic/pydantic/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/pydantic/pydantic.svg" /></a></p>
-<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/504110f529dcd7a0a8aa7ee3c54f611fdefbc25b">504110f</a>.</p>
-<p>Pydantic is the most widely used data validation library for Python.</p>
-<p>With Pydantic, Python type annotations become more than tools for documentation and type checking. Pydantic <strong>enforces type hints</strong> at runtime, and provides <strong>user-friendly errors</strong> when data is invalid.</p>
+<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/3ffb0c465a2d30accacbde1509ced0a74ba391e5">3ffb0c4</a>.</p>
+<p>Pydantic is the most widely used Python library for data validation and coercion using Python type annotations.</p>
+<h2 id="why-use-pydantic">Why use Pydantic?<a class="headerlink" href="#why-use-pydantic" title="Permanent link">&para;</a></h2>
+<p>Built-in Python type annotations are a useful way to hint about the expected type of data, improving code clarity and supporting development tools. However, Python's type annotations are optional and don't affect the runtime behavior of the program.</p>
+<p>Static type checkers like <a href="https://mypy-lang.org/">mypy</a> use type annotations to catch potential type-related errors before running the program. But static type checkers can't catch all errors, and they don't affect the runtime behavior of the program.</p>
+<p>Pydantic, on the other hand, uses type annotations to perform <a href="/usage/validators.md">data validation</a> and <a href="/usage/conversion_table.md">type coercion</a> at runtime, which is particularly useful for ensuring the correctness of user or external data.</p>
+<p>Pydantic enables you to convert input data to Python <a href="/usage/types/types.md">standard library types and custom types</a> in a controlled manner, ensuring they meet the specifications you've provided. This eliminates a significant amount of manual data validation and transformation code, making your program more robust and less prone to errors. It's particularly helpful when dealing with untrusted user input such as form data, <a href="/usage/schema.md">JSON documents</a>, and other data types.</p>
+<p>By providing a simple, declarative way of defining how data should be shaped, Pydantic helps you write cleaner, safer, and more reliable code.</p>
+<h2 id="features-of-pydantic">Features of Pydantic<a class="headerlink" href="#features-of-pydantic" title="Permanent link">&para;</a></h2>
+<p>Some of the main features of Pydantic include:</p>
+<ul>
+<li><a href="/usage/validators.md"><strong>Data validation</strong></a>: Pydantic validates data as it is assigned to ensure it meets the requirements. It automatically handles a broad range of data types, including custom types and custom validators.</li>
+<li><a href="/usage/types/types.md"><strong>Standard library and custom data types</strong></a>: Pydantic supports all of the Python standard library types, and you can define custom data types and specify how they should be validated and converted.</li>
+<li><a href="/usage/conversion_table.md"><strong>Conversion types</strong></a>: Pydantic will not only validate data, but also convert it to the appropriate type if possible. For instance, a string containing a number will be converted to the proper numerical type.</li>
+<li><a href="/usage/models.md"><strong>Custom and nested models</strong></a>: You can define models (similar to classes) that contain other models, allowing for complex data structures to be neatly and efficiently represented.</li>
+<li><a href="/usage/models.md/#generic-models"><strong>Generic models</strong></a>: Pydantic supports generic models, which allow the declaration of models that are "parameterized" on one or more fields.</li>
+<li><a href="/usage/dataclasses.md"><strong>Dataclasses</strong></a>: Pydantic supports <code>dataclasses.dataclass</code>, offering same data validation as using <code>BaseModel</code>.</li>
+<li><a href="/usage/schema.md"><strong>Model schema generation</strong></a>: Pydantic models can be converted to and from a JSON Schema, which can be useful for documentation, code generation, or other purposes.</li>
+<li><a href="/errors/errors.md"><strong>Error handling</strong></a>: Pydantic models raise informative errors when invalid data is provided, with the option to create your own <a href="/errors/errors.md/#custom-errors">custom errors</a>.</li>
+<li><a href="/usage/pydantic_settings.md"><strong>Settings management</strong></a>: The <code>BaseSettings</code> class from <a href="https://github.com/pydantic/pydantic-settings">pydantic-settings</a> provides a way to validate, document, and provide default values for environment variables.</li>
+</ul>
 <p>Pydantic is simple to use, even when doing complex things, and enables you to define and validate data in pure, canonical Python.</p>
-<p>Try Pydantic today! <a href="/install/">Installation</a> is as simple as: <a href="/install/"><code>pip install pydantic</code></a>.</p>
-<h2 id="example">Example<a class="headerlink" href="#example" title="Permanent link">&para;</a></h2>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
+<p><a href="install/">Installing Pydantic</a> is as simple as: <a href="install/"><code>pip install pydantic</code></a>.</p>
+<h2 id="pydantic-examples">Pydantic examples<a class="headerlink" href="#pydantic-examples" title="Permanent link">&para;</a></h2>
+<p>To see Pydantic at work, let's start with a simple example, creating a custom class that inherits from <code>BaseModel</code>:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
 <div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
-
-
-<span class="n">external_data</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;signup_ts&#39;</span><span class="p">:</span> <span class="s1">&#39;2019-06-01 12:22&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;friends&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">],</span>
-<span class="p">}</span>
-<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">external_data</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="c1">#&gt; 123</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">signup_ts</span><span class="p">))</span>
-<span class="c1">#&gt; datetime.datetime(2019, 6, 1, 12, 22)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">friends</span><span class="p">)</span>
-<span class="c1">#&gt; [1, 2, 3]</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;id&#39;: 123,</span>
-<span class="sd">    &#39;name&#39;: &#39;John Doe&#39;,</span>
-<span class="sd">    &#39;signup_ts&#39;: datetime.datetime(2019, 6, 1, 12, 22),</span>
-<span class="sd">    &#39;friends&#39;: [1, 2, 3],</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
-</code></pre></div>
-</div>
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
@@ -1833,30 +1815,17 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
 
 <span class="n">external_data</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span>
     <span class="s1">&#39;signup_ts&#39;</span><span class="p">:</span> <span class="s1">&#39;2019-06-01 12:22&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;friends&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">],</span>
 <span class="p">}</span>
+
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">external_data</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="c1">#&gt; 123</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">signup_ts</span><span class="p">))</span>
-<span class="c1">#&gt; datetime.datetime(2019, 6, 1, 12, 22)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">friends</span><span class="p">)</span>
-<span class="c1">#&gt; [1, 2, 3]</span>
+
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;id&#39;: 123,</span>
-<span class="sd">    &#39;name&#39;: &#39;John Doe&#39;,</span>
-<span class="sd">    &#39;signup_ts&#39;: datetime.datetime(2019, 6, 1, 12, 22),</span>
-<span class="sd">    &#39;friends&#39;: [1, 2, 3],</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#&gt; {&#39;id&#39;: 123, &#39;name&#39;: &#39;John Doe&#39;, &#39;signup_ts&#39;: datetime.datetime(2019, 6, 1, 12, 22)}</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -1869,52 +1838,47 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
     <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
 
 <span class="n">external_data</span> <span class="o">=</span> <span class="p">{</span>
     <span class="s1">&#39;id&#39;</span><span class="p">:</span> <span class="s1">&#39;123&#39;</span><span class="p">,</span>
     <span class="s1">&#39;signup_ts&#39;</span><span class="p">:</span> <span class="s1">&#39;2019-06-01 12:22&#39;</span><span class="p">,</span>
-    <span class="s1">&#39;friends&#39;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;3&#39;</span><span class="p">],</span>
 <span class="p">}</span>
+
 <span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="o">**</span><span class="n">external_data</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">id</span><span class="p">)</span>
-<span class="c1">#&gt; 123</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">repr</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">signup_ts</span><span class="p">))</span>
-<span class="c1">#&gt; datetime.datetime(2019, 6, 1, 12, 22)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">friends</span><span class="p">)</span>
-<span class="c1">#&gt; [1, 2, 3]</span>
+
 <span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;id&#39;: 123,</span>
-<span class="sd">    &#39;name&#39;: &#39;John Doe&#39;,</span>
-<span class="sd">    &#39;signup_ts&#39;: datetime.datetime(2019, 6, 1, 12, 22),</span>
-<span class="sd">    &#39;friends&#39;: [1, 2, 3],</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#&gt; {&#39;id&#39;: 123, &#39;name&#39;: &#39;John Doe&#39;, &#39;signup_ts&#39;: datetime.datetime(2019, 6, 1, 12, 22)}</span>
 </code></pre></div>
 </div>
 </div>
 </div>
 <p>What's going on here:</p>
 <ul>
-<li><code>id</code> is of type int; the annotation-only declaration tells Pydantic that this field is required. Strings,
+<li><code>id</code> is of type <code>int</code>; the annotation-only declaration tells Pydantic that this field is required. Strings,
   bytes, or floats will be coerced to ints if possible; otherwise an exception will be raised.</li>
 <li><code>name</code> is inferred as a string from the provided default; because it has a default, it is not required.</li>
-<li><code>signup_ts</code> is a datetime field that is not required (and takes the value <code>None</code> if it's not supplied).
+<li><code>signup_ts</code> is a <code>datetime</code> field that is not required (and takes the value <code>None</code> if a value is not supplied).
   Pydantic will process either a unix timestamp int (e.g. <code>1496498400</code>) or a string representing the date and time.</li>
-<li><code>friends</code> uses Python's typing system, and requires a list of integers. As with <code>id</code>, integer-like objects
-  will be converted to integers.</li>
 </ul>
 <p>If validation fails, Pydantic will raise an error with a breakdown of what was wrong:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">index_main</span> <span class="kn">import</span> <span class="n">User</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
 
-<span class="c1"># ignore-above</span>
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
+    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="n">User</span><span class="p">(</span><span class="n">signup_ts</span><span class="o">=</span><span class="s1">&#39;broken&#39;</span><span class="p">,</span> <span class="n">friends</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="s1">&#39;not number&#39;</span><span class="p">])</span>
+    <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
@@ -1923,106 +1887,137 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
 <span class="sd">            &#39;loc&#39;: (&#39;id&#39;,),</span>
 <span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
-<span class="sd">            &#39;input&#39;: {&#39;signup_ts&#39;: &#39;broken&#39;, &#39;friends&#39;: [1, 2, &#39;not number&#39;]},</span>
+<span class="sd">            &#39;input&#39;: {&#39;name&#39;: 1234},</span>
 <span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
 <span class="sd">        },</span>
 <span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;datetime_parsing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;signup_ts&#39;,),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid datetime, input is too short&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;broken&#39;,</span>
-<span class="sd">            &#39;ctx&#39;: {&#39;error&#39;: &#39;input is too short&#39;},</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/datetime_parsing&#39;,</span>
-<span class="sd">        },</span>
-<span class="sd">        {</span>
-<span class="sd">            &#39;type&#39;: &#39;int_parsing&#39;,</span>
-<span class="sd">            &#39;loc&#39;: (&#39;friends&#39;, 2),</span>
-<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid integer, unable to parse string as an integer&#39;,</span>
-<span class="sd">            &#39;input&#39;: &#39;not number&#39;,</span>
-<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/int_parsing&#39;,</span>
+<span class="sd">            &#39;type&#39;: &#39;string_type&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;name&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid string&#39;,</span>
+<span class="sd">            &#39;input&#39;: 1234,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/string_type&#39;,</span>
 <span class="sd">        },</span>
 <span class="sd">    ]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
-<h2 id="rationale">Rationale<a class="headerlink" href="#rationale" title="Permanent link">&para;</a></h2>
-<p>Pydantic uses some cool new language features, but why should I actually go and use it?</p>
-<dl>
-<dt><strong>Plays nicely with your IDE/linter/brain</strong></dt>
-<dd>There's no new schema definition micro-language to learn. If you know how to use Python type hints,
-  you know how to use Pydantic. Data structures are just instances of classes you define with type annotations,
-  so auto-completion, linting, <a href="/integrations/mypy/">mypy</a>, IDEs (especially <a href="/integrations/pycharm/">PyCharm</a>),
-  and your intuition should all work properly with your validated data.</dd>
-<dt><strong>Fast</strong></dt>
-<dd>Pydantic has always taken performance seriously. The core validation logic of Pydantic 2 uses a separate <code>pydantic-core</code> package, written in Rust using the excellent <code>pyo3</code> library. This provides a significant speed up over the already excellent performance of Prefect 1.</dd>
-<dt><strong>Validate complex structures</strong></dt>
-<dd>Use of <a href="/usage/models/#recursive-models">recursive Pydantic models</a>, <code>typing</code>'s
-  <a href="/usage/types/#standard-library-types">standard types</a> (e.g. <code>List</code>, <code>Tuple</code>, <code>Dict</code> etc.) and
-  <a href="/usage/validators/">validators</a> allow
-  complex data schemas to be clearly and easily defined, validated, and parsed.</dd>
-<dt><strong>Extensible</strong></dt>
-<dd>Pydantic allows <a href="/usage/types/#custom-data-types">custom data types</a> to be defined or you can extend validation
-  with methods on a model decorated with the <a href="/usage/validators/"><code>validator</code></a> decorator.</dd>
-<dt><strong>Dataclasses integration</strong></dt>
-<dd>As well as <code>BaseModel</code>, Pydantic provides
-  a <a href="/usage/dataclasses/"><code>dataclass</code></a> decorator which creates (almost) vanilla Python dataclasses with input
-  data parsing and validation.</dd>
-</dl>
-<h2 id="using-pydantic">Using Pydantic<a class="headerlink" href="#using-pydantic" title="Permanent link">&para;</a></h2>
-<p>Hundreds of organisations and packages are using Pydantic, including:</p>
-<dl>
-<dt><a href="https://fastapi.tiangolo.com/">FastAPI</a></dt>
-<dd>A high performance API framework, easy to learn,
-  fast to code and ready for production, based on Pydantic and Starlette.</dd>
-<dt><a href="https://jupyter.org/">Project Jupyter</a></dt>
-<dd>Developers of the Jupyter notebook are using Pydantic
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
+    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">1234</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">errors</span><span class="p">())</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    [</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;missing&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;id&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Field required&#39;,</span>
+<span class="sd">            &#39;input&#39;: {&#39;name&#39;: 1234},</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/missing&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">        {</span>
+<span class="sd">            &#39;type&#39;: &#39;string_type&#39;,</span>
+<span class="sd">            &#39;loc&#39;: (&#39;name&#39;,),</span>
+<span class="sd">            &#39;msg&#39;: &#39;Input should be a valid string&#39;,</span>
+<span class="sd">            &#39;input&#39;: 1234,</span>
+<span class="sd">            &#39;url&#39;: &#39;https://errors.pydantic.dev/2/v/string_type&#39;,</span>
+<span class="sd">        },</span>
+<span class="sd">    ]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="who-is-using-pydantic">Who is using Pydantic?<a class="headerlink" href="#who-is-using-pydantic" title="Permanent link">&para;</a></h2>
+<p>Hundreds of organisations and packages are using Pydantic.</p>
+<p>Some of the prominent projects using Pydantic include:</p>
+<p><a href="https://fastapi.tiangolo.com/">FastAPI</a> &mdash; A high-performance API framework, easy to learn,
+  fast to code and ready for production, based on Pydantic and Starlette.</p>
+<p><a href="https://jupyter.org/">Project Jupyter</a> &mdash; Developers of the Jupyter notebook are using Pydantic
   <a href="https://github.com/pydantic/pydantic/issues/773">for subprojects</a>, through the FastAPI-based Jupyter server
   <a href="https://github.com/jupyter-server/jupyverse">Jupyverse</a>, and for <a href="https://github.com/jupyter-server/fps">FPS</a>'s
-  configuration management.</dd>
-<dt><strong>Microsoft</strong></dt>
-<dd>Using Pydantic (via FastAPI) for
-  <a href="https://github.com/tiangolo/fastapi/pull/26#issuecomment-463768795">numerous services</a>, some of which are
-  "getting integrated into the core Windows product and some Office products."</dd>
-<dt><strong>Amazon Web Services</strong></dt>
-<dd>Using Pydantic in <a href="https://github.com/awslabs/gluon-ts">gluon-ts</a>, an open-source probabilistic time series
-  modeling library.</dd>
-<dt><strong>The NSA</strong></dt>
-<dd>Using Pydantic in <a href="https://github.com/nsacyber/WALKOFF">WALKOFF</a>, an open-source automation framework.</dd>
-<dt><strong>Uber</strong></dt>
-<dd>Using Pydantic in <a href="https://github.com/uber/ludwig">Ludwig</a>, an open-source TensorFlow wrapper.</dd>
-<dt><strong>Cuenca</strong></dt>
-<dd>A Mexican neobank that uses Pydantic for several internal
-  tools (including API validation) and for open source projects like
-  <a href="https://github.com/cuenca-mx/stpmex-python">stpmex</a>, which is used to process real-time, 24/7, inter-bank
-  transfers in Mexico.</dd>
-<dt><a href="https://molssi.org">The Molecular Sciences Software Institute</a></dt>
-<dd>Using Pydantic in <a href="https://github.com/MolSSI/QCFractal">QCFractal</a>, a massively distributed compute framework
-  for quantum chemistry.</dd>
-<dt><a href="https://www.reach.vote">Reach</a></dt>
-<dd>Trusts Pydantic (via FastAPI) and <a href="https://github.com/samuelcolvin/arq"><em>arq</em></a> (Samuel's excellent
-  asynchronous task queue) to reliably power multiple mission-critical microservices.</dd>
-<dt><a href="https://robusta.dev/">Robusta.dev</a></dt>
-<dd>Using Pydantic to automate Kubernetes troubleshooting and maintenance. For example, their open source
+  configuration management.</p>
+<p><a href="https://molssi.org">The Molecular Sciences Software Institute</a> &mdash; Using Pydantic in
+  <a href="https://github.com/MolSSI/QCFractal">QCFractal</a>, a massively distributed compute framework
+  for quantum chemistry.</p>
+<p><a href="https://www.reach.vote">Reach</a> &mdash; Trusts Pydantic (via FastAPI) and <a href="https://github.com/samuelcolvin/arq"><em>arq</em></a>
+  (Samuel's excellent asynchronous task queue) to reliably power multiple mission-critical microservices.</p>
+<p><a href="https://robusta.dev/">Robusta.dev</a> &mdash; Using Pydantic to automate Kubernetes troubleshooting and maintenance.
+  For example, their open source
   <a href="https://home.robusta.dev/python/">tools to debug and profile Python applications on Kubernetes</a> use
-  Pydantic models.</dd>
-</dl>
+  Pydantic models.</p>
+<p>And these are just a few of the companies and organizations around the world who are using Pydantic:</p>
+<div style="float: left; width: 50%;">
+<ul>
+<li>Adobe
+<li>Advanced Micro Devices
+<li>Amazon
+<li>Apple
+<li>ASML
+<li>AstraZeneca
+<li>Broadcom
+<li>Cisco Systems
+<li>Comcast
+<li>Datadog
+<li>Exoflare
+<li>Exposion AI
+<li>Facebook
+<li>Forethought AI
+<li>Google
+</ul>
+</div>
+<div style="float: right; width: 50%;">
+<ul>
+<li>IBM
+<li>Intel
+<li>Intuit
+<li>Microsoft
+<li>Netflix
+<li>NSA
+<li>NVIDIA
+<li>Qualcomm
+<li>Red Hat
+<li>Salesforce
+<li>Starbucks
+<li>Telstra
+<li>Texas Instruments
+<li>Twilio
+<li>UK Home Office
+</ul>
+</div>
+
 <p>For a more comprehensive list of open-source projects using Pydantic see the
 <a href="https://github.com/pydantic/pydantic/network/dependents">list of dependents on github</a>, or you can find some awesome projects using Pydantic in <a href="https://github.com/Kludex/awesome-pydantic">awesome-pydantic</a>.</p>
-<h2 id="discussion-of-pydantic">Discussion of Pydantic<a class="headerlink" href="#discussion-of-pydantic" title="Permanent link">&para;</a></h2>
-<p>Podcasts and videos discussing Pydantic.</p>
-<dl>
-<dt><a href="https://talkpython.fm/episodes/show/313/automate-your-data-exchange-with-pydantic" target="_blank">Talk Python To Me</a></dt>
-<dd>Michael Kennedy and Samuel Colvin, the creator of Pydantic, dive into the history of Pydantic and its many uses and benefits.</dd>
-<dt><a href="https://www.pythonpodcast.com/pydantic-data-validation-episode-263/" target="_blank">Podcast.__init__</a></dt>
-<dd>Discussion about where Pydantic came from and ideas for where it might go next with
-  Samuel Colvin the creator of Pydantic.</dd>
-<dt><a href="https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand" target="_blank">Python Bytes Podcast</a></dt>
-<dd>"<em>This is a sweet simple framework that solves some really nice problems... Data validations and settings management
+<!-- ## Discussion of Pydantic
+
+Podcasts and videos discussing Pydantic.
+
+[Talk Python To Me](https://talkpython.fm/episodes/show/313/automate-your-data-exchange-with-pydantic){target=_blank}
+: Michael Kennedy and Samuel Colvin, the creator of Pydantic, dive into the history of Pydantic and its many uses and benefits.
+
+[Podcast.\_\_init\_\_](https://www.pythonpodcast.com/pydantic-data-validation-episode-263/){target=_blank}
+: Discussion about where Pydantic came from and ideas for where it might go next with
+  Samuel Colvin the creator of Pydantic.
+
+[Python Bytes Podcast](https://pythonbytes.fm/episodes/show/157/oh-hai-pandas-hold-my-hand){target=_blank}
+: "*This is a sweet simple framework that solves some really nice problems... Data validations and settings management
   using Python type annotations, and it's the Python type annotations that makes me really extra happy... It works
-  automatically with all the IDE's you already have.</em>" --Michael Kennedy</dd>
-<dt><a href="https://www.youtube.com/watch?v=WJmqgJn9TXg" target="_blank">Python Pydantic Introduction – Give your data classes super powers</a></dt>
-<dd>A talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to Pydantic and walking
-  through the core features of Pydantic.</dd>
-</dl>
+  automatically with all the IDE's you already have.*" --Michael Kennedy
+
+[Python Pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
+: A talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to Pydantic and walking
+  through the core features of Pydantic. -->
 
 
 
