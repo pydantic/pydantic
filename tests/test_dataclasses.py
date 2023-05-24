@@ -2007,6 +2007,7 @@ def test_dataclass_alias_generator():
     ]
 
 
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='InitVar not supported in python 3.7')
 def test_init_vars_inheritance():
     init_vars = []
 
