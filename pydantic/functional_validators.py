@@ -1,18 +1,24 @@
 from __future__ import annotations as _annotations
 
+import sys
 from functools import partialmethod
 from types import FunctionType
 from typing import TYPE_CHECKING, Any, Callable, TypeVar, Union, overload
 
 from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
-from typing_extensions import Literal, Protocol, TypeAlias
+from typing_extensions import Literal, TypeAlias
 
 from ._internal import _decorators
 from ._internal._decorators import inspect_validator
 from ._internal._internal_dataclass import slots_dataclass
 from .annotated import GetCoreSchemaHandler
 from .errors import PydanticUserError
+
+if sys.version_info < (3, 11):
+    from typing_extensions import Protocol
+else:
+    from typing import Protocol
 
 
 @slots_dataclass(frozen=True)
