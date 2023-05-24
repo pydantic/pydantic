@@ -21,6 +21,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
+from pydantic_core import CoreSchema
 from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
@@ -36,6 +37,7 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 def test_success():
@@ -2223,3 +2225,14 @@ def test_multiple_protected_namespace():
             also_protect_field: str
 
             model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+
+
+def test_model_get_core_schema() -> None:
+    class Model(BaseModel):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            assert handler(int) == {'type': 'int'}
+            assert handler.generate_schema(int) == {'type': 'int'}
+            return handler(source_type)
+
+    Model()
