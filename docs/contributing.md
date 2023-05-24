@@ -28,7 +28,7 @@ creating a pull request.
     Pydantic v1 is in maintenance mode, meaning that only bug fixes and security fixes will be accepted.
     New features should be targeted at Pydantic v2.
 
-    To submit a fix to Pydantic v1, use the `1.10-fixes` branch.
+    To submit a fix to Pydantic v1, use the `1.10.X-fixes` branch.
 
 If you're looking for something to get your teeth into, check out the
 ["help wanted"](https://github.com/pydantic/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)
