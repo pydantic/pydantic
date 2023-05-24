@@ -7,7 +7,7 @@
 
 {{ version }}.
 
-Pydantic is the most widely used Python library for data validation and settings management using Python type annotations.
+Pydantic is the most widely used Python library for data validation and coercion using Python type annotations.
 
 ## Why use Pydantic?
 
@@ -26,6 +26,7 @@ By providing a simple, declarative way of defining how data should be shaped, Py
 Some of the main features of Pydantic include:
 
 - [**Data validation**](/usage/validators.md): Pydantic validates data as it is assigned to ensure it meets the requirements. It automatically handles a broad range of data types, including custom types and custom validators.
+- [**Standard library and custom data types**](/usage/types/types.md): Pydantic supports all of the Python standard library types, and you can define custom data types and specify how they should be validated and converted.
 - [**Conversion types**](/usage/conversion_table.md): Pydantic will not only validate data, but also convert it to the appropriate type if possible. For instance, a string containing a number will be converted to the proper numerical type.
 - [**Custom and nested models**](/usage/models.md): You can define models (similar to classes) that contain other models, allowing for complex data structures to be neatly and efficiently represented.
 - [**Generic models**](/usage/models.md/#generic-models): Pydantic supports generic models, which allow the declaration of models that are "parameterized" on one or more fields.
@@ -33,7 +34,6 @@ Some of the main features of Pydantic include:
 - [**Model schema generation**](/usage/schema.md): Pydantic models can be converted to and from a JSON Schema, which can be useful for documentation, code generation, or other purposes.
 - [**Error handling**](/errors/errors.md): Pydantic models raise informative errors when invalid data is provided, with the option to create your own [custom errors](/errors/errors.md/#custom-errors).
 - [**Settings management**](/usage/pydantic_settings.md): The `BaseSettings` class from [pydantic-settings](https://github.com/pydantic/pydantic-settings) provides a way to validate, document, and provide default values for environment variables.
-- [**Standard library and custom data types**](/usage/types/types.md): Pydantic supports all of the Python standard library types, and you can define custom data types and specify how they should be validated and converted.
 
 Pydantic is simple to use, even when doing complex things, and enables you to define and validate data in pure, canonical Python.
 
