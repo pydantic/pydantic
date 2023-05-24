@@ -28,6 +28,7 @@ from typing import (
     Sequence,
     Set,
     Tuple,
+    Type,
     TypeVar,
     Union,
 )
@@ -99,7 +100,7 @@ from pydantic import (
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, SecretField, SkipValidation, Strict
+from pydantic.types import AllowInfNan, ImportString, SecretField, SkipValidation, Strict, TransformSchema
 
 try:
     import email_validator
@@ -5073,3 +5074,100 @@ def test_skip_validation_json_schema():
         'title': 'A',
         'type': 'object',
     }
+
+
+def test_transform_schema_for_first_party_class():
+    # Here, first party means you can define the `__prepare_pydantic_annotations__` method on the class directly.
+    class LowercaseStr(str):
+        @classmethod
+        def __prepare_pydantic_annotations__(
+            cls, _source: Type[Any], annotations: Iterable[Any]
+        ) -> Tuple[Any, List[Any]]:
+            def transform_schema(schema: CoreSchema) -> CoreSchema:
+                return core_schema.no_info_after_validator_function(lambda v: v.lower(), schema)
+
+            return str, list(annotations) + [TransformSchema(transform_schema)]
+
+    class Model(BaseModel):
+        lower: LowercaseStr = Field(min_length=1)
+
+    assert Model(lower='ABC').lower == 'abc'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(lower='')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'min_length': 1},
+            'input': '',
+            'loc': ('lower',),
+            'msg': 'String should have at least 1 characters',
+            'type': 'string_too_short',
+        }
+    ]
+
+
+def test_transform_schema_for_third_party_class():
+    # Here, third party means you can't define methods on the class directly, so have to use annotations.
+
+    class DatetimeWrapper:
+        # This is pretending to be a third-party class. This example is specifically inspired by pandas.Timestamp,
+        # which can receive an item of type `datetime` as an input to its `__init__`.
+        # The important thing here is we are not defining any custom methods on this type directly.
+        def __init__(self, t: datetime):
+            self.t = t
+
+    class _DatetimeWrapperAnnotation:
+        # This is an auxiliary class that, when used as the first annotation for DatetimeWrapper,
+        # ensures pydantic can produce a valid schema.
+        @classmethod
+        def __prepare_pydantic_annotations__(
+            cls, _source: Type[Any], annotations: Iterable[Any]
+        ) -> Tuple[Any, List[Any]]:
+            def transform(schema: CoreSchema) -> CoreSchema:
+                return core_schema.no_info_after_validator_function(lambda v: DatetimeWrapper(v), schema)
+
+            return datetime, list(annotations) + [TransformSchema(transform)]
+
+    # Giving a name to Annotated[DatetimeWrapper, _DatetimeWrapperAnnotation] makes it easier to use in code
+    # where I want a field of type `DatetimeWrapper` that works as desired with pydantic.
+    PydanticDatetimeWrapper = Annotated[DatetimeWrapper, _DatetimeWrapperAnnotation]
+
+    class Model(BaseModel):
+        # The reason all of the above is necessary is specifically so that we get good behavior
+        timestamp: Annotated[PydanticDatetimeWrapper, annotated_types.Gt(datetime.fromisoformat('2020-01-01 00:00:00'))]
+
+    m = Model(timestamp='2021-01-01 00:00:00')
+    assert isinstance(m.timestamp, DatetimeWrapper)
+    assert repr(m.timestamp.t) == 'datetime.datetime(2021, 1, 1, 0, 0)'
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(timestamp='2019-01-01 00:00:00')
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'gt': '2020-01-01T00:00:00'},
+            'input': '2019-01-01 00:00:00',
+            'loc': ('timestamp',),
+            'msg': 'Input should be greater than 2020-01-01T00:00:00',
+            'type': 'greater_than',
+        }
+    ]
+
+
+def test_iterable_arbitrary_type():
+    class CustomIterable(Iterable):
+        def __init__(self, iterable):
+            self.iterable = iterable
+
+        def __iter__(self):
+            return self
+
+        def __next__(self):
+            return next(self.iterable)
+
+    with pytest.raises(
+        PydanticSchemaGenerationError,
+        match='Unable to generate pydantic-core schema for .*CustomIterable.*. Set `arbitrary_types_allowed=True`',
+    ):
+
+        class Model(BaseModel):
+            x: CustomIterable

@@ -1048,3 +1048,15 @@ else:
             original_schema = handler.generate_schema(source)
             metadata = build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
             return core_schema.any_schema(metadata=metadata, serialization=original_schema)
+
+
+@_internal_dataclass.slots_dataclass
+class TransformSchema:
+    """
+    An annotation that can be used to apply a transform to a core schema.
+    """
+
+    transform: Callable[[CoreSchema], CoreSchema]
+
+    def __get_pydantic_core_schema__(self, source_type: type[Any], handler: GetCoreSchemaHandler) -> CoreSchema:
+        return self.transform(handler(source_type))

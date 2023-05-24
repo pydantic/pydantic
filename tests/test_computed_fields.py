@@ -15,6 +15,7 @@ from pydantic import (
     dataclasses,
     field_validator,
 )
+from pydantic.alias_generators import to_camel
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticUserError
 
@@ -533,3 +534,63 @@ def test_computed_fields_missing_return_type():
 
     assert Model().model_dump() == {'cfield': '123'}
     assert Model().model_dump_json() == '{"cfield":"123"}'
+
+
+def test_alias_generator():
+    class MyModel(BaseModel):
+        my_standard_field: int
+
+        @computed_field  # *will* be overridden by alias generator
+        @property
+        def my_computed_field(self) -> int:
+            return self.my_standard_field + 1
+
+        @computed_field(alias='my_alias_none')  # will *not* be overridden by alias generator
+        @property
+        def my_aliased_computed_field_none(self) -> int:
+            return self.my_standard_field + 2
+
+        @computed_field(alias='my_alias_1', alias_priority=1)  # *will* be overridden by alias generator
+        @property
+        def my_aliased_computed_field_1(self) -> int:
+            return self.my_standard_field + 3
+
+        @computed_field(alias='my_alias_2', alias_priority=2)  # will *not* be overridden by alias generator
+        @property
+        def my_aliased_computed_field_2(self) -> int:
+            return self.my_standard_field + 4
+
+    class MySubModel(MyModel):
+        model_config = dict(alias_generator=to_camel, populate_by_name=True)
+
+    model = MyModel(my_standard_field=1)
+    assert model.model_dump() == {
+        'my_standard_field': 1,
+        'my_computed_field': 2,
+        'my_aliased_computed_field_none': 3,
+        'my_aliased_computed_field_1': 4,
+        'my_aliased_computed_field_2': 5,
+    }
+    assert model.model_dump(by_alias=True) == {
+        'my_standard_field': 1,
+        'my_computed_field': 2,
+        'my_alias_none': 3,
+        'my_alias_1': 4,
+        'my_alias_2': 5,
+    }
+
+    submodel = MySubModel(my_standard_field=1)
+    assert submodel.model_dump() == {
+        'my_standard_field': 1,
+        'my_computed_field': 2,
+        'my_aliased_computed_field_none': 3,
+        'my_aliased_computed_field_1': 4,
+        'my_aliased_computed_field_2': 5,
+    }
+    assert submodel.model_dump(by_alias=True) == {
+        'myStandardField': 1,
+        'myComputedField': 2,
+        'my_alias_none': 3,
+        'myAliasedComputedField1': 4,
+        'my_alias_2': 5,
+    }

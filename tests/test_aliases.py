@@ -415,20 +415,19 @@ def test_aliases_json_schema():
 
 
 @pytest.mark.parametrize(
-    'input,expected',
+    'value',
     [
-        ('a', 'a'),
-        (AliasPath('a', 'b', 1), ['a', 'b', 1]),
-        (AliasChoices('a', 'b'), [['a'], ['b']]),
-        (AliasChoices('a', AliasPath('b', 1)), [['a'], ['b', 1]]),
-        (AliasChoices(), None),
+        'a',
+        AliasPath('a', 'b', 1),
+        AliasChoices('a', 'b'),
+        AliasChoices('a', AliasPath('b', 1)),
     ],
 )
-def test_validation_alias_path(input, expected):
+def test_validation_alias_path(value):
     class Model(BaseModel):
-        x: str = Field(validation_alias=input)
+        x: str = Field(validation_alias=value)
 
-    assert Model.model_fields['x'].validation_alias == expected
+    assert Model.model_fields['x'].validation_alias == value
 
 
 def test_validation_alias_invalid_value_type():
@@ -443,7 +442,7 @@ def test_validation_alias_parse_data():
     class Model(BaseModel):
         x: str = Field(validation_alias=AliasChoices('a', AliasPath('b', 1), 'c'))
 
-    assert Model.model_fields['x'].validation_alias == [['a'], ['b', 1], ['c']]
+    assert Model.model_fields['x'].validation_alias == AliasChoices('a', AliasPath('b', 1), 'c')
     assert Model.model_validate({'a': 'hello'}).x == 'hello'
     assert Model.model_validate({'b': ['hello', 'world']}).x == 'world'
     assert Model.model_validate({'c': 'test'}).x == 'test'

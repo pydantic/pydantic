@@ -19,7 +19,7 @@ from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, get_origin, is_typeddict
 
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
-from ..fields import FieldInfo
+from ..fields import AliasChoices, AliasPath, FieldInfo
 from . import _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper
 from ._core_metadata import (
@@ -439,18 +439,9 @@ class GenerateSchema:
         if std_schema is not None:
             return std_schema
 
-        unsupported_err = PydanticSchemaGenerationError(
-            f'Unable to generate pydantic-core schema for {obj!r}. '
-            f'Set `arbitrary_types_allowed=True` in the model_config ignore this error'
-            f' or implement `__get_pydantic_core_schema__` on your type to fully support it.'
-        )
-
         origin = get_origin(obj)
         if origin is None:
-            if self.arbitrary_types:
-                return core_schema.is_instance_schema(obj)
-            else:
-                raise unsupported_err
+            return self._arbitrary_type_schema(obj, obj)
 
         # Need to handle generic dataclasses before looking for the schema properties because attribute accesses
         # on _GenericAlias delegate to the origin type, so lose the information about the concrete parametrization
@@ -476,17 +467,28 @@ class GenerateSchema:
         elif issubclass(origin, typing.Sequence):
             if origin in {typing.Sequence, collections.abc.Sequence}:
                 return self._sequence_schema(obj)
-            raise unsupported_err
+            else:
+                return self._arbitrary_type_schema(obj, origin)
         elif issubclass(origin, (typing.Iterable, collections.abc.Iterable)):
             # Because typing.Iterable does not have a specified `__init__` signature, we don't validate into subclasses
-            return self._iterable_schema(obj)
+            if origin in {typing.Iterable, collections.abc.Iterable, typing.Generator, collections.abc.Generator}:
+                return self._iterable_schema(obj)
+            else:
+                return self._arbitrary_type_schema(obj, origin)
         elif issubclass(origin, (re.Pattern, typing.Pattern)):
             return self._pattern_schema(obj)
         else:
-            if self.arbitrary_types and isinstance(origin, type):
-                return core_schema.is_instance_schema(origin)
-            else:
-                raise unsupported_err
+            return self._arbitrary_type_schema(obj, origin)
+
+    def _arbitrary_type_schema(self, obj: Any, type_: Any) -> CoreSchema:
+        if self.arbitrary_types and isinstance(type_, type):
+            return core_schema.is_instance_schema(type_)
+        else:
+            raise PydanticSchemaGenerationError(
+                f'Unable to generate pydantic-core schema for {obj!r}. '
+                f'Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
+                f' or implement `__get_pydantic_core_schema__` on your type to fully support it.'
+            )
 
     def _generate_td_field_schema(
         self,
@@ -617,10 +619,15 @@ class GenerateSchema:
             field_info.serialization_alias = alias
             field_info.alias_priority = 1
 
+        if isinstance(field_info.validation_alias, (AliasChoices, AliasPath)):
+            validation_alias = field_info.validation_alias.convert_to_aliases()
+        else:
+            validation_alias = field_info.validation_alias
+
         return _common_field(
             schema,
             serialization_exclude=True if field_info.exclude else None,
-            validation_alias=field_info.validation_alias,
+            validation_alias=validation_alias,
             serialization_alias=field_info.serialization_alias,
             frozen=field_info.frozen or field_info.final,
             metadata=metadata,
@@ -1038,6 +1045,18 @@ class GenerateSchema:
 
     def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
         return_type_schema = self.generate_schema(d.info.return_type)
+
+        # Handle alias_generator using similar logic to that from
+        # pydantic._internal._generate_schema.GenerateSchema._common_field_schema,
+        # with field_info -> d.info and name -> d.cls_var_name
+        alias_generator = self.config_wrapper.alias_generator
+        if alias_generator and (d.info.alias_priority is None or d.info.alias_priority <= 1):
+            alias = alias_generator(d.cls_var_name)
+            if not isinstance(alias, str):
+                raise TypeError(f'alias_generator {alias_generator} must return str, not {alias.__class__}')
+            d.info.alias = alias
+            d.info.alias_priority = 1
+
         return core_schema.computed_field(d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias)
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:

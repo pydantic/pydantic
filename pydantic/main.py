@@ -1272,6 +1272,10 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     __init__.__pydantic_base_init__ = True  # type: ignore
 
+    @classmethod
+    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
+        return super().model_construct(root=root, _fields_set=_fields_set)
+
     def __repr_args__(self) -> _repr.ReprArgs:
         yield 'root', self.root
 
