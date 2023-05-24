@@ -7,6 +7,7 @@ from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
 from pathlib import Path
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -290,12 +291,23 @@ else:
         def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
+            def serialize_import_string(v: Any) -> str:
+                if isinstance(v, ModuleType):
+                    return v.__name__
+                elif hasattr(v, '__module__') and hasattr(v, '__name__'):
+                    return f'{v.__module__}.{v.__name__}'
+                else:
+                    return v
+
+            serializer = core_schema.plain_serializer_function_ser_schema(serialize_import_string, when_used='json')
             if cls is source:
                 # Treat bare usage of ImportString (`schema is None`) as the same as ImportString[Any]
-                return core_schema.general_plain_validator_function(lambda v, _: _validators.import_string(v))
+                return core_schema.general_plain_validator_function(
+                    function=lambda v, _: _validators.import_string(v), serialization=serializer
+                )
             else:
                 return core_schema.general_before_validator_function(
-                    lambda v, _: _validators.import_string(v), handler(source)
+                    function=lambda v, _: _validators.import_string(v), schema=handler(source), serialization=serializer
                 )
 
         def __repr__(self) -> str:

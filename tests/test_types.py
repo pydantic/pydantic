@@ -844,13 +844,20 @@ def test_string_import_callable(annotation):
     ]
 
 
-def test_string_import_any():
+@pytest.mark.parametrize(
+    ('value', 'expected'),
+    [
+        ('math:cos', math.cos),
+        ('os.path', os.path),
+        ([1, 2, 3], [1, 2, 3]),
+        ('math', math),
+    ],
+)
+def test_string_import_any(value: Any, expected: Any):
     class PyObjectModel(BaseModel):
         thing: ImportString
 
-    assert PyObjectModel(thing='math:cos').model_dump() == {'thing': math.cos}
-    assert PyObjectModel(thing='os.path').model_dump() == {'thing': os.path}
-    assert PyObjectModel(thing=[1, 2, 3]).model_dump() == {'thing': [1, 2, 3]}
+    assert PyObjectModel(thing=value).model_dump(mode='python') == {'thing': expected}
 
 
 @pytest.mark.parametrize(
