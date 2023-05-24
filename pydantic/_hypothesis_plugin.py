@@ -168,6 +168,11 @@ st.register_type_strategy(pydantic.StrictBool, st.booleans())
 st.register_type_strategy(pydantic.StrictStr, st.text())
 
 
+# FutureDate, PastDate
+st.register_type_strategy(pydantic.FutureDate, st.dates(min_value=datetime.date.today() + datetime.timedelta(days=1)))
+st.register_type_strategy(pydantic.PastDate, st.dates(max_value=datetime.date.today() - datetime.timedelta(days=1)))
+
+
 # Constrained-type resolver functions
 #
 # For these ones, we actually want to inspect the type in order to work out a
