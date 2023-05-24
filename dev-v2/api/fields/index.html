@@ -2527,6 +2527,13 @@ of the property.</p>
           <td><p>The alias of the property to be used during encoding and decoding.</p></td>
         </tr>
         <tr>
+          <td><code>alias_priority</code></td>
+          <td>
+                <code>int | None</code>
+          </td>
+          <td><p>priority of the alias. This affects whether an alias generator is used</p></td>
+        </tr>
+        <tr>
           <td><code>title</code></td>
           <td>
                 <code>str | None</code>
@@ -2574,7 +2581,9 @@ of the property.</p>
 <span class="normal">884</span>
 <span class="normal">885</span>
 <span class="normal">886</span>
-<span class="normal">887</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
+<span class="normal">887</span>
+<span class="normal">888</span>
+<span class="normal">889</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
 <span class="k">class</span> <span class="nc">ComputedFieldInfo</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    A container for data from `@computed_field` so that we can access it while building the pydantic-core schema.</span>
@@ -2584,6 +2593,7 @@ of the property.</p>
 <span class="sd">        wrapped_property (property): The wrapped computed field property.</span>
 <span class="sd">        return_type (type[Any]): The type of the computed field property&#39;s return value.</span>
 <span class="sd">        alias (str|None): The alias of the property to be used during encoding and decoding.</span>
+<span class="sd">        alias_priority (int|None): priority of the alias. This affects whether an alias generator is used</span>
 <span class="sd">        title (str|None): Title of the computed field as in OpenAPI document, should be a short summary.</span>
 <span class="sd">        description (str|None): Description of the computed field as in OpenAPI document.</span>
 <span class="sd">        repr (bool): A boolean indicating whether or not to include the field in the __repr__ output.</span>
@@ -2593,6 +2603,7 @@ of the property.</p>
     <span class="n">wrapped_property</span><span class="p">:</span> <span class="nb">property</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">]</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
+    <span class="n">alias_priority</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
     <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span>
@@ -5830,6 +5841,7 @@ If both <code>default</code> and <code>default_factory</code> are set, an error 
     <span class="n">__f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">alias_priority</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">title</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
@@ -5870,6 +5882,16 @@ automatically wrapped with <code>property</code>.</p>
                 <code>str | None</code>
           </td>
           <td><p>alias to use when serializing this computed field, only used when <code>by_alias=True</code></p></td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>alias_priority</code></td>
+          <td>
+                <code>int | None</code>
+          </td>
+          <td><p>priority of the alias. This affects whether an alias generator is used</p></td>
           <td>
                 <code>None</code>
           </td>
@@ -5941,10 +5963,7 @@ objects.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/fields.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">933</span>
-<span class="normal">934</span>
-<span class="normal">935</span>
-<span class="normal">936</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">936</span>
 <span class="normal">937</span>
 <span class="normal">938</span>
 <span class="normal">939</span>
@@ -5996,10 +6015,17 @@ objects.</p></td>
 <span class="normal">985</span>
 <span class="normal">986</span>
 <span class="normal">987</span>
-<span class="normal">988</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
+<span class="normal">988</span>
+<span class="normal">989</span>
+<span class="normal">990</span>
+<span class="normal">991</span>
+<span class="normal">992</span>
+<span class="normal">993</span>
+<span class="normal">994</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">computed_field</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">PropertyT</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">alias</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">alias_priority</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">description</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="nb">repr</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -6014,6 +6040,7 @@ objects.</p></td>
 <span class="sd">    Args:</span>
 <span class="sd">        __f: the function to wrap.</span>
 <span class="sd">        alias: alias to use when serializing this computed field, only used when `by_alias=True`</span>
+<span class="sd">        alias_priority: priority of the alias. This affects whether an alias generator is used</span>
 <span class="sd">        title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697</span>
 <span class="sd">        description: Description to used when including this computed field in JSON Schema, defaults to the functions</span>
 <span class="sd">            docstring, currently unused waiting for #4697</span>
@@ -6028,7 +6055,7 @@ objects.</p></td>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
-        <span class="k">nonlocal</span> <span class="n">description</span><span class="p">,</span> <span class="n">return_type</span>
+        <span class="k">nonlocal</span> <span class="n">description</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">alias_priority</span>
         <span class="k">if</span> <span class="n">description</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">f</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">:</span>
             <span class="n">description</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">cleandoc</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="vm">__doc__</span><span class="p">)</span>
 
@@ -6045,7 +6072,8 @@ objects.</p></td>
 
         <span class="c1"># if the function isn&#39;t already decorated with `@property` (or another descriptor), then we wrap it now</span>
         <span class="n">f</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ensure_property</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
-        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">ComputedFieldInfo</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
+        <span class="n">alias_priority</span> <span class="o">=</span> <span class="p">(</span><span class="n">alias_priority</span> <span class="ow">or</span> <span class="mi">2</span><span class="p">)</span> <span class="k">if</span> <span class="n">alias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">ComputedFieldInfo</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">,</span> <span class="n">alias</span><span class="p">,</span> <span class="n">alias_priority</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">description</span><span class="p">,</span> <span class="nb">repr</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">__f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
