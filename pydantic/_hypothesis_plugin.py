@@ -46,7 +46,7 @@ from pydantic.utils import lenient_issubclass
 #
 # conlist() and conset() are unsupported for now, because the workarounds for
 # Cython and Hypothesis to handle parametrized generic types are incompatible.
-# Once Cython can support 'normal' generics we'll revisit this.
+# We are rethinking Hypothesis compatibility in Pydantic v2.
 
 # Emails
 try:
