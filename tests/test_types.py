@@ -845,19 +845,43 @@ def test_string_import_callable(annotation):
 
 
 @pytest.mark.parametrize(
-    ('value', 'expected'),
+    ('value', 'expected', 'mode'),
     [
-        ('math:cos', math.cos),
-        ('os.path', os.path),
-        ([1, 2, 3], [1, 2, 3]),
-        ('math', math),
+        ('math:cos', 'math.cos', 'json'),
+        ('math:cos', math.cos, 'python'),
+        ('os.path', 'posixpath', 'json'),
+        ('os.path', os.path, 'python'),
+        ([1, 2, 3], [1, 2, 3], 'json'),
+        ([1, 2, 3], [1, 2, 3], 'python'),
+        ('math', 'math', 'json'),
+        ('math', math, 'python'),
+        ('builtins.list', 'builtins.list', 'json'),
+        ('builtins.list', list, 'python'),
+        (list, 'builtins.list', 'json'),
+        (list, list, 'python'),
+        (f'{__name__}.pytest', 'pytest', 'json'),
+        (f'{__name__}.pytest', pytest, 'python'),
     ],
 )
-def test_string_import_any(value: Any, expected: Any):
+def test_string_import_any(value: Any, expected: Any, mode: Literal['json', 'python']):
     class PyObjectModel(BaseModel):
         thing: ImportString
 
-    assert PyObjectModel(thing=value).model_dump(mode='python') == {'thing': expected}
+    assert PyObjectModel(thing=value).model_dump(mode=mode) == {'thing': expected}
+
+
+@pytest.mark.parametrize(
+    ('value',),
+    [('oss',), ('os.os',), (f'{__name__}.x',), (f'{__name__}.pytest',)],
+)
+def test_string_import_any_expected_failure(value: Any):
+    """Ensure importString correctly fails to instantiate when it's supposed to"""
+
+    class PyObjectModel(BaseModel):
+        thing: ImportString
+
+    with pytest.raises(ValidationError):
+        PyObjectModel(thing=value).model_dump()
 
 
 @pytest.mark.parametrize(
