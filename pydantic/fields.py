@@ -873,6 +873,7 @@ class ComputedFieldInfo:
         wrapped_property (property): The wrapped computed field property.
         return_type (type[Any]): The type of the computed field property's return value.
         alias (str|None): The alias of the property to be used during encoding and decoding.
+        alias_priority (int|None): priority of the alias. This affects whether an alias generator is used
         title (str|None): Title of the computed field as in OpenAPI document, should be a short summary.
         description (str|None): Description of the computed field as in OpenAPI document.
         repr (bool): A boolean indicating whether or not to include the field in the __repr__ output.
@@ -882,6 +883,7 @@ class ComputedFieldInfo:
     wrapped_property: property
     return_type: type[Any]
     alias: str | None
+    alias_priority: int | None
     title: str | None
     description: str | None
     repr: bool
@@ -915,6 +917,7 @@ def computed_field(
     *,
     return_type: Any = Any,
     alias: str | None = None,
+    alias_priority: int | None = None,
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
@@ -934,6 +937,7 @@ def computed_field(
     __f: PropertyT | None = None,
     *,
     alias: str | None = None,
+    alias_priority: int | None = None,
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
@@ -948,6 +952,7 @@ def computed_field(
     Args:
         __f: the function to wrap.
         alias: alias to use when serializing this computed field, only used when `by_alias=True`
+        alias_priority: priority of the alias. This affects whether an alias generator is used
         title: Title to used when including this computed field in JSON Schema, currently unused waiting for #4697
         description: Description to used when including this computed field in JSON Schema, defaults to the functions
             docstring, currently unused waiting for #4697
@@ -962,7 +967,7 @@ def computed_field(
     """
 
     def dec(f: Any) -> Any:
-        nonlocal description, return_type
+        nonlocal description, return_type, alias_priority
         if description is None and f.__doc__:
             description = inspect.cleandoc(f.__doc__)
 
@@ -979,7 +984,8 @@ def computed_field(
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)
-        dec_info = ComputedFieldInfo(f, return_type, alias, title, description, repr)
+        alias_priority = (alias_priority or 2) if alias is not None else None
+        dec_info = ComputedFieldInfo(f, return_type, alias, alias_priority, title, description, repr)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:
