@@ -3,6 +3,7 @@ import pickle
 import re
 import sys
 from collections.abc import Hashable
+from dataclasses import InitVar
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
@@ -2004,3 +2005,22 @@ def test_dataclass_alias_generator():
             'input': ArgsKwargs((), {'name': 'test name', 'score': 2}),
         },
     ]
+
+
+def test_init_vars_inheritance():
+    init_vars = []
+
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        init: 'InitVar[int]'
+
+    @pydantic.dataclasses.dataclass
+    class Bar(Foo):
+        arg: int
+
+        def __post_init__(self, init: int) -> None:
+            init_vars.append(init)
+
+    bar = Bar(init=1, arg=2)
+    assert TypeAdapter(Bar).dump_python(bar) == {'arg': 2}
+    assert init_vars == [1]
