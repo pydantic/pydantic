@@ -937,16 +937,17 @@ class GenerateSchema:
 
         if is_pydantic_dataclass(dataclass):
             fields = dataclass.__pydantic_fields__
-            if typevars_map:
-                for field in fields.values():
-                    field.apply_typevars_map(typevars_map, self.types_namespace)
         else:
             fields = collect_dataclass_fields(
                 dataclass,
                 self.types_namespace,
                 typevars_map=typevars_map,
             )
-        decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos()
+        if typevars_map:
+            for field in fields.values():
+                field.apply_typevars_map(typevars_map, self.types_namespace)
+
+        decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos.build(dataclass)
         args = [self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
         has_post_init = hasattr(dataclass, '__post_init__')
 
