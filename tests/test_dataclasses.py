@@ -2053,5 +2053,5 @@ def test_init_vars_call_monkeypatch(remove_monkeypatch, monkeypatch):
         InitVar[int]()
 
     # Check that the custom __call__ was called precisely if the monkeypatch was not removed
-    stack_depth = len(traceback.format_exception(exc.value))
-    assert stack_depth == 3 if remove_monkeypatch else 4
+    stack_depth = len(traceback.extract_tb(exc.value.__traceback__))
+    assert stack_depth == 1 if remove_monkeypatch else 2
