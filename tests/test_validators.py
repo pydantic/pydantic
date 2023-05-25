@@ -10,6 +10,7 @@ from typing import Any, Callable, Deque, Dict, FrozenSet, List, Optional, Tuple,
 from unittest.mock import MagicMock
 
 import pytest
+from annotated_types import Ge
 from typing_extensions import Annotated, Literal
 
 from pydantic import (
@@ -186,7 +187,11 @@ def test_simple():
 
 def test_int_validation():
     class Model(BaseModel):
-        a: int
+        # In pydantic-core 0.34.0 at least there are only overflows if there
+        # are constraints (otherwise Python ints are not checked at all)
+        # So the only reason the constraint is here is to avoid short circuiting
+        # and doing nothing internally
+        a: Annotated[int, Ge(0)]
 
     with pytest.raises(ValidationError) as exc_info:
         Model(a='snap')
@@ -212,8 +217,16 @@ def test_int_validation():
         }
     ]
 
-    # Doesn't raise ValidationError for number > (2 ^ 63) - 1 and limits them to (2 ^ 63) - 1
-    assert Model(a=(2**63) + 100).a == (2**63) - 1
+    with pytest.raises(ValidationError) as exc_info:
+        Model(a=(2**63) + 100).a
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_overflow',
+            'loc': ('a',),
+            'msg': 'Input integer too large to convert to 64-bit integer',
+            'input': 9223372036854775908,
+        }
+    ]
 
 
 @pytest.mark.parametrize('value', [2.2250738585072011e308, float('nan'), float('inf')])

@@ -1034,9 +1034,9 @@ def test_model_iteration():
         ),
         pytest.param(
             {'foos': {-1: {'b'}}},
-            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]},
+            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {'a': 3}]},
             None,
-            id='negative indexes are ignored',
+            id='negative indexes',
         ),
     ],
 )
