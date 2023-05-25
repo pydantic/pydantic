@@ -1,4 +1,5 @@
 import json
+import platform
 import sys
 from collections import deque
 from pathlib import Path
@@ -406,10 +407,10 @@ def test_function_wrap_fallback():
     assert s.to_json('foo') == b'"result=foo"'
 
     assert s.to_python(Foobar()) == 'result=foobar!'
-    with pytest.raises(PydanticSerializationError, match='Error calling function `f`'):
-        assert s.to_python(Foobar(), mode='json') == 'result=foobar!'
-    with pytest.raises(PydanticSerializationError, match='Error calling function `f`'):
-        assert s.to_json(Foobar()) == b'"result=foobar!"'
+    with pytest.raises(PydanticSerializationError, match='Unable to serialize unknown type:'):
+        s.to_python(Foobar(), mode='json')
+    with pytest.raises(PydanticSerializationError, match='Unable to serialize unknown type:'):
+        s.to_json(Foobar())
 
     assert s.to_python(Foobar(), fallback=fallback) == 'result=fallback:foobar!'
     assert s.to_python(Foobar(), mode='json', fallback=fallback) == 'result=fallback:foobar!'
@@ -630,3 +631,34 @@ def test_function_wrap_preserves_wrapped_serialization():
     s = SchemaSerializer(core_schema.general_wrap_validator_function(f, core_schema.int_schema()))
     with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
         assert s.to_python('abc') == 'abc'
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' or sys.platform in {'emscripten', 'win32'},
+    reason='fails on pypy, emscripten and windows',
+)
+def test_recursive_call():
+    def bad_recursive(value):
+        return s.to_python(value)
+
+    s = SchemaSerializer(
+        core_schema.any_schema(serialization=core_schema.plain_serializer_function_ser_schema(bad_recursive))
+    )
+    with pytest.raises(PydanticSerializationError) as exc_info:
+        s.to_python(42)
+    # insert_assert(str(exc_info.value))
+    assert str(exc_info.value) == 'Error calling function `bad_recursive`: RecursionError'
+
+    with pytest.raises(PydanticSerializationError) as exc_info:
+        s.to_python(42, mode='json')
+    # insert_assert(str(exc_info.value))
+    assert str(exc_info.value) == 'Error calling function `bad_recursive`: RecursionError'
+
+    with pytest.raises(PydanticSerializationError) as exc_info:
+        s.to_json(42)
+    # insert_assert(str(exc_info.value))
+    assert str(exc_info.value) == (
+        'Error serializing to JSON: '
+        'PydanticSerializationError: Error calling function `bad_recursive`: '
+        'RuntimeError: Already mutably borrowed'
+    )
