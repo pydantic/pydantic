@@ -8,11 +8,12 @@ use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
-use crate::build_tools::{py_err, py_error_type, SchemaDict, SchemaError};
+use crate::build_tools::{py_schema_err, py_schema_error_type, SchemaError};
 use crate::definitions::{Definitions, DefinitionsBuilder};
 use crate::errors::{ErrorMode, LocItem, ValError, ValResult, ValidationError};
 use crate::input::{Input, InputType};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 mod any;
 mod arguments;
@@ -281,7 +282,7 @@ impl<'py> SelfValidator<'py> {
 
         let mut validator = match build_validator(self_schema, None, &mut definitions_builder) {
             Ok(v) => v,
-            Err(err) => return py_err!("Error building self-schema:\n  {}", err),
+            Err(err) => return py_schema_err!("Error building self-schema:\n  {}", err),
         };
         validator.complete(&definitions_builder)?;
         let mut definitions = definitions_builder.clone().finish()?;
@@ -325,7 +326,7 @@ fn build_specific_validator<'a, T: BuildValidator>(
     }
 
     T::build(schema_dict, config, definitions)
-        .map_err(|err| py_error_type!("Error building \"{}\" validator:\n  {}", val_type, err))
+        .map_err(|err| py_schema_error_type!("Error building \"{}\" validator:\n  {}", val_type, err))
 }
 
 // macro to build the match statement for validator selection
@@ -335,7 +336,7 @@ macro_rules! validator_match {
             $(
                 <$validator>::EXPECTED_TYPE => build_specific_validator::<$validator>($type, $dict, $config, $definitions),
             )+
-            _ => return py_err!(r#"Unknown schema type: "{}""#, $type),
+            _ => return py_schema_err!(r#"Unknown schema type: "{}""#, $type),
         }
     };
 }

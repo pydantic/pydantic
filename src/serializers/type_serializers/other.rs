@@ -2,8 +2,9 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{BuildSerializer, CombinedSerializer};
@@ -86,7 +87,7 @@ impl BuildSerializer for ArgumentsBuilder {
         _config: Option<&PyDict>,
         _definitions: &mut DefinitionsBuilder<CombinedSerializer>,
     ) -> PyResult<CombinedSerializer> {
-        py_err!("`arguments` validators require a custom serializer")
+        py_schema_err!("`arguments` validators require a custom serializer")
     }
 }
 

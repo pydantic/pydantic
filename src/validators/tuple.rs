@@ -2,10 +2,11 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyTuple};
 
-use crate::build_tools::{is_strict, SchemaDict};
+use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericIterable, Input};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::list::{get_items_schema, min_length_check};
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};

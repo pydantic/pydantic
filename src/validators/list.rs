@@ -1,10 +1,10 @@
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::SchemaDict;
 use crate::errors::ValResult;
 use crate::input::{GenericIterable, Input};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 

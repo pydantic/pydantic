@@ -3,8 +3,9 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 use std::borrow::Cow;
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::{
@@ -40,7 +41,7 @@ impl BuildSerializer for UnionSerializer {
 impl UnionSerializer {
     fn from_choices(choices: Vec<CombinedSerializer>) -> PyResult<CombinedSerializer> {
         match choices.len() {
-            0 => py_err!("One or more union choices required"),
+            0 => py_schema_err!("One or more union choices required"),
             1 => Ok(choices.into_iter().next().unwrap()),
             _ => {
                 let descr = choices.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(", ");

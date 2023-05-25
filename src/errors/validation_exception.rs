@@ -13,10 +13,11 @@ use serde::{Serialize, Serializer};
 
 use serde_json::ser::PrettyFormatter;
 
-use crate::build_tools::{py_error_type, safe_repr, SchemaDict};
+use crate::build_tools::py_schema_error_type;
 use crate::errors::LocItem;
 use crate::get_version;
 use crate::serializers::{SerMode, SerializationState};
+use crate::tools::{safe_repr, SchemaDict};
 
 use super::line_error::ValLineError;
 use super::location::Location;
@@ -97,7 +98,7 @@ impl ValidationError {
     }
 
     pub fn omit_error() -> PyErr {
-        py_error_type!("Uncaught Omit error, please check your usage of `default` validators.")
+        py_schema_error_type!("Uncaught Omit error, please check your usage of `default` validators.")
     }
 }
 

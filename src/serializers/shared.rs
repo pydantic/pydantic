@@ -11,8 +11,10 @@ use enum_dispatch::enum_dispatch;
 use serde::Serialize;
 use serde_json::ser::PrettyFormatter;
 
-use crate::build_tools::{py_err, py_error_type, SchemaDict};
+use crate::build_tools::py_schema_err;
+use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::{py_err, SchemaDict};
 
 use super::errors::se_err_py_err;
 use super::extra::Extra;
@@ -55,16 +57,16 @@ macro_rules! combined_serializer {
                     $(
                         <$b_serializer>::EXPECTED_TYPE => match <$b_serializer>::build(schema, config, definitions) {
                             Ok(serializer) => Ok(serializer),
-                            Err(err) => py_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
+                            Err(err) => py_schema_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
                         },
                     )*
                     $(
                         <$builder>::EXPECTED_TYPE => match <$builder>::build(schema, config, definitions) {
                             Ok(serializer) => Ok(serializer),
-                            Err(err) => py_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
+                            Err(err) => py_schema_err!("Error building `{}` serializer:\n  {}", lookup_type, err),
                         },
                     )*
-                    _ => py_err!("Unknown serialization schema type: `{}`", lookup_type),
+                    _ => py_schema_err!("Unknown serialization schema type: `{}`", lookup_type),
                 }
             }
         }
@@ -161,7 +163,7 @@ impl CombinedSerializer {
                         config,
                         definitions,
                     )
-                    .map_err(|err| py_error_type!("Error building `function-plain` serializer:\n  {}", err));
+                    .map_err(|err| py_schema_error_type!("Error building `function-plain` serializer:\n  {}", err));
                 }
                 Some("function-wrap") => {
                     // `function-wrap` is also a special case, not included in `find_serializer` since it mean
@@ -172,7 +174,7 @@ impl CombinedSerializer {
                         config,
                         definitions,
                     )
-                    .map_err(|err| py_error_type!("Error building `function-wrap` serializer:\n  {}", err));
+                    .map_err(|err| py_schema_error_type!("Error building `function-wrap` serializer:\n  {}", err));
                 }
                 // applies to lists tuples and dicts, does not override the main schema `type`
                 Some("include-exclude-sequence") | Some("include-exclude-dict") => (),

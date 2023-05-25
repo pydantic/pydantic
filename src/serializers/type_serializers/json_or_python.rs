@@ -5,8 +5,8 @@ use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use super::{BuildSerializer, CombinedSerializer, Extra, TypeSerializer};
-use crate::build_tools::SchemaDict;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
 
 #[derive(Debug, Clone)]
 pub struct JsonOrPythonSerializer {

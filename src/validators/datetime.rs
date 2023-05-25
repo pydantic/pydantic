@@ -6,10 +6,12 @@ use speedate::DateTime;
 use std::cmp::Ordering;
 use strum::EnumMessage;
 
-use crate::build_tools::{is_strict, py_err, py_error_type, SchemaDict};
+use crate::build_tools::py_schema_err;
+use crate::build_tools::{is_strict, py_schema_error_type};
 use crate::errors::{py_err_string, ErrorType, ValError, ValResult};
 use crate::input::{EitherDateTime, Input};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
@@ -78,7 +80,7 @@ impl Validator for DateTimeValidator {
             if let Some(ref now_constraint) = constraints.now {
                 let offset = now_constraint.utc_offset(py)?;
                 let now = DateTime::now(offset).map_err(|e| {
-                    py_error_type!("DateTime::now() error: {}", e.get_documentation().unwrap_or("unknown"))
+                    py_schema_error_type!("DateTime::now() error: {}", e.get_documentation().unwrap_or("unknown"))
                 })?;
                 // `if let Some(c)` to match behaviour of gt/lt/le/ge
                 if let Some(c) = speedate_dt.partial_cmp(&now) {
@@ -174,7 +176,7 @@ impl NowOp {
         match s {
             "past" => Ok(NowOp::Past),
             "future" => Ok(NowOp::Future),
-            _ => py_err!("Invalid now_op {:?}", s),
+            _ => py_schema_err!("Invalid now_op {:?}", s),
         }
     }
 }
@@ -231,7 +233,7 @@ impl TZConstraint {
         match s {
             "aware" => Ok(TZConstraint::Aware),
             "naive" => Ok(TZConstraint::Naive),
-            _ => py_err!("Invalid tz_constraint {:?}", s),
+            _ => py_schema_err!("Invalid tz_constraint {:?}", s),
         }
     }
 

@@ -2,10 +2,11 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, PydanticCustomError, PydanticKnownError, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
@@ -30,7 +31,9 @@ impl CustomError {
 
         if ErrorType::valid_type(py, &error_type) {
             if schema.contains(intern!(py, "custom_error_message"))? {
-                py_err!("custom_error_message should not be provided if 'custom_error_type' matches a known error")
+                py_schema_err!(
+                    "custom_error_message should not be provided if 'custom_error_type' matches a known error"
+                )
             } else {
                 let error = PydanticKnownError::py_new(py, &error_type, context)?;
                 Ok(Some(Self::KnownError(error)))

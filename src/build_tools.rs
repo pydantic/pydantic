@@ -1,69 +1,14 @@
-use std::borrow::Cow;
 use std::error::Error;
 use std::fmt;
 
-use pyo3::exceptions::{PyException, PyKeyError};
+use pyo3::exceptions::PyException;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyString};
 use pyo3::{intern, FromPyObject, PyErrArguments};
 
 use crate::errors::{ErrorMode, ValError};
+use crate::tools::SchemaDict;
 use crate::ValidationError;
-
-pub trait SchemaDict<'py> {
-    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
-    where
-        T: FromPyObject<'py>;
-
-    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
-    where
-        T: FromPyObject<'py>;
-}
-
-impl<'py> SchemaDict<'py> for PyDict {
-    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
-    where
-        T: FromPyObject<'py>,
-    {
-        match self.get_item(key) {
-            Some(t) => Ok(Some(<T>::extract(t)?)),
-            None => Ok(None),
-        }
-    }
-
-    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
-    where
-        T: FromPyObject<'py>,
-    {
-        match self.get_item(key) {
-            Some(t) => <T>::extract(t),
-            None => py_err!(PyKeyError; "{}", key),
-        }
-    }
-}
-
-impl<'py> SchemaDict<'py> for Option<&PyDict> {
-    fn get_as<T>(&'py self, key: &PyString) -> PyResult<Option<T>>
-    where
-        T: FromPyObject<'py>,
-    {
-        match self {
-            Some(d) => d.get_as(key),
-            None => Ok(None),
-        }
-    }
-
-    #[cfg_attr(has_no_coverage, no_coverage)]
-    fn get_as_req<T>(&'py self, key: &PyString) -> PyResult<T>
-    where
-        T: FromPyObject<'py>,
-    {
-        match self {
-            Some(d) => d.get_as_req(key),
-            None => py_err!(PyKeyError; "{}", key),
-        }
-    }
-}
 
 pub fn schema_or_config<'py, T>(
     schema: &'py PyDict,
@@ -197,58 +142,25 @@ impl SchemaError {
     }
 }
 
-macro_rules! py_error_type {
+macro_rules! py_schema_error_type {
     ($msg:expr) => {
-        crate::build_tools::py_error_type!(crate::build_tools::SchemaError; $msg)
+        crate::tools::py_error_type!(crate::build_tools::SchemaError; $msg)
     };
     ($msg:expr, $( $msg_args:expr ),+ ) => {
-        crate::build_tools::py_error_type!(crate::build_tools::SchemaError; $msg, $( $msg_args ),+)
-    };
-
-    ($error_type:ty; $msg:expr) => {
-        <$error_type>::new_err($msg)
-    };
-
-    ($error_type:ty; $msg:expr, $( $msg_args:expr ),+ ) => {
-        <$error_type>::new_err(format!($msg, $( $msg_args ),+))
+        crate::tools::py_error_type!(crate::build_tools::SchemaError; $msg, $( $msg_args ),+)
     };
 }
-pub(crate) use py_error_type;
+pub(crate) use py_schema_error_type;
 
-macro_rules! py_err {
+macro_rules! py_schema_err {
     ($msg:expr) => {
-        Err(crate::build_tools::py_error_type!($msg))
+        Err(crate::build_tools::py_schema_error_type!($msg))
     };
     ($msg:expr, $( $msg_args:expr ),+ ) => {
-        Err(crate::build_tools::py_error_type!($msg, $( $msg_args ),+))
-    };
-
-    ($error_type:ty; $msg:expr) => {
-        Err(crate::build_tools::py_error_type!($error_type; $msg))
-    };
-
-    ($error_type:ty; $msg:expr, $( $msg_args:expr ),+ ) => {
-        Err(crate::build_tools::py_error_type!($error_type; $msg, $( $msg_args ),+))
+        Err(crate::build_tools::py_schema_error_type!($msg, $( $msg_args ),+))
     };
 }
-pub(crate) use py_err;
-
-pub fn function_name(f: &PyAny) -> PyResult<String> {
-    match f.getattr(intern!(f.py(), "__name__")) {
-        Ok(name) => name.extract(),
-        _ => f.repr()?.extract(),
-    }
-}
-
-pub fn safe_repr(v: &PyAny) -> Cow<str> {
-    if let Ok(s) = v.repr() {
-        s.to_string_lossy()
-    } else if let Ok(name) = v.get_type().name() {
-        format!("<unprintable {name} object>").into()
-    } else {
-        "<unprintable object>".into()
-    }
-}
+pub(crate) use py_schema_err;
 
 #[derive(Debug, Clone)]
 pub(crate) enum ExtraBehavior {
@@ -275,7 +187,7 @@ impl ExtraBehavior {
             Some("allow") => Self::Allow,
             Some("ignore") => Self::Ignore,
             Some("forbid") => Self::Forbid,
-            Some(v) => return py_err!("Invalid extra_behavior: `{}`", v),
+            Some(v) => return py_schema_err!("Invalid extra_behavior: `{}`", v),
             None => default,
         };
         Ok(res)

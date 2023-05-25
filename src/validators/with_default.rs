@@ -3,10 +3,12 @@ use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
+use crate::build_tools::py_schema_err;
+use crate::build_tools::schema_or_config_same;
 use crate::errors::{LocItem, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
@@ -30,7 +32,7 @@ impl DefaultType {
             schema.get_as(intern!(py, "default"))?,
             schema.get_as(intern!(py, "default_factory"))?,
         ) {
-            (Some(_), Some(_)) => py_err!("'default' and 'default_factory' cannot be used together"),
+            (Some(_), Some(_)) => py_schema_err!("'default' and 'default_factory' cannot be used together"),
             (Some(default), None) => Ok(Self::Default(default)),
             (None, Some(default_factory)) => Ok(Self::DefaultFactory(default_factory)),
             (None, None) => Ok(Self::None),
@@ -78,7 +80,7 @@ impl BuildValidator for WithDefaultValidator {
             Some("omit") => OnError::Omit,
             Some("default") => {
                 if matches!(default, DefaultType::None) {
-                    return py_err!("'on_error = default' requires a `default` or `default_factory`");
+                    return py_schema_err!("'on_error = default' requires a `default` or `default_factory`");
                 }
                 OnError::Default
             }
