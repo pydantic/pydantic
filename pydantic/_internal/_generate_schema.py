@@ -946,7 +946,7 @@ class GenerateSchema:
                 self.types_namespace,
                 typevars_map=typevars_map,
             )
-        decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos.build(dataclass)
+        decorators = dataclass.__dict__.get('__pydantic_decorators__') or DecoratorInfos.build(dataclass)
         args = [self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
         has_post_init = hasattr(dataclass, '__post_init__')
 
