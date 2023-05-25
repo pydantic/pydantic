@@ -203,6 +203,7 @@ def test_include_list_tuple(any_serializer, seq_f):
     assert any_serializer.to_json(seq_f('a', 'b', 'c')) == b'["a","b","c"]'
 
     assert any_serializer.to_python(seq_f(0, 1, 2, 3), include={1, 2}) == seq_f(1, 2)
+    assert any_serializer.to_python(seq_f(0, 1, 2, 3), include={-1, -2}) == seq_f(2, 3)
     assert any_serializer.to_python(seq_f(0, 1, 2, 3), include={1, 2}, mode='json') == [1, 2]
     assert any_serializer.to_python(seq_f('a', 'b', 'c', 'd'), include={1, 2}) == seq_f('b', 'c')
     assert any_serializer.to_python(seq_f('a', 'b', 'c', 'd'), include={1, 2}, mode='json') == ['b', 'c']
@@ -240,6 +241,12 @@ def test_include_dict(any_serializer):
     assert any_serializer.to_json({1: 2, '3': 4}, include={1}) == b'{"1":2}'
     assert any_serializer.to_json({1: 2, '3': 4}, include={'3'}) == b'{"3":4}'
     assert any_serializer.to_json(MyDataclass(a=1, b='foo', frog=2), include={'a'}) == b'{"a":1}'
+
+
+def test_exclude_dict(any_serializer):
+    assert any_serializer.to_python({1: 2, '3': 4}) == {1: 2, '3': 4}
+    assert any_serializer.to_python({1: 2, 3: 4}, exclude={1}) == {3: 4}
+    assert any_serializer.to_python({1: 2, 3: 4}, exclude={-1}) == {1: 2, 3: 4}
 
 
 class FieldsSetModel:

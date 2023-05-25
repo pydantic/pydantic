@@ -122,6 +122,8 @@ def test_include():
         'f',
         'g',
     ]
+    with pytest.raises(ValueError, match='Negative indices cannot be used to exclude items on unsized iterables'):
+        v.to_python(gen_ok('a', 'b', 'c', 'd', 'e', 'f', 'g', 'h'), include={-1: None, -2: None}, mode='json')
 
 
 def test_custom_serializer():

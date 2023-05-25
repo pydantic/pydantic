@@ -422,7 +422,7 @@ impl SerializationCallable {
 
         if let Some(index_key) = index_key {
             let filter = if let Ok(index) = index_key.extract::<usize>() {
-                self.filter.index_filter(index, include, exclude)?
+                self.filter.index_filter(index, include, exclude, None)?
             } else {
                 self.filter.key_filter(index_key, include, exclude)?
             };
