@@ -1,3 +1,4 @@
+import dataclasses
 import re
 from datetime import date
 from typing import Any
@@ -17,6 +18,12 @@ def make_5():
 
 class MyModel:
     __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+
+
+@dataclasses.dataclass
+class MyDataclass:
+    x: int
+    y: str
 
 
 def ids_function(val):
@@ -248,9 +255,13 @@ all_schema_functions = [
     ),
     (
         core_schema.dataclass_schema,
-        # MyModel should be a dataclass, but I'm being lazy here
-        args(MyModel, {'type': 'int'}),
-        {'type': 'dataclass', 'schema': {'type': 'int'}, 'cls': MyModel},
+        args(MyDataclass, {'type': 'int'}, ['foobar']),
+        {'type': 'dataclass', 'schema': {'type': 'int'}, 'fields': ['foobar'], 'cls': MyDataclass},
+    ),
+    (
+        core_schema.dataclass_schema,
+        args(MyDataclass, {'type': 'int'}, ['foobar'], slots=True),
+        {'type': 'dataclass', 'schema': {'type': 'int'}, 'fields': ['foobar'], 'cls': MyDataclass, 'slots': True},
     ),
 ]
 

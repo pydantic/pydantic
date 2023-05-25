@@ -1,6 +1,7 @@
 import dataclasses
 import re
-from typing import Any, Dict, List, Optional, Union
+import sys
+from typing import Any, ClassVar, Dict, List, Optional, Union
 
 import pytest
 from dirty_equals import IsListOrTuple, IsStr
@@ -201,6 +202,7 @@ def test_dataclass():
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
             ],
         ),
+        ['a', 'b'],
     )
 
     v = SchemaValidator(schema)
@@ -248,7 +250,9 @@ class DuplicateDifferent:
         ('always', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
         ('always', FooDataclass(a='hello', b=True), {'a': 'hello', 'b': True}),
         ('always', FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
-        ('always', FooDataclassMore(a='hello', b=True, c='more'), Err(r'c\s+Unexpected keyword argument')),
+        # no error because we only look for fields in schema['fields']
+        ('always', FooDataclassMore(a='hello', b=True, c='more'), {'a': 'hello', 'b': True}),
+        ('always', FooDataclassSame(a='hello', b='wrong'), Err(r'b\s+Input should be a valid boolean,')),
         ('always', DuplicateDifferent(a='hello', b=True), Err('should be a dictionary or an instance of FooDataclass')),
         # revalidate_instances='subclass-instances'
         ('subclass-instances', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
@@ -256,7 +260,9 @@ class DuplicateDifferent:
         ('subclass-instances', FooDataclass(a=b'hello', b='true'), {'a': b'hello', 'b': 'true'}),
         ('subclass-instances', FooDataclassSame(a='hello', b=True), {'a': 'hello', 'b': True}),
         ('subclass-instances', FooDataclassSame(a=b'hello', b='true'), {'a': 'hello', 'b': True}),
-        ('subclass-instances', FooDataclassMore(a='hello', b=True, c='more'), Err('Unexpected keyword argument')),
+        # no error because we only look for fields in schema['fields']
+        ('subclass-instances', FooDataclassMore(a='hello', b=True, c='more'), {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclassSame(a='hello', b='wrong'), Err(r'b\s+Input should be a valid boolean,')),
         ('subclass-instances', DuplicateDifferent(a='hello', b=True), Err('dictionary or an instance of FooDataclass')),
         # revalidate_instances='never'
         ('never', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
@@ -278,6 +284,7 @@ def test_dataclass_subclass(revalidate_instances, input_value, expected):
             ],
             extra_behavior='forbid',
         ),
+        ['a', 'b'],
         revalidate_instances=revalidate_instances,
     )
     v = SchemaValidator(schema)
@@ -306,6 +313,7 @@ def test_dataclass_subclass_strict_never_revalidate():
                     core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
                 ],
             ),
+            ['a', 'b'],
             revalidate_instances='never',
             strict=True,
         )
@@ -332,6 +340,7 @@ def test_dataclass_subclass_subclass_revalidate():
                     core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
                 ],
             ),
+            ['a', 'b'],
             revalidate_instances='subclass-instances',
             strict=True,
         )
@@ -364,6 +373,7 @@ def test_dataclass_post_init():
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
             ],
         ),
+        ['a', 'b'],
         post_init=True,
     )
 
@@ -397,6 +407,7 @@ def test_dataclass_post_init_args():
             ],
             collect_init_only=True,
         ),
+        ['a', 'b'],
         post_init=True,
     )
 
@@ -432,6 +443,7 @@ def test_dataclass_post_init_args_multiple():
             ],
             collect_init_only=True,
         ),
+        ['a', 'b'],
         post_init=True,
     )
 
@@ -462,6 +474,7 @@ def test_dataclass_exact_validation(revalidate_instances, input_value, expected)
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
             ],
         ),
+        ['a', 'b'],
         revalidate_instances=revalidate_instances,
     )
 
@@ -495,6 +508,7 @@ def test_dataclass_field_after_validator():
                 ),
             ],
         ),
+        ['a', 'b'],
     )
 
     v = SchemaValidator(schema)
@@ -526,6 +540,7 @@ def test_dataclass_field_plain_validator():
                 ),
             ],
         ),
+        ['a', 'b'],
     )
 
     v = SchemaValidator(schema)
@@ -558,6 +573,7 @@ def test_dataclass_field_before_validator():
                 ),
             ],
         ),
+        ['a', 'b'],
     )
 
     v = SchemaValidator(schema)
@@ -593,6 +609,7 @@ def test_dataclass_field_wrap_validator1():
                 ),
             ],
         ),
+        ['a', 'b'],
     )
 
     v = SchemaValidator(schema)
@@ -626,6 +643,7 @@ def test_dataclass_field_wrap_validator2():
                 ),
             ],
         ),
+        ['a', 'b'],
     )
 
     v = SchemaValidator(schema)
@@ -651,6 +669,7 @@ def test_dataclass_self_init():
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), kw_only=False),
             ],
         ),
+        ['a', 'b'],
     )
     v = SchemaValidator(schema)
 
@@ -674,6 +693,7 @@ def test_dataclass_self_init_alias():
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), validation_alias=['bAlias', 0]),
             ],
         ),
+        ['a', 'b'],
     )
     v = SchemaValidator(schema)
 
@@ -715,6 +735,7 @@ def test_dataclass_self_init_alias_field_name():
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), validation_alias=['bAlias', 0]),
             ],
         ),
+        ['a', 'b'],
     )
     v = SchemaValidator(schema, {'loc_by_alias': False})
 
@@ -767,6 +788,7 @@ def test_dataclass_self_init_post_init():
             ],
             collect_init_only=True,
         ),
+        ['a', 'b', 'c'],
         post_init=True,
     )
     v = SchemaValidator(schema)
@@ -787,6 +809,7 @@ def test_dataclass_validate_assignment():
                 core_schema.dataclass_field(name='b', schema=core_schema.bool_schema(), kw_only=False),
             ],
         ),
+        ['a', 'b'],
     )
     v = SchemaValidator(schema)
 
@@ -816,7 +839,7 @@ def test_dataclass_validate_assignment():
     assert not hasattr(foo, 'c')
 
     # wrong arguments
-    with pytest.raises(AttributeError, match="'str' object has no attribute '__dict__'"):
+    with pytest.raises(AttributeError, match="'str' object has no attribute 'a'"):
         v.validate_assignment('field_a', 'c', 123)
 
 
@@ -846,6 +869,7 @@ def test_validate_assignment_function():
                     core_schema.dataclass_field('field_c', core_schema.int_schema()),
                 ],
             ),
+            ['field_a', 'field_b', 'field_c'],
         )
     )
 
@@ -873,6 +897,7 @@ def test_frozen():
         core_schema.dataclass_schema(
             MyModel,
             core_schema.dataclass_args_schema('MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())]),
+            ['f'],
             frozen=True,
         )
     )
@@ -900,6 +925,7 @@ def test_frozen_field():
             core_schema.dataclass_args_schema(
                 'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema(), frozen=True)]
             ),
+            ['f'],
         )
     )
 
@@ -936,6 +962,7 @@ def test_extra_behavior_ignore(config: Union[core_schema.CoreConfig, None], sche
             core_schema.dataclass_args_schema(
                 'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())], **schema_extra_behavior_kw
             ),
+            ['f'],
         ),
         config=config,
     )
@@ -983,6 +1010,7 @@ def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], sche
             core_schema.dataclass_args_schema(
                 'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())], **schema_extra_behavior_kw
             ),
+            ['f'],
         ),
         config=config,
     )
@@ -1028,6 +1056,7 @@ def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schem
             core_schema.dataclass_args_schema(
                 'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())], **schema_extra_behavior_kw
             ),
+            ['f'],
         ),
         config=config,
     )
@@ -1062,6 +1091,7 @@ def test_function_validator_wrapping_args_schema_after() -> None:
                 'Model', [core_schema.dataclass_field('number', core_schema.int_schema())]
             ),
         ),
+        ['number'],
     )
 
     v = SchemaValidator(cs)
@@ -1093,6 +1123,7 @@ def test_function_validator_wrapping_args_schema_before() -> None:
                 'Model', [core_schema.dataclass_field('number', core_schema.int_schema())]
             ),
         ),
+        ['number'],
     )
 
     v = SchemaValidator(cs)
@@ -1127,6 +1158,7 @@ def test_function_validator_wrapping_args_schema_wrap() -> None:
                 'Model', [core_schema.dataclass_field('number', core_schema.int_schema())]
             ),
         ),
+        ['number'],
     )
 
     v = SchemaValidator(cs)
@@ -1167,6 +1199,7 @@ def test_custom_dataclass_names():
                                         core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
                                     ],
                                 ),
+                                ['a', 'b'],
                                 cls_name='FooDataclass[cls_name]',
                             ),
                             core_schema.none_schema(),
@@ -1175,6 +1208,7 @@ def test_custom_dataclass_names():
                 )
             ],
         ),
+        ['foo'],
     )
 
     v = SchemaValidator(schema)
@@ -1190,3 +1224,237 @@ def test_custom_dataclass_names():
         },
         {'input': 123, 'loc': ('foo', 'none'), 'msg': 'Input should be None', 'type': 'none_required'},
     ]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
+def test_slots() -> None:
+    @dataclasses.dataclass(slots=True)
+    class Model:
+        x: int
+
+    schema = core_schema.dataclass_schema(
+        Model,
+        core_schema.dataclass_args_schema(
+            'Model', [core_schema.dataclass_field(name='x', schema=core_schema.int_schema())]
+        ),
+        ['x'],
+        slots=True,
+    )
+
+    val = SchemaValidator(schema)
+    m: Model
+
+    m = val.validate_python({'x': 123})
+    assert m == Model(x=123)
+
+    with pytest.raises(ValidationError):
+        val.validate_python({'x': 'abc'})
+
+    val.validate_assignment(m, 'x', 456)
+    assert m.x == 456
+
+    with pytest.raises(ValidationError):
+        val.validate_assignment(m, 'x', 'abc')
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
+def test_dataclass_slots_field_before_validator():
+    @dataclasses.dataclass(slots=True)
+    class Foo:
+        a: int
+        b: str
+
+        @classmethod
+        def validate_b(cls, v: bytes, info: core_schema.FieldValidationInfo) -> bytes:
+            assert v == b'hello'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 1}
+            return b'hello world!'
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(
+                    name='b',
+                    schema=core_schema.field_before_validator_function(Foo.validate_b, core_schema.str_schema()),
+                ),
+            ],
+        ),
+        ['a', 'b'],
+        slots=True,
+    )
+
+    v = SchemaValidator(schema)
+    foo = v.validate_python({'a': 1, 'b': b'hello'})
+    assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
+def test_dataclass_slots_field_after_validator():
+    @dataclasses.dataclass(slots=True)
+    class Foo:
+        a: int
+        b: str
+
+        @classmethod
+        def validate_b(cls, v: str, info: core_schema.FieldValidationInfo) -> str:
+            assert v == 'hello'
+            assert info.field_name == 'b'
+            assert info.data == {'a': 1}
+            return 'hello world!'
+
+    schema = core_schema.dataclass_schema(
+        Foo,
+        core_schema.dataclass_args_schema(
+            'Foo',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(
+                    name='b',
+                    schema=core_schema.field_after_validator_function(Foo.validate_b, core_schema.str_schema()),
+                ),
+            ],
+        ),
+        ['a', 'b'],
+        slots=True,
+    )
+
+    v = SchemaValidator(schema)
+    foo = v.validate_python({'a': 1, 'b': b'hello'})
+    assert dataclasses.asdict(foo) == {'a': 1, 'b': 'hello world!'}
+
+
+if sys.version_info < (3, 10):
+    kwargs = {}
+else:
+    kwargs = {'slots': True}
+
+
+@dataclasses.dataclass(**kwargs)
+class FooDataclassSlots:
+    a: str
+    b: bool
+
+
+@dataclasses.dataclass(**kwargs)
+class FooDataclassSameSlots(FooDataclassSlots):
+    pass
+
+
+@dataclasses.dataclass(**kwargs)
+class FooDataclassMoreSlots(FooDataclassSlots):
+    c: str
+
+
+@dataclasses.dataclass(**kwargs)
+class DuplicateDifferentSlots:
+    a: str
+    b: bool
+
+
+@pytest.mark.parametrize(
+    'revalidate_instances,input_value,expected',
+    [
+        ('always', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
+        ('always', FooDataclassSlots(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('always', FooDataclassSameSlots(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('always', FooDataclassMoreSlots(a='hello', b=True, c='more'), {'a': 'hello', 'b': True}),
+        (
+            'always',
+            DuplicateDifferentSlots(a='hello', b=True),
+            Err('should be a dictionary or an instance of FooDataclass'),
+        ),
+        # revalidate_instances='subclass-instances'
+        ('subclass-instances', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclassSlots(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclassSlots(a=b'hello', b='true'), {'a': b'hello', 'b': 'true'}),
+        ('subclass-instances', FooDataclassSameSlots(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclassSameSlots(a=b'hello', b='true'), {'a': 'hello', 'b': True}),
+        # no error because we don't look for fields unless their in schema['fields']
+        ('subclass-instances', FooDataclassMoreSlots(a='hello', b=True, c='more'), {'a': 'hello', 'b': True}),
+        ('subclass-instances', FooDataclassSameSlots(a=b'hello', b='wrong'), Err('Input should be a valid boolean,')),
+        (
+            'subclass-instances',
+            DuplicateDifferentSlots(a='hello', b=True),
+            Err('dictionary or an instance of FooDataclass'),
+        ),
+        # revalidate_instances='never'
+        ('never', {'a': 'hello', 'b': True}, {'a': 'hello', 'b': True}),
+        ('never', FooDataclassSlots(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('never', FooDataclassSameSlots(a='hello', b=True), {'a': 'hello', 'b': True}),
+        ('never', FooDataclassMoreSlots(a='hello', b=True, c='more'), {'a': 'hello', 'b': True, 'c': 'more'}),
+        ('never', FooDataclassMoreSlots(a='hello', b='wrong', c='more'), {'a': 'hello', 'b': 'wrong', 'c': 'more'}),
+        (
+            'never',
+            DuplicateDifferentSlots(a='hello', b=True),
+            Err('should be a dictionary or an instance of FooDataclass'),
+        ),
+    ],
+)
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
+def test_slots_dataclass_subclass(revalidate_instances, input_value, expected):
+    schema = core_schema.dataclass_schema(
+        FooDataclassSlots,
+        core_schema.dataclass_args_schema(
+            'FooDataclass',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+                core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
+            ],
+            extra_behavior='forbid',
+        ),
+        ['a', 'b'],
+        revalidate_instances=revalidate_instances,
+        slots=True,
+    )
+    v = SchemaValidator(schema)
+
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=expected.message) as exc_info:
+            print(v.validate_python(input_value))
+
+        # debug(exc_info.value.errors(include_url=False))
+        if expected.errors is not None:
+            assert exc_info.value.errors(include_url=False) == expected.errors
+    else:
+        dc = v.validate_python(input_value)
+        assert dataclasses.is_dataclass(dc)
+        assert dataclasses.asdict(dc) == expected
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
+def test_slots_mixed():
+    @dataclasses.dataclass(slots=True)
+    class Model:
+        x: int
+        y: dataclasses.InitVar[str]
+        z: ClassVar[str] = 'z-classvar'
+
+    @dataclasses.dataclass
+    class SubModel(Model):
+        x2: int
+        y2: dataclasses.InitVar[str]
+        z2: ClassVar[str] = 'z2-classvar'
+
+    schema = core_schema.dataclass_schema(
+        SubModel,
+        core_schema.dataclass_args_schema(
+            'SubModel',
+            [
+                core_schema.dataclass_field(name='x', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(name='y', init_only=True, schema=core_schema.str_schema()),
+                core_schema.dataclass_field(name='x2', schema=core_schema.int_schema()),
+                core_schema.dataclass_field(name='y2', init_only=True, schema=core_schema.str_schema()),
+            ],
+        ),
+        ['x'],
+        slots=True,
+    )
+    v = SchemaValidator(schema)
+    dc = v.validate_python({'x': 1, 'y': 'a', 'x2': 2, 'y2': 'b'})
+    assert dc.x == 1
+    assert dc.x2 == 2
+    assert dataclasses.asdict(dc) == {'x': 1, 'x2': 2}
