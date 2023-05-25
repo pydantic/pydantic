@@ -2036,3 +2036,16 @@ def test_init_vars_inheritance():
             'type': 'int_parsing',
         }
     ]
+
+
+def test_init_vars_call_monkeypatch():
+    initvar_monkeypatched = hasattr(pydantic.dataclasses, '_call_initvar')
+
+    if not (3, 8) <= sys.version_info < (3, 11):
+        assert not initvar_monkeypatched
+    else:
+        assert initvar_monkeypatched
+        InitVar(int)  # this is what is produced by InitVar[int]; note monkeypatching __call__ doesn't break this
+
+        with pytest.raises(TypeError, match="'InitVar' object is not callable"):
+            InitVar[int]()
