@@ -31,7 +31,6 @@ if typing.TYPE_CHECKING:
 IGNORED_TYPES: tuple[Any, ...] = (
     FunctionType,
     property,
-    type,
     classmethod,
     staticmethod,
     PydanticDescriptorProxy,
@@ -74,6 +73,13 @@ def inspect_namespace(  # noqa C901
     ignored_names: set[str] = set()
     for var_name, value in list(namespace.items()):
         if var_name == 'model_config':
+            continue
+        elif (
+            isinstance(value, type)
+            and value.__module__ == namespace['__module__']
+            and value.__qualname__.startswith(namespace['__qualname__'])
+        ):
+            # `value` is a nested type defined in this namespace; don't error
             continue
         elif isinstance(value, all_ignored_types) or value.__class__.__module__ == 'functools':
             ignored_names.add(var_name)

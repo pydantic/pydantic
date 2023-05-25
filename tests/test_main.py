@@ -2236,3 +2236,30 @@ def test_model_get_core_schema() -> None:
             return handler(source_type)
 
     Model()
+
+
+def test_nested_types_ignored():
+    from pydantic import BaseModel
+
+    class NonNestedType:
+        pass
+
+    # Defining a nested type does not error
+    class GoodModel(BaseModel):
+        class NestedType:
+            pass
+
+        # You can still store such types on the class by annotating as a ClassVar
+        MyType: ClassVar[Type[Any]] = NonNestedType
+
+        # For documentation: you _can_ give multiple names to a nested type and it won't error:
+        # It might be better if it did, but this seems to be rare enough that I'm not concerned
+        x = NestedType
+
+    assert GoodModel.MyType is NonNestedType
+    assert GoodModel.x is GoodModel.NestedType
+
+    with pytest.raises(PydanticUserError, match='A non-annotated attribute was detected'):
+
+        class BadModel(BaseModel):
+            x = NonNestedType
