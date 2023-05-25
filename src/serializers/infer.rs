@@ -70,9 +70,10 @@ pub(crate) fn infer_to_python_known(
             let py_seq: &$t = value.downcast()?;
             let mut items = Vec::with_capacity(py_seq.len());
             let filter = AnyFilter::new();
+            let len = value.len().ok();
 
             for (index, element) in py_seq.iter().enumerate() {
-                let op_next = filter.index_filter(index, include, exclude)?;
+                let op_next = filter.index_filter(index, include, exclude, len)?;
                 if let Some((next_include, next_exclude)) = op_next {
                     items.push(infer_to_python(element, next_include, next_exclude, extra)?);
                 }
@@ -204,7 +205,7 @@ pub(crate) fn infer_to_python_known(
 
                 for (index, r) in py_seq.iter()?.enumerate() {
                     let element = r?;
-                    let op_next = filter.index_filter(index, include, exclude)?;
+                    let op_next = filter.index_filter(index, include, exclude, None)?;
                     if let Some((next_include, next_exclude)) = op_next {
                         items.push(infer_to_python(element, next_include, next_exclude, extra)?);
                     }
@@ -378,8 +379,12 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             let py_seq: &$t = value.downcast().map_err(py_err_se_err)?;
             let mut seq = serializer.serialize_seq(Some(py_seq.len()))?;
             let filter = AnyFilter::new();
+            let len = value.len().ok();
+
             for (index, element) in py_seq.iter().enumerate() {
-                let op_next = filter.index_filter(index, include, exclude).map_err(py_err_se_err)?;
+                let op_next = filter
+                    .index_filter(index, include, exclude, len)
+                    .map_err(py_err_se_err)?;
                 if let Some((next_include, next_exclude)) = op_next {
                     let item_serializer = SerializeInfer::new(element, next_include, next_exclude, extra);
                     seq.serialize_element(&item_serializer)?
@@ -502,7 +507,9 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             let filter = AnyFilter::new();
             for (index, r) in py_seq.iter().map_err(py_err_se_err)?.enumerate() {
                 let element = r.map_err(py_err_se_err)?;
-                let op_next = filter.index_filter(index, include, exclude).map_err(py_err_se_err)?;
+                let op_next = filter
+                    .index_filter(index, include, exclude, None)
+                    .map_err(py_err_se_err)?;
                 if let Some((next_include, next_exclude)) = op_next {
                     let item_serializer = SerializeInfer::new(element, next_include, next_exclude, extra);
                     seq.serialize_element(&item_serializer)?
