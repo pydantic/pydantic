@@ -18,6 +18,7 @@ pub struct GeneratorValidator {
     min_length: Option<usize>,
     max_length: Option<usize>,
     name: String,
+    hide_input_in_errors: bool,
 }
 
 impl BuildValidator for GeneratorValidator {
@@ -33,11 +34,15 @@ impl BuildValidator for GeneratorValidator {
             Some(ref v) => format!("{}[{}]", Self::EXPECTED_TYPE, v.get_name()),
             None => format!("{}[any]", Self::EXPECTED_TYPE),
         };
+        let hide_input_in_errors: bool = config
+            .get_as(pyo3::intern!(schema.py(), "hide_input_in_errors"))?
+            .unwrap_or(false);
         Ok(Self {
             item_validator,
             name,
             min_length: schema.get_as(pyo3::intern!(schema.py(), "min_length"))?,
             max_length: schema.get_as(pyo3::intern!(schema.py(), "max_length"))?,
+            hide_input_in_errors,
         }
         .into())
     }
@@ -53,16 +58,24 @@ impl Validator for GeneratorValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let iterator = input.validate_iter()?;
-        let validator = self
-            .item_validator
-            .as_ref()
-            .map(|v| InternalValidator::new(py, "ValidatorIterator", v, definitions, extra, recursion_guard));
+        let validator = self.item_validator.as_ref().map(|v| {
+            InternalValidator::new(
+                py,
+                "ValidatorIterator",
+                v,
+                definitions,
+                extra,
+                recursion_guard,
+                self.hide_input_in_errors,
+            )
+        });
 
         let v_iterator = ValidatorIterator {
             iterator,
             validator,
             min_length: self.min_length,
             max_length: self.max_length,
+            hide_input_in_errors: self.hide_input_in_errors,
         };
         Ok(v_iterator.into_py(py))
     }
@@ -98,6 +111,7 @@ struct ValidatorIterator {
     validator: Option<InternalValidator>,
     min_length: Option<usize>,
     max_length: Option<usize>,
+    hide_input_in_errors: bool,
 }
 
 #[pymethods]
@@ -109,6 +123,7 @@ impl ValidatorIterator {
     fn __next__(mut slf: PyRefMut<'_, Self>, py: Python) -> PyResult<Option<PyObject>> {
         let min_length = slf.min_length;
         let max_length = slf.max_length;
+        let hide_input_in_errors = slf.hide_input_in_errors;
         let Self {
             validator, iterator, ..
         } = &mut *slf;
@@ -133,6 +148,7 @@ impl ValidatorIterator {
                                         ErrorMode::Python,
                                         val_error,
                                         None,
+                                        hide_input_in_errors,
                                     ));
                                 }
                             }
@@ -157,6 +173,7 @@ impl ValidatorIterator {
                                     ErrorMode::Python,
                                     val_error,
                                     None,
+                                    hide_input_in_errors,
                                 ));
                             }
                         }
@@ -203,6 +220,7 @@ pub struct InternalValidator {
     self_instance: Option<PyObject>,
     recursion_guard: RecursionGuard,
     validation_mode: InputType,
+    hide_input_in_errors: bool,
 }
 
 impl fmt::Debug for InternalValidator {
@@ -219,6 +237,7 @@ impl InternalValidator {
         definitions: &[CombinedValidator],
         extra: &Extra,
         recursion_guard: &RecursionGuard,
+        hide_input_in_errors: bool,
     ) -> Self {
         Self {
             name: name.to_string(),
@@ -230,6 +249,7 @@ impl InternalValidator {
             self_instance: extra.self_instance.map(|d| d.into_py(py)),
             recursion_guard: recursion_guard.clone(),
             validation_mode: extra.mode,
+            hide_input_in_errors,
         }
     }
 
@@ -261,7 +281,14 @@ impl InternalValidator {
                 &mut self.recursion_guard,
             )
             .map_err(|e| {
-                ValidationError::from_val_error(py, self.name.to_object(py), ErrorMode::Python, e, outer_location)
+                ValidationError::from_val_error(
+                    py,
+                    self.name.to_object(py),
+                    ErrorMode::Python,
+                    e,
+                    outer_location,
+                    self.hide_input_in_errors,
+                )
             })
     }
 
@@ -286,7 +313,14 @@ impl InternalValidator {
         self.validator
             .validate(py, input, &extra, &self.definitions, &mut self.recursion_guard)
             .map_err(|e| {
-                ValidationError::from_val_error(py, self.name.to_object(py), ErrorMode::Python, e, outer_location)
+                ValidationError::from_val_error(
+                    py,
+                    self.name.to_object(py),
+                    ErrorMode::Python,
+                    e,
+                    outer_location,
+                    self.hide_input_in_errors,
+                )
             })
     }
 }

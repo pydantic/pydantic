@@ -140,7 +140,8 @@ impl SchemaError {
         match error {
             ValError::LineErrors(raw_errors) => {
                 let line_errors = raw_errors.into_iter().map(|e| e.into_py(py)).collect();
-                let validation_error = ValidationError::new(line_errors, "Schema".to_object(py), ErrorMode::Python);
+                let validation_error =
+                    ValidationError::new(line_errors, "Schema".to_object(py), ErrorMode::Python, false);
                 let schema_error = SchemaError(SchemaErrorEnum::ValidationError(validation_error));
                 match Py::new(py, schema_error) {
                     Ok(err) => PyErr::from_value(err.into_ref(py)),
@@ -177,21 +178,21 @@ impl SchemaError {
     fn errors(&self, py: Python) -> PyResult<Py<PyList>> {
         match &self.0 {
             SchemaErrorEnum::Message(_) => Ok(PyList::empty(py).into_py(py)),
-            SchemaErrorEnum::ValidationError(error) => error.errors(py, false, true),
+            SchemaErrorEnum::ValidationError(error) => error.errors(py, false, false),
         }
     }
 
     fn __str__(&self, py: Python) -> String {
         match &self.0 {
             SchemaErrorEnum::Message(message) => message.to_owned(),
-            SchemaErrorEnum::ValidationError(error) => error.display(py, Some("Invalid Schema:")),
+            SchemaErrorEnum::ValidationError(error) => error.display(py, Some("Invalid Schema:"), false),
         }
     }
 
     fn __repr__(&self, py: Python) -> String {
         match &self.0 {
             SchemaErrorEnum::Message(message) => format!("SchemaError({message:?})"),
-            SchemaErrorEnum::ValidationError(error) => error.display(py, Some("Invalid Schema:")),
+            SchemaErrorEnum::ValidationError(error) => error.display(py, Some("Invalid Schema:"), false),
         }
     }
 }

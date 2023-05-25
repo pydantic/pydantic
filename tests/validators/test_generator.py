@@ -37,6 +37,20 @@ def test_generator_json_int(py_and_json: PyAndJson, input_value, expected):
 
 
 @pytest.mark.parametrize(
+    'config,input_str',
+    (
+        ({}, 'type=iterable_type, input_value=5, input_type=int'),
+        ({'hide_input_in_errors': False}, 'type=iterable_type, input_value=5, input_type=int'),
+        ({'hide_input_in_errors': True}, 'type=iterable_type'),
+    ),
+)
+def test_generator_json_hide_input(py_and_json: PyAndJson, config, input_str):
+    v = py_and_json({'type': 'generator', 'items_schema': {'type': 'int'}}, config)
+    with pytest.raises(ValidationError, match=re.escape(f'Input should be iterable [{input_str}]')):
+        list(v.validate_test(5))
+
+
+@pytest.mark.parametrize(
     'input_value,expected',
     [
         ([1, 2, 3], [1, 2, 3]),

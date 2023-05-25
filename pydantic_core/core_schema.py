@@ -51,6 +51,8 @@ class CoreConfig(TypedDict, total=False):
     # the config options are used to customise serialization to JSON
     ser_json_timedelta: Literal['iso8601', 'float']  # default: 'iso8601'
     ser_json_bytes: Literal['utf8', 'base64']  # default: 'utf8'
+    # used to hide input data from ValidationError repr
+    hide_input_in_errors: bool
 
 
 IncExCall: TypeAlias = 'set[int | str] | dict[int | str, IncExCall] | None'

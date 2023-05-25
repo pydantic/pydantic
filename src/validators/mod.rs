@@ -65,6 +65,7 @@ pub struct SchemaValidator {
     schema: PyObject,
     #[pyo3(get)]
     title: PyObject,
+    hide_input_in_errors: bool,
 }
 
 #[pymethods]
@@ -90,11 +91,13 @@ impl SchemaValidator {
             Some(t) => t.into_py(py),
             None => validator.get_name().into_py(py),
         };
+        let hide_input_in_errors: bool = config.get_as(intern!(py, "hide_input_in_errors"))?.unwrap_or(false);
         Ok(Self {
             validator,
             definitions,
             schema: schema.into_py(py),
             title,
+            hide_input_in_errors,
         })
     }
 
@@ -227,7 +230,14 @@ impl SchemaValidator {
     }
 
     fn prepare_validation_err(&self, py: Python, error: ValError, error_mode: ErrorMode) -> PyErr {
-        ValidationError::from_val_error(py, self.title.clone_ref(py), error_mode, error, None)
+        ValidationError::from_val_error(
+            py,
+            self.title.clone_ref(py),
+            error_mode,
+            error,
+            None,
+            self.hide_input_in_errors,
+        )
     }
 }
 
@@ -283,6 +293,7 @@ impl<'py> SelfValidator<'py> {
             definitions,
             schema: py.None(),
             title: "Self Schema".into_py(py),
+            hide_input_in_errors: false,
         })
     }
 }

@@ -115,3 +115,25 @@ def test_allow_inf_nan(config: CoreConfig, float_field_schema, input_value, expe
     else:
         output_dict = v.validate_python(input_value)
         assert output_dict == expected
+
+
+@pytest.mark.parametrize(
+    'config,input_str',
+    (
+        ({}, 'type=string_type, input_value=123, input_type=int'),
+        ({'hide_input_in_errors': False}, 'type=string_type, input_value=123, input_type=int'),
+        ({'hide_input_in_errors': True}, 'type=string_type'),
+    ),
+)
+def test_hide_input_in_errors(config, input_str):
+    v = SchemaValidator(
+        {
+            'type': 'model',
+            'cls': MyModel,
+            'schema': {'type': 'model-fields', 'fields': {'f': {'type': 'model-field', 'schema': {'type': 'str'}}}},
+        },
+        config,
+    )
+
+    with pytest.raises(ValidationError, match=re.escape(f'Input should be a valid string [{input_str}]')):
+        assert v.validate_python({'f': 123})
