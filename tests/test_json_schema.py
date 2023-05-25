@@ -757,7 +757,7 @@ def test_list_union_dict(field_type, expected_schema):
         (datetime, {'type': 'string', 'format': 'date-time'}),
         (date, {'type': 'string', 'format': 'date'}),
         (time, {'type': 'string', 'format': 'time'}),
-        (timedelta, {'type': 'number', 'format': 'time-delta'}),
+        (timedelta, {'type': 'string', 'format': 'duration'}),
     ],
 )
 def test_date_types(field_type, expected_schema):
