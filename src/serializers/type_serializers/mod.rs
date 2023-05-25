@@ -35,6 +35,4 @@ pub(self) use super::infer::{
     infer_to_python_known,
 };
 pub(self) use super::ob_type::{IsType, ObType};
-pub(self) use super::shared::{
-    object_to_dict, to_json_bytes, BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer,
-};
+pub(self) use super::shared::{to_json_bytes, BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer};

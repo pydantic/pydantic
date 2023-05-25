@@ -2,8 +2,9 @@ use std::borrow::Cow;
 use std::fmt::Debug;
 
 use pyo3::exceptions::PyTypeError;
+use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PySet};
+use pyo3::types::{PyDict, PyString};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
 use enum_dispatch::enum_dispatch;
@@ -95,7 +96,6 @@ combined_serializer! {
         super::type_serializers::other::CallableBuilder;
         super::type_serializers::definitions::DefinitionsSerializerBuilder;
         super::type_serializers::dataclass::DataclassArgsBuilder;
-        super::type_serializers::dataclass::DataclassBuilder;
         super::type_serializers::function::FunctionBeforeSerializerBuilder;
         super::type_serializers::function::FunctionAfterSerializerBuilder;
         super::type_serializers::function::FunctionPlainSerializerBuilder;
@@ -123,6 +123,7 @@ combined_serializer! {
         Generator: super::type_serializers::generator::GeneratorSerializer;
         Dict: super::type_serializers::dict::DictSerializer;
         Model: super::type_serializers::model::ModelSerializer;
+        Dataclass: super::type_serializers::dataclass::DataclassSerializer;
         Url: super::type_serializers::url::UrlSerializer;
         MultiHostUrl: super::type_serializers::url::MultiHostUrlSerializer;
         Any: super::type_serializers::any::AnySerializer;
@@ -327,21 +328,29 @@ pub(crate) fn to_json_bytes(
     Ok(bytes)
 }
 
-pub(super) fn object_to_dict<'py>(value: &'py PyAny, is_model: bool, extra: &Extra) -> PyResult<&'py PyDict> {
-    let py = value.py();
-    let attr = value.getattr(intern!(py, "__dict__"))?;
-    let attrs: &PyDict = attr.downcast()?;
-    if is_model && extra.exclude_unset {
-        let fields_set: &PySet = value.getattr(intern!(py, "__pydantic_fields_set__"))?.downcast()?;
+static DC_FIELD_MARKER: GILOnceCell<PyObject> = GILOnceCell::new();
 
-        let new_attrs = attrs.copy()?;
-        for key in new_attrs.keys() {
-            if !fields_set.contains(key)? {
-                new_attrs.del_item(key)?;
-            }
+/// needed to match the logic from dataclasses.fields `tuple(f for f in fields.values() if f._field_type is _FIELD)`
+pub(super) fn get_field_marker(py: Python<'_>) -> PyResult<&PyAny> {
+    let field_type_marker_obj = DC_FIELD_MARKER.get_or_try_init(py, || {
+        let field_ = py.import("dataclasses")?.getattr("_FIELD")?;
+        Ok::<PyObject, PyErr>(field_.into_py(py))
+    })?;
+    Ok(field_type_marker_obj.as_ref(py))
+}
+
+pub(super) fn dataclass_to_dict(dc: &PyAny) -> PyResult<&PyDict> {
+    let py = dc.py();
+    let dc_fields: &PyDict = dc.getattr(intern!(py, "__dataclass_fields__"))?.downcast()?;
+    let dict = PyDict::new(py);
+
+    let field_type_marker = get_field_marker(py)?;
+    for (field_name, field) in dc_fields.iter() {
+        let field_type = field.getattr(intern!(py, "_field_type"))?;
+        if field_type.is(field_type_marker) {
+            let field_name: &PyString = field_name.downcast()?;
+            dict.set_item(field_name, dc.getattr(field_name)?)?;
         }
-        Ok(new_attrs)
-    } else {
-        Ok(attrs)
     }
+    Ok(dict)
 }

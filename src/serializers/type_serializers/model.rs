@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyString, PyType};
+use pyo3::types::{PyDict, PySet, PyString, PyType};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
 use ahash::AHashMap;
@@ -10,9 +10,9 @@ use crate::build_tools::{py_error_type, ExtraBehavior, SchemaDict};
 use crate::definitions::DefinitionsBuilder;
 
 use super::{
-    infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, object_to_dict, py_err_se_err,
-    BuildSerializer, CombinedSerializer, ComputedFields, Extra, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck,
-    SerField, TypeSerializer,
+    infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer,
+    CombinedSerializer, ComputedFields, Extra, FieldsMode, GeneralFieldsSerializer, ObType, SerCheck, SerField,
+    TypeSerializer,
 };
 
 const ROOT_FIELD: &str = "root";
@@ -116,16 +116,28 @@ impl ModelSerializer {
         }
     }
 
-    fn get_inner_value<'py>(&self, value: &'py PyAny, extra: &Extra) -> PyResult<&'py PyAny> {
-        let py = value.py();
-        let dict = object_to_dict(value, true, extra)?;
+    fn get_inner_value<'py>(&self, model: &'py PyAny, extra: &Extra) -> PyResult<&'py PyAny> {
+        let py = model.py();
+        let mut attrs: &PyDict = model.getattr(intern!(py, "__dict__"))?.downcast()?;
+
+        if extra.exclude_unset {
+            let fields_set: &PySet = model.getattr(intern!(py, "__pydantic_fields_set__"))?.downcast()?;
+
+            let new_attrs = attrs.copy()?;
+            for key in new_attrs.keys() {
+                if !fields_set.contains(key)? {
+                    new_attrs.del_item(key)?;
+                }
+            }
+            attrs = new_attrs;
+        }
 
         if self.has_extra {
-            let model_extra = value.getattr(intern!(py, "__pydantic_extra__"))?;
-            let py_tuple = (dict, model_extra).to_object(py);
+            let model_extra = model.getattr(intern!(py, "__pydantic_extra__"))?;
+            let py_tuple = (attrs, model_extra).to_object(py);
             Ok(py_tuple.into_ref(py))
         } else {
-            Ok(dict)
+            Ok(attrs)
         }
     }
 }
