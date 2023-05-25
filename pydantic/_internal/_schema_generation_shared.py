@@ -87,13 +87,16 @@ class UnpackedRefJsonSchemaHandler(GetJsonSchemaHandler):
         if self.original_schema is None:
             # handler / our __call__ was never called
             return schema
-        original_schema = self.resolve_ref_schema(self.original_schema)
-        if original_schema is not self.original_schema and schema is not original_schema:
-            # a new schema was returned
-            original_schema.clear()
-            original_schema.update(schema)
-        # return self.original_schema, which may be a ref schema
-        return self.original_schema
+        if '$ref' in self.original_schema:
+            original_referenced_schema = self.resolve_ref_schema(self.original_schema)
+            if schema != original_referenced_schema:
+                # a new schema was returned, update the non-ref schema
+                original_referenced_schema.clear()
+                original_referenced_schema.update(schema)
+            # return self.original_schema, which may be a ref schema
+            return self.original_schema
+        # not a ref schema, return the new schema
+        return schema
 
 
 def wrap_json_schema_fn_for_model_or_custom_type_with_ref_unpacking(
