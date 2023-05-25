@@ -1479,7 +1479,8 @@ def test_cyclic_reference_dataclass(create_module):
     assert isinstance(D1.__pydantic_validator__, SchemaValidator)
     assert isinstance(D2.__pydantic_validator__, SchemaValidator)
 
-    assert TypeAdapter(D1).dump_python(instance) == {'d2': {'d1': {'d2': {'d1': {'d2': None}}}}}
+    adapter = TypeAdapter(D1)
+    assert adapter.dump_python(instance) == {'d2': {'d1': {'d2': {'d1': {'d2': None}}}}}
 
     with pytest.raises(ValidationError) as exc_info:
         D2(d1=D2())
@@ -1494,7 +1495,8 @@ def test_cyclic_reference_dataclass(create_module):
     ]
 
     with pytest.raises(ValidationError) as exc_info:
-        TypeAdapter(D1).validate_python(dict(d2=dict(d1=dict(d2=dict(d2=dict())))))
+        m = adapter.validate_python(dict(d2=dict(d1=dict(d2=dict(d2=dict())))))
+        print(m)
     assert exc_info.value.errors(include_url=False) == [
         {
             'input': {},

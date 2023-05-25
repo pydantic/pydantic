@@ -108,8 +108,11 @@ class TypeAdapter(Generic[T]):
         core_schema: CoreSchema
         try:
             # look in __type.__dict__ to make sure we don't get the core schema of a parent class
-            core_schema = __type.__dict__['__pydantic_core_schema__']
-        except KeyError:
+            if hasattr(__type, '__dict__'):
+                core_schema = __type.__dict__['__pydantic_core_schema__']
+            else:
+                core_schema = __type.__pydantic_core_schema__
+        except (KeyError, AttributeError):
             core_schema = _get_schema(__type, config_wrapper, parent_depth=_parent_depth + 1)
 
         core_schema = flatten_schema_defs(core_schema)
