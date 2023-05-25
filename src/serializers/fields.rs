@@ -6,6 +6,7 @@ use pyo3::types::{PyDict, PyString};
 use ahash::AHashMap;
 use serde::ser::SerializeMap;
 
+use crate::serializers::extra::SerCheck;
 use crate::PydanticSerializationUnexpectedValue;
 
 use super::computed_fields::ComputedFields;
@@ -75,7 +76,7 @@ fn exclude_default(value: &PyAny, extra: &Extra, serializer: &CombinedSerializer
     Ok(false)
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Eq, PartialEq)]
 pub(super) enum FieldsMode {
     // typeddict with no extra items
     SimpleDict,
@@ -196,10 +197,10 @@ impl TypeSerializer for GeneralFieldsSerializer {
                     if field.required {
                         used_req_fields += 1;
                     }
-                } else if matches!(self.mode, FieldsMode::TypedDictAllow) {
+                } else if self.mode == FieldsMode::TypedDictAllow {
                     let value = infer_to_python(value, next_include, next_exclude, &extra)?;
                     output_dict.set_item(key, value)?;
-                } else if extra.check.enabled() {
+                } else if extra.check == SerCheck::Strict {
                     return Err(PydanticSerializationUnexpectedValue::new_err(None));
                 }
             }
@@ -281,11 +282,12 @@ impl TypeSerializer for GeneralFieldsSerializer {
                             map.serialize_entry(&output_key, &s)?;
                         }
                     }
-                } else if matches!(self.mode, FieldsMode::TypedDictAllow) {
+                } else if self.mode == FieldsMode::TypedDictAllow {
                     let output_key = infer_json_key(key, &extra).map_err(py_err_se_err)?;
                     let s = SerializeInfer::new(value, next_include, next_exclude, &extra);
                     map.serialize_entry(&output_key, &s)?
                 }
+                // no error case here since unions (which need the error case) use `to_python(..., mode='json')`
             }
         }
         // this is used to include `__pydantic_extra__` in serialization on models

@@ -1,3 +1,4 @@
+import dataclasses
 import json
 import re
 
@@ -179,9 +180,6 @@ def test_typed_dict_literal():
 
 
 def test_typed_dict_missing():
-    """
-    TODO, needs tests for each case
-    """
     s = SchemaSerializer(
         core_schema.union_schema(
             [
@@ -189,7 +187,9 @@ def test_typed_dict_missing():
                 core_schema.typed_dict_schema(
                     dict(
                         foo=core_schema.typed_dict_field(
-                            core_schema.int_schema(serialization=core_schema.format_ser_schema('04d'))
+                            core_schema.int_schema(
+                                serialization=core_schema.format_ser_schema('04d', when_used='always')
+                            )
                         ),
                         bar=core_schema.typed_dict_field(core_schema.int_schema()),
                     )
@@ -201,7 +201,8 @@ def test_typed_dict_missing():
     assert s.to_python(dict(foo=1)) == {'foo': 1}
     assert s.to_python(dict(foo=1), mode='json') == {'foo': 1}
     assert s.to_json(dict(foo=1)) == b'{"foo":1}'
-    assert s.to_python(dict(foo=1, bar=2)) == {'foo': 1, 'bar': 2}
+
+    assert s.to_python(dict(foo=1, bar=2)) == {'foo': '0001', 'bar': 2}
     assert s.to_python(dict(foo=1, bar=2), mode='json') == {'foo': '0001', 'bar': 2}
     assert s.to_json(dict(foo=1, bar=2)) == b'{"foo":"0001","bar":2}'
 
@@ -269,3 +270,93 @@ def test_typed_dict_different_fields():
     assert s.to_python(dict(spam=1, ham=2)) == {'spam': 1, 'ham': 2}
     assert s.to_python(dict(spam=1, ham=2), mode='json') == {'spam': 1, 'ham': '0002'}
     assert s.to_json(dict(spam=1, ham=2)) == b'{"spam":1,"ham":"0002"}'
+
+
+def test_dataclass_union():
+    @dataclasses.dataclass
+    class BaseUser:
+        name: str
+
+    @dataclasses.dataclass
+    class User(BaseUser):
+        surname: str
+
+    @dataclasses.dataclass
+    class DBUser(User):
+        password_hash: str
+
+    @dataclasses.dataclass
+    class Item:
+        name: str
+        price: float
+
+    user_schema = core_schema.dataclass_schema(
+        User,
+        core_schema.dataclass_args_schema(
+            'User',
+            [
+                core_schema.dataclass_field(name='name', schema=core_schema.str_schema()),
+                core_schema.dataclass_field(name='surname', schema=core_schema.str_schema()),
+            ],
+        ),
+        ['name', 'surname'],
+    )
+    item_schema = core_schema.dataclass_schema(
+        Item,
+        core_schema.dataclass_args_schema(
+            'Item',
+            [
+                core_schema.dataclass_field(name='name', schema=core_schema.str_schema()),
+                core_schema.dataclass_field(name='price', schema=core_schema.float_schema()),
+            ],
+        ),
+        ['name', 'price'],
+    )
+    s = SchemaSerializer(core_schema.union_schema([user_schema, item_schema]))
+    assert s.to_python(User(name='foo', surname='bar')) == {'name': 'foo', 'surname': 'bar'}
+    assert s.to_python(DBUser(name='foo', surname='bar', password_hash='x')) == {'name': 'foo', 'surname': 'bar'}
+    assert s.to_json(DBUser(name='foo', surname='bar', password_hash='x')) == b'{"name":"foo","surname":"bar"}'
+
+
+def test_model_union():
+    class BaseUser:
+        def __init__(self, name: str):
+            self.name = name
+
+    class User(BaseUser):
+        def __init__(self, name: str, surname: str):
+            super().__init__(name)
+            self.surname = surname
+
+    class DBUser(User):
+        def __init__(self, name: str, surname: str, password_hash: str):
+            super().__init__(name, surname)
+            self.password_hash = password_hash
+
+    class Item:
+        def __init__(self, name: str, price: float):
+            self.name = name
+            self.price = price
+
+    user_schema = core_schema.model_schema(
+        User,
+        core_schema.model_fields_schema(
+            {
+                'name': core_schema.model_field(schema=core_schema.str_schema()),
+                'surname': core_schema.model_field(schema=core_schema.str_schema()),
+            }
+        ),
+    )
+    item_schema = core_schema.model_schema(
+        Item,
+        core_schema.model_fields_schema(
+            {
+                'name': core_schema.model_field(schema=core_schema.str_schema()),
+                'price': core_schema.model_field(schema=core_schema.float_schema()),
+            }
+        ),
+    )
+    s = SchemaSerializer(core_schema.union_schema([user_schema, item_schema]))
+    assert s.to_python(User(name='foo', surname='bar')) == {'name': 'foo', 'surname': 'bar'}
+    assert s.to_python(DBUser(name='foo', surname='bar', password_hash='x')) == {'name': 'foo', 'surname': 'bar'}
+    assert s.to_json(DBUser(name='foo', surname='bar', password_hash='x')) == b'{"name":"foo","surname":"bar"}'
