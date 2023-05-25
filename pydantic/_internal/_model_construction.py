@@ -18,6 +18,7 @@ from ._decorators import ComputedFieldInfo, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_model_typevars_map
+from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
@@ -30,7 +31,6 @@ if typing.TYPE_CHECKING:
 IGNORED_TYPES: tuple[Any, ...] = (
     FunctionType,
     property,
-    type,
     classmethod,
     staticmethod,
     PydanticDescriptorProxy,
@@ -73,6 +73,13 @@ def inspect_namespace(  # noqa C901
     ignored_names: set[str] = set()
     for var_name, value in list(namespace.items()):
         if var_name == 'model_config':
+            continue
+        elif (
+            isinstance(value, type)
+            and value.__module__ == namespace['__module__']
+            and value.__qualname__.startswith(namespace['__qualname__'])
+        ):
+            # `value` is a nested type defined in this namespace; don't error
             continue
         elif isinstance(value, all_ignored_types) or value.__class__.__module__ == 'functools':
             ignored_names.add(var_name)
@@ -170,10 +177,12 @@ def complete_model_class(
         types_namespace,
         typevars_map,
     )
+    handler = CallbackGetCoreSchemaHandler(
+        partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
+        gen_schema.generate_schema,
+    )
     try:
-        schema = cls.__get_pydantic_core_schema__(
-            cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False)
-        )
+        schema = cls.__get_pydantic_core_schema__(cls, handler)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise

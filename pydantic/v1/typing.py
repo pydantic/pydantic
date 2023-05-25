@@ -1,4 +1,5 @@
 import sys
+import typing
 from collections.abc import Callable
 from os import PathLike
 from typing import (  # type: ignore
@@ -89,6 +90,11 @@ AnyArgTCallable = TypingCallable[..., _T]
 # Annotated[...] is implemented by returning an instance of one of these classes, depending on
 # python/typing_extensions version.
 AnnotatedTypeNames = {'AnnotatedMeta', '_AnnotatedAlias'}
+
+
+LITERAL_TYPES: Set[Any] = {Literal}
+if hasattr(typing, 'Literal'):
+    LITERAL_TYPES.add(typing.Literal)
 
 
 if sys.version_info < (3, 8):
@@ -271,7 +277,13 @@ if TYPE_CHECKING:
     MappingIntStrAny = Mapping[IntStr, Any]
     CallableGenerator = Generator[AnyCallable, None, None]
     ReprArgs = Sequence[Tuple[Optional[str], Any]]
-    AnyClassMethod = classmethod[Any]
+
+    MYPY = False
+    if MYPY:
+        AnyClassMethod = classmethod[Any]
+    else:
+        # classmethod[TargetType, CallableParamSpecType, CallableReturnType]
+        AnyClassMethod = classmethod[Any, Any, Any]
 
 __all__ = (
     'AnyCallable',
@@ -348,10 +360,7 @@ elif sys.version_info[:2] == (3, 8):
 else:
 
     def is_none_type(type_: Any) -> bool:
-        for none_type in NONE_TYPES:
-            if type_ is none_type:
-                return True
-        return False
+        return type_ in NONE_TYPES
 
 
 def display_as_type(v: Type[Any]) -> str:
@@ -409,7 +418,7 @@ def is_callable_type(type_: Type[Any]) -> bool:
 
 
 def is_literal_type(type_: Type[Any]) -> bool:
-    return Literal is not None and get_origin(type_) is Literal
+    return Literal is not None and get_origin(type_) in LITERAL_TYPES
 
 
 def literal_values(type_: Type[Any]) -> Tuple[Any, ...]:

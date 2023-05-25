@@ -1107,7 +1107,13 @@ class ModelField(Representation):
         assert self.discriminator_alias is not None
 
         try:
-            discriminator_value = v[self.discriminator_alias]
+            try:
+                discriminator_value = v[self.discriminator_alias]
+            except KeyError:
+                if self.model_config.allow_population_by_field_name:
+                    discriminator_value = v[self.discriminator_key]
+                else:
+                    raise
         except KeyError:
             return v, ErrorWrapper(MissingDiscriminator(discriminator_key=self.discriminator_key), loc)
         except TypeError:

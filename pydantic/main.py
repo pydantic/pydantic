@@ -10,7 +10,7 @@ from copy import copy, deepcopy
 from inspect import getdoc
 from pathlib import Path
 from types import prepare_class, resolve_bases
-from typing import Any, Callable, Generic, Mapping, Tuple, cast
+from typing import Any, Generic, Mapping, Tuple, cast
 
 import pydantic_core
 import typing_extensions
@@ -28,6 +28,7 @@ from ._internal import (
 )
 from ._internal._fields import Undefined
 from ._migration import getattr_migration
+from .annotated import GetCoreSchemaHandler
 from .config import ConfigDict
 from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
@@ -306,9 +307,7 @@ class BaseModel(metaclass=ModelMetaclass):
     __init__.__pydantic_base_init__ = True  # type: ignore
 
     @classmethod
-    def __get_pydantic_core_schema__(
-        cls, __source: type[BaseModel], __handler: Callable[[Any], CoreSchema]
-    ) -> CoreSchema:
+    def __get_pydantic_core_schema__(cls, __source: type[BaseModel], __handler: GetCoreSchemaHandler) -> CoreSchema:
         """Hook into generating the model's CoreSchema.
 
         Args:
@@ -1271,6 +1270,10 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
         __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 
     __init__.__pydantic_base_init__ = True  # type: ignore
+
+    @classmethod
+    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
+        return super().model_construct(root=root, _fields_set=_fields_set)
 
     def __repr_args__(self) -> _repr.ReprArgs:
         yield 'root', self.root

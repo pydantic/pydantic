@@ -532,10 +532,7 @@ class GenerateJsonSchema:
         Returns:
             JsonSchemaValue: The generated JSON schema.
         """
-        # It's weird that this schema has 'type': 'number' but also specifies a 'format'.
-        # TODO: Probably should just change this to str (look at readme intro for speeddate)
-        #   Issue: https://github.com/pydantic/pydantic/issues/5034
-        return {'type': 'number', 'format': 'time-delta'}
+        return {'type': 'string', 'format': 'duration'}
 
     def literal_schema(self, schema: core_schema.LiteralSchema) -> JsonSchemaValue:
         """

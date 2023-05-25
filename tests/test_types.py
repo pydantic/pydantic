@@ -100,7 +100,7 @@ from pydantic import (
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, SecretField, SkipValidation, Strict, TransformSchema
+from pydantic.types import AllowInfNan, ImportString, InstanceOf, SecretField, SkipValidation, Strict, TransformSchema
 
 try:
     import email_validator
@@ -2526,7 +2526,11 @@ def test_strict_bool():
 
 def test_strict_int():
     class Model(BaseModel):
-        v: StrictInt
+        # In pydantic-core 0.34.0 at least there are only overflows if there
+        # are constraints (otherwise Python ints are not checked at all)
+        # So the only reason the constraint is here is to avoid short circuiting
+        # and doing nothing internally
+        v: Annotated[StrictInt, annotated_types.Ge(0)]
 
     assert Model(v=123456).v == 123456
 
@@ -2536,7 +2540,9 @@ def test_strict_int():
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=3.14159)
 
-    with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
+    with pytest.raises(
+        ValidationError, match=r'Input integer too large to convert to 64-bit integer \[type=int_overflow,'
+    ):
         Model(v=2**64)
 
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
@@ -5171,3 +5177,52 @@ def test_iterable_arbitrary_type():
 
         class Model(BaseModel):
             x: CustomIterable
+
+
+def test_typing_extension_literal_field():
+    from typing_extensions import Literal
+
+    class Model(BaseModel):
+        foo: Literal['foo']
+
+    assert Model(foo='foo').foo == 'foo'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='`typing.Literal` is available for python 3.8 and above.')
+def test_typing_literal_field():
+    from typing import Literal
+
+    class Model(BaseModel):
+        foo: Literal['foo']
+
+    assert Model(foo='foo').foo == 'foo'
+
+
+def test_is_instance_annotation():
+    class Model(BaseModel):
+        x: InstanceOf[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
+
+    class MyList(list):
+        pass
+
+    assert Model(x='abc').x == 'abc'
+    assert type(Model(x=MyList([1, 2, 3])).x) is MyList
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=1)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'class': 'Sequence'},
+            'input': 1,
+            'loc': ('x',),
+            'msg': 'Input should be an instance of Sequence',
+            'type': 'is_instance_of',
+        }
+    ]
+
+    assert Model.model_validate_json('{"x": [1,2,3]}').x == [1, 2, 3]
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_json('{"x": "abc"}')
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 'abc', 'loc': ('x',), 'msg': 'Input should be a valid array', 'type': 'list_type'}
+    ]

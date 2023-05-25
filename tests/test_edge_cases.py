@@ -599,7 +599,6 @@ def test_include_exclude_defaults():
     assert m.model_dump(exclude=['a'], exclude_unset=True) == {'b': 2, 'e': 5, 'f': 7}
 
 
-@pytest.mark.xfail(reason='pydantic-core include/exclude does not wrap negative ints')
 def test_advanced_exclude():
     class SubSubModel(BaseModel):
         a: str
@@ -622,7 +621,6 @@ def test_advanced_exclude():
     assert m.model_dump(exclude={'e': ..., 'f': {'d'}}) == {'f': {'c': 'foo'}}
 
 
-@pytest.mark.xfail(reason='pydantic-core include/exclude does not wrap negative ints')
 def test_advanced_exclude_by_alias():
     class SubSubModel(BaseModel):
         a: str
@@ -651,7 +649,6 @@ def test_advanced_exclude_by_alias():
     assert m.model_dump(exclude=excludes, by_alias=True) == {'f_alias': {'c_alias': 'foo'}}
 
 
-@pytest.mark.xfail(reason='pydantic-core include/exclude does not wrap negative ints')
 def test_advanced_value_include():
     class SubSubModel(BaseModel):
         a: str
@@ -672,7 +669,6 @@ def test_advanced_value_include():
     assert m.model_dump(include={'f': {'d': {0: ..., -1: {'b'}}}}) == {'f': {'d': [{'a': 'a', 'b': 'b'}, {'b': 'e'}]}}
 
 
-@pytest.mark.xfail(reason='pydantic-core include/exclude does not wrap negative ints')
 def test_advanced_value_exclude_include():
     class SubSubModel(BaseModel):
         a: str

@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
-from pydantic import BaseModel, RootModel, ValidationError, field_serializer
+from pydantic import Base64Str, BaseModel, RootModel, ValidationError, field_serializer
 
 
 def parametrize_root_model():
@@ -152,3 +152,26 @@ def test_v1_compatibility_serializer():
     assert m.model_dump() == {'my_root': {'__root__': {'x': 1}}}
     with pytest.warns(DeprecationWarning):
         assert m.dict() == {'my_root': {'__root__': {'x': 1}}}
+
+
+def test_construct():
+    class Base64Root(RootModel[Base64Str]):
+        pass
+
+    v = Base64Root.model_construct('test')
+    assert v.model_dump() == 'dGVzdA==\n'
+
+
+def test_construct_nested():
+    class Base64RootProperty(BaseModel):
+        data: RootModel[Base64Str]
+
+    v = Base64RootProperty.model_construct(data=RootModel[Base64Str].model_construct('test'))
+    assert v.model_dump() == {'data': 'dGVzdA==\n'}
+
+    # Note: model_construct requires the inputs to be valid; the root model value does not get "validated" into
+    # an actual root model instance:
+    v = Base64RootProperty.model_construct(data='test')
+    assert isinstance(v.data, str)  # should be RootModel[Base64Str], but model_construct skipped validation
+    with pytest.raises(AttributeError, match="'str' object has no attribute 'root'"):
+        v.model_dump()

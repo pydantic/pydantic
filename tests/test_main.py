@@ -21,6 +21,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
+from pydantic_core import CoreSchema
 from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
@@ -36,6 +37,7 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic.annotated import GetCoreSchemaHandler
 
 
 def test_success():
@@ -1032,9 +1034,9 @@ def test_model_iteration():
         ),
         pytest.param(
             {'foos': {-1: {'b'}}},
-            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {'a': 3, 'b': 4}]},
+            {'c': 3, 'foos': [{'a': 1, 'b': 2}, {'a': 3}]},
             None,
-            id='negative indexes are ignored',
+            id='negative indexes',
         ),
     ],
 )
@@ -2223,3 +2225,41 @@ def test_multiple_protected_namespace():
             also_protect_field: str
 
             model_config = ConfigDict(protected_namespaces=('protect_me_', 'also_protect_'))
+
+
+def test_model_get_core_schema() -> None:
+    class Model(BaseModel):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            assert handler(int) == {'type': 'int'}
+            assert handler.generate_schema(int) == {'type': 'int'}
+            return handler(source_type)
+
+    Model()
+
+
+def test_nested_types_ignored():
+    from pydantic import BaseModel
+
+    class NonNestedType:
+        pass
+
+    # Defining a nested type does not error
+    class GoodModel(BaseModel):
+        class NestedType:
+            pass
+
+        # You can still store such types on the class by annotating as a ClassVar
+        MyType: ClassVar[Type[Any]] = NonNestedType
+
+        # For documentation: you _can_ give multiple names to a nested type and it won't error:
+        # It might be better if it did, but this seems to be rare enough that I'm not concerned
+        x = NestedType
+
+    assert GoodModel.MyType is NonNestedType
+    assert GoodModel.x is GoodModel.NestedType
+
+    with pytest.raises(PydanticUserError, match='A non-annotated attribute was detected'):
+
+        class BadModel(BaseModel):
+            x = NonNestedType
