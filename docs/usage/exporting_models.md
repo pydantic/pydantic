@@ -427,7 +427,10 @@ print(user.model_dump(include=include_keys))
 {
     'first_name': 'John',
     'address': {'country': {'name': 'USA'}},
-    'hobbies': [{'name': 'Programming', 'info': 'Writing code and stuff'}],
+    'hobbies': [
+        {'name': 'Programming', 'info': 'Writing code and stuff'},
+        {'name': 'Gaming'},
+    ],
 }
 """
 
