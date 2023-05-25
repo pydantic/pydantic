@@ -459,3 +459,12 @@ def test_to_string_direct(benchmark):
     assert s.to_json(123) == b'"123"'
 
     benchmark(s.to_json, 123)
+
+
+def test_filter(benchmark):
+    v = SchemaSerializer(core_schema.list_schema(core_schema.any_schema()))
+    assert v.to_python(['a', 'b', 'c', 'd', 'e'], include={-1, -2}) == ['d', 'e']
+
+    @benchmark
+    def t():
+        v.to_python(['a', 'b', 'c', 'd', 'e'], include={-1, -2})
