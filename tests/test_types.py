@@ -5173,6 +5173,25 @@ def test_iterable_arbitrary_type():
             x: CustomIterable
 
 
+def test_typing_extension_literal_field():
+    from typing_extensions import Literal
+
+    class Model(BaseModel):
+        foo: Literal['foo']
+
+    assert Model(foo='foo').foo == 'foo'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='`typing.Literal` is available for python 3.8 and above.')
+def test_typing_literal_field():
+    from typing import Literal
+
+    class Model(BaseModel):
+        foo: Literal['foo']
+
+    assert Model(foo='foo').foo == 'foo'
+
+
 def test_is_instance_annotation():
     class Model(BaseModel):
         x: InstanceOf[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation

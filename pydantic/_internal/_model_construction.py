@@ -18,6 +18,7 @@ from ._decorators import ComputedFieldInfo, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_model_typevars_map
+from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 from ._typing_extra import is_classvar
 from ._utils import ClassAttribute, is_valid_identifier
 
@@ -170,10 +171,12 @@ def complete_model_class(
         types_namespace,
         typevars_map,
     )
+    handler = CallbackGetCoreSchemaHandler(
+        partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
+        gen_schema.generate_schema,
+    )
     try:
-        schema = cls.__get_pydantic_core_schema__(
-            cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False)
-        )
+        schema = cls.__get_pydantic_core_schema__(cls, handler)
     except PydanticUndefinedAnnotation as e:
         if raise_errors:
             raise

@@ -261,6 +261,39 @@ jobs:
     - name: test
       run: make test-fastapi
 
+  test-typing-extensions:
+    name: test typing-extensions
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # test the oldest supported version and main
+        typing-extensions-version: ['4.5.0', 'main']
+        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: pdm-project/setup-pdm@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: true
+
+    - name: install deps
+      run: |
+        pdm install -G testing -G email
+
+    - name: install typing-extensions
+      run: |
+        if [ ${{ matrix.typing-extensions-version }} == 'main' ]; then
+          pdm remove typing-extensions && pdm add 'git+https://github.com/python/typing_extensions.git'
+        else
+          pdm remove typing-extensions && pdm add 'typing-extensions==${{ matrix.typing-extensions-version }}'
+        fi
+        pdm list
+    - name: test
+      run: make test
+
   test-pydantic-settings:
     name: test pydantic settings
     runs-on: ubuntu-latest

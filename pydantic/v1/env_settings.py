@@ -296,7 +296,7 @@ class SecretsSettingsSource:
             for env_name in field.field_info.extra['env_names']:
                 path = find_case_path(secrets_path, env_name, settings.__config__.case_sensitive)
                 if not path:
-                    # path does not exist, we curently don't return a warning for this
+                    # path does not exist, we currently don't return a warning for this
                     continue
 
                 if path.is_file():

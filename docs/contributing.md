@@ -21,9 +21,14 @@ to your question or feature request.
 It should be extremely simple to get started and create a Pull Request.
 Pydantic is released regularly so you should see your improvements release in a matter of days or weeks.
 
-!!! note
-    Unless your change is trivial (typo, docs tweak etc.), please create an issue to discuss the change before
-    creating a pull request.
+Unless your change is trivial (typo, docs tweak etc.), please create an issue to discuss the change before
+creating a pull request.
+
+!!! note "Pydantic V1 is in maintenance mode"
+    Pydantic v1 is in maintenance mode, meaning that only bug fixes and security fixes will be accepted.
+    New features should be targeted at Pydantic v2.
+
+    To submit a fix to Pydantic v1, use the `1.10.X-fixes` branch.
 
 If you're looking for something to get your teeth into, check out the
 ["help wanted"](https://github.com/pydantic/pydantic/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22)

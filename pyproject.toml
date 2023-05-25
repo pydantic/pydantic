@@ -145,11 +145,13 @@ xfail_strict = true
 filterwarnings = [
     'error',
     'ignore:path is deprecated.*:DeprecationWarning:',
+    # Work around https://github.com/pytest-dev/pytest/issues/10977 for Python 3.12
+    'ignore:(ast\.Str|ast\.NameConstant|ast\.Num|Attribute s) is deprecated and will be removed.*:DeprecationWarning:',
 ]
 
 # configuring https://github.com/pydantic/hooky
 [tool.hooky]
-reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig']
+reviewers = ['samuelcolvin', 'adriangb', 'dmontagu', 'hramezani', 'lig', 'Kludex']
 require_change_file = false
 
 [tool.ruff]
