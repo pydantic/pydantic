@@ -77,7 +77,7 @@ except ImportError:  # pragma: no cover
 CONFIGFILE_KEY = 'pydantic-mypy'
 METADATA_KEY = 'pydantic-mypy-metadata'
 BASEMODEL_FULLNAME = 'pydantic.main.BaseModel'
-MODEL_METACLASS_FULLNAME = 'pydantic.main.ModelMetaclass'
+MODEL_METACLASS_FULLNAME = 'pydantic._internal._model_construction.ModelMetaclass'
 FIELD_FULLNAME = 'pydantic.fields.Field'
 DATACLASS_FULLNAME = 'pydantic.dataclasses.dataclass'
 DECORATOR_FULLNAMES = {
