@@ -3,10 +3,10 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple};
 
-use crate::build_tools::SchemaDict;
 use crate::errors::ValResult;
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 

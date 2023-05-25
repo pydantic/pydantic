@@ -3,12 +3,12 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyAny, PyDict, PyString};
 
-use crate::build_tools::{function_name, py_err, SchemaDict};
 use crate::errors::{
     ErrorType, LocItem, PydanticCustomError, PydanticKnownError, PydanticOmit, ValError, ValResult, ValidationError,
 };
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::{function_name, py_err, SchemaDict};
 
 use super::generator::InternalValidator;
 use super::{

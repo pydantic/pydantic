@@ -3,10 +3,10 @@ use std::fmt;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::SchemaDict;
 use crate::errors::{ErrorMode, ErrorType, LocItem, ValError, ValResult};
 use crate::input::{GenericIterator, Input};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 use crate::ValidationError;
 
 use super::list::get_items_schema;

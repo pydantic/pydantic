@@ -9,11 +9,13 @@ use pyo3::types::{PyDict, PyList, PyString};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{is_strict, py_err, schema_or_config, SchemaDict};
+use crate::build_tools::py_schema_err;
+use crate::build_tools::{is_strict, schema_or_config};
 use crate::errors::{ErrorType, LocItem, ValError, ValLineError, ValResult};
 use crate::input::{GenericMapping, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::{extract_i64, py_err, SchemaDict};
 
 use super::custom_error::CustomError;
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
@@ -45,7 +47,7 @@ impl BuildValidator for UnionValidator {
 
         let auto_collapse = || schema.get_as_req(intern!(py, "auto_collapse")).unwrap_or(true);
         match choices.len() {
-            0 => py_err!("One or more union choices required"),
+            0 => py_schema_err!("One or more union choices required"),
             1 if auto_collapse() => Ok(choices.into_iter().next().unwrap()),
             _ => {
                 let descr = choices.iter().map(|v| v.get_name()).collect::<Vec<_>>().join(",");
@@ -226,7 +228,7 @@ enum ChoiceKey {
 
 impl ChoiceKey {
     fn from_py(raw: &PyAny) -> PyResult<Self> {
-        if let Ok(py_int) = raw.extract::<i64>() {
+        if let Ok(py_int) = extract_i64(raw) {
             Ok(Self::Int(py_int))
         } else if let Ok(py_str) = raw.downcast::<PyString>() {
             Ok(Self::Str(py_str.to_str()?.to_string()))
@@ -331,7 +333,7 @@ impl BuildValidator for TaggedUnionValidator {
                 }
             }
             if !wrong_values.is_empty() {
-                return py_err!(
+                return py_schema_err!(
                     "String values in choices don't match any keys: {}",
                     wrong_values.join(", ")
                 );

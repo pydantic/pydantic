@@ -3,10 +3,11 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString};
 use regex::Regex;
 
-use crate::build_tools::{is_strict, py_error_type, schema_or_config, SchemaDict};
+use crate::build_tools::{is_strict, py_schema_error_type, schema_or_config};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
@@ -94,7 +95,7 @@ impl Validator for StrConstrainedValidator {
         }
         if let Some(min_length) = self.min_length {
             if str.len() < min_length {
-                // return py_err!("{} is shorter than {}", str, min_length);
+                // return py_schema_err!("{} is shorter than {}", str, min_length);
                 return Err(ValError::new(ErrorType::StringTooShort { min_length }, input));
             }
         }
@@ -148,7 +149,7 @@ impl StrConstrainedValidator {
     fn build(schema: &PyDict, config: Option<&PyDict>) -> PyResult<Self> {
         let py = schema.py();
         let pattern = match schema.get_as(intern!(py, "pattern"))? {
-            Some(s) => Some(Regex::new(s).map_err(|e| py_error_type!("{}", e))?),
+            Some(s) => Some(Regex::new(s).map_err(|e| py_schema_error_type!("{}", e))?),
             None => None,
         };
         let min_length: Option<usize> =

@@ -2,7 +2,7 @@ use pyo3::basic::CompareOp;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyTuple};
 
-use crate::build_tools::safe_repr;
+use crate::tools::safe_repr;
 
 #[pyclass(module = "pydantic_core._pydantic_core", get_all, frozen, freelist = 100)]
 #[derive(Debug, Clone)]

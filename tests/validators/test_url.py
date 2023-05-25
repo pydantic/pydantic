@@ -1015,7 +1015,7 @@ def test_multi_max_length(url_validator):
 
 
 def test_zero_schemas():
-    with pytest.raises(SchemaError, match='"allowed_schemes" should have length > 0'):
+    with pytest.raises(SchemaError, match='`allowed_schemes` should have length > 0'):
         SchemaValidator(core_schema.multi_host_url_schema(allowed_schemes=[]))
 
 

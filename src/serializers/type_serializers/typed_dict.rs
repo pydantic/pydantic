@@ -4,8 +4,9 @@ use pyo3::types::{PyDict, PyString};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{py_error_type, schema_or_config, ExtraBehavior, SchemaDict};
+use crate::build_tools::{py_schema_error_type, schema_or_config, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
 
 use super::{BuildSerializer, CombinedSerializer, ComputedFields, FieldsMode, GeneralFieldsSerializer, SerField};
 
@@ -48,7 +49,7 @@ impl BuildSerializer for TypedDictBuilder {
 
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
                 let serializer = CombinedSerializer::build(schema, config, definitions)
-                    .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
+                    .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", key, e))?;
                 fields.insert(key, SerField::new(py, key_py, alias, Some(serializer), required));
             }
         }

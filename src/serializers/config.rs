@@ -7,8 +7,9 @@ use pyo3::{intern, PyNativeType};
 
 use serde::ser::Error;
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::py_schema_err;
 use crate::input::pytimedelta_as_duration;
+use crate::tools::SchemaDict;
 
 use super::errors::py_err_se_err;
 
@@ -57,7 +58,7 @@ impl TimedeltaMode {
         match s {
             Some("iso8601") => Ok(Self::Iso8601),
             Some("float") => Ok(Self::Float),
-            Some(s) => py_err!(
+            Some(s) => py_schema_err!(
                 "Invalid timedelta serialization mode: `{}`, expected `iso8601` or `float`",
                 s
             ),
@@ -133,7 +134,7 @@ impl BytesMode {
         let base64_config = match s {
             Some("utf8") => None,
             Some("base64") => Some(base64::Config::new(base64::CharacterSet::UrlSafe, true)),
-            Some(s) => return py_err!("Invalid bytes serialization mode: `{}`, expected `utf8` or `base64`", s),
+            Some(s) => return py_schema_err!("Invalid bytes serialization mode: `{}`, expected `utf8` or `base64`", s),
             None => None,
         };
         Ok(Self { base64_config })

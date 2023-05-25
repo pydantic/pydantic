@@ -10,11 +10,11 @@ use pyo3::types::{
 
 use serde::ser::{Error, Serialize, SerializeMap, SerializeSeq, Serializer};
 
-use crate::build_tools::{py_err, safe_repr};
 use crate::serializers::errors::SERIALIZATION_ERR_MARKER;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{PydanticSerializer, TypeSerializer};
 use crate::serializers::SchemaSerializer;
+use crate::tools::{extract_i64, py_err, safe_repr};
 use crate::url::{PyMultiHostUrl, PyUrl};
 
 use super::errors::{py_err_se_err, PydanticSerializationError};
@@ -122,7 +122,7 @@ pub(crate) fn infer_to_python_known(
             // `bool` and `None` can't be subclasses, `ObType::Int`, `ObType::Float`, `ObType::Str` refer to exact types
             ObType::None | ObType::Bool | ObType::Int | ObType::Float | ObType::Str => value.into_py(py),
             // have to do this to make sure subclasses of for example str are upcast to `str`
-            ObType::IntSubclass => value.extract::<i64>()?.into_py(py),
+            ObType::IntSubclass => extract_i64(value)?.into_py(py),
             ObType::FloatSubclass => value.extract::<f64>()?.into_py(py),
             ObType::Decimal => value.to_string().into_py(py),
             ObType::StrSubclass => value.extract::<&str>()?.into_py(py),

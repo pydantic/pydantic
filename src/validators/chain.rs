@@ -2,10 +2,11 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::py_schema_err;
 use crate::errors::ValResult;
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
@@ -33,7 +34,7 @@ impl BuildValidator for ChainValidator {
             .collect::<Vec<CombinedValidator>>();
 
         match steps.len() {
-            0 => py_err!("One or more steps are required for a chain validator"),
+            0 => py_schema_err!("One or more steps are required for a chain validator"),
             1 => {
                 let step = steps.into_iter().next().unwrap();
                 Ok(step)

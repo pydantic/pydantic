@@ -9,7 +9,7 @@ use pyo3::prelude::*;
 
 use ahash::AHashMap;
 
-use crate::build_tools::py_err;
+use crate::build_tools::py_schema_err;
 
 // An integer id for the reference
 pub type ReferenceId = usize;
@@ -68,7 +68,7 @@ impl<T: Clone + std::fmt::Debug> DefinitionsBuilder<T> {
         let next_id = self.definitions.len();
         match self.definitions.entry(reference.clone()) {
             Entry::Occupied(mut entry) => match entry.get_mut().value.replace(value) {
-                Some(_) => py_err!("Duplicate ref: `{}`", reference),
+                Some(_) => py_schema_err!("Duplicate ref: `{}`", reference),
                 None => Ok(entry.get().id),
             },
             Entry::Vacant(entry) => {
@@ -86,11 +86,11 @@ impl<T: Clone + std::fmt::Debug> DefinitionsBuilder<T> {
     pub fn get_definition(&self, reference_id: ReferenceId) -> PyResult<&T> {
         let (reference, def) = match self.definitions.iter().find(|(_, def)| def.id == reference_id) {
             Some(v) => v,
-            None => return py_err!("Definitions error: no definition for ReferenceId `{}`", reference_id),
+            None => return py_schema_err!("Definitions error: no definition for ReferenceId `{}`", reference_id),
         };
         match def.value.as_ref() {
             Some(v) => Ok(v),
-            None => py_err!(
+            None => py_schema_err!(
                 "Definitions error: attempted to use `{}` before it was filled",
                 reference
             ),
@@ -103,7 +103,7 @@ impl<T: Clone + std::fmt::Debug> DefinitionsBuilder<T> {
         let mut defs: Vec<(usize, T)> = Vec::new();
         for (reference, def) in self.definitions.into_iter() {
             match def.value {
-                None => return py_err!("Definitions error: definition {} was never filled", reference),
+                None => return py_schema_err!("Definitions error: definition {} was never filled", reference),
                 Some(v) => defs.push((def.id, v)),
             }
         }

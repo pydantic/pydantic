@@ -10,8 +10,8 @@ use pyo3::types::{
 use pyo3::types::{PyDictItems, PyDictKeys, PyDictValues};
 use pyo3::{ffi, intern, AsPyPointer, PyTypeInfo};
 
-use crate::build_tools::safe_repr;
 use crate::errors::{ErrorType, InputValue, LocItem, ValError, ValResult};
+use crate::tools::{extract_i64, safe_repr};
 use crate::{ArgsKwargs, PyMultiHostUrl, PyUrl};
 
 use super::datetime::{
@@ -89,7 +89,7 @@ impl<'a> Input<'a> for PyAny {
     fn as_loc_item(&self) -> LocItem {
         if let Ok(py_str) = self.downcast::<PyString>() {
             py_str.to_string_lossy().as_ref().into()
-        } else if let Ok(key_int) = self.extract::<i64>() {
+        } else if let Ok(key_int) = extract_i64(self) {
             key_int.into()
         } else {
             safe_repr(self).to_string().into()
@@ -244,19 +244,19 @@ impl<'a> Input<'a> for PyAny {
     }
 
     fn strict_bool(&self) -> ValResult<bool> {
-        if let Ok(bool) = self.extract::<bool>() {
-            Ok(bool)
+        if let Ok(bool) = self.downcast::<PyBool>() {
+            Ok(bool.is_true())
         } else {
             Err(ValError::new(ErrorType::BoolType, self))
         }
     }
 
     fn lax_bool(&self) -> ValResult<bool> {
-        if let Ok(bool) = self.extract::<bool>() {
-            Ok(bool)
+        if let Ok(bool) = self.downcast::<PyBool>() {
+            Ok(bool.is_true())
         } else if let Some(cow_str) = maybe_as_string(self, ErrorType::BoolParsing)? {
             str_as_bool(self, &cow_str)
-        } else if let Ok(int) = self.extract::<i64>() {
+        } else if let Ok(int) = extract_i64(self) {
             int_as_bool(self, int)
         } else if let Ok(float) = self.extract::<f64>() {
             match float_as_int(self, float) {
@@ -547,7 +547,7 @@ impl<'a> Input<'a> for PyAny {
             bytes_as_time(self, py_bytes.as_bytes())
         } else if PyBool::is_exact_type_of(self) {
             Err(ValError::new(ErrorType::TimeType, self))
-        } else if let Ok(int) = self.extract::<i64>() {
+        } else if let Ok(int) = extract_i64(self) {
             int_as_time(self, int, 0)
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_time(self, float)
@@ -574,7 +574,7 @@ impl<'a> Input<'a> for PyAny {
             bytes_as_datetime(self, py_bytes.as_bytes())
         } else if PyBool::is_exact_type_of(self) {
             Err(ValError::new(ErrorType::DatetimeType, self))
-        } else if let Ok(int) = self.extract::<i64>() {
+        } else if let Ok(int) = extract_i64(self) {
             int_as_datetime(self, int, 0)
         } else if let Ok(float) = self.extract::<f64>() {
             float_as_datetime(self, float)
@@ -601,7 +601,7 @@ impl<'a> Input<'a> for PyAny {
             bytes_as_timedelta(self, str.as_bytes())
         } else if let Ok(py_bytes) = self.downcast::<PyBytes>() {
             bytes_as_timedelta(self, py_bytes.as_bytes())
-        } else if let Ok(int) = self.extract::<i64>() {
+        } else if let Ok(int) = extract_i64(self) {
             Ok(int_as_duration(self, int)?.into())
         } else if let Ok(float) = self.extract::<f64>() {
             Ok(float_as_duration(self, float)?.into())

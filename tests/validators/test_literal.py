@@ -159,7 +159,7 @@ def test_literal_not_json(kwarg_expected, input_value, expected):
 
 
 def test_build_error():
-    with pytest.raises(SchemaError, match='SchemaError: "expected" should have length > 0'):
+    with pytest.raises(SchemaError, match='SchemaError: `expected` should have length > 0'):
         SchemaValidator({'type': 'literal', 'expected': []})
 
 

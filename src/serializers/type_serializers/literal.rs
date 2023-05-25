@@ -1,14 +1,15 @@
 use std::borrow::Cow;
 
-use pyo3::intern;
 use pyo3::prelude::*;
-use pyo3::types::{PyDict, PyList, PyString};
+use pyo3::types::{PyBool, PyDict, PyList, PyString};
+use pyo3::{intern, PyTypeInfo};
 
 use ahash::AHashSet;
 use serde::Serialize;
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::{extract_i64, SchemaDict};
 
 use super::{
     infer_json_key, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer, CombinedSerializer, Extra,
@@ -34,7 +35,7 @@ impl BuildSerializer for LiteralSerializer {
         let expected: &PyList = schema.get_as_req(intern!(schema.py(), "expected"))?;
 
         if expected.is_empty() {
-            return py_err!("`expected` should have length > 0");
+            return py_schema_err!("`expected` should have length > 0");
         }
         let mut expected_int = AHashSet::new();
         let mut expected_str = AHashSet::new();
@@ -43,7 +44,7 @@ impl BuildSerializer for LiteralSerializer {
         let mut repr_args: Vec<String> = Vec::new();
         for item in expected {
             repr_args.push(item.repr()?.extract()?);
-            if let Ok(int) = item.extract::<i64>() {
+            if let Ok(int) = extract_i64(item) {
                 expected_int.insert(int);
             } else if let Ok(py_str) = item.downcast::<PyString>() {
                 expected_str.insert(py_str.to_str()?.to_string());
@@ -75,8 +76,8 @@ enum OutputValue<'a> {
 impl LiteralSerializer {
     fn check<'a>(&self, value: &'a PyAny, extra: &Extra) -> PyResult<OutputValue<'a>> {
         if extra.check.enabled() {
-            if !self.expected_int.is_empty() && value.extract::<bool>().is_err() {
-                if let Ok(int) = value.extract::<i64>() {
+            if !self.expected_int.is_empty() && !PyBool::is_type_of(value) {
+                if let Ok(int) = extract_i64(value) {
                     if self.expected_int.contains(&int) {
                         return Ok(OutputValue::OkInt(int));
                     }

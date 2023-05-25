@@ -9,10 +9,11 @@ use pyo3::types::{PyDict, PyList};
 use ahash::AHashSet;
 use url::{ParseError, SyntaxViolation, Url};
 
-use crate::build_tools::{is_strict, py_err, SchemaDict};
+use crate::build_tools::{is_strict, py_schema_err};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 use crate::url::{schema_is_special, PyMultiHostUrl, PyUrl};
 
 use super::literal::expected_repr_name;
@@ -168,7 +169,7 @@ impl BuildValidator for MultiHostUrlValidator {
         let default_host: Option<String> = schema.get_as(intern!(schema.py(), "default_host"))?;
         if let Some(ref default_host) = default_host {
             if default_host.contains(',') {
-                return py_err!("default_host cannot contain a comma, see pydantic-core#326");
+                return py_schema_err!("default_host cannot contain a comma, see pydantic-core#326");
             }
         }
         Ok(Self {
@@ -457,7 +458,7 @@ fn get_allowed_schemas(schema: &PyDict, name: &'static str) -> PyResult<(Allowed
     match schema.get_as::<&PyList>(intern!(schema.py(), "allowed_schemes"))? {
         Some(list) => {
             if list.is_empty() {
-                return py_err!(r#""allowed_schemes" should have length > 0"#);
+                return py_schema_err!("`allowed_schemes` should have length > 0");
             }
 
             let mut expected: AHashSet<String> = AHashSet::new();

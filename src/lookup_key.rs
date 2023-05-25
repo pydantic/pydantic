@@ -5,9 +5,10 @@ use pyo3::exceptions::{PyAttributeError, PyTypeError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList, PyMapping, PyString};
 
-use crate::build_tools::py_err;
+use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, ValLineError};
 use crate::input::{Input, JsonInput, JsonObject};
+use crate::tools::{extract_i64, py_err};
 
 /// Used got getting items from python dicts, python objects, or JSON objects, in different ways
 #[derive(Debug, Clone)]
@@ -73,7 +74,7 @@ impl LookupKey {
             let list: &PyList = value.downcast()?;
             let first = match list.get_item(0) {
                 Ok(v) => v,
-                Err(_) => return py_err!("Lookup paths should have at least one element"),
+                Err(_) => return py_schema_err!("Lookup paths should have at least one element"),
             };
             let mut locs: Vec<LookupPath> = if first.downcast::<PyString>().is_ok() {
                 // list of strings rather than list of lists
@@ -331,7 +332,7 @@ impl LookupPath {
             .collect::<PyResult<Vec<PathItem>>>()?;
 
         if v.is_empty() {
-            py_err!("Each alias path should have at least one element")
+            py_schema_err!("Each alias path should have at least one element")
         } else {
             Ok(Self(v))
         }
@@ -408,7 +409,7 @@ impl PathItem {
             } else {
                 Ok(Self::Pos(usize_key))
             }
-        } else if let Ok(int_key) = obj.extract::<i64>() {
+        } else if let Ok(int_key) = extract_i64(obj) {
             if index == 0 {
                 py_err!(PyTypeError; "The first item in an alias path should be a string")
             } else {

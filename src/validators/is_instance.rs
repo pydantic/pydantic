@@ -3,10 +3,11 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyType};
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::py_schema_err;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::InputType;
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
@@ -34,7 +35,7 @@ impl BuildValidator for IsInstanceValidator {
         // matter what object is being checked
         let test_value: &PyAny = cls_key.as_ref();
         if test_value.is_instance(class).is_err() {
-            return py_err!("'cls' must be valid as the first argument to 'isinstance'");
+            return py_schema_err!("'cls' must be valid as the first argument to 'isinstance'");
         }
 
         let class_repr = match schema.get_as(intern!(py, "cls_repr"))? {

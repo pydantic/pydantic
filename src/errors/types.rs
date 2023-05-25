@@ -7,7 +7,7 @@ use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::build_tools::{py_err, py_error_type};
+use crate::tools::{extract_i64, py_err, py_error_type};
 use strum::{Display, EnumMessage, IntoEnumIterator};
 use strum_macros::EnumIter;
 
@@ -729,7 +729,7 @@ impl From<String> for Number {
 
 impl FromPyObject<'_> for Number {
     fn extract(obj: &PyAny) -> PyResult<Self> {
-        if let Ok(int) = obj.extract::<i64>() {
+        if let Ok(int) = extract_i64(obj) {
             Ok(Number::Int(int))
         } else if let Ok(float) = obj.extract::<f64>() {
             Ok(Number::Float(float))

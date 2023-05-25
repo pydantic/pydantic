@@ -3,10 +3,11 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDelta, PyDict, PyString};
 use speedate::Duration;
 
-use crate::build_tools::{is_strict, SchemaDict};
+use crate::build_tools::is_strict;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{EitherTimedelta, Input};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
