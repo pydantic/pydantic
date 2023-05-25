@@ -1,15 +1,14 @@
 use std::borrow::Cow;
 use std::str::FromStr;
 
-use pyo3::exceptions::{PyAttributeError, PyRuntimeError};
+use pyo3::exceptions::{PyAttributeError, PyRecursionError, PyRuntimeError};
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
 use pyo3::types::PyString;
-use serde::ser::Error;
 
-use crate::build_tools::{function_name, py_error_type, SchemaDict};
+use crate::build_tools::{function_name, py_err, py_error_type, SchemaDict};
 use crate::definitions::DefinitionsBuilder;
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
 
@@ -154,6 +153,26 @@ impl FunctionPlainSerializer {
     }
 }
 
+fn on_error(py: Python, err: PyErr, function_name: &str, extra: &Extra) -> PyResult<()> {
+    let exception = err.value(py);
+    if let Ok(ser_err) = exception.extract::<PydanticSerializationUnexpectedValue>() {
+        if extra.check.enabled() {
+            Err(err)
+        } else {
+            extra.warnings.custom_warning(ser_err.__repr__());
+            Ok(())
+        }
+    } else if let Ok(err) = exception.extract::<PydanticSerializationError>() {
+        py_err!(PydanticSerializationError; "{}", err)
+    } else if exception.is_instance_of::<PyRecursionError>().unwrap_or(false) {
+        py_err!(PydanticSerializationError; "Error calling function `{}`: RecursionError", function_name)
+    } else {
+        let new_err = py_error_type!(PydanticSerializationError; "Error calling function `{}`: {}", function_name, err);
+        new_err.set_cause(py, Some(err));
+        Err(new_err)
+    }
+}
+
 macro_rules! function_type_serializer {
     ($name:ident) => {
         impl TypeSerializer for $name {
@@ -177,21 +196,10 @@ macro_rules! function_type_serializer {
                             _ => Ok(next_value.to_object(py)),
                         }
                     }
-                    Err(err) => match err.value(py).extract::<PydanticSerializationUnexpectedValue>() {
-                        Ok(ser_err) => {
-                            if extra.check.enabled() {
-                                Err(err)
-                            } else {
-                                extra.warnings.custom_warning(ser_err.__repr__());
-                                infer_to_python(value, include, exclude, extra)
-                            }
-                        }
-                        Err(_) => {
-                            let new_err = py_error_type!(PydanticSerializationError; "Error calling function `{}`: {}", self.function_name, err);
-                            new_err.set_cause(py, Some(err));
-                            Err(new_err)
-                        }
-                    },
+                    Err(err) => {
+                        on_error(py, err, &self.function_name, extra)?;
+                        infer_to_python(value, include, exclude, extra)
+                    }
                 }
             }
 
@@ -205,21 +213,10 @@ macro_rules! function_type_serializer {
                             None => infer_json_key(next_key, extra),
                         }
                     }
-                    Err(err) => match err.value(py).extract::<PydanticSerializationUnexpectedValue>() {
-                        Ok(ser_err) => {
-                            if extra.check.enabled() {
-                                Err(err)
-                            } else {
-                                extra.warnings.custom_warning(ser_err.__repr__());
-                                infer_json_key(key, extra)
-                            }
-                        }
-                        Err(_) => {
-                            let new_err = py_error_type!(PydanticSerializationError; "Error calling function `{}`: {}", self.function_name, err);
-                            new_err.set_cause(py, Some(err));
-                            Err(new_err)
-                        }
-                    },
+                    Err(err) => {
+                        on_error(py, err, &self.function_name, extra)?;
+                        infer_json_key(key, extra)
+                    }
                 }
             }
 
@@ -235,7 +232,7 @@ macro_rules! function_type_serializer {
                 match self.call(value, include, exclude, extra) {
                     Ok(v) => {
                         let next_value = v.as_ref(py);
-                            // None for include/exclude here, as filtering should be done
+                        // None for include/exclude here, as filtering should be done
                         match self.json_return_ob_type {
                             Some(ref ob_type) => {
                                 infer_serialize_known(ob_type, next_value, serializer, None, None, extra)
@@ -243,20 +240,10 @@ macro_rules! function_type_serializer {
                             None => infer_serialize(next_value, serializer, None, None, extra),
                         }
                     }
-                    Err(err) => match err.value(py).extract::<PydanticSerializationUnexpectedValue>() {
-                        Ok(ser_err) => {
-                            if extra.check.enabled() {
-                                Err(py_err_se_err(err))
-                            } else {
-                                extra.warnings.custom_warning(ser_err.__repr__());
-                                infer_serialize(value, serializer, include, exclude, extra)
-                            }
-                        }
-                        Err(_) => Err(Error::custom(format!(
-                            "Error calling function `{}`: {}",
-                            self.function_name, err
-                        ))),
-                    },
+                    Err(err) => {
+                        on_error(py, err, &self.function_name, extra).map_err(py_err_se_err)?;
+                        infer_serialize(value, serializer, include, exclude, extra)
+                    }
                 }
             }
 

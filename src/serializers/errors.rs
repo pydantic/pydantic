@@ -37,6 +37,12 @@ pub struct PydanticSerializationError {
     message: String,
 }
 
+impl fmt::Display for PydanticSerializationError {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.message)
+    }
+}
+
 impl PydanticSerializationError {
     pub(crate) fn new_err(msg: String) -> PyErr {
         PyErr::new::<Self, String>(msg)
