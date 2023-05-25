@@ -3,6 +3,7 @@ from __future__ import annotations as _annotations
 import base64
 import dataclasses as _dataclasses
 import re
+import sys
 from datetime import date, datetime
 from decimal import Decimal
 from enum import Enum
@@ -16,6 +17,7 @@ from typing import (
     Generic,
     Hashable,
     Iterable,
+    Iterator,
     List,
     Set,
     TypeVar,
@@ -24,6 +26,7 @@ from typing import (
 from uuid import UUID
 
 import annotated_types
+from annotated_types import GroupedMetadata
 from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, PydanticOmit, core_schema
 from typing_extensions import Annotated, Literal, Protocol
 
@@ -332,7 +335,7 @@ def condecimal(
 
 
 @_internal_dataclass.slots_dataclass
-class UuidVersion:
+class UuidVersion(GroupedMetadata):
     uuid_version: Literal[1, 3, 4, 5]
 
     def __get_pydantic_json_schema__(
@@ -357,6 +360,12 @@ class UuidVersion:
 
     def __hash__(self) -> int:
         return hash(type(self.uuid_version))
+
+    def __iter__(self) -> Iterator[object]:  # type: ignore
+        if 'hypothesis' in sys.modules:
+            from hypothesis import strategies as st
+
+            yield st.uuids(version=self.uuid_version)
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
