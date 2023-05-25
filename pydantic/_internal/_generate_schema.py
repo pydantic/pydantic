@@ -546,7 +546,7 @@ class GenerateSchema:
             name,
             common_field['schema'],
             init_only=field_info.init_var or None,
-            kw_only=None if field_info.kw_only else False,
+            kw_only=field_info.kw_only,
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
@@ -948,6 +948,7 @@ class GenerateSchema:
             )
         decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos.build(dataclass)
         args = [self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
+        args = [x for x in args if not x.get('kw_only')] + [x for x in args if x.get('kw_only')]
         has_post_init = hasattr(dataclass, '__post_init__')
 
         config = getattr(dataclass, '__pydantic_config__', None)
