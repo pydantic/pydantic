@@ -6,10 +6,11 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
 
-use crate::build_tools::{py_err, py_error_type, SchemaDict};
+use crate::build_tools::{py_schema_err, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
@@ -37,7 +38,7 @@ impl BuildValidator for LiteralValidator {
     ) -> PyResult<CombinedValidator> {
         let expected: &PyList = schema.get_as_req(intern!(schema.py(), "expected"))?;
         if expected.is_empty() {
-            return py_err!(r#""expected" should have length > 0"#);
+            return py_schema_err!("`expected` should have length > 0");
         }
         let py = expected.py();
         // Literal[...] only supports int, str, bytes or enums, all of which can be hashed
@@ -50,12 +51,12 @@ impl BuildValidator for LiteralValidator {
             if let Ok(either_int) = item.strict_int() {
                 let int = either_int
                     .try_into()
-                    .map_err(|_| py_error_type!("error extracting int {:?}", item))?;
+                    .map_err(|_| py_schema_error_type!("error extracting int {:?}", item))?;
                 expected_int.insert(int);
             } else if let Ok(either_str) = item.strict_str() {
                 let str = either_str
                     .as_cow()
-                    .map_err(|_| py_error_type!("error extracting str {:?}", item))?;
+                    .map_err(|_| py_schema_error_type!("error extracting str {:?}", item))?;
                 expected_str.insert(str.to_string());
             } else {
                 expected_py.set_item(item, item)?;

@@ -7,7 +7,7 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyBool, PyDict, PySet};
 
-use crate::build_tools::SchemaDict;
+use crate::tools::SchemaDict;
 
 #[derive(Debug, Clone, Default)]
 pub(crate) struct SchemaFilter<T> {

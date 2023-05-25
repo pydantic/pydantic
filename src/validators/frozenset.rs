@@ -1,10 +1,10 @@
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyFrozenSet};
 
-use crate::build_tools::SchemaDict;
 use crate::errors::ValResult;
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::list::min_length_check;
 use super::set::set_build;

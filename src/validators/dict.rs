@@ -2,12 +2,13 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyMapping};
 
-use crate::build_tools::{is_strict, SchemaDict};
+use crate::build_tools::is_strict;
 use crate::errors::{ValError, ValLineError, ValResult};
 use crate::input::{
     DictGenericIterator, GenericMapping, Input, JsonObject, JsonObjectGenericIterator, MappingGenericIterator,
 };
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::any::AnyValidator;
 use super::list::length_check;

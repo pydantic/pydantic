@@ -4,7 +4,8 @@ use pyo3::types::{PyDict, PyString};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{is_strict, py_err, schema_or_config, schema_or_config_same, ExtraBehavior, SchemaDict};
+use crate::build_tools::py_schema_err;
+use crate::build_tools::{is_strict, schema_or_config, schema_or_config_same, ExtraBehavior};
 use crate::errors::{py_err_string, ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{
     AttributesGenericIterator, DictGenericIterator, GenericMapping, Input, JsonObjectGenericIterator,
@@ -12,6 +13,7 @@ use crate::input::{
 };
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
@@ -52,7 +54,7 @@ impl BuildValidator for TypedDictValidator {
 
         let extra_validator = match (schema.get_item(intern!(py, "extra_validator")), &extra_behavior) {
             (Some(v), ExtraBehavior::Allow) => Some(Box::new(build_validator(v, config, definitions)?)),
-            (Some(_), _) => return py_err!("extra_validator can only be used if extra_behavior=allow"),
+            (Some(_), _) => return py_schema_err!("extra_validator can only be used if extra_behavior=allow"),
             (_, _) => None,
         };
 
@@ -67,7 +69,7 @@ impl BuildValidator for TypedDictValidator {
 
             let validator = match build_validator(schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_err!("Field \"{}\":\n  {}", field_name, err),
+                Err(err) => return py_schema_err!("Field \"{}\":\n  {}", field_name, err),
             };
 
             let required = match field_info.get_as::<bool>(intern!(py, "required"))? {
@@ -75,7 +77,10 @@ impl BuildValidator for TypedDictValidator {
                     if required {
                         if let CombinedValidator::WithDefault(ref val) = validator {
                             if val.has_default() {
-                                return py_err!("Field '{}': a required field cannot have a default value", field_name);
+                                return py_schema_err!(
+                                    "Field '{}': a required field cannot have a default value",
+                                    field_name
+                                );
                             }
                         }
                     }
@@ -87,7 +92,7 @@ impl BuildValidator for TypedDictValidator {
             if required {
                 if let CombinedValidator::WithDefault(ref val) = validator {
                     if val.omit_on_error() {
-                        return py_err!(
+                        return py_schema_err!(
                             "Field '{}': 'on_error = omit' cannot be set for required fields",
                             field_name
                         );

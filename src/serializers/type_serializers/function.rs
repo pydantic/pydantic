@@ -8,8 +8,10 @@ use pyo3::types::PyDict;
 
 use pyo3::types::PyString;
 
-use crate::build_tools::{function_name, py_err, py_error_type, SchemaDict};
+use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
+use crate::tools::{function_name, py_err, py_error_type};
 use crate::{PydanticOmit, PydanticSerializationUnexpectedValue};
 
 use super::format::WhenUsed;
@@ -442,7 +444,7 @@ impl SerializationCallable {
 pub fn get_json_return_type(schema: &PyDict) -> PyResult<Option<ObType>> {
     match schema.get_as::<&str>(intern!(schema.py(), "json_return_type"))? {
         Some(t) => Ok(Some(
-            ObType::from_str(t).map_err(|_| py_error_type!("Unknown return type {:?}", t))?,
+            ObType::from_str(t).map_err(|_| py_schema_error_type!("Unknown return type {:?}", t))?,
         )),
         None => Ok(None),
     }

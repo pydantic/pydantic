@@ -6,8 +6,8 @@ use pyo3::types::PyDict;
 
 use serde::ser::SerializeMap;
 
-use crate::build_tools::SchemaDict;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
 
 use super::any::AnySerializer;
 use super::{

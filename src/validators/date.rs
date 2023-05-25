@@ -4,10 +4,11 @@ use pyo3::types::{PyDate, PyDict, PyString};
 use speedate::{Date, Time};
 use strum::EnumMessage;
 
-use crate::build_tools::{is_strict, py_error_type, SchemaDict};
+use crate::build_tools::{is_strict, py_schema_error_type};
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{EitherDate, Input};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 use crate::validators::datetime::{NowConstraint, NowOp};
 
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
@@ -80,7 +81,7 @@ impl Validator for DateValidator {
             if let Some(ref today_constraint) = constraints.today {
                 let offset = today_constraint.utc_offset(py)?;
                 let today = Date::today(offset).map_err(|e| {
-                    py_error_type!("Date::today() error: {}", e.get_documentation().unwrap_or("unknown"))
+                    py_schema_error_type!("Date::today() error: {}", e.get_documentation().unwrap_or("unknown"))
                 })?;
                 // `if let Some(c)` to match behaviour of gt/lt/le/ge
                 if let Some(c) = raw_date.partial_cmp(&today) {

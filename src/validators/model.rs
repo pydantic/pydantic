@@ -6,10 +6,12 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
-use crate::build_tools::{py_err, schema_or_config_same, SchemaDict};
+use crate::build_tools::py_schema_err;
+use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{py_error_on_minusone, Input};
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::{py_err, SchemaDict};
 
 use super::function::convert_err;
 use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
@@ -33,7 +35,7 @@ impl Revalidate {
             Some("always") => Ok(Self::Always),
             Some("never") => Ok(Self::Never),
             Some("subclass-instances") => Ok(Self::SubclassInstances),
-            Some(s) => py_err!("Invalid revalidate_instances value: {}", s),
+            Some(s) => py_schema_err!("Invalid revalidate_instances value: {}", s),
         }
     }
 

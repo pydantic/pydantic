@@ -4,8 +4,8 @@ use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-use crate::build_tools::SchemaDict;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
 
 use super::{infer_json_key_known, BuildSerializer, CombinedSerializer, Extra, IsType, ObType, TypeSerializer};
 

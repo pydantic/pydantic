@@ -4,10 +4,11 @@ use pyo3::types::{PyDict, PyList, PyString};
 use serde::ser::SerializeMap;
 use serde::Serialize;
 
-use crate::build_tools::{py_error_type, SchemaDict};
+use crate::build_tools::py_schema_error_type;
 use crate::definitions::DefinitionsBuilder;
 use crate::serializers::filter::SchemaFilter;
 use crate::serializers::shared::{BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer};
+use crate::tools::SchemaDict;
 
 use super::errors::py_err_se_err;
 use super::Extra;
@@ -105,7 +106,7 @@ impl ComputedField {
         let property_name: &PyString = schema.get_as_req(intern!(py, "property_name"))?;
         let return_schema = schema.get_as_req(intern!(py, "return_schema"))?;
         let serializer = CombinedSerializer::build(return_schema, config, definitions)
-            .map_err(|e| py_error_type!("Computed field `{}`:\n  {}", property_name, e))?;
+            .map_err(|e| py_schema_error_type!("Computed field `{}`:\n  {}", property_name, e))?;
         let alias_py: &PyString = schema.get_as(intern!(py, "alias"))?.unwrap_or(property_name);
         Ok(Self {
             property_name: property_name.extract()?,

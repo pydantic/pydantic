@@ -5,11 +5,13 @@ use pyo3::types::{PyDict, PyList, PyString, PyTuple, PyType};
 
 use ahash::AHashSet;
 
-use crate::build_tools::{is_strict, py_err, schema_or_config_same, ExtraBehavior, SchemaDict};
+use crate::build_tools::py_schema_err;
+use crate::build_tools::{is_strict, schema_or_config_same, ExtraBehavior};
 use crate::errors::{ErrorType, ValError, ValLineError, ValResult};
 use crate::input::{GenericArguments, Input};
 use crate::lookup_key::LookupKey;
 use crate::recursion_guard::RecursionGuard;
+use crate::tools::SchemaDict;
 use crate::validators::function::convert_err;
 
 use super::arguments::{json_get, json_slice, py_get, py_slice};
@@ -75,12 +77,12 @@ impl BuildValidator for DataclassArgsValidator {
 
             let validator = match build_validator(schema, config, definitions) {
                 Ok(v) => v,
-                Err(err) => return py_err!("Field '{}':\n  {}", name, err),
+                Err(err) => return py_schema_err!("Field '{}':\n  {}", name, err),
             };
 
             if let CombinedValidator::WithDefault(ref v) = validator {
                 if v.omit_on_error() {
-                    return py_err!("Field `{}`: omit_on_error cannot be used with arguments", name);
+                    return py_schema_err!("Field `{}`: omit_on_error cannot be used with arguments", name);
                 }
             }
 

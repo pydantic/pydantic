@@ -8,6 +8,7 @@ use serde::ser::SerializeSeq;
 use serde::{Serialize, Serializer};
 
 use crate::lookup_key::{LookupPath, PathItem};
+use crate::tools::extract_i64;
 
 /// Used to store individual items of the error location, e.g. a string for key/field names
 /// or a number for array indices.
@@ -88,7 +89,7 @@ impl TryFrom<&PyAny> for LocItem {
         if let Ok(py_str) = loc_item.downcast::<PyString>() {
             let str = py_str.to_str()?.to_string();
             Ok(Self::S(str))
-        } else if let Ok(int) = loc_item.extract::<i64>() {
+        } else if let Ok(int) = extract_i64(loc_item) {
             Ok(Self::I(int))
         } else {
             Err(PyTypeError::new_err("Item in a location must be a string or int"))

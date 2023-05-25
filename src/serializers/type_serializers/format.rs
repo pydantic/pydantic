@@ -6,8 +6,9 @@ use pyo3::types::{PyDict, PyString};
 
 use serde::ser::Error;
 
-use crate::build_tools::{py_err, SchemaDict};
+use crate::build_tools::py_schema_err;
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
 
 use super::simple::none_json_key;
 use super::string::serialize_py_str;
@@ -29,7 +30,7 @@ impl WhenUsed {
             Some("unless-none") => Ok(Self::UnlessNone),
             Some("json") => Ok(Self::Json),
             Some("json-unless-none") => Ok(Self::JsonUnlessNone),
-            Some(s) => py_err!("Invalid value for `when_used`: {:?}", s),
+            Some(s) => py_schema_err!("Invalid value for `when_used`: {:?}", s),
             None => Ok(default),
         }
     }

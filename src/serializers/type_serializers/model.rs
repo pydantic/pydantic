@@ -6,8 +6,9 @@ use pyo3::{intern, PyTraverseError, PyVisit};
 
 use ahash::AHashMap;
 
-use crate::build_tools::{py_error_type, ExtraBehavior, SchemaDict};
+use crate::build_tools::{py_schema_error_type, ExtraBehavior};
 use crate::definitions::DefinitionsBuilder;
+use crate::tools::SchemaDict;
 
 use super::{
     infer_json_key, infer_json_key_known, infer_serialize, infer_to_python, py_err_se_err, BuildSerializer,
@@ -51,7 +52,7 @@ impl BuildSerializer for ModelFieldsBuilder {
 
                 let schema = field_info.get_as_req(intern!(py, "schema"))?;
                 let serializer = CombinedSerializer::build(schema, config, definitions)
-                    .map_err(|e| py_error_type!("Field `{}`:\n  {}", key, e))?;
+                    .map_err(|e| py_schema_error_type!("Field `{}`:\n  {}", key, e))?;
 
                 fields.insert(key, SerField::new(py, key_py, alias, Some(serializer), true));
             }
