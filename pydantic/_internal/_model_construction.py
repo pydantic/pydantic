@@ -4,22 +4,25 @@ Private logic for creating models.
 from __future__ import annotations as _annotations
 
 import typing
+import warnings
+from abc import ABCMeta
 from functools import partial
 from types import FunctionType
-from typing import Any, Callable
+from typing import Any, Callable, Generic, Mapping
 
 from pydantic_core import SchemaSerializer, SchemaValidator
+from typing_extensions import dataclass_transform
 
 from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
-from ..fields import FieldInfo, ModelPrivateAttr, PrivateAttr
+from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
 from ._config import ConfigWrapper
 from ._core_utils import flatten_schema_defs, inline_schema_defs
-from ._decorators import ComputedFieldInfo, PydanticDescriptorProxy
+from ._decorators import ComputedFieldInfo, DecoratorInfos, PydanticDescriptorProxy
 from ._fields import Undefined, collect_model_fields
 from ._generate_schema import GenerateSchema
-from ._generics import get_model_typevars_map
+from ._generics import PydanticGenericMetadata, get_model_typevars_map
 from ._schema_generation_shared import CallbackGetCoreSchemaHandler
-from ._typing_extra import is_classvar
+from ._typing_extra import get_cls_types_namespace, is_classvar, parent_frame_namespace
 from ._utils import ClassAttribute, is_valid_identifier
 
 if typing.TYPE_CHECKING:
@@ -38,6 +41,184 @@ IGNORED_TYPES: tuple[Any, ...] = (
     ComputedFieldInfo,
 )
 object_setattr = object.__setattr__
+
+
+class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
+    """
+    A dictionary subclass that intercepts attribute setting on model classes and warns about overriding of decorators.
+
+    Args:
+        k (str): The key to be set.
+        v (object): The value to set with the key.
+    """
+
+    def __setitem__(self, k: str, v: object) -> None:
+        existing: Any = self.get(k, None)
+        if existing and v is not existing and isinstance(existing, PydanticDescriptorProxy):
+            warnings.warn(f'`{k}` overrides an existing Pydantic `{existing.decorator_info.decorator_repr}` decorator')
+
+        return super().__setitem__(k, v)
+
+
+@dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
+class ModelMetaclass(ABCMeta):
+    def __new__(
+        mcs,
+        cls_name: str,
+        bases: tuple[type[Any], ...],
+        namespace: dict[str, Any],
+        __pydantic_generic_metadata__: PydanticGenericMetadata | None = None,
+        __pydantic_reset_parent_namespace__: bool = True,
+        **kwargs: Any,
+    ) -> type:
+        """Metaclass for creating Pydantic models.
+
+        Args:
+            cls_name (str): the name of the class to be created
+            bases (tuple[type[Any], ...]]): the base classes of the class to be created
+            namespace (dict[str, Any]): the attribute dictionary of the class to be created
+            __pydantic_generic_metadata__ (PydanticGenericMetadata | None): metadata for generic models
+            __pydantic_reset_parent_namespace__ (bool): reset parent namespace
+            **kwargs (Any): catch-all for any other keyword arguments
+
+        Returns:
+            type: the new class created by the metaclass
+        """
+        # Note `ModelMetaclass` refers to `BaseModel`, but is also used to *create* `BaseModel`, so we rely on the fact
+        # that `BaseModel` itself won't have any bases, but any subclass of it will, to determine whether the `__new__`
+        # call we're in the middle of is for the `BaseModel` class.
+        if bases:
+            base_field_names, class_vars, base_private_attributes = mcs._collect_bases_data(bases)
+
+            config_wrapper = ConfigWrapper.for_model(bases, namespace, kwargs)
+            namespace['model_config'] = config_wrapper.config_dict
+            private_attributes = inspect_namespace(
+                namespace, config_wrapper.ignored_types, class_vars, base_field_names
+            )
+            if private_attributes:
+                slots: set[str] = set(namespace.get('__slots__', ()))
+                namespace['__slots__'] = slots | private_attributes.keys()
+
+                if 'model_post_init' in namespace:
+                    # if there are private_attributes and a model_post_init function, we handle both
+                    original_model_post_init = namespace['model_post_init']
+
+                    def wrapped_model_post_init(self: BaseModel, __context: Any) -> None:
+                        """
+                        We need to both initialize private attributes and call the user-defined model_post_init method
+                        """
+                        init_private_attributes(self, __context)
+                        original_model_post_init(self, __context)
+
+                    namespace['model_post_init'] = wrapped_model_post_init
+                else:
+                    namespace['model_post_init'] = init_private_attributes
+
+            namespace['__class_vars__'] = class_vars
+            namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
+
+            if config_wrapper.extra == 'allow':
+                namespace['__getattr__'] = model_extra_getattr
+
+            if '__hash__' not in namespace and config_wrapper.frozen:
+
+                def hash_func(self: Any) -> int:
+                    return hash(self.__class__) + hash(tuple(self.__dict__.values()))
+
+                namespace['__hash__'] = hash_func
+
+            cls: type[BaseModel] = super().__new__(mcs, cls_name, bases, namespace, **kwargs)  # type: ignore
+
+            from ..main import BaseModel
+
+            cls.__pydantic_custom_init__ = not getattr(cls.__init__, '__pydantic_base_init__', False)
+            cls.__pydantic_post_init__ = None if cls.model_post_init is BaseModel.model_post_init else 'model_post_init'
+
+            cls.__pydantic_decorators__ = DecoratorInfos.build(cls)
+
+            # Use the getattr below to grab the __parameters__ from the `typing.Generic` parent class
+            if __pydantic_generic_metadata__:
+                cls.__pydantic_generic_metadata__ = __pydantic_generic_metadata__
+            else:
+                parameters = getattr(cls, '__parameters__', ())
+                parent_parameters = getattr(cls, '__pydantic_generic_metadata__', {}).get('parameters', ())
+                if parameters and parent_parameters and not all(x in parameters for x in parent_parameters):
+                    combined_parameters = parent_parameters + tuple(x for x in parameters if x not in parent_parameters)
+                    parameters_str = ', '.join([str(x) for x in combined_parameters])
+                    error_message = (
+                        f'All parameters must be present on typing.Generic;'
+                        f' you should inherit from typing.Generic[{parameters_str}]'
+                    )
+                    if Generic not in bases:  # pragma: no cover
+                        # This branch will only be hit if I have misunderstood how `__parameters__` works.
+                        # If that is the case, and a user hits this, I could imagine it being very helpful
+                        # to have this extra detail in the reported traceback.
+                        error_message += f' (bases={bases})'
+                    raise TypeError(error_message)
+
+                cls.__pydantic_generic_metadata__ = {
+                    'origin': None,
+                    'args': (),
+                    'parameters': parameters,
+                }
+
+            cls.__pydantic_complete__ = False  # Ensure this specific class gets completed
+
+            # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
+            # for attributes not in `new_namespace` (e.g. private attributes)
+            for name, obj in private_attributes.items():
+                set_name = getattr(obj, '__set_name__', None)
+                if callable(set_name):
+                    set_name(cls, name)
+
+            if __pydantic_reset_parent_namespace__:
+                cls.__pydantic_parent_namespace__ = parent_frame_namespace()
+            parent_namespace = getattr(cls, '__pydantic_parent_namespace__', None)
+
+            types_namespace = get_cls_types_namespace(cls, parent_namespace)
+            set_model_fields(cls, bases, config_wrapper, types_namespace)
+            complete_model_class(
+                cls,
+                cls_name,
+                config_wrapper,
+                raise_errors=False,
+                types_namespace=types_namespace,
+            )
+            # using super(cls, cls) on the next line ensures we only call the parent class's __pydantic_init_subclass__
+            # I believe the `type: ignore` is only necessary because mypy doesn't realize that this code branch is
+            # only hit for _proper_ subclasses of BaseModel
+            super(cls, cls).__pydantic_init_subclass__(**kwargs)  # type: ignore[misc]
+            return cls
+        else:
+            # this is the BaseModel class itself being created, no logic required
+            return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
+
+    @classmethod
+    def __prepare__(cls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
+        return _ModelNamespaceDict()
+
+    def __instancecheck__(self, instance: Any) -> bool:
+        """
+        Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
+
+        See #3829 and python/cpython#92810
+        """
+        return hasattr(instance, '__pydantic_validator__') and super().__instancecheck__(instance)
+
+    @staticmethod
+    def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
+        from ..main import BaseModel
+
+        field_names: set[str] = set()
+        class_vars: set[str] = set()
+        private_attributes: dict[str, ModelPrivateAttr] = {}
+        for base in bases:
+            if issubclass(base, BaseModel) and base is not BaseModel:
+                # model_fields might not be defined yet in the case of generics, so we use getattr here:
+                field_names.update(getattr(base, 'model_fields', {}).keys())
+                class_vars.update(base.__class_vars__)
+                private_attributes.update(base.__private_attributes__)
+        return field_names, class_vars, private_attributes
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:
