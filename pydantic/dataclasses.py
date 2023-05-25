@@ -6,7 +6,7 @@ from __future__ import annotations as _annotations
 import dataclasses
 import sys
 import types
-from typing import TYPE_CHECKING, Any, Callable, Generic, TypeVar, overload
+from typing import TYPE_CHECKING, Any, Callable, Generic, NoReturn, TypeVar, overload
 
 from typing_extensions import Literal, dataclass_transform
 
@@ -211,3 +211,17 @@ def dataclass(
 
 
 __getattr__ = getattr_migration(__name__)
+
+if (3, 8) <= sys.version_info < (3, 11):
+    # Monkeypatch dataclasses.InitVar so that typing doesn't error if it occurs as a type when evaluating type hints
+    # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
+
+    def _call_initvar(*args: Any, **kwargs: Any) -> NoReturn:
+        """
+        This function does nothing but raise an error that is as similar as possible to what you'd get
+        if you were to try calling `InitVar[int]()` without this monkeypatch. The whole purpose is just
+        to ensure typing._type_check does not error if the type hint evaluates to `InitVar[<parameter>]`.
+        """
+        raise TypeError("'InitVar' object is not callable")
+
+    dataclasses.InitVar.__call__ = _call_initvar  # type: ignore

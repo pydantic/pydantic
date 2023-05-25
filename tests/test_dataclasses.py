@@ -2,7 +2,9 @@ import dataclasses
 import pickle
 import re
 import sys
+import traceback
 from collections.abc import Hashable
+from dataclasses import InitVar
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, ClassVar, Dict, FrozenSet, Generic, List, Optional, Set, TypeVar, Union
@@ -2004,3 +2006,52 @@ def test_dataclass_alias_generator():
             'input': ArgsKwargs((), {'name': 'test name', 'score': 2}),
         },
     ]
+
+
+@pytest.mark.skipif(sys.version_info < (3, 8), reason='InitVar not supported in python 3.7')
+def test_init_vars_inheritance():
+    init_vars = []
+
+    @pydantic.dataclasses.dataclass
+    class Foo:
+        init: 'InitVar[int]'
+
+    @pydantic.dataclasses.dataclass
+    class Bar(Foo):
+        arg: int
+
+        def __post_init__(self, init: int) -> None:
+            init_vars.append(init)
+
+    bar = Bar(init=1, arg=2)
+    assert TypeAdapter(Bar).dump_python(bar) == {'arg': 2}
+    assert init_vars == [1]
+
+    with pytest.raises(ValidationError) as exc_info:
+        Bar(init='a', arg=2)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'input': 'a',
+            'loc': ('init',),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
+@pytest.mark.skipif(not hasattr(pydantic.dataclasses, '_call_initvar'), reason='InitVar was not modified')
+@pytest.mark.parametrize('remove_monkeypatch', [True, False])
+def test_init_vars_call_monkeypatch(remove_monkeypatch, monkeypatch):
+    # Parametrizing like this allows us to test that the behavior is the same with or without the monkeypatch
+
+    if remove_monkeypatch:
+        monkeypatch.delattr(InitVar, '__call__')
+
+    InitVar(int)  # this is what is produced by InitVar[int]; note monkeypatching __call__ doesn't break this
+
+    with pytest.raises(TypeError, match="'InitVar' object is not callable") as exc:
+        InitVar[int]()
+
+    # Check that the custom __call__ was called precisely if the monkeypatch was not removed
+    stack_depth = len(traceback.extract_tb(exc.value.__traceback__))
+    assert stack_depth == 1 if remove_monkeypatch else 2
