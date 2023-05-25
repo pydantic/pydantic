@@ -90,6 +90,31 @@ def test_function_before_error():
     assert repr(exc_info.value).startswith('1 validation error for function-before[my_function(), constrained-str]\n')
 
 
+@pytest.mark.parametrize(
+    'config,input_str',
+    (
+        ({}, "type=string_too_long, input_value='12345x', input_type=str"),
+        ({'hide_input_in_errors': False}, "type=string_too_long, input_value='12345x', input_type=str"),
+        ({'hide_input_in_errors': True}, 'type=string_too_long'),
+    ),
+)
+def test_function_before_error_hide_input(config, input_str):
+    def my_function(input_value, info):
+        return input_value + 'x'
+
+    v = SchemaValidator(
+        {
+            'type': 'function-before',
+            'function': {'type': 'general', 'function': my_function},
+            'schema': {'type': 'str', 'max_length': 5},
+        },
+        config,
+    )
+
+    with pytest.raises(ValidationError, match=re.escape(f'String should have at most 5 characters [{input_str}]')):
+        v.validate_python('12345')
+
+
 def test_function_before_error_model():
     def f(input_value, info):
         if 'my_field' in input_value:
@@ -224,6 +249,34 @@ def test_wrap_error():
     ]
 
 
+@pytest.mark.parametrize(
+    'config,input_str',
+    (
+        ({}, "type=int_parsing, input_value='wrong', input_type=str"),
+        ({'hide_input_in_errors': False}, "type=int_parsing, input_value='wrong', input_type=str"),
+        ({'hide_input_in_errors': True}, 'type=int_parsing'),
+    ),
+)
+def test_function_wrap_error_hide_input(config, input_str):
+    def f(input_value, validator, info):
+        try:
+            return validator(input_value) * 2
+        except ValidationError as e:
+            assert e.title == 'ValidatorCallable'
+            assert str(e).startswith('1 validation error for ValidatorCallable\n')
+            raise e
+
+    v = SchemaValidator(
+        {'type': 'function-wrap', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'int'}}, config
+    )
+
+    with pytest.raises(
+        ValidationError,
+        match=re.escape(f'Input should be a valid integer, unable to parse string as an integer [{input_str}]'),
+    ):
+        v.validate_python('wrong')
+
+
 def test_function_wrap_location():
     def f(input_value, validator, info):
         return validator(input_value, outer_location='foo') + 2
@@ -300,6 +353,26 @@ def test_function_after_raise():
             'ctx': {'error': 'foobar'},
         }
     ]
+
+
+@pytest.mark.parametrize(
+    'config,input_str',
+    (
+        ({}, "type=value_error, input_value='input value', input_type=str"),
+        ({'hide_input_in_errors': False}, "type=value_error, input_value='input value', input_type=str"),
+        ({'hide_input_in_errors': True}, 'type=value_error'),
+    ),
+)
+def test_function_after_error_hide_input(config, input_str):
+    def f(input_value, info):
+        raise ValueError('foobar')
+
+    v = SchemaValidator(
+        {'type': 'function-after', 'function': {'type': 'general', 'function': f}, 'schema': {'type': 'str'}}, config
+    )
+
+    with pytest.raises(ValidationError, match=re.escape(f'Value error, foobar [{input_str}]')):
+        v.validate_python('input value')
 
 
 def test_function_after_config():
