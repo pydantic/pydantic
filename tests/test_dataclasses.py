@@ -2,6 +2,7 @@ import dataclasses
 import pickle
 import re
 import sys
+import traceback
 from collections.abc import Hashable
 from dataclasses import InitVar
 from datetime import datetime
@@ -2038,14 +2039,19 @@ def test_init_vars_inheritance():
     ]
 
 
-def test_init_vars_call_monkeypatch():
-    initvar_monkeypatched = hasattr(pydantic.dataclasses, '_call_initvar')
+@pytest.mark.skipif(not hasattr(pydantic.dataclasses, '_call_initvar'), reason='InitVar was not modified')
+@pytest.mark.parametrize('remove_monkeypatch', [True, False])
+def test_init_vars_call_monkeypatch(remove_monkeypatch, monkeypatch):
+    # Parametrizing like this allows us to test that the behavior is the same with or without the monkeypatch
 
-    if not (3, 8) <= sys.version_info < (3, 11):
-        assert not initvar_monkeypatched
-    else:
-        assert initvar_monkeypatched
-        InitVar(int)  # this is what is produced by InitVar[int]; note monkeypatching __call__ doesn't break this
+    if remove_monkeypatch:
+        monkeypatch.delattr(InitVar, '__call__')
 
-        with pytest.raises(TypeError, match="'InitVar' object is not callable"):
-            InitVar[int]()
+    InitVar(int)  # this is what is produced by InitVar[int]; note monkeypatching __call__ doesn't break this
+
+    with pytest.raises(TypeError, match="'InitVar' object is not callable") as exc:
+        InitVar[int]()
+
+    # Check that the custom __call__ was called precisely if the monkeypatch was not removed
+    stack_depth = len(traceback.format_exception(exc.value))
+    assert stack_depth == 3 if remove_monkeypatch else 4
