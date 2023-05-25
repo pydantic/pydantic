@@ -262,9 +262,36 @@ pub struct FunctionWrapValidator {
     name: String,
     is_field_validator: bool,
     info_arg: bool,
+    hide_input_in_errors: bool,
 }
 
-impl_build!(FunctionWrapValidator, "function-wrap");
+impl BuildValidator for FunctionWrapValidator {
+    const EXPECTED_TYPE: &'static str = "function-wrap";
+
+    fn build(
+        schema: &PyDict,
+        config: Option<&PyDict>,
+        definitions: &mut DefinitionsBuilder<CombinedValidator>,
+    ) -> PyResult<CombinedValidator> {
+        let py = schema.py();
+        let validator = build_validator(schema.get_as_req(intern!(py, "schema"))?, config, definitions)?;
+        let (is_field_validator, info_arg, function) = destructure_function_schema(schema)?;
+        let hide_input_in_errors: bool = config.get_as(intern!(py, "hide_input_in_errors"))?.unwrap_or(false);
+        Ok(Self {
+            validator: Box::new(validator),
+            func: function.into_py(py),
+            config: match config {
+                Some(c) => c.into(),
+                None => py.None(),
+            },
+            name: format!("function-wrap[{}()]", function_name(function)?),
+            is_field_validator,
+            info_arg,
+            hide_input_in_errors,
+        }
+        .into())
+    }
+}
 
 impl FunctionWrapValidator {
     fn _validate<'s, 'data>(
@@ -301,6 +328,7 @@ impl Validator for FunctionWrapValidator {
                 definitions,
                 extra,
                 recursion_guard,
+                self.hide_input_in_errors,
             ),
         };
         self._validate(
@@ -329,6 +357,7 @@ impl Validator for FunctionWrapValidator {
                 definitions,
                 extra,
                 recursion_guard,
+                self.hide_input_in_errors,
             ),
             updated_field_name: field_name.to_string(),
             updated_field_value: field_value.to_object(py),

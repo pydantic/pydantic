@@ -173,7 +173,10 @@ class SchemaError(Exception):
 class ValidationError(ValueError):
     @staticmethod
     def from_exception_data(
-        title: str, errors: 'list[InitErrorDetails]', error_mode: Literal['python', 'json'] = 'python'
+        title: str,
+        errors: 'list[InitErrorDetails]',
+        error_mode: Literal['python', 'json'] = 'python',
+        hide_input_in_errors: bool = False,
     ) -> ValidationError:
         """
         Provisory constructor for a Validation Error.
