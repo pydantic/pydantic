@@ -3093,6 +3093,7 @@ class DataclassSchema(TypedDict, total=False):
     type: Required[Literal['dataclass']]
     cls: Required[Type[Any]]
     schema: Required[CoreSchema]
+    fields: Required[List[str]]
     cls_name: str
     post_init: bool  # default: False
     revalidate_instances: Literal['always', 'never', 'subclass-instances']  # default: 'never'
@@ -3101,11 +3102,13 @@ class DataclassSchema(TypedDict, total=False):
     ref: str
     metadata: Any
     serialization: SerSchema
+    slots: bool
 
 
 def dataclass_schema(
     cls: Type[Any],
     schema: CoreSchema,
+    fields: List[str],
     *,
     cls_name: str | None = None,
     post_init: bool | None = None,
@@ -3115,14 +3118,17 @@ def dataclass_schema(
     metadata: Any = None,
     serialization: SerSchema | None = None,
     frozen: bool | None = None,
+    slots: bool | None = None,
 ) -> DataclassSchema:
     """
     Returns a schema for a dataclass. As with `ModelSchema`, this schema can only be used as a field within
     another schema, not as the root type.
 
     Args:
-        cls: The dataclass type, used to to perform subclass checks
+        cls: The dataclass type, used to perform subclass checks
         schema: The schema to use for the dataclass fields
+        fields: Fields of the dataclass, this is used in serialization and in validation during re-validation
+            and while validating assignment
         cls_name: The name to use in error locs, etc; this is useful for generics (default: `cls.__name__`)
         post_init: Whether to call `__post_init__` after validation
         revalidate_instances: whether instances of models and dataclasses (including subclass instances)
@@ -3132,10 +3138,13 @@ def dataclass_schema(
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
         frozen: Whether the dataclass is frozen
+        slots: Whether `slots=True` on the dataclass, means each field is assigned independently, rather than
+            simply setting `__dict__`, default false
     """
     return dict_not_none(
         type='dataclass',
         cls=cls,
+        fields=fields,
         cls_name=cls_name,
         schema=schema,
         post_init=post_init,
@@ -3145,6 +3154,7 @@ def dataclass_schema(
         metadata=metadata,
         serialization=serialization,
         frozen=frozen,
+        slots=slots,
     )
 
 

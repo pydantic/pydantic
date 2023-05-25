@@ -21,7 +21,7 @@ use super::errors::{py_err_se_err, PydanticSerializationError};
 use super::extra::{Extra, SerMode};
 use super::filter::AnyFilter;
 use super::ob_type::ObType;
-use super::shared::object_to_dict;
+use super::shared::dataclass_to_dict;
 
 pub(crate) fn infer_to_python(
     value: &PyAny,
@@ -98,29 +98,23 @@ pub(crate) fn infer_to_python_known(
         Ok::<PyObject, PyErr>(new_dict.into_py(py))
     };
 
-    let serialize_with_serializer = |value: &PyAny, is_model: bool| {
-        if let Ok(py_serializer) = value.getattr(intern!(py, "__pydantic_serializer__")) {
-            if let Ok(serializer) = py_serializer.extract::<SchemaSerializer>() {
-                let extra = serializer.build_extra(
-                    py,
-                    extra.mode,
-                    extra.by_alias,
-                    extra.warnings,
-                    extra.exclude_unset,
-                    extra.exclude_defaults,
-                    extra.exclude_none,
-                    extra.round_trip,
-                    extra.rec_guard,
-                    extra.serialize_unknown,
-                    extra.fallback,
-                );
-                return serializer.serializer.to_python(value, include, exclude, &extra);
-            }
-        }
-        // Fallback to dict serialization if `__pydantic_serializer__` is not set.
-        // This currently only affects non-pydantic dataclasses.
-        let dict = object_to_dict(value, is_model, extra)?;
-        serialize_dict(dict)
+    let serialize_with_serializer = || {
+        let py_serializer = value.getattr(intern!(py, "__pydantic_serializer__"))?;
+        let serializer: SchemaSerializer = py_serializer.extract()?;
+        let extra = serializer.build_extra(
+            py,
+            extra.mode,
+            extra.by_alias,
+            extra.warnings,
+            extra.exclude_unset,
+            extra.exclude_defaults,
+            extra.exclude_none,
+            extra.round_trip,
+            extra.rec_guard,
+            extra.serialize_unknown,
+            extra.fallback,
+        );
+        serializer.serializer.to_python(value, include, exclude, &extra)
     };
 
     let value = match extra.mode {
@@ -192,8 +186,8 @@ pub(crate) fn infer_to_python_known(
                 let py_url: PyMultiHostUrl = value.extract()?;
                 py_url.__str__().into_py(py)
             }
-            ObType::PydanticSerializable => serialize_with_serializer(value, true)?,
-            ObType::Dataclass => serialize_with_serializer(value, false)?,
+            ObType::PydanticSerializable => serialize_with_serializer()?,
+            ObType::Dataclass => serialize_dict(dataclass_to_dict(value)?)?,
             ObType::Enum => {
                 let v = value.getattr(intern!(py, "value"))?;
                 infer_to_python(v, include, exclude, extra)?.into_py(py)
@@ -258,8 +252,8 @@ pub(crate) fn infer_to_python_known(
                 }
                 new_dict.into_py(py)
             }
-            ObType::PydanticSerializable => serialize_with_serializer(value, true)?,
-            ObType::Dataclass => serialize_with_serializer(value, false)?,
+            ObType::PydanticSerializable => serialize_with_serializer()?,
+            ObType::Dataclass => serialize_dict(dataclass_to_dict(value)?)?,
             ObType::Generator => {
                 let iter = super::type_serializers::generator::SerializationIterator::new(
                     value.downcast()?,
@@ -411,36 +405,6 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
         }};
     }
 
-    macro_rules! serialize_with_serializer {
-        ($py_serializable:expr, $is_model:expr) => {{
-            let py = $py_serializable.py();
-            if let Ok(py_serializer) = value.getattr(intern!(py, "__pydantic_serializer__")) {
-                if let Ok(extracted_serializer) = py_serializer.extract::<SchemaSerializer>() {
-                    let extra = extracted_serializer.build_extra(
-                        py,
-                        extra.mode,
-                        extra.by_alias,
-                        extra.warnings,
-                        extra.exclude_unset,
-                        extra.exclude_defaults,
-                        extra.exclude_none,
-                        extra.round_trip,
-                        extra.rec_guard,
-                        extra.serialize_unknown,
-                        extra.fallback,
-                    );
-                    let pydantic_serializer =
-                        PydanticSerializer::new(value, &extracted_serializer.serializer, include, exclude, &extra);
-                    return pydantic_serializer.serialize(serializer);
-                }
-            }
-            // Fallback to dict serialization if `__pydantic_serializer__` is not set.
-            // This currently only affects non-pydantic dataclasses.
-            let dict = object_to_dict(value, $is_model, extra).map_err(py_err_se_err)?;
-            serialize_dict!(dict)
-        }};
-    }
-
     let ser_result = match ob_type {
         ObType::None => serializer.serialize_none(),
         ObType::Int | ObType::IntSubclass => serialize!(i64),
@@ -495,8 +459,30 @@ pub(crate) fn infer_serialize_known<S: Serializer>(
             let py_url: PyMultiHostUrl = value.extract().map_err(py_err_se_err)?;
             serializer.serialize_str(&py_url.__str__())
         }
-        ObType::Dataclass => serialize_with_serializer!(value, false),
-        ObType::PydanticSerializable => serialize_with_serializer!(value, true),
+        ObType::PydanticSerializable => {
+            let py = value.py();
+            let py_serializer = value
+                .getattr(intern!(py, "__pydantic_serializer__"))
+                .map_err(py_err_se_err)?;
+            let extracted_serializer: SchemaSerializer = py_serializer.extract().map_err(py_err_se_err)?;
+            let extra = extracted_serializer.build_extra(
+                py,
+                extra.mode,
+                extra.by_alias,
+                extra.warnings,
+                extra.exclude_unset,
+                extra.exclude_defaults,
+                extra.exclude_none,
+                extra.round_trip,
+                extra.rec_guard,
+                extra.serialize_unknown,
+                extra.fallback,
+            );
+            let pydantic_serializer =
+                PydanticSerializer::new(value, &extracted_serializer.serializer, include, exclude, &extra);
+            pydantic_serializer.serialize(serializer)
+        }
+        ObType::Dataclass => serialize_dict!(dataclass_to_dict(value).map_err(py_err_se_err)?),
         ObType::Enum => {
             let v = value.getattr(intern!(value.py(), "value")).map_err(py_err_se_err)?;
             infer_serialize(v, serializer, include, exclude, extra)

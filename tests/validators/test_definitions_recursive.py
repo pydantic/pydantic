@@ -889,6 +889,7 @@ def test_validate_assignment() -> None:
                 )
             ],
         ),
+        ['x'],
         ref='model',
     )
     v = SchemaValidator(schema, config=core_schema.CoreConfig(revalidate_instances='always'))
