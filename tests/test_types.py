@@ -100,7 +100,7 @@ from pydantic import (
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, SecretField, SkipValidation, Strict, TransformSchema
+from pydantic.types import AllowInfNan, ImportString, InstanceOf, SecretField, SkipValidation, Strict, TransformSchema
 
 try:
     import email_validator
@@ -5190,3 +5190,33 @@ def test_typing_literal_field():
         foo: Literal['foo']
 
     assert Model(foo='foo').foo == 'foo'
+
+
+def test_is_instance_annotation():
+    class Model(BaseModel):
+        x: InstanceOf[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
+
+    class MyList(list):
+        pass
+
+    assert Model(x='abc').x == 'abc'
+    assert type(Model(x=MyList([1, 2, 3])).x) is MyList
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(x=1)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'class': 'Sequence'},
+            'input': 1,
+            'loc': ('x',),
+            'msg': 'Input should be an instance of Sequence',
+            'type': 'is_instance_of',
+        }
+    ]
+
+    assert Model.model_validate_json('{"x": [1,2,3]}').x == [1, 2, 3]
+    with pytest.raises(ValidationError) as exc_info:
+        Model.model_validate_json('{"x": "abc"}')
+    assert exc_info.value.errors(include_url=False) == [
+        {'input': 'abc', 'loc': ('x',), 'msg': 'Input should be a valid array', 'type': 'list_type'}
+    ]
