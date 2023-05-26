@@ -1060,20 +1060,10 @@ class GenerateSchema:
     def _get_prepare_pydantic_annotations_for_known_type(
         self, obj: Any, annotations: tuple[Any, ...]
     ) -> tuple[Any, list[Any]] | None:
-        from . import _std_types_schema as std_types
+        from ._std_types_schema import PREPARE_METHODS
 
-        for gen in (
-            std_types.decimal_prepare_pydantic_annotations,
-            std_types.sequence_like_prepare_pydantic_annotations,
-            std_types.datetime_prepare_pydantic_annotations,
-            std_types.uuid_prepare_pydantic_annotations,
-            std_types.path_schema_prepare_pydantic_annotations,
-            std_types.mapping_like_prepare_pydantic_annotations,
-            std_types.enum_prepare_pydantic_annotations,
-            std_types.ip_prepare_pydantic_annotations,
-            std_types.url_prepare_pydantic_annotations,
-        ):
-            res = gen(obj, annotations)
+        for gen in PREPARE_METHODS:
+            res = gen(obj, annotations, self.config_wrapper.config_dict)
             if res is not None:
                 return res
 
@@ -1092,13 +1082,13 @@ class GenerateSchema:
         annotations = tuple(annotations)  # make them immutable to avoid confusion over mutating them
 
         if prepare is not None:
-            source_type, annotations = prepare(source_type, tuple(annotations))
+            source_type, annotations = prepare(source_type, tuple(annotations), self.config_wrapper.config_dict)
         else:
             res = self._get_prepare_pydantic_annotations_for_known_type(source_type, annotations)
             if res is not None:
                 source_type, annotations = res
 
-        return (source_type, list(annotations))
+        return source_type, list(annotations)
 
     def _apply_annotations(
         self,
@@ -1116,12 +1106,13 @@ class GenerateSchema:
         idx = -1
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
         if prepare:
-            source_type, annotations = prepare(source_type, tuple(annotations))
+            source_type, annotations = prepare(source_type, tuple(annotations), self.config_wrapper.config_dict)
             annotations = list(annotations)
         else:
             res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
             if res is not None:
                 source_type, annotations = res
+
         pydantic_js_functions: list[GetJsonSchemaFunction] = []
 
         def inner_handler(obj: Any) -> CoreSchema:
@@ -1151,7 +1142,7 @@ class GenerateSchema:
             if prepare is not None:
                 previous = annotations[:idx]
                 remaining = annotations[idx + 1 :]
-                new_source_type, remaining = prepare(source_type, tuple(remaining))
+                new_source_type, remaining = prepare(source_type, tuple(remaining), self.config_wrapper.config_dict)
                 annotations = previous + remaining
                 if new_source_type is not source_type:
                     return self._apply_annotations(
