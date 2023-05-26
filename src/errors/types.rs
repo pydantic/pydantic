@@ -490,7 +490,7 @@ impl ErrorType {
             Self::IntType => "Input should be a valid integer",
             Self::IntParsing => "Input should be a valid integer, unable to parse string as an integer",
             Self::IntFromFloat => "Input should be a valid integer, got a number with a fractional part",
-            Self::IntParsingSize => "Unable to parse input string as an integer, exceed maximum size",
+            Self::IntParsingSize => "Unable to parse input string as an integer, exceeded maximum size",
             Self::FloatType => "Input should be a valid number",
             Self::FloatParsing => "Input should be a valid number, unable to parse string as an number",
             Self::BytesType => "Input should be a valid bytes",

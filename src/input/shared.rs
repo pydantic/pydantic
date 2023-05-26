@@ -54,7 +54,7 @@ pub fn int_as_bool<'a>(input: &'a impl Input<'a>, int: i64) -> ValResult<'a, boo
 pub fn str_as_int<'s, 'l>(input: &'s impl Input<'s>, str: &'l str) -> ValResult<'s, EitherInt<'s>> {
     let len = str.len();
     if len > 4300 {
-        Err(ValError::new(ErrorType::IntParsing, input))
+        Err(ValError::new(ErrorType::IntParsingSize, input))
     } else if let Some(int) = _parse_str(input, str, len) {
         Ok(int)
     } else if let Some(str_stripped) = strip_decimal_zeros(str) {

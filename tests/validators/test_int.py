@@ -165,7 +165,7 @@ def test_negative_int(input_value, expected):
         (
             int(1e30),
             Err(
-                'Unable to parse input string as an integer, exceed maximum size '
+                'Unable to parse input string as an integer, exceeded maximum size '
                 '[type=int_parsing_size, input_value=1e+30, input_type=float]'
             ),
         ),
@@ -197,7 +197,10 @@ def test_positive_json(input_value, expected):
         (0, Err('Input should be less than 0 [type=less_than, input_value=0, input_type=int]')),
         (-i64_max, -i64_max),
         (-i64_max - 1, -i64_max - 1),
-        (-i64_max * 2, Err(' Unable to parse input string as an integer, exceed maximum size [type=int_parsing_size')),
+        (
+            -i64_max * 2,
+            Err(' Unable to parse input string as an integer, exceeded maximum size [type=int_parsing_size'),
+        ),
     ],
 )
 def test_negative_json(input_value, expected):
@@ -345,18 +348,18 @@ def test_too_long():
 
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'int_parsing',
+            'type': 'int_parsing_size',
             'loc': (),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'msg': 'Unable to parse input string as an integer, exceeded maximum size',
             'input': '1' * 4301,
         }
     ]
     # insert_assert(repr(exc_info.value))
     assert repr(exc_info.value) == (
         "1 validation error for int\n"
-        "  Input should be a valid integer, unable to parse string as an integer "
-        "[type=int_parsing, input_value='111111111111111111111111...11111111111111111111111', input_type=str]\n"
-        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/int_parsing"
+        "  Unable to parse input string as an integer, exceeded maximum size "
+        "[type=int_parsing_size, input_value='111111111111111111111111...11111111111111111111111', input_type=str]\n"
+        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/int_parsing_size"
     )
 
 
