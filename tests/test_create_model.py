@@ -246,7 +246,8 @@ def test_create_model_field_description():
 
 
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
-def test_private_descriptors(base):
+@pytest.mark.parametrize('use_annotation', [True, False])
+def test_private_descriptors(base, use_annotation):
     set_name_calls = []
     get_calls = []
     set_calls = []
@@ -283,13 +284,25 @@ def test_private_descriptors(base):
     class A(BaseModel):
         x: int
 
-        @MyDescriptor
-        def _some_func(self):
-            return self.x
+        if use_annotation:
+            _some_func: MyDescriptor = MyDescriptor(lambda self: self.x)
+        else:
+            _some_func = MyDescriptor(lambda self: self.x)
+
+        @property
+        def _double_x(self):
+            return self.x * 2
+
+    if use_annotation or base is ModelPrivateAttr:
+        assert set(A.__private_attributes__) == {'_some_func'}
+    else:
+        assert set(A.__private_attributes__) == set()
 
     assert set_name_calls == [(A, '_some_func')]
 
     a = A(x=2)
+
+    assert a._double_x == 4  # Ensure properties with leading underscores work fine and don't become private attributes
 
     assert get_calls == []
     assert a._some_func == 2
