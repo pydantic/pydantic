@@ -2302,6 +2302,8 @@ In this case you can simply add <code>arbitrary_types_allowed</code> in the conf
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="o">.</span><span class="n">message</span><span class="p">)</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Unable to generate pydantic-core schema for &lt;class &#39;__main__.ArbitraryType&#39;&gt;. Set `arbitrary_types_allowed=True` in the model_config to ignore this error or implement `__get_pydantic_core_schema__` on your type to fully support it.</span>
+
+<span class="sd">    If you got this error by calling handler(&lt;some type&gt;) within `__get_pydantic_core_schema__` then you likely need to call `handler.generate_schema(&lt;some type&gt;)` since we do not call `__get_pydantic_core_schema__` on `&lt;some type&gt;` otherwise to avoid infinite recursion.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 
