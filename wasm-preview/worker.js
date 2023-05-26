@@ -97,7 +97,7 @@ async function main() {
     setupStreams(FS, pyodide._module.TTY);
     FS.mkdir('/test_dir');
     FS.chdir('/test_dir');
-    await pyodide.loadPackage(['micropip', 'pytest', 'pytz']);
+    await pyodide.loadPackage(['micropip', 'pytest', 'pytz', 'typing-extensions']);
     await pyodide.runPythonAsync(python_code, {globals: pyodide.toPy({pydantic_core_version, tests_zip})});
     post();
   } catch (err) {
