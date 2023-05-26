@@ -78,7 +78,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
 
 def _getattr_no_parents(obj: Any, attribute: str) -> Any:
     """
-    Returns the attribute value without looking at class attributes or parent types
+    Returns the attribute value without attempting to look up attributes from parent types
     """
     if hasattr(obj, '__dict__'):
         try:

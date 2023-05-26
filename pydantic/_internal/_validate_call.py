@@ -31,9 +31,8 @@ class ValidateCallWrapper:
         'raw_function',
         '_config',
         '_validate_return',
-        # Removing these from slots ensures that self.__dict__['__pydantic_core_schema__'] works
-        # '__pydantic_core_schema__',
-        # '__pydantic_validator__',
+        '__pydantic_core_schema__',
+        '__pydantic_validator__',
         '__signature__',
         '__name__',
         '__qualname__',
