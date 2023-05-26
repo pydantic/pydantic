@@ -116,34 +116,9 @@ except ValidationError as e:
 
 ## Who is using Pydantic?
 
-Hundreds of organisations and packages are using Pydantic.
-
-Some of the prominent projects using Pydantic include:
-
-[FastAPI](https://fastapi.tiangolo.com/) &mdash; A high-performance API framework, easy to learn,
-  fast to code and ready for production, based on Pydantic and Starlette.
-
-[Project Jupyter](https://jupyter.org/) &mdash; Developers of the Jupyter notebook are using Pydantic
-  [for subprojects](https://github.com/pydantic/pydantic/issues/773), through the FastAPI-based Jupyter server
-  [Jupyverse](https://github.com/jupyter-server/jupyverse), and for [FPS](https://github.com/jupyter-server/fps)'s
-  configuration management.
-
-[The Molecular Sciences Software Institute](https://molssi.org) &mdash; Using Pydantic in
-  [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
-  for quantum chemistry.
-
-[Reach](https://www.reach.vote) &mdash; Trusts Pydantic (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq)
-  (Samuel's excellent asynchronous task queue) to reliably power multiple mission-critical microservices.
-
-[Robusta.dev](https://robusta.dev/) &mdash; Using Pydantic to automate Kubernetes troubleshooting and maintenance.
-  For example, their open source
-  [tools to debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
-  Pydantic models.
-
-And these are just a few of the companies and organizations around the world who are using Pydantic:
+Hundreds of organisations and packages are using Pydantic. Some of the prominent companies and organizations around the world who are using Pydantic include:
 
 <div id="company-grid" class="grid"></div>
-
 
 For a more comprehensive list of open-source projects using Pydantic see the
 [list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), or you can find some awesome projects using Pydantic in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
@@ -235,8 +210,16 @@ const companies = [
     logoUrl: '/logos/intuit_logo.png'
   },
   {
+    name: 'Jupyter',
+    logoUrl: '/logos/jupyter_logo.png'
+  },
+  {
     name: 'Microsoft',
     logoUrl: '/logos/microsoft_logo.png'
+  },
+  {
+    name: 'Molssi',
+    logoUrl: '/logos/molssi_logo.png'
   },
   {
     name: 'Netflix',
@@ -257,6 +240,10 @@ const companies = [
   {
     name: 'Red Hat',
     logoUrl: '/logos/redhat_logo.png'
+  },
+  {
+    name: 'Robusta',
+    logoUrl: '/logos/robusta_logo.png'
   },
   {
     name: 'Salesforce',
