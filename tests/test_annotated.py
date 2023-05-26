@@ -238,9 +238,6 @@ def test_modify_get_schema_annotated() -> None:
         'PydanticMetadata:before',
         'CustomType:before',
         'CustomType:after',
-        # we don't really care how many times `GroupedMetadataMarker.iter` is called
-        'GroupedMetadataMarker:iter',
-        'GroupedMetadataMarker:iter',
         'PydanticMetadata:after',
     ]
 
@@ -256,9 +253,6 @@ def test_modify_get_schema_annotated() -> None:
         'CustomType:before',
         'CustomType:after',
         'PydanticMetadata:after',
-        # we don't really care how many times `GroupedMetadataMarker.iter` is called
-        'GroupedMetadataMarker:iter',
-        'GroupedMetadataMarker:iter',
     ]
 
     calls.clear()

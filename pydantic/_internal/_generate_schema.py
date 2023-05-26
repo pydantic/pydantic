@@ -1103,6 +1103,9 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
+        # expand annotations before we start processing them so that `__prepare_pydantic_annotations` can consume
+        # individual items from GroupedMetadata
+        annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
         idx = -1
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
         if prepare:

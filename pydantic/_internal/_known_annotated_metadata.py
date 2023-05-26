@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+from copy import copy
 from functools import partial
 from typing import Any, Iterable
 
@@ -37,6 +38,26 @@ SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT
 NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
 
+def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
+    from pydantic.fields import FieldInfo  # circular import
+
+    for annotation in annotations:
+        if isinstance(annotation, at.GroupedMetadata):
+            yield from annotation
+        elif isinstance(annotation, FieldInfo):
+            yield from annotation.metadata
+            # this is a bit problematic in that it results in duplicate metadata
+            # all of our "consumers" can handle it, but it is not ideal
+            # we probably should split up FieldInfo into:
+            # - annotated types metadata
+            # - individual metadata known only to Pydantic
+            annotation = copy(annotation)
+            annotation.metadata = []
+            yield annotation
+        else:
+            yield annotation
+
+
 def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # noqa: C901
     """
     Apply `annotation` to `schema` if it is an annotation we know about (Gt, Le, etc.).
@@ -44,13 +65,12 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # 
 
     This does not handle all known annotations. If / when it does, it can always
     return a CoreSchema and return the unmodified schema if the annotation should be ignored.
+
+    Assumes that GroupedMetadata has already been expanded via `expand_grouped_metadata`.
     """
     schema = schema.copy()
     schema_update, _ = collect_known_metadata([annotation])
-    if isinstance(annotation, at.GroupedMetadata):
-        for constraint in annotation:
-            schema = apply_known_metadata(constraint, schema) or schema
-    elif isinstance(annotation, at.Gt):
+    if isinstance(annotation, at.Gt):
         if schema['type'] in NUMERIC_SCHEMA_TYPES:
             schema.update(schema_update)  # type: ignore
         else:
@@ -127,24 +147,15 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
 
     For example `[Gt(1), Len(42), Unknown()]` -> `({'gt': 1, 'min_length': 42}, [Unknown()])`.
     """
-    from pydantic.fields import FieldInfo  # circular import
+    annotations = expand_grouped_metadata(annotations)
 
     res: dict[str, Any] = {}
     remaining: list[Any] = []
     for annotation in annotations:
-        if isinstance(annotation, at.GroupedMetadata):
-            m, r = collect_known_metadata(list(annotation))
-            res.update(m)
-            remaining.extend(r)
-        elif isinstance(annotation, FieldInfo):
-            for sub in annotation.metadata:
-                m, r = collect_known_metadata([sub])
-                res.update(m)
-                remaining.extend(r)
         # Do we really want to consume any `BaseMetadata`?
         # It does let us give a better error when there is an annotation that doesn't apply
         # But it seems dangerous!
-        elif isinstance(annotation, PydanticGeneralMetadata):
+        if isinstance(annotation, PydanticGeneralMetadata):
             res.update(annotation.__dict__)
         elif isinstance(annotation, (at.BaseMetadata, PydanticMetadata)):
             res.update(dataclasses.asdict(annotation))  # type: ignore[call-overload]
