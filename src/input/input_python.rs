@@ -260,7 +260,7 @@ impl<'a> Input<'a> for PyAny {
             int_as_bool(self, int)
         } else if let Ok(float) = self.extract::<f64>() {
             match float_as_int(self, float) {
-                Ok(int) => int_as_bool(self, int),
+                Ok(int) => int.as_bool().ok_or_else(|| ValError::new(ErrorType::BoolParsing, self)),
                 _ => Err(ValError::new(ErrorType::BoolType, self)),
             }
         } else {
@@ -287,10 +287,9 @@ impl<'a> Input<'a> for PyAny {
         if PyInt::is_exact_type_of(self) {
             Ok(EitherInt::Py(self))
         } else if let Some(cow_str) = maybe_as_string(self, ErrorType::IntParsing)? {
-            let int = str_as_int(self, &cow_str)?;
-            Ok(EitherInt::Rust(int))
+            str_as_int(self, &cow_str)
         } else if let Ok(float) = self.extract::<f64>() {
-            Ok(EitherInt::Rust(float_as_int(self, float)?))
+            float_as_int(self, float)
         } else {
             Err(ValError::new(ErrorType::IntType, self))
         }

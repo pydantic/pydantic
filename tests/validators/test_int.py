@@ -1,3 +1,4 @@
+import json
 import re
 from decimal import Decimal
 from typing import Any, Dict
@@ -25,7 +26,7 @@ i64_max = 9_223_372_036_854_775_807
         (42.0, 42),
         ('42.0', 42),
         ('123456789.0', 123_456_789),
-        ('123456789123456.00001', 123_456_789_123_456),
+        ('123456789123456.00001', Err('Input should be a valid integer, unable to parse string as an integer')),
         (int(1e10), int(1e10)),
         (i64_max, i64_max),
         pytest.param(
@@ -59,8 +60,12 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
         (Decimal('1'), 1),
         (Decimal('1.0'), 1),
         (i64_max, i64_max),
+        (str(i64_max), i64_max),
+        (str(i64_max * 2), i64_max * 2),
         (i64_max + 1, i64_max + 1),
+        (-i64_max + 1, -i64_max + 1),
         (i64_max * 2, i64_max * 2),
+        (-i64_max * 2, -i64_max * 2),
         pytest.param(
             Decimal('1.001'),
             Err(
@@ -75,6 +80,7 @@ def test_int_py_and_json(py_and_json: PyAndJson, input_value, expected):
             id='tuple',
         ),
     ],
+    ids=repr,
 )
 def test_int(input_value, expected):
     v = SchemaValidator({'type': 'int'})
@@ -93,21 +99,14 @@ def test_int(input_value, expected):
         (Decimal('1'), 1),
         (Decimal('1.0'), 1),
         (i64_max, i64_max),
+        (i64_max + 1, i64_max + 1),
         (
-            i64_max + 1,
-            Err(
-                'Input integer too large to convert to 64-bit integer '
-                '[type=int_overflow, input_value=9223372036854775808, input_type=int]'
-            ),
+            -i64_max + 1,
+            Err('Input should be greater than 0 [type=greater_than, input_value=-9223372036854775806, input_type=int]'),
         ),
-        (
-            i64_max * 2,
-            Err(
-                'Input integer too large to convert to 64-bit integer '
-                '[type=int_overflow, input_value=18446744073709551614, input_type=int]'
-            ),
-        ),
-        # (0, Err('Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]')),
+        (i64_max * 2, i64_max * 2),
+        (int('9' * 30), int('9' * 30)),
+        (0, Err('Input should be greater than 0 [type=greater_than, input_value=0, input_type=int]')),
         (-1, Err('Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]')),
         pytest.param(
             Decimal('1.001'),
@@ -131,6 +130,84 @@ def test_positive_int(input_value, expected):
             v.validate_python(input_value)
     else:
         output = v.validate_python(input_value)
+        assert output == expected
+        assert isinstance(output, int)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        (-1, -1),
+        (0, Err('Input should be less than 0 [type=less_than, input_value=0, input_type=int]')),
+        (-i64_max, -i64_max),
+        (-i64_max - 1, -i64_max - 1),
+        (-int('9' * 30), -int('9' * 30)),
+    ],
+)
+def test_negative_int(input_value, expected):
+    v = SchemaValidator({'type': 'int', 'lt': 0})
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_python(input_value)
+    else:
+        output = v.validate_python(input_value)
+        assert output == expected
+        assert isinstance(output, int)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        (1, 1),
+        (i64_max, i64_max),
+        (i64_max + 1, i64_max + 1),
+        (i64_max * 2, i64_max * 2),
+        (
+            int(1e30),
+            Err(
+                'Unable to parse input string as an integer, exceed maximum size '
+                '[type=int_parsing_size, input_value=1e+30, input_type=float]'
+            ),
+        ),
+        (0, Err('Input should be greater than 0 [type=greater_than, input_value=0, input_type=int]')),
+        (-1, Err('Input should be greater than 0 [type=greater_than, input_value=-1, input_type=int]')),
+        pytest.param(
+            [1, 2],
+            Err('Input should be a valid integer [type=int_type, input_value=[1, 2], input_type=list]'),
+            id='list',
+        ),
+    ],
+)
+def test_positive_json(input_value, expected):
+    v = SchemaValidator({'type': 'int', 'gt': 0})
+    json_input = json.dumps(input_value)
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_json(json_input)
+    else:
+        output = v.validate_json(json_input)
+        assert output == expected
+        assert isinstance(output, int)
+
+
+@pytest.mark.parametrize(
+    'input_value,expected',
+    [
+        (-1, -1),
+        (0, Err('Input should be less than 0 [type=less_than, input_value=0, input_type=int]')),
+        (-i64_max, -i64_max),
+        (-i64_max - 1, -i64_max - 1),
+        (-i64_max * 2, Err(' Unable to parse input string as an integer, exceed maximum size [type=int_parsing_size')),
+    ],
+)
+def test_negative_json(input_value, expected):
+    v = SchemaValidator({'type': 'int', 'lt': 0})
+    json_input = json.dumps(input_value)
+    if isinstance(expected, Err):
+        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+            v.validate_json(json_input)
+    else:
+        output = v.validate_json(json_input)
         assert output == expected
         assert isinstance(output, int)
 
@@ -260,32 +337,62 @@ def test_int_repr():
     assert plain_repr(v).startswith('SchemaValidator(title="constrained-int",validator=ConstrainedInt(')
 
 
-def test_long_int(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'int'})
+def test_too_long():
+    v = SchemaValidator({'type': 'int'})
 
     with pytest.raises(ValidationError) as exc_info:
-        v.validate_test('1' * 400)
+        v.validate_python('1' * 4301)
 
     assert exc_info.value.errors(include_url=False) == [
-        {'type': 'finite_number', 'loc': (), 'msg': 'Input should be a finite number', 'input': '1' * 400}
+        {
+            'type': 'int_parsing',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': '1' * 4301,
+        }
     ]
+    # insert_assert(repr(exc_info.value))
     assert repr(exc_info.value) == (
-        '1 validation error for int\n'
-        '  Input should be a finite number '
-        '[type=finite_number, '
-        "input_value='111111111111111111111111...11111111111111111111111', input_type=str]\n"
-        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/finite_number"
+        "1 validation error for int\n"
+        "  Input should be a valid integer, unable to parse string as an integer "
+        "[type=int_parsing, input_value='111111111111111111111111...11111111111111111111111', input_type=str]\n"
+        f"    For further information visit https://errors.pydantic.dev/{__version__}/v/int_parsing"
     )
 
 
-def test_finite_number(py_and_json: PyAndJson):
-    v = py_and_json({'type': 'int'})
+def test_long_python():
+    v = SchemaValidator({'type': 'int'})
 
-    with pytest.raises(ValidationError, match='Input should be a finite number'):
-        v.validate_test('-' + '1' * 400)
+    s = v.validate_python('1' * 4_300)
+    assert s == int('1' * 4_300)
 
-    with pytest.raises(ValidationError, match='Input should be a finite number'):
-        v.validate_test('nan')
+    s = v.validate_python('-' + '1' * 400)
+    assert s == -int('1' * 400)
+
+    with pytest.raises(ValidationError, match='Input should be a valid integer'):
+        v.validate_python('nan')
+
+
+def test_long_python_inequality():
+    v = SchemaValidator({'type': 'int', 'gt': 0, 'lt': int('1' * 4_300) - 5})
+
+    s = str(int('1' * 4_300) - 6)
+    s = v.validate_python(s)
+    assert s == int('1' * 4_300) - 6
+
+    s = str(int('1' * 4_300) - 5)
+    with pytest.raises(ValidationError, match='Input should be less than 1'):
+        v.validate_python(s)
+
+
+def test_long_json():
+    v = SchemaValidator({'type': 'int'})
+
+    with pytest.raises(ValidationError, match=r'number out of range at line 1 column 401 \[type=json_invalid,'):
+        v.validate_json('-' + '1' * 400)
+
+    with pytest.raises(ValidationError, match=r'expected ident at line 1 column 2 \[type=json_invalid,'):
+        v.validate_json('nan')
 
 
 def test_int_key(py_and_json: PyAndJson):

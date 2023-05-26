@@ -12,6 +12,7 @@ pub enum JsonInput {
     Null,
     Bool(bool),
     Int(i64),
+    Uint(u64),
     Float(f64),
     String(String),
     Array(JsonArray),
@@ -26,6 +27,7 @@ impl ToPyObject for JsonInput {
             Self::Null => py.None(),
             Self::Bool(b) => b.into_py(py),
             Self::Int(i) => i.into_py(py),
+            Self::Uint(i) => i.into_py(py),
             Self::Float(f) => f.into_py(py),
             Self::String(s) => s.into_py(py),
             Self::Array(v) => PyList::new(py, v.iter().map(|v| v.to_object(py))).into_py(py),
@@ -64,7 +66,10 @@ impl<'de> Deserialize<'de> for JsonInput {
             }
 
             fn visit_u64<E>(self, value: u64) -> Result<JsonInput, E> {
-                Ok(JsonInput::Int(value as i64))
+                match i64::try_from(value) {
+                    Ok(i) => Ok(JsonInput::Int(i)),
+                    Err(_) => Ok(JsonInput::Uint(value)),
+                }
             }
 
             fn visit_f64<E>(self, value: f64) -> Result<JsonInput, E> {
