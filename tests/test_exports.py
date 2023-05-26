@@ -25,12 +25,6 @@ def test_init_export():
     assert pydantic_all == exported, "pydantic.__all__ doesn't match actual exports"
 
 
-public_internal_whitelist = {
-    'GetJsonSchemaHandler',
-    'GetCoreSchemaHandler',
-}
-
-
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_public_internal():
     """
@@ -47,10 +41,9 @@ def test_public_internal():
                 spec.loader.exec_module(module)
             for name, attr in vars(module).items():
                 if not name.startswith('_'):
-                    attr_module = getattr(attr, '__module__', None)
-                    if attr_module and attr_module.startswith('pydantic._internal'):
-                        if name not in public_internal_whitelist:
-                            public_internal_attributes.append(f'{module.__name__}:{name} from {attr_module}')
+                    attr_module = getattr(attr, '__module__', '')
+                    if attr_module.startswith('pydantic._internal'):
+                        public_internal_attributes.append(f'{module.__name__}:{name} from {attr_module}')
 
     if public_internal_attributes:
         pytest.fail('The following should not be publicly accessible:\n  ' + '\n  '.join(public_internal_attributes))
