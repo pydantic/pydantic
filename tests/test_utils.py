@@ -26,7 +26,7 @@ from pydantic._internal._utils import (
 from pydantic._internal._validators import import_string
 from pydantic.alias_generators import to_camel, to_pascal, to_snake
 from pydantic.color import Color
-from pydantic.fields import Undefined
+from pydantic.fields import _Undefined
 
 try:
     import devtools
@@ -336,12 +336,12 @@ def test_deep_update_is_not_mutating():
 
 
 def test_undefined_repr():
-    assert repr(Undefined) == 'PydanticUndefined'
+    assert repr(_Undefined) == 'PydanticUndefined'
 
 
 def test_undefined_copy():
-    assert copy(Undefined) is Undefined
-    assert deepcopy(Undefined) is Undefined
+    assert copy(_Undefined) is _Undefined
+    assert deepcopy(_Undefined) is _Undefined
 
 
 def test_class_attribute():
@@ -444,8 +444,8 @@ def test_all_identical():
 
 
 def test_undefined_pickle():
-    undefined2 = pickle.loads(pickle.dumps(Undefined))
-    assert undefined2 is Undefined
+    undefined2 = pickle.loads(pickle.dumps(_Undefined))
+    assert undefined2 is _Undefined
 
 
 def test_on_lower_camel_zero_length():

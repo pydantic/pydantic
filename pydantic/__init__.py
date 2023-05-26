@@ -53,12 +53,14 @@ __all__ = [
     'Extra',
     # validate_call
     'validate_call',
-    # error_wrappers
+    # pydantic_core errors
     'ValidationError',
+    # errors
     'PydanticUserError',
     'PydanticSchemaGenerationError',
     'PydanticImportError',
     'PydanticUndefinedAnnotation',
+    'PydanticInvalidForJsonSchema',
     # fields
     'AliasPath',
     'AliasChoices',

@@ -9,7 +9,7 @@ from typing_extensions import Annotated
 from pydantic import BaseModel, Field
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
-from pydantic.fields import Undefined
+from pydantic.fields import _Undefined
 
 NO_VALUE = object()
 
@@ -59,7 +59,7 @@ NO_VALUE = object()
         ),
         (
             lambda: Annotated[int, Gt(0)],
-            Undefined,
+            _Undefined,
             'FieldInfo(annotation=int, required=True, metadata=[Gt(gt=0)])',
         ),
         (
@@ -69,7 +69,7 @@ NO_VALUE = object()
         ),
         (
             lambda: Annotated[int, Field(alias='foobar')],
-            Undefined,
+            _Undefined,
             "FieldInfo(annotation=int, required=True, alias='foobar', alias_priority=2)",
         ),
     ],
@@ -129,12 +129,12 @@ def test_annotated_allows_unknown(metadata):
     [
         (
             lambda: int,
-            Undefined,
+            _Undefined,
             pytest.raises(ValueError, match=r'Field required \[type=missing,'),
         ),
         (
             lambda: Annotated[int, Field()],
-            Undefined,
+            _Undefined,
             pytest.raises(ValueError, match=r'Field required \[type=missing,'),
         ),
     ],
