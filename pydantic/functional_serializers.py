@@ -181,7 +181,7 @@ def model_serializer(
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
     json_return_type: _core_schema.JsonReturnTypes | None = None,
-) -> Callable[[Any], _decorators.PydanticDescriptorProxy[Any]] | _decorators.PydanticDescriptorProxy[Any]:
+) -> Callable[[Any], Any]:
     """
     Decorate a function which will be called to serialize the model.
 
@@ -206,4 +206,4 @@ def model_serializer(
     if __f is None:
         return dec
     else:
-        return dec(__f)
+        return dec(__f)  # type: ignore
