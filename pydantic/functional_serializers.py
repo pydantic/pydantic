@@ -176,6 +176,23 @@ def field_serializer(
     return dec
 
 
+FuncType = TypeVar('FuncType', bound=Callable[..., Any])
+
+
+@overload
+def model_serializer(__f: FuncType) -> FuncType:
+    ...
+
+
+@overload
+def model_serializer(
+    *,
+    mode: Literal['plain', 'wrap'] = 'plain',
+    json_return_type: _core_schema.JsonReturnTypes | None = None,
+) -> Callable[[FuncType], FuncType]:
+    ...
+
+
 def model_serializer(
     __f: Callable[..., Any] | None = None,
     *,
