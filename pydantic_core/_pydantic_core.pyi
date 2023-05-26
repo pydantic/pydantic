@@ -176,7 +176,7 @@ class ValidationError(ValueError):
         title: str,
         errors: 'list[InitErrorDetails]',
         error_mode: Literal['python', 'json'] = 'python',
-        hide_input_in_errors: bool = False,
+        hide_input: bool = False,
     ) -> ValidationError:
         """
         Provisory constructor for a Validation Error.

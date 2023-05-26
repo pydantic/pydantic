@@ -32,21 +32,16 @@ pub struct ValidationError {
     line_errors: Vec<PyLineError>,
     error_mode: ErrorMode,
     title: PyObject,
-    hide_input_in_errors: bool,
+    hide_input: bool,
 }
 
 impl ValidationError {
-    pub fn new(
-        line_errors: Vec<PyLineError>,
-        title: PyObject,
-        error_mode: ErrorMode,
-        hide_input_in_errors: bool,
-    ) -> Self {
+    pub fn new(line_errors: Vec<PyLineError>, title: PyObject, error_mode: ErrorMode, hide_input: bool) -> Self {
         Self {
             line_errors,
             title,
             error_mode,
-            hide_input_in_errors,
+            hide_input,
         }
     }
 
@@ -56,7 +51,7 @@ impl ValidationError {
         error_mode: ErrorMode,
         error: ValError,
         outer_location: Option<LocItem>,
-        hide_input_in_errors: bool,
+        hide_input: bool,
     ) -> PyErr {
         match error {
             ValError::LineErrors(raw_errors) => {
@@ -67,7 +62,7 @@ impl ValidationError {
                         .collect(),
                     None => raw_errors.into_iter().map(|e| e.into_py(py)).collect(),
                 };
-                let validation_error = Self::new(line_errors, title, error_mode, hide_input_in_errors);
+                let validation_error = Self::new(line_errors, title, error_mode, hide_input);
                 match Py::new(py, validation_error) {
                     Ok(err) => PyErr::from_value(err.into_ref(py)),
                     Err(err) => err,
@@ -78,15 +73,9 @@ impl ValidationError {
         }
     }
 
-    pub fn display(&self, py: Python, prefix_override: Option<&'static str>, hide_input_in_errors: bool) -> String {
+    pub fn display(&self, py: Python, prefix_override: Option<&'static str>, hide_input: bool) -> String {
         let url_prefix = get_url_prefix(py, include_url_env(py));
-        let line_errors = pretty_py_line_errors(
-            py,
-            &self.error_mode,
-            self.line_errors.iter(),
-            url_prefix,
-            hide_input_in_errors,
-        );
+        let line_errors = pretty_py_line_errors(py, &self.error_mode, self.line_errors.iter(), url_prefix, hide_input);
         if let Some(prefix) = prefix_override {
             format!("{prefix}\n{line_errors}")
         } else {
@@ -139,13 +128,13 @@ impl<'a> IntoPy<ValError<'a>> for ValidationError {
 #[pymethods]
 impl ValidationError {
     #[staticmethod]
-    #[pyo3(signature = (title, line_errors, error_mode=None, hide_input_in_errors=false))]
+    #[pyo3(signature = (title, line_errors, error_mode=None, hide_input=false))]
     fn from_exception_data(
         py: Python,
         title: PyObject,
         line_errors: &PyList,
         error_mode: Option<&str>,
-        hide_input_in_errors: bool,
+        hide_input: bool,
     ) -> PyResult<Py<Self>> {
         Py::new(
             py,
@@ -153,7 +142,7 @@ impl ValidationError {
                 line_errors: line_errors.iter().map(PyLineError::try_from).collect::<PyResult<_>>()?,
                 title,
                 error_mode: ErrorMode::try_from(error_mode)?,
-                hide_input_in_errors,
+                hide_input,
             },
         )
     }
@@ -228,7 +217,7 @@ impl ValidationError {
     }
 
     fn __repr__(&self, py: Python) -> String {
-        self.display(py, None, self.hide_input_in_errors)
+        self.display(py, None, self.hide_input)
     }
 
     fn __str__(&self, py: Python) -> String {
@@ -256,10 +245,10 @@ pub fn pretty_py_line_errors<'a>(
     error_mode: &ErrorMode,
     line_errors_iter: impl Iterator<Item = &'a PyLineError>,
     url_prefix: Option<&str>,
-    hide_input_in_errors: bool,
+    hide_input: bool,
 ) -> String {
     line_errors_iter
-        .map(|i| i.pretty(py, error_mode, url_prefix, hide_input_in_errors))
+        .map(|i| i.pretty(py, error_mode, url_prefix, hide_input))
         .collect::<Result<Vec<_>, _>>()
         .unwrap_or_else(|err| vec![format!("[error formatting line errors: {err}]")])
         .join("\n")
@@ -373,7 +362,7 @@ impl PyLineError {
         py: Python,
         error_mode: &ErrorMode,
         url_prefix: Option<&str>,
-        hide_input_in_errors: bool,
+        hide_input: bool,
     ) -> Result<String, fmt::Error> {
         let mut output = String::with_capacity(200);
         write!(output, "{}", self.location)?;
@@ -384,7 +373,7 @@ impl PyLineError {
         };
         write!(output, "  {message} [type={}", self.error_type.type_string())?;
 
-        if !hide_input_in_errors {
+        if !hide_input {
             let input_value = self.input_value.as_ref(py);
             let input_str = safe_repr(input_value);
             truncate_input_value!(output, input_str);

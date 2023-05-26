@@ -575,7 +575,7 @@ def test_raise_validation_error_hide_input(hide_input_in_errors, input_str):
         raise ValidationError.from_exception_data(
             'Foobar',
             [{'type': 'greater_than', 'loc': ('a', 2), 'input': 4, 'ctx': {'gt': 5}}],
-            hide_input_in_errors=hide_input_in_errors,
+            hide_input=hide_input_in_errors,
         )
 
 
