@@ -187,8 +187,8 @@ def model_serializer(__f: FuncType) -> FuncType:
 @overload
 def model_serializer(
     *,
-    mode: Literal['plain', 'wrap'] = 'plain',
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    mode: Literal['plain', 'wrap'] = ...,
+    json_return_type: _core_schema.JsonReturnTypes | None = ...,
 ) -> Callable[[FuncType], FuncType]:
     ...
 
