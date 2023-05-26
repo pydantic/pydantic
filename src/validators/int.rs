@@ -1,3 +1,4 @@
+use num_bigint::BigInt;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
@@ -72,11 +73,11 @@ impl Validator for IntValidator {
 #[derive(Debug, Clone)]
 pub struct ConstrainedIntValidator {
     strict: bool,
-    multiple_of: Option<i64>,
-    le: Option<i64>,
-    lt: Option<i64>,
-    ge: Option<i64>,
-    gt: Option<i64>,
+    multiple_of: Option<BigInt>,
+    le: Option<BigInt>,
+    lt: Option<BigInt>,
+    ge: Option<BigInt>,
+    gt: Option<BigInt>,
 }
 
 impl Validator for ConstrainedIntValidator {
@@ -89,38 +90,42 @@ impl Validator for ConstrainedIntValidator {
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let either_int = input.validate_int(extra.strict.unwrap_or(self.strict))?;
-        let int: i64 = either_int.try_into()?;
-        if let Some(multiple_of) = self.multiple_of {
-            if int % multiple_of != 0 {
+        let int = either_int.as_bigint()?;
+
+        if let Some(ref multiple_of) = self.multiple_of {
+            if &int % multiple_of != BigInt::from(0) {
                 return Err(ValError::new(
                     ErrorType::MultipleOf {
-                        multiple_of: multiple_of.into(),
+                        multiple_of: multiple_of.clone().into(),
                     },
                     input,
                 ));
             }
         }
-        if let Some(le) = self.le {
-            if int > le {
-                return Err(ValError::new(ErrorType::LessThanEqual { le: le.into() }, input));
+        if let Some(ref le) = self.le {
+            if &int > le {
+                return Err(ValError::new(ErrorType::LessThanEqual { le: le.clone().into() }, input));
             }
         }
-        if let Some(lt) = self.lt {
-            if int >= lt {
-                return Err(ValError::new(ErrorType::LessThan { lt: lt.into() }, input));
+        if let Some(ref lt) = self.lt {
+            if &int >= lt {
+                return Err(ValError::new(ErrorType::LessThan { lt: lt.clone().into() }, input));
             }
         }
-        if let Some(ge) = self.ge {
-            if int < ge {
-                return Err(ValError::new(ErrorType::GreaterThanEqual { ge: ge.into() }, input));
+        if let Some(ref ge) = self.ge {
+            if &int < ge {
+                return Err(ValError::new(
+                    ErrorType::GreaterThanEqual { ge: ge.clone().into() },
+                    input,
+                ));
             }
         }
-        if let Some(gt) = self.gt {
-            if int <= gt {
-                return Err(ValError::new(ErrorType::GreaterThan { gt: gt.into() }, input));
+        if let Some(ref gt) = self.gt {
+            if &int <= gt {
+                return Err(ValError::new(ErrorType::GreaterThan { gt: gt.clone().into() }, input));
             }
         }
-        Ok(int.into_py(py))
+        Ok(either_int.into_py(py))
     }
 
     fn different_strict_behavior(

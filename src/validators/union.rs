@@ -382,7 +382,7 @@ impl Validator for TaggedUnionValidator {
                         match lookup_key.$get_method($( $dict ),+)? {
                             Some((_, value)) => {
                                 if let Ok(either_int) = value.validate_int(self.strict) {
-                                    let int = either_int.try_into()?;
+                                    let int = either_int.into_i64(py)?;
                                     Ok(ChoiceKey::Int(int))
                                 } else {
                                     Ok(ChoiceKey::Str(value.validate_str(self.strict)?.as_cow()?.as_ref().to_string()))

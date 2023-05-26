@@ -1388,3 +1388,25 @@ def test_strict_int(benchmark):
     v = SchemaValidator(core_schema.int_schema(strict=True))
 
     benchmark(v.validate_python, 42)
+
+
+@pytest.mark.benchmark(group='int_range')
+def test_int_range(benchmark):
+    v = SchemaValidator(core_schema.int_schema(gt=0, lt=100))
+
+    assert v.validate_python(42) == 42
+    with pytest.raises(ValidationError, match='Input should be greater than 0'):
+        v.validate_python(0)
+
+    benchmark(v.validate_python, 42)
+
+
+@pytest.mark.benchmark(group='int_range')
+def test_int_range_json(benchmark):
+    v = SchemaValidator(core_schema.int_schema(gt=0, lt=100))
+
+    assert v.validate_json('42') == 42
+    with pytest.raises(ValidationError, match='Input should be greater than 0'):
+        v.validate_python('0')
+
+    benchmark(v.validate_json, '42')

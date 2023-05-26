@@ -2,6 +2,7 @@ use std::borrow::Cow;
 use std::fmt;
 
 use ahash::AHashMap;
+use num_bigint::BigInt;
 use pyo3::exceptions::{PyKeyError, PyTypeError, PyValueError};
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
@@ -174,8 +175,8 @@ pub enum ErrorType {
     // int errors
     IntType,
     IntParsing,
+    IntParsingSize,
     IntFromFloat,
-    IntOverflow,
     // ---------------------
     // float errors
     FloatType,
@@ -489,7 +490,7 @@ impl ErrorType {
             Self::IntType => "Input should be a valid integer",
             Self::IntParsing => "Input should be a valid integer, unable to parse string as an integer",
             Self::IntFromFloat => "Input should be a valid integer, got a number with a fractional part",
-            Self::IntOverflow => "Input integer too large to convert to 64-bit integer",
+            Self::IntParsingSize => "Unable to parse input string as an integer, exceed maximum size",
             Self::FloatType => "Input should be a valid number",
             Self::FloatParsing => "Input should be a valid number, unable to parse string as an number",
             Self::BytesType => "Input should be a valid bytes",
@@ -699,6 +700,7 @@ impl ErrorType {
 #[derive(Clone, Debug)]
 pub enum Number {
     Int(i64),
+    BigInt(BigInt),
     Float(f64),
     String(String),
 }
@@ -712,6 +714,12 @@ impl Default for Number {
 impl From<i64> for Number {
     fn from(i: i64) -> Self {
         Self::Int(i)
+    }
+}
+
+impl From<BigInt> for Number {
+    fn from(i: BigInt) -> Self {
+        Self::BigInt(i)
     }
 }
 
@@ -746,6 +754,7 @@ impl fmt::Display for Number {
         match self {
             Self::Float(s) => write!(f, "{s}"),
             Self::Int(i) => write!(f, "{i}"),
+            Self::BigInt(i) => write!(f, "{i}"),
             Self::String(s) => write!(f, "{s}"),
         }
     }
@@ -754,6 +763,7 @@ impl ToPyObject for Number {
     fn to_object(&self, py: Python<'_>) -> PyObject {
         match self {
             Self::Int(i) => i.into_py(py),
+            Self::BigInt(i) => i.clone().into_py(py),
             Self::Float(f) => f.into_py(py),
             Self::String(s) => s.into_py(py),
         }
