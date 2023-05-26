@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, List, Tuple
+from typing import Any, Iterable, List, Tuple
 
 import dirty_equals as de
 import pytest
@@ -34,7 +34,7 @@ class MyDecimal(float):
     @classmethod
     def __prepare_pydantic_annotations__(
         cls, source_type: Any, annotations: Tuple[Any, ...], _config_dict: ConfigDict
-    ) -> Tuple[Any, Tuple[Any, ...]]:
+    ) -> Tuple[Any, Iterable[Any]]:
         assert source_type is MyDecimal
         metadata: dict[str, Any] = {}
         remaining_annotations: list[Any] = []
@@ -95,7 +95,7 @@ def test_generator_custom_type() -> None:
         @classmethod
         def __prepare_pydantic_annotations__(
             cls, _source_type: Any, annotations: Tuple[Any, ...], _config: ConfigDict
-        ) -> Tuple[Any, Tuple[Any, ...]]:
+        ) -> Tuple[Any, Iterable[Any]]:
             return int, (Gt(123), *annotations)
 
     a = TypeAdapter(MyType)
@@ -170,7 +170,7 @@ class Roman:
     @classmethod
     def __prepare_pydantic_annotations__(
         cls, source_type: Any, annotations: Tuple[Any, ...], config: ConfigDict
-    ) -> Tuple[Any, Tuple[Any, ...]]:
+    ) -> Tuple[Any, Iterable[Any]]:
         allow_inf_nan = config.get('allow_inf_nan', False)
         for an in annotations:
             if isinstance(an, AllowInfNan):

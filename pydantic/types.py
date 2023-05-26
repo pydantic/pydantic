@@ -15,6 +15,7 @@ from typing import (
     FrozenSet,
     Generic,
     Hashable,
+    Iterable,
     List,
     Set,
     TypeVar,
@@ -468,7 +469,7 @@ class SecretField(Generic[SecretType]):
     @classmethod
     def __prepare_pydantic_annotations__(
         cls, source: type[Any], annotations: tuple[Any, ...], _config: ConfigDict
-    ) -> tuple[Any, tuple[Any, ...]]:
+    ) -> tuple[Any, Iterable[Any]]:
         metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
         _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
         return (

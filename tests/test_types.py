@@ -5059,7 +5059,7 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
 
         def __prepare_pydantic_annotations__(
             self, _source: Any, annotations: Tuple[Any, ...], _config: ConfigDict
-        ) -> Tuple[Any, Tuple[Any, ...]]:
+        ) -> Tuple[Any, Iterable[Any]]:
             return Decimal, [self, *annotations]
 
     class Model(BaseModel):
@@ -5112,7 +5112,7 @@ def test_transform_schema_for_first_party_class():
         @classmethod
         def __prepare_pydantic_annotations__(
             cls, _source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
-        ) -> Tuple[Any, Tuple[Any, ...]]:
+        ) -> Tuple[Any, Iterable[Any]]:
             def transform_schema(schema: CoreSchema) -> CoreSchema:
                 return core_schema.no_info_after_validator_function(lambda v: v.lower(), schema)
 
@@ -5152,7 +5152,7 @@ def test_transform_schema_for_third_party_class():
         @classmethod
         def __prepare_pydantic_annotations__(
             cls, _source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
-        ) -> Tuple[Any, Tuple[Any, ...]]:
+        ) -> Tuple[Any, Iterable[Any]]:
             def transform(schema: CoreSchema) -> CoreSchema:
                 return core_schema.no_info_after_validator_function(lambda v: DatetimeWrapper(v), schema)
 
