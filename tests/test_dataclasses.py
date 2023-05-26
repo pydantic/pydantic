@@ -2155,3 +2155,52 @@ def test_vanilla_dataclass_decorators_in_type_adapter(decorator1, decorator2):
     assert m.int2 == 202
 
     assert adapter.dump_python(m) == {'int1': 111, 'int2': 222}
+
+
+@pytest.mark.parametrize(
+    'dataclass_decorator',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
+def test_dataclass_slots(dataclass_decorator):
+    @dataclass_decorator(slots=True)
+    class Model:
+        a: str
+        b: str
+
+    dc = TypeAdapter(Model).validate_python({'a': 'foo', 'b': 'bar'})
+    assert dc.a == 'foo'
+    assert dc.b == 'bar'
+
+
+@pytest.mark.parametrize(
+    'dataclass_decorator',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
+def test_dataclass_slots_mixed(dataclass_decorator):
+    @dataclass_decorator(slots=True)
+    class Model:
+        x: int
+        y: dataclasses.InitVar[str]
+        z: ClassVar[str] = 'z-classvar'
+
+    @dataclass_decorator
+    class SubModel(Model):
+        x2: int
+        y2: dataclasses.InitVar[str]
+        z2: ClassVar[str] = 'z2-classvar'
+
+    dc = TypeAdapter(SubModel).validate_python({'x': 1, 'y': 'a', 'x2': 2, 'y2': 'b'})
+    assert dc.x == 1
+    assert dc.x2 == 2
+    assert SubModel.z == 'z-classvar'
+    assert SubModel.z2 == 'z2-classvar'

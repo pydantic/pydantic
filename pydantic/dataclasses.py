@@ -40,6 +40,7 @@ if sys.version_info >= (3, 10):
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
+        slots: bool = ...,
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
         """Overload for `dataclass`."""
         ...
@@ -58,6 +59,7 @@ if sys.version_info >= (3, 10):
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
         kw_only: bool = ...,
+        slots: bool = ...,
     ) -> type[PydanticDataclass]:
         """Overload for `dataclass`."""
         ...
@@ -111,6 +113,7 @@ def dataclass(
     config: ConfigDict | type[object] | None = None,
     validate_on_init: bool | None = None,
     kw_only: bool = False,
+    slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
     """
     A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
@@ -142,7 +145,7 @@ def dataclass(
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
 
     if sys.version_info >= (3, 10):
-        kwargs = dict(kw_only=kw_only)
+        kwargs = dict(kw_only=kw_only, slots=slots)
     else:
         kwargs = {}
 

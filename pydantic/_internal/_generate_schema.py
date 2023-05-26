@@ -4,6 +4,7 @@ Convert python types to pydantic-core schema.
 from __future__ import annotations as _annotations
 
 import collections.abc
+import dataclasses
 import inspect
 import re
 import sys
@@ -928,6 +929,7 @@ class GenerateSchema:
             key=lambda a: a.get('kw_only') is not False,
         )
         has_post_init = hasattr(dataclass, '__post_init__')
+        has_slots = hasattr(dataclass, '__slots__')
 
         config = getattr(dataclass, '__pydantic_config__', None)
         if config is not None:
@@ -946,7 +948,14 @@ class GenerateSchema:
                 self._config_wrapper_stack.pop()
 
         inner_schema = apply_validators(args_schema, decorators.root_validators.values())
-        dc_schema = core_schema.dataclass_schema(dataclass, inner_schema, post_init=has_post_init, ref=dataclass_ref)
+        dc_schema = core_schema.dataclass_schema(
+            dataclass,
+            inner_schema,
+            post_init=has_post_init,
+            ref=dataclass_ref,
+            fields=[field.name for field in dataclasses.fields(dataclass)],
+            slots=has_slots,
+        )
         schema = apply_model_serializers(dc_schema, decorators.model_serializers.values())
         return apply_model_validators(schema, decorators.model_validators.values())
 

@@ -36,7 +36,7 @@ except ValidationError as e:
     """
     1 validation error for Model
     p.0
-      Input should be a valid integer, got a number with a fractional part [type=int_from_float, input_value='1.3', input_type=str]
+      Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='1.3', input_type=str]
     """
 ```
 
