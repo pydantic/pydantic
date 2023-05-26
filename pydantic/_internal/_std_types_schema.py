@@ -336,7 +336,7 @@ class InnerSchemaValidator:
             js_schema.update(self.js_schema_update)
         return js_schema
 
-    def __get_pydantic_core_schema__(self, source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
+    def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         return self.core_schema
 
 

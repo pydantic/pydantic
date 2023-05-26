@@ -1083,6 +1083,7 @@ class GenerateSchema:
 
         if prepare is not None:
             source_type, annotations = prepare(source_type, tuple(annotations), self.config_wrapper.config_dict)
+            annotations = list(annotations)
         else:
             res = self._get_prepare_pydantic_annotations_for_known_type(source_type, annotations)
             if res is not None:
@@ -1143,7 +1144,7 @@ class GenerateSchema:
                 previous = annotations[:idx]
                 remaining = annotations[idx + 1 :]
                 new_source_type, remaining = prepare(source_type, tuple(remaining), self.config_wrapper.config_dict)
-                annotations = previous + remaining
+                annotations = previous + list(remaining)
                 if new_source_type is not source_type:
                     return self._apply_annotations(
                         transform_inner_schema,

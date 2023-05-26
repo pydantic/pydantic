@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, List, Sequence, Tuple
+from typing import Any, List, Tuple
 
 import dirty_equals as de
 import pytest
@@ -33,8 +33,8 @@ class MyDecimal(float):
 
     @classmethod
     def __prepare_pydantic_annotations__(
-        cls, source_type: Any, annotations: Sequence[Any], _config_dict: ConfigDict
-    ) -> Tuple[Any, List[Any]]:
+        cls, source_type: Any, annotations: Tuple[Any, ...], _config_dict: ConfigDict
+    ) -> Tuple[Any, Tuple[Any, ...]]:
         assert source_type is MyDecimal
         metadata: dict[str, Any] = {}
         remaining_annotations: list[Any] = []
@@ -45,11 +45,11 @@ class MyDecimal(float):
                 remaining_annotations.append(annotation)
         inner_schema = core_schema.float_schema(**metadata)
         outer_schema = core_schema.no_info_after_validator_function(MyDecimal, inner_schema)
-        new_annotations = [
+        new_annotations = (
             MetadataApplier(inner_core_schema=inner_schema, outer_core_schema=outer_schema),
             *remaining_annotations,
-        ]
-        return (source_type, new_annotations)
+        )
+        return source_type, new_annotations
 
 
 def test_decimal_like_in_annotated() -> None:
@@ -94,9 +94,9 @@ def test_generator_custom_type() -> None:
     class MyType(int):
         @classmethod
         def __prepare_pydantic_annotations__(
-            cls, source_type: Any, annotations: Sequence[Any], _config: ConfigDict
-        ) -> Tuple[Any, List[Any]]:
-            return (int, [Gt(123), *annotations])
+            cls, _source_type: Any, annotations: Tuple[Any, ...], _config: ConfigDict
+        ) -> Tuple[Any, Tuple[Any, ...]]:
+            return int, (Gt(123), *annotations)
 
     a = TypeAdapter(MyType)
     assert a.core_schema == de.IsPartialDict(core_schema.int_schema(gt=123))
@@ -169,8 +169,8 @@ class Roman:
 
     @classmethod
     def __prepare_pydantic_annotations__(
-        cls, source_type: Any, annotations: Sequence[Any], config: ConfigDict
-    ) -> Tuple[Any, List[Any]]:
+        cls, source_type: Any, annotations: Tuple[Any, ...], config: ConfigDict
+    ) -> Tuple[Any, Tuple[Any, ...]]:
         allow_inf_nan = config.get('allow_inf_nan', False)
         for an in annotations:
             if isinstance(an, AllowInfNan):
