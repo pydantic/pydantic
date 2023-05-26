@@ -1458,3 +1458,32 @@ def test_slots_mixed():
     assert dc.x == 1
     assert dc.x2 == 2
     assert dataclasses.asdict(dc) == {'x': 1, 'x2': 2}
+
+
+def test_dataclass_json():
+    schema = core_schema.dataclass_schema(
+        FooDataclass,
+        core_schema.dataclass_args_schema(
+            'FooDataclass',
+            [
+                core_schema.dataclass_field(name='a', schema=core_schema.str_schema()),
+                core_schema.dataclass_field(name='b', schema=core_schema.bool_schema()),
+            ],
+        ),
+        ['a', 'b'],
+    )
+    v = SchemaValidator(schema)
+    assert v.validate_json('{"a": "hello", "b": true}') == FooDataclass(a='hello', b=True)
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('["a", "b"]')
+
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'dataclass_name': 'FooDataclass'},
+            'input': ['a', 'b'],
+            'loc': (),
+            'msg': 'Input should be an object',
+            'type': 'dataclass_type',
+        }
+    ]
