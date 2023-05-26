@@ -246,13 +246,13 @@ def test_create_model_field_description():
 
 
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
-def test_set_name(base):
+def test_private_descriptors(base):
     set_name_calls = []
     get_calls = []
     set_calls = []
     delete_calls = []
 
-    class class_deco(base):
+    class MyDescriptor(base):
         def __init__(self, fn):
             super().__init__()
             self.fn = fn
@@ -283,7 +283,7 @@ def test_set_name(base):
     class A(BaseModel):
         x: int
 
-        @class_deco
+        @MyDescriptor
         def _some_func(self):
             return self.x
 
