@@ -61,7 +61,7 @@ class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
-    def __new__(
+    def __new__(  # noqa: C901
         mcs,
         cls_name: str,
         bases: tuple[type[Any], ...],
@@ -95,9 +95,6 @@ class ModelMetaclass(ABCMeta):
                 namespace, config_wrapper.ignored_types, class_vars, base_field_names
             )
             if private_attributes:
-                slots: set[str] = set(namespace.get('__slots__', ()))
-                namespace['__slots__'] = slots | private_attributes.keys()
-
                 if 'model_post_init' in namespace:
                     # if there are private_attributes and a model_post_init function, we handle both
                     original_model_post_init = namespace['model_post_init']
@@ -116,8 +113,10 @@ class ModelMetaclass(ABCMeta):
             namespace['__class_vars__'] = class_vars
             namespace['__private_attributes__'] = {**base_private_attributes, **private_attributes}
 
-            if config_wrapper.extra == 'allow':
-                namespace['__getattr__'] = model_extra_getattr
+            if config_wrapper.extra == 'allow' or namespace['__private_attributes__']:
+                namespace['__getattr__'] = model_extra_private_getattr
+            if namespace['__private_attributes__']:
+                namespace['__delattr__'] = model_private_delattr
 
             if '__hash__' not in namespace and config_wrapper.frozen:
 
@@ -192,6 +191,15 @@ class ModelMetaclass(ABCMeta):
             # this is the BaseModel class itself being created, no logic required
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
+    def __getattr__(self, item: str) -> Any:
+        """
+        This is necessary to keep attribute access working for class attribute access
+        """
+        private_attributes = self.__dict__.get('__private_attributes__')
+        if private_attributes and item in private_attributes:
+            return private_attributes[item]
+        raise AttributeError(item)
+
     @classmethod
     def __prepare__(cls, *args: Any, **kwargs: Any) -> Mapping[str, object]:
         return _ModelNamespaceDict()
@@ -226,10 +234,12 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
 
     It takes context as an argument since that's what pydantic-core passes when calling it.
     """
+    pydantic_private = {}
     for name, private_attr in self.__private_attributes__.items():
         default = private_attr.get_default()
         if default is not Undefined:
-            object_setattr(self, name, default)
+            pydantic_private[name] = default
+    object_setattr(self, '__pydantic_private__', pydantic_private)
 
 
 def inspect_namespace(  # noqa C901
@@ -505,15 +515,30 @@ class MockValidator:
         raise PydanticUserError(self._error_message, code=self._code)
 
 
-def model_extra_getattr(self: BaseModel, item: str) -> Any:
+def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
     """
     This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
-    allow (and store) extra
+    allow (and store) extra and/or private attributes
     """
+    if item in self.__private_attributes__:
+        try:
+            # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
+            return self.__pydantic_private__[item]  # type: ignore
+        except KeyError as exc:
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
     if self.__pydantic_extra__ is not None:
         try:
             return self.__pydantic_extra__[item]
         except KeyError as exc:
             raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+    else:
+        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
+
+def model_private_delattr(self: BaseModel, item: str) -> Any:
+    # Note: self.__pydantic_private__ is guaranteed to not be None if this method is set as __delattr__
+    assert self.__pydantic_private__ is not None
+    if item in self.__pydantic_private__:
+        del self.__pydantic_private__[item]
     else:
         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')

@@ -1,5 +1,4 @@
 import functools
-import platform
 from typing import ClassVar, Generic, TypeVar
 
 import pytest
@@ -14,11 +13,11 @@ def test_private_attribute():
     class Model(BaseModel):
         _foo = PrivateAttr(default)
 
-    assert Model.__slots__ == {'_foo'}
-    if platform.python_implementation() == 'PyPy':
-        repr(Model._foo).startswith('<member_descriptor object at')
-    else:
-        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    assert set(Model.__private_attributes__) == {'_foo'}
+    # if platform.python_implementation() == 'PyPy':
+    #     repr(Model._foo).startswith('<member_descriptor object at')
+    # else:
+    #     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
 
     m = Model()
     assert m._foo == default
@@ -54,11 +53,10 @@ def test_private_attribute_factory():
     class Model(BaseModel):
         _foo = PrivateAttr(default_factory=factory)
 
-    assert Model.__slots__ == {'_foo'}
-    if platform.python_implementation() == 'PyPy':
-        repr(Model._foo).startswith('<member_descriptor object at')
-    else:
-        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    # if platform.python_implementation() == 'PyPy':
+    #     repr(Model._foo).startswith('<member_descriptor object at')
+    # else:
+    #     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
 
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(default_factory=factory)}
 
@@ -80,11 +78,10 @@ def test_private_attribute_annotation():
 
         _foo: str
 
-    assert Model.__slots__ == {'_foo'}
-    if platform.python_implementation() == 'PyPy':
-        repr(Model._foo).startswith('<member_descriptor object at')
-    else:
-        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    # if platform.python_implementation() == 'PyPy':
+    #     repr(Model._foo).startswith('<member_descriptor object at')
+    # else:
+    #     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(Undefined)}
     assert repr(Model.__doc__) == "'The best model'"
 
@@ -115,11 +112,10 @@ def test_underscore_attrs_are_private():
         _foo: str = 'abc'
         _bar: ClassVar[str] = 'cba'
 
-    assert Model.__slots__ == {'_foo'}
-    if platform.python_implementation() == 'PyPy':
-        repr(Model._foo).startswith('<member_descriptor object at')
-    else:
-        assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
+    # if platform.python_implementation() == 'PyPy':
+    #     repr(Model._foo).startswith('<member_descriptor object at')
+    # else:
+    #     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
     assert Model._bar == 'cba'
     assert Model.__private_attributes__ == {'_foo': PrivateAttr('abc')}
 
@@ -144,7 +140,7 @@ def test_private_attribute_intersection_with_extra_field():
 
         model_config = ConfigDict(extra='allow')
 
-    assert Model.__slots__ == {'_foo'}
+    assert set(Model.__private_attributes__) == {'_foo'}
     m = Model(_foo='field')
     assert m._foo == 'private_attribute'
     assert m.__dict__ == {}
@@ -245,17 +241,21 @@ def test_private_attribute_multiple_inheritance():
     class Model(ParentAModel, ParentBModel):
         _baz = PrivateAttr(default)
 
-    assert GrandParentModel.__slots__ == {'_foo'}
-    assert ParentBModel.__slots__ == {'_bar'}
-    assert Model.__slots__ == {'_baz'}
-    if platform.python_implementation() == 'PyPy':
-        assert repr(Model._foo).startswith('<member_descriptor object at')
-        assert repr(Model._bar).startswith('<member_descriptor object at')
-        assert repr(Model._baz).startswith('<member_descriptor object at')
-    else:
-        assert repr(Model._foo) == "<member '_foo' of 'GrandParentModel' objects>"
-        assert repr(Model._bar) == "<member '_bar' of 'ParentBModel' objects>"
-        assert repr(Model._baz) == "<member '_baz' of 'Model' objects>"
+    # if platform.python_implementation() == 'PyPy':
+    #     assert repr(Model._foo).startswith('<member_descriptor object at')
+    #     assert repr(Model._bar).startswith('<member_descriptor object at')
+    #     assert repr(Model._baz).startswith('<member_descriptor object at')
+    # else:
+    #     assert repr(Model._foo) == "<member '_foo' of 'GrandParentModel' objects>"
+    #     assert repr(Model._bar) == "<member '_bar' of 'ParentBModel' objects>"
+    #     assert repr(Model._baz) == "<member '_baz' of 'Model' objects>"
+    assert GrandParentModel.__private_attributes__ == {
+        '_foo': PrivateAttr(default),
+    }
+    assert ParentBModel.__private_attributes__ == {
+        '_foo': PrivateAttr(default),
+        '_bar': PrivateAttr(default),
+    }
     assert Model.__private_attributes__ == {
         '_foo': PrivateAttr(default),
         '_bar': PrivateAttr(default),
@@ -339,3 +339,28 @@ def test_none_as_private_attr():
     a = A()
     a._x = None
     assert a._x is None
+
+
+def test_layout_compatible_multiple_private_parents():
+    import typing as t
+
+    import pydantic
+
+    class ModelMixin(pydantic.BaseModel):
+        _mixin_private: t.Optional[str] = pydantic.PrivateAttr(None)
+
+    class Model(pydantic.BaseModel):
+        public: str = 'default'
+        _private: t.Optional[str] = pydantic.PrivateAttr(None)
+
+    class NewModel(ModelMixin, Model):
+        pass
+
+    assert set(NewModel.__private_attributes__) == {'_mixin_private', '_private'}
+    m = NewModel()
+    m._mixin_private = 1
+    m._private = 2
+
+    assert m.__pydantic_private__ == {'_mixin_private': 1, '_private': 2}
+    assert m._mixin_private == 1
+    assert m._private == 2
