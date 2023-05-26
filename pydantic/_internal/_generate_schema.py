@@ -19,8 +19,10 @@ from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, get_origin, is_typeddict
 
+from ..annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import AliasChoices, AliasPath, FieldInfo
+from ..json_schema import JsonSchemaValue
 from . import _discriminated_union, _known_annotated_metadata, _typing_extra
 from ._config import ConfigWrapper
 from ._core_metadata import (
@@ -28,6 +30,7 @@ from ._core_metadata import (
     build_metadata_dict,
 )
 from ._core_utils import (
+    CoreSchemaOrField,
     consolidate_refs,
     define_expected_missing_refs,
     get_type_ref,
@@ -57,11 +60,6 @@ from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, recursively_defined_type_refs, replace_types
 from ._schema_generation_shared import (
     CallbackGetCoreSchemaHandler,
-    CoreSchemaOrField,
-    GetCoreSchemaHandler,
-    GetJsonSchemaFunction,
-    GetJsonSchemaHandler,
-    JsonSchemaValue,
     UnpackedRefJsonSchemaHandler,
     wrap_json_schema_fn_for_model_or_custom_type_with_ref_unpacking,
 )
@@ -72,6 +70,7 @@ if TYPE_CHECKING:
     from ..main import BaseModel
     from ..validators import FieldValidatorModes
     from ._dataclasses import StandardDataclass
+    from ._schema_generation_shared import GetJsonSchemaFunction
 
 _SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
 
