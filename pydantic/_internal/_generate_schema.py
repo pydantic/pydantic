@@ -311,11 +311,11 @@ class GenerateSchema:
         Note: `__get_pydantic_core_schema__` takes priority so it can
         decide whether to use a `__pydantic_core_schema__` attribute, or generate a fresh schema.
         """
-        obj, new_annotations = self._prepare_annotations(obj, [])
-        if new_annotations:
+        new_obj, new_annotations = self._prepare_annotations(obj, [])
+        if new_obj is not obj or new_annotations:
             return self._apply_annotations(
                 lambda x: x,
-                obj,
+                new_obj,
                 new_annotations,
             )
         return None
