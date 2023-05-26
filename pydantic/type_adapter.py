@@ -76,6 +76,23 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     return gen.generate_schema(type_)
 
 
+def _getattr_no_parents(obj: Any, attribute: str) -> Any:
+    """
+    Returns the attribute value without looking at class attributes or parent types
+    """
+    if hasattr(obj, '__dict__'):
+        try:
+            return obj.__dict__[attribute]
+        except KeyError:
+            pass
+
+    slots = getattr(obj, '__slots__', None)
+    if slots is not None and attribute in slots:
+        return getattr(obj, attribute)
+    else:
+        raise AttributeError(attribute)
+
+
 class TypeAdapter(Generic[T]):
     """A class representing the type adapter.
 
@@ -107,12 +124,8 @@ class TypeAdapter(Generic[T]):
 
         core_schema: CoreSchema
         try:
-            # look in __type.__dict__ to make sure we don't get the core schema of a parent class
-            if hasattr(__type, '__dict__'):
-                core_schema = __type.__dict__['__pydantic_core_schema__']
-            else:
-                core_schema = __type.__pydantic_core_schema__
-        except (KeyError, AttributeError):
+            core_schema = _getattr_no_parents(__type, '__pydantic_core_schema__')
+        except AttributeError:
             core_schema = _get_schema(__type, config_wrapper, parent_depth=_parent_depth + 1)
 
         core_schema = flatten_schema_defs(core_schema)
@@ -120,18 +133,16 @@ class TypeAdapter(Generic[T]):
 
         core_config = config_wrapper.core_config(None)
         validator: SchemaValidator
-        # If we were to keep this logic, we'd need to make sure we look in __type.__dict__, not use getattr
-        # if hasattr(__type, '__pydantic_validator__') and config is None:
-        #     validator = __type.__pydantic_validator__
-        # else:
-        validator = SchemaValidator(simplified_core_schema, core_config)
+        try:
+            validator = _getattr_no_parents(__type, '__pydantic_validator__')
+        except AttributeError:
+            validator = SchemaValidator(simplified_core_schema, core_config)
 
         serializer: SchemaSerializer
-        # If we were to keep this logic, we'd need to make sure we look in __type.__dict__, not use getattr
-        # if hasattr(_type, '__pydantic_serializer__') and config is None:
-        #     serializer = _type.__pydantic_serializer__
-        # else:
-        serializer = SchemaSerializer(simplified_core_schema, core_config)
+        try:
+            serializer = _getattr_no_parents(__type, '__pydantic_serializer__')
+        except AttributeError:
+            serializer = SchemaSerializer(simplified_core_schema, core_config)
 
         self.core_schema = core_schema
         self.validator = validator
