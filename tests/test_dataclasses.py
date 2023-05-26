@@ -1579,6 +1579,52 @@ def test_kw_only():
     assert A(b='hi').b == 'hi'
 
 
+def dataclass_decorators(include_identity: bool = False, exclude_combined: bool = False):
+    decorators = [pydantic.dataclasses.dataclass, dataclasses.dataclass]
+    ids = ['pydantic', 'stdlib']
+
+    if not exclude_combined:
+
+        def combined_decorator(cls):
+            """
+            Should be equivalent to:
+            @pydantic.dataclasses.dataclass
+            @dataclasses.dataclass
+            """
+            return pydantic.dataclasses.dataclass(dataclasses.dataclass(cls))
+
+        decorators.append(combined_decorator)
+        ids.append('combined')
+
+    if include_identity:
+
+        def identity_decorator(cls):
+            return cls
+
+        decorators.append(identity_decorator)
+        ids.append('identity')
+
+    return {'argvalues': decorators, 'ids': ids}
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='kw_only is not available in python < 3.10')
+@pytest.mark.parametrize('decorator1', **dataclass_decorators(exclude_combined=True))
+@pytest.mark.parametrize('decorator2', **dataclass_decorators(exclude_combined=True))
+def test_kw_only_inheritance(decorator1, decorator2):
+    # Exclude combined from the decorators since it doesn't know how to accept kw_only
+    @decorator1(kw_only=True)
+    class Parent:
+        x: int
+
+    @decorator2
+    class Child(Parent):
+        y: int
+
+    child = Child(1, x=2)
+    assert child.x == 2
+    assert child.y == 1
+
+
 def test_extra_forbid_list_no_error():
     @pydantic.dataclasses.dataclass(config=dict(extra='forbid'))
     class Bar:
@@ -1853,26 +1899,6 @@ def test_dataclass_config_validate_default():
     ]
 
 
-def dataclass_decorators(identity: bool = False):
-    def combined(cls):
-        """
-        Should be equivalent to:
-        @pydantic.dataclasses.dataclass
-        @dataclasses.dataclass
-        """
-        return pydantic.dataclasses.dataclass(dataclasses.dataclass(cls))
-
-    def identity_decorator(cls):
-        return cls
-
-    decorators = [pydantic.dataclasses.dataclass, dataclasses.dataclass, combined]
-    ids = ['pydantic', 'stdlib', 'combined']
-    if identity:
-        decorators.append(identity_decorator)
-        ids.append('identity')
-    return {'argvalues': decorators, 'ids': ids}
-
-
 @pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators())
 def test_unparametrized_generic_dataclass(dataclass_decorator):
     T = TypeVar('T')
@@ -1935,7 +1961,7 @@ def test_parametrized_generic_dataclass(dataclass_decorator, annotation, input_v
         assert exc_info.value.errors(include_url=False) == output_value
 
 
-@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(identity=True))
+@pytest.mark.parametrize('dataclass_decorator', **dataclass_decorators(include_identity=True))
 def test_pydantic_dataclass_preserves_metadata(dataclass_decorator: Callable[[Any], Any]) -> None:
     @dataclass_decorator
     class FooStd:
