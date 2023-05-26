@@ -28,15 +28,13 @@ from pydantic_core import CoreSchema, PydanticOmit, core_schema
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Literal, assert_never
 
-from pydantic._internal._schema_generation_shared import GenerateJsonSchemaHandler
-
 from ._internal import _core_metadata, _core_utils, _schema_generation_shared, _typing_extra
-from ._internal._core_utils import CoreSchemaField, CoreSchemaOrField, is_core_schema, is_core_schema_field
 from .config import JsonSchemaExtraCallable
 from .errors import PydanticInvalidForJsonSchema, PydanticUserError
 
 if TYPE_CHECKING:
     from . import ConfigDict
+    from ._internal._core_utils import CoreSchemaField, CoreSchemaOrField
     from ._internal._dataclasses import PydanticDataclass
     from .main import BaseModel
 
@@ -47,7 +45,7 @@ A type alias for defined schema types that represents a union of `core_schema.Co
 `core_schema.CoreSchemaFieldType`.
 """
 
-JsonSchemaValue = _schema_generation_shared.JsonSchemaValue
+JsonSchemaValue = Dict[str, Any]
 """
 A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary values.
 """
@@ -325,12 +323,12 @@ class GenerateJsonSchema:
         self._used = True
         return json_schema
 
-    def generate_inner(self, schema: _core_metadata.CoreSchemaOrField) -> JsonSchemaValue:
+    def generate_inner(self, schema: CoreSchemaOrField) -> JsonSchemaValue:
         """
         Generates a JSON schema for a given `CoreSchemaOrField`.
 
         Args:
-            schema (_core_metadata.CoreSchemaOrField): The given `CoreSchemaOrField` to generate JSON schema for.
+            schema (CoreSchemaOrField): The given `CoreSchemaOrField` to generate JSON schema for.
 
         Returns:
             JsonSchemaValue: The generated JSON schema.
@@ -347,12 +345,12 @@ class GenerateJsonSchema:
         # Generate the JSON schema, accounting for the json_schema_override and core_schema_override
         metadata_handler = _core_metadata.CoreMetadataHandler(schema)
 
-        def handler_func(schema_or_field: _core_metadata.CoreSchemaOrField) -> JsonSchemaValue:
+        def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
             """
             Generate a JSON schema based on the input schema.
 
             Args:
-                schema_or_field (_core_metadata.CoreSchemaOrField): The schema data to generate a JSON schema from.
+                schema_or_field (CoreSchemaOrField): The schema data to generate a JSON schema from.
 
             Returns:
                 JsonSchemaValue: The generated JSON schema.
@@ -361,7 +359,7 @@ class GenerateJsonSchema:
                 TypeError: If an unexpected schema type is encountered.
             """
             # Generate the core-schema-type-specific bits of the schema generation:
-            if is_core_schema(schema_or_field) or is_core_schema_field(schema_or_field):
+            if _core_utils.is_core_schema(schema_or_field) or _core_utils.is_core_schema_field(schema_or_field):
                 generate_for_schema_type = self._schema_type_to_method[schema_or_field['type']]
                 json_schema = generate_for_schema_type(schema_or_field)
             else:
@@ -374,18 +372,18 @@ class GenerateJsonSchema:
                 json_schema = ref_json_schema
             return json_schema
 
-        current_handler = GenerateJsonSchemaHandler(self, handler_func)
+        current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
 
         for js_modify_function in metadata_handler.metadata.get('pydantic_js_functions', ()):
 
             def new_handler_func(
-                schema_or_field: _core_metadata.CoreSchemaOrField,
+                schema_or_field: CoreSchemaOrField,
                 current_handler: _core_metadata.GetJsonSchemaHandler = current_handler,
                 js_modify_function: _core_metadata.GetJsonSchemaFunction = js_modify_function,
             ) -> JsonSchemaValue:
                 return js_modify_function(schema_or_field, current_handler)
 
-            current_handler = GenerateJsonSchemaHandler(self, new_handler_func)
+            current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
         return current_handler(schema)
 

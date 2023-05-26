@@ -7,9 +7,9 @@ from pydantic_core import core_schema
 from typing_extensions import Annotated
 
 from pydantic import BaseModel, Field
+from pydantic._internal._fields import Undefined
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
-from pydantic.fields import Undefined
 
 NO_VALUE = object()
 

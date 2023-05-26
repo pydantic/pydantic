@@ -7,13 +7,11 @@ from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, TypeAlias
 
-from ._internal import _decorators
-from ._internal._decorators import inspect_annotated_serializer
-from ._internal._internal_dataclass import slots_dataclass
+from ._internal import _decorators, _internal_dataclass
 from .annotated import GetCoreSchemaHandler
 
 
-@slots_dataclass(frozen=True)
+@_internal_dataclass.slots_dataclass(frozen=True)
 class PlainSerializer:
     """
     Plain serializers use a function to modify the output of serialization.
@@ -43,14 +41,14 @@ class PlainSerializer:
         schema = handler(source_type)
         schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
             function=self.func,
-            info_arg=inspect_annotated_serializer(self.func, 'plain'),
+            info_arg=_decorators.inspect_annotated_serializer(self.func, 'plain'),
             json_return_type=self.json_return_type,
             when_used=self.when_used,
         )
         return schema
 
 
-@slots_dataclass(frozen=True)
+@_internal_dataclass.slots_dataclass(frozen=True)
 class WrapSerializer:
     """
     Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization logic,
@@ -81,7 +79,7 @@ class WrapSerializer:
         schema = handler(source_type)
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=self.func,
-            info_arg=inspect_annotated_serializer(self.func, 'wrap'),
+            info_arg=_decorators.inspect_annotated_serializer(self.func, 'wrap'),
             json_return_type=self.json_return_type,
             when_used=self.when_used,
         )

@@ -5,7 +5,7 @@ from typing import ClassVar, Generic, TypeVar
 import pytest
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
-from pydantic.fields import Undefined
+from pydantic.fields import _Undefined
 
 
 def test_private_attribute():
@@ -85,7 +85,7 @@ def test_private_attribute_annotation():
         repr(Model._foo).startswith('<member_descriptor object at')
     else:
         assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
-    assert Model.__private_attributes__ == {'_foo': PrivateAttr(Undefined)}
+    assert Model.__private_attributes__ == {'_foo': PrivateAttr(_Undefined)}
     assert repr(Model.__doc__) == "'The best model'"
 
     m = Model()

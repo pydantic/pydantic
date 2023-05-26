@@ -16,13 +16,13 @@ import annotated_types
 import typing_extensions
 
 from . import types
-from ._internal import _decorators, _fields, _internal_dataclass, _repr, _typing_extra, _utils
-from ._internal._fields import Undefined
-from ._internal._generics import replace_types
+from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
 from .errors import PydanticUserError
 
 if typing.TYPE_CHECKING:
     from ._internal._repr import ReprArgs
+
+_Undefined = _fields.Undefined
 
 
 class _FromFieldInfoInputs(typing_extensions.TypedDict, total=False):
@@ -173,15 +173,15 @@ class FieldInfo(_repr.Representation):
         """
         self.annotation, annotation_metadata = self._extract_metadata(kwargs.get('annotation'))
 
-        default = kwargs.pop('default', Undefined)
+        default = kwargs.pop('default', _Undefined)
         if default is Ellipsis:
-            self.default = Undefined
+            self.default = _Undefined
         else:
             self.default = default
 
         self.default_factory = kwargs.pop('default_factory', None)
 
-        if self.default is not Undefined and self.default_factory is not None:
+        if self.default is not _Undefined and self.default_factory is not None:
             raise TypeError('cannot specify both default and default_factory')
 
         self.alias = kwargs.pop('alias', None)
@@ -207,7 +207,7 @@ class FieldInfo(_repr.Representation):
 
     @classmethod
     def from_field(
-        cls, default: Any = Undefined, **kwargs: typing_extensions.Unpack[_FromFieldInfoInputs]
+        cls, default: Any = _Undefined, **kwargs: typing_extensions.Unpack[_FromFieldInfoInputs]
     ) -> typing_extensions.Self:
         """
         Create a new `FieldInfo` object with the `Field` function.
@@ -370,7 +370,7 @@ class FieldInfo(_repr.Representation):
         """
         default = dc_field.default
         if default is dataclasses.MISSING:
-            default = Undefined
+            default = _Undefined
 
         if dc_field.default_factory is dataclasses.MISSING:
             default_factory: typing.Callable[[], Any] | None = None
@@ -480,7 +480,7 @@ class FieldInfo(_repr.Representation):
         Returns:
             bool: `True` if the argument is required, `False` otherwise.
         """
-        return self.default is Undefined and self.default_factory is None
+        return self.default is _Undefined and self.default_factory is None
 
     def rebuild_annotation(self) -> Any:
         """
@@ -515,7 +515,7 @@ class FieldInfo(_repr.Representation):
                 their concrete types.
         """
         annotation = _typing_extra.eval_type_lenient(self.annotation, types_namespace, None)
-        self.annotation = replace_types(annotation, typevars_map)
+        self.annotation = _generics.replace_types(annotation, typevars_map)
 
     def __repr_args__(self) -> ReprArgs:
         yield 'annotation', _repr.PlainRepr(_repr.display_as_type(self.annotation))
@@ -540,7 +540,7 @@ class FieldInfo(_repr.Representation):
                 yield 'default_factory', _repr.PlainRepr(_repr.display_as_type(self.default_factory))
             else:
                 value = getattr(self, s)
-                if value is not None and value is not Undefined:
+                if value is not None and value is not _Undefined:
                     yield s, value
 
 
@@ -614,7 +614,7 @@ class _EmptyKwargs(typing_extensions.TypedDict):
 
 
 def Field(  # noqa C901
-    default: Any = Undefined,
+    default: Any = _Undefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
     alias: str | None = None,
@@ -796,7 +796,7 @@ class ModelPrivateAttr(_repr.Representation):
 
     __slots__ = 'default', 'default_factory'
 
-    def __init__(self, default: Any = Undefined, *, default_factory: typing.Callable[[], Any] | None = None) -> None:
+    def __init__(self, default: Any = _Undefined, *, default_factory: typing.Callable[[], Any] | None = None) -> None:
         self.default = default
         self.default_factory = default_factory
 
@@ -804,7 +804,7 @@ class ModelPrivateAttr(_repr.Representation):
         """
         preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
         """
-        if self.default is Undefined:
+        if self.default is _Undefined:
             return
         if not hasattr(self.default, '__set_name__'):
             return
@@ -831,7 +831,7 @@ class ModelPrivateAttr(_repr.Representation):
 
 
 def PrivateAttr(
-    default: Any = Undefined,
+    default: Any = _Undefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
 ) -> Any:
@@ -854,7 +854,7 @@ def PrivateAttr(
     Raises:
         ValueError: If both `default` and `default_factory` are set.
     """
-    if default is not Undefined and default_factory is not None:
+    if default is not _Undefined and default_factory is not None:
         raise TypeError('cannot specify both default and default_factory')
 
     return ModelPrivateAttr(
