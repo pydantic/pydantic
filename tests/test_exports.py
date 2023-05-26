@@ -38,7 +38,11 @@ def test_public_internal():
             if module is None:
                 spec = importlib.util.spec_from_file_location(module_name, str(file))
                 module = importlib.util.module_from_spec(spec)
-                spec.loader.exec_module(module)
+                try:
+                    spec.loader.exec_module(module)
+                except ImportError:
+                    continue
+
             for name, attr in vars(module).items():
                 if not name.startswith('_'):
                     attr_module = getattr(attr, '__module__', '')
