@@ -1177,24 +1177,6 @@ def test_optional_required():
     ]
 
 
-@pytest.mark.xfail(reason='items yielded by __get_validators__ are not inspected for valid signatures')
-def test_invalid_validator():
-    class InvalidValidator:
-        @classmethod
-        def __get_validators__(cls):
-            yield cls.has_wrong_arguments
-
-        @classmethod
-        def has_wrong_arguments(cls, value, bar):
-            pass
-
-    with pytest.raises(errors.PydanticUserError, match='Invalid signature for validator'):
-
-        class InvalidValidatorModel(BaseModel):
-            model_config = dict(arbitrary_types_allowed=True)
-            x: InvalidValidator = ...
-
-
 def test_unable_to_infer():
     with pytest.raises(
         errors.PydanticUserError,
@@ -2268,7 +2250,7 @@ def test_model_issubclass():
     assert not issubclass(Custom, BaseModel)
 
 
-@pytest.mark.xfail(reason='"long int", see details below')
+@pytest.mark.xfail(reason='"long int", see deta ils below')
 def test_long_int():
     """
     see https://github.com/pydantic/pydantic/issues/1477 and in turn, https://github.com/python/cpython/issues/95778

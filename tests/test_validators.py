@@ -1563,9 +1563,7 @@ def test_assignment_validator_cls():
     assert validator_calls == 2
 
 
-@pytest.mark.xfail(
-    sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
-)
+@pytest.mark.skipif(sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592')
 def test_literal_validator():
     class Model(BaseModel):
         a: Literal['foo']
@@ -1606,7 +1604,7 @@ def test_literal_validator_str_enum():
     assert my_foo.fizfuz is Bar.FUZ
 
 
-@pytest.mark.xfail(
+@pytest.mark.skipif(
     sys.version_info[:2] == (3, 8), reason='https://github.com/python/cpython/issues/103592', strict=False
 )
 def test_nested_literal_validator():
