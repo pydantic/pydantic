@@ -16,7 +16,7 @@ from ..conftest import Err, PyAndJson, infinite_generator
         ([1, 2, 3], {1, 2, 3}),
         ([1, 2, '3'], {1, 2, 3}),
         ([1, 2, 3, 2, 3], {1, 2, 3}),
-        (5, Err('Input should be a valid set [type=set_type, input_value=5, input_type=int]')),
+        (5, Err('[type=set_type, input_value=5, input_type=int]')),
     ],
 )
 def test_set_ints_both(py_and_json: PyAndJson, input_value, expected):
@@ -38,16 +38,16 @@ def test_set_no_validators_both(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         ([1, 2.5, '3'], {1, 2.5, '3'}),
-        ('foo', Err('Input should be a valid set')),
-        (1, Err('Input should be a valid set')),
-        (1.0, Err('Input should be a valid set')),
-        (False, Err('Input should be a valid set')),
+        ('foo', Err('[type=set_type, input_value=foo, input_type=str]')),
+        (1, Err('[type=set_type, input_value=1.0, input_type=float]')),
+        (1.0, Err('[type=set_type, input_value=1.0, input_type=float]')),
+        (False, Err('[type=set_type, input_value=False, input_type=bool]')),
     ],
 )
 def test_frozenset_no_validators_both(py_and_json: PyAndJson, input_value, expected):
     v = py_and_json({'type': 'set'})
     if isinstance(expected, Err):
-        with pytest.raises(ValidationError, match=re.escape(expected.message)):
+        with pytest.raises(ValidationError, match=expected.message):
             v.validate_test(input_value)
     else:
         assert v.validate_test(input_value) == expected
@@ -215,7 +215,7 @@ def test_union_set_int_set_str(input_value, expected):
 
 def test_set_as_dict_keys(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'keys_schema': {'type': 'set'}, 'values_schema': {'type': 'int'}})
-    with pytest.raises(ValidationError, match=re.escape('Input should be a valid set')):
+    with pytest.raises(ValidationError, match=re.escape("[type=set_type, input_value='foo', input_type=str]")):
         v.validate_test({'foo': 'bar'})
 
 

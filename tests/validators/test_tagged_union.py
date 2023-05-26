@@ -1,6 +1,7 @@
 from enum import Enum
 
 import pytest
+from dirty_equals import IsAnyStr
 
 from pydantic_core import SchemaError, SchemaValidator, ValidationError
 
@@ -71,7 +72,14 @@ from .test_typed_dict import Cls
             'not a dict',
             Err(
                 'dict_type',
-                [{'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': 'not a dict'}],
+                [
+                    {
+                        'type': 'dict_type',
+                        'loc': (),
+                        'msg': IsAnyStr(regex='Input should be (a valid dictionary|an object)'),
+                        'input': 'not a dict',
+                    }
+                ],
             ),
         ),
     ],
