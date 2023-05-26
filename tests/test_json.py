@@ -23,6 +23,7 @@ from pydantic.deprecated.json import pydantic_encoder, timedelta_isoformat
 from pydantic.functional_serializers import (
     field_serializer,
 )
+from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 
 try:
@@ -357,3 +358,23 @@ class Model(BaseModel):
     M = module.Model
 
     assert M(value=1, nested=M(value=2)).model_dump_json(exclude_none=True) == '{"value":1,"nested":{"value":2}}'
+
+
+def test_unresolvable_schema_lookup_error():
+    class Model(BaseModel):
+        mini_me: 'Model'
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            json_schema = super().__get_pydantic_json_schema__(core_schema, handler)
+            return handler.resolve_ref_schema(json_schema)
+
+    with pytest.raises(LookupError) as e:
+        Model.model_json_schema()
+
+    assert e.value.args[0] == (
+        'Could not find a ref for #/$defs/Model.'
+        ' Maybe you tried to call resolve_ref_schema from within a recursive model?'
+    )
