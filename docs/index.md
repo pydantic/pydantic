@@ -215,6 +215,10 @@ const companies = [
     logoUrl: '/logos/facebook_logo.png'
   },
   {
+    name: 'FastAPI',
+    logoUrl: '/logos/fastapi_logo.png'
+  },
+  {
     name: 'Google',
     logoUrl: '/logos/google_logo.png'
   },
