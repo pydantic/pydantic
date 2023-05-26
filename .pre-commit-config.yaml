@@ -29,4 +29,4 @@ repos:
     types: [python]
     language: node
     pass_filenames: false
-    additional_dependencies: ["pyright@1.1.302"]
+    additional_dependencies: ["pyright@1.1.310"]
