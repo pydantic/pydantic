@@ -492,11 +492,6 @@ class SequenceValidator:
     min_length: int | None = None
     max_length: int | None = None
     strict: bool = False
-    js_core_schema: CoreSchema | None = None
-
-    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        assert self.js_core_schema is not None
-        return handler(self.js_core_schema)
 
     def serialize_sequence_via_list(
         self, v: Any, handler: core_schema.SerializerFunctionWrapHandler, info: core_schema.SerializationInfo
@@ -532,8 +527,6 @@ class SequenceValidator:
                 assert self.mapped_origin is frozenset  # safety check in case we forget to add a case
                 constrained_schema = core_schema.frozenset_schema(items_schema, **metadata)
 
-            js_core_schema = constrained_schema
-
             schema = constrained_schema
         else:
             # safety check in case we forget to add a case
@@ -550,7 +543,7 @@ class SequenceValidator:
             else:
                 coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
 
-            constrained_schema = js_core_schema = core_schema.list_schema(items_schema, **metadata)
+            constrained_schema = core_schema.list_schema(items_schema, **metadata)
 
             check_instance = core_schema.json_or_python_schema(
                 json_schema=core_schema.list_schema(),
@@ -569,8 +562,6 @@ class SequenceValidator:
                 lax = coerce_instance_wrap(constrained_schema)
                 schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
             schema['serialization'] = serialization
-
-        self.js_core_schema = js_core_schema
 
         return schema
 
@@ -715,11 +706,6 @@ class MappingValidator:
     min_length: int | None = None
     max_length: int | None = None
     strict: bool = False
-    js_core_schema: CoreSchema | None = None
-
-    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        assert self.js_core_schema is not None
-        return handler(self.js_core_schema)
 
     def serialize_mapping_via_dict(self, v: Any, handler: core_schema.SerializerFunctionWrapHandler) -> Any:
         return handler(v)
@@ -737,9 +723,9 @@ class MappingValidator:
         metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
 
         if self.mapped_origin is dict:
-            schema = js_core_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
+            schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
         else:
-            constrained_schema = js_core_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
+            constrained_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
             check_instance = core_schema.json_or_python_schema(
                 json_schema=core_schema.dict_schema(),
                 python_schema=core_schema.is_instance_schema(self.mapped_origin),
@@ -770,8 +756,6 @@ class MappingValidator:
                 lax = coerce_instance_wrap(constrained_schema)
                 schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
                 schema['serialization'] = serialization
-
-        self.js_core_schema = js_core_schema
 
         return schema
 
