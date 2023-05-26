@@ -54,6 +54,7 @@ class ConfigWrapper:
     validate_default: bool
     validate_return: bool
     protected_namespaces: tuple[str, ...]
+    hide_input_in_errors: bool
 
     def __init__(self, config: ConfigDict | dict[str, Any] | type[Any] | None, *, check: bool = True):
         if check:
@@ -135,6 +136,7 @@ class ConfigWrapper:
                 validate_default=self.config_dict.get('validate_default'),
                 str_max_length=self.config_dict.get('str_max_length'),
                 str_min_length=self.config_dict.get('str_min_length'),
+                hide_input_in_errors=self.config_dict.get('hide_input_in_errors'),
             )
         )
         return core_config
@@ -171,6 +173,7 @@ config_defaults = ConfigDict(
     validate_default=False,
     validate_return=False,
     protected_namespaces=('model_',),
+    hide_input_in_errors=False,
 )
 
 

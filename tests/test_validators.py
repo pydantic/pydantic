@@ -2527,3 +2527,32 @@ def test_validator_with_underscore_name() -> None:
         _normalize_name = field_validator('name')(f)
 
     assert Model(name='Adrian').name == 'adrian'
+
+
+@pytest.mark.parametrize(
+    'mode,config,input_str',
+    (
+        ('before', {}, "type=value_error, input_value='123', input_type=str"),
+        ('before', {'hide_input_in_errors': False}, "type=value_error, input_value='123', input_type=str"),
+        ('before', {'hide_input_in_errors': True}, 'type=value_error'),
+        ('after', {}, "type=value_error, input_value='123', input_type=str"),
+        ('after', {'hide_input_in_errors': False}, "type=value_error, input_value='123', input_type=str"),
+        ('after', {'hide_input_in_errors': True}, 'type=value_error'),
+        ('plain', {}, "type=value_error, input_value='123', input_type=str"),
+        ('plain', {'hide_input_in_errors': False}, "type=value_error, input_value='123', input_type=str"),
+        ('plain', {'hide_input_in_errors': True}, 'type=value_error'),
+    ),
+)
+def test_validator_function_error_hide_input(mode, config, input_str):
+    class Model(BaseModel):
+        x: str
+
+        model_config = ConfigDict(**config)
+
+        @field_validator('x', mode=mode)
+        @classmethod
+        def check_a1(cls, v: str) -> str:
+            raise ValueError('foo')
+
+    with pytest.raises(ValidationError, match=re.escape(f'Value error, foo [{input_str}]')):
+        Model(x='123')

@@ -165,6 +165,10 @@ and has a type that is not in this tuple (or otherwise recognized by pydantic), 
 : a `tuple` of strings that prevent model to have field which conflict with them (default: `('model_', )`).
 see [the dedicated section](#protected-namespaces)
 
+**`hide_input_in_errors`**
+: whether to show input value and input type in `ValidationError` representation defaults to `False`.
+see [the dedicated section](#hide-input-in-errors)
+
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
@@ -388,4 +392,50 @@ try:
 except NameError as e:
     print(e)
     #> Field "also_protect_field" has conflict with protected namespace "also_protect_"
+```
+
+## Hide Input in Errors
+_Pydantic_ shows input value and input type when it raises `ValidationError` during the validation.
+
+
+```py
+from pydantic import BaseModel, ValidationError
+
+
+class Model(BaseModel):
+    a: str
+
+
+try:
+    Model(a=123)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    a
+      Input should be a valid string [type=string_type, input_value=123, input_type=int]
+    """
+```
+
+You can hide the input value and type by setting the `hide_input_in_errors` config to `True`.
+
+```py
+from pydantic import BaseModel, ConfigDict, ValidationError
+
+
+class Model(BaseModel):
+    a: str
+
+    model_config = ConfigDict(hide_input_in_errors=True)
+
+
+try:
+    Model(a=123)
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Model
+    a
+      Input should be a valid string [type=string_type]
+    """
 ```

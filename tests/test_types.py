@@ -2063,6 +2063,24 @@ def test_invalid_iterable():
     ]
 
 
+@pytest.mark.parametrize(
+    'config,input_str',
+    (
+        ({}, 'type=iterable_type, input_value=5, input_type=int'),
+        ({'hide_input_in_errors': False}, 'type=iterable_type, input_value=5, input_type=int'),
+        ({'hide_input_in_errors': True}, 'type=iterable_type'),
+    ),
+)
+def test_iterable_error_hide_input(config, input_str):
+    class Model(BaseModel):
+        it: Iterable[int]
+
+        model_config = ConfigDict(**config)
+
+    with pytest.raises(ValidationError, match=re.escape(f'Input should be iterable [{input_str}]')):
+        Model(it=5)
+
+
 def test_infinite_iterable_validate_first():
     class Model(BaseModel):
         it: Iterable[int]
