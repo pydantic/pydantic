@@ -317,7 +317,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             if self.__pydantic_private__ is None or name not in self.__private_attributes__:
                 _object_setattr(self, name, value)
             else:
-                self.__pydantic_private__[name] = value
+                attribute = self.__private_attributes__[name]
+                if hasattr(attribute, '__set__'):
+                    attribute.__set__(self, value)  # type: ignore
+                else:
+                    self.__pydantic_private__[name] = value
             return
         elif self.model_config.get('frozen', None):
             error: pydantic_core.InitErrorDetails = {

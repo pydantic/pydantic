@@ -521,6 +521,10 @@ def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
     allow (and store) extra and/or private attributes
     """
     if item in self.__private_attributes__:
+        attribute = self.__private_attributes__[item]
+        if hasattr(attribute, '__get__'):
+            return attribute.__get__(self, type(self))  # type: ignore
+
         try:
             # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
             return self.__pydantic_private__[item]  # type: ignore
@@ -536,9 +540,16 @@ def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
 
 
 def model_private_delattr(self: BaseModel, item: str) -> Any:
-    # Note: self.__pydantic_private__ is guaranteed to not be None if this method is set as __delattr__
-    assert self.__pydantic_private__ is not None
-    if item in self.__pydantic_private__:
-        del self.__pydantic_private__[item]
+    if item in self.__private_attributes__:
+        attribute = self.__private_attributes__[item]
+        if hasattr(attribute, '__delete__'):
+            attribute.__delete__(self)  # type: ignore
+            return
+
+        try:
+            # Note: self.__pydantic_private__ is guaranteed to not be None if self.__private_attributes__ has items
+            del self.__pydantic_private__[item]  # type: ignore
+        except KeyError as exc:
+            raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
     else:
         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')

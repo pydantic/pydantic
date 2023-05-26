@@ -247,18 +247,38 @@ def test_create_model_field_description():
 
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
 def test_set_name(base):
-    calls = []
+    set_name_calls = []
+    get_calls = []
+    set_calls = []
+    delete_calls = []
 
     class class_deco(base):
         def __init__(self, fn):
             super().__init__()
             self.fn = fn
+            self.name = ''
 
         def __set_name__(self, owner, name):
-            calls.append((owner, name))
+            set_name_calls.append((owner, name))
+            self.name = name
 
         def __get__(self, obj, type=None):
+            get_calls.append((obj, type))
             return self.fn(obj) if obj else self
+
+        def __set__(self, obj, value):
+            set_calls.append((obj, value))
+            self.fn = lambda obj: value
+
+        def __delete__(self, obj):
+            delete_calls.append(obj)
+
+            def fail(obj):
+                # I have purposely not used the exact formatting you'd get if the attribute wasn't defined,
+                # to make it clear this function is being called, while also having sensible behavior
+                raise AttributeError(f'{self.name!r} is not defined on {obj!r}')
+
+            self.fn = fail
 
     class A(BaseModel):
         x: int
@@ -267,15 +287,28 @@ def test_set_name(base):
         def _some_func(self):
             return self.x
 
-    assert calls == [(A, '_some_func')]
+    assert set_name_calls == [(A, '_some_func')]
+
     a = A(x=2)
 
-    # we don't test whether calling the method on a PrivateAttr works:
-    # attribute access on privateAttributes is more complicated, it doesn't
-    # get added to the class namespace (and will also get set on the instance
-    # with _init_private_attributes), so the descriptor protocol won't work.
-    if base is object:
-        assert a._some_func == 2
+    assert get_calls == []
+    assert a._some_func == 2
+    assert get_calls == [(a, A)]
+
+    assert set_calls == []
+    a._some_func = 3
+    assert set_calls == [(a, 3)]
+
+    assert a._some_func == 3
+    assert get_calls == [(a, A), (a, A)]
+
+    assert delete_calls == []
+    del a._some_func
+    assert delete_calls == [a]
+
+    with pytest.raises(AttributeError, match=r"'_some_func' is not defined on A\(x=2\)"):
+        a._some_func
+    assert get_calls == [(a, A), (a, A), (a, A)]
 
 
 def test_private_attr_set_name():
