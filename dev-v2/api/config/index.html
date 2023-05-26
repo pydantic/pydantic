@@ -2054,6 +2054,13 @@ Defaults to 'iso8601'.</p></td>
           </td>
           <td><p>A list of protected namespaces. Defaults to ('model_', ).</p></td>
         </tr>
+        <tr>
+          <td><code>hide_input_in_errors</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td><p>Whether to hide inputs when printing errors. Defaults to False.</p></td>
+        </tr>
     </tbody>
   </table>
 
@@ -2122,7 +2129,9 @@ Defaults to 'iso8601'.</p></td>
 <span class="normal">103</span>
 <span class="normal">104</span>
 <span class="normal">105</span>
-<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ConfigDict</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ConfigDict</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A dictionary-like class for configuring Pydantic models.</span>
 
 <span class="sd">    Attributes:</span>
@@ -2151,6 +2160,7 @@ Defaults to 'iso8601'.</p></td>
 <span class="sd">        ser_json_bytes (Literal[&#39;utf8&#39;, &#39;base64&#39;]): The encoding of JSON serialized bytes. Defaults to &#39;utf8&#39;.</span>
 <span class="sd">        validate_default (bool): Whether to validate default values during validation. Defaults to False.</span>
 <span class="sd">        protected_namespaces (tuple[str, ..]): A list of protected namespaces. Defaults to (&#39;model_&#39;, ).</span>
+<span class="sd">        hide_input_in_errors (bool): Whether to hide inputs when printing errors. Defaults to False.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
@@ -2185,6 +2195,7 @@ Defaults to 'iso8601'.</p></td>
     <span class="c1"># whether to validate the return value from call validator</span>
     <span class="n">validate_return</span><span class="p">:</span> <span class="nb">bool</span>
     <span class="n">protected_namespaces</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="o">...</span><span class="p">]</span>
+    <span class="n">hide_input_in_errors</span><span class="p">:</span> <span class="nb">bool</span>
 </code></pre></div></td></tr></table></div>
         </details>
 

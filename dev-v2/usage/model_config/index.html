@@ -1010,6 +1010,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#hide-input-in-errors" class="md-nav__link">
+    Hide Input in Errors
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1780,6 +1787,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#hide-input-in-errors" class="md-nav__link">
+    Hide Input in Errors
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1943,6 +1957,9 @@ and has a type that is not in this tuple (or otherwise recognized by pydantic), 
 <dt><strong><code>protected_namespaces</code></strong></dt>
 <dd>a <code>tuple</code> of strings that prevent model to have field which conflict with them (default: <code>('model_', )</code>).
 see <a href="#protected-namespaces">the dedicated section</a></dd>
+<dt><strong><code>hide_input_in_errors</code></strong></dt>
+<dd>whether to show input value and input type in <code>ValidationError</code> representation defaults to <code>False</code>.
+see <a href="#hide-input-in-errors">the dedicated section</a></dd>
 </dl>
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
 <p>If you wish to change the behaviour of <em>pydantic</em> globally, you can create your own custom <code>BaseModel</code>
@@ -2237,6 +2254,45 @@ you can allow overriding <code>model_</code> or add your own protected namespace
 <span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
     <span class="c1">#&gt; Field &quot;also_protect_field&quot; has conflict with protected namespace &quot;also_protect_&quot;</span>
+</code></pre></div>
+<h2 id="hide-input-in-errors">Hide Input in Errors<a class="headerlink" href="#hide-input-in-errors" title="Permanent link">&para;</a></h2>
+<p><em>Pydantic</em> shows input value and input type when it raises <code>ValidationError</code> during the validation.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    a</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value=123, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<p>You can hide the input value and type by setting the <code>hide_input_in_errors</code> config to <code>True</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">hide_input_in_errors</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">123</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    a</span>
+<span class="sd">      Input should be a valid string [type=string_type]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 
 
