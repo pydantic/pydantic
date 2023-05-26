@@ -99,6 +99,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __class_vars__: typing.ClassVar[set[str]]
         __pydantic_fields_set__: set[str] = set()
         __pydantic_extra__: dict[str, Any] | None = None
+        __pydantic_private__: dict[str, Any] | None = None
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
         __pydantic_custom_init__: typing.ClassVar[bool]
@@ -114,7 +115,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
 
     model_config = ConfigDict()
-    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__'
+    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
     __pydantic_complete__ = False
     __pydantic_root_model__: typing.ClassVar[bool] = False
 
@@ -314,7 +315,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
                 f'If you want to set a value on the class, use `{self.__class__.__name__}.{name} = value`.'
             )
         elif name.startswith('_'):
-            _object_setattr(self, name, value)
+            if self.__pydantic_private__ is None or name not in self.__private_attributes__:
+                _object_setattr(self, name, value)
+            else:
+                attribute = self.__private_attributes__[name]
+                if hasattr(attribute, '__set__'):
+                    attribute.__set__(self, value)  # type: ignore
+                else:
+                    self.__pydantic_private__[name] = value
             return
         elif self.model_config.get('frozen', None):
             error: pydantic_core.InitErrorDetails = {
@@ -337,20 +345,21 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             self.__pydantic_fields_set__.add(name)
 
     def __getstate__(self) -> dict[Any, Any]:
-        private_attrs = ((k, getattr(self, k, _Undefined)) for k in self.__private_attributes__)
+        private = self.__pydantic_private__
+        if private:
+            private = {k: v for k, v in private.items() if v is not _Undefined}
         return {
             '__dict__': self.__dict__,
             '__pydantic_extra__': self.__pydantic_extra__,
             '__pydantic_fields_set__': self.__pydantic_fields_set__,
-            '__private_attribute_values__': {k: v for k, v in private_attrs if v is not _Undefined},
+            '__pydantic_private__': private,
         }
 
     def __setstate__(self, state: dict[Any, Any]) -> None:
         _object_setattr(self, '__dict__', state['__dict__'])
         _object_setattr(self, '__pydantic_fields_set__', state['__pydantic_fields_set__'])
         _object_setattr(self, '__pydantic_extra__', state['__pydantic_extra__'])
-        for name, value in state.get('__private_attribute_values__', {}).items():
-            _object_setattr(self, name, value)
+        _object_setattr(self, '__pydantic_private__', state['__pydantic_private__'])
 
     def model_dump(
         self,
@@ -475,10 +484,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if cls.model_config.get('extra') == 'allow':
             _extra = {}
             for k, v in values.items():
-                if k in cls.model_fields:
-                    fields_values[k] = v
-                else:
-                    _extra[k] = v
+                _extra[k] = v
         else:
             fields_values.update(values)
         _object_setattr(m, '__dict__', fields_values)
@@ -486,8 +492,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _fields_set = set(values.keys())
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         _object_setattr(m, '__pydantic_extra__', _extra)
+
         if cls.__pydantic_post_init__:
             m.model_post_init(None)
+        else:
+            # Note: if there are any private attributes, cls.__pydantic_post_init__ would exist
+            # Since it doesn't, that means that `__pydantic_private__` should be set to None
+            _object_setattr(m, '__pydantic_private__', None)
+
         return m
 
     @classmethod
@@ -600,21 +612,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             self_type = self.__pydantic_generic_metadata__['origin'] or self.__class__
             other_type = other.__pydantic_generic_metadata__['origin'] or other.__class__
 
-            if self_type != other_type:
-                return False
-
-            if self.__dict__ != other.__dict__:
-                return False
-
-            if self.__pydantic_extra__ != other.__pydantic_extra__:
-                return False
-
-            # If the types and field values match, check for equality of private attributes
-            for k in self.__private_attributes__:
-                if getattr(self, k, _Undefined) != getattr(other, k, _Undefined):
-                    return False
-
-            return True
+            return (
+                self_type == other_type
+                and self.__dict__ == other.__dict__
+                and self.__pydantic_private__ == other.__pydantic_private__
+                and self.__pydantic_extra__ == other.__pydantic_extra__
+            )
         else:
             return NotImplemented  # delegate to the other item in the comparison
 
@@ -654,10 +657,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _object_setattr(m, '__dict__', copy(self.__dict__))
         _object_setattr(m, '__pydantic_extra__', copy(self.__pydantic_extra__))
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
-        for name in self.__private_attributes__:
-            value = getattr(self, name, _Undefined)
-            if value is not _Undefined:
-                _object_setattr(m, name, value)
+
+        if self.__pydantic_private__ is None:
+            _object_setattr(m, '__pydantic_private__', None)
+        else:
+            _object_setattr(
+                m, '__pydantic_private__', {k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}
+            )
+
         return m
 
     def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
@@ -671,10 +678,16 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         # This next line doesn't need a deepcopy because __pydantic_fields_set__ is a set[str],
         # and attempting a deepcopy would be marginally slower.
         _object_setattr(m, '__pydantic_fields_set__', copy(self.__pydantic_fields_set__))
-        for name in self.__private_attributes__:
-            value = getattr(self, name, _Undefined)
-            if value is not _Undefined:
-                _object_setattr(m, name, deepcopy(value, memo=memo))
+
+        if self.__pydantic_private__ is None:
+            _object_setattr(m, '__pydantic_private__', None)
+        else:
+            _object_setattr(
+                m,
+                '__pydantic_private__',
+                deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}, memo=memo),
+            )
+
         return m
 
     def __repr_args__(self) -> _repr.ReprArgs:
@@ -987,6 +1000,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             ),
             **(update or {}),
         )
+        if self.__pydantic_private__ is None:
+            private = None
+        else:
+            private = {k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}
+
         if self.__pydantic_extra__ is None:
             extra: dict[str, Any] | None = None
         else:
@@ -1008,7 +1026,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if exclude:
             fields_set -= set(exclude)
 
-        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, extra, deep=deep)
+        return _deprecated_copy_internals._copy_and_set_values(self, values, fields_set, extra, private, deep=deep)
 
     @classmethod
     @typing_extensions.deprecated('The `schema` method is deprecated; use `model_json_schema` instead.')

@@ -12,7 +12,6 @@ from .._internal import (
     _typing_extra,
     _utils,
 )
-from .._internal._fields import Undefined
 
 if typing.TYPE_CHECKING:
     from .. import BaseModel
@@ -101,6 +100,7 @@ def _copy_and_set_values(
     values: dict[str, Any],
     fields_set: set[str],
     extra: dict[str, Any] | None = None,
+    private: dict[str, Any] | None = None,
     *,
     deep: bool,  # UP006
 ) -> Model:
@@ -108,18 +108,14 @@ def _copy_and_set_values(
         # chances of having empty dict here are quite low for using smart_deepcopy
         values = deepcopy(values)
         extra = deepcopy(extra)
+        private = deepcopy(private)
 
     cls = self.__class__
     m = cls.__new__(cls)
     _object_setattr(m, '__dict__', values)
     _object_setattr(m, '__pydantic_extra__', extra)
     _object_setattr(m, '__pydantic_fields_set__', fields_set)
-    for name in self.__private_attributes__:
-        value = getattr(self, name, Undefined)
-        if value is not Undefined:
-            if deep:
-                value = deepcopy(value)
-            _object_setattr(m, name, value)
+    _object_setattr(m, '__pydantic_private__', private)
 
     return m
 

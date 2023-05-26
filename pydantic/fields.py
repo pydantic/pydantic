@@ -800,6 +800,16 @@ class ModelPrivateAttr(_repr.Representation):
         self.default = default
         self.default_factory = default_factory
 
+    def __getattr__(self, item: str) -> Any:
+        """
+        This function improves compatibility with custom descriptors by ensuring delegation happens
+        as expected when the default value of a private attribute is a descriptor.
+        """
+        if item in {'__get__', '__set__', '__delete__'}:
+            if hasattr(self.default, item):
+                return getattr(self.default, item)
+        raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+
     def __set_name__(self, cls: type[Any], name: str) -> None:
         """
         preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487

@@ -18,13 +18,13 @@ def test_user_error_url():
 
 
 @pytest.mark.parametrize(
-    'hide_input_in_errors,input_str',
+    'hide_input,input_str',
     ((False, 'type=greater_than, input_value=4, input_type=int'), (True, 'type=greater_than')),
 )
-def test_raise_validation_error_hide_input(hide_input_in_errors, input_str):
+def test_raise_validation_error_hide_input(hide_input, input_str):
     with pytest.raises(ValidationError, match=re.escape(f'Input should be greater than 5 [{input_str}]')):
         raise ValidationError.from_exception_data(
             'Foobar',
             [{'type': 'greater_than', 'loc': ('a', 2), 'input': 4, 'ctx': {'gt': 5}}],
-            hide_input_in_errors=hide_input_in_errors,
+            hide_input=hide_input,
         )
