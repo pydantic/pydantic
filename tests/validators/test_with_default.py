@@ -273,7 +273,7 @@ def test_build_default_and_default_factory():
 
 def test_model_class():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
 

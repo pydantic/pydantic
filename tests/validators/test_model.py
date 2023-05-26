@@ -10,7 +10,7 @@ from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_sc
 def test_model_class():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -52,7 +52,7 @@ def test_model_class():
 def test_model_class_extra():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -221,7 +221,7 @@ def test_model_class_root_validator_after():
 @pytest.mark.parametrize('mode', ['before', 'after', 'wrap'])
 def test_function_ask(mode):
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     def f(input_value, info):
         return input_value
@@ -244,7 +244,7 @@ def test_function_ask(mode):
 
 def test_function_plain_ask():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     def f(input_value):
         return input_value, {1: 2}, {'field_a'}
@@ -265,7 +265,7 @@ def test_function_plain_ask():
 
 def test_union_sub_schema():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     v = SchemaValidator(
         {
@@ -330,6 +330,7 @@ def test_tagged_union_sub_schema():
         'bar': 123,
         '__pydantic_fields_set__': {'foo', 'bar'},
         '__pydantic_extra__': None,
+        '__pydantic_private__': None,
     }
 
     m = v.validate_python({'foo': 'banana', 'spam': [1, 2, 3]})
@@ -340,6 +341,7 @@ def test_tagged_union_sub_schema():
         'spam': [1, 2, 3],
         '__pydantic_fields_set__': {'spam', 'foo'},
         '__pydantic_extra__': None,
+        '__pydantic_private__': None,
     }
 
 
@@ -354,7 +356,7 @@ def test_bad_sub_schema():
 
 def test_model_class_function_after():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     def f(input_value, info):
         input_value[0]['x'] = 'y'
@@ -396,7 +398,7 @@ def test_model_class_not_type():
 
 def test_model_class_instance_direct():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
 
         def __init__(self):
@@ -427,7 +429,7 @@ def test_model_class_instance_subclass():
     post_init_calls = []
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
 
         def __init__(self):
@@ -474,7 +476,7 @@ def test_model_class_instance_subclass_revalidate():
     post_init_calls = []
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
 
         def __init__(self):
@@ -582,7 +584,7 @@ def test_model_class_strict():
 
 def test_model_class_strict_json():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
         field_c: int
@@ -627,7 +629,7 @@ def test_internal_error():
 
 def test_revalidate_always():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
         def __init__(self, a, b, fields_set):
             self.field_a = a
@@ -684,7 +686,7 @@ def test_revalidate_always():
 
 def test_revalidate_subclass_instances():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
         def __init__(self):
             self.field_a = 'init_a'
@@ -734,7 +736,7 @@ def test_revalidate_subclass_instances():
 
 def test_revalidate_extra():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
         def __init__(self, **kwargs):
             self.__dict__.update(kwargs)
@@ -777,7 +779,7 @@ def test_post_init():
     call_count = 0
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -814,7 +816,7 @@ def test_revalidate_post_init():
     call_count = 0
 
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
         def call_me_maybe(self, context):
             nonlocal call_count
@@ -861,7 +863,7 @@ def test_revalidate_post_init():
 
 def test_post_init_validation_error():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
 
         def call_me_maybe(self, context, **kwargs):
@@ -898,7 +900,7 @@ def test_post_init_validation_error():
 
 def test_post_init_internal_error():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
 
         def wrong_signature(self):
@@ -921,7 +923,7 @@ def test_post_init_internal_error():
 
 def test_post_init_mutate():
     class MyModel:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -954,7 +956,7 @@ def test_post_init_mutate():
 def test_validate_assignment():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -987,7 +989,7 @@ def test_validate_assignment():
 def test_validate_assignment_function():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
         field_c: int
@@ -1065,7 +1067,7 @@ def test_validate_assignment_no_fields_set():
 
 def test_frozen():
     class MyModel:
-        __slots__ = {'__dict__', '__pydantic_extra__', '__pydantic_fields_set__'}
+        __slots__ = {'__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'}
 
     v = SchemaValidator(
         core_schema.model_schema(
@@ -1121,7 +1123,7 @@ def test_validate_assignment_model_validator_function(function_schema: Any, call
     """
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     calls: List[Any] = []
 
