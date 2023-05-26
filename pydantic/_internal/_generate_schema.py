@@ -546,7 +546,7 @@ class GenerateSchema:
             name,
             common_field['schema'],
             init_only=field_info.init_var or None,
-            kw_only=field_info.kw_only,
+            kw_only=None if field_info.kw_only else False,
             serialization_exclude=common_field['serialization_exclude'],
             validation_alias=common_field['validation_alias'],
             serialization_alias=common_field['serialization_alias'],
