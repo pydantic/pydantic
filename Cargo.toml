@@ -40,6 +40,7 @@ url = "2.3.1"
 # idna is already required by url, added here to be explicit
 idna = "0.3.0"
 base64 = "0.13.1"
+num-bigint = "0.4.3"
 
 [lib]
 name = "_pydantic_core"
@@ -50,7 +51,7 @@ crate-type = ["cdylib", "rlib"]
 extension-module = ["pyo3/extension-module"]
 # required for cargo bench
 auto-initialize = ["pyo3/auto-initialize"]
-default = ["mimalloc", "mimalloc/local_dynamic_tls", "pyo3/generate-import-lib"]
+default = ["mimalloc", "mimalloc/local_dynamic_tls", "pyo3/generate-import-lib", "pyo3/num-bigint"]
 
 [profile.release]
 lto = "fat"

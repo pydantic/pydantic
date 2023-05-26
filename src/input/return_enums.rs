@@ -1,6 +1,8 @@
 use std::borrow::Cow;
 use std::slice::Iter as SliceIter;
 
+use num_bigint::BigInt;
+
 use pyo3::prelude::*;
 use pyo3::types::iter::PyDictIterator;
 use pyo3::types::{
@@ -820,17 +822,62 @@ impl<'a> IntoPy<PyObject> for EitherBytes<'a> {
 
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub enum EitherInt<'a> {
-    Rust(i64),
+    I64(i64),
+    U64(u64),
+    BigInt(BigInt),
     Py(&'a PyAny),
 }
 
-impl<'a> TryInto<i64> for EitherInt<'a> {
-    type Error = ValError<'a>;
-
-    fn try_into(self) -> ValResult<'a, i64> {
+impl<'a> EitherInt<'a> {
+    pub fn into_i64(self, py: Python<'a>) -> ValResult<'a, i64> {
         match self {
-            EitherInt::Rust(i) => Ok(i),
-            EitherInt::Py(i) => i.extract().map_err(|_| ValError::new(ErrorType::IntOverflow, i)),
+            EitherInt::I64(i) => Ok(i),
+            EitherInt::U64(u) => match i64::try_from(u) {
+                Ok(u) => Ok(u),
+                Err(_) => Err(ValError::new(ErrorType::IntParsingSize, u.into_py(py).into_ref(py))),
+            },
+            EitherInt::BigInt(u) => match i64::try_from(u) {
+                Ok(u) => Ok(u),
+                Err(e) => Err(ValError::new(
+                    ErrorType::IntParsingSize,
+                    e.into_original().into_py(py).into_ref(py),
+                )),
+            },
+            EitherInt::Py(i) => i.extract().map_err(|_| ValError::new(ErrorType::IntParsingSize, i)),
+        }
+    }
+
+    pub fn as_bool(&self) -> Option<bool> {
+        match self {
+            EitherInt::I64(i) => match i {
+                0 => Some(false),
+                1 => Some(true),
+                _ => None,
+            },
+            EitherInt::U64(u) => match u {
+                0 => Some(false),
+                1 => Some(true),
+                _ => None,
+            },
+            EitherInt::BigInt(i) => match u8::try_from(i) {
+                Ok(0) => Some(false),
+                Ok(1) => Some(true),
+                _ => None,
+            },
+            EitherInt::Py(i) => match i.extract::<u8>() {
+                Ok(0) => Some(false),
+                Ok(1) => Some(true),
+                _ => None,
+            },
+        }
+    }
+
+    pub fn as_bigint(&self) -> PyResult<BigInt> {
+        match self {
+            EitherInt::I64(i) => Ok(BigInt::from(*i)),
+            EitherInt::U64(u) => Ok(BigInt::from(*u)),
+            EitherInt::BigInt(i) => Ok(i.clone()),
+            EitherInt::Py(i) => i.extract(),
         }
     }
 }
@@ -838,7 +885,9 @@ impl<'a> TryInto<i64> for EitherInt<'a> {
 impl<'a> IntoPy<PyObject> for EitherInt<'a> {
     fn into_py(self, py: Python<'_>) -> PyObject {
         match self {
-            Self::Rust(int) => int.into_py(py),
+            Self::I64(int) => int.into_py(py),
+            Self::U64(int) => int.into_py(py),
+            Self::BigInt(int) => int.into_py(py),
             Self::Py(int) => int.into_py(py),
         }
     }
