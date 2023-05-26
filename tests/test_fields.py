@@ -4,7 +4,7 @@ from dataclasses import InitVar
 import pytest
 
 import pydantic.dataclasses
-from pydantic import RootModel, ValidationError, fields
+from pydantic import BaseModel, Field, RootModel, ValidationError, fields
 
 
 def test_field_info_annotation_keyword_argument():
@@ -84,3 +84,12 @@ def test_root_model_field_override():
     validated = SubModel.model_validate_json('1').root
     assert validated == 1.0
     assert isinstance(validated, float)
+
+
+def test_frozen_field_repr():
+    class Model(BaseModel):
+        non_frozen_field: int = Field(frozen=False)
+        frozen_field: int = Field(frozen=True)
+
+    assert repr(Model.model_fields['non_frozen_field']) == 'FieldInfo(annotation=int, required=True)'
+    assert repr(Model.model_fields['frozen_field']) == 'FieldInfo(annotation=int, required=True, frozen=True)'

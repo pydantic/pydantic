@@ -512,14 +512,19 @@ def test_allow_mutation():
         class Model(BaseModel):
             model_config = ConfigDict(validate_assignment=True)
             x: int = Field(allow_mutation=False)
+            y: int = Field(allow_mutation=True)
 
-    m = Model(x=1)
+    m = Model(x=1, y=2)
+
     assert m.x == 1
     with pytest.raises(ValidationError) as exc_info:
         m.x = 2
     assert exc_info.value.errors(include_url=False) == [
         {'input': 2, 'loc': ('x',), 'msg': 'Field is frozen', 'type': 'frozen_field'}
     ]
+
+    m.y = 3
+    assert m.y == 3
 
 
 def test_field_regex():

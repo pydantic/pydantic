@@ -1,10 +1,11 @@
 import re
 import sys
 from contextlib import nullcontext as does_not_raise
+from decimal import Decimal
 from inspect import signature
 from typing import Any, ContextManager, Iterable, NamedTuple, Type, Union, get_type_hints
 
-from dirty_equals import HasRepr
+from dirty_equals import HasRepr, IsPartialDict
 from pydantic_core import SchemaError
 
 from pydantic import (
@@ -569,3 +570,36 @@ def test_hide_input_in_errors(config, input_str):
 
     with pytest.raises(ValidationError, match=re.escape(f'Input should be a valid string [{input_str}]')):
         Model(x=123)
+
+
+parametrize_inf_nan_capable_type = pytest.mark.parametrize('inf_nan_capable_type', [float, Decimal])
+parametrize_inf_nan_capable_value = pytest.mark.parametrize('inf_nan_value', ['Inf', 'NaN'])
+
+
+@parametrize_inf_nan_capable_value
+@parametrize_inf_nan_capable_type
+def test_config_inf_nan_enabled(inf_nan_capable_type, inf_nan_value):
+    class Model(BaseModel):
+        model_config = ConfigDict(allow_inf_nan=True)
+        value: inf_nan_capable_type
+
+    assert Model(value=inf_nan_capable_type(inf_nan_value))
+
+
+@parametrize_inf_nan_capable_value
+@parametrize_inf_nan_capable_type
+def test_config_inf_nan_disabled(inf_nan_capable_type, inf_nan_value):
+    class Model(BaseModel):
+        model_config = ConfigDict(allow_inf_nan=False)
+        value: inf_nan_capable_type
+
+    with pytest.raises(ValidationError) as e:
+        Model(value=inf_nan_capable_type(inf_nan_value))
+
+    assert e.value.errors(include_url=False)[0] == IsPartialDict(
+        {
+            'loc': ('value',),
+            'msg': 'Input should be a finite number',
+            'type': 'finite_number',
+        }
+    )

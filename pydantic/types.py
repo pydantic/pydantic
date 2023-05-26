@@ -33,9 +33,10 @@ from ._internal._generics import get_origin
 from ._internal._internal_dataclass import slots_dataclass
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
+from .config import ConfigDict
 from .errors import PydanticUserError
 
-__all__ = [
+__all__ = (
     'Strict',
     'StrictStr',
     'conbytes',
@@ -88,7 +89,7 @@ __all__ = [
     'Base64Bytes',
     'Base64Str',
     'SkipValidation',
-]
+)
 
 from ._internal._schema_generation_shared import GetJsonSchemaHandler
 from ._internal._utils import update_not_none
@@ -466,15 +467,17 @@ class SecretField(Generic[SecretType]):
         return self._secret_value
 
     @classmethod
-    def __prepare_pydantic_annotations__(cls, source: type[Any], annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
+    def __prepare_pydantic_annotations__(
+        cls, source: type[Any], annotations: tuple[Any, ...], _config: ConfigDict
+    ) -> tuple[Any, Iterable[Any]]:
         metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
         _known_annotated_metadata.check_metadata(metadata, {'min_length', 'max_length'}, cls)
         return (
             source,
-            [
+            (
                 _SecretFieldValidator(source, **metadata),
-                remaining_annotations,
-            ],
+                *remaining_annotations,
+            ),
         )
 
     def __eq__(self, other: Any) -> bool:

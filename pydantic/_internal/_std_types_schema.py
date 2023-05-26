@@ -30,6 +30,7 @@ from typing_extensions import get_args, get_origin
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.fields import FieldInfo
 
+from ..config import ConfigDict
 from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _known_annotated_metadata, _typing_extra, _validators
 from ._core_utils import get_type_ref
@@ -54,7 +55,9 @@ class SchemaTransformer:
         return self.get_json_schema(schema, handler)
 
 
-def enum_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+def enum_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
+) -> tuple[Any, list[Any]] | None:
     if not (inspect.isclass(source_type) and issubclass(source_type, Enum)):
         return None
 
@@ -298,15 +301,22 @@ class DecimalValidator:
         return value
 
 
-def decimal_prepare_pydantic_annotations(source: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+def decimal_prepare_pydantic_annotations(
+    source: Any, annotations: Iterable[Any], config: ConfigDict
+) -> tuple[Any, list[Any]] | None:
     if source is not decimal.Decimal:
         return None
 
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
+
+    config_allow_inf_nan = config.get('allow_inf_nan')
+    if config_allow_inf_nan is not None:
+        metadata.setdefault('allow_inf_nan', config_allow_inf_nan)
+
     _known_annotated_metadata.check_metadata(
         metadata, {*_known_annotated_metadata.FLOAT_CONSTRAINTS, 'max_digits', 'decimal_places'}, decimal.Decimal
     )
-    return (source, [DecimalValidator(**metadata), *remaining_annotations])
+    return source, [DecimalValidator(**metadata), *remaining_annotations]
 
 
 @slots_dataclass
@@ -326,11 +336,13 @@ class InnerSchemaValidator:
             js_schema.update(self.js_schema_update)
         return js_schema
 
-    def __get_pydantic_core_schema__(self, source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
+    def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
         return self.core_schema
 
 
-def datetime_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+def datetime_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
+) -> tuple[Any, list[Any]] | None:
     import datetime
 
     metadata, remaining_annotations = _known_annotated_metadata.collect_known_metadata(annotations)
@@ -349,7 +361,9 @@ def datetime_prepare_pydantic_annotations(source_type: Any, annotations: Iterabl
     return (source_type, [sv, *remaining_annotations])
 
 
-def uuid_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+def uuid_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
+) -> tuple[Any, list[Any]] | None:
     # UUIDs have no constraints - they are fixed length, constructing a UUID instance checks the length
 
     from uuid import UUID
@@ -404,7 +418,7 @@ def uuid_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[An
 
 
 def path_schema_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any]
+    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
 ) -> tuple[Any, list[Any]] | None:
     import pathlib
 
@@ -478,11 +492,6 @@ class SequenceValidator:
     min_length: int | None = None
     max_length: int | None = None
     strict: bool = False
-    js_core_schema: CoreSchema | None = None
-
-    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        assert self.js_core_schema is not None
-        return handler(self.js_core_schema)
 
     def serialize_sequence_via_list(
         self, v: Any, handler: core_schema.SerializerFunctionWrapHandler, info: core_schema.SerializationInfo
@@ -518,8 +527,6 @@ class SequenceValidator:
                 assert self.mapped_origin is frozenset  # safety check in case we forget to add a case
                 constrained_schema = core_schema.frozenset_schema(items_schema, **metadata)
 
-            js_core_schema = constrained_schema
-
             schema = constrained_schema
         else:
             # safety check in case we forget to add a case
@@ -536,7 +543,7 @@ class SequenceValidator:
             else:
                 coerce_instance_wrap = partial(core_schema.no_info_after_validator_function, self.mapped_origin)
 
-            constrained_schema = js_core_schema = core_schema.list_schema(items_schema, **metadata)
+            constrained_schema = core_schema.list_schema(items_schema, **metadata)
 
             check_instance = core_schema.json_or_python_schema(
                 json_schema=core_schema.list_schema(),
@@ -555,8 +562,6 @@ class SequenceValidator:
                 lax = coerce_instance_wrap(constrained_schema)
                 schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
             schema['serialization'] = serialization
-
-        self.js_core_schema = js_core_schema
 
         return schema
 
@@ -586,7 +591,7 @@ def identity(s: CoreSchema) -> CoreSchema:
 
 
 def sequence_like_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any]
+    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
 ) -> tuple[Any, list[Any]] | None:
     origin: Any = get_origin(source_type)
 
@@ -701,11 +706,6 @@ class MappingValidator:
     min_length: int | None = None
     max_length: int | None = None
     strict: bool = False
-    js_core_schema: CoreSchema | None = None
-
-    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        assert self.js_core_schema is not None
-        return handler(self.js_core_schema)
 
     def serialize_mapping_via_dict(self, v: Any, handler: core_schema.SerializerFunctionWrapHandler) -> Any:
         return handler(v)
@@ -723,9 +723,9 @@ class MappingValidator:
         metadata = {'min_length': self.min_length, 'max_length': self.max_length, 'strict': self.strict}
 
         if self.mapped_origin is dict:
-            schema = js_core_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
+            schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
         else:
-            constrained_schema = js_core_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
+            constrained_schema = core_schema.dict_schema(keys_schema, values_schema, **metadata)
             check_instance = core_schema.json_or_python_schema(
                 json_schema=core_schema.dict_schema(),
                 python_schema=core_schema.is_instance_schema(self.mapped_origin),
@@ -757,13 +757,11 @@ class MappingValidator:
                 schema = core_schema.lax_or_strict_schema(lax_schema=lax, strict_schema=strict)
                 schema['serialization'] = serialization
 
-        self.js_core_schema = js_core_schema
-
         return schema
 
 
 def mapping_like_prepare_pydantic_annotations(
-    source_type: Any, annotations: Iterable[Any]
+    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
 ) -> tuple[Any, list[Any]] | None:
     origin: Any = get_origin(source_type)
 
@@ -797,7 +795,9 @@ def mapping_like_prepare_pydantic_annotations(
     )
 
 
-def ip_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+def ip_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
+) -> tuple[Any, list[Any]] | None:
     def make_strict_ip_schema(tp: type[Any]) -> CoreSchema:
         return core_schema.json_or_python_schema(
             json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
@@ -881,7 +881,9 @@ def ip_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]
     return None
 
 
-def url_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+def url_prepare_pydantic_annotations(
+    source_type: Any, annotations: Iterable[Any], _config: ConfigDict
+) -> tuple[Any, list[Any]] | None:
     if source_type is Url:
         return source_type, [
             SchemaTransformer(
@@ -898,3 +900,16 @@ def url_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any
             ),
             *annotations,
         ]
+
+
+PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, list[Any]] | None], ...] = (
+    decimal_prepare_pydantic_annotations,
+    sequence_like_prepare_pydantic_annotations,
+    datetime_prepare_pydantic_annotations,
+    uuid_prepare_pydantic_annotations,
+    path_schema_prepare_pydantic_annotations,
+    mapping_like_prepare_pydantic_annotations,
+    enum_prepare_pydantic_annotations,
+    ip_prepare_pydantic_annotations,
+    url_prepare_pydantic_annotations,
+)

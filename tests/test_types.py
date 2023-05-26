@@ -5057,8 +5057,10 @@ def test_handle_3rd_party_custom_type_reusing_known_metadata() -> None:
         def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             return core_schema.no_info_after_validator_function(PdDecimal, handler(source_type))
 
-        def __prepare_pydantic_annotations__(self, source: Any, annotations: List[Any]) -> Tuple[Any, List[Any]]:
-            return (Decimal, [self, *annotations])
+        def __prepare_pydantic_annotations__(
+            self, _source: Any, annotations: Tuple[Any, ...], _config: ConfigDict
+        ) -> Tuple[Any, Iterable[Any]]:
+            return Decimal, [self, *annotations]
 
     class Model(BaseModel):
         x: Annotated[PdDecimal, PdDecimalMarker(), annotated_types.Gt(0)]
@@ -5109,12 +5111,12 @@ def test_transform_schema_for_first_party_class():
     class LowercaseStr(str):
         @classmethod
         def __prepare_pydantic_annotations__(
-            cls, _source: Type[Any], annotations: Iterable[Any]
-        ) -> Tuple[Any, List[Any]]:
+            cls, _source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
+        ) -> Tuple[Any, Iterable[Any]]:
             def transform_schema(schema: CoreSchema) -> CoreSchema:
                 return core_schema.no_info_after_validator_function(lambda v: v.lower(), schema)
 
-            return str, list(annotations) + [TransformSchema(transform_schema)]
+            return str, (*annotations, TransformSchema(transform_schema))
 
     class Model(BaseModel):
         lower: LowercaseStr = Field(min_length=1)
@@ -5149,8 +5151,8 @@ def test_transform_schema_for_third_party_class():
         # ensures pydantic can produce a valid schema.
         @classmethod
         def __prepare_pydantic_annotations__(
-            cls, _source: Type[Any], annotations: Iterable[Any]
-        ) -> Tuple[Any, List[Any]]:
+            cls, _source: Type[Any], annotations: Tuple[Any, ...], _config: ConfigDict
+        ) -> Tuple[Any, Iterable[Any]]:
             def transform(schema: CoreSchema) -> CoreSchema:
                 return core_schema.no_info_after_validator_function(lambda v: DatetimeWrapper(v), schema)
 

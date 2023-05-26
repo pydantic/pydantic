@@ -348,7 +348,6 @@ def test_private_attr_set_name():
 
 def test_private_attr_set_name_do_not_crash_if_not_callable():
     class SetNameInt(int):
-        _owner_attr_name: Optional[str] = None
         __set_name__ = None
 
     _private_attr_default = SetNameInt(2)
@@ -359,7 +358,6 @@ def test_private_attr_set_name_do_not_crash_if_not_callable():
     # Checks below are just to ensure that everything is the same as in `test_private_attr_set_name`
     # The main check is that model class definition above doesn't crash
     assert Model()._private_attr == 2
-    assert _private_attr_default._owner_attr_name is None
 
 
 def test_create_model_with_slots():
