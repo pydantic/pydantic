@@ -2165,6 +2165,7 @@ def test_vanilla_dataclass_decorators_in_type_adapter(decorator1, decorator2):
     ],
     ids=['pydantic', 'stdlib'],
 )
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots(dataclass_decorator):
     @dataclass_decorator(slots=True)
     class Model:
@@ -2184,6 +2185,7 @@ def test_dataclass_slots(dataclass_decorator):
     ],
     ids=['pydantic', 'stdlib'],
 )
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='slots are only supported for dataclasses in Python >= 3.10')
 def test_dataclass_slots_mixed(dataclass_decorator):
     @dataclass_decorator(slots=True)
     class Model:

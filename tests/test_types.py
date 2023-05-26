@@ -2526,11 +2526,7 @@ def test_strict_bool():
 
 def test_strict_int():
     class Model(BaseModel):
-        # In pydantic-core 0.34.0 at least there are only overflows if there
-        # are constraints (otherwise Python ints are not checked at all)
-        # So the only reason the constraint is here is to avoid short circuiting
-        # and doing nothing internally
-        v: Annotated[StrictInt, annotated_types.Ge(0)]
+        v: StrictInt
 
     assert Model(v=123456).v == 123456
 
@@ -2540,13 +2536,19 @@ def test_strict_int():
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=3.14159)
 
-    with pytest.raises(
-        ValidationError, match=r'Input integer too large to convert to 64-bit integer \[type=int_overflow,'
-    ):
-        Model(v=2**64)
-
     with pytest.raises(ValidationError, match=r'Input should be a valid integer \[type=int_type,'):
         Model(v=True)
+
+
+def test_int_parsing_size_error():
+    i64_max = 9_223_372_036_854_775_807
+    v = TypeAdapter(int)
+
+    with pytest.raises(
+        ValidationError,
+        match=r'Unable to parse input string as an integer, exceed maximum size \[type=int_parsing_size,',
+    ):
+        v.validate_json(json.dumps(-i64_max * 2))
 
 
 def test_strict_float():

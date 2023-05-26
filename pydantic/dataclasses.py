@@ -145,7 +145,7 @@ def dataclass(
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
 
     if sys.version_info >= (3, 10):
-        kwargs = dict(kw_only=kw_only)
+        kwargs = dict(kw_only=kw_only, slots=slots)
     else:
         kwargs = {}
 
@@ -194,7 +194,6 @@ def dataclass(
             order=order,
             unsafe_hash=unsafe_hash,
             frozen=frozen,
-            slots=slots,
             **kwargs,
         )
 
