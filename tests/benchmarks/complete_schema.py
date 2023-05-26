@@ -1,7 +1,7 @@
 def schema(*, strict: bool = False) -> dict:
     class MyModel:
         # __slots__ is not required, but it avoids __pydantic_fields_set__ falling into __dict__
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     def append_func(input_value, info):
         return f'{input_value} Changed'

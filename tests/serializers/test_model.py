@@ -251,7 +251,7 @@ def test_exclude_none():
 
 
 class FieldsSetModel:
-    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     def __init__(self, **kwargs):
         for key, value in kwargs.items():
@@ -756,7 +756,7 @@ def test_property_setter():
 def test_extra():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
 
@@ -813,7 +813,7 @@ def test_extra():
 def test_extra_config():
     class MyModel:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
         field_b: int
 

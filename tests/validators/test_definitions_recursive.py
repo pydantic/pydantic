@@ -236,7 +236,7 @@ def test_multiple_intertwined():
 def test_model_class():
     class Branch:
         # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         # these are here just as decoration
         width: int
         branch: Optional['Branch']

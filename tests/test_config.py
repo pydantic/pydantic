@@ -34,7 +34,7 @@ def test_field_priority_arg():
 
 class MyModel:
     # this is not required, but it avoids `__pydantic_fields_set__` being included in `__dict__`
-    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
 
 def test_on_model_class():
