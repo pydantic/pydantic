@@ -1612,15 +1612,7 @@ def test_enum_from_json(enum_base, strict):
 @pytest.mark.parametrize(
     'kwargs,type_',
     [
-        ({'max_length': 5}, int),
-        ({'min_length': 2}, float),
         ({'pattern': '^foo$'}, int),
-        ({'gt': 2}, str),
-        ({'lt': 5}, bytes),
-        ({'ge': 2}, str),
-        ({'le': 5}, bool),
-        ({'gt': 0}, Callable),
-        ({'gt': 0}, Callable[[int], int]),
         ({'gt': 0}, conlist(int, min_length=4)),
         ({'gt': 0}, conset(int, min_length=4)),
         ({'gt': 0}, confrozenset(int, min_length=4)),

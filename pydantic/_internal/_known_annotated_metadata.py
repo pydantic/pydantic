@@ -37,7 +37,7 @@ SEQUENCE_SCHEMA_TYPES = ('list', 'tuple', 'set', 'frozenset', 'generator', *TEXT
 NUMERIC_SCHEMA_TYPES = ('float', 'int', 'date', 'time', 'timedelta', 'datetime')
 
 
-def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | None:
+def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # noqa: C901
     """
     Apply `annotation` to `schema` if it is an annotation we know about (Gt, Le, etc.).
     Otherwise return `None`.
@@ -47,9 +47,12 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
     """
     schema = schema.copy()
     schema_update, _ = collect_known_metadata([annotation])
-    if isinstance(annotation, at.Gt):
+    if isinstance(annotation, at.GroupedMetadata):
+        for constraint in annotation:
+            schema = apply_known_metadata(constraint, schema) or schema
+    elif isinstance(annotation, at.Gt):
         if schema['type'] in NUMERIC_SCHEMA_TYPES:
-            schema.update(schema_update)
+            schema.update(schema_update)  # type: ignore
         else:
             return cs.no_info_after_validator_function(
                 partial(_validators.greater_than_validator, gt=annotation.gt),
@@ -57,7 +60,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             )
     elif isinstance(annotation, at.Ge):
         if schema['type'] in NUMERIC_SCHEMA_TYPES:
-            schema.update(schema_update)
+            schema.update(schema_update)  # type: ignore
         else:
             return cs.no_info_after_validator_function(
                 partial(_validators.greater_than_or_equal_validator, ge=annotation.ge),
@@ -65,7 +68,7 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             )
     elif isinstance(annotation, at.Lt):
         if schema['type'] in NUMERIC_SCHEMA_TYPES:
-            schema.update(schema_update)
+            schema.update(schema_update)  # type: ignore
         else:
             return cs.no_info_after_validator_function(
                 partial(_validators.less_than_validator, lt=annotation.lt),
@@ -73,15 +76,23 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             )
     elif isinstance(annotation, at.Le):
         if schema['type'] in NUMERIC_SCHEMA_TYPES:
-            schema.update(schema_update)
+            schema.update(schema_update)  # type: ignore
         else:
             return cs.no_info_after_validator_function(
                 partial(_validators.less_than_or_equal_validator, le=annotation.le),
                 schema,
             )
+    elif isinstance(annotation, at.MultipleOf):
+        if schema['type'] in NUMERIC_SCHEMA_TYPES:
+            schema.update(schema_update)  # type: ignore
+        else:
+            return cs.no_info_after_validator_function(
+                partial(_validators.multiple_of_validator, multiple_of=annotation.multiple_of),
+                schema,
+            )
     elif isinstance(annotation, at.MinLen):
         if schema['type'] in SEQUENCE_SCHEMA_TYPES:
-            schema.update(schema_update)
+            schema.update(schema_update)  # type: ignore
         else:
             return cs.no_info_after_validator_function(
                 partial(_validators.min_length_validator, min_length=annotation.min_length),
@@ -89,14 +100,25 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | No
             )
     elif isinstance(annotation, at.MaxLen):
         if schema['type'] in SEQUENCE_SCHEMA_TYPES:
-            schema.update(schema_update)
+            schema.update(schema_update)  # type: ignore
         else:
             return cs.no_info_after_validator_function(
                 partial(_validators.max_length_validator, max_length=annotation.max_length),
                 schema,
             )
+    elif isinstance(annotation, at.Predicate):
 
-    return None
+        def val_func(v: Any) -> Any:
+            # annotation.func may also raise an exception, let it pass through
+            assert annotation.func(v), f'Predicate {annotation.func} failed'
+
+        return cs.no_info_after_validator_function(val_func, schema)
+
+    # for all other annotations just update the schema
+    # this includes things like `strict` which apply to pretty much every schema
+    schema.update(schema_update)  # type: ignore
+
+    return schema
 
 
 def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], list[Any]]:

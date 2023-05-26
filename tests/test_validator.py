@@ -69,7 +69,7 @@ def test_global_namespace_variables():
 
 
 def test_local_namespace_variables():
-    IntList = List[int]
+    List[int]
     OuterDict = Dict[str, 'IntList']
 
     v = TypeAdapter(OuterDict).validate_python

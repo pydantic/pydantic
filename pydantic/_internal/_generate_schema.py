@@ -1348,16 +1348,7 @@ def apply_single_annotation(
             schema['schema'] = inner
         return schema
 
-    new_schema = _known_annotated_metadata.apply_known_metadata(metadata, schema)
-    if new_schema is None:
-        # note that we ignore any unrecognized metadata
-        # PEP 593: "If a library (or tool) encounters a typehint Annotated[T, x] and has no
-        # special logic for metadata x, it should ignore it and simply treat the type as T."
-        # Allow, but ignore, any unknown metadata.
-        metadata_dict, _ = _known_annotated_metadata.collect_known_metadata([metadata])
-        schema.update(metadata_dict)
-    else:
-        schema = new_schema
+    schema = _known_annotated_metadata.apply_known_metadata(metadata, schema)
 
     return schema
 

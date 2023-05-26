@@ -252,6 +252,14 @@ def less_than_or_equal_validator(x: Any, le: Any) -> Any:
     return x
 
 
+def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
+    if not (x % multiple_of == 0):
+        raise PydanticCustomError(
+            'multiple_of', 'Input should be a multiple of {multiple_of}', {'multiple_of': multiple_of}
+        )
+    return x
+
+
 def min_length_validator(x: Any, min_length: Any) -> Any:
     if not (len(x) >= min_length):
         raise PydanticCustomError(
