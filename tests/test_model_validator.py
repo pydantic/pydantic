@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pprint import pprint
-from typing import Any, Dict, cast
+from typing import Any, Dict, Union, cast
 
 import pytest
 
@@ -81,7 +81,7 @@ def test_nested_models() -> None:
     calls: list[str] = []
 
     class Model(BaseModel):
-        inner: Model | None
+        inner: Union[Model, None]  # noqa
 
         @model_validator(mode='before')
         @classmethod
