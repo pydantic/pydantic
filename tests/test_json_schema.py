@@ -490,27 +490,17 @@ def test_decimal_json_schema():
         a: bytes = b'foobar'
         b: Decimal = Decimal('12.34')
 
-    with pytest.warns(
-        DeprecationWarning,
-        match=re.escape('The `schema_json` method is deprecated; use `model_json_schema` and json.dumps instead.'),
-    ):
-        schema_json = Model.schema_json(indent=2)
-        loaded_schema_json = json.loads(schema_json)
     model_json_schema_validation = Model.model_json_schema(mode='validation')
     model_json_schema_serialization = Model.model_json_schema(mode='serialization')
 
-    assert (
-        loaded_schema_json
-        == model_json_schema_validation
-        == {
-            'properties': {
-                'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
-                'b': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'default': '12.34', 'title': 'B'},
-            },
-            'title': 'Model',
-            'type': 'object',
-        }
-    )
+    assert model_json_schema_validation == {
+        'properties': {
+            'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
+            'b': {'anyOf': [{'type': 'number'}, {'type': 'string'}], 'default': '12.34', 'title': 'B'},
+        },
+        'title': 'Model',
+        'type': 'object',
+    }
     assert model_json_schema_serialization == {
         'properties': {
             'a': {'default': 'foobar', 'format': 'binary', 'title': 'A', 'type': 'string'},
@@ -2214,7 +2204,7 @@ def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return handler(Path)
+            return handler.generate_schema(Path)
 
         @classmethod
         def __get_pydantic_json_schema__(
@@ -2431,11 +2421,11 @@ def test_schema_for_generic_field():
         def __get_pydantic_core_schema__(
             cls,
             source: Any,
-            handler: Callable[[Any], core_schema.CoreSchema],
+            handler: GetCoreSchemaHandler,
         ) -> core_schema.PlainValidatorFunctionSchema:
             source_args = getattr(source, '__args__', [Any])
             param = source_args[0]
-            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler(param))])
+            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(handler.generate_schema(param))])
             return core_schema.general_plain_validator_function(
                 GenModel,
                 metadata=metadata,
@@ -2529,15 +2519,13 @@ def test_advanced_generic_schema():  # noqa: C901
             return v
 
         @classmethod
-        def __get_pydantic_core_schema__(
-            cls, source: Any, handler: Callable[[Any], core_schema.CoreSchema]
-        ) -> core_schema.CoreSchema:
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             if hasattr(source, '__args__'):
                 arg = source.__args__[0]
 
                 def js_func(s, h):
                     # ignore the schema we were given and get a new CoreSchema
-                    s = handler(Optional[arg])
+                    s = handler.generate_schema(Optional[arg])
                     return h(s)
 
                 return core_schema.general_plain_validator_function(
@@ -4097,3 +4085,65 @@ def test_root_model():
         pass
 
     assert B.model_json_schema() == {'type': 'integer'}
+
+
+def test_get_json_schema_is_passed_the_same_schema_handler_was_called_with() -> None:
+    class CustomInt(int):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return handler(int)
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            assert core_schema['type'] == 'function-after'
+            inner = core_schema['schema']
+            assert inner['type'] == 'int'
+            inner = inner.copy()
+            inner['gt'] = 0
+            core_schema = {**core_schema, 'schema': inner}
+            return handler(core_schema)
+
+    class Marker:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(lambda x: x, handler(source_type))
+
+        def __get_pydantic_json_schema__(
+            self, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return handler(core_schema)
+
+    js_schema = TypeAdapter(Annotated[CustomInt, Marker()]).json_schema()
+
+    # insert_assert(js_schema)
+    assert js_schema == {'type': 'integer', 'exclusiveMinimum': 0}
+
+
+def test_get_json_schema_gets_called_if_schema_is_replaced() -> None:
+    class CustomInt(int):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return handler(int)
+
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            assert core_schema['type'] == 'str'
+            core_schema = {**core_schema, 'min_length': 1}
+            return handler(core_schema)
+
+    class Marker:
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.no_info_after_validator_function(lambda x: x, handler(source_type))
+
+        def __get_pydantic_json_schema__(
+            self, _core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return handler({'type': 'str'})
+
+    js_schema = TypeAdapter(Annotated[CustomInt, Marker()]).json_schema()
+
+    # insert_assert(js_schema)
+    assert js_schema == {'type': 'string', 'minLength': 1}

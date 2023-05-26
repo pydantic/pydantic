@@ -79,8 +79,8 @@ class UnpackedRefJsonSchemaHandler(GetJsonSchemaHandler):
     def resolve_ref_schema(self, __maybe_ref_json_schema: JsonSchemaValue) -> JsonSchemaValue:
         return self.handler.resolve_ref_schema(__maybe_ref_json_schema)
 
-    def __call__(self, __core_schema: CoreSchemaOrField) -> JsonSchemaValue:
-        self.original_schema = self.handler(__core_schema)
+    def __call__(self, core_schema: CoreSchemaOrField) -> JsonSchemaValue:
+        self.original_schema = self.handler(core_schema)
         return self.resolve_ref_schema(self.original_schema)
 
     def update_schema(self, schema: JsonSchemaValue) -> JsonSchemaValue:
@@ -133,10 +133,10 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
     def __call__(self, __core_schema: CoreSchemaOrField) -> JsonSchemaValue:
         return self.handler(__core_schema)
 
-    def resolve_ref_schema(self, __maybe_ref_json_schema: JsonSchemaValue) -> JsonSchemaValue:
-        if '$ref' not in __maybe_ref_json_schema:
-            return __maybe_ref_json_schema
-        ref = __maybe_ref_json_schema['$ref']
+    def resolve_ref_schema(self, maybe_ref_json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        if '$ref' not in maybe_ref_json_schema:
+            return maybe_ref_json_schema
+        ref = maybe_ref_json_schema['$ref']
         json_schema = self.generate_json_schema.get_schema_from_definitions(ref)
         if json_schema is None:
             raise LookupError(

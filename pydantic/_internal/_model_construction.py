@@ -359,7 +359,7 @@ def complete_model_class(
         typevars_map,
     )
     handler = CallbackGetCoreSchemaHandler(
-        partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
+        partial(gen_schema.generate_schema_for_type, from_dunder_get_core_schema=False),
         gen_schema.generate_schema,
     )
     try:
