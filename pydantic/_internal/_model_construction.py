@@ -166,9 +166,7 @@ class ModelMetaclass(ABCMeta):
             # preserve `__set_name__` protocol defined in https://peps.python.org/pep-0487
             # for attributes not in `new_namespace` (e.g. private attributes)
             for name, obj in private_attributes.items():
-                set_name = getattr(obj, '__set_name__', None)
-                if callable(set_name):
-                    set_name(cls, name)
+                obj.__set_name__(cls, name)
 
             if __pydantic_reset_parent_namespace__:
                 cls.__pydantic_parent_namespace__ = parent_frame_namespace()
