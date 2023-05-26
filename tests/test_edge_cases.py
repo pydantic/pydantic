@@ -1177,24 +1177,6 @@ def test_optional_required():
     ]
 
 
-@pytest.mark.xfail(reason='items yielded by __get_validators__ are not inspected for valid signatures')
-def test_invalid_validator():
-    class InvalidValidator:
-        @classmethod
-        def __get_validators__(cls):
-            yield cls.has_wrong_arguments
-
-        @classmethod
-        def has_wrong_arguments(cls, value, bar):
-            pass
-
-    with pytest.raises(errors.PydanticUserError, match='Invalid signature for validator'):
-
-        class InvalidValidatorModel(BaseModel):
-            model_config = dict(arbitrary_types_allowed=True)
-            x: InvalidValidator = ...
-
-
 def test_unable_to_infer():
     with pytest.raises(
         errors.PydanticUserError,
@@ -2268,7 +2250,6 @@ def test_model_issubclass():
     assert not issubclass(Custom, BaseModel)
 
 
-@pytest.mark.xfail(reason='"long int", see details below')
 def test_long_int():
     """
     see https://github.com/pydantic/pydantic/issues/1477 and in turn, https://github.com/python/cpython/issues/95778
@@ -2277,41 +2258,21 @@ def test_long_int():
     class Model(BaseModel):
         x: int
 
-    # TODO: The next line now raises the following error:
-    #     E       pydantic_core._pydantic_core.ValidationError: 1 validation error for Model
-    #     E       x
-    #     E         Input should be a finite number [type=finite_number,
-    #     input_value='111111111111111111111111...11111111111111111111111', input_type=str]
-    #   Do we need to resolve this? How hard would that be in pydantic_core? Is it worth it?
-    #   -
-    #   "in pydantic-core we use an i64, which constrains the max and min values. Since that's massively more
-    #   performant, and there are very few real world uses for int > i64:MAX, the error is correct."
-    #   https://github.com/pydantic/pydantic/pull/5151#discussion_r1130693762
-    #   -
-    #   I think before modifying this test and removing the xfail, we should create a new test
-    #   that handles the following line without failure using the is-instance approach described in the comment
-    #   linked above.
     assert Model(x='1' * 4_300).x == int('1' * 4_300)
-    assert Model(x=b'1' * 4_300).x == int('1' * 4_300)
-    assert Model(x=bytearray(b'1' * 4_300)).x == int('1' * 4_300)
 
     too_long = '1' * 4_301
     with pytest.raises(ValidationError) as exc_info:
         Model(x=too_long)
 
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
+            'type': 'int_parsing',
             'loc': ('x',),
-            'msg': 'value is not a valid integer',
-            'type': 'type_error.integer',
-        },
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': too_long,
+        }
     ]
-
-    too_long_b = too_long.encode('utf-8')
-    with pytest.raises(ValidationError):
-        Model(x=too_long_b)
-    with pytest.raises(ValidationError):
-        Model(x=bytearray(too_long_b))
 
     # this used to hang indefinitely
     with pytest.raises(ValidationError):

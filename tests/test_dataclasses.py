@@ -726,26 +726,28 @@ def test_hashable_required():
     ]
 
 
-@pytest.mark.parametrize(
-    'default',
-    [
-        1,
-        None,
-        pytest.param(
-            ...,
-            marks=pytest.mark.xfail(
-                reason='... makes field required: https://github.com/pydantic/pydantic/issues/5488'
-            ),
-        ),
-    ],
-)
-def test_hashable_optional(default):
+@pytest.mark.parametrize('default', [1, None])
+def test_default_value(default):
     @pydantic.dataclasses.dataclass
     class MyDataclass:
-        v: Hashable = default
+        v: int = default
 
-    MyDataclass()
-    MyDataclass(v=None)
+    assert dataclasses.asdict(MyDataclass()) == {'v': default}
+    assert dataclasses.asdict(MyDataclass(v=42)) == {'v': 42}
+
+
+def test_default_value_ellipsis():
+    """
+    https://github.com/pydantic/pydantic/issues/5488
+    """
+
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        v: int = ...
+
+    assert dataclasses.asdict(MyDataclass(v=42)) == {'v': 42}
+    with pytest.raises(ValidationError, match='type=missing'):
+        MyDataclass()
 
 
 def test_override_builtin_dataclass():
@@ -804,7 +806,6 @@ def test_override_builtin_dataclass_2():
     assert f.seen_count == 7
 
 
-@pytest.mark.xfail(reason='TODO we need to optionally run validation even on exact types')
 def test_override_builtin_dataclass_nested():
     @dataclasses.dataclass
     class Meta:
@@ -816,10 +817,7 @@ def test_override_builtin_dataclass_nested():
         filename: str
         meta: Meta
 
-    class Foo(BaseModel):
-        file: File
-
-    FileChecked = pydantic.dataclasses.dataclass(File)
+    FileChecked = pydantic.dataclasses.dataclass(File, config=ConfigDict(revalidate_instances='always'))
     f = FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count='7'))
     assert f.filename == 'thefilename'
     assert f.meta.modified_date == datetime(2020, 1, 1, 0, 0)
@@ -827,9 +825,15 @@ def test_override_builtin_dataclass_nested():
 
     with pytest.raises(ValidationError) as e:
         FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count=['7']))
+    # insert_assert(e.value.errors(include_url=False))
     assert e.value.errors(include_url=False) == [
-        {'loc': ('meta', 'seen_count'), 'msg': 'value is not a valid integer', 'type': 'type_error.integer'}
+        {'type': 'int_type', 'loc': ('meta', 'seen_count'), 'msg': 'Input should be a valid integer', 'input': ['7']}
     ]
+
+    class Foo(
+        BaseModel,
+    ):
+        file: File
 
     foo = Foo.model_validate(
         {
@@ -1342,8 +1346,11 @@ def test_post_init_after_validation():
     assert Model.model_validate_json(json_text).model_dump() == model.model_dump()
 
 
-@pytest.mark.xfail(reason='pydantic dataclasses currently do not preserve sunder attributes set in __new__')
-def test_keeps_custom_properties():
+def test_new_not_called():
+    """
+    pydantic dataclasses do not preserve sunder attributes set in __new__
+    """
+
     class StandardClass:
         """Class which modifies instance creation."""
 
@@ -1359,13 +1366,15 @@ def test_keeps_custom_properties():
     StandardLibDataclass = dataclasses.dataclass(StandardClass)
     PydanticDataclass = pydantic.dataclasses.dataclass(StandardClass)
 
-    clases_to_test = [StandardLibDataclass, PydanticDataclass]
-
     test_string = 'string'
-    for cls in clases_to_test:
-        instance = cls(a=test_string)
-        assert instance._special_property == 1
-        assert instance.a == test_string
+
+    std_instance = StandardLibDataclass(a=test_string)
+    assert std_instance._special_property == 1
+    assert std_instance.a == test_string
+
+    pyd_instance = PydanticDataclass(a=test_string)
+    assert not hasattr(pyd_instance, '_special_property')
+    assert pyd_instance.a == test_string
 
 
 def test_ignore_extra():

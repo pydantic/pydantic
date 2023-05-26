@@ -34,49 +34,6 @@ def deprecated_from_orm(model_type: Type[BaseModel], obj: Any) -> Any:
         return model_type.from_orm(obj)
 
 
-@pytest.mark.xfail(reason='working on V2')
-def test_getdict():
-    class TestCls:
-        a = 1
-        b: int
-
-        def __init__(self):
-            self.c = 3
-
-        @property
-        def d(self):
-            return 4
-
-        def __getattr__(self, key):
-            if key == 'e':
-                return 5
-            else:
-                raise AttributeError()
-
-    t = TestCls()
-    # gd = GetterDict(t)
-    gd = object(t)
-    assert gd.keys() == ['a', 'c', 'd']
-    assert gd.get('a') == 1
-    assert gd['a'] == 1
-    with pytest.raises(KeyError):
-        assert gd['foobar']
-    assert gd.get('b', None) is None
-    assert gd.get('b', 1234) == 1234
-    assert gd.get('c', None) == 3
-    assert gd.get('d', None) == 4
-    assert gd.get('e', None) == 5
-    assert gd.get('f', 'missing') == 'missing'
-    assert list(gd.values()) == [1, 3, 4]
-    assert list(gd.items()) == [('a', 1), ('c', 3), ('d', 4)]
-    assert list(gd) == ['a', 'c', 'd']
-    assert gd == {'a': 1, 'c': 3, 'd': 4}
-    assert 'a' in gd
-    assert len(gd) == 3
-    assert str(gd) == "{'a': 1, 'c': 3, 'd': 4}"
-    assert repr(gd) == "GetterDict[TestCls]({'a': 1, 'c': 3, 'd': 4})"
-
-
 def test_from_attributes_root():
     class PokemonCls:
         def __init__(self, *, en_name: str, jp_name: str):
@@ -256,7 +213,7 @@ def test_extra_allow_from_orm(extra: Literal['ignore', 'forbid', 'allow']):
     assert not hasattr(model, 'y')
 
 
-@pytest.mark.xfail(reason='working on V2')
+@pytest.mark.filterwarnings('ignore:Pydantic V1 style `@root_validator` validators are deprecated.*:DeprecationWarning')
 def test_root_validator():
     validator_value = None
 
@@ -274,69 +231,12 @@ def test_root_validator():
         def change_input_data(cls, value):
             nonlocal validator_value
             validator_value = value
-            return {**value, 'z': value['x'] + value['y']}
+            return {'x': value.x, 'y': value.y, 'z': value.x + value.y}
 
     model = deprecated_from_orm(Model, TestCls())
     assert model.model_dump() == {'x': 1, 'y': 2, 'z': 3}
     # assert isinstance(validator_value, GetterDict)
-    assert validator_value == {'x': 1, 'y': 2}
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_custom_getter_dict():
-    class TestCls:
-        x = 1
-        y = 2
-
-    def custom_getter_dict(obj):
-        assert isinstance(obj, TestCls)
-        return {'x': 42, 'y': 24}
-
-    class Model(BaseModel):
-        x: int
-        y: int
-
-        class Config:
-            from_attributes = True
-            getter_dict = custom_getter_dict
-
-    model = deprecated_from_orm(Model, TestCls())
-    assert model.model_dump() == {'x': 42, 'y': 24}
-
-
-@pytest.mark.xfail(reason='working on V2')
-def test_recursive_parsing():
-    class Getter:  # GetterDict
-        # try to read the modified property name
-        # either as an attribute or as a key
-        def get(self, key, default):
-            key = key + key
-            try:
-                v = self._obj[key]
-                return Getter(v) if isinstance(v, dict) else v
-            except TypeError:
-                return getattr(self._obj, key, default)
-            except KeyError:
-                return default
-
-    class Model(BaseModel):
-        class Config:
-            from_attributes = True
-            getter_dict = Getter
-
-    class ModelA(Model):
-        a: int
-
-    class ModelB(Model):
-        b: ModelA
-
-    # test recursive parsing with object attributes
-    dct = dict(bb=SimpleNamespace(aa=1))
-    assert deprecated_from_orm(ModelB, dct) == ModelB(b=ModelA(a=1))
-
-    # test recursive parsing with dict keys
-    obj = dict(bb=dict(aa=1))
-    assert deprecated_from_orm(ModelB, obj) == ModelB(b=ModelA(a=1))
+    assert isinstance(validator_value, TestCls)
 
 
 def test_nested_orm():
