@@ -976,6 +976,9 @@ def test_from_attributes_type_error():
         }
     ]
 
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('123')
+
 
 def test_from_attributes_by_name():
     v = SchemaValidator(

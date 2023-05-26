@@ -14,18 +14,13 @@ from ..conftest import Err, PyAndJson, infinite_generator
     'mode,items,input_value,expected',
     [
         ('variable', {'type': 'int'}, [1, 2, 3], (1, 2, 3)),
-        (
-            'variable',
-            {'type': 'int'},
-            1,
-            Err('Input should be a valid tuple [type=tuple_type, input_value=1, input_type=int]'),
-        ),
+        ('variable', {'type': 'int'}, 1, Err('[type=tuple_type, input_value=1, input_type=int]')),
         ('positional', [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}], [1, 2, '3'], (1, 2, 3)),
         (
             'positional',
             [{'type': 'int'}, {'type': 'int'}, {'type': 'int'}],
             5,
-            Err('Input should be a valid tuple [type=tuple_type, input_value=5, input_type=int]'),
+            Err('[type=tuple_type, input_value=5, input_type=int]'),
         ),
     ],
     ids=repr,

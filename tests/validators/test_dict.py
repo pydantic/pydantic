@@ -17,7 +17,7 @@ def test_dict(py_and_json: PyAndJson):
     v = py_and_json({'type': 'dict', 'strict': True, 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
     assert v.validate_test({'1': 2, '3': 4}) == {1: 2, 3: 4}
     assert v.validate_test({}) == {}
-    with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
+    with pytest.raises(ValidationError, match=re.escape('[type=dict_type, input_value=[], input_type=list]')):
         v.validate_test([])
 
 
@@ -225,3 +225,13 @@ def test_dict_length_constraints(kwargs: Dict[str, Any], input_value, expected):
             v.validate_python(input_value)
     else:
         assert v.validate_python(input_value) == expected
+
+
+def test_json_dict():
+    v = SchemaValidator({'type': 'dict', 'keys_schema': {'type': 'int'}, 'values_schema': {'type': 'int'}})
+    assert v.validate_json('{"1": 2, "3": 4}') == {1: 2, 3: 4}
+    with pytest.raises(ValidationError) as exc_info:
+        v.validate_json('1')
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'dict_type', 'loc': (), 'msg': 'Input should be an object', 'input': 1}
+    ]
