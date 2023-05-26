@@ -81,7 +81,7 @@ def test_nested_models() -> None:
     calls: list[str] = []
 
     class Model(BaseModel):
-        inner: Model | None
+        inner: Union['Model', None]
 
         @model_validator(mode='before')
         @classmethod
