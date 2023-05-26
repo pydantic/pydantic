@@ -285,13 +285,19 @@ def test_private_attr_set_name():
         def __set_name__(self, owner, name):
             self._owner_attr_name = f'{owner.__name__}.{name}'
 
-    _private_attr_default = SetNameInt(2)
+    _private_attr_default = SetNameInt(1)
 
     class Model(BaseModel):
-        _private_attr: int = PrivateAttr(default=_private_attr_default)
+        _private_attr_1: int = PrivateAttr(default=_private_attr_default)
+        _private_attr_2: SetNameInt = SetNameInt(2)
 
-    assert Model()._private_attr == 2
-    assert _private_attr_default._owner_attr_name == 'Model._private_attr'
+    assert _private_attr_default._owner_attr_name == 'Model._private_attr_1'
+
+    m = Model()
+    assert m._private_attr_1 == 1
+    assert m._private_attr_1._owner_attr_name == 'Model._private_attr_1'
+    assert m._private_attr_2 == 2
+    assert m._private_attr_2._owner_attr_name == 'Model._private_attr_2'
 
 
 def test_private_attr_set_name_do_not_crash_if_not_callable():
