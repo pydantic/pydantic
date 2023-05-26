@@ -462,7 +462,7 @@ def test_validate_assignment():
         return input_value
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         field_a: str
 
     v = SchemaValidator(
@@ -785,7 +785,7 @@ def test_non_model_field_plain_validator_tries_to_access_field_info() -> None:
 
 def test_non_model_field_wrap_validator_tries_to_access_field_info() -> None:
     class Model:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         x: str
 
     def f(input_value: Any, val: core_schema.ValidatorFunctionWrapHandler, info: core_schema.ValidationInfo) -> Any:
@@ -867,7 +867,7 @@ def test_model_root_function_assignment(mode: str, calls1: Any, calls2: Any):
     calls: list[Any] = []
 
     class Model:
-        __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         x: str
         y: int
 

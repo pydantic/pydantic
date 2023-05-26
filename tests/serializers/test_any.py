@@ -258,7 +258,7 @@ def test_exclude_dict(any_serializer):
 
 class FieldsSetModel:
     __pydantic_serializer__ = 42
-    __slots__ = '__dict__', '__pydantic_extra__', '__pydantic_fields_set__'
+    __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
 
     def __init__(self, **kwargs):
         fields = {}

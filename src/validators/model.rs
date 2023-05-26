@@ -20,6 +20,7 @@ const ROOT_FIELD: &str = "root";
 const DUNDER_DICT: &str = "__dict__";
 const DUNDER_FIELDS_SET_KEY: &str = "__pydantic_fields_set__";
 const DUNDER_MODEL_EXTRA_KEY: &str = "__pydantic_extra__";
+const DUNDER_MODEL_PRIVATE_KEY: &str = "__pydantic_private__";
 
 #[derive(Debug, Clone)]
 pub(super) enum Revalidate {
@@ -363,6 +364,7 @@ fn set_model_attrs(instance: &PyAny, model_dict: &PyAny, model_extra: &PyAny, fi
     let py = instance.py();
     force_setattr(py, instance, intern!(py, DUNDER_DICT), model_dict)?;
     force_setattr(py, instance, intern!(py, DUNDER_MODEL_EXTRA_KEY), model_extra)?;
+    force_setattr(py, instance, intern!(py, DUNDER_MODEL_PRIVATE_KEY), py.None())?;
     force_setattr(py, instance, intern!(py, DUNDER_FIELDS_SET_KEY), fields_set)?;
     Ok(())
 }
