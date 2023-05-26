@@ -417,7 +417,7 @@ except ValidationError as e:
     """
 ```
 
-You can disable hide the input value and type by setting the `hide_input_in_errors` config to `True`.
+You can hide the input value and type by setting the `hide_input_in_errors` config to `True`.
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
