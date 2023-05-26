@@ -551,3 +551,21 @@ def test_config_is_not_inherited_in_model_fields():
     m = Outer.model_validate(dict(x=['Abc'], inner=dict(a='Def')))
 
     assert m.model_dump() == {'x': ['abc'], 'inner': {'a': 'Def'}}
+
+
+@pytest.mark.parametrize(
+    'config,input_str',
+    (
+        ({}, 'type=string_type, input_value=123, input_type=int'),
+        ({'hide_input_in_errors': False}, 'type=string_type, input_value=123, input_type=int'),
+        ({'hide_input_in_errors': True}, 'type=string_type'),
+    ),
+)
+def test_hide_input_in_errors(config, input_str):
+    class Model(BaseModel):
+        x: str
+
+        model_config = ConfigDict(**config)
+
+    with pytest.raises(ValidationError, match=re.escape(f'Input should be a valid string [{input_str}]')):
+        Model(x=123)
