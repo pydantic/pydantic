@@ -920,7 +920,7 @@ class GenerateSchema:
                 self.types_namespace,
                 typevars_map=typevars_map,
             )
-        decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos.build(dataclass)
+        decorators = dataclass.__dict__.get('__pydantic_decorators__') or DecoratorInfos.build(dataclass)
         # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
         # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True
         args = sorted(

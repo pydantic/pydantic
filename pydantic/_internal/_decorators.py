@@ -240,7 +240,7 @@ class DecoratorInfos:
         # reminder: dicts are ordered and replacement does not alter the order
         res = DecoratorInfos()
         for base in model_dc.__bases__[::-1]:
-            existing = cast(Union[DecoratorInfos, None], getattr(base, '__pydantic_decorators__', None))
+            existing = cast(Union[DecoratorInfos, None], base.__dict__.get('__pydantic_decorators__'))
             if existing is None:
                 existing = DecoratorInfos.build(base)
             res.validators.update({k: v.bind_to_cls(model_dc) for k, v in existing.validators.items()})

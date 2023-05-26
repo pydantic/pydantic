@@ -174,7 +174,7 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
 
 
 def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
-    return dataclasses.is_dataclass(_cls) and hasattr(_cls, '__pydantic_validator__')
+    return dataclasses.is_dataclass(_cls) and '__pydantic_validator__' in _cls.__dict__
 
 
 def rebuild_dataclass(

@@ -22,6 +22,7 @@ from pydantic import (
     PydanticUserError,
     TypeAdapter,
     ValidationError,
+    field_serializer,
     field_validator,
 )
 from pydantic._internal._model_construction import MockValidator
@@ -2083,8 +2084,10 @@ def test_init_vars_call_monkeypatch(remove_monkeypatch, monkeypatch):
     assert stack_depth == 1 if remove_monkeypatch else 2
 
 
-def test_vanilla_dataclass_validators_in_model_field():
-    @dataclasses.dataclass
+@pytest.mark.parametrize('decorator1', **dataclass_decorators())
+@pytest.mark.parametrize('decorator2', **dataclass_decorators())
+def test_decorators_in_model_field(decorator1, decorator2):
+    @decorator1
     class Demo1:
         int1: int
 
@@ -2092,22 +2095,36 @@ def test_vanilla_dataclass_validators_in_model_field():
         def set_int_1(cls, v):
             return v + 100
 
-    @dataclasses.dataclass
+        @field_serializer('int1')
+        def serialize_int_1(self, v):
+            return v + 10
+
+    @decorator2
     class Demo2(Demo1):
         int2: int
 
         @field_validator('int2', mode='before')
         def set_int_2(cls, v):
             return v + 200
+
+        @field_serializer('int2')
+        def serialize_int_2(self, v):
+            return v + 20
 
     class Model(BaseModel):
         x: Demo2
 
-    assert Model.model_validate(dict(x=dict(int1=1, int2=2))).model_dump() == {'x': {'int1': 101, 'int2': 202}}
+    m = Model.model_validate(dict(x=dict(int1=1, int2=2)))
+    assert m.x.int1 == 101
+    assert m.x.int2 == 202
+
+    assert m.model_dump() == {'x': {'int1': 111, 'int2': 222}}
 
 
-def test_vanilla_dataclass_validators_in_type_adapter():
-    @dataclasses.dataclass
+@pytest.mark.parametrize('decorator1', **dataclass_decorators())
+@pytest.mark.parametrize('decorator2', **dataclass_decorators())
+def test_vanilla_dataclass_decorators_in_type_adapter(decorator1, decorator2):
+    @decorator1
     class Demo1:
         int1: int
 
@@ -2115,7 +2132,11 @@ def test_vanilla_dataclass_validators_in_type_adapter():
         def set_int_1(cls, v):
             return v + 100
 
-    @dataclasses.dataclass
+        @field_serializer('int1')
+        def serialize_int_1(self, v):
+            return v + 10
+
+    @decorator2
     class Demo2(Demo1):
         int2: int
 
@@ -2123,7 +2144,14 @@ def test_vanilla_dataclass_validators_in_type_adapter():
         def set_int_2(cls, v):
             return v + 200
 
+        @field_serializer('int2')
+        def serialize_int_2(self, v):
+            return v + 20
+
     adapter = TypeAdapter(Demo2)
 
     m = adapter.validate_python(dict(int1=1, int2=2))
-    assert adapter.dump_python(m) == {'int1': 101, 'int2': 202}
+    assert m.int1 == 101
+    assert m.int2 == 202
+
+    assert adapter.dump_python(m) == {'int1': 111, 'int2': 222}
