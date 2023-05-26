@@ -127,10 +127,11 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # 
                 schema,
             )
     elif isinstance(annotation, at.Predicate):
+        predicate_name = f'{annotation.func.__qualname__} ' if hasattr(annotation.func, '__qualname__') else ''
 
         def val_func(v: Any) -> Any:
             # annotation.func may also raise an exception, let it pass through
-            assert annotation.func(v), f'Predicate {annotation.func} failed'
+            assert annotation.func(v), f'Predicate {predicate_name}failed'
 
         return cs.no_info_after_validator_function(val_func, schema)
 

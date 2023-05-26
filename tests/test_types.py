@@ -5265,8 +5265,8 @@ def test_constraints_arbitrary_type() -> None:
         def __gt__(self, o: object) -> bool:
             return self.v > o
 
-        def __mul__(self, o: Any) -> Any:
-            self.v * o
+        def __mod__(self, o: Any) -> Any:
+            return self.v % o
 
         def __len__(self) -> int:
             return len(self.v)
@@ -5279,8 +5279,10 @@ def test_constraints_arbitrary_type() -> None:
         ge: Annotated[CustomType, annotated_types.Ge(CustomType(0))]
         lt: Annotated[CustomType, annotated_types.Lt(CustomType(0))]
         le: Annotated[CustomType, annotated_types.Le(CustomType(0))]
+        multiple_of: Annotated[CustomType, annotated_types.MultipleOf(2)]
         min_length: Annotated[CustomType, annotated_types.MinLen(1)]
         max_length: Annotated[CustomType, annotated_types.MaxLen(1)]
+        predicate: Annotated[CustomType, annotated_types.Predicate(lambda x: x > 0)]
 
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
@@ -5291,4 +5293,77 @@ def test_constraints_arbitrary_type() -> None:
         le=CustomType(0),
         min_length=CustomType([1, 2]),
         max_length=CustomType([]),
+        multiple_of=CustomType(4),
+        predicate=CustomType(1),
     )
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            gt=CustomType(-1),
+            ge=CustomType(-1),
+            lt=CustomType(1),
+            le=CustomType(1),
+            min_length=CustomType([]),
+            max_length=CustomType([1, 2, 3]),
+            multiple_of=CustomType(3),
+            predicate=CustomType(-1),
+        )
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'greater_than',
+            'loc': ('gt',),
+            'msg': 'Input should be greater than CustomType(0)',
+            'input': CustomType(-1),
+            'ctx': {'gt': CustomType(0)},
+        },
+        {
+            'type': 'greater_than_equal',
+            'loc': ('ge',),
+            'msg': 'Input should be greater than or equal to {ge}',
+            'input': CustomType(-1),
+            'ctx': {'le': CustomType(0)},
+        },
+        {
+            'type': 'less_than',
+            'loc': ('lt',),
+            'msg': 'Input should be less than CustomType(0)',
+            'input': CustomType(1),
+            'ctx': {'lt': CustomType(0)},
+        },
+        {
+            'type': 'less_than_equal',
+            'loc': ('le',),
+            'msg': 'Input should be less than or equal to CustomType(0)',
+            'input': CustomType(1),
+            'ctx': {'le': CustomType(0)},
+        },
+        {
+            'type': 'multiple_of',
+            'loc': ('multiple_of',),
+            'msg': 'Input should be a multiple of 2',
+            'input': CustomType(3),
+            'ctx': {'multiple_of': 2},
+        },
+        {
+            'type': 'too_short',
+            'loc': ('min_length',),
+            'msg': 'Should have at least 1 item after validation, not 0',
+            'input': CustomType([]),
+            'ctx': {'min_length': 1, 'actual_length': 0},
+        },
+        {
+            'type': 'too_long',
+            'loc': ('max_length',),
+            'msg': 'Should have at most {min_length} item after validation, not 3',
+            'input': CustomType([1, 2, 3]),
+            'ctx': {'max_length': 1, 'actual_length': 3},
+        },
+        {
+            'type': 'assertion_error',
+            'loc': ('predicate',),
+            'msg': 'Assertion failed, Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'input': CustomType(-1),
+            'ctx': {'error': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed'},
+        },
+    ]
