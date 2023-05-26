@@ -199,13 +199,12 @@ class GenerateSchema:
 
         if from_prepare_args:
             schema = self._generate_schema_from_prepare_annotations(obj)
-            if schema:
-                return schema
 
         if from_dunder_get_core_schema:
             from_property = self._generate_schema_from_property(obj, obj)
             if from_property is not None:
                 schema = from_property
+
         if schema is None:
             schema = self._generate_schema(obj)
 
@@ -434,10 +433,6 @@ class GenerateSchema:
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
-
-        std_schema = self._std_types_schema(obj)
-        if std_schema is not None:
-            return std_schema
 
         origin = get_origin(obj)
         if origin is None:
@@ -898,27 +893,6 @@ class GenerateSchema:
             custom_error_message='Input should be hashable',
         )
 
-    def _std_types_schema(self, obj: Any) -> core_schema.CoreSchema | None:
-        """
-        Generate schema for types in the standard library.
-        """
-        if not isinstance(obj, type):
-            return None
-
-        # Import here to avoid the extra import time earlier since _std_validators imports lots of things globally
-        from ._std_types_schema import SCHEMA_LOOKUP
-
-        # instead of iterating over a list and calling is_instance, this should be somewhat faster,
-        # especially as it should catch most types on the first iteration
-        # (same as we do/used to do in json encoding)
-        for base in obj.__mro__[:-1]:
-            try:
-                encoder = SCHEMA_LOOKUP[base]
-            except KeyError:
-                continue
-            return encoder(self, obj)
-        return None
-
     def _dataclass_schema(
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
     ) -> core_schema.CoreSchema:
@@ -947,7 +921,12 @@ class GenerateSchema:
                 typevars_map=typevars_map,
             )
         decorators = dataclass.__dict__.get('__pydantic_decorators__') or DecoratorInfos.build(dataclass)
-        args = [self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
+        # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
+        # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True
+        args = sorted(
+            (self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()),
+            key=lambda a: a.get('kw_only') is not False,
+        )
         has_post_init = hasattr(dataclass, '__post_init__')
 
         config = getattr(dataclass, '__pydantic_config__', None)
@@ -1083,6 +1062,9 @@ class GenerateSchema:
             std_types.uuid_prepare_pydantic_annotations,
             std_types.path_schema_prepare_pydantic_annotations,
             std_types.mapping_like_prepare_pydantic_annotations,
+            std_types.enum_prepare_pydantic_annotations,
+            std_types.ip_prepare_pydantic_annotations,
+            std_types.url_prepare_pydantic_annotations,
         ):
             res = gen(obj, annotations)
             if res is not None:

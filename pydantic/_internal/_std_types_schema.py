@@ -32,7 +32,6 @@ from pydantic.fields import FieldInfo
 
 from ..json_schema import JsonSchemaValue, update_json_schema
 from . import _known_annotated_metadata, _typing_extra, _validators
-from ._core_metadata import build_metadata_dict
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
 from ._schema_generation_shared import GetCoreSchemaHandler, GetJsonSchemaHandler
@@ -43,20 +42,25 @@ if typing.TYPE_CHECKING:
     StdSchemaFunction = Callable[[GenerateSchema, type[Any]], core_schema.CoreSchema]
 
 
-SCHEMA_LOOKUP: dict[type[Any], StdSchemaFunction] = {}
+@slots_dataclass
+class SchemaTransformer:
+    get_core_schema: Callable[[Any, GetCoreSchemaHandler], CoreSchema]
+    get_json_schema: Callable[[CoreSchema, GetJsonSchemaHandler], JsonSchemaValue]
+
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+        return self.get_core_schema(source_type, handler)
+
+    def __get_pydantic_json_schema__(self, schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+        return self.get_json_schema(schema, handler)
 
 
-def schema_function(type: type[Any]) -> Callable[[StdSchemaFunction], StdSchemaFunction]:
-    def wrapper(func: StdSchemaFunction) -> StdSchemaFunction:
-        SCHEMA_LOOKUP[type] = func
-        return func
+def enum_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+    if not (inspect.isclass(source_type) and issubclass(source_type, Enum)):
+        return None
 
-    return wrapper
+    enum_type = source_type
 
-
-@schema_function(Enum)
-def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> core_schema.CoreSchema:
-    cases = list(enum_type.__members__.values())
+    cases: list[Any] = list(enum_type.__members__.values())
 
     if not cases:
         # Use an isinstance check for enums with no cases.
@@ -64,7 +68,14 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         # use case for this is creating typevar bounds for generics that should be restricted to enums.
         # This is more consistent than it might seem at first, since you can only subclass enum.Enum
         # (or subclasses of enum.Enum) if all parent classes have no cases.
-        return core_schema.is_instance_schema(enum_type)
+        schema = core_schema.is_instance_schema(enum_type)
+        return enum_type, [
+            SchemaTransformer(
+                lambda _1, _2: schema,
+                lambda _1, handler: handler(schema),
+            ),
+            *annotations,
+        ]
 
     if len(cases) == 1:
         expected = repr(cases[0].value)
@@ -85,13 +96,11 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
     updates = {'title': enum_type.__name__, 'description': description}
     updates = {k: v for k, v in updates.items() if v is not None}
 
-    def update_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
+    def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
         json_schema = handler(core_schema.literal_schema([x.value for x in cases]))
         original_schema = handler.resolve_ref_schema(json_schema)
         update_json_schema(original_schema, updates)
         return json_schema
-
-    metadata = build_metadata_dict(js_functions=[update_schema])
 
     to_enum_validator = core_schema.no_info_plain_validator_function(to_enum)
     if issubclass(enum_type, int):
@@ -123,24 +132,16 @@ def enum_schema(_schema_generator: GenerateSchema, enum_type: type[Enum]) -> cor
         strict = core_schema.json_or_python_schema(
             json_schema=to_enum_validator, python_schema=core_schema.is_instance_schema(enum_type)
         )
-    return core_schema.lax_or_strict_schema(
+    outer_schema = core_schema.lax_or_strict_schema(
         lax_schema=lax,
         strict_schema=strict,
         ref=enum_ref,
-        metadata=metadata,
     )
 
-
-@slots_dataclass
-class MetadataApplier:
-    inner_core_schema: CoreSchema
-    outer_core_schema: CoreSchema
-
-    def __get_pydantic_core_schema__(self, _source_type: Any, _handler: GetCoreSchemaHandler) -> CoreSchema:
-        return self.outer_core_schema
-
-    def __get_pydantic_json_schema__(self, _schema: CoreSchema, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        return handler(self.inner_core_schema)
+    return enum_type, [
+        SchemaTransformer(lambda _1, _2: outer_schema, lambda _, handler: get_json_schema(_, handler)),
+        *annotations,
+    ]
 
 
 @slots_dataclass
@@ -796,83 +797,104 @@ def mapping_like_prepare_pydantic_annotations(
     )
 
 
-def make_strict_ip_schema(tp: type[Any], metadata: Any) -> CoreSchema:
-    return core_schema.json_or_python_schema(
-        json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
-        python_schema=core_schema.is_instance_schema(tp),
-        metadata=metadata,
-    )
+def ip_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+    def make_strict_ip_schema(tp: type[Any]) -> CoreSchema:
+        return core_schema.json_or_python_schema(
+            json_schema=core_schema.no_info_after_validator_function(tp, core_schema.str_schema()),
+            python_schema=core_schema.is_instance_schema(tp),
+        )
+
+    if source_type is IPv4Address:
+        return source_type, [
+            SchemaTransformer(
+                lambda _1, _2: core_schema.lax_or_strict_schema(
+                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_address_validator),
+                    strict_schema=make_strict_ip_schema(IPv4Address),
+                    serialization=core_schema.to_string_ser_schema(),
+                ),
+                lambda _1, _2: {'type': 'string', 'format': 'ipv4'},
+            ),
+            *annotations,
+        ]
+    if source_type is IPv4Network:
+        return source_type, [
+            SchemaTransformer(
+                lambda _1, _2: core_schema.lax_or_strict_schema(
+                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_network_validator),
+                    strict_schema=make_strict_ip_schema(IPv4Network),
+                    serialization=core_schema.to_string_ser_schema(),
+                ),
+                lambda _1, _2: {'type': 'string', 'format': 'ipv4network'},
+            ),
+            *annotations,
+        ]
+    if source_type is IPv4Interface:
+        return source_type, [
+            SchemaTransformer(
+                lambda _1, _2: core_schema.lax_or_strict_schema(
+                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_interface_validator),
+                    strict_schema=make_strict_ip_schema(IPv4Interface),
+                    serialization=core_schema.to_string_ser_schema(),
+                ),
+                lambda _1, _2: {'type': 'string', 'format': 'ipv4interface'},
+            ),
+            *annotations,
+        ]
+
+    if source_type is IPv6Address:
+        return source_type, [
+            SchemaTransformer(
+                lambda _1, _2: core_schema.lax_or_strict_schema(
+                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_address_validator),
+                    strict_schema=make_strict_ip_schema(IPv6Address),
+                    serialization=core_schema.to_string_ser_schema(),
+                ),
+                lambda _1, _2: {'type': 'string', 'format': 'ipv6'},
+            ),
+            *annotations,
+        ]
+    if source_type is IPv6Network:
+        return source_type, [
+            SchemaTransformer(
+                lambda _1, _2: core_schema.lax_or_strict_schema(
+                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_network_validator),
+                    strict_schema=make_strict_ip_schema(IPv6Network),
+                    serialization=core_schema.to_string_ser_schema(),
+                ),
+                lambda _1, _2: {'type': 'string', 'format': 'ipv6network'},
+            ),
+            *annotations,
+        ]
+    if source_type is IPv6Interface:
+        return source_type, [
+            SchemaTransformer(
+                lambda _1, _2: core_schema.lax_or_strict_schema(
+                    lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_interface_validator),
+                    strict_schema=make_strict_ip_schema(IPv6Interface),
+                    serialization=core_schema.to_string_ser_schema(),
+                ),
+                lambda _1, _2: {'type': 'string', 'format': 'ipv6interface'},
+            ),
+            *annotations,
+        ]
+
+    return None
 
 
-@schema_function(IPv4Address)
-def ip_v4_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv4'}])
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_address_validator, metadata=metadata),
-        strict_schema=make_strict_ip_schema(IPv4Address, metadata=metadata),
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-
-@schema_function(IPv4Interface)
-def ip_v4_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv4interface'}])
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_plain_validator_function(
-            _validators.ip_v4_interface_validator, metadata=metadata
-        ),
-        strict_schema=make_strict_ip_schema(IPv4Interface, metadata=metadata),
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-
-@schema_function(IPv4Network)
-def ip_v4_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv4network'}])
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v4_network_validator, metadata=metadata),
-        strict_schema=make_strict_ip_schema(IPv4Network, metadata=metadata),
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-
-@schema_function(IPv6Address)
-def ip_v6_address_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv6'}])
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_address_validator, metadata=metadata),
-        strict_schema=make_strict_ip_schema(IPv6Address, metadata=metadata),
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-
-@schema_function(IPv6Interface)
-def ip_v6_interface_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv6interface'}])
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_plain_validator_function(
-            _validators.ip_v6_interface_validator, metadata=metadata
-        ),
-        strict_schema=make_strict_ip_schema(IPv6Interface, metadata=metadata),
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-
-@schema_function(IPv6Network)
-def ip_v6_network_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    metadata = build_metadata_dict(js_functions=[lambda _c, _h: {'type': 'string', 'format': 'ipv6network'}])
-    return core_schema.lax_or_strict_schema(
-        lax_schema=core_schema.no_info_plain_validator_function(_validators.ip_v6_network_validator, metadata=metadata),
-        strict_schema=make_strict_ip_schema(IPv6Network, metadata=metadata),
-        serialization=core_schema.to_string_ser_schema(),
-    )
-
-
-@schema_function(Url)
-def url_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    return {'type': 'url'}
-
-
-@schema_function(MultiHostUrl)
-def multi_host_url_schema(_schema_generator: GenerateSchema, _obj: Any) -> core_schema.CoreSchema:
-    return {'type': 'multi-host-url'}
+def url_prepare_pydantic_annotations(source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]] | None:
+    if source_type is Url:
+        return source_type, [
+            SchemaTransformer(
+                lambda _1, _2: core_schema.url_schema(),
+                lambda cs, handler: handler(cs),
+            ),
+            *annotations,
+        ]
+    if source_type is MultiHostUrl:
+        return source_type, [
+            SchemaTransformer(
+                lambda _1, _2: core_schema.multi_host_url_schema(),
+                lambda cs, handler: handler(cs),
+            ),
+            *annotations,
+        ]
