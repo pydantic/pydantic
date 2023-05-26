@@ -12,6 +12,16 @@ from pydantic.functional_validators import AfterValidator
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 
 
+def test_prepare_annotations_without_get_core_schema() -> None:
+    class Foo:
+        @classmethod
+        def __prepare_pydantic_annotations__(cls, src_type: Any, annotations: List[Any]) -> Tuple[Any, List[Any]]:
+            return int, annotations
+
+    ta = TypeAdapter(Foo)
+    assert ta.validate_json('1') == 1
+
+
 @dataclass
 class MetadataApplier:
     inner_core_schema: CoreSchema
