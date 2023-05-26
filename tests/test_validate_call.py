@@ -412,16 +412,6 @@ def test_json_schema():
     }
 
 
-@pytest.mark.xfail(reason='waiting for https://github.com/pydantic/pydantic/issues/5395')
-def test_config_title():
-    @validate_call(config=dict(title='Testing'))
-    def foo(a: int, b: int = None):
-        return f'{a}, {b}'
-
-    js = TypeAdapter(foo).json_schema()
-    assert js['title'] == 'Testing'
-
-
 def test_alias_generator():
     @validate_call(config=dict(alias_generator=lambda x: x * 2))
     def foo(a: int, b: int):

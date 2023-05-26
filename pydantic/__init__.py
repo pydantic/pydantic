@@ -16,7 +16,7 @@ from .deprecated.config import BaseConfig  # type: ignore
 from .deprecated.tools import *
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
-from .functional_serializers import field_serializer, model_serializer
+from .functional_serializers import PlainSerializer, WrapSerializer, field_serializer, model_serializer
 from .functional_validators import field_validator, model_validator
 from .main import *
 from .networks import *
@@ -47,6 +47,8 @@ __all__ = [
     # functional serializers
     'field_serializer',
     'model_serializer',
+    'PlainSerializer',
+    'WrapSerializer',
     'FieldSerializationInfo',
     'SerializationInfo',
     'SerializerFunctionWrapHandler',

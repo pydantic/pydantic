@@ -580,12 +580,11 @@ class Model(BaseModel):
     assert module.Model.__class_vars__ == {'a'}
 
 
-@pytest.mark.xfail(reason='json encoder stuff')
 def test_json_encoder_str(create_module):
     module = create_module(
         # language=Python
         """
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, field_serializer
 
 
 class User(BaseModel):
@@ -600,40 +599,42 @@ class User(BaseModel):
 
 
 class Model(BaseModel):
-    model_config=ConfigDict(json_encoders={'User': lambda v: f'User({v.y})'})
     foo_user: FooUser
     user: User
+
+    @field_serializer('user')
+    def serialize_user(self, v):
+        return f'User({v.y})'
 
 """
     )
 
     m = module.Model(foo_user={'x': 'user1'}, user={'y': 'user2'})
     # TODO: How can we replicate this custom-encoder functionality without affecting the serialization of `User`?
-    assert m.model_dump_json(models_as_dict=False) == '{"foo_user": {"x": "user1"}, "user": "User(user2)"}'
+    assert m.model_dump_json() == '{"foo_user":{"x":"user1"},"user":"User(user2)"}'
 
 
-@pytest.mark.xfail(reason='json encoder stuff')
 def test_json_encoder_forward_ref(create_module):
     # TODO: Replace the use of json_encoders with a root_serializer
     module = create_module(
         # language=Python
         """
-from pydantic import BaseModel, ConfigDict
-from typing import ForwardRef, List, Optional
+from typing import List, Optional
+from typing_extensions import Annotated
+from pydantic import BaseModel, PlainSerializer
+
+def serialize_user(user):
+    return f'User({user.name})'
 
 class User(BaseModel):
     name: str
-    friends: Optional[List['User']] = None
+    friends: Optional[List[Annotated['User', PlainSerializer(serialize_user)]]] = None
 
-    model_config = ConfigDict(
-        json_encoders = {
-            ForwardRef('User'): lambda v: f'User({v.name})',
-        })
 """
     )
 
     m = module.User(name='anne', friends=[{'name': 'ben'}, {'name': 'charlie'}])
-    assert m.model_dump_json(models_as_dict=False) == '{"name": "anne", "friends": ["User(ben)", "User(charlie)"]}'
+    assert m.model_dump_json() == '{"name":"anne","friends":["User(ben)","User(charlie)"]}'
 
 
 skip_pep585 = pytest.mark.skipif(
