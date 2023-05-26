@@ -12,6 +12,7 @@ from typing_extensions import Annotated, Literal
 
 from pydantic import BaseModel
 from pydantic._internal import _repr
+from pydantic._internal._fields import Undefined
 from pydantic._internal._typing_extra import all_literal_values, get_origin, is_new_type
 from pydantic._internal._utils import (
     BUILTIN_COLLECTIONS,
@@ -26,7 +27,6 @@ from pydantic._internal._utils import (
 from pydantic._internal._validators import import_string
 from pydantic.alias_generators import to_camel, to_pascal, to_snake
 from pydantic.color import Color
-from pydantic.fields import Undefined
 
 try:
     import devtools

@@ -61,7 +61,7 @@ class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
 
 @dataclass_transform(kw_only_default=True, field_specifiers=(Field,))
 class ModelMetaclass(ABCMeta):
-    def __new__(  # noqa: C901
+    def __new__(
         mcs,
         cls_name: str,
         bases: tuple[type[Any], ...],

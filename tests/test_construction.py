@@ -5,7 +5,7 @@ import pytest
 from pydantic_core import ValidationError
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
-from pydantic.fields import Undefined
+from pydantic._internal._fields import Undefined
 
 
 class Model(BaseModel):

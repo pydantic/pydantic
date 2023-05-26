@@ -9,9 +9,7 @@ from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, TypeAlias
 
-from ._internal import _decorators
-from ._internal._decorators import inspect_validator
-from ._internal._internal_dataclass import slots_dataclass
+from ._internal import _decorators, _internal_dataclass
 from .annotated import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
@@ -20,52 +18,54 @@ if sys.version_info < (3, 11):
 else:
     from typing import Protocol
 
+_inspect_validator = _decorators.inspect_validator
 
-@slots_dataclass(frozen=True)
+
+@_internal_dataclass.slots_dataclass(frozen=True)
 class AfterValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = inspect_validator(self.func, 'after')
+        info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
             return core_schema.general_after_validator_function(self.func, schema=schema)  # type: ignore
         else:
             return core_schema.no_info_after_validator_function(self.func, schema=schema)  # type: ignore
 
 
-@slots_dataclass(frozen=True)
+@_internal_dataclass.slots_dataclass(frozen=True)
 class BeforeValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = inspect_validator(self.func, 'before')
+        info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
             return core_schema.general_before_validator_function(self.func, schema=schema)  # type: ignore
         else:
             return core_schema.no_info_before_validator_function(self.func, schema=schema)  # type: ignore
 
 
-@slots_dataclass(frozen=True)
+@_internal_dataclass.slots_dataclass(frozen=True)
 class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
-        info_arg = inspect_validator(self.func, 'plain')
+        info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             return core_schema.general_plain_validator_function(self.func)  # type: ignore
         else:
             return core_schema.no_info_plain_validator_function(self.func)  # type: ignore
 
 
-@slots_dataclass(frozen=True)
+@_internal_dataclass.slots_dataclass(frozen=True)
 class WrapValidator:
     func: core_schema.GeneralWrapValidatorFunction | core_schema.FieldWrapValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
-        info_arg = inspect_validator(self.func, 'wrap')
+        info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:
             return core_schema.general_wrap_validator_function(self.func, schema=schema)  # type: ignore
         else:

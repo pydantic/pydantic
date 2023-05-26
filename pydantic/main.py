@@ -16,6 +16,7 @@ import typing_extensions
 from ._internal import (
     _config,
     _decorators,
+    _fields,
     _forward_ref,
     _generics,
     _model_construction,
@@ -23,7 +24,6 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
-from ._internal._fields import Undefined
 from ._migration import getattr_migration
 from .annotated import GetCoreSchemaHandler
 from .config import ConfigDict
@@ -58,6 +58,7 @@ if typing.TYPE_CHECKING:
 __all__ = 'BaseModel', 'RootModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
+_Undefined = _fields.Undefined
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
@@ -346,7 +347,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
         if private:
-            private = {k: v for k, v in private.items() if v is not Undefined}
+            private = {k: v for k, v in private.items() if v is not _Undefined}
         return {
             '__dict__': self.__dict__,
             '__pydantic_extra__': self.__pydantic_extra__,
@@ -661,7 +662,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
-                m, '__pydantic_private__', {k: v for k, v in self.__pydantic_private__.items() if v is not Undefined}
+                m, '__pydantic_private__', {k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}
             )
 
         return m
@@ -684,7 +685,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _object_setattr(
                 m,
                 '__pydantic_private__',
-                deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not Undefined}, memo=memo),
+                deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}, memo=memo),
             )
 
         return m
@@ -844,14 +845,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        encoder: typing.Callable[[Any], Any] | None = Undefined,  # type: ignore[assignment]
-        models_as_dict: bool = Undefined,  # type: ignore[assignment]
+        encoder: typing.Callable[[Any], Any] | None = _Undefined,  # type: ignore[assignment]
+        models_as_dict: bool = _Undefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
     ) -> str:
         warnings.warn('The `json` method is deprecated; use `model_dump_json` instead.', DeprecationWarning)
-        if encoder is not Undefined:
+        if encoder is not _Undefined:
             raise TypeError('The `encoder` argument is no longer supported; use field serializers instead.')
-        if models_as_dict is not Undefined:
+        if models_as_dict is not _Undefined:
             raise TypeError('The `models_as_dict` argument is no longer supported; use a model serializer instead.')
         if dumps_kwargs:
             raise TypeError('`dumps_kwargs` keyword arguments are no longer supported.')
@@ -1002,7 +1003,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if self.__pydantic_private__ is None:
             private = None
         else:
-            private = {k: v for k, v in self.__pydantic_private__.items() if v is not Undefined}
+            private = {k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}
 
         if self.__pydantic_extra__ is None:
             extra: dict[str, Any] | None = None

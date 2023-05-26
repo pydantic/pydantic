@@ -27,14 +27,20 @@ import annotated_types
 from pydantic_core import CoreSchema, PydanticCustomError, PydanticKnownError, PydanticOmit, core_schema
 from typing_extensions import Annotated, Literal, Protocol
 
-from ._internal import _fields, _internal_dataclass, _known_annotated_metadata, _validators
-from ._internal._core_metadata import build_metadata_dict
-from ._internal._generics import get_origin
-from ._internal._internal_dataclass import slots_dataclass
+from ._internal import (
+    _core_metadata,
+    _fields,
+    _generics,
+    _internal_dataclass,
+    _known_annotated_metadata,
+    _utils,
+    _validators,
+)
 from ._migration import getattr_migration
-from .annotated import GetCoreSchemaHandler
+from .annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUserError
+from .json_schema import JsonSchemaValue
 
 __all__ = (
     'Strict',
@@ -90,10 +96,6 @@ __all__ = (
     'Base64Str',
     'SkipValidation',
 )
-
-from ._internal._schema_generation_shared import GetJsonSchemaHandler
-from ._internal._utils import update_not_none
-from .json_schema import JsonSchemaValue
 
 
 @_dataclasses.dataclass
@@ -505,7 +507,7 @@ def _secret_display(value: str | bytes) -> str:
     return '**********' if value else ''
 
 
-@slots_dataclass
+@_internal_dataclass.slots_dataclass
 class _SecretFieldValidator:
     field_type: type[SecretField[Any]]
     min_length: int | None = None
@@ -545,7 +547,7 @@ class _SecretFieldValidator:
         if self.max_length is not None:
             schema['max_length'] = self.max_length  # type: ignore
         json_schema = handler(schema)
-        update_not_none(
+        _utils.update_not_none(
             json_schema,
             type='string',
             writeOnly=True,
@@ -1014,7 +1016,7 @@ else:
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             # use the generic _origin_ as the second argument to isinstance when appropriate
-            python_schema = core_schema.is_instance_schema(get_origin(source) or source)
+            python_schema = core_schema.is_instance_schema(_generics.get_origin(source) or source)
             json_schema = handler(source)
             return core_schema.json_or_python_schema(python_schema=python_schema, json_schema=json_schema)
 
@@ -1071,7 +1073,7 @@ else:
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
             original_schema = handler.generate_schema(source)
-            metadata = build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
+            metadata = _core_metadata.build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
             return core_schema.any_schema(metadata=metadata, serialization=original_schema)
 
 
