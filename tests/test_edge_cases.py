@@ -2250,7 +2250,7 @@ def test_model_issubclass():
     assert not issubclass(Custom, BaseModel)
 
 
-@pytest.mark.xfail(reason='"long int", see deta ils below')
+@pytest.mark.xfail(reason='"long int", see details below')
 def test_long_int():
     """
     see https://github.com/pydantic/pydantic/issues/1477 and in turn, https://github.com/python/cpython/issues/95778
