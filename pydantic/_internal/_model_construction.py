@@ -431,9 +431,11 @@ def generate_model_signature(
                 param_name = field.alias
             else:
                 param_name = field_name
+
             if field_name in merged_params or param_name in merged_params:
                 continue
-            elif not is_valid_identifier(param_name):
+
+            if not is_valid_identifier(param_name):
                 if allow_names and is_valid_identifier(field_name):
                     param_name = field_name
                 else:
