@@ -179,11 +179,6 @@ class Roman:
 
         return source_type, [RomanValidator(allow_inf_nan)]
 
-    @classmethod
-    def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-        # do nothing special here, the RomanValidator in annotations will take care of building the schema
-        return handler(source_type)
-
 
 @dataclass
 class RomanValidator:
