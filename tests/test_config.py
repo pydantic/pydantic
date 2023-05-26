@@ -181,7 +181,7 @@ class TestsBaseConfig:
 
             model_config = ConfigDict(extra='allow')
 
-        assert Model.__slots__ == {'_foo'}
+        assert set(Model.__private_attributes__) == {'_foo'}
         m = Model(_foo='field')
         assert m._foo == 'private_attribute'
         assert m.__dict__ == {}

@@ -246,36 +246,82 @@ def test_create_model_field_description():
 
 
 @pytest.mark.parametrize('base', [ModelPrivateAttr, object])
-def test_set_name(base):
-    calls = []
+@pytest.mark.parametrize('use_annotation', [True, False])
+def test_private_descriptors(base, use_annotation):
+    set_name_calls = []
+    get_calls = []
+    set_calls = []
+    delete_calls = []
 
-    class class_deco(base):
+    class MyDescriptor(base):
         def __init__(self, fn):
             super().__init__()
             self.fn = fn
+            self.name = ''
 
         def __set_name__(self, owner, name):
-            calls.append((owner, name))
+            set_name_calls.append((owner, name))
+            self.name = name
 
         def __get__(self, obj, type=None):
+            get_calls.append((obj, type))
             return self.fn(obj) if obj else self
+
+        def __set__(self, obj, value):
+            set_calls.append((obj, value))
+            self.fn = lambda obj: value
+
+        def __delete__(self, obj):
+            delete_calls.append(obj)
+
+            def fail(obj):
+                # I have purposely not used the exact formatting you'd get if the attribute wasn't defined,
+                # to make it clear this function is being called, while also having sensible behavior
+                raise AttributeError(f'{self.name!r} is not defined on {obj!r}')
+
+            self.fn = fail
 
     class A(BaseModel):
         x: int
 
-        @class_deco
-        def _some_func(self):
-            return self.x
+        if use_annotation:
+            _some_func: MyDescriptor = MyDescriptor(lambda self: self.x)
+        else:
+            _some_func = MyDescriptor(lambda self: self.x)
 
-    assert calls == [(A, '_some_func')]
+        @property
+        def _double_x(self):
+            return self.x * 2
+
+    if use_annotation or base is ModelPrivateAttr:
+        assert set(A.__private_attributes__) == {'_some_func'}
+    else:
+        assert set(A.__private_attributes__) == set()
+
+    assert set_name_calls == [(A, '_some_func')]
+
     a = A(x=2)
 
-    # we don't test whether calling the method on a PrivateAttr works:
-    # attribute access on privateAttributes is more complicated, it doesn't
-    # get added to the class namespace (and will also get set on the instance
-    # with _init_private_attributes), so the descriptor protocol won't work.
-    if base is object:
-        assert a._some_func == 2
+    assert a._double_x == 4  # Ensure properties with leading underscores work fine and don't become private attributes
+
+    assert get_calls == []
+    assert a._some_func == 2
+    assert get_calls == [(a, A)]
+
+    assert set_calls == []
+    a._some_func = 3
+    assert set_calls == [(a, 3)]
+
+    assert a._some_func == 3
+    assert get_calls == [(a, A), (a, A)]
+
+    assert delete_calls == []
+    del a._some_func
+    assert delete_calls == [a]
+
+    with pytest.raises(AttributeError, match=r"'_some_func' is not defined on A\(x=2\)"):
+        a._some_func
+    assert get_calls == [(a, A), (a, A), (a, A)]
 
 
 def test_private_attr_set_name():
@@ -285,13 +331,19 @@ def test_private_attr_set_name():
         def __set_name__(self, owner, name):
             self._owner_attr_name = f'{owner.__name__}.{name}'
 
-    _private_attr_default = SetNameInt(2)
+    _private_attr_default = SetNameInt(1)
 
     class Model(BaseModel):
-        _private_attr: int = PrivateAttr(default=_private_attr_default)
+        _private_attr_1: int = PrivateAttr(default=_private_attr_default)
+        _private_attr_2: SetNameInt = SetNameInt(2)
 
-    assert Model()._private_attr == 2
-    assert _private_attr_default._owner_attr_name == 'Model._private_attr'
+    assert _private_attr_default._owner_attr_name == 'Model._private_attr_1'
+
+    m = Model()
+    assert m._private_attr_1 == 1
+    assert m._private_attr_1._owner_attr_name == 'Model._private_attr_1'
+    assert m._private_attr_2 == 2
+    assert m._private_attr_2._owner_attr_name == 'Model._private_attr_2'
 
 
 def test_private_attr_set_name_do_not_crash_if_not_callable():
