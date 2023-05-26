@@ -79,21 +79,24 @@ class UnpackedRefJsonSchemaHandler(GetJsonSchemaHandler):
     def resolve_ref_schema(self, __maybe_ref_json_schema: JsonSchemaValue) -> JsonSchemaValue:
         return self.handler.resolve_ref_schema(__maybe_ref_json_schema)
 
-    def __call__(self, __core_schema: CoreSchemaOrField) -> JsonSchemaValue:
-        self.original_schema = self.handler(__core_schema)
+    def __call__(self, core_schema: CoreSchemaOrField) -> JsonSchemaValue:
+        self.original_schema = self.handler(core_schema)
         return self.resolve_ref_schema(self.original_schema)
 
     def update_schema(self, schema: JsonSchemaValue) -> JsonSchemaValue:
         if self.original_schema is None:
             # handler / our __call__ was never called
             return schema
-        original_schema = self.resolve_ref_schema(self.original_schema)
-        if original_schema is not self.original_schema and schema is not original_schema:
-            # a new schema was returned
-            original_schema.clear()
-            original_schema.update(schema)
-        # return self.original_schema, which may be a ref schema
-        return self.original_schema
+        if '$ref' in self.original_schema:
+            original_referenced_schema = self.resolve_ref_schema(self.original_schema)
+            if schema != original_referenced_schema:
+                # a new schema was returned, update the non-ref schema
+                original_referenced_schema.clear()
+                original_referenced_schema.update(schema)
+            # return self.original_schema, which may be a ref schema
+            return self.original_schema
+        # not a ref schema, return the new schema
+        return schema
 
 
 def wrap_json_schema_fn_for_model_or_custom_type_with_ref_unpacking(
@@ -130,10 +133,10 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
     def __call__(self, __core_schema: CoreSchemaOrField) -> JsonSchemaValue:
         return self.handler(__core_schema)
 
-    def resolve_ref_schema(self, __maybe_ref_json_schema: JsonSchemaValue) -> JsonSchemaValue:
-        if '$ref' not in __maybe_ref_json_schema:
-            return __maybe_ref_json_schema
-        ref = __maybe_ref_json_schema['$ref']
+    def resolve_ref_schema(self, maybe_ref_json_schema: JsonSchemaValue) -> JsonSchemaValue:
+        if '$ref' not in maybe_ref_json_schema:
+            return maybe_ref_json_schema
+        ref = maybe_ref_json_schema['$ref']
         json_schema = self.generate_json_schema.get_schema_from_definitions(ref)
         if json_schema is None:
             raise LookupError(

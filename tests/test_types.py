@@ -4602,7 +4602,9 @@ def test_custom_generic_containers():
     class GenericList(List[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
+            return core_schema.no_info_after_validator_function(
+                GenericList, handler.generate_schema(List[get_args(source_type)[0]])
+            )
 
     class Model(BaseModel):
         field: GenericList[int]
@@ -4950,7 +4952,7 @@ def test_custom_default_dict() -> None:
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(
-                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
+                lambda x: cls(x.default_factory, x), handler.generate_schema(DefaultDict[keys_type, values_type])
             )
 
     ta = TypeAdapter(CustomDefaultDict[str, int])

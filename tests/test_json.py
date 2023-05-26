@@ -134,7 +134,7 @@ def test_subclass_encoding():
             def val(v: datetime) -> SubDate:
                 return SubDate.fromtimestamp(v.timestamp())
 
-            return core_schema.no_info_after_validator_function(val, handler(datetime))
+            return core_schema.no_info_after_validator_function(val, handler.generate_schema(datetime))
 
     class Model(BaseModel):
         a: datetime
@@ -152,7 +152,7 @@ def test_subclass_custom_encoding():
             def val(v: datetime) -> SubDt:
                 return SubDt.fromtimestamp(v.timestamp())
 
-            return core_schema.no_info_after_validator_function(val, handler(datetime))
+            return core_schema.no_info_after_validator_function(val, handler.generate_schema(datetime))
 
     class SubDelta(timedelta):
         @classmethod
@@ -160,7 +160,7 @@ def test_subclass_custom_encoding():
             def val(v: timedelta) -> SubDelta:
                 return cls(seconds=v.total_seconds())
 
-            return core_schema.no_info_after_validator_function(val, handler(timedelta))
+            return core_schema.no_info_after_validator_function(val, handler.generate_schema(timedelta))
 
     class Model(BaseModel):
         a: SubDt

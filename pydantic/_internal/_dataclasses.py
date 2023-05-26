@@ -20,6 +20,7 @@ from ._fields import collect_dataclass_fields
 from ._generate_schema import GenerateSchema
 from ._generics import get_standard_typevars_map
 from ._model_construction import MockValidator
+from ._schema_generation_shared import CallbackGetCoreSchemaHandler
 
 if typing.TYPE_CHECKING:
     from ..config import ConfigDict
@@ -98,7 +99,13 @@ def complete_dataclass(
     get_core_schema = getattr(cls, '__get_pydantic_core_schema__', None)
     try:
         if get_core_schema:
-            schema = get_core_schema(cls, partial(gen_schema.generate_schema, from_dunder_get_core_schema=False))
+            schema = get_core_schema(
+                cls,
+                CallbackGetCoreSchemaHandler(
+                    partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
+                    gen_schema.generate_schema,
+                ),
+            )
         else:
             schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
     except PydanticUndefinedAnnotation as e:

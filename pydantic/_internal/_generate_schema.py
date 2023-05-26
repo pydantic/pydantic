@@ -194,8 +194,23 @@ class GenerateSchema:
         return self.config_wrapper.arbitrary_types_allowed
 
     def generate_schema(
-        self, obj: Any, from_dunder_get_core_schema: bool = True, from_prepare_args: bool = True
+        self,
+        obj: Any,
+        from_dunder_get_core_schema: bool = True,
+        from_prepare_args: bool = True,
     ) -> core_schema.CoreSchema:
+        if isinstance(obj, type(Annotated[int, 123])):
+            return self._annotated_schema(obj)
+        return self._generate_schema_for_type(
+            obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
+        )
+
+    def _generate_schema_for_type(
+        self,
+        obj: Any,
+        from_dunder_get_core_schema: bool = True,
+        from_prepare_args: bool = True,
+    ) -> CoreSchema:
         schema: CoreSchema | None = None
 
         if from_prepare_args:
@@ -209,28 +224,17 @@ class GenerateSchema:
         if schema is None:
             schema = self._generate_schema(obj)
 
-        schema = remove_unnecessary_invalid_definitions(schema)
-
-        metadata_js_function = _extract_get_pydantic_json_schema(obj)
-        if metadata_js_function is None:
-            # Need to do this to handle custom generics
-            # Skip Annotated because Annotated.__origin__ will be analyzed in the next recursion
-            if hasattr(obj, '__origin__') and not isinstance(obj, type(Annotated[int, 123])):
-                metadata_js_function = _extract_get_pydantic_json_schema(obj.__origin__)
+        metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
         if metadata_js_function is not None:
             metadata = CoreMetadataHandler(schema).metadata
-            # wrap the schema so that we unpack ref schemas and always call metadata_js_function with the full schema
-            if schema['type'] != 'definition-ref':
-                # we would fail to unpack recursive ref schemas!
-                metadata_js_function = wrap_json_schema_fn_for_model_or_custom_type_with_ref_unpacking(
-                    metadata_js_function
-                )
             metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
 
-        if 'ref' in schema:
+        schema = remove_unnecessary_invalid_definitions(schema)
+
+        ref = schema.get('ref', None)
+        if ref:
             # definitions and definition-ref schemas don't have 'ref', causing the type error ignored on the next line
-            schema_ref = schema['ref']  # type: ignore[typeddict-item]
-            self.definitions[schema_ref] = schema
+            self.definitions[ref] = schema
 
         return schema
 
@@ -310,9 +314,7 @@ class GenerateSchema:
         obj, new_annotations = self._prepare_annotations(obj, [])
         if new_annotations:
             return self._apply_annotations(
-                CallbackGetCoreSchemaHandler(
-                    partial(self.generate_schema, from_prepare_args=False), self.generate_schema
-                ),
+                lambda x: x,
                 obj,
                 new_annotations,
             )
@@ -334,7 +336,7 @@ class GenerateSchema:
             # (source) -> CoreSchema
             return get_schema(source)
 
-        return get_schema(source, partial(self.generate_schema, from_dunder_get_core_schema=False))
+        return get_schema(source, CallbackGetCoreSchemaHandler(self._generate_schema, self.generate_schema))
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
         """
@@ -452,8 +454,6 @@ class GenerateSchema:
 
         if _typing_extra.origin_is_union(origin):
             return self._union_schema(obj)
-        elif issubclass(origin, Annotated):  # type: ignore[arg-type]
-            return self._annotated_schema(obj)
         elif issubclass(origin, typing.Tuple):  # type: ignore[arg-type]
             return self._tuple_schema(obj)
         elif is_typeddict(origin):
@@ -482,8 +482,12 @@ class GenerateSchema:
         else:
             raise PydanticSchemaGenerationError(
                 f'Unable to generate pydantic-core schema for {obj!r}. '
-                f'Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
-                f' or implement `__get_pydantic_core_schema__` on your type to fully support it.'
+                'Set `arbitrary_types_allowed=True` in the model_config to ignore this error'
+                ' or implement `__get_pydantic_core_schema__` on your type to fully support it.'
+                '\n\nIf you got this error by calling handler(<some type>) within'
+                ' `__get_pydantic_core_schema__` then you likely need to call'
+                ' `handler.generate_schema(<some type>)` since we do not call'
+                ' `__get_pydantic_core_schema__` on `<some type>` otherwise to avoid infinite recursion.'
             )
 
     def _generate_td_field_schema(
@@ -553,15 +557,14 @@ class GenerateSchema:
     def _common_field_schema(self, name: str, field_info: FieldInfo, decorators: DecoratorInfos) -> _CommonField:
         assert field_info.annotation is not None, 'field_info.annotation should not be None when generating a schema'
 
-        def generate_schema(source: Any) -> CoreSchema:
-            schema = self.generate_schema(source, from_prepare_args=False)
+        def apply_discriminator(schema: CoreSchema) -> CoreSchema:
             if field_info.discriminator is not None:
                 schema = _discriminated_union.apply_discriminator(schema, field_info.discriminator, self.definitions)
             return schema
 
         source_type, annotations = field_info.annotation, field_info.metadata
         schema = self._apply_annotations(
-            CallbackGetCoreSchemaHandler(generate_schema, self.generate_schema),
+            apply_discriminator,
             source_type,
             annotations,
         )
@@ -757,10 +760,7 @@ class GenerateSchema:
             field = FieldInfo.from_annotated_attribute(annotation, default)
         assert field.annotation is not None, 'field.annotation should not be None when generating a schema'
         source_type, annotations = field.annotation, field.metadata
-        source_type, annotations = self._prepare_annotations(source_type, annotations)
-        schema = self._apply_annotations(
-            CallbackGetCoreSchemaHandler(self.generate_schema, self.generate_schema), source_type, annotations
-        )
+        schema = self._apply_annotations(lambda x: x, source_type, annotations)
 
         if not field.is_required():
             schema = wrap_default(field, schema)
@@ -1055,9 +1055,7 @@ class GenerateSchema:
 
         source_type, annotations = self._prepare_annotations(first_arg, other_args)
 
-        return self._apply_annotations(
-            CallbackGetCoreSchemaHandler(self.generate_schema, self.generate_schema), source_type, annotations
-        )
+        return self._apply_annotations(lambda x: x, source_type, annotations)
 
     def _get_prepare_pydantic_annotations_for_known_type(
         self, obj: Any, annotations: tuple[Any, ...]
@@ -1104,10 +1102,9 @@ class GenerateSchema:
 
     def _apply_annotations(
         self,
-        get_inner_schema: GetCoreSchemaHandler,
+        transform_inner_schema: Callable[[CoreSchema], CoreSchema],
         source_type: Any,
         annotations: list[Any],
-        check_prepare_on_source: bool = True,
     ) -> CoreSchema:
         """
         Apply arguments from `Annotated` or from `FieldInfo` to a schema.
@@ -1125,6 +1122,24 @@ class GenerateSchema:
             res = self._get_prepare_pydantic_annotations_for_known_type(source_type, tuple(annotations))
             if res is not None:
                 source_type, annotations = res
+        pydantic_js_functions: list[GetJsonSchemaFunction] = []
+
+        def inner_handler(obj: Any) -> CoreSchema:
+            if isinstance(obj, type(Annotated[int, 123])):
+                schema = transform_inner_schema(self._annotated_schema(obj))
+            else:
+                from_property = self._generate_schema_from_property(obj, obj)
+                if from_property is None:
+                    schema = self._generate_schema(obj)
+                else:
+                    schema = from_property
+                metadata_js_function = _extract_get_pydantic_json_schema(obj, schema)
+                if metadata_js_function is not None:
+                    pydantic_js_functions.append(metadata_js_function)
+            return transform_inner_schema(schema)
+
+        get_inner_schema = CallbackGetCoreSchemaHandler(inner_handler, self.generate_schema)
+
         while True:
             idx += 1
             if idx == len(annotations):
@@ -1140,18 +1155,26 @@ class GenerateSchema:
                 annotations = previous + remaining
                 if new_source_type is not source_type:
                     return self._apply_annotations(
-                        get_inner_schema,
+                        transform_inner_schema,
                         new_source_type,
                         annotations,
-                        check_prepare_on_source=check_prepare_on_source,
                     )
             annotation = annotations[idx]
-            get_inner_schema = self._get_wrapped_inner_schema(get_inner_schema, annotation, self.definitions)
+            get_inner_schema = self._get_wrapped_inner_schema(
+                get_inner_schema, annotation, self.definitions, pydantic_js_functions
+            )
 
-        return get_inner_schema(source_type)
+        schema = get_inner_schema(source_type)
+        metadata = CoreMetadataHandler(schema).metadata
+        metadata.setdefault('pydantic_js_functions', []).extend(pydantic_js_functions)
+        return schema
 
     def _get_wrapped_inner_schema(
-        self, get_inner_schema: GetCoreSchemaHandler, annotation: Any, definitions: dict[str, core_schema.CoreSchema]
+        self,
+        get_inner_schema: GetCoreSchemaHandler,
+        annotation: Any,
+        definitions: dict[str, core_schema.CoreSchema],
+        pydantic_js_functions: list[GetJsonSchemaFunction],
     ) -> CallbackGetCoreSchemaHandler:
         metadata_get_schema: GetCoreSchemaFunction = getattr(annotation, '__get_pydantic_core_schema__', None) or (
             lambda source, handler: handler(source)
@@ -1161,10 +1184,9 @@ class GenerateSchema:
             schema = metadata_get_schema(source, get_inner_schema)
             schema = apply_single_annotation(schema, annotation, definitions)
 
-            metadata_js_function = _extract_get_pydantic_json_schema(annotation)
+            metadata_js_function = _extract_get_pydantic_json_schema(annotation, schema)
             if metadata_js_function is not None:
-                metadata = CoreMetadataHandler(schema).metadata
-                metadata.setdefault('pydantic_js_functions', []).append(metadata_js_function)
+                pydantic_js_functions.append(metadata_js_function)
             return schema
 
         return CallbackGetCoreSchemaHandler(new_handler, self.generate_schema)
@@ -1361,7 +1383,7 @@ def get_first_arg(type_: Any) -> Any:
         return Any
 
 
-def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
+def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSchemaFunction | None:
     """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`"""
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
@@ -1372,6 +1394,17 @@ def _extract_get_pydantic_json_schema(tp: Any) -> GetJsonSchemaFunction | None:
         )
         return lambda c, h: tp.__modify_schema__(h(c))
 
+    # handle GenericAlias' but ignore Annotated which "lies" about it's origin (in this case it would be `int`)
+    if hasattr(tp, '__origin__') and not isinstance(tp, type(Annotated[int, 'placeholder'])):
+        return _extract_get_pydantic_json_schema(tp.__origin__, schema)
+
+    if js_modify_function is None:
+        return None
+
+    # wrap the schema so that we unpack ref schemas and always call metadata_js_function with the full schema
+    if schema['type'] != 'definition-ref':
+        # we would fail to unpack recursive ref schemas!
+        js_modify_function = wrap_json_schema_fn_for_model_or_custom_type_with_ref_unpacking(js_modify_function)
     return js_modify_function
 
 
