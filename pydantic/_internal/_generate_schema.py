@@ -921,10 +921,12 @@ class GenerateSchema:
                 typevars_map=typevars_map,
             )
         decorators = getattr(dataclass, '__pydantic_decorators__', None) or DecoratorInfos.build(dataclass)
-        args = [self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()]
         # Move kw_only=False args to the start of the list, as this is how vanilla dataclasses work.
         # Note that when kw_only is missing or None, it is treated as equivalent to kw_only=True
-        args = [a for a in args if a.get('kw_only') is False] + [a for a in args if a.get('kw_only') is not False]
+        args = sorted(
+            (self._generate_dc_field_schema(k, v, decorators) for k, v in fields.items()),
+            key=lambda a: a.get('kw_only') is not False,
+        )
         has_post_init = hasattr(dataclass, '__post_init__')
 
         config = getattr(dataclass, '__pydantic_config__', None)
