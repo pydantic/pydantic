@@ -14,10 +14,6 @@ def test_private_attribute():
         _foo = PrivateAttr(default)
 
     assert set(Model.__private_attributes__) == {'_foo'}
-    # if platform.python_implementation() == 'PyPy':
-    #     repr(Model._foo).startswith('<member_descriptor object at')
-    # else:
-    #     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
 
     m = Model()
     assert m._foo == default
@@ -53,11 +49,6 @@ def test_private_attribute_factory():
     class Model(BaseModel):
         _foo = PrivateAttr(default_factory=factory)
 
-    # if platform.python_implementation() == 'PyPy':
-    #     repr(Model._foo).startswith('<member_descriptor object at')
-    # else:
-    #     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
-
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(default_factory=factory)}
 
     m = Model()
@@ -78,10 +69,6 @@ def test_private_attribute_annotation():
 
         _foo: str
 
-    # if platform.python_implementation() == 'PyPy':
-    #     repr(Model._foo).startswith('<member_descriptor object at')
-    # else:
-    #     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
     assert Model.__private_attributes__ == {'_foo': PrivateAttr(Undefined)}
     assert repr(Model.__doc__) == "'The best model'"
 
@@ -112,10 +99,6 @@ def test_underscore_attrs_are_private():
         _foo: str = 'abc'
         _bar: ClassVar[str] = 'cba'
 
-    # if platform.python_implementation() == 'PyPy':
-    #     repr(Model._foo).startswith('<member_descriptor object at')
-    # else:
-    #     assert repr(Model._foo) == "<member '_foo' of 'Model' objects>"
     assert Model._bar == 'cba'
     assert Model.__private_attributes__ == {'_foo': PrivateAttr('abc')}
 
@@ -241,14 +224,6 @@ def test_private_attribute_multiple_inheritance():
     class Model(ParentAModel, ParentBModel):
         _baz = PrivateAttr(default)
 
-    # if platform.python_implementation() == 'PyPy':
-    #     assert repr(Model._foo).startswith('<member_descriptor object at')
-    #     assert repr(Model._bar).startswith('<member_descriptor object at')
-    #     assert repr(Model._baz).startswith('<member_descriptor object at')
-    # else:
-    #     assert repr(Model._foo) == "<member '_foo' of 'GrandParentModel' objects>"
-    #     assert repr(Model._bar) == "<member '_bar' of 'ParentBModel' objects>"
-    #     assert repr(Model._baz) == "<member '_baz' of 'Model' objects>"
     assert GrandParentModel.__private_attributes__ == {
         '_foo': PrivateAttr(default),
     }
