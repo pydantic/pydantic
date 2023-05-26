@@ -102,12 +102,12 @@ def complete_dataclass(
             schema = get_core_schema(
                 cls,
                 CallbackGetCoreSchemaHandler(
-                    partial(gen_schema.generate_schema_for_type, from_dunder_get_core_schema=False),
+                    partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
                     gen_schema.generate_schema,
                 ),
             )
         else:
-            schema = gen_schema.generate_schema_for_type(cls, from_dunder_get_core_schema=False)
+            schema = gen_schema.generate_schema(cls, from_dunder_get_core_schema=False)
     except PydanticUndefinedAnnotation as e:
         cls_name = cls.__name__
         if raise_errors:

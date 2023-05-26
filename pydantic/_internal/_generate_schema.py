@@ -196,18 +196,16 @@ class GenerateSchema:
     def generate_schema(
         self,
         obj: Any,
+        from_dunder_get_core_schema: bool = True,
+        from_prepare_args: bool = True,
     ) -> core_schema.CoreSchema:
         if isinstance(obj, type(Annotated[int, 123])):
             return self._annotated_schema(obj)
-        return self.generate_schema_for_type(obj)
+        return self._generate_schema_for_type(
+            obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
+        )
 
-    def generate_annotated_schema(
-        self,
-        obj: Any,
-    ) -> core_schema.CoreSchema:
-        return self._annotated_schema(obj)
-
-    def generate_schema_for_type(
+    def _generate_schema_for_type(
         self,
         obj: Any,
         from_dunder_get_core_schema: bool = True,
