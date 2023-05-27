@@ -551,5 +551,7 @@ def model_private_delattr(self: BaseModel, item: str) -> Any:
             del self.__pydantic_private__[item]  # type: ignore
         except KeyError as exc:
             raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+    elif item in self.model_fields:
+        super(self.__class__, self).__delattr__(item)
     else:
         raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
