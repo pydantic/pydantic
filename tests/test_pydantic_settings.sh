@@ -9,6 +9,8 @@ python -m ensurepip --upgrade
 
 make install
 
+pip install -e ../
+
 make test
 
 popd
