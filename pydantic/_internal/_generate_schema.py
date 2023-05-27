@@ -72,7 +72,7 @@ if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
     from ._schema_generation_shared import GetJsonSchemaFunction
 
-_SUPPORTS_TYPEDDICT = sys.version_info >= (3, 11)
+_SUPPORTS_TYPEDDICT = sys.version_info >= (3, 12)
 
 FieldDecoratorInfo = Union[ValidatorDecoratorInfo, FieldValidatorDecoratorInfo, FieldSerializerDecoratorInfo]
 FieldDecoratorInfoType = TypeVar('FieldDecoratorInfoType', bound=FieldDecoratorInfo)
@@ -661,9 +661,7 @@ class GenerateSchema:
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         return core_schema.literal_schema(expected)
 
-    def _typed_dict_schema(
-        self, typed_dict_cls: Any, origin: Any
-    ) -> core_schema.TypedDictSchema | core_schema.DefinitionReferenceSchema:
+    def _typed_dict_schema(self, typed_dict_cls: Any, origin: Any) -> core_schema.CoreSchema:
         """
         Generate schema for a TypedDict.
 
@@ -687,13 +685,15 @@ class GenerateSchema:
 
         if not _SUPPORTS_TYPEDDICT and type(typed_dict_cls).__module__ == 'typing':
             raise PydanticUserError(
-                'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.11.',
+                'Please use `typing_extensions.TypedDict` instead of `typing.TypedDict` on Python < 3.12.',
                 code='typed-dict-version',
             )
 
         required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
         fields: dict[str, core_schema.TypedDictField] = {}
+
+        decorators = DecoratorInfos.build(typed_dict_cls)
 
         for field_name, annotation in get_type_hints_infer_globalns(
             typed_dict_cls, localns=self.types_namespace, include_extras=True
@@ -709,18 +709,19 @@ class GenerateSchema:
                 annotation = get_args(annotation)[0]
 
             field_info = FieldInfo.from_annotation(annotation)
-            fields[field_name] = self._generate_td_field_schema(
-                field_name, field_info, DecoratorInfos(), required=required
-            )
+            fields[field_name] = self._generate_td_field_schema(field_name, field_info, decorators, required=required)
 
         metadata = build_metadata_dict(js_functions=[partial(modify_model_json_schema, cls=typed_dict_cls)])
 
-        return core_schema.typed_dict_schema(
+        td_schema = core_schema.typed_dict_schema(
             fields,
             extra_behavior='forbid',
             ref=typed_dict_ref,
             metadata=metadata,
         )
+
+        schema = apply_model_serializers(td_schema, decorators.model_serializers.values())
+        return apply_model_validators(schema, decorators.model_validators.values())
 
     def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
         """
