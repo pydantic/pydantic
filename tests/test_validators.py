@@ -1762,7 +1762,6 @@ def test_validating_assignment_pre_root_validator_fail():
     ]
 
 
-@pytest.mark.xfail(reason='Something weird going on with model_validator and assignment')
 def test_validating_assignment_model_validator_before_fail():
     class Model(BaseModel):
         current_value: float = Field(..., alias='current')
@@ -1772,7 +1771,7 @@ def test_validating_assignment_model_validator_before_fail():
 
         @model_validator(mode='before')
         def values_are_not_string(cls, values: Dict[str, Any]) -> Dict[str, Any]:
-            print(values)
+            assert isinstance(values, dict)
             if any(isinstance(x, str) for x in values.values()):
                 raise ValueError('values cannot be a string')
             return values
