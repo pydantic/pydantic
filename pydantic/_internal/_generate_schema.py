@@ -1103,6 +1103,9 @@ class GenerateSchema:
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
         (in other words, `GenerateSchema._annotated_schema` just unpacks `Annotated`, this process it).
         """
+        # expand annotations before we start processing them so that `__prepare_pydantic_annotations` can consume
+        # individual items from GroupedMetadata
+        annotations = list(_known_annotated_metadata.expand_grouped_metadata(annotations))
         idx = -1
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
         if prepare:
@@ -1339,21 +1342,17 @@ def apply_single_annotation(
             schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator, definitions)
         # TODO setting a default here needs to be tested
         return wrap_default(metadata, schema)
-    # note that we ignore any unrecognized metadata
-    # PEP 593: "If a library (or tool) encounters a typehint Annotated[T, x] and has no
-    # special logic for metadata x, it should ignore it and simply treat the type as T."
-    # Allow, but ignore, any unknown metadata.
-    metadata_dict, _ = _known_annotated_metadata.collect_known_metadata([metadata])
-
-    if not metadata_dict:
-        return schema
 
     if schema['type'] == 'nullable':
         # for nullable schemas, metadata is automatically applied to the inner schema
-        # TODO need to do the same for lists, tuples and more
-        schema['schema'].update(metadata_dict)
-    else:
-        schema.update(metadata_dict)  # type: ignore[typeddict-item]
+        inner = schema.get('schema', core_schema.any_schema())
+        inner = apply_single_annotation(inner, metadata, definitions)
+        if inner:
+            schema['schema'] = inner
+        return schema
+
+    schema = _known_annotated_metadata.apply_known_metadata(metadata, schema)
+
     return schema
 
 

@@ -232,12 +232,12 @@ def test_modify_get_schema_annotated() -> None:
     class _(BaseModel):
         x: Annotated[CustomType, GroupedMetadataMarker(), PydanticMetadata()]
 
+    # insert_assert(calls)
     assert calls == [
         'GroupedMetadataMarker:iter',
         'PydanticMetadata:before',
         'CustomType:before',
         'CustomType:after',
-        'GroupedMetadataMarker:iter',
         'PydanticMetadata:after',
     ]
 
@@ -246,13 +246,13 @@ def test_modify_get_schema_annotated() -> None:
     class _(BaseModel):
         x: Annotated[CustomType, PydanticMetadata(), GroupedMetadataMarker()]
 
+    # insert_assert(calls)
     assert calls == [
         'GroupedMetadataMarker:iter',
         'PydanticMetadata:before',
         'CustomType:before',
         'CustomType:after',
         'PydanticMetadata:after',
-        'GroupedMetadataMarker:iter',
     ]
 
     calls.clear()

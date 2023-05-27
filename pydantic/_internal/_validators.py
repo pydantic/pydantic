@@ -12,6 +12,7 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from typing import Any
 
 from pydantic_core import PydanticCustomError, core_schema
+from pydantic_core._pydantic_core import PydanticKnownError
 
 
 def sequence_validator(
@@ -226,3 +227,51 @@ def ip_v6_interface_validator(__input_value: Any) -> IPv6Interface:
         return IPv6Interface(__input_value)
     except ValueError:
         raise PydanticCustomError('ip_v6_interface', 'Input is not a valid IPv6 interface')
+
+
+def greater_than_validator(x: Any, gt: Any) -> Any:
+    if not (x > gt):
+        raise PydanticKnownError('greater_than', {'gt': str(gt)})
+    return x
+
+
+def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
+    if not (x >= ge):
+        raise PydanticKnownError('greater_than_equal', {'ge': str(ge)})
+    return x
+
+
+def less_than_validator(x: Any, lt: Any) -> Any:
+    if not (x < lt):
+        raise PydanticKnownError('less_than', {'lt': str(lt)})
+    return x
+
+
+def less_than_or_equal_validator(x: Any, le: Any) -> Any:
+    if not (x <= le):
+        raise PydanticKnownError('less_than_equal', {'le': str(le)})
+    return x
+
+
+def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
+    if not (x % multiple_of == 0):
+        raise PydanticKnownError('multiple_of', {'multiple_of': multiple_of})
+    return x
+
+
+def min_length_validator(x: Any, min_length: Any) -> Any:
+    if not (len(x) >= min_length):
+        raise PydanticKnownError(
+            'too_short',
+            {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)},
+        )
+    return x
+
+
+def max_length_validator(x: Any, max_length: Any) -> Any:
+    if not (len(x) < max_length):
+        raise PydanticKnownError(
+            'too_long',
+            {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
+        )
+    return x

@@ -1612,15 +1612,7 @@ def test_enum_from_json(enum_base, strict):
 @pytest.mark.parametrize(
     'kwargs,type_',
     [
-        ({'max_length': 5}, int),
-        ({'min_length': 2}, float),
         ({'pattern': '^foo$'}, int),
-        ({'gt': 2}, str),
-        ({'lt': 5}, bytes),
-        ({'ge': 2}, str),
-        ({'le': 5}, bool),
-        ({'gt': 0}, Callable),
-        ({'gt': 0}, Callable[[int], int]),
         ({'gt': 0}, conlist(int, min_length=4)),
         ({'gt': 0}, conset(int, min_length=4)),
         ({'gt': 0}, confrozenset(int, min_length=4)),
@@ -1654,6 +1646,7 @@ def test_string_success():
         str_min_length: constr(min_length=5) = ...
         str_email: EmailStr = ...
         name_email: NameEmail = ...
+        str_gt: Annotated[str, annotated_types.Gt('a')]
 
     m = MoreStringsModel(
         str_strip_enabled='   xxx123   ',
@@ -1662,6 +1655,7 @@ def test_string_success():
         str_min_length='12345',
         str_email='foobar@example.com  ',
         name_email='foo bar  <foobaR@example.com>',
+        str_gt='b',
     )
     assert m.str_strip_enabled == 'xxx123'
     assert m.str_strip_disabled == '   xxx123   '
@@ -1671,6 +1665,7 @@ def test_string_success():
     assert str(m.name_email) == 'foo bar <foobaR@example.com>'
     assert m.name_email.name == 'foo bar'
     assert m.name_email.email == 'foobaR@example.com'
+    assert m.str_gt == 'b'
 
 
 @pytest.mark.skipif(not email_validator, reason='email_validator not installed')
@@ -5247,4 +5242,128 @@ def test_is_instance_annotation():
         Model.model_validate_json('{"x": "abc"}')
     assert exc_info.value.errors(include_url=False) == [
         {'input': 'abc', 'loc': ('x',), 'msg': 'Input should be a valid array', 'type': 'list_type'}
+    ]
+
+
+def test_constraints_arbitrary_type() -> None:
+    class CustomType:
+        def __init__(self, v: Any) -> None:
+            self.v = v
+
+        def __eq__(self, o: object) -> bool:
+            return self.v == o
+
+        def __le__(self, o: object) -> bool:
+            return self.v <= o
+
+        def __lt__(self, o: object) -> bool:
+            return self.v < o
+
+        def __ge__(self, o: object) -> bool:
+            return self.v >= o
+
+        def __gt__(self, o: object) -> bool:
+            return self.v > o
+
+        def __mod__(self, o: Any) -> Any:
+            return self.v % o
+
+        def __len__(self) -> int:
+            return len(self.v)
+
+        def __repr__(self) -> str:
+            return f'CustomType({self.v})'
+
+    class Model(BaseModel):
+        gt: Annotated[CustomType, annotated_types.Gt(CustomType(0))]
+        ge: Annotated[CustomType, annotated_types.Ge(CustomType(0))]
+        lt: Annotated[CustomType, annotated_types.Lt(CustomType(0))]
+        le: Annotated[CustomType, annotated_types.Le(CustomType(0))]
+        multiple_of: Annotated[CustomType, annotated_types.MultipleOf(2)]
+        min_length: Annotated[CustomType, annotated_types.MinLen(1)]
+        max_length: Annotated[CustomType, annotated_types.MaxLen(1)]
+        predicate: Annotated[CustomType, annotated_types.Predicate(lambda x: x > 0)]
+
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+    Model(
+        gt=CustomType(1),
+        ge=CustomType(0),
+        lt=CustomType(-1),
+        le=CustomType(0),
+        min_length=CustomType([1, 2]),
+        max_length=CustomType([]),
+        multiple_of=CustomType(4),
+        predicate=CustomType(1),
+    )
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(
+            gt=CustomType(-1),
+            ge=CustomType(-1),
+            lt=CustomType(1),
+            le=CustomType(1),
+            min_length=CustomType([]),
+            max_length=CustomType([1, 2, 3]),
+            multiple_of=CustomType(3),
+            predicate=CustomType(-1),
+        )
+    # insert_assert(exc_info.value.errors(include_url=False))
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'greater_than',
+            'loc': ('gt',),
+            'msg': 'Input should be greater than CustomType(0)',
+            'input': CustomType(-1),
+            'ctx': {'gt': 'CustomType(0)'},
+        },
+        {
+            'type': 'greater_than_equal',
+            'loc': ('ge',),
+            'msg': 'Input should be greater than or equal to CustomType(0)',
+            'input': CustomType(-1),
+            'ctx': {'ge': 'CustomType(0)'},
+        },
+        {
+            'type': 'less_than',
+            'loc': ('lt',),
+            'msg': 'Input should be less than CustomType(0)',
+            'input': CustomType(1),
+            'ctx': {'lt': 'CustomType(0)'},
+        },
+        {
+            'type': 'less_than_equal',
+            'loc': ('le',),
+            'msg': 'Input should be less than or equal to CustomType(0)',
+            'input': CustomType(1),
+            'ctx': {'le': 'CustomType(0)'},
+        },
+        {
+            'type': 'multiple_of',
+            'loc': ('multiple_of',),
+            'msg': 'Input should be a multiple of 2',
+            'input': CustomType(3),
+            'ctx': {'multiple_of': 2},
+        },
+        {
+            'type': 'too_short',
+            'loc': ('min_length',),
+            'msg': 'Value should have at least 1 item after validation, not 0',
+            'input': CustomType([]),
+            'ctx': {'field_type': 'Value', 'min_length': 1, 'actual_length': 0},
+        },
+        {
+            'type': 'too_long',
+            'loc': ('max_length',),
+            'msg': 'Value should have at most 1 item after validation, not 3',
+            'input': CustomType([1, 2, 3]),
+            'ctx': {'field_type': 'Value', 'max_length': 1, 'actual_length': 3},
+        },
+        {
+            'type': 'predicate_failed',
+            'loc': ('predicate',),
+            'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'input': CustomType(-1),
+            'ctx': {},
+        },
     ]
