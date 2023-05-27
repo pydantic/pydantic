@@ -6,7 +6,7 @@ from functools import partial
 from typing import Any, Iterable
 
 import annotated_types as at
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, PydanticCustomError
 from pydantic_core import core_schema as cs
 
 from . import _validators
@@ -131,7 +131,13 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # 
 
         def val_func(v: Any) -> Any:
             # annotation.func may also raise an exception, let it pass through
-            assert annotation.func(v), f'Predicate {predicate_name}failed'
+            if not annotation.func(v):
+                raise PydanticCustomError(
+                    'predicate_failed',
+                    f'Predicate {predicate_name}failed',  # type: ignore
+                    {},
+                )
+            return v
 
         return cs.no_info_after_validator_function(val_func, schema)
 

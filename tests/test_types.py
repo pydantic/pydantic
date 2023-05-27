@@ -5360,10 +5360,10 @@ def test_constraints_arbitrary_type() -> None:
             'ctx': {'max_length': 1, 'actual_length': 3},
         },
         {
-            'type': 'assertion_error',
+            'type': 'predicate_failed',
             'loc': ('predicate',),
-            'msg': 'Assertion failed, Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
+            'msg': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed',
             'input': CustomType(-1),
-            'ctx': {'error': 'Predicate test_constraints_arbitrary_type.<locals>.Model.<lambda> failed'},
+            'ctx': {},
         },
     ]
