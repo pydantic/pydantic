@@ -5370,7 +5370,7 @@ def test_constraints_arbitrary_type() -> None:
 
 
 def test_annotated_default_value() -> None:
-    t = TypeAdapter(Annotated[list[str], Field(default=['foo', 'bar'])])
+    t = TypeAdapter(Annotated[List[str], Field(default=['foo', 'bar'])])
 
     # TODO: check the default value somehow with `validate_python`
     # There is currently no way to do this
