@@ -43,6 +43,32 @@ def test_model_validator_before(classmethod_decorator: Any) -> None:
                 values.y += 1
             return values
 
+    m = Model(x=1, y=2)
+    assert m.model_dump() == {'x': 2, 'y': 3}
+    # model not changed because we don't revalidate m
+    assert Model.model_validate(m).model_dump() == {'x': 2, 'y': 3}
+
+
+@pytest.mark.parametrize('classmethod_decorator', [classmethod, lambda x: x])
+def test_model_validator_before_revalidate_always(classmethod_decorator: Any) -> None:
+    class Model(BaseModel, revalidate_instances='always'):
+        x: int
+        y: int
+
+        @model_validator(mode='before')
+        @classmethod_decorator
+        def val_model(cls, values: Any, info: ValidationInfo) -> dict[str, Any] | Model:
+            assert not info.context
+            if isinstance(values, dict):
+                values = cast(Dict[str, Any], values)
+                values['x'] += 1
+                values['y'] += 1
+            else:
+                assert isinstance(values, Model)
+                values.x += 1
+                values.y += 1
+            return values
+
     assert Model(x=1, y=2).model_dump() == {'x': 2, 'y': 3}
     assert Model.model_validate(Model(x=1, y=2)).model_dump() == {'x': 3, 'y': 4}
 
