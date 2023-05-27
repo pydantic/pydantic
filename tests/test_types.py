@@ -5367,3 +5367,14 @@ def test_constraints_arbitrary_type() -> None:
             'ctx': {},
         },
     ]
+
+
+def test_annotated_default_value() -> None:
+    t = TypeAdapter(Annotated[List[str], Field(default=['foo', 'bar'])])
+
+    # TODO: check the default value somehow with `validate_python`
+    # There is currently no way to do this
+    # See https://github.com/pydantic/pydantic-core/pull/643
+
+    # insert_assert(t.json_schema())
+    assert t.json_schema() == {'type': 'array', 'items': {'type': 'string'}, 'default': ['foo', 'bar']}
