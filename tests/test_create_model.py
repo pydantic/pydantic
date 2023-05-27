@@ -346,6 +346,22 @@ def test_private_attr_set_name():
     assert m._private_attr_2._owner_attr_name == 'Model._private_attr_2'
 
 
+def test_private_attr_default_descriptor_attribute_error():
+    class SetNameInt(int):
+        def __get__(self, obj, cls):
+            return self
+
+    _private_attr_default = SetNameInt(1)
+
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=_private_attr_default)
+
+    assert Model.__private_attributes__['_private_attr'].__get__(None, Model) == _private_attr_default
+
+    with pytest.raises(AttributeError, match="'ModelPrivateAttr' object has no attribute 'some_attr'"):
+        Model.__private_attributes__['_private_attr'].some_attr
+
+
 def test_private_attr_set_name_do_not_crash_if_not_callable():
     class SetNameInt(int):
         __set_name__ = None
