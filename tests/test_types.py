@@ -5367,3 +5367,13 @@ def test_constraints_arbitrary_type() -> None:
             'ctx': {},
         },
     ]
+
+
+def test_annotated_default_value() -> None:
+    t = TypeAdapter(Annotated[list[str], Field(default=['foo', 'bar'])])
+
+    # TODO: check the default value somehow with `validate_python`
+    # There is currently no way to do this
+
+    # insert_assert(t.json_schema())
+    assert t.json_schema() == {'type': 'array', 'items': {'type': 'string'}, 'default': ['foo', 'bar']}
