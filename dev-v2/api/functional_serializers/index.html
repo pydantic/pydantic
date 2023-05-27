@@ -2383,7 +2383,7 @@ serialization mode is JSON.</p></td>
     <tbody>
         <tr>
 <td><code>Callable</code></td>          <td>
-                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="pydantic._internal._decorators">_decorators</span>.<span title="pydantic._internal._decorators.PydanticDescriptorProxy">PydanticDescriptorProxy</span>[<span title="typing.Any">Any</span>]] | <span title="pydantic._internal._decorators">_decorators</span>.<span title="pydantic._internal._decorators.PydanticDescriptorProxy">PydanticDescriptorProxy</span>[<span title="typing.Any">Any</span>]</code>
+                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
           </td>
           <td><p>A decorator that can be used to decorate a function to be used as a model serializer.</p></td>
         </tr>
@@ -2392,24 +2392,7 @@ serialization mode is JSON.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">194</span>
 <span class="normal">195</span>
 <span class="normal">196</span>
 <span class="normal">197</span>
@@ -2422,12 +2405,29 @@ serialization mode is JSON.</p></td>
 <span class="normal">204</span>
 <span class="normal">205</span>
 <span class="normal">206</span>
-<span class="normal">207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
     <span class="n">__f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="n">json_return_type</span><span class="p">:</span> <span class="n">_core_schema</span><span class="o">.</span><span class="n">JsonReturnTypes</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span> <span class="o">|</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Decorate a function which will be called to serialize the model.</span>
 
@@ -2452,7 +2452,7 @@ serialization mode is JSON.</p></td>
     <span class="k">if</span> <span class="n">__f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">dec</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">dec</span><span class="p">(</span><span class="n">__f</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dec</span><span class="p">(</span><span class="n">__f</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
