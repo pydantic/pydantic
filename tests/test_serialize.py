@@ -3,7 +3,7 @@ New tests for v2 of serialization logic.
 """
 import json
 from functools import partial, partialmethod
-from typing import Any, Optional
+from typing import Any, Callable, Dict, Optional
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
@@ -816,3 +816,22 @@ def test_serialize_with_extra():
     m = Outer.model_validate({})
 
     assert m.model_dump() == {'inner': {'a': 'a'}}
+
+
+def test_model_serializer_nested_models() -> None:
+    class Model(BaseModel):
+        x: int
+        inner: Optional['Model']
+
+        @model_serializer(mode='wrap')
+        def ser_model(self, handler: Callable[['Model'], Dict[str, Any]]) -> Dict[str, Any]:
+            inner = handler(self)
+            inner['x'] += 1
+            return inner
+
+    assert Model(x=0, inner=None).model_dump() == {'x': 1, 'inner': None}
+
+    assert Model(x=2, inner=Model(x=1, inner=Model(x=0, inner=None))).model_dump() == {
+        'x': 3,
+        'inner': {'x': 2, 'inner': {'x': 1, 'inner': None}},
+    }

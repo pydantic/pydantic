@@ -1276,6 +1276,7 @@ def apply_model_serializers(
     """
     Apply model serializers to a schema.
     """
+    ref: str | None = schema.pop('ref', None)  # type: ignore
     if serializers:
         serializer = list(serializers)[-1]
         info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
@@ -1293,6 +1294,8 @@ def apply_model_serializers(
                 json_return_type=serializer.info.json_return_type,
             )
         schema['serialization'] = ser_schema
+    if ref:
+        schema['ref'] = ref  # type: ignore
     return schema
 
 
@@ -1302,6 +1305,7 @@ def apply_model_validators(
     """
     Apply model validators to a schema.
     """
+    ref: str | None = schema.pop('ref', None)  # type: ignore
     for validator in validators:
         info_arg = inspect_validator(validator.func, validator.info.mode)
         if validator.info.mode == 'wrap':
@@ -1320,6 +1324,8 @@ def apply_model_validators(
                 schema = core_schema.general_after_validator_function(function=validator.func, schema=schema)
             else:
                 schema = core_schema.no_info_after_validator_function(function=validator.func, schema=schema)
+    if ref:
+        schema['ref'] = ref  # type: ignore
     return schema
 
 
