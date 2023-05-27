@@ -57,7 +57,6 @@ if sys.version_info < (3, 10):
     NoneType = type(None)
     EllipsisType = type(Ellipsis)
 else:
-    from types import EllipsisType as EllipsisType  # noqa: F401
     from types import NoneType as NoneType
 
 
