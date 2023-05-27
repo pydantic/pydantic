@@ -12,6 +12,7 @@ from ipaddress import IPv4Address, IPv4Interface, IPv4Network, IPv6Address, IPv6
 from typing import Any
 
 from pydantic_core import PydanticCustomError, core_schema
+from pydantic_core._pydantic_core import PydanticKnownError
 
 
 def sequence_validator(
@@ -230,51 +231,47 @@ def ip_v6_interface_validator(__input_value: Any) -> IPv6Interface:
 
 def greater_than_validator(x: Any, gt: Any) -> Any:
     if not (x > gt):
-        raise PydanticCustomError('greater_than', 'Input should be greater than {gt}', {'gt': gt})
+        raise PydanticKnownError('greater_than', {'gt': str(gt)})
     return x
 
 
 def greater_than_or_equal_validator(x: Any, ge: Any) -> Any:
     if not (x >= ge):
-        raise PydanticCustomError('greater_than_equal', 'Input should be greater than or equal to {ge}', {'le': ge})
+        raise PydanticKnownError('greater_than_equal', {'ge': str(ge)})
     return x
 
 
 def less_than_validator(x: Any, lt: Any) -> Any:
     if not (x < lt):
-        raise PydanticCustomError('less_than', 'Input should be less than {lt}', {'lt': lt})
+        raise PydanticKnownError('less_than', {'lt': str(lt)})
     return x
 
 
 def less_than_or_equal_validator(x: Any, le: Any) -> Any:
     if not (x <= le):
-        raise PydanticCustomError('less_than_equal', 'Input should be less than or equal to {le}', {'le': le})
+        raise PydanticKnownError('less_than_equal', {'le': str(le)})
     return x
 
 
 def multiple_of_validator(x: Any, multiple_of: Any) -> Any:
     if not (x % multiple_of == 0):
-        raise PydanticCustomError(
-            'multiple_of', 'Input should be a multiple of {multiple_of}', {'multiple_of': multiple_of}
-        )
+        raise PydanticKnownError('multiple_of', {'multiple_of': multiple_of})
     return x
 
 
 def min_length_validator(x: Any, min_length: Any) -> Any:
     if not (len(x) >= min_length):
-        raise PydanticCustomError(
+        raise PydanticKnownError(
             'too_short',
-            'Should have at least {min_length} item after validation, not {actual_length}',
-            {'min_length': min_length, 'actual_length': len(x)},
+            {'field_type': 'Value', 'min_length': min_length, 'actual_length': len(x)},
         )
     return x
 
 
 def max_length_validator(x: Any, max_length: Any) -> Any:
     if not (len(x) < max_length):
-        raise PydanticCustomError(
+        raise PydanticKnownError(
             'too_long',
-            'Should have at most {min_length} item after validation, not {actual_length}',
-            {'max_length': max_length, 'actual_length': len(x)},
+            {'field_type': 'Value', 'max_length': max_length, 'actual_length': len(x)},
         )
     return x
