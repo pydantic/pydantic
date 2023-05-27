@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
-from pydantic import Base64Str, BaseModel, RootModel, ValidationError, field_serializer
+from pydantic import Base64Str, BaseModel, RootModel, ValidationError, field_serializer, model_validator
 
 
 def parametrize_root_model():
@@ -175,3 +175,52 @@ def test_construct_nested():
     assert isinstance(v.data, str)  # should be RootModel[Base64Str], but model_construct skipped validation
     with pytest.raises(AttributeError, match="'str' object has no attribute 'root'"):
         v.model_dump()
+
+
+def test_assignment():
+    Model = RootModel[int]
+
+    m = Model(1)
+    assert m.model_fields_set == {'root'}
+    assert m.root == 1
+    m.root = 2
+    assert m.root == 2
+
+
+def test_model_validator_before():
+    class Model(RootModel[int]):
+        @model_validator(mode='before')
+        def words(cls, v):
+            if v == 'one':
+                return 1
+            elif v == 'two':
+                return 2
+            else:
+                return v
+
+    assert Model('one').root == 1
+    assert Model('two').root == 2
+    assert Model('3').root == 3
+    with pytest.raises(ValidationError) as exc_info:
+        Model('three')
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'three',
+        }
+    ]
+
+
+def test_model_validator_after():
+    class Model(RootModel[int]):
+        @model_validator(mode='after')
+        def double(cls, v):
+            v.root *= 2
+            return v
+
+    Model('1')
+    assert Model('1').root == 2
+    assert Model('21').root == 42
