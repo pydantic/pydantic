@@ -267,7 +267,7 @@ class GenerateSchema:
         if cls.__pydantic_root_model__:
             root_field = self._common_field_schema('root', fields['root'], decorators)
             inner_schema = root_field['schema']
-            inner_schema = apply_before_model_validators(inner_schema, model_validators)
+            inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
             model_schema = core_schema.model_schema(
                 cls,
                 inner_schema,
@@ -290,7 +290,7 @@ class GenerateSchema:
 
             inner_schema = apply_validators(fields_schema, decorators.root_validators.values())
             inner_schema = define_expected_missing_refs(inner_schema, recursively_defined_type_refs())
-            inner_schema = apply_before_model_validators(inner_schema, model_validators)
+            inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
             model_schema = core_schema.model_schema(
                 cls,
@@ -305,7 +305,7 @@ class GenerateSchema:
 
         model_schema = consolidate_refs(model_schema)
         schema = apply_model_serializers(model_schema, decorators.model_serializers.values())
-        return apply_other_model_validators(schema, model_validators)
+        return apply_model_validators(schema, model_validators, 'outer')
 
     def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
         """
@@ -954,7 +954,7 @@ class GenerateSchema:
         inner_schema = apply_validators(args_schema, decorators.root_validators.values())
 
         model_validators = decorators.model_validators.values()
-        inner_schema = apply_before_model_validators(inner_schema, model_validators)
+        inner_schema = apply_model_validators(inner_schema, model_validators, 'inner')
 
         dc_schema = core_schema.dataclass_schema(
             dataclass,
@@ -965,7 +965,7 @@ class GenerateSchema:
             slots=has_slots,
         )
         schema = apply_model_serializers(dc_schema, decorators.model_serializers.values())
-        return apply_other_model_validators(schema, model_validators)
+        return apply_model_validators(schema, model_validators, 'outer')
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
         """
@@ -1308,32 +1308,23 @@ def apply_model_serializers(
     return schema
 
 
-def apply_before_model_validators(
-    inner_schema: core_schema.CoreSchema, validators: Iterable[Decorator[ModelValidatorDecoratorInfo]]
-) -> core_schema.CoreSchema:
-    """
-    `before` model validators are applied to the inner schema
-    """
-    return apply_model_validators(inner_schema, [x for x in validators if x.info.mode == 'before'])
-
-
-def apply_other_model_validators(
-    model_schema: core_schema.CoreSchema, validators: Iterable[Decorator[ModelValidatorDecoratorInfo]]
-) -> core_schema.CoreSchema:
-    """
-    model validators other than `before` are applied to the outer model_schema
-    """
-    return apply_model_validators(model_schema, [x for x in validators if x.info.mode != 'before'])
-
-
 def apply_model_validators(
-    schema: core_schema.CoreSchema, validators: Iterable[Decorator[ModelValidatorDecoratorInfo]]
+    schema: core_schema.CoreSchema,
+    validators: Iterable[Decorator[ModelValidatorDecoratorInfo]],
+    mode: Literal['inner', 'outer'],
 ) -> core_schema.CoreSchema:
     """
     Apply model validators to a schema.
+
+    If mode == 'inner', only "before" validators are applied
+    If mode == 'outer', validators other than "before" are applied
     """
     ref: str | None = schema.pop('ref', None)  # type: ignore
     for validator in validators:
+        if mode == 'inner' and validator.info.mode != 'before':
+            continue
+        if mode == 'outer' and validator.info.mode == 'before':
+            continue
         info_arg = inspect_validator(validator.func, validator.info.mode)
         if validator.info.mode == 'wrap':
             if info_arg:
