@@ -24,6 +24,7 @@ from pydantic import (
     ValidationError,
     field_serializer,
     field_validator,
+    model_validator,
 )
 from pydantic._internal._model_construction import MockValidator
 from pydantic.dataclasses import rebuild_dataclass
@@ -1656,7 +1657,7 @@ def test_extra_forbid_list_error():
         Bar(a=1)
 
 
-def test_validator():
+def test_field_validator():
     @pydantic.dataclasses.dataclass
     class MyDataclass:
         a: int
@@ -1664,12 +1665,44 @@ def test_validator():
 
         @field_validator('b')
         @classmethod
-        def double_b(cls, v, _):
+        def double_b(cls, v):
             return v * 2
 
     d = MyDataclass('1', '2.5')
     assert d.a == 1
     assert d.b == 5.0
+
+
+def test_model_validator_before():
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: int
+        b: float
+
+        @model_validator(mode='before')
+        def double_b(cls, v: ArgsKwargs):
+            v.kwargs['b'] *= 2
+            return v
+
+    d = MyDataclass('1', b='2')
+    assert d.a == 1
+    assert d.b == 22.0
+
+
+def test_model_validator_after():
+    @pydantic.dataclasses.dataclass
+    class MyDataclass:
+        a: int
+        b: float
+
+        @model_validator(mode='after')
+        def double_b(cls, dc: 'MyDataclass'):
+            dc.b *= 2
+            return dc
+
+    d = MyDataclass('1', b='2')
+    assert d.a == 1
+    assert d.b == 4
 
 
 def test_parent_post_init():
