@@ -849,7 +849,12 @@ def test_string_import_callable(annotation):
     [
         ('math:cos', 'math.cos', 'json'),
         ('math:cos', math.cos, 'python'),
-        ('os.path', 'posixpath', 'json'),
+        pytest.param(
+            'os.path', 'posixpath', 'json', marks=pytest.mark.skipif(sys.platform == 'win32', reason='different output')
+        ),
+        pytest.param(
+            'os.path', 'ntpath', 'json', marks=pytest.mark.skipif(sys.platform != 'win32', reason='different output')
+        ),
         ('os.path', os.path, 'python'),
         ([1, 2, 3], [1, 2, 3], 'json'),
         ([1, 2, 3], [1, 2, 3], 'python'),
