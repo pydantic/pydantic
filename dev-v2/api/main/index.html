@@ -6470,9 +6470,7 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 
       <details class="quote">
         <summary>Source code in <code>pydantic/main.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1158</span>
-<span class="normal">1159</span>
-<span class="normal">1160</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1160</span>
 <span class="normal">1161</span>
 <span class="normal">1162</span>
 <span class="normal">1163</span>
@@ -6550,7 +6548,9 @@ passed in the format: <code>&lt;name&gt;=&lt;Field&gt;</code> or <code>&lt;name&
 <span class="normal">1235</span>
 <span class="normal">1236</span>
 <span class="normal">1237</span>
-<span class="normal">1238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
+<span class="normal">1238</span>
+<span class="normal">1239</span>
+<span class="normal">1240</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">create_model</span><span class="p">(</span>
     <span class="n">__model_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">__config__</span><span class="p">:</span> <span class="n">ConfigDict</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
