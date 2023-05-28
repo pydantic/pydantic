@@ -875,21 +875,14 @@ def test_string_import_any(value: Any, expected: Any, mode: Literal['json', 'pyt
     assert PyObjectModel(thing=value).model_dump(mode=mode) == {'thing': expected}
 
 
-@pytest.mark.parametrize(
-    ('value',),
-    [
-        ('oss',),
-        ('os.os',),
-        (f'{__name__}.x',),
-    ],
-)
+@pytest.mark.parametrize('value', ['oss', 'os.os', f'{__name__}.x'])
 def test_string_import_any_expected_failure(value: Any):
     """Ensure importString correctly fails to instantiate when it's supposed to"""
 
     class PyObjectModel(BaseModel):
         thing: ImportString
 
-    with pytest.raises(ValidationError):
+    with pytest.raises(ValidationError, match='type=import_error'):
         PyObjectModel(thing=value)
 
 
