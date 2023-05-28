@@ -92,10 +92,10 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
     eval_example.print_callback = print_callback
 
     prefix_settings = example.prefix_settings()
-    test_settings = prefix_settings.get('test')
-    lint_settings = prefix_settings.get('lint')
-    if test_settings == 'skip' and lint_settings == 'skip':
-        pytest.skip('both test and lint skipped')
+    test_settings = prefix_settings.get('test', '')
+    lint_settings = prefix_settings.get('lint', '')
+    if test_settings.startswith('skip') and lint_settings.startswith('skip'):
+        pytest.skip('both running code and lint skipped')
 
     requires_settings = prefix_settings.get('requires')
     if requires_settings:
@@ -110,14 +110,14 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
     if group_name:
         eval_example.set_config(ruff_ignore=['F821'])
 
-    if lint_settings != 'skip':
+    if not lint_settings.startswith('skip'):
         if eval_example.update_examples:
             eval_example.format(example)
         else:
             eval_example.lint(example)
 
-    if test_settings == 'skip':
-        return
+    if test_settings.startswith('skip'):
+        pytest.skip(test_settings[4:].lstrip(' -') or 'running code skipped')
 
     group_name = prefix_settings.get('group')
     d = group_globals.get(group_name)
@@ -126,7 +126,7 @@ def test_docs_examples(example: CodeExample, eval_example: EvalExample, tmp_path
     mocker.patch('random.randint', return_value=3)
 
     xfail = None
-    if test_settings and test_settings.startswith('xfail'):
+    if test_settings.startswith('xfail'):
         xfail = test_settings[5:].lstrip(' -')
 
     rewrite_assertions = prefix_settings.get('rewrite_assert', 'true') == 'true'

@@ -11,10 +11,18 @@ to get validators to parse and validate the input data.
     These validators have the same semantics as in [Validators](../validators.md), you can
     declare a parameter `config`, `field`, etc.
 
-```py test="xfail - replace with Annoated[str, PostCodeLogic]"
+```py
 import re
+from typing import Any
+
+from pydantic_core import core_schema
+from typing_extensions import Annotated
 
 from pydantic import BaseModel
+from pydantic.annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
+
+# from devtools import debug
 
 # https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom#Validation
 post_code_regex = re.compile(
@@ -31,7 +39,7 @@ post_code_regex = re.compile(
 )
 
 
-class PostCode(str):
+class PostCodeAnnotation:
     """
     Partial UK postcode validation. Note: this is just an example, and is not
     intended for use in production; in particular this does NOT guarantee
@@ -39,48 +47,62 @@ class PostCode(str):
     """
 
     @classmethod
-    def __get_validators__(cls):
-        # one or more validators may be yielded which will be called in the
-        # order to validate the input, each validator will receive as an input
-        # the value returned from the previous validator
-        yield cls.validate
-
-    @classmethod
-    def __get_pydantic_json_schema__(cls, field_schema):
-        # __get_pydantic_json_schema__ should mutate the dict it receives
-        # in place, the returned value will be ignored
-        field_schema.update(
-            # simplified regex here for brevity, see the wikipedia link above
-            pattern='^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
-            # some example postcodes
-            examples=['SP11 9DG', 'w1j7bu'],
+    def __get_pydantic_core_schema__(
+        cls, _source_type: Any, _handler: GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
+        # debug(_source_type, _handler, foobar)
+        return core_schema.no_info_after_validator_function(
+            cls.validate,
+            core_schema.str_schema(),
         )
 
     @classmethod
-    def validate(cls, v):
-        if not isinstance(v, str):
-            raise TypeError('string required')
-        m = post_code_regex.fullmatch(v.upper())
-        if not m:
-            raise ValueError('invalid postcode format')
-        # you could also return a string here which would mean model.post_code
-        # would be a string, pydantic won't care but you could end up with some
-        # confusion since the value's type won't match the type annotation
-        # exactly
-        return cls(f'{m.group(1)} {m.group(2)}')
+    def __get_pydantic_json_schema__(
+        cls, schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+    ) -> JsonSchemaValue:
+        json_schema = handler(schema)
+        json_schema.update(
+            # simplified regex here for brevity, see the wikipedia link above
+            pattern='^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
+            # some example postcodes
+            examples=['SP11 9DG', 'W1J 7BU'],
+        )
+        return json_schema
 
-    def __repr__(self):
-        return f'PostCode({super().__repr__()})'
+    @classmethod
+    def validate(cls, v: str):
+        m = post_code_regex.fullmatch(v.upper())
+        if m:
+            return f'{m.group(1)} {m.group(2)}'
+        else:
+            raise ValueError('invalid postcode format')
 
 
 class Model(BaseModel):
-    post_code: PostCode
+    post_code: Annotated[str, PostCodeAnnotation]
 
 
 model = Model(post_code='sw8 5el')
 print(model)
+#> post_code='SW8 5EL'
 print(model.post_code)
+#> SW8 5EL
 print(Model.model_json_schema())
+"""
+{
+    'type': 'object',
+    'properties': {
+        'post_code': {
+            'type': 'string',
+            'pattern': '^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
+            'examples': ['SP11 9DG', 'W1J 7BU'],
+            'title': 'Post Code',
+        }
+    },
+    'required': ['post_code'],
+    'title': 'Model',
+}
+"""
 ```
 
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be

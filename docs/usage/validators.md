@@ -197,26 +197,30 @@ print(DemoModel(int_list=[3, 2, 1], name_list=['adrian g', 'David']))
 
 ## Validate Always
 
+**TODO this content is wrong!**
+
 For performance reasons, by default validators are not called for fields when a value is not supplied.
 However there are situations where it may be useful or required to always call the validator, e.g.
 to set a dynamic default value.
 
-```py test="xfail - we need default value validation"
+```py
 from datetime import datetime
 
-from pydantic import BaseModel, validator
+from pydantic import BaseModel, field_validator
 
 
 class DemoModel(BaseModel):
-    ts: datetime = None
+    ts: datetime
 
-    @validator('ts', pre=True, always=True)
+    @field_validator('ts', mode='before')
     def set_ts_now(cls, v):
         return v or datetime.now()
 
 
-print(DemoModel())
+print(DemoModel(ts=None))
+#> ts=datetime.datetime(2032, 1, 2, 3, 4, 5, 6)
 print(DemoModel(ts='2017-11-08T14:00'))
+#> ts=datetime.datetime(2017, 11, 8, 14, 0)
 ```
 
 You'll often want to use this together with `pre`, since otherwise with `always=True`

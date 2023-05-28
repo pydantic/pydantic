@@ -4,7 +4,7 @@
 Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/pep-0563/))
 "just work".
 
-```py requires="3.9" upgrade="skip"
+```py requires="3.9"
 from __future__ import annotations
 
 from typing import Any
@@ -57,7 +57,7 @@ print(Foo(b={'a': '321'}))
 
 For example, this works fine:
 
-```py test="xfail - this should work"
+```py test="skip - works fine in reality, but fails with pytest-examples"
 from __future__ import annotations
 
 from pydantic import (
@@ -71,6 +71,7 @@ def this_works():
         a: HttpUrl
 
     print(Model(a='https://example.com'))
+    #> a=Url('https://example.com/')
 
 
 this_works()
@@ -82,27 +83,19 @@ While this will break:
 from __future__ import annotations
 
 from pydantic import BaseModel
-from pydantic.errors import PydanticUserError
 
 
-def this_is_broken():
+def this_works():
     from pydantic import HttpUrl  # HttpUrl is defined in function local scope
 
     class Model(BaseModel):
         a: HttpUrl
 
-    try:
-        Model(a='https://example.com')
-    except PydanticUserError as e:
-        print(e)
-
-    try:
-        Model.model_rebuild()
-    except NameError as e:
-        print(e)
+    print(Model(a='https://example.com'))
+    #> a=Url('https://example.com/')
 
 
-this_is_broken()
+this_works()
 ```
 
 Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.

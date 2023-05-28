@@ -179,31 +179,24 @@ for i in m.infinite:
 
 You can create a [validator](../validators.md) to validate the first value in an infinite generator and still not consume it entirely.
 
-```py test="xfail - what's going on here?"
-import itertools
+```py
 from typing import Iterable
 
-from pydantic import BaseModel, ValidationError, field_validator
+from pydantic import BaseModel, field_validator
 
 
 class Model(BaseModel):
     infinite: Iterable[int]
 
-    @field_validator('infinite')
-    # You don't need to add the "ModelField", but it will help your
-    # editor give you completion and catch errors
-    def infinite_first_int(cls, iterable, field):
+    @field_validator('infinite', mode='wrap')
+    def infinite_first_int(cls, iterable, handler):
         first_value = next(iterable)
-        if field.sub_fields:
-            # The Iterable had a parameter type, in this case it's int
-            # We use it to validate the first value
-            sub_field = field.sub_fields[0]
-            v, error = sub_field.validate(first_value, {}, loc='first_value')
-            if error:
-                raise ValidationError.from_exception_data([error], cls)
-        # This creates a new generator that returns the first value and then
-        # the rest of the values from the (already started) iterable
-        return itertools.chain([first_value], iterable)
+        if isinstance(first_value, int):
+            yield first_value
+        else:
+            raise ValueError(f'first value must be an int, not {type(first_value)}')
+
+        yield from handler(iterable)
 
 
 def infinite_ints():
@@ -214,16 +207,23 @@ def infinite_ints():
 
 
 m = Model(infinite=infinite_ints())
-print(m)
+print(next(m.infinite))
+#> 0
+print(next(m.infinite))
+#> 1
+print(next(m.infinite))
+#> 2
 
 
 def infinite_strs():
     while True:
-        yield from 'allthesingleladies'
+        yield from '123'
 
 
+m = Model(infinite=infinite_strs())
 try:
-    Model(infinite=infinite_strs())
-except ValidationError as e:
+    next(m.infinite)
+except ValueError as e:
     print(e)
+    #> first value must be an int, not <class 'str'>
 ```
