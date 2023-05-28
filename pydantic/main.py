@@ -7,7 +7,6 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from inspect import getdoc
 from typing import Any
 
 import pydantic_core
@@ -531,29 +530,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         )
 
     @classmethod
-    def model_modify_json_schema(cls, json_schema: JsonSchemaValue) -> JsonSchemaValue:
-        """
-        This is a convenience method that primarily controls how the "generic" properties of the JSON schema are
-        populated.
-        For more details see https://json-schema.org/understanding-json-schema/reference/generic.html.
-
-        Override this method to modify the JSON schema generated for the model.
-
-        If you want to make more sweeping changes to how the JSON schema is generated, you will probably want to create
-        a subclass of `GenerateJsonSchema` and pass it as `schema_generator` in `BaseModel.model_json_schema`
-
-        Args:
-            cls (type): The class object.
-            json_schema (dict): The original JSON schema before modification.
-
-        Returns:
-            Dict: The modified JSON schema.
-        """
-        metadata = {'title': cls.model_config.get('title', None) or cls.__name__, 'description': getdoc(cls) or None}
-        metadata = {k: v for k, v in metadata.items() if v is not None}
-        return {**metadata, **json_schema}
-
-    @classmethod
     def model_rebuild(
         cls,
         *,
@@ -890,7 +866,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         encoding: str = 'utf8',
         proto: _deprecated_parse.Protocol | None = None,
         allow_pickle: bool = False,
-    ) -> Model:
+    ) -> Model:  # pragma: no cover
         warnings.warn(
             'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
             'otherwise load the data then use `model_validate` instead.',
@@ -986,7 +962,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         update: typing.Dict[str, Any] | None = None,  # noqa UP006
         deep: bool = False,
-    ) -> Model:
+    ) -> Model:  # pragma: no cover
         """
         This method is now deprecated; use `model_copy` instead. If you need include / exclude, use:
 
@@ -1048,7 +1024,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     )
     def schema_json(
         cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
-    ) -> str:
+    ) -> str:  # pragma: no cover
         import json
 
         warnings.warn(
@@ -1075,7 +1051,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings.warn(
             'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.', DeprecationWarning
         )
-        if localns:
+        if localns:  # pragma: no cover
             raise TypeError('`localns` arguments are not longer accepted.')
         cls.model_rebuild(force=True)
 
@@ -1244,19 +1220,6 @@ def create_model(
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
     return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False, **kwds)
-
-
-def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
-    field_names: set[str] = set()
-    class_vars: set[str] = set()
-    private_attributes: dict[str, ModelPrivateAttr] = {}
-    for base in bases:
-        if issubclass(base, BaseModel) and base != BaseModel:
-            # model_fields might not be defined yet in the case of generics, so we use getattr here:
-            field_names.update(getattr(base, 'model_fields', {}).keys())
-            class_vars.update(base.__class_vars__)
-            private_attributes.update(base.__private_attributes__)
-    return field_names, class_vars, private_attributes
 
 
 __getattr__ = getattr_migration(__name__)

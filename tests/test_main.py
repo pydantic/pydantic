@@ -1987,6 +1987,35 @@ def test_model_equality_private_attrs(InnerEqualityModel):
     assert m3 == m3_equal
 
 
+def test_model_copy_extra():
+    class Model(BaseModel, extra='allow'):
+        x: int
+
+    m = Model(x=1, y=2)
+    assert m.model_dump() == {'x': 1, 'y': 2}
+    assert m.model_extra == {'y': 2}
+    m2 = m.model_copy()
+    assert m2.model_dump() == {'x': 1, 'y': 2}
+    assert m2.model_extra == {'y': 2}
+
+    m3 = m.model_copy(update={'x': 4, 'z': 3})
+    assert m3.model_dump() == {'x': 4, 'y': 2, 'z': 3}
+    assert m3.model_extra == {'y': 2, 'z': 3}
+
+    m3.__pydantic_extra__ = None
+    m4 = m.model_copy(update={'x': 4, 'z': 3})
+    assert m4.model_dump() == {'x': 4, 'y': 2, 'z': 3}
+    assert m4.model_extra == {'y': 2, 'z': 3}
+
+
+def test_model_parametrized_name_not_generic():
+    class Model(BaseModel):
+        x: int
+
+    with pytest.raises(TypeError, match='Concrete names should only be generated for generic models.'):
+        Model.model_parametrized_name(())
+
+
 def test_model_equality_generics():
     T = TypeVar('T')
 
