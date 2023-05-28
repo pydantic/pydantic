@@ -795,24 +795,22 @@ The root type can be any type supported by pydantic, and is specified by the typ
 The root value can be passed to the model `__init__` via the `__root__` keyword argument, or as
 the first and only argument to `model_validate`.
 
-```py test="xfail support/replace __root__"
-import json
+```py
 from typing import List
 
-from pydantic import BaseModel
-from pydantic.json_schema import models_json_schema
+from pydantic import RootModel
+
+Pets = RootModel[List[str]]
 
 
-class Pets(BaseModel):
-    __root__: List[str]
-
-
-print(Pets(__root__=['dog', 'cat']))
-print(Pets(__root__=['dog', 'cat']).model_dump_json())
+print(Pets(['dog', 'cat']))
+#> root=['dog', 'cat']
+print(Pets(['dog', 'cat']).model_dump_json())
+#> ["dog","cat"]
 print(Pets.model_validate(['dog', 'cat']))
+#> root=['dog', 'cat']
 print(Pets.model_json_schema())
-pets_schema = models_json_schema([Pets])
-print(json.dumps(pets_schema, indent=2))
+#> {'type': 'array', 'items': {'type': 'string'}}
 ```
 
 If you call the `model_validate` method for a model with a custom root type with a *dict* as the first argument,
@@ -826,29 +824,20 @@ the following logic is used:
 
 This is demonstrated in the following example:
 
-```py test="xfail support/replace __root__"
+```py
 from typing import Dict, List
 
-from pydantic import BaseModel, ValidationError
+from pydantic import RootModel
 
-
-class Pets(BaseModel):
-    __root__: List[str]
-
+Pets = RootModel[List[str]]
 
 print(Pets.model_validate(['dog', 'cat']))
-print(Pets.model_validate({'__root__': ['dog', 'cat']}))  # not recommended
+#> root=['dog', 'cat']
 
-
-class PetsByName(BaseModel):
-    __root__: Dict[str, str]
-
+PetsByName = RootModel[Dict[str, str]]
 
 print(PetsByName.model_validate({'Otis': 'dog', 'Milo': 'cat'}))
-try:
-    PetsByName.model_validate({'__root__': {'Otis': 'dog', 'Milo': 'cat'}})
-except ValidationError as e:
-    print(e)
+#> root={'Otis': 'dog', 'Milo': 'cat'}
 ```
 
 !!! warning
@@ -857,25 +846,27 @@ except ValidationError as e:
 
 If you want to access items in the `__root__` field directly or to iterate over the items, you can implement custom `__iter__` and `__getitem__` functions, as shown in the following example.
 
-```py test="xfail support/replace __root__"
+```py
 from typing import List
 
-from pydantic import BaseModel
+from pydantic import RootModel
 
 
-class Pets(BaseModel):
-    __root__: List[str]
+class Pets(RootModel):
+    root: List[str]
 
     def __iter__(self):
-        return iter(self.__root__)
+        return iter(self.root)
 
     def __getitem__(self, item):
-        return self.__root__[item]
+        return self.root[item]
 
 
 pets = Pets.model_validate(['dog', 'cat'])
 print(pets[0])
+#> dog
 print([pet for pet in pets])
+#> ['dog', 'cat']
 ```
 
 ## Faux immutability
@@ -1117,28 +1108,6 @@ print(m._secret_value)
 
 Private attribute names must start with underscore to prevent conflicts with model fields: both `_attr` and `__attr__`
 are supported.
-
-If `Config.underscore_attrs_are_private` is `True`, any non-ClassVar underscore attribute will be treated as private:
-```py test="xfail what the hell is underscore_attrs_are_private?"
-from typing import ClassVar
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    _class_var: ClassVar[str] = 'class var value'
-    _private_attr: str = 'private attr value'
-
-    class Config:
-        underscore_attrs_are_private = True
-
-
-print(Model._class_var)
-print(Model._private_attr)
-print(Model()._private_attr)
-```
-
-Upon class creation pydantic constructs `__slots__` filled with private attributes.
 
 ## Parsing data into a specified type
 

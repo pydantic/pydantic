@@ -15,7 +15,7 @@ if TYPE_CHECKING:
         core_schema.ComputedField,
     ]
 
-    __all__ = 'GetJsonSchemaHandler', 'GetCoreSchemaHandler'
+__all__ = 'GetJsonSchemaHandler', 'GetCoreSchemaHandler'
 
 
 class GetJsonSchemaHandler:
