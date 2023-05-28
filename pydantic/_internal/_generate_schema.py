@@ -300,8 +300,7 @@ class GenerateSchema:
 
         model_schema = consolidate_refs(model_schema)
         schema = apply_model_serializers(model_schema, decorators.model_serializers.values())
-        schema = apply_model_validators(schema, decorators.model_validators.values())
-        return schema
+        return apply_model_validators(schema, decorators.model_validators.values())
 
     def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
         """
