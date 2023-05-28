@@ -726,7 +726,7 @@ class GenerateSchema:
         )
 
         schema = apply_model_serializers(td_schema, decorators.model_serializers.values())
-        return apply_model_validators(schema, decorators.model_validators.values())
+        return apply_model_validators(schema, decorators.model_validators.values(), 'all')
 
     def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
         """
@@ -1321,13 +1321,14 @@ def apply_model_serializers(
 def apply_model_validators(
     schema: core_schema.CoreSchema,
     validators: Iterable[Decorator[ModelValidatorDecoratorInfo]],
-    mode: Literal['inner', 'outer'],
+    mode: Literal['inner', 'outer', 'all'],
 ) -> core_schema.CoreSchema:
     """
     Apply model validators to a schema.
 
     If mode == 'inner', only "before" validators are applied
     If mode == 'outer', validators other than "before" are applied
+    If mode == 'all', all validators are applied
     """
     ref: str | None = schema.pop('ref', None)  # type: ignore
     for validator in validators:
