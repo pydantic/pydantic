@@ -1,3 +1,4 @@
+import platform
 from typing import Optional, Tuple
 
 import pytest
@@ -374,6 +375,72 @@ def test_private_attr_set_name_do_not_crash_if_not_callable():
     # Checks below are just to ensure that everything is the same as in `test_private_attr_set_name`
     # The main check is that model class definition above doesn't crash
     assert Model()._private_attr == 2
+
+
+def test_del_model_attr():
+    class Model(BaseModel):
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, 'some_field')
+
+    del m.some_field
+
+    assert not hasattr(m, 'some_field')
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and platform.python_version_tuple() < ('3', '8'),
+    reason='In this single case `del` behaves weird on pypy 3.7',
+)
+def test_del_model_attr_error():
+    class Model(BaseModel):
+        some_field: str
+
+    m = Model(some_field='value')
+    assert not hasattr(m, 'other_field')
+
+    with pytest.raises(AttributeError, match='other_field'):
+        del m.other_field
+
+
+def test_del_model_attr_with_privat_attrs():
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=1)
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, 'some_field')
+
+    del m.some_field
+
+    assert not hasattr(m, 'some_field')
+
+
+def test_del_model_attr_with_privat_attrs_error():
+    class Model(BaseModel):
+        _private_attr: int = PrivateAttr(default=1)
+        some_field: str
+
+    m = Model(some_field='value')
+    assert not hasattr(m, 'other_field')
+
+    with pytest.raises(AttributeError, match="'Model' object has no attribute 'other_field'"):
+        del m.other_field
+
+
+def test_del_model_attr_with_privat_attrs_twice_error():
+    class Model(BaseModel):
+        _private_attr: int = 1
+        some_field: str
+
+    m = Model(some_field='value')
+    assert hasattr(m, '_private_attr')
+
+    del m._private_attr
+
+    with pytest.raises(AttributeError, match="'Model' object has no attribute '_private_attr'"):
+        del m._private_attr
 
 
 def test_create_model_with_slots():
