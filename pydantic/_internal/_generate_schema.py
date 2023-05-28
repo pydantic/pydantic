@@ -1055,7 +1055,13 @@ class GenerateSchema:
 
         source_type, annotations = self._prepare_annotations(first_arg, other_args)
 
-        return self._apply_annotations(lambda x: x, source_type, annotations)
+        schema = self._apply_annotations(lambda x: x, source_type, annotations)
+        # put the default validator last so that TypeAdapter.get_default_value() works
+        # even if there are function validators involved
+        for annotation in annotations:
+            if isinstance(annotation, FieldInfo):
+                schema = wrap_default(annotation, schema)
+        return schema
 
     def _get_prepare_pydantic_annotations_for_known_type(
         self, obj: Any, annotations: tuple[Any, ...]
@@ -1341,8 +1347,7 @@ def apply_single_annotation(
             schema = apply_single_annotation(schema, field_metadata, definitions)
         if metadata.discriminator is not None:
             schema = _discriminated_union.apply_discriminator(schema, metadata.discriminator, definitions)
-        # TODO setting a default here needs to be tested
-        return wrap_default(metadata, schema)
+        return schema
 
     if schema['type'] == 'nullable':
         # for nullable schemas, metadata is automatically applied to the inner schema
