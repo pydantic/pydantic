@@ -204,11 +204,11 @@ class GenerateSchema:
             schema = self._generate_schema_for_type(
                 obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
             )
-        if self.definitions:
-            schema = core_schema.definitions_schema(
-                schema,
-                list(self.definitions.values()),
-            )
+        # if self.definitions:
+        #     schema = core_schema.definitions_schema(
+        #         schema,
+        #         list(self.definitions.values()),
+        #     )
         return schema
 
     def _generate_schema_for_type(
@@ -307,7 +307,8 @@ class GenerateSchema:
 
         model_schema = consolidate_refs(model_schema)
         schema = apply_model_serializers(model_schema, decorators.model_serializers.values())
-        return apply_model_validators(schema, decorators.model_validators.values())
+        schema = apply_model_validators(schema, decorators.model_validators.values())
+        return schema
 
     def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
         """
@@ -1072,7 +1073,7 @@ class GenerateSchema:
         if obj_ref in self.recursion_cache:
             return obj_ref, self.recursion_cache[obj_ref]
         else:
-            self.recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
+            self.recursion_cache[obj_ref] = self.definitions[obj_ref] = core_schema.definition_reference_schema(obj_ref)
             return obj_ref, None
 
     def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
@@ -1412,8 +1413,7 @@ def apply_single_annotation(
             return core_schema.definition_reference_schema(schema_ref=schema['ref'])
         else:
             return original_schema
-    else:
-        return _known_annotated_metadata.apply_known_metadata(metadata, schema.copy())
+    return _known_annotated_metadata.apply_known_metadata(metadata, schema.copy())
 
 
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
