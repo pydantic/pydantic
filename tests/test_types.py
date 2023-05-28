@@ -99,6 +99,7 @@ from pydantic import (
 )
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
+from pydantic.functional_validators import AfterValidator
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
 from pydantic.types import AllowInfNan, ImportString, InstanceOf, SecretField, SkipValidation, Strict, TransformSchema
 
@@ -2558,7 +2559,7 @@ def test_int_parsing_size_error():
 
     with pytest.raises(
         ValidationError,
-        match=r'Unable to parse input string as an integer, exceed maximum size \[type=int_parsing_size,',
+        match=r'Unable to parse input string as an integer, exceeded maximum size \[type=int_parsing_size,',
     ):
         v.validate_json(json.dumps(-i64_max * 2))
 
@@ -5370,11 +5371,39 @@ def test_constraints_arbitrary_type() -> None:
 
 
 def test_annotated_default_value() -> None:
-    t = TypeAdapter(Annotated[List[str], Field(default=['foo', 'bar'])])
+    t = TypeAdapter(Annotated[List[int], Field(default=['1', '2'])])
 
-    # TODO: check the default value somehow with `validate_python`
-    # There is currently no way to do this
-    # See https://github.com/pydantic/pydantic-core/pull/643
+    r = t.get_default_value()
+    assert r is not None
+    assert r.value == ['1', '2']
 
     # insert_assert(t.json_schema())
-    assert t.json_schema() == {'type': 'array', 'items': {'type': 'string'}, 'default': ['foo', 'bar']}
+    assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'default': ['1', '2']}
+
+
+def test_annotated_default_value_validate_default() -> None:
+    t = TypeAdapter(Annotated[List[int], Field(default=['1', '2'])], config=ConfigDict(validate_default=True))
+
+    r = t.get_default_value()
+    assert r is not None
+    assert r.value == [1, 2]
+
+    # insert_assert(t.json_schema())
+    assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'default': ['1', '2']}
+
+
+def test_annotated_default_value_functional_validator() -> None:
+    T = TypeVar('T')
+    WithAfterValidator = Annotated[T, AfterValidator(lambda x: [v * 2 for v in x])]
+    WithDefaultValue = Annotated[T, Field(default=['1', '2'])]
+
+    # the order of the args should not matter, we always put the default value on the outside
+    for tp in (WithDefaultValue[WithAfterValidator[List[int]]], WithAfterValidator[WithDefaultValue[List[int]]]):
+        t = TypeAdapter(tp, config=ConfigDict(validate_default=True))
+
+        r = t.get_default_value()
+        assert r is not None
+        assert r.value == [2, 4]
+
+        # insert_assert(t.json_schema())
+        assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'default': ['1', '2']}

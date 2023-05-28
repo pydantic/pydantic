@@ -4,7 +4,7 @@ from __future__ import annotations as _annotations
 import sys
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
 
-from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator
+from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
 from typing_extensions import Literal
 
 from ._internal import _config, _core_utils, _generate_schema, _typing_extra
@@ -177,6 +177,18 @@ class TypeAdapter(Generic[T]):
 
         """
         return self.validator.validate_json(__data, strict=strict, context=context)
+
+    def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
+        """Get the default value for this model / type.
+
+        Args:
+            strict (bool | None, optional): Whether to strictly check types. Defaults to None.
+            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.
+
+        Returns:
+            Some[T] | None: The default value wrapped in a Some if there is one or None if not.
+        """
+        return self.validator.get_default_value(strict=strict, context=context)
 
     def dump_python(
         self,

@@ -2267,9 +2267,9 @@ def test_long_int():
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {
-            'type': 'int_parsing',
+            'type': 'int_parsing_size',
             'loc': ('x',),
-            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'msg': 'Unable to parse input string as an integer, exceeded maximum size',
             'input': too_long,
         }
     ]
