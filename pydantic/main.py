@@ -7,7 +7,6 @@ import types
 import typing
 import warnings
 from copy import copy, deepcopy
-from inspect import getdoc
 from typing import Any
 
 import pydantic_core
@@ -529,29 +528,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return model_json_schema(
             cls, by_alias=by_alias, ref_template=ref_template, schema_generator=schema_generator, mode=mode
         )
-
-    @classmethod
-    def model_modify_json_schema(cls, json_schema: JsonSchemaValue) -> JsonSchemaValue:
-        """
-        This is a convenience method that primarily controls how the "generic" properties of the JSON schema are
-        populated.
-        For more details see https://json-schema.org/understanding-json-schema/reference/generic.html.
-
-        Override this method to modify the JSON schema generated for the model.
-
-        If you want to make more sweeping changes to how the JSON schema is generated, you will probably want to create
-        a subclass of `GenerateJsonSchema` and pass it as `schema_generator` in `BaseModel.model_json_schema`
-
-        Args:
-            cls (type): The class object.
-            json_schema (dict): The original JSON schema before modification.
-
-        Returns:
-            Dict: The modified JSON schema.
-        """
-        metadata = {'title': cls.model_config.get('title', None) or cls.__name__, 'description': getdoc(cls) or None}
-        metadata = {k: v for k, v in metadata.items() if v is not None}
-        return {**metadata, **json_schema}
 
     @classmethod
     def model_rebuild(
