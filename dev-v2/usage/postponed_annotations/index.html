@@ -1796,6 +1796,7 @@ This means <em>pydantic</em> may not play well with types not defined in the glo
         <span class="n">a</span><span class="p">:</span> <span class="n">HttpUrl</span>
 
     <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;https://example.com&#39;</span><span class="p">))</span>
+    <span class="c1">#&gt; a=Url(&#39;https://example.com/&#39;)</span>
 
 
 <span class="n">this_works</span><span class="p">()</span>
@@ -1804,27 +1805,19 @@ This means <em>pydantic</em> may not play well with types not defined in the glo
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.errors</span> <span class="kn">import</span> <span class="n">PydanticUserError</span>
 
 
-<span class="k">def</span> <span class="nf">this_is_broken</span><span class="p">():</span>
+<span class="k">def</span> <span class="nf">this_works</span><span class="p">():</span>
     <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">HttpUrl</span>  <span class="c1"># HttpUrl is defined in function local scope</span>
 
     <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
         <span class="n">a</span><span class="p">:</span> <span class="n">HttpUrl</span>
 
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;https://example.com&#39;</span><span class="p">)</span>
-    <span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-
-    <span class="k">try</span><span class="p">:</span>
-        <span class="n">Model</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
-    <span class="k">except</span> <span class="ne">NameError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-        <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;https://example.com&#39;</span><span class="p">))</span>
+    <span class="c1">#&gt; a=Url(&#39;https://example.com/&#39;)</span>
 
 
-<span class="n">this_is_broken</span><span class="p">()</span>
+<span class="n">this_works</span><span class="p">()</span>
 </code></pre></div>
 <p>Resolving this is beyond the call for <em>pydantic</em>: either remove the future import or declare the types globally.</p>
 <h2 id="self-referencing-models">Self-referencing Models<a class="headerlink" href="#self-referencing-models" title="Permanent link">&para;</a></h2>

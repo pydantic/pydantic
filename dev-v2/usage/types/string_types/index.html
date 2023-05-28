@@ -1843,7 +1843,9 @@ won't result in validation (thus evaluation). This is actively
 being worked on.</p>
 </blockquote>
 <p><strong>Good behavior:</strong>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span><span class="p">,</span> <span class="n">ValidationError</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">cos</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">ImportThings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -1870,70 +1872,23 @@ being worked on.</p>
 <span class="sd">    &quot;&quot;&quot;</span>
 
 
-<span class="c1"># TODO sort out the module name here</span>
-<span class="c1"># # An object defined in the current namespace can indeed be imported,</span>
-<span class="c1"># # though you should probably avoid doing this (since the ordering of declaration</span>
-<span class="c1"># # can have an impact on behavior).</span>
-<span class="c1"># class Foo:</span>
-<span class="c1">#     bar = 1</span>
-<span class="c1">#</span>
-<span class="c1">#</span>
-<span class="c1"># # This now works</span>
-<span class="c1"># my_foo = ImportThings(obj=Foo)</span>
-<span class="c1"># # So does this</span>
-<span class="c1"># my_foo_2 = ImportThings(obj=&#39;__main__.Foo&#39;)</span>
-
-
 <span class="c1"># Actual python objects can be assigned as well</span>
-<span class="kn">from</span> <span class="nn">math</span> <span class="kn">import</span> <span class="n">cos</span>  <span class="c1"># noqa: E402</span>
-
 <span class="n">my_cos</span> <span class="o">=</span> <span class="n">ImportThings</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="n">cos</span><span class="p">)</span>
 <span class="n">my_cos_2</span> <span class="o">=</span> <span class="n">ImportThings</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math.cos&#39;</span><span class="p">)</span>
 <span class="k">assert</span> <span class="n">my_cos</span> <span class="o">==</span> <span class="n">my_cos_2</span>
 </code></pre></div></p>
-<p><strong>Serializing an <code>ImportString</code> type to json is possible with a
-<a href="../../exporting_models/#json_encoders">custom encoder</a> which accounts for
-the evaluated object:</strong>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">BuiltinFunctionType</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span>
+<p>Serializing an <code>ImportString</code> type to json is also possible.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ImportString</span>
 
 
-<span class="c1"># The following class will not successfully serialize to JSON</span>
-<span class="c1"># Since &quot;obj&quot; is evaluated to an object, not a pydantic `ImportString`</span>
-<span class="k">class</span> <span class="nc">WithCustomEncodersBad</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">ImportThings</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">obj</span><span class="p">:</span> <span class="n">ImportString</span>
-
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-        <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span><span class="n">ImportString</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)}</span>
 
 
 <span class="c1"># Create an instance</span>
-<span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncodersBad</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math:cos&#39;</span><span class="p">)</span>
-
-<span class="k">try</span><span class="p">:</span>
-    <span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
-<span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-
-<span class="c1"># Let&#39;s do some sanity checks to verify that m.obj is not an &quot;ImportString&quot;</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">obj</span><span class="p">,</span> <span class="n">ImportString</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">obj</span><span class="p">,</span> <span class="n">BuiltinFunctionType</span><span class="p">))</span>
-
-
-<span class="c1"># So now that we know that after an ImportString is evaluated by Pydantic</span>
-<span class="c1"># it results in its underlying object, we can configure our json encoder</span>
-<span class="c1"># to account for those specific types</span>
-<span class="k">class</span> <span class="nc">WithCustomEncodersGood</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">obj</span><span class="p">:</span> <span class="n">ImportString</span>
-
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-        <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span><span class="n">BuiltinFunctionType</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)}</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncodersGood</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math:cos&#39;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">json</span><span class="p">())</span>
-</code></pre></div></p>
+<span class="n">m</span> <span class="o">=</span> <span class="n">ImportThings</span><span class="p">(</span><span class="n">obj</span><span class="o">=</span><span class="s1">&#39;math:cos&#39;</span><span class="p">)</span>
+<span class="n">m</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">()</span>
+</code></pre></div>
 <h2 id="constrained-types">Constrained Types<a class="headerlink" href="#constrained-types" title="Permanent link">&para;</a></h2>
 <p>The value of numerous common types can be restricted using <code>con*</code> type functions.</p>
 <h3 id="arguments-to-constr">Arguments to <code>constr</code><a class="headerlink" href="#arguments-to-constr" title="Permanent link">&para;</a></h3>
