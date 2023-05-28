@@ -199,10 +199,17 @@ class GenerateSchema:
         from_prepare_args: bool = True,
     ) -> core_schema.CoreSchema:
         if isinstance(obj, type(Annotated[int, 123])):
-            return self._annotated_schema(obj)
-        return self._generate_schema_for_type(
-            obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
-        )
+            schema = self._annotated_schema(obj)
+        else:
+            schema = self._generate_schema_for_type(
+                obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
+            )
+        if self.definitions:
+            schema = core_schema.definitions_schema(
+                schema,
+                list(self.definitions.values()),
+            )
+        return schema
 
     def _generate_schema_for_type(
         self,
@@ -685,7 +692,10 @@ class GenerateSchema:
         schema['ref'] = ref  # type: ignore
         self.types_namespace = namespace or None
         self.recursion_cache[obj] = schema  # type: ignore
-        return schema  # type: ignore
+        self.definitions[ref] = schema
+        return core_schema.definition_reference_schema(
+            schema_ref=ref,
+        )
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -1388,9 +1398,22 @@ def apply_single_annotation(
             schema['schema'] = inner
         return schema
 
-    schema = _known_annotated_metadata.apply_known_metadata(metadata, schema)
-
-    return schema
+    if schema['type'] == 'definition-ref':
+        original_schema = schema
+        schema = definitions[schema['schema_ref']]
+        schema = schema.copy()
+        schema['ref'] = schema['ref'] + '_' + repr(metadata)
+        new_schema = _known_annotated_metadata.apply_known_metadata(metadata, schema.copy())
+        if new_schema != schema:
+            for other_schema in definitions.values():
+                if new_schema == other_schema:
+                    return core_schema.definition_reference_schema(schema_ref=other_schema['ref'])
+            definitions[schema['ref']] = new_schema
+            return core_schema.definition_reference_schema(schema_ref=schema['ref'])
+        else:
+            return original_schema
+    else:
+        return _known_annotated_metadata.apply_known_metadata(metadata, schema.copy())
 
 
 def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:

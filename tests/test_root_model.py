@@ -32,9 +32,10 @@ def parametrize_root_model():
 def test_root_model_specialized(root_type, root_value, dump_value):
     Model = RootModel[root_type]
 
-    assert Model.__pydantic_core_schema__['type'] == 'model'
-    assert Model.__pydantic_core_schema__['root_model'] is True
-    assert Model.__pydantic_core_schema__['custom_init'] is False
+    schema = Model.__pydantic_core_schema__['definitions'][0]
+    assert schema['type'] == 'model'
+    assert schema['root_model'] is True
+    assert schema['custom_init'] is False
 
     m = Model(root_value)
 
@@ -47,9 +48,10 @@ def test_root_model_inherited(root_type, root_value, dump_value):
     class Model(RootModel[root_type]):
         pass
 
-    assert Model.__pydantic_core_schema__['type'] == 'model'
-    assert Model.__pydantic_core_schema__['root_model'] is True
-    assert Model.__pydantic_core_schema__['custom_init'] is False
+    schema = Model.__pydantic_core_schema__['definitions'][0]
+    assert schema['type'] == 'model'
+    assert schema['root_model'] is True
+    assert schema['custom_init'] is False
 
     m = Model(root_value)
 
