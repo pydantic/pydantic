@@ -93,6 +93,12 @@ def test_inheritance():
     m = model(foo='a', x=4)
     assert m.model_dump() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
 
+    # bases as a tuple
+    model = create_model('FooModel', foo=(str, ...), bar=(int, 123), __base__=(BarModel,))
+    assert model.model_fields.keys() == {'foo', 'bar', 'x', 'y'}
+    m = model(foo='a', x=4)
+    assert m.model_dump() == {'bar': 123, 'foo': 'a', 'x': 4, 'y': 2}
+
 
 def test_custom_config():
     config = ConfigDict(frozen=True)

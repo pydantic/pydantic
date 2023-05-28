@@ -1045,7 +1045,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         warnings.warn(
             'The `update_forward_refs` method is deprecated; use `model_rebuild` instead.', DeprecationWarning
         )
-        if localns:
+        if localns:  # pragma: no cover
             raise TypeError('`localns` arguments are not longer accepted.')
         cls.model_rebuild(force=True)
 

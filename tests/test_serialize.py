@@ -264,7 +264,7 @@ def test_invalid_signature_no_params() -> None:
 
             # caught by type checkers
             @field_serializer('x')
-            def no_args() -> Any:  # pragma: no cover
+            def no_args() -> Any:
                 ...
 
 
@@ -276,7 +276,7 @@ def test_invalid_signature_single_params() -> None:
 
             # not caught by type checkers
             @field_serializer('x')
-            def no_args(self) -> Any:  # pragma: no cover
+            def no_args(self) -> Any:
                 ...
 
 
@@ -288,7 +288,7 @@ def test_invalid_signature_too_many_params_1() -> None:
 
             # caught by type checkers
             @field_serializer('x')
-            def no_args(self, value: Any, nxt: Any, info: Any, extra_param: Any) -> Any:  # pragma: no cover
+            def no_args(self, value: Any, nxt: Any, info: Any, extra_param: Any) -> Any:
                 ...
 
 
@@ -301,7 +301,7 @@ def test_invalid_signature_too_many_params_2() -> None:
             # caught by type checkers
             @field_serializer('x')
             @staticmethod
-            def no_args(not_self: Any, value: Any, nxt: Any, info: Any) -> Any:  # pragma: no cover
+            def no_args(not_self: Any, value: Any, nxt: Any, info: Any) -> Any:
                 ...
 
 
@@ -313,7 +313,7 @@ def test_invalid_signature_bad_plain_signature() -> None:
 
             # caught by type checkers
             @field_serializer('x', mode='plain')
-            def no_args(self, value: Any, nxt: Any, info: Any) -> Any:  # pragma: no cover
+            def no_args(self, value: Any, nxt: Any, info: Any) -> Any:
                 ...
 
 
