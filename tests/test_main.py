@@ -1987,6 +1987,18 @@ def test_model_equality_private_attrs(InnerEqualityModel):
     assert m3 == m3_equal
 
 
+def test_model_copy_extra():
+    class Model(BaseModel, extra='allow'):
+        x: int
+
+    m = Model(x=1, y=2)
+    assert m.model_dump() == {'x': 1, 'y': 2}
+    assert m.model_extra == {'y': 2}
+    m2 = m.model_copy()
+    assert m2.model_dump() == {'x': 1, 'y': 2}
+    assert m2.model_extra == {'y': 2}
+
+
 def test_model_equality_generics():
     T = TypeVar('T')
 

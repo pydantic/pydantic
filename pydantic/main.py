@@ -884,7 +884,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         encoding: str = 'utf8',
         proto: _deprecated_parse.Protocol | None = None,
         allow_pickle: bool = False,
-    ) -> Model:
+    ) -> Model:  # pragma: no cover
         warnings.warn(
             'The `parse_raw` method is deprecated; if your data is JSON use `model_validate_json`, '
             'otherwise load the data then use `model_validate` instead.',
@@ -980,7 +980,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude: AbstractSetIntStr | MappingIntStrAny | None = None,
         update: typing.Dict[str, Any] | None = None,  # noqa UP006
         deep: bool = False,
-    ) -> Model:
+    ) -> Model:  # pragma: no cover
         """
         This method is now deprecated; use `model_copy` instead. If you need include / exclude, use:
 
@@ -1042,7 +1042,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     )
     def schema_json(
         cls, *, by_alias: bool = True, ref_template: str = DEFAULT_REF_TEMPLATE, **dumps_kwargs: Any
-    ) -> str:
+    ) -> str:  # pragma: no cover
         import json
 
         warnings.warn(
@@ -1238,19 +1238,6 @@ def create_model(
         ns['__orig_bases__'] = __base__
     namespace.update(ns)
     return meta(__model_name, resolved_bases, namespace, __pydantic_reset_parent_namespace__=False, **kwds)
-
-
-def _collect_bases_data(bases: tuple[type[Any], ...]) -> tuple[set[str], set[str], dict[str, ModelPrivateAttr]]:
-    field_names: set[str] = set()
-    class_vars: set[str] = set()
-    private_attributes: dict[str, ModelPrivateAttr] = {}
-    for base in bases:
-        if issubclass(base, BaseModel) and base != BaseModel:
-            # model_fields might not be defined yet in the case of generics, so we use getattr here:
-            field_names.update(getattr(base, 'model_fields', {}).keys())
-            class_vars.update(base.__class_vars__)
-            private_attributes.update(base.__private_attributes__)
-    return field_names, class_vars, private_attributes
 
 
 __getattr__ = getattr_migration(__name__)
