@@ -845,13 +845,46 @@ def test_string_import_callable(annotation):
     ]
 
 
-def test_string_import_any():
+@pytest.mark.parametrize(
+    ('value', 'expected', 'mode'),
+    [
+        ('math:cos', 'math.cos', 'json'),
+        ('math:cos', math.cos, 'python'),
+        pytest.param(
+            'os.path', 'posixpath', 'json', marks=pytest.mark.skipif(sys.platform == 'win32', reason='different output')
+        ),
+        pytest.param(
+            'os.path', 'ntpath', 'json', marks=pytest.mark.skipif(sys.platform != 'win32', reason='different output')
+        ),
+        ('os.path', os.path, 'python'),
+        ([1, 2, 3], [1, 2, 3], 'json'),
+        ([1, 2, 3], [1, 2, 3], 'python'),
+        ('math', 'math', 'json'),
+        ('math', math, 'python'),
+        ('builtins.list', 'builtins.list', 'json'),
+        ('builtins.list', list, 'python'),
+        (list, 'builtins.list', 'json'),
+        (list, list, 'python'),
+        (f'{__name__}.pytest', 'pytest', 'json'),
+        (f'{__name__}.pytest', pytest, 'python'),
+    ],
+)
+def test_string_import_any(value: Any, expected: Any, mode: Literal['json', 'python']):
     class PyObjectModel(BaseModel):
         thing: ImportString
 
-    assert PyObjectModel(thing='math:cos').model_dump() == {'thing': math.cos}
-    assert PyObjectModel(thing='os.path').model_dump() == {'thing': os.path}
-    assert PyObjectModel(thing=[1, 2, 3]).model_dump() == {'thing': [1, 2, 3]}
+    assert PyObjectModel(thing=value).model_dump(mode=mode) == {'thing': expected}
+
+
+@pytest.mark.parametrize('value', ['oss', 'os.os', f'{__name__}.x'])
+def test_string_import_any_expected_failure(value: Any):
+    """Ensure importString correctly fails to instantiate when it's supposed to"""
+
+    class PyObjectModel(BaseModel):
+        thing: ImportString
+
+    with pytest.raises(ValidationError, match='type=import_error'):
+        PyObjectModel(thing=value)
 
 
 @pytest.mark.parametrize(
