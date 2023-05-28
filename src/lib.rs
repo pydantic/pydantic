@@ -30,7 +30,7 @@ pub use errors::{list_all_errors, PydanticCustomError, PydanticKnownError, Pydan
 pub use serializers::{
     to_json, to_jsonable_python, PydanticSerializationError, PydanticSerializationUnexpectedValue, SchemaSerializer,
 };
-pub use validators::SchemaValidator;
+pub use validators::{PySome, SchemaValidator};
 
 pub fn get_version() -> String {
     let version = env!("CARGO_PKG_VERSION");
@@ -46,6 +46,7 @@ pub fn get_version() -> String {
 fn _pydantic_core(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add("__version__", get_version())?;
     m.add("build_profile", env!("PROFILE"))?;
+    m.add_class::<PySome>()?;
     m.add_class::<SchemaValidator>()?;
     m.add_class::<ValidationError>()?;
     m.add_class::<SchemaError>()?;
