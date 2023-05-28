@@ -2,27 +2,19 @@
 
 You can also define your own custom data types. There are several ways to achieve it.
 
-### Classes with `__get_validators__`
+### Classes with `____get_pydantic_core_schema____`
 
-You use a custom class with a classmethod `__get_validators__`. It will be called
-to get validators to parse and validate the input data.
-
-!!! tip
-    These validators have the same semantics as in [Validators](../validators.md), you can
-    declare a parameter `config`, `field`, etc.
 
 ```py
 import re
 from typing import Any
 
-from pydantic_core import core_schema
+from pydantic_core import PydanticCustomError, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from pydantic.annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
 from pydantic.json_schema import JsonSchemaValue
-
-# from devtools import debug
 
 # https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom#Validation
 post_code_regex = re.compile(
@@ -50,7 +42,6 @@ class PostCodeAnnotation:
     def __get_pydantic_core_schema__(
         cls, _source_type: Any, _handler: GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        # debug(_source_type, _handler, foobar)
         return core_schema.no_info_after_validator_function(
             cls.validate,
             core_schema.str_schema(),
@@ -75,7 +66,7 @@ class PostCodeAnnotation:
         if m:
             return f'{m.group(1)} {m.group(2)}'
         else:
-            raise ValueError('invalid postcode format')
+            raise PydanticCustomError('postcode', 'invalid postcode format')
 
 
 class Model(BaseModel):
@@ -103,6 +94,20 @@ print(Model.model_json_schema())
     'title': 'Model',
 }
 """
+try:
+    Model(post_code='invalid')
+except ValidationError as e:
+    print(e.errors())
+    """
+    [
+        {
+            'type': 'postcode',
+            'loc': ('post_code',),
+            'msg': 'invalid postcode format',
+            'input': 'invalid',
+        }
+    ]
+    """
 ```
 
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
