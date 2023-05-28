@@ -11,7 +11,7 @@ from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
 from pydantic_core import SchemaSerializer, SchemaValidator
-from typing_extensions import dataclass_transform
+from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticErrorCodes, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import Field, FieldInfo, ModelPrivateAttr, PrivateAttr
@@ -224,6 +224,12 @@ class ModelMetaclass(ABCMeta):
                 class_vars.update(base.__class_vars__)
                 private_attributes.update(base.__private_attributes__)
         return field_names, class_vars, private_attributes
+
+    @property
+    @deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.')
+    def __fields__(self) -> dict[str, FieldInfo]:
+        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
+        return self.model_fields
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:

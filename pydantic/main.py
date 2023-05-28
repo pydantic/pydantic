@@ -807,6 +807,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     # ##### Deprecated methods from v1 #####
     @property
+    @typing_extensions.deprecated('The `__fields__` attribute is deprecated, use `model_fields` instead.')
+    def __fields__(self) -> dict[str, FieldInfo]:
+        warnings.warn('The `__fields__` attribute is deprecated, use `model_fields` instead.', DeprecationWarning)
+        return self.model_fields
+
+    @property
     @typing_extensions.deprecated('The `__fields_set__` attribute is deprecated, use `model_fields_set` instead.')
     def __fields_set__(self) -> set[str]:
         warnings.warn(

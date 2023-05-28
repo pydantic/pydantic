@@ -287,6 +287,21 @@ def test_parse_raw_pass_fail():
     ]
 
 
+def test_fields():
+    class Model(BaseModel):
+        x: int
+        y: int = 2
+
+    m = Model(x=1)
+    assert len(Model.model_fields) == 2
+    assert len(m.model_fields) == 2
+    match = '^The `__fields__` attribute is deprecated, use `model_fields` instead.$'
+    with pytest.warns(DeprecationWarning, match=match):
+        assert len(Model.__fields__) == 2
+    with pytest.warns(DeprecationWarning, match=match):
+        assert len(m.__fields__) == 2
+
+
 def test_fields_set():
     class Model(BaseModel):
         x: int
