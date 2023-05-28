@@ -14,10 +14,10 @@ from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
 from types import FunctionType, LambdaType, MethodType
-from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union, cast
 
 from pydantic_core import CoreSchema, core_schema
-from typing_extensions import Annotated, Final, Literal, TypedDict, get_args, get_origin, is_typeddict
+from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
 from ..annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
@@ -437,6 +437,10 @@ class GenerateSchema:
             return self._dataclass_schema(obj, None)
 
         origin = get_origin(obj)
+
+        if isinstance(obj, TypeAliasType) or isinstance(origin, TypeAliasType):
+            return self._type_alias_type_schema(obj)
+
         if origin is None:
             return self._arbitrary_type_schema(obj, obj)
 
@@ -652,6 +656,36 @@ class GenerateSchema:
         if nullable:
             s = core_schema.nullable_schema(s)
         return s
+
+    def _type_alias_type_schema(
+        self,
+        obj: Any,  # TypeAliasType
+    ) -> CoreSchema:
+        origin = get_origin(obj)
+        if origin is not None and _typing_extra.origin_is_type_alias_type(origin):  # type: ignore
+            origin = cast(Any, origin)
+            ref, schema = self._get_or_cache_recursive_ref(origin)
+            if schema is not None:
+                return schema
+            namespace = (self.types_namespace or {}).copy()
+            new_namespace = {**_typing_extra.get_cls_types_namespace(origin), **namespace}
+            annotation = origin.__value__
+        else:
+            ref, schema = self._get_or_cache_recursive_ref(obj)
+            if schema is not None:
+                return schema
+            namespace = (self.types_namespace or {}).copy()
+            new_namespace = {**_typing_extra.get_cls_types_namespace(obj), **namespace}
+            annotation = obj.__value__
+        self.types_namespace = new_namespace
+        typevars_map = get_standard_typevars_map(obj)
+        annotation = replace_types(annotation, typevars_map)
+        schema = self.generate_schema(annotation)
+        assert schema['type'] != 'definitions'
+        schema['ref'] = ref  # type: ignore
+        self.types_namespace = namespace or None
+        self.recursion_cache[obj] = schema  # type: ignore
+        return schema  # type: ignore
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
         """
@@ -1051,10 +1085,7 @@ class GenerateSchema:
         """
         Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
         """
-        first_arg, *other_args = get_args(annotated_type)
-
-        source_type, annotations = self._prepare_annotations(first_arg, other_args)
-
+        source_type, *annotations = get_args(annotated_type)
         schema = self._apply_annotations(lambda x: x, source_type, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
         # even if there are function validators involved

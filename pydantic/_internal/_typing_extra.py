@@ -12,7 +12,7 @@ from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, ForwardRef
 
-from typing_extensions import Annotated, Final, Literal, TypeGuard, get_args, get_origin
+from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypeGuard, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -443,3 +443,7 @@ def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     # The dataclasses.is_dataclass function doesn't seem to provide TypeGuard functionality,
     # so I created this convenience function
     return dataclasses.is_dataclass(_cls)
+
+
+def origin_is_type_alias_type(origin: Any) -> TypeGuard[TypeAliasType]:
+    return isinstance(origin, TypeAliasType)
