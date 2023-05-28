@@ -199,12 +199,10 @@ class GenerateSchema:
         from_prepare_args: bool = True,
     ) -> core_schema.CoreSchema:
         if isinstance(obj, type(Annotated[int, 123])):
-            schema = self._annotated_schema(obj)
-        else:
-            schema = self._generate_schema_for_type(
-                obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
-            )
-        return schema
+            return self._annotated_schema(obj)
+        return self._generate_schema_for_type(
+            obj, from_dunder_get_core_schema=from_dunder_get_core_schema, from_prepare_args=from_prepare_args
+        )
 
     def _generate_schema_for_type(
         self,
