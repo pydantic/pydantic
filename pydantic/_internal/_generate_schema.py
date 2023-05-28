@@ -1063,7 +1063,7 @@ class GenerateSchema:
         if obj_ref in self.recursion_cache:
             return obj_ref, self.recursion_cache[obj_ref]
         else:
-            self.recursion_cache[obj_ref] = self.definitions[obj_ref] = core_schema.definition_reference_schema(obj_ref)
+            self.recursion_cache[obj_ref] = core_schema.definition_reference_schema(obj_ref)
             return obj_ref, None
 
     def _computed_field_schema(self, d: Decorator[ComputedFieldInfo]) -> core_schema.ComputedField:
