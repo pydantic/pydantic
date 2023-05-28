@@ -1,9 +1,10 @@
+import sys
 from collections import deque
-from typing import Dict, List
+from typing import Any, Callable, Dict, List, Union, cast
 
 import pytest
 
-from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, ValidationError, core_schema
+from pydantic_core import ArgsKwargs, SchemaError, SchemaValidator, Some, ValidationError, core_schema
 
 from ..conftest import PyAndJson
 
@@ -307,18 +308,46 @@ def test_model_class():
     assert m.__pydantic_fields_set__ == set()
 
 
-def test_validate_default():
+@pytest.mark.parametrize('config_validate_default', [True, False, None])
+@pytest.mark.parametrize('schema_validate_default', [True, False, None])
+@pytest.mark.parametrize(
+    'inner_schema',
+    [
+        core_schema.no_info_after_validator_function(lambda x: x * 2, core_schema.int_schema()),
+        core_schema.no_info_before_validator_function(lambda x: str(int(x) * 2), core_schema.int_schema()),
+        core_schema.no_info_wrap_validator_function(lambda x, h: h(str(int(x) * 2)), core_schema.int_schema()),
+        core_schema.no_info_wrap_validator_function(lambda x, h: h(x) * 2, core_schema.int_schema()),
+    ],
+    ids=['after', 'before', 'wrap-before', 'wrap-after'],
+)
+def test_validate_default(
+    config_validate_default: Union[bool, None],
+    schema_validate_default: Union[bool, None],
+    inner_schema: core_schema.CoreSchema,
+):
+    if config_validate_default is not None:
+        config = core_schema.CoreConfig(validate_default=config_validate_default)
+    else:
+        config = None
     v = SchemaValidator(
         core_schema.typed_dict_schema(
             {
                 'x': core_schema.typed_dict_field(
-                    core_schema.with_default_schema(core_schema.int_schema(), default='42', validate_default=True)
+                    core_schema.with_default_schema(
+                        inner_schema, default='42', validate_default=schema_validate_default
+                    )
                 )
             }
-        )
+        ),
+        config,
     )
-    assert v.validate_python({'x': '2'}) == {'x': 2}
-    assert v.validate_python({}) == {'x': 42}
+    assert v.validate_python({'x': '2'}) == {'x': 4}
+    expected = (
+        84
+        if (config_validate_default is True and schema_validate_default is not False or schema_validate_default is True)
+        else '42'
+    )
+    assert v.validate_python({}) == {'x': expected}
 
 
 def test_validate_default_factory():
@@ -436,3 +465,119 @@ def test_deepcopy_mutable_defaults():
 
     assert m2.int_list_with_default is not m1.int_list_with_default
     assert m2.str_dict_with_default is not m1.str_dict_with_default
+
+
+def test_default_value() -> None:
+    s = core_schema.with_default_schema(core_schema.list_schema(core_schema.int_schema()), default=[1, 2, 3])
+
+    v = SchemaValidator(s)
+
+    r = v.get_default_value()
+    assert r is not None
+    assert r.value == [1, 2, 3]
+
+
+def test_default_value_validate_default() -> None:
+    s = core_schema.with_default_schema(core_schema.list_schema(core_schema.int_schema()), default=['1', '2', '3'])
+
+    v = SchemaValidator(s, core_schema.CoreConfig(validate_default=True))
+
+    r = v.get_default_value()
+    assert r is not None
+    assert r.value == [1, 2, 3]
+
+
+def test_default_value_validate_default_fail() -> None:
+    s = core_schema.with_default_schema(core_schema.list_schema(core_schema.int_schema()), default=['a'])
+
+    v = SchemaValidator(s, core_schema.CoreConfig(validate_default=True))
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.get_default_value()
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'int_parsing',
+            'loc': (0,),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'input': 'a',
+        }
+    ]
+
+
+def test_default_value_validate_default_strict_pass() -> None:
+    s = core_schema.with_default_schema(core_schema.list_schema(core_schema.int_schema()), default=[1, 2, 3])
+
+    v = SchemaValidator(s, core_schema.CoreConfig(validate_default=True))
+
+    r = v.get_default_value(strict=True)
+    assert r is not None
+    assert r.value == [1, 2, 3]
+
+
+def test_default_value_validate_default_strict_fail() -> None:
+    s = core_schema.with_default_schema(core_schema.list_schema(core_schema.int_schema()), default=['1'])
+
+    v = SchemaValidator(s, core_schema.CoreConfig(validate_default=True))
+
+    with pytest.raises(ValidationError) as exc_info:
+        v.get_default_value(strict=True)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'int_type', 'loc': (0,), 'msg': 'Input should be a valid integer', 'input': '1'}
+    ]
+
+
+@pytest.mark.parametrize('validate_default', [True, False])
+def test_no_default_value(validate_default: bool) -> None:
+    s = core_schema.list_schema(core_schema.int_schema())
+    v = SchemaValidator(s, core_schema.CoreConfig(validate_default=validate_default))
+
+    assert v.get_default_value() is None
+
+
+@pytest.mark.parametrize('validate_default', [True, False])
+def test_some(validate_default: bool) -> None:
+    def get_default() -> Union[Some[int], None]:
+        s = core_schema.with_default_schema(core_schema.int_schema(), default=42)
+        return SchemaValidator(s).get_default_value()
+
+    res = get_default()
+    assert res is not None
+    assert res.value == 42
+    assert repr(res) == 'Some(42)'
+
+
+@pytest.mark.skipif(sys.version_info < (3, 10), reason='pattern matching was added in 3.10')
+def test_some_pattern_match() -> None:
+    code = """\
+def f(v: Union[Some[Any], None]) -> str:
+    match v:
+        case Some(1):
+            return 'case1'
+        case Some(value=2):
+            return 'case2'
+        case Some(int(value)):
+            return f'case3: {value}'
+        case Some(value):
+            return f'case4: {type(value).__name__}({value})'
+        case None:
+            return 'case5'
+"""
+
+    local_vars = {}
+    exec(code, globals(), local_vars)
+    f = cast(Callable[[Union[Some[Any], None]], str], local_vars['f'])
+
+    res = f(SchemaValidator(core_schema.with_default_schema(core_schema.int_schema(), default=1)).get_default_value())
+    assert res == 'case1'
+
+    res = f(SchemaValidator(core_schema.with_default_schema(core_schema.int_schema(), default=2)).get_default_value())
+    assert res == 'case2'
+
+    res = f(SchemaValidator(core_schema.with_default_schema(core_schema.int_schema(), default=3)).get_default_value())
+    assert res == 'case3: 3'
+
+    res = f(SchemaValidator(core_schema.with_default_schema(core_schema.int_schema(), default='4')).get_default_value())
+    assert res == 'case4: str(4)'
+
+    res = f(SchemaValidator(core_schema.int_schema()).get_default_value())
+    assert res == 'case5'

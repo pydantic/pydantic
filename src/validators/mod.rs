@@ -5,7 +5,7 @@ use enum_dispatch::enum_dispatch;
 use pyo3::exceptions::PyTypeError;
 use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
-use pyo3::types::{PyAny, PyDict};
+use pyo3::types::{PyAny, PyDict, PyTuple, PyType};
 use pyo3::{intern, PyTraverseError, PyVisit};
 
 use crate::build_tools::{py_schema_err, py_schema_error_type, SchemaError};
@@ -57,6 +57,40 @@ mod with_default;
 pub use with_default::DefaultType;
 
 use self::definitions::DefinitionRefValidator;
+
+#[pyclass(module = "pydantic_core._pydantic_core", name = "Some")]
+pub struct PySome {
+    #[pyo3(get)]
+    value: PyObject,
+}
+
+impl PySome {
+    fn new(value: PyObject) -> Self {
+        Self { value }
+    }
+}
+
+#[pymethods]
+impl PySome {
+    pub fn __repr__(&self, py: Python) -> PyResult<String> {
+        Ok(format!("Some({})", self.value.as_ref(py).repr()?,))
+    }
+
+    #[new]
+    pub fn py_new(value: PyObject) -> Self {
+        Self { value }
+    }
+
+    #[classmethod]
+    pub fn __class_getitem__(cls: &PyType, _args: &PyAny) -> Py<PyType> {
+        cls.into_py(cls.py())
+    }
+
+    #[classattr]
+    fn __match_args__(py: Python) -> &PyTuple {
+        PyTuple::new(py, vec![intern!(py, "value")])
+    }
+}
 
 #[pyclass(module = "pydantic_core._pydantic_core")]
 #[derive(Debug, Clone)]
@@ -180,6 +214,30 @@ impl SchemaValidator {
         self.validator
             .validate_assignment(py, obj, field_name, field_value, &extra, &self.definitions, guard)
             .map_err(|e| self.prepare_validation_err(py, e, ErrorMode::Python))
+    }
+
+    #[pyo3(signature = (*, strict=None, context=None))]
+    pub fn get_default_value(&self, py: Python, strict: Option<bool>, context: Option<&PyAny>) -> PyResult<PyObject> {
+        let extra = Extra {
+            mode: InputType::Python,
+            data: None,
+            strict,
+            ultra_strict: false,
+            context,
+            field_name: None,
+            self_instance: None,
+        };
+        let recursion_guard = &mut RecursionGuard::default();
+        let r = self
+            .validator
+            .default_value(py, None::<i64>, &extra, &self.definitions, recursion_guard);
+        match r {
+            Ok(maybe_default) => match maybe_default {
+                Some(v) => Ok(PySome::new(v).into_py(py)),
+                None => Ok(py.None().into_py(py)),
+            },
+            Err(e) => Err(self.prepare_validation_err(py, e, ErrorMode::Python)),
+        }
     }
 
     pub fn __repr__(&self, py: Python) -> String {
