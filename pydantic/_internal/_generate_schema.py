@@ -13,6 +13,7 @@ import warnings
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
+from operator import attrgetter
 from types import FunctionType, LambdaType, MethodType
 from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, TypeVar, Union
 
@@ -868,11 +869,11 @@ class GenerateSchema:
         return core_schema.generator_schema(self.generate_schema(item_type))
 
     def _pattern_schema(self, pattern_type: Any) -> core_schema.CoreSchema:
-        from . import _serializers, _validators
+        from . import _validators
 
         metadata = build_metadata_dict(js_functions=[lambda _1, _2: {'type': 'string', 'format': 'regex'}])
         ser = core_schema.plain_serializer_function_ser_schema(
-            _serializers.pattern_serializer, info_arg=True, json_return_type='str'
+            attrgetter('pattern'), when_used='json', return_schema=core_schema.str_schema()
         )
         if pattern_type == typing.Pattern or pattern_type == re.Pattern:
             # bare type
@@ -1274,7 +1275,7 @@ def apply_field_serializers(
                 serializer.func,
                 is_field_serializer=is_field_serializer,
                 info_arg=info_arg,
-                json_return_type=serializer.info.json_return_type,
+                return_schema=serializer.info.return_schema,
                 when_used=serializer.info.when_used,
             )
         else:
@@ -1283,7 +1284,7 @@ def apply_field_serializers(
                 serializer.func,
                 is_field_serializer=is_field_serializer,
                 info_arg=info_arg,
-                json_return_type=serializer.info.json_return_type,
+                return_schema=serializer.info.return_schema,
                 when_used=serializer.info.when_used,
             )
     return schema
@@ -1303,14 +1304,16 @@ def apply_model_serializers(
             ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(
                 serializer.func,
                 info_arg=info_arg,
-                json_return_type=serializer.info.json_return_type,
+                return_schema=serializer.info.return_schema,
+                when_used=serializer.info.when_used,
             )
         else:
             # plain
             ser_schema = core_schema.plain_serializer_function_ser_schema(
                 serializer.func,
                 info_arg=info_arg,
-                json_return_type=serializer.info.json_return_type,
+                return_schema=serializer.info.return_schema,
+                when_used=serializer.info.when_used,
             )
         schema['serialization'] = ser_schema
     if ref:

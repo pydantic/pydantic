@@ -744,11 +744,11 @@ try:
         x: int
         y: int
 
-        @field_serializer('x', 'y', json_return_type='str')
+        @field_serializer('x', 'y')
         def serializer1(v):
             return f'{v:,}'
 
-        @field_serializer('x', json_return_type='str')
+        @field_serializer('x')
         def serializer2(v):
             return v
 

@@ -79,7 +79,7 @@ class FieldSerializerDecoratorInfo:
     decorator_repr: ClassVar[str] = '@field_serializer'
     fields: tuple[str, ...]
     mode: Literal['plain', 'wrap']
-    json_return_type: core_schema.JsonReturnTypes | None
+    return_schema: core_schema.CoreSchema | None
     when_used: core_schema.WhenUsed
     check_fields: bool | None
 
@@ -93,7 +93,8 @@ class ModelSerializerDecoratorInfo:
 
     decorator_repr: ClassVar[str] = '@model_serializer'
     mode: Literal['plain', 'wrap']
-    json_return_type: core_schema.JsonReturnTypes | None
+    return_schema: core_schema.CoreSchema | None
+    when_used: core_schema.WhenUsed
 
 
 @slots_dataclass

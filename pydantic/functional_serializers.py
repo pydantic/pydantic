@@ -18,13 +18,14 @@ class PlainSerializer:
 
     Attributes:
         func (core_schema.SerializerFunction): The serializer function.
-        json_return_type (core_schema.JsonReturnTypes | None, optional): The JSON return type. Defaults to `None`.
+        return_schema (core_schema.CoreSchema | None, optional): Schema to build serializer for return type.
+            Defaults to `None`.
         when_used (Literal['always', 'unless-none', 'json', 'json-unless-none'], optional): The serialization condition.
             Defaults to 'always'.
     """
 
     func: core_schema.SerializerFunction
-    json_return_type: core_schema.JsonReturnTypes | None = None
+    return_schema: core_schema.CoreSchema | None = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -42,7 +43,7 @@ class PlainSerializer:
         schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
             function=self.func,
             info_arg=_decorators.inspect_annotated_serializer(self.func, 'plain'),
-            json_return_type=self.json_return_type,
+            return_schema=self.return_schema,
             when_used=self.when_used,
         )
         return schema
@@ -56,13 +57,12 @@ class WrapSerializer:
 
     Attributes:
         func (core_schema.WrapSerializerFunction): The function to be wrapped.
-        json_return_type (Optional[core_schema.JsonReturnTypes]): The JSON return type annotation of the function.
-        when_used (Literal['always', 'unless-none', 'json', 'json-unless-none']): Determines the way the serialization
-            will go. This governs whether and when this function will be used during serialization.
+        return_schema: Schema to build serializer for return type. Defaults to `None`.
+        when_used: Determines the serializer will be be used for serialization.
     """
 
     func: core_schema.WrapSerializerFunction
-    json_return_type: core_schema.JsonReturnTypes | None = None
+    return_schema: core_schema.CoreSchema | None = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -80,7 +80,7 @@ class WrapSerializer:
         schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
             function=self.func,
             info_arg=_decorators.inspect_annotated_serializer(self.func, 'wrap'),
-            json_return_type=self.json_return_type,
+            return_schema=self.return_schema,
             when_used=self.when_used,
         )
         return schema
@@ -98,7 +98,7 @@ if TYPE_CHECKING:
 def field_serializer(
     __field: str,
     *fields: str,
-    json_return_type: _core_schema.JsonReturnTypes | None = ...,
+    return_schema: _core_schema.CoreSchema | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
@@ -110,7 +110,7 @@ def field_serializer(
     __field: str,
     *fields: str,
     mode: Literal['plain'],
-    json_return_type: _core_schema.JsonReturnTypes | None = ...,
+    return_schema: _core_schema.CoreSchema | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_PlainSerializeMethodType], _PlainSerializeMethodType]:
@@ -122,7 +122,7 @@ def field_serializer(
     __field: str,
     *fields: str,
     mode: Literal['wrap'],
-    json_return_type: _core_schema.JsonReturnTypes | None = ...,
+    return_schema: _core_schema.CoreSchema | None = ...,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = ...,
     check_fields: bool | None = ...,
 ) -> Callable[[_WrapSerializeMethodType], _WrapSerializeMethodType]:
@@ -132,7 +132,7 @@ def field_serializer(
 def field_serializer(
     *fields: str,
     mode: Literal['plain', 'wrap'] = 'plain',
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    return_schema: _core_schema.CoreSchema | None = None,
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
@@ -151,8 +151,9 @@ def field_serializer(
         mode (str): `plain` means the function will be called instead of the default serialization logic,
             `wrap` means the function will be called with an argument to optionally call the
             default serialization logic.
-        json_return_type (str): The type that the function returns if the serialization mode is JSON.
-        when_used (str): When the function should be called.
+
+        return_schema: Schema to build serializer for return type. Defaults to `None`.
+        when_used: Determines the serializer will be be used for serialization.
         check_fields (bool): Whether to check that the fields actually exist on the model.
 
     Returns:
@@ -165,7 +166,7 @@ def field_serializer(
         dec_info = _decorators.FieldSerializerDecoratorInfo(
             fields=fields,
             mode=mode,
-            json_return_type=json_return_type,
+            return_schema=return_schema,
             when_used=when_used,
             check_fields=check_fields,
         )
@@ -186,7 +187,7 @@ def model_serializer(__f: FuncType) -> FuncType:
 def model_serializer(
     *,
     mode: Literal['plain', 'wrap'] = ...,
-    json_return_type: _core_schema.JsonReturnTypes | None = ...,
+    return_schema: _core_schema.CoreSchema | None = ...,
 ) -> Callable[[FuncType], FuncType]:
     ...
 
@@ -195,7 +196,8 @@ def model_serializer(
     __f: Callable[..., Any] | None = None,
     *,
     mode: Literal['plain', 'wrap'] = 'plain',
-    json_return_type: _core_schema.JsonReturnTypes | None = None,
+    when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
+    return_schema: _core_schema.CoreSchema | None = None,
 ) -> Callable[[Any], Any]:
     """
     Decorate a function which will be called to serialize the model.
@@ -207,7 +209,8 @@ def model_serializer(
         mode (Literal['plain', 'wrap']): The serialization mode. `'plain'` means the function will be called
             instead of the default serialization logic, `'wrap'` means the function will be called with an argument
             to optionally call the default serialization logic.
-        json_return_type (_core_schema.JsonReturnTypes | None): The type that the function returns if the
+        when_used: Determines the serializer will be be used for serialization.
+        return_schema: The type that the function returns if the
             serialization mode is JSON.
 
     Returns:
@@ -215,7 +218,7 @@ def model_serializer(
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
-        dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, json_return_type=json_return_type)
+        dec_info = _decorators.ModelSerializerDecoratorInfo(mode=mode, return_schema=return_schema, when_used=when_used)
         return _decorators.PydanticDescriptorProxy(f, dec_info)
 
     if __f is None:
