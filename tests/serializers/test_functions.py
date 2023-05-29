@@ -1,7 +1,9 @@
 import json
 import platform
+import re
 import sys
 from collections import deque
+from operator import attrgetter
 from pathlib import Path
 
 import pytest
@@ -10,7 +12,6 @@ from pydantic_core import (
     PydanticOmit,
     PydanticSerializationError,
     PydanticSerializationUnexpectedValue,
-    SchemaError,
     SchemaSerializer,
     core_schema,
 )
@@ -180,7 +181,7 @@ def test_function_known_type():
     s = SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.plain_serializer_function_ser_schema(
-                append_42, info_arg=True, json_return_type='list'
+                append_42, info_arg=True, return_schema=core_schema.list_schema(core_schema.int_schema())
             )
         )
     )
@@ -188,14 +189,15 @@ def test_function_known_type():
     assert s.to_python([1, 2, 3], mode='json') == [1, 2, 3, 42]
     assert s.to_json([1, 2, 3]) == b'[1,2,3,42]'
 
-    assert s.to_python('abc') == 'abc'
+    msg = r'Expected `list\[int\]` but got `str` - serialized value may not be as expected'
+    with pytest.warns(UserWarning, match=msg):
+        assert s.to_python('abc') == 'abc'
 
-    with pytest.raises(TypeError, match="'str' object cannot be converted to 'PyList'"):
-        s.to_python('abc', mode='json')
+    with pytest.warns(UserWarning, match=msg):
+        assert s.to_python('abc', mode='json') == 'abc'
 
-    msg = "Error serializing to JSON: 'str' object cannot be converted to 'PyList'"
-    with pytest.raises(PydanticSerializationError, match=msg):
-        s.to_json('abc')
+    with pytest.warns(UserWarning, match=msg):
+        assert s.to_json('abc') == b'"abc"'
 
 
 def test_function_args_str():
@@ -205,7 +207,7 @@ def test_function_args_str():
     s = SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.plain_serializer_function_ser_schema(
-                append_args, info_arg=True, json_return_type='str'
+                append_args, info_arg=True, return_schema=core_schema.str_schema()
             )
         )
     )
@@ -229,17 +231,6 @@ def test_function_args_str():
         b'"123 info=SerializationInfo(include=None, exclude=None, mode=\'json\', by_alias=True, exclude_unset=False, '
         b'exclude_defaults=False, exclude_none=False, round_trip=False)"'
     )
-
-
-def test_invalid_return_type():
-    with pytest.raises(SchemaError, match=r'function-plain\.json_return_type\n  Input should be'):
-        SchemaSerializer(
-            core_schema.any_schema(
-                serialization=core_schema.plain_serializer_function_ser_schema(
-                    lambda _: 1, info_arg=True, json_return_type='different'
-                )
-            )
-        )
 
 
 def test_dict_keys():
@@ -305,44 +296,16 @@ def test_wrong_return_type():
     s = SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.plain_serializer_function_ser_schema(
-                repr_function, info_arg=True, json_return_type='int'
+                repr_function, info_arg=True, return_schema=core_schema.int_schema()
             )
         )
     )
-    assert s.to_python(123) == '123'
-    assert s.to_python(123, mode='json') == '123'
-
-    msg = "Error serializing to JSON: TypeError: 'str' object cannot be interpreted as an integer"
-    with pytest.raises(PydanticSerializationError, match=msg):
-        s.to_json(123)
-
-
-def test_wrong_return_type_str():
-    def f(value, _):
-        if value == 666:
-            return value
-        else:
-            return str(value)
-
-    s = SchemaSerializer(
-        core_schema.any_schema(
-            serialization=core_schema.plain_serializer_function_ser_schema(
-                f, info_arg=True, json_return_type='str_subclass'
-            )
-        )
-    )
-    assert s.to_python(123) == '123'
-    assert s.to_python(123, mode='json') == '123'
-    assert s.to_json(123) == b'"123"'
-
-    assert s.to_python(666) == 666
-
-    with pytest.raises(TypeError, match="^'int' object cannot be converted to 'PyString'$"):
-        s.to_python(666, mode='json')
-
-    m = "^Error serializing to JSON: 'int' object cannot be converted to 'PyString'$"
-    with pytest.raises(PydanticSerializationError, match=m):
-        s.to_json(666)
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+        assert s.to_python(123) == '123'
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+        assert s.to_python(123, mode='json') == '123'
+    with pytest.warns(UserWarning, match='Expected `int` but got `str` - serialized value may not be as expected'):
+        assert s.to_json(123) == b'"123"'
 
 
 def test_function_wrap():
@@ -355,6 +318,28 @@ def test_function_wrap():
     assert s.to_python('foo') == 'result=3 repr=SerializationCallable(serializer=int)'
     assert s.to_python('foo', mode='json') == 'result=3 repr=SerializationCallable(serializer=int)'
     assert s.to_json('foo') == b'"result=3 repr=SerializationCallable(serializer=int)"'
+
+
+def test_function_wrap_return_scheam():
+    def f(value, serializer):
+        if value == 42:
+            return 42
+        return f'result={serializer(value)}'
+
+    s = SchemaSerializer(
+        core_schema.int_schema(
+            serialization=core_schema.wrap_serializer_function_ser_schema(f, return_schema=core_schema.str_schema())
+        )
+    )
+    assert s.to_python(3) == 'result=3'
+    assert s.to_python(3, mode='json') == 'result=3'
+    assert s.to_json(3) == b'"result=3"'
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_python(42) == 42
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_python(42, mode='json') == 42
+    with pytest.warns(UserWarning, match='Expected `str` but got `int` - serialized value may not be as expected'):
+        assert s.to_json(42) == b'42'
 
 
 def test_function_wrap_no_info():
@@ -567,29 +552,13 @@ def test_wrap_return_type():
     s = SchemaSerializer(
         core_schema.str_schema(
             serialization=core_schema.wrap_serializer_function_ser_schema(
-                to_path, info_arg=True, json_return_type='path'
+                to_path, info_arg=True, return_schema=core_schema.any_schema()
             )
         )
     )
     assert s.to_python('foobar') == Path('foobar.new')
     assert s.to_python('foobar', mode='json') == 'foobar.new'
     assert s.to_json('foobar') == b'"foobar.new"'
-
-
-def test_unexpected_value():
-    def return_xxx(_value):
-        return 'xxx'
-
-    s = SchemaSerializer(
-        core_schema.any_schema(
-            serialization=core_schema.plain_serializer_function_ser_schema(return_xxx, json_return_type='int')
-        )
-    )
-    assert s.to_python('foo') == 'xxx'
-
-    m = "Error serializing to JSON: TypeError: 'str' object cannot be interpreted as an integer"
-    with pytest.raises(PydanticSerializationError, match=m):
-        s.to_json('foo')
 
 
 def test_raise_unexpected():
@@ -662,3 +631,15 @@ def test_recursive_call():
         'PydanticSerializationError: Error calling function `bad_recursive`: '
         'RuntimeError: Already mutably borrowed'
     )
+
+
+def test_serialize_pattern():
+    ser = core_schema.plain_serializer_function_ser_schema(
+        attrgetter('pattern'), when_used='json', return_schema=core_schema.str_schema()
+    )
+    s = SchemaSerializer(core_schema.any_schema(serialization=ser))
+
+    pattern = re.compile('^regex$')
+    assert s.to_python(pattern) == pattern
+    assert s.to_python(pattern, mode='json') == '^regex$'
+    assert s.to_json(pattern) == b'"^regex$"'

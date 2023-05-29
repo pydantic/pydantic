@@ -30,9 +30,6 @@ pub(self) use super::errors::{py_err_se_err, PydanticSerializationError};
 pub(self) use super::extra::{Extra, ExtraOwned, SerCheck, SerMode};
 pub(self) use super::fields::{FieldsMode, GeneralFieldsSerializer, SerField};
 pub(self) use super::filter::{AnyFilter, SchemaFilter};
-pub(self) use super::infer::{
-    infer_json_key, infer_json_key_known, infer_serialize, infer_serialize_known, infer_to_python,
-    infer_to_python_known,
-};
+pub(self) use super::infer::{infer_json_key, infer_json_key_known, infer_serialize, infer_to_python};
 pub(self) use super::ob_type::{IsType, ObType};
 pub(self) use super::shared::{to_json_bytes, BuildSerializer, CombinedSerializer, PydanticSerializer, TypeSerializer};
