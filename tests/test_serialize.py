@@ -2,11 +2,12 @@
 New tests for v2 of serialization logic.
 """
 import json
+import re
 from functools import partial, partialmethod
-from typing import Any, Callable, Dict, Optional
+from typing import Any, Callable, Dict, Optional, Pattern
 
 import pytest
-from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
+from pydantic_core import PydanticSerializationError, SchemaSerializer, core_schema, to_jsonable_python
 from typing_extensions import Annotated
 
 from pydantic import (
@@ -19,6 +20,8 @@ from pydantic import (
     field_serializer,
     model_serializer,
 )
+from pydantic._internal._config import ConfigWrapper
+from pydantic._internal._generate_schema import GenerateSchema
 from pydantic.config import ConfigDict
 from pydantic.functional_serializers import PlainSerializer, WrapSerializer
 
@@ -835,3 +838,12 @@ def test_model_serializer_nested_models() -> None:
         'x': 3,
         'inner': {'x': 2, 'inner': {'x': 1, 'inner': None}},
     }
+
+
+def test_pattern_serialize():
+    config_wrapper = ConfigWrapper({'arbitrary_types_allowed': False})
+    gen = GenerateSchema(config_wrapper, None)
+    schema = gen.generate_schema(Pattern)
+    serializer = SchemaSerializer(schema)
+    pattern = re.compile('^regex$')
+    assert serializer.to_python(pattern) == pattern
