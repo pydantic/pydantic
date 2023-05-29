@@ -64,14 +64,14 @@ def sequence_like(v: Any) -> bool:
     return isinstance(v, (list, tuple, set, frozenset, GeneratorType, deque))
 
 
-def lenient_isinstance(o: Any, class_or_tuple: type[Any] | tuple[type[Any], ...] | None) -> bool:
+def lenient_isinstance(o: Any, class_or_tuple: type[Any] | tuple[type[Any], ...] | None) -> bool:  # pragma: no cover
     try:
         return isinstance(o, class_or_tuple)  # type: ignore[arg-type]
     except TypeError:
         return False
 
 
-def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:
+def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:  # pragma: no cover
     try:
         return isinstance(cls, type) and issubclass(cls, class_or_tuple)
     except TypeError:
@@ -115,10 +115,6 @@ def deep_update(mapping: dict[KeyType, Any], *updating_mappings: dict[KeyType, A
             else:
                 updated_mapping[k] = v
     return updated_mapping
-
-
-def dict_not_none(__pos: dict[str, Any] | None = None, **kwargs: Any) -> dict[str, Any]:
-    return {k: v for k, v in (__pos or kwargs).items() if v is not None}
 
 
 def update_not_none(mapping: dict[Any, Any], **update: Any) -> None:

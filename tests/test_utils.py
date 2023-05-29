@@ -177,6 +177,25 @@ def test_value_items():
     assert sub_vi.is_included(2)
     assert [v_ for i, v_ in enumerate(sub_v) if sub_vi.is_included(i)] == ['a', 'c']
 
+    vi = ValueItems([], {'__all__': {}})
+    assert vi._items == {}
+
+    with pytest.raises(TypeError, match='Unexpected type of exclude value for index "a" <class \'NoneType\'>'):
+        ValueItems(['a', 'b'], {'a': None})
+
+    m = (
+        'Excluding fields from a sequence of sub-models or dicts must be performed index-wise: '
+        'expected integer keys or keyword "__all__"'
+    )
+    with pytest.raises(TypeError, match=m):
+        ValueItems(['a', 'b'], {'a': {}})
+
+    vi = ValueItems([1, 2, 3, 4], {'__all__': True})
+    assert repr(vi) == 'ValueItems({0: Ellipsis, 1: Ellipsis, 2: Ellipsis, 3: Ellipsis})'
+
+    vi = ValueItems([1, 2], {'__all__': {1, 2}})
+    assert repr(vi) == 'ValueItems({0: {1: Ellipsis, 2: Ellipsis}, 1: {1: Ellipsis, 2: Ellipsis}})'
+
 
 @pytest.mark.parametrize(
     'base,override,intersect,expected',
