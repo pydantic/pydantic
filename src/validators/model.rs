@@ -51,7 +51,6 @@ impl Revalidate {
 
 #[derive(Debug, Clone)]
 pub struct ModelValidator {
-    strict: bool,
     revalidate: Revalidate,
     validator: Box<CombinedValidator>,
     class: Py<PyType>,
@@ -79,9 +78,6 @@ impl BuildValidator for ModelValidator {
         let validator = build_validator(sub_schema, config, definitions)?;
 
         Ok(Self {
-            // we don't use is_strict here since we don't want validation to be strict in this case if
-            // `config.strict` is set, only if this specific field is strict
-            strict: schema.get_as(intern!(py, "strict"))?.unwrap_or(false),
             revalidate: Revalidate::from_str(schema_or_config_same(
                 schema,
                 config,
@@ -151,13 +147,6 @@ impl Validator for ModelValidator {
             } else {
                 Ok(input.to_object(py))
             }
-        } else if extra.strict.unwrap_or(self.strict) && input.is_python() {
-            Err(ValError::new(
-                ErrorType::ModelClassType {
-                    class_name: self.get_name().to_string(),
-                },
-                input,
-            ))
         } else {
             self.validate_construct(py, input, None, extra, definitions, recursion_guard)
         }
