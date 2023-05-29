@@ -18,8 +18,7 @@ class PlainSerializer:
 
     Attributes:
         func (core_schema.SerializerFunction): The serializer function.
-        return_schema (core_schema.CoreSchema | None, optional): Schema to build serializer for return type.
-            Defaults to `None`.
+        return_schema: Schema to build serializer for return type. Defaults to `None`.
         when_used (Literal['always', 'unless-none', 'json', 'json-unless-none'], optional): The serialization condition.
             Defaults to 'always'.
     """
@@ -58,7 +57,7 @@ class WrapSerializer:
     Attributes:
         func (core_schema.WrapSerializerFunction): The function to be wrapped.
         return_schema: Schema to build serializer for return type. Defaults to `None`.
-        when_used: Determines the serializer will be be used for serialization.
+        when_used: Determines the serializer will be used for serialization.
     """
 
     func: core_schema.WrapSerializerFunction
@@ -151,9 +150,8 @@ def field_serializer(
         mode (str): `plain` means the function will be called instead of the default serialization logic,
             `wrap` means the function will be called with an argument to optionally call the
             default serialization logic.
-
         return_schema: Schema to build serializer for return type. Defaults to `None`.
-        when_used: Determines the serializer will be be used for serialization.
+        when_used: Determines the serializer will be used for serialization.
         check_fields (bool): Whether to check that the fields actually exist on the model.
 
     Returns:
@@ -210,8 +208,7 @@ def model_serializer(
             instead of the default serialization logic, `'wrap'` means the function will be called with an argument
             to optionally call the default serialization logic.
         when_used: Determines the serializer will be be used for serialization.
-        return_schema: The type that the function returns if the
-            serialization mode is JSON.
+        return_schema: Schema to build serializer for return type. Defaults to `None`.
 
     Returns:
         Callable: A decorator that can be used to decorate a function to be used as a model serializer.
