@@ -22,6 +22,8 @@ DEPRECATED_MOVED_IN_V2 = {
     'pydantic.decorator:validate_arguments': 'pydantic.deprecated.decorator:validate_arguments',
     'pydantic.class_validators:validator': 'pydantic.deprecated.class_validators:validator',
     'pydantic.class_validators:root_validator': 'pydantic.deprecated.class_validators:root_validator',
+    'pydantic.utils:lenient_isinstance': 'pydantic._internal._utils:lenient_isinstance',
+    'pydantic.utils:lenient_issubclass': 'pydantic._internal._utils:lenient_issubclass',
 }
 
 REMOVED_IN_V2 = {
@@ -227,8 +229,6 @@ REMOVED_IN_V2 = {
     'pydantic.utils:in_ipython',
     'pydantic.utils:is_valid_field',
     'pydantic.utils:is_valid_identifier',
-    'pydantic.utils:lenient_isinstance',
-    'pydantic.utils:lenient_issubclass',
     'pydantic.utils:path_type',
     'pydantic.utils:sequence_like',
     'pydantic.utils:smart_deepcopy',
