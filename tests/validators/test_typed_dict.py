@@ -58,8 +58,8 @@ def test_strict():
                 'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
                 'field_b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
             },
-        },
-        {'strict': True},
+            'config': {'strict': True},
+        }
     )
 
     assert v.validate_python({'field_a': 'hello', 'field_b': 12}) == {'field_a': 'hello', 'field_b': 12}
@@ -139,8 +139,8 @@ def test_config(config: CoreConfig, input_value, expected):
                 'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                 'b': {'type': 'typed-dict-field', 'schema': {'type': 'float'}, 'required': False},
             },
-        },
-        config,
+            'config': config,
+        }
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
@@ -190,14 +190,17 @@ def test_allow_extra_invalid():
 
 
 def test_allow_extra_wrong():
-    with pytest.raises(SchemaError, match='Invalid extra_behavior: `wrong`'):
-        SchemaValidator({'type': 'typed-dict', 'fields': {}}, {'extra_fields_behavior': 'wrong'})
+    with pytest.raises(SchemaError, match="Input should be 'allow', 'forbid' or 'ignore'"):
+        SchemaValidator({'type': 'typed-dict', 'fields': {}, 'config': {'extra_fields_behavior': 'wrong'}})
 
 
 def test_str_config():
     v = SchemaValidator(
-        {'type': 'typed-dict', 'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}}},
-        {'str_max_length': 5},
+        {
+            'type': 'typed-dict',
+            'fields': {'field_a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}}},
+            'config': {'str_max_length': 5},
+        }
     )
     assert v.validate_python({'field_a': 'test'}) == {'field_a': 'test'}
 
@@ -465,8 +468,8 @@ def test_aliases_path_multiple(py_and_json: PyAndJson, input_value, expected):
                     'schema': {'type': 'int'},
                 }
             },
-        },
-        {'loc_by_alias': False},
+            'config': {'loc_by_alias': False},
+        }
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
@@ -500,8 +503,8 @@ def test_aliases_path_negative(input_value, expected):
             'fields': {
                 'field_a': {'validation_alias': ['foo', -2], 'type': 'typed-dict-field', 'schema': {'type': 'int'}}
             },
-        },
-        {'loc_by_alias': False},
+            'config': {'loc_by_alias': False},
+        }
     )
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=expected.message):
@@ -688,8 +691,8 @@ def test_alias_error_loc_field_names(py_and_json: PyAndJson):
                     'validation_alias': [['foo'], ['bar', 1, -1]],
                 }
             },
-        },
-        {'loc_by_alias': False},
+            'config': {'loc_by_alias': False},
+        }
     )
     assert v.validate_test({'foo': 42}) == {'field_a': 42}
     assert v.validate_test({'bar': ['x', [1, 2, 42]]}) == {'field_a': 42}
@@ -785,8 +788,8 @@ def test_alias_extra(py_and_json: PyAndJson):
                     'schema': {'type': 'int'},
                 }
             },
-        },
-        {'loc_by_alias': False},
+            'config': {'loc_by_alias': False},
+        }
     )
     assert v.validate_test({'FieldA': 1}) == {'field_a': 1}
     assert v.validate_test({'foo': [1, 2, 3]}) == {'field_a': 3}
@@ -1098,8 +1101,8 @@ def test_extra_behavior_allow(
             {'f': core_schema.typed_dict_field(core_schema.str_schema())},
             **schema_extra_behavior_kw,
             **extra_validator_kw,
-        ),
-        config=config,
+            config=config,
+        )
     )
 
     m: Dict[str, Any] = v.validate_python({'f': 'x', 'extra_field': '123'})
@@ -1119,9 +1122,8 @@ def test_extra_behavior_allow(
 def test_extra_behavior_forbid(config: Union[core_schema.CoreConfig, None], schema_extra_behavior_kw: Dict[str, Any]):
     v = SchemaValidator(
         core_schema.typed_dict_schema(
-            {'f': core_schema.typed_dict_field(core_schema.str_schema())}, **schema_extra_behavior_kw
-        ),
-        config=config,
+            {'f': core_schema.typed_dict_field(core_schema.str_schema())}, **schema_extra_behavior_kw, config=config
+        )
     )
 
     m: Dict[str, Any] = v.validate_python({'f': 'x'})
