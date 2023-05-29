@@ -22,8 +22,22 @@ DEPRECATED_MOVED_IN_V2 = {
     'pydantic.decorator:validate_arguments': 'pydantic.deprecated.decorator:validate_arguments',
     'pydantic.class_validators:validator': 'pydantic.deprecated.class_validators:validator',
     'pydantic.class_validators:root_validator': 'pydantic.deprecated.class_validators:root_validator',
-    'pydantic.utils:lenient_isinstance': 'pydantic._internal._utils:lenient_isinstance',
-    'pydantic.utils:lenient_issubclass': 'pydantic._internal._utils:lenient_issubclass',
+    **{
+        f'pydantic.utils:{obj}': f'pydantic.v1.utils:{obj}'
+        for obj in (
+            'deep_update',
+            'GetterDict',
+            'lenient_issubclass',
+            'lenient_isinstance',
+            'is_valid_field',
+            'update_not_none',
+            'import_string',
+            'Representation',
+            'ROOT_KEY',
+            'smart_deepcopy',
+            'sequence_like',
+        )
+    },
 }
 
 REMOVED_IN_V2 = {
@@ -215,24 +229,15 @@ REMOVED_IN_V2 = {
     'pydantic.typing:update_model_forward_refs',
     'pydantic.utils:ClassAttribute',
     'pydantic.utils:DUNDER_ATTRIBUTES',
-    'pydantic.utils:GetterDict',
     'pydantic.utils:PyObjectStr',
-    'pydantic.utils:ROOT_KEY',
-    'pydantic.utils:Representation',
     'pydantic.utils:ValueItems',
     'pydantic.utils:almost_equal_floats',
-    'pydantic.utils:deep_update',
     'pydantic.utils:get_discriminator_alias_and_values',
     'pydantic.utils:get_model',
     'pydantic.utils:get_unique_discriminator_alias',
-    'pydantic.utils:import_string',
     'pydantic.utils:in_ipython',
-    'pydantic.utils:is_valid_field',
     'pydantic.utils:is_valid_identifier',
     'pydantic.utils:path_type',
-    'pydantic.utils:sequence_like',
-    'pydantic.utils:smart_deepcopy',
-    'pydantic.utils:update_not_none',
     'pydantic.utils:validate_field_name',
     'pydantic:validate_model',
 }
