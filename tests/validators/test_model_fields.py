@@ -931,7 +931,8 @@ class MyDataclass:
     ],
     ids=repr,
 )
-def test_from_attributes(input_value, expected):
+@pytest.mark.parametrize('from_attributes_mode', ['schema', 'validation'])
+def test_from_attributes(input_value, expected, from_attributes_mode):
     v = SchemaValidator(
         {
             'type': 'model-fields',
@@ -940,15 +941,18 @@ def test_from_attributes(input_value, expected):
                 'b': {'type': 'model-field', 'schema': {'type': 'int'}},
                 'c': {'type': 'model-field', 'schema': {'type': 'str'}},
             },
-            'from_attributes': True,
+            'from_attributes': from_attributes_mode == 'schema',
         }
     )
+    kwargs = {}
+    if from_attributes_mode == 'validation':
+        kwargs['from_attributes'] = True
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
-            val = v.validate_python(input_value)
+            val = v.validate_python(input_value, **kwargs)
             print(f'UNEXPECTED OUTPUT: {val!r}')
     else:
-        output = v.validate_python(input_value)
+        output = v.validate_python(input_value, **kwargs)
         assert output == expected
 
 
@@ -978,6 +982,10 @@ def test_from_attributes_type_error():
 
     with pytest.raises(ValidationError) as exc_info:
         v.validate_json('123')
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'dict_type', 'loc': (), 'msg': 'Input should be an object', 'input': 123}
+    ]
 
 
 def test_from_attributes_by_name():
@@ -991,6 +999,38 @@ def test_from_attributes_by_name():
     )
     assert v.validate_python(Cls(a_alias=1)) == ({'a': 1}, None, {'a'})
     assert v.validate_python(Cls(a=1)) == ({'a': 1}, None, {'a'})
+
+
+def test_from_attributes_override_true():
+    v = SchemaValidator(
+        {
+            'type': 'model-fields',
+            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'int'}}},
+            'from_attributes': False,
+        }
+    )
+    with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
+        v.validate_python(Cls(a=1))
+    assert v.validate_python(Cls(a=1), from_attributes=True) == ({'a': 1}, None, {'a'})
+
+    assert v.isinstance_python(Cls(a=1), from_attributes=True) is True
+    assert v.isinstance_python(Cls(a=1)) is False
+
+
+def test_from_attributes_override_false():
+    v = SchemaValidator(
+        {
+            'type': 'model-fields',
+            'fields': {'a': {'type': 'model-field', 'schema': {'type': 'int'}}},
+            'from_attributes': True,
+        }
+    )
+    with pytest.raises(ValidationError, match='Input should be a valid dictionary'):
+        v.validate_python(Cls(a=1), from_attributes=False)
+    assert v.validate_python(Cls(a=1)) == ({'a': 1}, None, {'a'})
+
+    assert v.isinstance_python(Cls(a=1)) is True
+    assert v.isinstance_python(Cls(a=1), from_attributes=False) is False
 
 
 def test_from_attributes_missing():

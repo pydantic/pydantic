@@ -76,13 +76,6 @@ pyright:
 test:
 	pytest
 
-.PHONY: py-benchmark
-py-benchmark: BRANCH=$(shell git rev-parse --abbrev-ref HEAD)
-py-benchmark: build-prod
-	@echo "running the \"complete\" python benchmarks, saving to: $(BRANCH)"
-	pytest tests/benchmarks/test_complete_benchmark.py --benchmark-enable --benchmark-save=$(BRANCH)
-
-
 .PHONY: testcov
 testcov: build-coverage
 	@rm -rf htmlcov

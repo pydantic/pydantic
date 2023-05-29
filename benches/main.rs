@@ -42,12 +42,12 @@ fn ints_python(bench: &mut Bencher) {
 
         let input = 123_i64.into_py(py);
         let input = input.as_ref(py);
-        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None, None).unwrap();
         let result_int: i64 = result.extract(py).unwrap();
         assert_eq!(result_int, 123);
 
         let input = black_box(input);
-        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
     })
 }
 
@@ -81,7 +81,7 @@ fn list_int_python(bench: &mut Bencher) {
         let (validator, input) = list_int_input(py);
         let input = black_box(input.as_ref(py));
         bench.iter(|| {
-            let v = validator.validate_python(py, input, None, None, None).unwrap();
+            let v = validator.validate_python(py, input, None, None, None, None).unwrap();
             black_box(v)
         })
     })
@@ -92,11 +92,11 @@ fn list_int_python_isinstance(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let (validator, input) = list_int_input(py);
         let input = black_box(input.as_ref(py));
-        let v = validator.isinstance_python(py, input, None, None, None).unwrap();
+        let v = validator.isinstance_python(py, input, None, None, None, None).unwrap();
         assert!(v);
 
         bench.iter(|| {
-            let v = validator.isinstance_python(py, input, None, None, None).unwrap();
+            let v = validator.isinstance_python(py, input, None, None, None, None).unwrap();
             black_box(v)
         })
     })
@@ -146,7 +146,7 @@ fn list_error_python_input(py: Python<'_>) -> (SchemaValidator, PyObject) {
 
     let input = py.eval(&code, None, None).unwrap();
 
-    match validator.validate_python(py, input, None, None, None) {
+    match validator.validate_python(py, input, None, None, None, None) {
         Ok(_) => panic!("unexpectedly valid"),
         Err(e) => {
             let v = e.value(py);
@@ -166,7 +166,7 @@ fn list_error_python(bench: &mut Bencher) {
 
         let input = black_box(input.as_ref(py));
         bench.iter(|| {
-            let result = validator.validate_python(py, input, None, None, None);
+            let result = validator.validate_python(py, input, None, None, None, None);
 
             match result {
                 Ok(_) => panic!("unexpectedly valid"),
@@ -181,13 +181,13 @@ fn list_error_python_isinstance(bench: &mut Bencher) {
     Python::with_gil(|py| {
         let (validator, input) = list_error_python_input(py);
         let r = validator
-            .isinstance_python(py, black_box(input.as_ref(py)), None, None, None)
+            .isinstance_python(py, black_box(input.as_ref(py)), None, None, None, None)
             .unwrap();
         assert!(!r);
 
         let input = black_box(input.as_ref(py));
         bench.iter(|| {
-            black_box(validator.isinstance_python(py, input, None, None, None).unwrap());
+            black_box(validator.isinstance_python(py, input, None, None, None, None).unwrap());
         })
     })
 }
@@ -216,7 +216,7 @@ fn list_any_python(bench: &mut Bencher) {
         let input = py.eval(&code, None, None).unwrap();
         let input = black_box(input);
         bench.iter(|| {
-            let v = validator.validate_python(py, input, None, None, None).unwrap();
+            let v = validator.validate_python(py, input, None, None, None, None).unwrap();
             black_box(v)
         })
     })
@@ -268,7 +268,7 @@ fn dict_python(bench: &mut Bencher) {
         let input = py.eval(&code, None, None).unwrap();
         let input = black_box(input);
         bench.iter(|| {
-            let v = validator.validate_python(py, input, None, None, None).unwrap();
+            let v = validator.validate_python(py, input, None, None, None, None).unwrap();
             black_box(v)
         })
     })
@@ -296,7 +296,7 @@ fn dict_value_error(bench: &mut Bencher) {
 
         let input = py.eval(&code, None, None).unwrap();
 
-        match validator.validate_python(py, input, None, None, None) {
+        match validator.validate_python(py, input, None, None, None, None) {
             Ok(_) => panic!("unexpectedly valid"),
             Err(e) => {
                 let v = e.value(py);
@@ -309,7 +309,7 @@ fn dict_value_error(bench: &mut Bencher) {
 
         let input = black_box(input);
         bench.iter(|| {
-            let result = validator.validate_python(py, input, None, None, None);
+            let result = validator.validate_python(py, input, None, None, None, None);
 
             match result {
                 Ok(_) => panic!("unexpectedly valid"),
@@ -375,7 +375,7 @@ fn typed_dict_python(bench: &mut Bencher) {
         let input = py.eval(&code, None, None).unwrap();
         let input = black_box(input);
         bench.iter(|| {
-            let v = validator.validate_python(py, input, None, None, None).unwrap();
+            let v = validator.validate_python(py, input, None, None, None, None).unwrap();
             black_box(v)
         })
     })
@@ -415,7 +415,7 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
         let input = py.eval(code, None, None).unwrap();
         let input = black_box(input);
 
-        match validator.validate_python(py, input, None, None, None) {
+        match validator.validate_python(py, input, None, None, None, None) {
             Ok(_) => panic!("unexpectedly valid"),
             Err(e) => {
                 let v = e.value(py);
@@ -427,7 +427,7 @@ fn typed_dict_deep_error(bench: &mut Bencher) {
         };
 
         bench.iter(|| {
-            let result = validator.validate_python(py, input, None, None, None);
+            let result = validator.validate_python(py, input, None, None, None, None);
 
             match result {
                 Ok(_) => panic!("unexpectedly valid"),
@@ -451,7 +451,7 @@ fn complete_model(bench: &mut Bencher) {
         let input = black_box(input);
 
         bench.iter(|| {
-            black_box(validator.validate_python(py, input, None, None, None).unwrap());
+            black_box(validator.validate_python(py, input, None, None, None, None).unwrap());
         })
     })
 }
@@ -463,12 +463,12 @@ fn literal_ints_few_python(bench: &mut Bencher) {
 
         let input = 4_i64.into_py(py);
         let input = input.as_ref(py);
-        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None, None).unwrap();
         let result_int: i64 = result.extract(py).unwrap();
         assert_eq!(result_int, 4);
 
         let input = black_box(input);
-        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
     })
 }
 
@@ -479,12 +479,12 @@ fn literal_strings_few_small_python(bench: &mut Bencher) {
 
         let input = py.eval("'4'", None, None).unwrap();
         let input_str: String = input.extract().unwrap();
-        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None, None).unwrap();
         let result_str: String = result.extract(py).unwrap();
         assert_eq!(result_str, input_str);
 
         let input = black_box(input);
-        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
     })
 }
 
@@ -498,12 +498,12 @@ fn literal_strings_few_large_python(bench: &mut Bencher) {
 
         let input = py.eval("'a' * 25 + '4'", None, None).unwrap();
         let input_str: String = input.extract().unwrap();
-        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None, None).unwrap();
         let result_str: String = result.extract(py).unwrap();
         assert_eq!(result_str, input_str);
 
         let input = black_box(input);
-        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
     })
 }
 
@@ -533,11 +533,11 @@ class Foo(Enum):
         );
 
         let input = py.eval("Foo.v4", Some(globals), None).unwrap();
-        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None, None).unwrap();
         assert!(input.eq(result).unwrap());
 
         let input = black_box(input);
-        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
     })
 }
 
@@ -548,12 +548,12 @@ fn literal_ints_many_python(bench: &mut Bencher) {
 
         let input = 99_i64.into_py(py);
         let input = input.as_ref(py);
-        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None, None).unwrap();
         let result_int: i64 = result.extract(py).unwrap();
         assert_eq!(result_int, 99);
 
         let input = black_box(input);
-        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
     })
 }
 
@@ -564,12 +564,12 @@ fn literal_strings_many_small_python(bench: &mut Bencher) {
 
         let input = py.eval("'99'", None, None).unwrap();
         let input_str: String = input.extract().unwrap();
-        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None, None).unwrap();
         let result_str: String = result.extract(py).unwrap();
         assert_eq!(result_str, input_str);
 
         let input = black_box(input);
-        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
     })
 }
 
@@ -583,12 +583,12 @@ fn literal_strings_many_large_python(bench: &mut Bencher) {
 
         let input = py.eval("'a' * 25 + '99'", None, None).unwrap();
         let input_str: String = input.extract().unwrap();
-        let result = validator.validate_python(py, input, None, None, None).unwrap();
+        let result = validator.validate_python(py, input, None, None, None, None).unwrap();
         let result_str: String = result.extract(py).unwrap();
         assert_eq!(result_str, input_str);
 
         let input = black_box(input);
-        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+        bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
     })
 }
 
@@ -655,44 +655,44 @@ class Foo(Enum):
         {
             let input = py.eval("'null'", None, None).unwrap();
             let input_str: String = input.extract().unwrap();
-            let result = validator.validate_python(py, input, None, None, None).unwrap();
+            let result = validator.validate_python(py, input, None, None, None, None).unwrap();
             let result_str: String = result.extract(py).unwrap();
             assert_eq!(result_str, input_str);
 
             let input = black_box(input);
-            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
         }
 
         // Int
         {
             let input = py.eval("-1", None, None).unwrap();
             let input_int: i64 = input.extract().unwrap();
-            let result = validator.validate_python(py, input, None, None, None).unwrap();
+            let result = validator.validate_python(py, input, None, None, None, None).unwrap();
             let result_int: i64 = result.extract(py).unwrap();
             assert_eq!(result_int, input_int);
 
             let input = black_box(input);
-            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
         }
 
         // None
         {
             let input = py.eval("None", None, None).unwrap();
-            let result = validator.validate_python(py, input, None, None, None).unwrap();
+            let result = validator.validate_python(py, input, None, None, None, None).unwrap();
             assert!(input.eq(result).unwrap());
 
             let input = black_box(input);
-            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
         }
 
         // Enum
         {
             let input = py.eval("Foo.v4", Some(globals), None).unwrap();
-            let result = validator.validate_python(py, input, None, None, None).unwrap();
+            let result = validator.validate_python(py, input, None, None, None, None).unwrap();
             assert!(input.eq(result).unwrap());
 
             let input = black_box(input);
-            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None).unwrap()))
+            bench.iter(|| black_box(validator.validate_python(py, input, None, None, None, None).unwrap()))
         }
     })
 }
