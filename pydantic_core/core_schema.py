@@ -2696,6 +2696,7 @@ class TypedDictSchema(TypedDict, total=False):
     ref: str
     metadata: Any
     serialization: SerSchema
+    config: CoreConfig
 
 
 def typed_dict_schema(
@@ -2710,6 +2711,7 @@ def typed_dict_schema(
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
+    config: CoreConfig | None = None,
 ) -> TypedDictSchema:
     """
     Returns a schema that matches a typed dict, e.g.:
@@ -2748,6 +2750,7 @@ def typed_dict_schema(
         ref=ref,
         metadata=metadata,
         serialization=serialization,
+        config=config,
     )
 
 

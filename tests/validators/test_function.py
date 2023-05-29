@@ -396,17 +396,12 @@ def test_function_after_config():
                     },
                 }
             },
-        },
-        {'config_choose_priority': 2},
+            'config': {'allow_inf_nan': True},
+        }
     )
 
     assert v.validate_python({'test_field': b'321'}) == {'test_field': '321 Changed'}
-    assert f_kwargs == {
-        'data': {},
-        'config': {'config_choose_priority': 2},
-        'context': None,
-        'field_name': 'test_field',
-    }
+    assert f_kwargs == {'data': {}, 'config': {'allow_inf_nan': True}, 'context': None, 'field_name': 'test_field'}
 
 
 def test_config_no_model():

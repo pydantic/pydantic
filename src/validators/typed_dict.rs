@@ -40,10 +40,14 @@ impl BuildValidator for TypedDictValidator {
 
     fn build(
         schema: &PyDict,
-        config: Option<&PyDict>,
+        _config: Option<&PyDict>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
+
+        // typed dicts ignore the parent config and always use the config from this TypedDict
+        let config = schema.get_as(intern!(py, "config"))?;
+
         let strict = is_strict(schema, config)?;
 
         let total =
