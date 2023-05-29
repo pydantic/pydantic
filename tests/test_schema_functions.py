@@ -317,12 +317,12 @@ def repr_function(value, _info):
     return repr(value)
 
 
-@pytest.mark.parametrize('json_return_type', core_schema.JsonReturnTypes.__args__)
-def test_expected_serialization_types(json_return_type):
+@pytest.mark.parametrize('return_schema', [core_schema.str_schema(), core_schema.int_schema()])
+def test_expected_serialization_types(return_schema):
     SchemaSerializer(
         core_schema.any_schema(
             serialization=core_schema.plain_serializer_function_ser_schema(
-                repr_function, info_arg=True, json_return_type=json_return_type
+                repr_function, info_arg=True, return_schema=return_schema
             )
         )
     )
