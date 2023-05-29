@@ -337,9 +337,9 @@ def test_validate_default(
                         inner_schema, default='42', validate_default=schema_validate_default
                     )
                 )
-            }
-        ),
-        config,
+            },
+            config=config,
+        )
     )
     assert v.validate_python({'x': '2'}) == {'x': 4}
     expected = (
