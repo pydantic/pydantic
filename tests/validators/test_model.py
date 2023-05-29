@@ -34,19 +34,13 @@ def test_model_class():
     assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
     assert m.__dict__ == {'field_a': 'test', 'field_b': 12}
 
-    with pytest.raises(ValidationError, match='Input should be an instance of MyModel') as exc_info:
-        v.validate_python({'field_a': 'test', 'field_b': 12}, strict=True)
-
-    # insert_assert(exc_info.value.errors(include_url=False))
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'model_class_type',
-            'loc': (),
-            'msg': 'Input should be an instance of MyModel',
-            'input': {'field_a': 'test', 'field_b': 12},
-            'ctx': {'class_name': 'MyModel'},
-        }
-    ]
+    m2 = v.validate_python({'field_a': 'test', 'field_b': 12}, strict=True)
+    assert isinstance(m2, MyModel)
+    assert m2.field_a == 'test'
+    assert m2.field_b == 12
+    assert m2.__pydantic_extra__ is None
+    assert m2.__pydantic_fields_set__ == {'field_a', 'field_b'}
+    assert m2.__dict__ == {'field_a': 'test', 'field_b': 12}
 
 
 def test_model_class_extra():
@@ -556,18 +550,10 @@ def test_model_class_strict():
     assert m.field_a == 'init_a'
     # note that since dict validation was not run here, there has been no check this is an int
     assert m.field_b == 'init_b'
-    with pytest.raises(ValidationError, match='^1 validation error for MyModel\n') as exc_info:
-        v.validate_python({'field_a': 'test', 'field_b': 12})
-    assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'model_class_type',
-            'loc': (),
-            'msg': 'Input should be an instance of MyModel',
-            'input': {'field_a': 'test', 'field_b': 12},
-            'ctx': {'class_name': 'MyModel'},
-        }
-    ]
-    assert str(exc_info.value).startswith('1 validation error for MyModel\n')
+    m3 = v.validate_python({'field_a': 'test', 'field_b': 12})
+    assert isinstance(m3, MyModel)
+    assert m3.field_a == 'test'
+    assert m3.field_b == 12
 
     class MySubModel(MyModel):
         field_c: str
