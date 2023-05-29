@@ -50,10 +50,22 @@ class SchemaValidator:
     def title(self) -> str: ...
     def __init__(self, schema: CoreSchema, config: 'CoreConfig | None' = None) -> None: ...
     def validate_python(
-        self, input: Any, *, strict: 'bool | None' = None, context: Any = None, self_instance: 'Any | None' = None
+        self,
+        input: Any,
+        *,
+        strict: 'bool | None' = None,
+        context: Any = None,
+        from_attributes: 'bool | None' = None,
+        self_instance: 'Any | None' = None,
     ) -> Any: ...
     def isinstance_python(
-        self, input: Any, *, strict: 'bool | None' = None, context: Any = None, self_instance: 'Any | None' = None
+        self,
+        input: Any,
+        *,
+        strict: 'bool | None' = None,
+        context: Any = None,
+        from_attributes: 'bool | None' = None,
+        self_instance: 'Any | None' = None,
     ) -> bool: ...
     def validate_json(
         self,
@@ -64,7 +76,14 @@ class SchemaValidator:
         self_instance: 'Any | None' = None,
     ) -> Any: ...
     def validate_assignment(
-        self, obj: Any, field: str, input: Any, *, strict: 'bool | None' = None, context: Any = None
+        self,
+        obj: Any,
+        field: str,
+        input: Any,
+        *,
+        strict: 'bool | None' = None,
+        context: Any = None,
+        from_attributes: 'bool | None' = None,
     ) -> 'dict[str, Any]': ...
     def get_default_value(self, *, strict: 'bool | None' = None, context: Any = None) -> Some | None: ...
 

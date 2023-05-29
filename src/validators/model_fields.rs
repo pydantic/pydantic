@@ -112,7 +112,8 @@ impl Validator for ModelFieldsValidator {
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
         let strict = extra.strict.unwrap_or(self.strict);
-        let dict = input.validate_model_fields(strict, self.from_attributes)?;
+        let from_attributes = extra.from_attributes.unwrap_or(self.from_attributes);
+        let dict = input.validate_model_fields(strict, from_attributes)?;
 
         let model_dict = PyDict::new(py);
         let mut model_extra_dict_op: Option<&PyDict> = None;

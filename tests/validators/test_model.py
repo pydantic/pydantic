@@ -631,7 +631,6 @@ def test_revalidate_always():
             'revalidate_instances': 'always',
             'schema': {
                 'type': 'model-fields',
-                'from_attributes': True,
                 'fields': {
                     'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
                     'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
@@ -690,7 +689,6 @@ def test_revalidate_subclass_instances():
             'revalidate_instances': 'subclass-instances',
             'schema': {
                 'type': 'model-fields',
-                'from_attributes': True,
                 'fields': {
                     'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
                     'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
@@ -733,7 +731,6 @@ def test_revalidate_extra():
             'cls': MyModel,
             'schema': {
                 'type': 'model-fields',
-                'from_attributes': True,
                 'extra_behavior': 'allow',
                 'fields': {
                     'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
@@ -816,7 +813,6 @@ def test_revalidate_post_init():
             'post_init': 'call_me_maybe',
             'schema': {
                 'type': 'model-fields',
-                'from_attributes': True,
                 'fields': {
                     'field_a': {'type': 'model-field', 'schema': {'type': 'str'}},
                     'field_b': {'type': 'model-field', 'schema': {'type': 'int'}},
@@ -970,6 +966,9 @@ def test_validate_assignment():
     m.field_a = 'hello'
     assert m.field_b == 321
     assert m.__pydantic_fields_set__ == {'field_a', 'field_b'}
+
+    v.validate_assignment(m, 'field_b', '322', from_attributes=True)
+    assert m.field_b == 322
 
 
 def test_validate_assignment_function():
