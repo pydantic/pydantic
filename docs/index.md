@@ -118,7 +118,9 @@ except ValidationError as e:
 
 Hundreds of organisations and packages are using Pydantic. Some of the prominent companies and organizations around the world who are using Pydantic include:
 
+<div id="grid-container">
 <div id="company-grid" class="grid"></div>
+</div>
 
 For a more comprehensive list of open-source projects using Pydantic see the
 [list of dependents on github](https://github.com/pydantic/pydantic/network/dependents), or you can find some awesome projects using Pydantic in [awesome-pydantic](https://github.com/Kludex/awesome-pydantic).
@@ -210,6 +212,14 @@ const companies = [
     logoUrl: '/logos/intuit_logo.png'
   },
   {
+    name: 'IPCC',
+    logoUrl: '/logos/ipcc_logo.png'
+  },
+  {
+    name: 'JPMorgan',
+    logoUrl: '/logos/jpmorgan_logo.png'
+  },
+  {
     name: 'Jupyter',
     logoUrl: '/logos/jupyter_logo.png'
   },
@@ -220,6 +230,10 @@ const companies = [
   {
     name: 'Molssi',
     logoUrl: '/logos/molssi_logo.png'
+  },
+  {
+    name: 'NASA',
+    logoUrl: '/logos/nasa_logo.png'
   },
   {
     name: 'Netflix',
@@ -260,6 +274,10 @@ const companies = [
   {
     name: 'Twilio',
     logoUrl: '/logos/twilio_logo.png'
+  },
+  {
+    name: 'Twitter',
+    logoUrl: '/logos/twitter_logo.png'
   },
   {
     name: 'UK Home Office',

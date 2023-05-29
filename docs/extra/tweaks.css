@@ -41,25 +41,37 @@ aside.blog img {
 }
 
 /* Define the company grid layout */
-#grid {
-  gap: 10px; /* Gap between tiles */
+
+#grid-container {
+  width: 100%;
+  text-align: center;
+}
+
+#company-grid {
+  display: inline-block;
+  margin: 0 auto;
+  gap: 10px;
+  align-content: center;
+  justify-content: center;
+  grid-auto-flow: column;
+}
+
+[data-md-color-scheme="slate"] #company-grid {
+  background-color: #ffffff;
+  border-radius: .5rem;
 }
 
 .tile {
   display: flex;
-  align-items: center;
-  justify-content: center;
   text-align: center;
-  width: 110px;
-  height: 110px;
+  width: 120px;
+  height: 120px;
   display: inline-block;
   margin: 10px;
+  padding: 5px;
+  border-radius: .5rem;
 }
 
 .tile img {
   width: 100px;
-}
-
-.tile h4 {
-  margin: 0;
 }
