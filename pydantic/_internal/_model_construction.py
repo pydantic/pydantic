@@ -368,7 +368,7 @@ def complete_model_class(
     """
     typevars_map = get_model_typevars_map(cls)
     gen_schema = GenerateSchema(
-        config_wrapper,
+        config_wrapper.config_dict,
         types_namespace,
         typevars_map,
     )

@@ -1,10 +1,12 @@
 from __future__ import annotations as _annotations
 
 import warnings
-from typing import TYPE_CHECKING, Any, Callable, cast
+from contextlib import contextmanager
+from inspect import isclass
+from typing import TYPE_CHECKING, Any, Callable, Iterator, Sequence, cast
 
-from pydantic_core import core_schema
-from typing_extensions import Literal, Self
+from pydantic_core import CoreConfig, core_schema
+from typing_extensions import Literal, Self, get_origin
 
 from ..config import ConfigDict, ExtraValues, JsonSchemaExtraCallable
 from ..errors import PydanticUserError
@@ -235,3 +237,57 @@ def check_deprecated(config_dict: ConfigDict) -> None:
         removed_bullets = [f'* {k!r} has been removed' for k in sorted(deprecated_removed_keys)]
         message = '\n'.join(['Valid config keys have changed in V2:'] + renamed_bullets + removed_bullets)
         warnings.warn(message, UserWarning)
+
+
+class ConfigStack:
+    def __init__(self, configs: Sequence[ConfigDict] = ()) -> None:
+        self.stack: list[ConfigDict] = list(configs)
+
+    @staticmethod
+    def extract_config(type_: type[Any]) -> ConfigDict | None:
+        origin = get_origin(type_) or type_
+        if isclass(origin):
+            return getattr(origin, '__pydantic_config__', None) or None
+        return None
+
+    @property
+    def config_dict(self) -> ConfigDict | None:
+        return self.stack[-1] if self.stack else None
+
+    @property
+    def config_wrapper(self) -> ConfigWrapper:
+        return ConfigWrapper(self.config_dict or ConfigDict(), check=False)
+
+    def get_core_config(self, tp: type[Any]) -> CoreConfig | None:
+        return self.config_wrapper.core_config(tp) if self.config_wrapper else None
+
+    @contextmanager
+    def with_config(self, config: ConfigDict | None) -> Iterator[None]:
+        if config is None:
+            yield
+        else:
+            self.stack.append(config)
+            try:
+                yield
+            finally:
+                self.stack.pop()
+
+    @staticmethod
+    def _merge_configs(parent: ConfigDict | None, child: ConfigDict | None) -> ConfigDict | None:
+        if parent:
+            parent = parent.copy()
+            # don't push down title
+            parent.pop('title', None)
+
+        if parent is None:
+            return child
+        if child is None:
+            return parent
+        return ConfigDict({**parent, **child})
+
+    @contextmanager
+    def with_merged_config(self, config: ConfigDict | None) -> Iterator[None]:
+        parent = self.config_dict
+        child = config
+        with self.with_config(self._merge_configs(parent, child)):
+            yield

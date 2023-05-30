@@ -627,7 +627,6 @@ def test_recursive_generic_typeddict_in_function_3():
     ]
 
 
-@pytest.mark.xfail(reason='Needs https://github.com/pydantic/pydantic/pull/5944')
 def test_typeddict_alias_generator(TypedDict):
     def alias_generator(name: str) -> str:
         return 'alias_' + name

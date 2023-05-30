@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Any, Callable, Iterable, TypeVar, Union, cast
 
-from pydantic_core import CoreSchema, core_schema
-from typing_extensions import TypeAliasType, TypeGuard, get_args
+from pydantic_core import CoreConfig, CoreSchema, core_schema
+from typing_extensions import TypeGuard, get_args
 
 from . import _repr
 
@@ -66,27 +66,7 @@ def is_list_like_schema_with_items_schema(
     return schema['type'] in _LIST_LIKE_SCHEMA_WITH_ITEMS_TYPES
 
 
-def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
-    """
-    Produces the ref to be used for this type by pydantic_core's core schemas.
-
-    This `args_override` argument was added for the purpose of creating valid recursive references
-    when creating generic models without needing to create a concrete class.
-    """
-    origin = type_
-    args = args_override or ()
-    generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
-    if generic_metadata:
-        origin = generic_metadata['origin'] or origin
-        args = generic_metadata['args'] or args
-
-    module_name = getattr(origin, '__module__', '<No __module__>')
-    if isinstance(origin, TypeAliasType):
-        type_ref = f'{module_name}.{origin.__name__}'
-    else:
-        qualname = getattr(origin, '__qualname__', f'<No __qualname__: {origin}>')
-        type_ref = f'{module_name}.{qualname}:{id(origin)}'
-
+def _add_arg_refs(type_ref: str, args: tuple[type[Any], ...]) -> str:
     arg_refs: list[str] = []
     for arg in args:
         if isinstance(arg, str):
@@ -99,6 +79,48 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
     if arg_refs:
         type_ref = f'{type_ref}[{",".join(arg_refs)}]'
     return type_ref
+
+
+def _get_args_and_origin(
+    type_: type[Any], args_override: tuple[type[Any], ...] | None
+) -> tuple[type[Any], tuple[type[Any], ...]]:
+    args = args_override or ()
+    generic_metadata = getattr(type_, '__pydantic_generic_metadata__', None)
+    origin = type_
+    if generic_metadata:
+        origin = generic_metadata['origin'] or origin
+        args = generic_metadata['args'] or args
+    return origin, args
+
+
+def get_type_ref(
+    type_: type[Any],
+    args_override: tuple[type[Any], ...] | None = None,
+    config: CoreConfig | None = None,
+) -> str:
+    """
+    Produces the ref to be used for this type by pydantic_core's core schemas.
+
+    This `args_override` argument was added for the purpose of creating valid recursive references
+    when creating generic models without needing to create a concrete class.
+    """
+    origin, args = _get_args_and_origin(type_, args_override)
+
+    module_name = getattr(origin, '__module__', '<No __module__>')
+    if hasattr(origin, '__qualname__'):
+        name = getattr(origin, '__qualname__')
+    elif hasattr(origin, '__name__'):
+        # things like TypeAliasType that can only exist at the module level may not have a qualname
+        name = getattr(origin, '__name__')
+    else:
+        name = f'<object at {id(origin)}>'
+    name = _add_arg_refs(name, args)
+
+    config = CoreConfig(sorted(config.items())) if config else None  # type: ignore
+    if config:
+        return f'{module_name}.{name}:{id(origin)}:{config}'
+    else:
+        return f'{module_name}.{name}:{id(origin)}'
 
 
 def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:

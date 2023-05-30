@@ -80,7 +80,7 @@ def complete_dataclass(
 
     typevars_map = get_standard_typevars_map(cls)
     gen_schema = GenerateSchema(
-        config_wrapper,
+        config_wrapper.config_dict,
         types_namespace,
         typevars_map,
     )

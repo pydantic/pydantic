@@ -807,7 +807,6 @@ def test_override_builtin_dataclass_2():
     assert f.seen_count == 7
 
 
-@pytest.mark.xfail(reason='Meta() is not being revalidated')
 def test_override_builtin_dataclass_nested():
     @dataclasses.dataclass
     class Meta:
@@ -819,7 +818,9 @@ def test_override_builtin_dataclass_nested():
         filename: str
         meta: Meta
 
-    FileChecked = pydantic.dataclasses.dataclass(File, config=ConfigDict(revalidate_instances='always'))
+        __pydantic_config__ = ConfigDict(revalidate_instances='always')
+
+    FileChecked = pydantic.dataclasses.dataclass(File)
     f = FileChecked(filename=b'thefilename', meta=Meta(modified_date='2020-01-01T00:00', seen_count='7'))
     assert f.filename == 'thefilename'
     assert f.meta.modified_date == datetime(2020, 1, 1, 0, 0)

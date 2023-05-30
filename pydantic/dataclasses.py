@@ -159,10 +159,11 @@ def dataclass(
         Raises:
             TypeError: If a non-class value is provided.
         """
-
         original_cls = cls
 
-        config_wrapper = _config.ConfigWrapper(config)
+        config_ = config if config is not None else getattr(original_cls, '__pydantic_config__', None)
+
+        config_wrapper = _config.ConfigWrapper(config_)
         decorators = _decorators.DecoratorInfos.build(cls)
 
         # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator

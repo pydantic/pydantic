@@ -138,6 +138,11 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __init__.__pydantic_base_init__ = True  # type: ignore
 
     @classmethod
+    @property
+    def __pydantic_config__(cls) -> ConfigDict:
+        return cls.model_config
+
+    @classmethod
     def __get_pydantic_core_schema__(cls, __source: type[BaseModel], __handler: GetCoreSchemaHandler) -> CoreSchema:
         """Hook into generating the model's CoreSchema.
 

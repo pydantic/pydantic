@@ -2,14 +2,10 @@
 from __future__ import annotations as _annotations
 
 import sys
-from dataclasses import is_dataclass
 from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal, is_typeddict
-
-from pydantic.errors import PydanticUserError
-from pydantic.main import BaseModel
+from typing_extensions import Literal
 
 from ._internal import _config, _core_utils, _generate_schema, _typing_extra
 from .config import ConfigDict
@@ -29,7 +25,7 @@ if TYPE_CHECKING:
     IncEx = Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any]]
 
 
-def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
+def _get_schema(type_: Any, config: ConfigDict | None, parent_depth: int) -> CoreSchema:
     """
     `BaseModel` uses its own `__module__` to find out where it was defined
     and then look for symbols to resolve forward references in those globals.
@@ -75,7 +71,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     local_ns = _typing_extra.parent_frame_namespace(parent_depth=parent_depth)
     global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
     global_ns.update(local_ns or {})
-    gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
+    gen = _generate_schema.GenerateSchema(config, types_namespace=global_ns, typevars_map={})
     return gen.generate_schema(type_)
 
 
@@ -123,33 +119,17 @@ class TypeAdapter(Generic[T]):
 
     def __init__(self, type: Any, *, config: ConfigDict | None = None, _parent_depth: int = 2) -> None:
         """Initializes the TypeAdapter object."""
-        config_wrapper = _config.ConfigWrapper(config)
-
-        try:
-            type_has_config = issubclass(type, BaseModel) or is_dataclass(type) or is_typeddict(type)
-        except TypeError:
-            # type is not a class
-            type_has_config = False
-
-        if type_has_config and config is not None:
-            raise PydanticUserError(
-                'Cannot use `config` when the type is a BaseModel, dataclass or TypedDict.'
-                ' These types can have their own config and setting the config via the `config`'
-                ' parameter to TypeAdapter will not override it, thus the `config` you passed to'
-                ' TypeAdapter becomes meaningless, which is probably not what you want.',
-                code='type-adapter-config-unused',
-            )
 
         core_schema: CoreSchema
         try:
             core_schema = _getattr_no_parents(type, '__pydantic_core_schema__')
         except AttributeError:
-            core_schema = _get_schema(type, config_wrapper, parent_depth=_parent_depth + 1)
+            core_schema = _get_schema(type, config, parent_depth=_parent_depth + 1)
 
         core_schema = _core_utils.flatten_schema_defs(core_schema)
         simplified_core_schema = _core_utils.inline_schema_defs(core_schema)
 
-        core_config = config_wrapper.core_config(None)
+        core_config = _config.ConfigWrapper(config).core_config(None)
         validator: SchemaValidator
         try:
             validator = _getattr_no_parents(type, '__pydantic_validator__')
