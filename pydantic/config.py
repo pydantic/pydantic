@@ -45,32 +45,30 @@ class ConfigDict(TypedDict, total=False):
     """A dictionary-like class for configuring Pydantic models.
 
     Attributes:
-        title (Optional[str]): Optional title for the configuration. Defaults to None.
-        str_to_lower (bool): Whether to convert strings to lowercase. Defaults to False.
-        str_to_upper (bool): Whether to convert strings to uppercase. Defaults to False.
-        str_strip_whitespace (bool): Whether to strip whitespace from strings. Defaults to False.
-        str_min_length (int): The minimum length for strings. Defaults to None.
-        str_max_length (int): The maximum length for strings. Defaults to None.
-        extra (ExtraValues): Extra values to include in this configuration. Defaults to None.
-        frozen (bool): Whether to freeze the configuration. Defaults to False.
-        populate_by_name (bool): Whether to populate fields by name. Defaults to False.
-        use_enum_values (bool): Whether to use enum values. Defaults to False.
-        validate_assignment (bool): Whether to validate assignments. Defaults to False.
-        arbitrary_types_allowed (bool): Whether to allow arbitrary types. Defaults to False.
-        from_attributes (bool): Whether to set attributes from the configuration. Defaults to False.
-        loc_by_alias (bool): Whether to use the alias for error `loc`s. Defaults to True.
-        alias_generator (Optional[Callable[[str], str]]): A function to generate aliases. Defaults to None.
-        ignored_types (Tuple[type, ...]): A tuple of types to ignore. Defaults to ().
-        allow_inf_nan (bool): Whether to allow infinity and NaN. Defaults to False.
-        strict (bool): Whether to make the configuration strict. Defaults to False.
-        revalidate_instances (Literal['always', 'never', 'subclass-instances']):
-            When and how to revalidate models and dataclasses during validation. Defaults to 'never'.
-        ser_json_timedelta (Literal['iso8601', 'float']): The format of JSON serialized timedeltas.
-            Defaults to 'iso8601'.
-        ser_json_bytes (Literal['utf8', 'base64']): The encoding of JSON serialized bytes. Defaults to 'utf8'.
-        validate_default (bool): Whether to validate default values during validation. Defaults to False.
-        protected_namespaces (tuple[str, ..]): A list of protected namespaces. Defaults to ('model_', ).
-        hide_input_in_errors (bool): Whether to hide inputs when printing errors. Defaults to False.
+        title: Optional title for the configuration. Defaults to `None`.
+        str_to_lower: Whether to convert strings to lowercase. Defaults to `False`.
+        str_to_upper: Whether to convert strings to uppercase. Defaults to `False`.
+        str_strip_whitespace: Whether to strip whitespace from strings. Defaults to `False`.
+        str_min_length: The minimum length for strings. Defaults to `None`.
+        str_max_length: The maximum length for strings. Defaults to `None`.
+        extra: Extra values to include in this configuration. Defaults to `None`.
+        frozen: Whether to freeze the configuration. Defaults to `False`.
+        populate_by_name: Whether to populate fields by name. Defaults to `False`.
+        use_enum_values: Whether to use enum values. Defaults to `False`.
+        validate_assignment: Whether to validate assignments. Defaults to `False`.
+        arbitrary_types_allowed: Whether to allow arbitrary types. Defaults to `False`.
+        from_attributes: Whether to set attributes from the configuration. Defaults to `False`.
+        loc_by_alias: Whether to use the alias for error `loc`s. Defaults to `True`.
+        alias_generator: A function to generate aliases. Defaults to `None`.
+        ignored_types: A tuple of types to ignore. Defaults to `()`.
+        allow_inf_nan: Whether to allow infinity and NaN. Defaults to `False`.
+        strict: Whether to make the configuration strict. Defaults to `False`.
+        revalidate_instances: When and how to revalidate models and dataclasses during validation. Defaults to 'never'.
+        ser_json_timedelta: The format of JSON serialized timedeltas. Defaults to 'iso8601'.
+        ser_json_bytes: The encoding of JSON serialized bytes. Defaults to 'utf8'.
+        validate_default: Whether to validate default values during validation. Defaults to `False`.
+        protected_namespaces: A list of protected namespaces. Defaults to `('model_', )`.
+        hide_input_in_errors: Whether to hide inputs when printing errors. Defaults to `False`.
     """
 
     title: str | None

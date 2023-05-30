@@ -133,6 +133,22 @@ def dataclass(
         kw_only (bool): Determines if keyword-only parameters should be used on the `__init__` method. Defaults
             to `False`.
 
+    Args:
+        _cls: The target dataclass.
+        init: If set to `False`, the dataclass will not generate an `__init__`,
+            and you will need to provide one. Defaults to `False`.
+        repr: Determines if a `__repr__` should be generated for the class. Defaults to `True`.
+        eq: Determines if a `__eq__` should be generated for the class. Defaults to `True`.
+        order: Determines if comparison magic methods should be generated, such as` __lt__`, but
+            not `__eq__`. Defaults to `False`.
+        unsafe_hash: Determines if an unsafe hashing function should be included in the class.
+        frozen: Determines if the generated class should be a 'frozen' dataclass, which does not allow its
+            attributes to be modified from its constructor. Defaults to `False`.
+        config: A configuration for the dataclass generation. Defaults to `None`.
+        validate_on_init: Determines whether the dataclass will be validated upon creation.
+        kw_only: Determines if keyword-only parameters should be used on the `__init__` method. Defaults
+            to `False`.
+
     Returns:
         A callable that takes a `type` as its argument, and returns a `type` of `PydanticDataclass`. This can
         also return a `tyoe` of `PydanticDataclass` directly.
@@ -151,10 +167,10 @@ def dataclass(
         """Create a Pydantic dataclass from a regular dataclass.
 
         Args:
-            cls (type[Any]): The class to create the Pydantic dataclass from.
+            cls: The class to create the Pydantic dataclass from.
 
         Returns:
-            type[PydanticDataclass]: A Pydantic dataclass.
+            A Pydantic dataclass.
 
         Raises:
             TypeError: If a non-class value is provided.
@@ -242,14 +258,14 @@ def rebuild_dataclass(
     This is analogous to `BaseModel.model_rebuild`.
 
     Args:
-        cls (type): The class to build the dataclass core schema for.
-        force (bool): Whether to force the rebuilding of the model schema, defaults to `False`.
-        raise_errors (bool): Whether to raise errors, defaults to `True`.
-        _parent_namespace_depth (int): The depth level of the parent namespace, defaults to 2.
-        _types_namespace (dict[str, Any] | None): The types namespace, defaults to `None`.
+        cls: The class to build the dataclass core schema for.
+        force: Whether to force the rebuilding of the model schema, defaults to `False`.
+        raise_errors: Whether to raise errors, defaults to `True`.
+        _parent_namespace_depth: The depth level of the parent namespace, defaults to 2.
+        _types_namespace: The types namespace, defaults to `None`.
 
     Returns:
-        bool or None: Returns `None` if model schema is complete and no rebuilding is required.
+        Returns `None` if model schema is complete and no rebuilding is required.
             If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.
     """
     if not force and cls.__pydantic_complete__:
