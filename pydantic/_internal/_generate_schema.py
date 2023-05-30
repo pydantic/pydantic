@@ -983,6 +983,9 @@ class GenerateSchema:
         if config is not None:
             config_wrapper = ConfigWrapper(config, check=False)
             self._config_wrapper_stack.append(config_wrapper)
+            core_config = config_wrapper.core_config(dataclass)
+        else:
+            core_config = None
 
         try:
             args_schema = core_schema.dataclass_args_schema(
@@ -1007,6 +1010,7 @@ class GenerateSchema:
             ref=dataclass_ref,
             fields=[field.name for field in dataclasses.fields(dataclass)],
             slots=has_slots,
+            config=core_config,
         )
         schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
         return apply_model_validators(schema, model_validators, 'outer')
