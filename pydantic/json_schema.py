@@ -1039,7 +1039,7 @@ class GenerateJsonSchema:
         elif self.mode == 'validation':
             return True
         else:
-            assert_never(self.mode)  # pragma: no cover
+            assert_never(self.mode)
 
     def field_is_required(
         self, field: core_schema.ModelField | core_schema.DataclassField | core_schema.TypedDictField
@@ -1056,7 +1056,7 @@ class GenerateJsonSchema:
             else:
                 return field['schema']['type'] != 'default'
         else:
-            assert_never(self.mode)  # pragma: no cover
+            assert_never(self.mode)
 
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
         named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
