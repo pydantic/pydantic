@@ -350,7 +350,18 @@ class Model(BaseModel):
 try:
     Model(x=datetime.now())
 except ValidationError as exc_info:
-    assert exc_info.errors()[0]['type'] == 'datetime_aware'
+    print(exc_info.errors())
+    """
+    [
+        {
+            'type': 'timezone_aware',
+            'loc': ('x',),
+            'msg': 'Input should have timezone info',
+            'input': datetime.datetime(2032, 1, 2, 3, 4, 5, 6),
+            'url': 'https://errors.pydantic.dev/2/v/timezone_aware',
+        }
+    ]
+    """
 ```
 
 ## `datetime_future`
