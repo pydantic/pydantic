@@ -238,7 +238,7 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         return value
 
 
-def get_function_type_hints(function: Callable[..., Any]) -> dict[str, Any]:
+def get_function_type_hints(function: Callable[..., Any], *, include_keys: set[str] | None = None) -> dict[str, Any]:
     """
     Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
     copes with `partial`.
@@ -252,6 +252,8 @@ def get_function_type_hints(function: Callable[..., Any]) -> dict[str, Any]:
     globalns = add_module_globals(function)
     type_hints = {}
     for name, value in annotations.items():
+        if include_keys is not None and name not in include_keys:
+            continue
         if value is None:
             value = NoneType
         elif isinstance(value, str):

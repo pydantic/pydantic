@@ -305,7 +305,7 @@ class GenerateSchema:
             )
 
         model_schema = consolidate_refs(model_schema)
-        schema = apply_model_serializers(model_schema, decorators.model_serializers.values())
+        schema = self._apply_model_serializers(model_schema, decorators.model_serializers.values())
         return apply_model_validators(schema, model_validators, 'outer')
 
     def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
@@ -596,7 +596,7 @@ class GenerateSchema:
         if not field_info.is_required():
             schema = wrap_default(field_info, schema)
 
-        schema = apply_field_serializers(
+        schema = self._apply_field_serializers(
             schema, filter_field_decorator_info_by_field(decorators.field_serializers.values(), name)
         )
         json_schema_updates = {
@@ -726,7 +726,7 @@ class GenerateSchema:
             metadata=metadata,
         )
 
-        schema = apply_model_serializers(td_schema, decorators.model_serializers.values())
+        schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())
         return apply_model_validators(schema, decorators.model_validators.values(), 'all')
 
     def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
@@ -966,7 +966,7 @@ class GenerateSchema:
             fields=[field.name for field in dataclasses.fields(dataclass)],
             slots=has_slots,
         )
-        schema = apply_model_serializers(dc_schema, decorators.model_serializers.values())
+        schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
         return apply_model_validators(schema, model_validators, 'outer')
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
@@ -1202,6 +1202,77 @@ class GenerateSchema:
 
         return CallbackGetCoreSchemaHandler(new_handler, self.generate_schema)
 
+    def _apply_field_serializers(
+        self, schema: core_schema.CoreSchema, serializers: list[Decorator[FieldSerializerDecoratorInfo]]
+    ) -> core_schema.CoreSchema:
+        """
+        Apply field serializers to a schema.
+        """
+        if serializers:
+            # use the last serializer to make it easy to override a serializer set on a parent model
+            serializer = serializers[-1]
+            is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
+
+            if serializer.info.return_type is None:
+                return_schema = None
+            else:
+                return_schema = self.generate_schema(serializer.info.return_type)
+
+            if serializer.info.mode == 'wrap':
+                schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
+                    serializer.func,
+                    is_field_serializer=is_field_serializer,
+                    info_arg=info_arg,
+                    return_schema=return_schema,
+                    when_used=serializer.info.when_used,
+                )
+            else:
+                assert serializer.info.mode == 'plain'
+                schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
+                    serializer.func,
+                    is_field_serializer=is_field_serializer,
+                    info_arg=info_arg,
+                    return_schema=return_schema,
+                    when_used=serializer.info.when_used,
+                )
+        return schema
+
+    def _apply_model_serializers(
+        self, schema: core_schema.CoreSchema, serializers: Iterable[Decorator[ModelSerializerDecoratorInfo]]
+    ) -> core_schema.CoreSchema:
+        """
+        Apply model serializers to a schema.
+        """
+        ref: str | None = schema.pop('ref', None)  # type: ignore
+        if serializers:
+            serializer = list(serializers)[-1]
+            info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
+
+            if serializer.info.return_type is None:
+                return_schema = None
+            else:
+                return_schema = self.generate_schema(serializer.info.return_type)
+
+            if serializer.info.mode == 'wrap':
+                ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(
+                    serializer.func,
+                    info_arg=info_arg,
+                    return_schema=return_schema,
+                    when_used=serializer.info.when_used,
+                )
+            else:
+                # plain
+                ser_schema = core_schema.plain_serializer_function_ser_schema(
+                    serializer.func,
+                    info_arg=info_arg,
+                    return_schema=return_schema,
+                    when_used=serializer.info.when_used,
+                )
+            schema['serialization'] = ser_schema
+        if ref:
+            schema['ref'] = ref  # type: ignore
+        return schema
+
 
 _VALIDATOR_F_MATCH: Mapping[
     tuple[FieldValidatorModes, Literal['no-info', 'general', 'field']],
@@ -1258,67 +1329,6 @@ def _validators_require_validate_default(validators: Iterable[Decorator[Validato
         if validator.info.always:
             return True
     return False
-
-
-def apply_field_serializers(
-    schema: core_schema.CoreSchema, serializers: list[Decorator[FieldSerializerDecoratorInfo]]
-) -> core_schema.CoreSchema:
-    """
-    Apply field serializers to a schema.
-    """
-    if serializers:
-        # use the last serializer to make it easy to override a serializer set on a parent model
-        serializer = serializers[-1]
-        is_field_serializer, info_arg = inspect_field_serializer(serializer.func, serializer.info.mode)
-        if serializer.info.mode == 'wrap':
-            schema['serialization'] = core_schema.wrap_serializer_function_ser_schema(
-                serializer.func,
-                is_field_serializer=is_field_serializer,
-                info_arg=info_arg,
-                return_schema=serializer.info.return_schema,
-                when_used=serializer.info.when_used,
-            )
-        else:
-            assert serializer.info.mode == 'plain'
-            schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
-                serializer.func,
-                is_field_serializer=is_field_serializer,
-                info_arg=info_arg,
-                return_schema=serializer.info.return_schema,
-                when_used=serializer.info.when_used,
-            )
-    return schema
-
-
-def apply_model_serializers(
-    schema: core_schema.CoreSchema, serializers: Iterable[Decorator[ModelSerializerDecoratorInfo]]
-) -> core_schema.CoreSchema:
-    """
-    Apply model serializers to a schema.
-    """
-    ref: str | None = schema.pop('ref', None)  # type: ignore
-    if serializers:
-        serializer = list(serializers)[-1]
-        info_arg = inspect_model_serializer(serializer.func, serializer.info.mode)
-        if serializer.info.mode == 'wrap':
-            ser_schema: core_schema.SerSchema = core_schema.wrap_serializer_function_ser_schema(
-                serializer.func,
-                info_arg=info_arg,
-                return_schema=serializer.info.return_schema,
-                when_used=serializer.info.when_used,
-            )
-        else:
-            # plain
-            ser_schema = core_schema.plain_serializer_function_ser_schema(
-                serializer.func,
-                info_arg=info_arg,
-                return_schema=serializer.info.return_schema,
-                when_used=serializer.info.when_used,
-            )
-        schema['serialization'] = ser_schema
-    if ref:
-        schema['ref'] = ref  # type: ignore
-    return schema
 
 
 def apply_model_validators(

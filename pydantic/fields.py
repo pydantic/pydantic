@@ -925,7 +925,7 @@ Example:
 @typing.overload
 def computed_field(
     *,
-    return_type: Any = Any,
+    return_type: Any = None,
     alias: str | None = None,
     alias_priority: int | None = None,
     title: str | None = None,
@@ -940,9 +940,6 @@ def computed_field(__func: PropertyT) -> PropertyT:
     ...
 
 
-_UNSET: Any = object()
-
-
 def computed_field(
     __f: PropertyT | None = None,
     *,
@@ -951,7 +948,7 @@ def computed_field(
     title: str | None = None,
     description: str | None = None,
     repr: bool = True,
-    return_type: Any = _UNSET,
+    return_type: Any = None,
 ) -> PropertyT | typing.Callable[[PropertyT], PropertyT]:
     """
     Decorate to include `property` and `cached_property` when serialising models.
@@ -981,16 +978,13 @@ def computed_field(
         if description is None and f.__doc__:
             description = inspect.cleandoc(f.__doc__)
 
-        if return_type is _UNSET:
-            # try to get it from the type annotation
-            res = _typing_extra.get_type_hints(_decorators.unwrap_wrapped_function(f), include_extras=True)
-            return_type = res.get('return', _UNSET)
-            if return_type is _UNSET:
-                raise PydanticUserError(
-                    'Computed field is missing return type annotation or specifying `return_type`'
-                    ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)',
-                    code='model-field-missing-annotation',
-                )
+        return_type = _decorators.get_function_return_type(f, return_type)
+        if return_type is None:
+            raise PydanticUserError(
+                'Computed field is missing return type annotation or specifying `return_type`'
+                ' to the `@computed_field` decorator (e.g. `@computed_field(return_type=int|str)`)',
+                code='model-field-missing-annotation',
+            )
 
         # if the function isn't already decorated with `@property` (or another descriptor), then we wrap it now
         f = _decorators.ensure_property(f)

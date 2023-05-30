@@ -17,6 +17,7 @@ from ..errors import PydanticUserError
 from ..fields import ComputedFieldInfo
 from ._core_utils import get_type_ref
 from ._internal_dataclass import slots_dataclass
+from ._typing_extra import get_function_type_hints
 
 if TYPE_CHECKING:
     from ..functional_validators import FieldValidatorModes
@@ -79,7 +80,7 @@ class FieldSerializerDecoratorInfo:
     decorator_repr: ClassVar[str] = '@field_serializer'
     fields: tuple[str, ...]
     mode: Literal['plain', 'wrap']
-    return_schema: core_schema.CoreSchema | None
+    return_type: Any
     when_used: core_schema.WhenUsed
     check_fields: bool | None
 
@@ -93,7 +94,7 @@ class ModelSerializerDecoratorInfo:
 
     decorator_repr: ClassVar[str] = '@model_serializer'
     mode: Literal['plain', 'wrap']
-    return_schema: core_schema.CoreSchema | None
+    return_type: Any
     when_used: core_schema.WhenUsed
 
 
@@ -611,6 +612,16 @@ def unwrap_wrapped_function(
             func = func.func  # type: ignore
 
     return func
+
+
+def get_function_return_type(func: Any, explicit_return_type: Any) -> Any:
+    if explicit_return_type is None:
+        # try to get it from the type annotation
+        func = unwrap_wrapped_function(func)
+        hints = get_function_type_hints(unwrap_wrapped_function(func), include_keys={'return'})
+        return hints.get('return', None)
+    else:
+        return explicit_return_type
 
 
 def count_positional_params(sig: Signature) -> int:

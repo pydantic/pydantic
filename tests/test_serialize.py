@@ -75,7 +75,7 @@ def test_serialize_extra_allow_subclass_2() -> None:
 
 
 def test_serializer_annotated_plain_always():
-    FancyInt = Annotated[int, PlainSerializer(lambda x: f'{x:,}', return_schema=core_schema.str_schema())]
+    FancyInt = Annotated[int, PlainSerializer(lambda x: f'{x:,}', return_type=str)]
 
     class MyModel(BaseModel):
         x: FancyInt
@@ -86,9 +86,7 @@ def test_serializer_annotated_plain_always():
 
 
 def test_serializer_annotated_plain_json():
-    FancyInt = Annotated[
-        int, PlainSerializer(lambda x: f'{x:,}', return_schema=core_schema.str_schema(), when_used='json')
-    ]
+    FancyInt = Annotated[int, PlainSerializer(lambda x: f'{x:,}', return_type=str, when_used='json')]
 
     class MyModel(BaseModel):
         x: FancyInt
@@ -99,10 +97,10 @@ def test_serializer_annotated_plain_json():
 
 
 def test_serializer_annotated_wrap_always():
-    def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> Any:
+    def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> str:
         return f'{nxt(v + 1):,}'
 
-    FancyInt = Annotated[int, WrapSerializer(ser_wrap, return_schema=core_schema.str_schema())]
+    FancyInt = Annotated[int, WrapSerializer(ser_wrap, return_type=str)]
 
     class MyModel(BaseModel):
         x: FancyInt
@@ -113,10 +111,10 @@ def test_serializer_annotated_wrap_always():
 
 
 def test_serializer_annotated_wrap_json():
-    def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> Any:
+    def ser_wrap(v: Any, nxt: SerializerFunctionWrapHandler) -> str:
         return f'{nxt(v + 1):,}'
 
-    FancyInt = Annotated[int, WrapSerializer(ser_wrap, return_schema=core_schema.str_schema(), when_used='json')]
+    FancyInt = Annotated[int, WrapSerializer(ser_wrap, when_used='json')]
 
     class MyModel(BaseModel):
         x: FancyInt
@@ -146,8 +144,8 @@ def test_serialize_decorator_always():
     class MyModel(BaseModel):
         x: Optional[int]
 
-        @field_serializer('x', return_schema=core_schema.str_schema())
-        def customise_x_serialisation(v, _info):
+        @field_serializer('x')
+        def customise_x_serialisation(v, _info) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -169,8 +167,8 @@ def test_serialize_decorator_json():
     class MyModel(BaseModel):
         x: int
 
-        @field_serializer('x', return_schema=core_schema.str_schema(), when_used='json')
-        def customise_x_serialisation(v):
+        @field_serializer('x', when_used='json')
+        def customise_x_serialisation(v) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 1234}
@@ -347,8 +345,8 @@ def test_serialize_decorator_self_info():
     class MyModel(BaseModel):
         x: Optional[int]
 
-        @field_serializer('x', return_schema=core_schema.str_schema())
-        def customise_x_serialisation(self, v, info):
+        @field_serializer('x')
+        def customise_x_serialisation(self, v, info) -> str:
             return f'{info.mode}:{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 'python:1,234'}
@@ -359,8 +357,8 @@ def test_serialize_decorator_self_no_info():
     class MyModel(BaseModel):
         x: Optional[int]
 
-        @field_serializer('x', return_schema=core_schema.str_schema())
-        def customise_x_serialisation(self, v):
+        @field_serializer('x')
+        def customise_x_serialisation(self, v) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -463,8 +461,8 @@ def test_model_serializer_plain_json_return_type():
     class MyModel(BaseModel):
         a: int
 
-        @model_serializer(return_schema=core_schema.str_schema(), when_used='json')
-        def _serialize(self):
+        @model_serializer(when_used='json')
+        def _serialize(self) -> str:
             if self.a == 666:
                 return self.a
             else:
@@ -530,12 +528,12 @@ def test_field_multiple_serializer():
             x: int
             y: int
 
-            @field_serializer('x', 'y', return_schema=core_schema.str_schema())
-            def serializer1(v):
+            @field_serializer('x', 'y')
+            def serializer1(v) -> str:
                 return f'{v:,}'
 
-            @field_serializer('x', return_schema=core_schema.str_schema())
-            def serializer2(v):
+            @field_serializer('x')
+            def serializer2(v) -> str:
                 return v
 
 
@@ -543,13 +541,13 @@ def test_field_multiple_serializer_subclass():
     class MyModel(BaseModel):
         x: int
 
-        @field_serializer('x', return_schema=core_schema.str_schema())
-        def serializer1(v):
+        @field_serializer('x')
+        def serializer1(v) -> str:
             return f'{v:,}'
 
     class MySubModel(MyModel):
-        @field_serializer('x', return_schema=core_schema.str_schema())
-        def serializer1(v):
+        @field_serializer('x')
+        def serializer1(v) -> str:
             return f'{v}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -611,7 +609,7 @@ def test_serialize_partial(
     class MyModel(BaseModel):
         x: int
 
-        ser = field_serializer('x', return_schema=core_schema.str_schema())(partial(func, expected=1234))
+        ser = field_serializer('x', return_type=str)(partial(func, expected=1234))
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
 
@@ -635,7 +633,7 @@ def test_serialize_partialmethod(
     class MyModel(BaseModel):
         x: int
 
-        ser = field_serializer('x', return_schema=core_schema.str_schema())(partialmethod(func, expected=1234))
+        ser = field_serializer('x', return_type=str)(partialmethod(func, expected=1234))
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
 
@@ -846,3 +844,27 @@ def test_pattern_serialize():
     assert ta.dump_python(pattern) == pattern
     assert ta.dump_python(pattern, mode='json') == '^regex$'
     assert ta.dump_json(pattern) == b'"^regex$"'
+
+
+def test_custom_return_schema():
+    class Model(BaseModel):
+        x: int
+
+        @field_serializer('x', return_type=str)
+        def ser_model(self, v) -> int:
+            return repr(v)
+
+    return_serializer = re.search(r'return_serializer: *\w+', repr(Model.__pydantic_serializer__)).group(0)
+    assert return_serializer == 'return_serializer: Str'
+
+
+def test_clear_return_schema():
+    class Model(BaseModel):
+        x: int
+
+        @field_serializer('x', return_type=Any)
+        def ser_model(self, v) -> int:
+            return repr(v)
+
+    return_serializer = re.search(r'return_serializer: *\w+', repr(Model.__pydantic_serializer__)).group(0)
+    assert return_serializer == 'return_serializer: Any'
