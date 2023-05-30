@@ -544,7 +544,14 @@ def test_camel2snake(value: str, result: str) -> None:
 
 @pytest.mark.parametrize(
     'params,expected_extra_schema',
-    (({}, {}), ({'extra_schema': core_schema.float_schema()}, {'extra_schema': {'type': 'str'}})),
+    (
+        pytest.param({}, {}, id='Positional tuple without extra_schema'),
+        pytest.param(
+            {'extra_schema': core_schema.float_schema()},
+            {'extra_schema': {'type': 'str'}},
+            id='Positional tuple with extra_schema',
+        ),
+    ),
 )
 def test_handle_tuple_positional_schema(params, expected_extra_schema):
     schema = core_schema.tuple_positional_schema([core_schema.str_schema()], **params)
@@ -565,7 +572,14 @@ def test_handle_tuple_positional_schema(params, expected_extra_schema):
 
 @pytest.mark.parametrize(
     'params,expected_extra_schema',
-    (({}, {}), ({'extra_validator': core_schema.float_schema()}, {'extra_validator': {'type': 'str'}})),
+    (
+        pytest.param({}, {}, id='Model fields without extra_validator'),
+        pytest.param(
+            {'extra_validator': core_schema.float_schema()},
+            {'extra_validator': {'type': 'str'}},
+            id='Model fields with extra_validator',
+        ),
+    ),
 )
 def test_handle_model_fields_schema(params, expected_extra_schema):
     schema = core_schema.model_fields_schema(
@@ -591,7 +605,14 @@ def test_handle_model_fields_schema(params, expected_extra_schema):
 
 @pytest.mark.parametrize(
     'params,expected_extra_schema',
-    (({}, {}), ({'extra_validator': core_schema.float_schema()}, {'extra_validator': {'type': 'str'}})),
+    (
+        pytest.param({}, {}, id='Typeddict without extra_validator'),
+        pytest.param(
+            {'extra_validator': core_schema.float_schema()},
+            {'extra_validator': {'type': 'str'}},
+            id='Typeddict with extra_validator',
+        ),
+    ),
 )
 def test_handle_typed_dict_schema(params, expected_extra_schema):
     schema = core_schema.typed_dict_schema(
