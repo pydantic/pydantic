@@ -1,11 +1,11 @@
 import re
-from datetime import date, datetime, time, timezone
+from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from typing import Any, Dict
 
 import pytest
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaError, SchemaValidator, ValidationError, core_schema
 
 from ..conftest import Err, PyAndJson
 
@@ -15,6 +15,7 @@ from ..conftest import Err, PyAndJson
     [
         pytest.param(time(12, 13, 14), time(12, 13, 14), id='time'),
         pytest.param(time(12, 13, 14, 123), time(12, 13, 14, 123), id='time-micro'),
+        pytest.param(time(12, 13, 14, tzinfo=timezone.utc), time(12, 13, 14, tzinfo=timezone.utc), id='time-tz'),
         pytest.param('12:13:14', time(12, 13, 14), id='str'),
         pytest.param('12:13:14Z', time(12, 13, 14, tzinfo=timezone.utc), id='str-tz'),
         pytest.param(b'12:13:14', time(12, 13, 14), id='bytes'),
@@ -198,3 +199,85 @@ def test_union():
     v = SchemaValidator({'type': 'union', 'choices': [{'type': 'time'}, {'type': 'str'}]})
     assert v.validate_python('12:01:02') == '12:01:02'
     assert v.validate_python(time(12, 1, 2)) == time(12, 1, 2)
+
+
+def test_aware():
+    v = SchemaValidator(core_schema.time_schema(tz_constraint='aware'))
+    value = time(12, 13, 15, tzinfo=timezone.utc)
+    assert value is v.validate_python(value)
+    assert v.validate_python('12:13:14Z') == time(12, 13, 14, tzinfo=timezone.utc)
+
+    value = time(12, 13, 15)
+    with pytest.raises(ValidationError, match=r'Input should have timezone info'):
+        v.validate_python(value)
+
+    with pytest.raises(ValidationError, match=r'Input should have timezone info'):
+        v.validate_python('12:13:14')
+
+
+def test_naive():
+    v = SchemaValidator(core_schema.time_schema(tz_constraint='naive'))
+    value = time(12, 13, 15)
+    assert value is v.validate_python(value)
+    assert v.validate_python('12:13:14') == time(12, 13, 14)
+
+    value = time(12, 13, 15, tzinfo=timezone.utc)
+    with pytest.raises(ValidationError, match=r'Input should not have timezone info'):
+        v.validate_python(value)
+
+    with pytest.raises(ValidationError, match=r'Input should not have timezone info'):
+        v.validate_python('12:13:14Z')
+
+
+def test_aware_specific():
+    v = SchemaValidator(core_schema.time_schema(tz_constraint=0))
+    value = time(12, 13, 15, tzinfo=timezone.utc)
+    assert value is v.validate_python(value)
+    assert v.validate_python('12:13:14Z') == time(12, 13, 14, tzinfo=timezone.utc)
+
+    value = time(12, 13, 14)
+    with pytest.raises(ValidationError, match='Input should have timezone info'):
+        v.validate_python(value)
+
+    value = time(12, 13, 15, tzinfo=timezone(timedelta(hours=1)))
+    with pytest.raises(ValidationError, match='Timezone offset of 0 required, got 3600') as exc_info:
+        v.validate_python(value)
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'timezone_offset',
+            'loc': (),
+            'msg': 'Timezone offset of 0 required, got 3600',
+            'input': value,
+            'ctx': {'tz_expected': 0, 'tz_actual': 3600},
+        }
+    ]
+    with pytest.raises(ValidationError, match='Timezone offset of 0 required, got 3600'):
+        v.validate_python('12:13:14+01:00')
+
+
+def test_neg_7200():
+    v = SchemaValidator(core_schema.time_schema(tz_constraint=-7200))
+    value = time(12, 13, 15, tzinfo=timezone(timedelta(hours=-2)))
+    assert value is v.validate_python(value)
+
+    value = time(12, 13, 14)
+    with pytest.raises(ValidationError, match='Input should have timezone info'):
+        v.validate_python(value)
+
+    value = time(12, 13, 15, tzinfo=timezone.utc)
+    with pytest.raises(ValidationError, match='Timezone offset of -7200 required, got 0'):
+        v.validate_python(value)
+    with pytest.raises(ValidationError, match='Timezone offset of -7200 required, got 0'):
+        v.validate_python('12:13:14Z')
+
+
+def test_tz_constraint_too_high():
+    with pytest.raises(SchemaError, match='OverflowError: Python int too large to convert to C long'):
+        SchemaValidator(core_schema.time_schema(tz_constraint=2**64))
+
+
+def test_tz_constraint_wrong():
+    with pytest.raises(SchemaError, match="Input should be 'aware' or 'naive"):
+        SchemaValidator(core_schema.time_schema(tz_constraint='wrong'))

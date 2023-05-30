@@ -291,8 +291,8 @@ def test_invalid_constraint():
         ('2022-06-08T12:13:14', datetime(2022, 6, 8, 12, 13, 14)),
         ('2022-06-08T12:13:14Z', datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
         (1655205632, datetime(2022, 6, 14, 11, 20, 32)),
-        ('2068-06-08T12:13:14', Err('Datetime should be in the past [type=datetime_past,')),
-        (3105730800, Err('Datetime should be in the past [type=datetime_past,')),
+        ('2068-06-08T12:13:14', Err('Input should be in the past [type=datetime_past,')),
+        (3105730800, Err('Input should be in the past [type=datetime_past,')),
     ],
 )
 def test_datetime_past(py_and_json: PyAndJson, input_value, expected):
@@ -334,8 +334,8 @@ def test_datetime_past_timezone():
         ('2068-06-08T12:13:14', datetime(2068, 6, 8, 12, 13, 14)),
         ('2068-06-08T12:13:14Z', datetime(2068, 6, 8, 12, 13, 14, tzinfo=timezone.utc)),
         (3105730800, datetime(2068, 5, 31, 23, 0)),
-        ('2022-06-08T12:13:14', Err('Datetime should be in the future [type=datetime_future,')),
-        (1655205632, Err('Datetime should be in the future [type=datetime_future,')),
+        ('2022-06-08T12:13:14', Err('Input should be in the future [type=datetime_future,')),
+        (1655205632, Err('Input should be in the future [type=datetime_future,')),
     ],
 )
 def test_datetime_future(py_and_json: PyAndJson, input_value, expected):
@@ -391,34 +391,88 @@ def test_offset_too_large():
 def test_raises_schema_error_for_unknown_constraint_kind():
     with pytest.raises(
         SchemaError,
-        match=(
-            r'Input should be \'aware\' or \'naive\' ' r'\[type=literal_error, input_value=\'foo\', input_type=str\]'
-        ),
+        match=(r'Input should be \'aware\' or \'naive\' \[type=literal_error, input_value=\'foo\', input_type=str\]'),
     ):
         SchemaValidator({'type': 'datetime', 'tz_constraint': 'foo'})
 
 
-def test_can_validate_aware_value():
-    aware_validator = SchemaValidator(core_schema.datetime_schema(tz_constraint='aware'))
+def test_aware():
+    v = SchemaValidator(core_schema.datetime_schema(tz_constraint='aware'))
     value = datetime.now(tz=timezone.utc)
-    assert value is aware_validator.validate_python(value)
+    assert value is v.validate_python(value)
+    assert v.validate_python('2022-06-08T12:13:14Z') == datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)
 
-
-def test_raises_validation_error_when_aware_given_naive():
-    aware_validator = SchemaValidator(core_schema.datetime_schema(tz_constraint='aware'))
     value = datetime.now()
-    with pytest.raises(ValidationError, match=r'Datetime should have timezone info'):
-        assert aware_validator.validate_python(value)
+    with pytest.raises(ValidationError, match=r'Input should have timezone info \[type=timezone_aware,'):
+        v.validate_python(value)
+
+    with pytest.raises(ValidationError, match=r'Input should have timezone info \[type=timezone_aware,'):
+        v.validate_python('2022-06-08T12:13:14')
 
 
-def test_can_validate_naive_value():
-    naive_validator = SchemaValidator(core_schema.datetime_schema(tz_constraint='naive'))
+def test_naive():
+    v = SchemaValidator(core_schema.datetime_schema(tz_constraint='naive'))
     value = datetime.now()
-    assert value is naive_validator.validate_python(value)
+    assert value is v.validate_python(value)
+    assert v.validate_python('2022-06-08T12:13:14') == datetime(2022, 6, 8, 12, 13, 14)
 
-
-def test_raises_validation_error_when_naive_given_aware():
-    naive_validator = SchemaValidator(core_schema.datetime_schema(tz_constraint='naive'))
     value = datetime.now(tz=timezone.utc)
-    with pytest.raises(ValidationError, match=r'Datetime should not have timezone info'):
-        assert naive_validator.validate_python(value)
+    with pytest.raises(ValidationError, match=r'Input should not have timezone info \[type=timezone_naive,'):
+        v.validate_python(value)
+
+    with pytest.raises(ValidationError, match=r'Input should not have timezone info \[type=timezone_naive,'):
+        v.validate_python('2022-06-08T12:13:14Z')
+
+
+def test_aware_specific():
+    v = SchemaValidator(core_schema.datetime_schema(tz_constraint=0))
+    value = datetime.now(tz=timezone.utc)
+    assert value is v.validate_python(value)
+    assert v.validate_python('2022-06-08T12:13:14Z') == datetime(2022, 6, 8, 12, 13, 14, tzinfo=timezone.utc)
+
+    value = datetime.now()
+    with pytest.raises(ValidationError, match='Input should have timezone info'):
+        v.validate_python(value)
+
+    value = datetime.now(tz=timezone(timedelta(hours=1)))
+    with pytest.raises(ValidationError, match='Timezone offset of 0 required, got 3600') as exc_info:
+        v.validate_python(value)
+
+    # insert_assert(exc_info.value.errors())
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'timezone_offset',
+            'loc': (),
+            'msg': 'Timezone offset of 0 required, got 3600',
+            'input': value,
+            'ctx': {'tz_expected': 0, 'tz_actual': 3600},
+        }
+    ]
+    with pytest.raises(ValidationError, match='Timezone offset of 0 required, got 3600'):
+        v.validate_python('2022-06-08T12:13:14+01:00')
+
+
+def test_neg_7200():
+    v = SchemaValidator(core_schema.datetime_schema(tz_constraint=-7200))
+    value = datetime.now(tz=timezone(timedelta(hours=-2)))
+    assert value is v.validate_python(value)
+
+    value = datetime.now()
+    with pytest.raises(ValidationError, match='Input should have timezone info'):
+        v.validate_python(value)
+
+    value = datetime.now(tz=timezone.utc)
+    with pytest.raises(ValidationError, match='Timezone offset of -7200 required, got 0'):
+        v.validate_python(value)
+    with pytest.raises(ValidationError, match='Timezone offset of -7200 required, got 0'):
+        v.validate_python('2022-06-08T12:13:14Z')
+
+
+def test_tz_constraint_too_high():
+    with pytest.raises(SchemaError, match='OverflowError: Python int too large to convert to C long'):
+        SchemaValidator(core_schema.datetime_schema(tz_constraint=2**64))
+
+
+def test_tz_constraint_wrong():
+    with pytest.raises(SchemaError, match="Input should be 'aware' or 'naive"):
+        SchemaValidator(core_schema.datetime_schema(tz_constraint='wrong'))
