@@ -471,7 +471,7 @@ def test_invalid_extra():
     with pytest.raises(SchemaError, match=extra_error):
         create_model('MyCreatedModel', __config__=config_dict)
 
-    with pytest.raises(SchemaError, match='Invalid extra_behavior: `invalid-value`'):
+    with pytest.raises(SchemaError, match=extra_error):
 
         @pydantic_dataclass(config=config_dict)
         class MyDataclass:
