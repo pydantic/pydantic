@@ -808,6 +808,7 @@ class TimeSchema(TypedDict, total=False):
     ge: time
     lt: time
     gt: time
+    tz_constraint: Union[Literal['aware', 'naive'], int]
     ref: str
     metadata: Any
     serialization: SerSchema
@@ -820,6 +821,7 @@ def time_schema(
     ge: time | None = None,
     lt: time | None = None,
     gt: time | None = None,
+    tz_constraint: Literal['aware', 'naive'] | int | None = None,
     ref: str | None = None,
     metadata: Any = None,
     serialization: SerSchema | None = None,
@@ -842,12 +844,22 @@ def time_schema(
         ge: The value must be greater than or equal to this time
         lt: The value must be strictly less than this time
         gt: The value must be strictly greater than this time
+        tz_constraint: The value must be timezone aware or naive, or an int to indicate required tz offset
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
         serialization: Custom serialization schema
     """
     return dict_not_none(
-        type='time', strict=strict, le=le, ge=ge, lt=lt, gt=gt, ref=ref, metadata=metadata, serialization=serialization
+        type='time',
+        strict=strict,
+        le=le,
+        ge=ge,
+        lt=lt,
+        gt=gt,
+        tz_constraint=tz_constraint,
+        ref=ref,
+        metadata=metadata,
+        serialization=serialization,
     )
 
 
@@ -859,7 +871,7 @@ class DatetimeSchema(TypedDict, total=False):
     lt: datetime
     gt: datetime
     now_op: Literal['past', 'future']
-    tz_constraint: Literal['aware', 'naive']
+    tz_constraint: Union[Literal['aware', 'naive'], int]
     # defaults to current local utc offset from `time.localtime().tm_gmtoff`
     # value is restricted to -86_400 < offset < 86_400 by bounds in generate_self_schema.py
     now_utc_offset: int
@@ -876,7 +888,7 @@ def datetime_schema(
     lt: datetime | None = None,
     gt: datetime | None = None,
     now_op: Literal['past', 'future'] | None = None,
-    tz_constraint: Literal['aware', 'naive'] | None = None,
+    tz_constraint: Literal['aware', 'naive'] | int | None = None,
     now_utc_offset: int | None = None,
     ref: str | None = None,
     metadata: Any = None,
@@ -902,7 +914,8 @@ def datetime_schema(
         lt: The value must be strictly less than this datetime
         gt: The value must be strictly greater than this datetime
         now_op: The value must be in the past or future relative to the current datetime
-        tz_constraint: The value must be timezone aware or naive
+        tz_constraint: The value must be timezone aware or naive, or an int to indicate required tz offset
+            TODO: use of a tzinfo where offset changes based on the datetime is not yet supported
         now_utc_offset: The value must be in the past or future relative to the current datetime with this utc offset
         ref: optional unique identifier of the schema, used to reference the schema in other places
         metadata: Any other information you want to include with the schema, not used by pydantic-core
@@ -3779,8 +3792,9 @@ ErrorType = Literal[
     'datetime_object_invalid',
     'datetime_past',
     'datetime_future',
-    'datetime_aware',
-    'datetime_naive',
+    'timezone_naive',
+    'timezone_aware',
+    'timezone_offset',
     'time_delta_type',
     'time_delta_parsing',
     'frozen_set_type',
