@@ -12,18 +12,15 @@ use super::{
 };
 
 pub(crate) fn datetime_to_string(py_dt: &PyDateTime) -> PyResult<String> {
-    let dt = pydatetime_as_datetime(py_dt)?;
-    Ok(dt.to_string())
+    pydatetime_as_datetime(py_dt).map(|dt| dt.to_string())
 }
 
 pub(crate) fn date_to_string(py_date: &PyDate) -> PyResult<String> {
-    let date = pydate_as_date!(py_date);
-    Ok(date.to_string())
+    pydate_as_date(py_date).map(|dt| dt.to_string())
 }
 
 pub(crate) fn time_to_string(py_time: &PyTime) -> PyResult<String> {
-    let time = pytime_as_time!(py_time);
-    Ok(time.to_string())
+    pytime_as_time(py_time).map(|dt| dt.to_string())
 }
 
 macro_rules! build_serializer {
