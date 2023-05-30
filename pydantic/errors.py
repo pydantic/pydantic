@@ -101,10 +101,10 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
         Convert a `NameError` to a `PydanticUndefinedAnnotation` error.
 
         Args:
-            name_error (NameError): `NameError` to be converted.
+            name_error: `NameError` to be converted.
 
         Returns:
-            PydanticUndefinedAnnotation: Converted `PydanticUndefinedAnnotation` error.
+            Converted `PydanticUndefinedAnnotation` error.
         """
         try:
             name = name_error.name  # type: ignore  # python > 3.10

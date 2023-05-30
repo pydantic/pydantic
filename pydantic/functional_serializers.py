@@ -17,10 +17,9 @@ class PlainSerializer:
     Plain serializers use a function to modify the output of serialization.
 
     Attributes:
-        func (core_schema.SerializerFunction): The serializer function.
-        json_return_type (core_schema.JsonReturnTypes | None, optional): The JSON return type. Defaults to `None`.
-        when_used (Literal['always', 'unless-none', 'json', 'json-unless-none'], optional): The serialization condition.
-            Defaults to 'always'.
+        func: The serializer function.
+        json_return_type: The JSON return type. Defaults to `None`.
+        when_used: The serialization condition. Defaults to 'always'.
     """
 
     func: core_schema.SerializerFunction
@@ -32,11 +31,11 @@ class PlainSerializer:
         Gets the Pydantic core schema.
 
         Args:
-            source_type (Any): The source type.
-            handler (GetCoreSchemaHandler): The `GetCoreSchemaHandler` instance.
+            source_type: The source type.
+            handler: The `GetCoreSchemaHandler` instance.
 
         Returns:
-            core_schema.CoreSchema: The Pydantic core schema.
+            The Pydantic core schema.
         """
         schema = handler(source_type)
         schema['serialization'] = core_schema.plain_serializer_function_ser_schema(
@@ -55,9 +54,9 @@ class WrapSerializer:
     and can modify the resulting value before returning it as the final output of serialization.
 
     Attributes:
-        func (core_schema.WrapSerializerFunction): The function to be wrapped.
-        json_return_type (Optional[core_schema.JsonReturnTypes]): The JSON return type annotation of the function.
-        when_used (Literal['always', 'unless-none', 'json', 'json-unless-none']): Determines the way the serialization
+        func: The function to be wrapped.
+        json_return_type: The JSON return type annotation of the function.
+        when_used: Determines the way the serialization
             will go. This governs whether and when this function will be used during serialization.
     """
 
@@ -70,8 +69,8 @@ class WrapSerializer:
         This method is used to get the Pydantic core schema of the class.
 
         Args:
-            source_type (Any): Source type.
-            handler (GetCoreSchemaHandler): Core schema handler.
+            source_type: Source type.
+            handler: Core schema handler.
 
         Returns:
             The generated core schema of the class.
@@ -147,16 +146,16 @@ def field_serializer(
     - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
     Args:
-        fields (str): Which field(s) the method should be called on.
-        mode (str): `plain` means the function will be called instead of the default serialization logic,
+        fields: Which field(s) the method should be called on.
+        mode: `plain` means the function will be called instead of the default serialization logic,
             `wrap` means the function will be called with an argument to optionally call the
             default serialization logic.
-        json_return_type (str): The type that the function returns if the serialization mode is JSON.
-        when_used (str): When the function should be called.
-        check_fields (bool): Whether to check that the fields actually exist on the model.
+        json_return_type: The type that the function returns if the serialization mode is JSON.
+        when_used: When the function should be called.
+        check_fields: Whether to check that the fields actually exist on the model.
 
     Returns:
-        Callable: A decorator that can be used to decorate a function to be used as a field serializer.
+        A decorator that can be used to decorate a function to be used as a field serializer.
     """
 
     def dec(
@@ -203,15 +202,15 @@ def model_serializer(
     (`when_used` is not permitted here since it makes no sense.)
 
     Args:
-        __f (Callable[..., Any] | None): The function to be decorated.
-        mode (Literal['plain', 'wrap']): The serialization mode. `'plain'` means the function will be called
+        __f: The function to be decorated.
+        mode: The serialization mode. `'plain'` means the function will be called
             instead of the default serialization logic, `'wrap'` means the function will be called with an argument
             to optionally call the default serialization logic.
-        json_return_type (_core_schema.JsonReturnTypes | None): The type that the function returns if the
+        json_return_type: The type that the function returns if the
             serialization mode is JSON.
 
     Returns:
-        Callable: A decorator that can be used to decorate a function to be used as a model serializer.
+        A decorator that can be used to decorate a function to be used as a model serializer.
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
