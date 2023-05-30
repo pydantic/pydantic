@@ -47,6 +47,7 @@ if typing.TYPE_CHECKING:
     from typing_extensions import Literal, Unpack
 
     from ._internal._utils import AbstractSetIntStr, MappingIntStrAny
+    from .fields import Field as _Field
 
     AnyClassMethod = classmethod[Any, Any, Any]
     TupleGenerator = typing.Generator[typing.Tuple[str, Any], None, None]
@@ -96,9 +97,13 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __signature__: typing.ClassVar[Signature]
         __private_attributes__: typing.ClassVar[dict[str, ModelPrivateAttr]]
         __class_vars__: typing.ClassVar[set[str]]
-        __pydantic_fields_set__: set[str] = set()
-        __pydantic_extra__: dict[str, Any] | None = None
-        __pydantic_private__: dict[str, Any] | None = None
+
+        # Use the non-existent kwarg `init=False` in pydantic.fields.Field so @dataclass_transform
+        # doesn't think these are keyword arguments for BaseModel.__init__
+        __pydantic_fields_set__: set[str] = _Field(default_factory=set, init=False)  # type: ignore
+        __pydantic_extra__: dict[str, Any] | None = _Field(default=None, init=False)  # type: ignore
+        __pydantic_private__: dict[str, Any] | None = _Field(default=None, init=False)  # type: ignore
+
         __pydantic_generic_metadata__: typing.ClassVar[_generics.PydanticGenericMetadata]
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
         __pydantic_custom_init__: typing.ClassVar[bool]
