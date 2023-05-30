@@ -116,69 +116,10 @@ except ValidationError as e:
 
 ## Who is using Pydantic?
 
-Hundreds of organisations and packages are using Pydantic.
+Hundreds of organisations and packages are using Pydantic. Some of the prominent companies and organizations around the world who are using Pydantic include:
 
-Some of the prominent projects using Pydantic include:
-
-[FastAPI](https://fastapi.tiangolo.com/) &mdash; A high-performance API framework, easy to learn,
-  fast to code and ready for production, based on Pydantic and Starlette.
-
-[Project Jupyter](https://jupyter.org/) &mdash; Developers of the Jupyter notebook are using Pydantic
-  [for subprojects](https://github.com/pydantic/pydantic/issues/773), through the FastAPI-based Jupyter server
-  [Jupyverse](https://github.com/jupyter-server/jupyverse), and for [FPS](https://github.com/jupyter-server/fps)'s
-  configuration management.
-
-[The Molecular Sciences Software Institute](https://molssi.org) &mdash; Using Pydantic in
-  [QCFractal](https://github.com/MolSSI/QCFractal), a massively distributed compute framework
-  for quantum chemistry.
-
-[Reach](https://www.reach.vote) &mdash; Trusts Pydantic (via FastAPI) and [*arq*](https://github.com/samuelcolvin/arq)
-  (Samuel's excellent asynchronous task queue) to reliably power multiple mission-critical microservices.
-
-[Robusta.dev](https://robusta.dev/) &mdash; Using Pydantic to automate Kubernetes troubleshooting and maintenance.
-  For example, their open source
-  [tools to debug and profile Python applications on Kubernetes](https://home.robusta.dev/python/) use
-  Pydantic models.
-
-And these are just a few of the companies and organizations around the world who are using Pydantic:
-
-<div style="float: left; width: 50%;">
-<ul>
-<li>Adobe
-<li>Advanced Micro Devices
-<li>Amazon
-<li>Apple
-<li>ASML
-<li>AstraZeneca
-<li>Broadcom
-<li>Cisco Systems
-<li>Comcast
-<li>Datadog
-<li>Exoflare
-<li>Exposion AI
-<li>Facebook
-<li>Forethought AI
-<li>Google
-</ul>
-</div>
-<div style="float: right; width: 50%;">
-<ul>
-<li>IBM
-<li>Intel
-<li>Intuit
-<li>Microsoft
-<li>Netflix
-<li>NSA
-<li>NVIDIA
-<li>Qualcomm
-<li>Red Hat
-<li>Salesforce
-<li>Starbucks
-<li>Telstra
-<li>Texas Instruments
-<li>Twilio
-<li>UK Home Office
-</ul>
+<div id="grid-container">
+<div id="company-grid" class="grid"></div>
 </div>
 
 For a more comprehensive list of open-source projects using Pydantic see the
@@ -203,3 +144,155 @@ Podcasts and videos discussing Pydantic.
 [Python Pydantic Introduction – Give your data classes super powers](https://www.youtube.com/watch?v=WJmqgJn9TXg){target=_blank}
 : A talk by Alexander Hultnér originally for the Python Pizza Conference introducing new users to Pydantic and walking
   through the core features of Pydantic. -->
+
+<script>
+const companies = [
+  {
+    name: 'Adobe',
+    logoUrl: '/logos/adobe_logo.png'
+  },
+  {
+    name: 'AMD',
+    logoUrl: '/logos/amd_logo.png'
+  },
+  {
+    name: 'Amazon',
+    logoUrl: '/logos/amazon_logo.png'
+  },
+  {
+    name: 'Apple',
+    logoUrl: '/logos/apple_logo.png'
+  },
+  {
+    name: 'ASML',
+    logoUrl: '/logos/asml_logo.png'
+  },
+  {
+    name: 'AstraZeneca',
+    logoUrl: '/logos/astrazeneca_logo.png'
+  },
+  {
+    name: 'Broadcom',
+    logoUrl: '/logos/broadcom_logo.png'
+  },
+  {
+    name: 'Cisco Systems',
+    logoUrl: '/logos/cisco_logo.png'
+  },
+  {
+    name: 'Comcast',
+    logoUrl: '/logos/comcast_logo.png'
+  },
+  {
+    name: 'Datadog',
+    logoUrl: '/logos/datadog_logo.png'
+  },
+  {
+    name: 'Facebook',
+    logoUrl: '/logos/facebook_logo.png'
+  },
+  {
+    name: 'FastAPI',
+    logoUrl: '/logos/fastapi_logo.png'
+  },
+  {
+    name: 'Google',
+    logoUrl: '/logos/google_logo.png'
+  },
+  {
+    name: 'IBM',
+    logoUrl: '/logos/ibm_logo.png'
+  },
+  {
+    name: 'Intel',
+    logoUrl: '/logos/intel_logo.png'
+  },
+  {
+    name: 'Intuit',
+    logoUrl: '/logos/intuit_logo.png'
+  },
+  {
+    name: 'IPCC',
+    logoUrl: '/logos/ipcc_logo.png'
+  },
+  {
+    name: 'JPMorgan',
+    logoUrl: '/logos/jpmorgan_logo.png'
+  },
+  {
+    name: 'Jupyter',
+    logoUrl: '/logos/jupyter_logo.png'
+  },
+  {
+    name: 'Microsoft',
+    logoUrl: '/logos/microsoft_logo.png'
+  },
+  {
+    name: 'Molssi',
+    logoUrl: '/logos/molssi_logo.png'
+  },
+  {
+    name: 'NASA',
+    logoUrl: '/logos/nasa_logo.png'
+  },
+  {
+    name: 'Netflix',
+    logoUrl: '/logos/netflix_logo.png'
+  },
+  {
+    name: 'NSA',
+    logoUrl: '/logos/nsa_logo.png'
+  },
+  {
+    name: 'NVIDIA',
+    logoUrl: '/logos/nvidia_logo.png'
+  },
+  {
+    name: 'Qualcomm',
+    logoUrl: '/logos/qualcomm_logo.png'
+  },
+  {
+    name: 'Red Hat',
+    logoUrl: '/logos/redhat_logo.png'
+  },
+  {
+    name: 'Robusta',
+    logoUrl: '/logos/robusta_logo.png'
+  },
+  {
+    name: 'Salesforce',
+    logoUrl: '/logos/salesforce_logo.png'
+  },
+  {
+    name: 'Starbucks',
+    logoUrl: '/logos/starbucks_logo.png'
+  },
+  {
+    name: 'Texas Instruments',
+    logoUrl: '/logos/ti_logo.png'
+  },
+  {
+    name: 'Twilio',
+    logoUrl: '/logos/twilio_logo.png'
+  },
+  {
+    name: 'Twitter',
+    logoUrl: '/logos/twitter_logo.png'
+  },
+  {
+    name: 'UK Home Office',
+    logoUrl: '/logos/ukhomeoffice_logo.png'
+  }
+];
+
+const grid = document.getElementById('company-grid');
+
+for (const company of companies) {
+  const tile = document.createElement('div');
+  tile.classList.add('tile');
+  tile.innerHTML = `
+    <img src="${company.logoUrl}" />
+  `;
+  grid.appendChild(tile);
+}
+</script>

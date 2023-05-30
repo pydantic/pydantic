@@ -408,7 +408,7 @@ class CompressedString:
             cls._validate,
             core_schema.str_schema(),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                cls._serialize, info_arg=False, json_return_type='str'
+                cls._serialize, info_arg=False, return_schema=core_schema.str_schema()
             ),
         )
 

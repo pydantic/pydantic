@@ -27,7 +27,7 @@ class CoreMetadata(typing_extensions.TypedDict, total=False):
 
 class UpdateCoreSchemaCallable(typing_extensions.Protocol):
     def __call__(self, schema: CoreSchema, **kwargs: Any) -> None:
-        ...
+        ...  # pragma: no cover
 
 
 class CoreMetadataHandler:

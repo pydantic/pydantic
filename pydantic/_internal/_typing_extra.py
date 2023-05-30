@@ -12,7 +12,7 @@ from functools import partial
 from types import GetSetDescriptorType
 from typing import TYPE_CHECKING, Any, ForwardRef
 
-from typing_extensions import Annotated, Final, Literal, TypeGuard, get_args, get_origin
+from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypeGuard, get_args, get_origin
 
 if TYPE_CHECKING:
     from ._dataclasses import StandardDataclass
@@ -238,7 +238,7 @@ def eval_type_lenient(value: Any, globalns: dict[str, Any] | None, localns: dict
         return value
 
 
-def get_function_type_hints(function: Callable[..., Any]) -> dict[str, Any]:
+def get_function_type_hints(function: Callable[..., Any], *, include_keys: set[str] | None = None) -> dict[str, Any]:
     """
     Like `typing.get_type_hints`, but doesn't convert `X` to `Optional[X]` if the default value is `None`, also
     copes with `partial`.
@@ -252,6 +252,8 @@ def get_function_type_hints(function: Callable[..., Any]) -> dict[str, Any]:
     globalns = add_module_globals(function)
     type_hints = {}
     for name, value in annotations.items():
+        if include_keys is not None and name not in include_keys:
+            continue
         if value is None:
             value = NoneType
         elif isinstance(value, str):
@@ -443,3 +445,7 @@ def is_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     # The dataclasses.is_dataclass function doesn't seem to provide TypeGuard functionality,
     # so I created this convenience function
     return dataclasses.is_dataclass(_cls)
+
+
+def origin_is_type_alias_type(origin: Any) -> TypeGuard[TypeAliasType]:
+    return isinstance(origin, TypeAliasType)
