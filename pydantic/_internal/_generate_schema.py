@@ -20,7 +20,7 @@ from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from pydantic.config import ConfigDict
+from ..config import ConfigDict
 
 from ..annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
