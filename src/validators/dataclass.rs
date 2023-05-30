@@ -425,10 +425,13 @@ impl BuildValidator for DataclassValidator {
 
     fn build(
         schema: &PyDict,
-        config: Option<&PyDict>,
+        _config: Option<&PyDict>,
         definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
         let py = schema.py();
+
+        // dataclasses ignore the parent config and always use the config from this dataclasses
+        let config = schema.get_as(intern!(py, "config"))?;
 
         let class: &PyType = schema.get_as_req(intern!(py, "cls"))?;
         let name = match schema.get_as_req::<String>(intern!(py, "cls_name")) {

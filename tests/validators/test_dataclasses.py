@@ -736,8 +736,9 @@ def test_dataclass_self_init_alias_field_name():
             ],
         ),
         ['a', 'b'],
+        config={'loc_by_alias': False},
     )
-    v = SchemaValidator(schema, {'loc_by_alias': False})
+    v = SchemaValidator(schema)
 
     def __init__(self, *args, **kwargs):
         v.validate_python(ArgsKwargs(args, kwargs), self_instance=self)
@@ -1057,8 +1058,8 @@ def test_extra_behavior_allow(config: Union[core_schema.CoreConfig, None], schem
                 'MyModel', [core_schema.dataclass_field('f', core_schema.str_schema())], **schema_extra_behavior_kw
             ),
             ['f'],
-        ),
-        config=config,
+            config=config,
+        )
     )
 
     m: MyModel = v.validate_python({'f': 'x', 'extra_field': '123'})

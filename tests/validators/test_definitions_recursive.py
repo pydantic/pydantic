@@ -891,8 +891,9 @@ def test_validate_assignment() -> None:
         ),
         ['x'],
         ref='model',
+        config=core_schema.CoreConfig(revalidate_instances='always'),
     )
-    v = SchemaValidator(schema, config=core_schema.CoreConfig(revalidate_instances='always'))
+    v = SchemaValidator(schema)
 
     data = [Model(x=[Model(x=[])])]
     instance = Model(x=[])
