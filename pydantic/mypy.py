@@ -541,8 +541,16 @@ class PydanticModelTransformer:
         self_tvar_name = '_PydanticBaseModel'  # Make sure it does not conflict with other names in the class
         tvar_fullname = ctx.cls.fullname + '.' + self_tvar_name
         # requires mypy>0.910
-        self_type = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
-        self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
+        if MYPY_VERSION_TUPLE >= (1, 4):
+            self_type = TypeVarType(
+                self_tvar_name, tvar_fullname, -1, [], obj_type, AnyType(TypeOfAny.from_omitted_generics)
+            )
+            self_tvar_expr = TypeVarExpr(
+                self_tvar_name, tvar_fullname, [], obj_type, AnyType(TypeOfAny.from_omitted_generics)
+            )
+        else:
+            self_type = TypeVarDef(self_tvar_name, tvar_fullname, -1, [], obj_type)
+            self_tvar_expr = TypeVarExpr(self_tvar_name, tvar_fullname, [], obj_type)
         ctx.cls.info.names[self_tvar_name] = SymbolTableNode(MDEF, self_tvar_expr)
 
         add_method(
