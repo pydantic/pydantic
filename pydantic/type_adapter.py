@@ -357,8 +357,7 @@ class TypeAdapter(Generic[T]):
         key_map, definitions = schema_generator_instance.generate_definitions(inputs)
 
         json_schema: dict[str, Any] = {}
-        if definitions:
-            json_schema['$defs'] = definitions
+        json_schema['$defs'] = definitions
         if title:
             json_schema['title'] = title
         if description:
