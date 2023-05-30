@@ -20,6 +20,8 @@ from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
+from ..config import ConfigDict
+
 from ..annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import AliasChoices, AliasPath, FieldInfo
@@ -730,6 +732,10 @@ class GenerateSchema:
                 code='typed-dict-version',
             )
 
+        config: ConfigDict | None = getattr(typed_dict_cls, '__pydantic_config__', None)
+        config_wrapper = ConfigWrapper(config)
+        core_config = config_wrapper.core_config(None)
+
         required_keys: frozenset[str] = typed_dict_cls.__required_keys__
 
         fields: dict[str, core_schema.TypedDictField] = {}
@@ -759,6 +765,7 @@ class GenerateSchema:
             extra_behavior='forbid',
             ref=typed_dict_ref,
             metadata=metadata,
+            config=core_config,
         )
 
         schema = self._apply_model_serializers(td_schema, decorators.model_serializers.values())

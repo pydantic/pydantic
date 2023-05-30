@@ -101,8 +101,11 @@ def test_validate_python_strict() -> None:
     class Model(TypedDict):
         x: int
 
-    lax_validator = TypeAdapter(Model, config=ConfigDict(strict=False))
-    strict_validator = TypeAdapter(Model, config=ConfigDict(strict=True))
+    class ModelStrict(Model):
+        __pydantic_config__ = ConfigDict(strict=True)  # type: ignore
+
+    lax_validator = TypeAdapter(Model)
+    strict_validator = TypeAdapter(ModelStrict)
 
     assert lax_validator.validate_python({'x': '1'}, strict=None) == Model(x=1)
     assert lax_validator.validate_python({'x': '1'}, strict=False) == Model(x=1)
@@ -129,8 +132,11 @@ def test_validate_json_strict() -> None:
     class Model(TypedDict):
         x: int
 
+    class ModelStrict(Model):
+        __pydantic_config__ = ConfigDict(strict=True)  # type: ignore
+
     lax_validator = TypeAdapter(Model, config=ConfigDict(strict=False))
-    strict_validator = TypeAdapter(Model, config=ConfigDict(strict=True))
+    strict_validator = TypeAdapter(ModelStrict)
 
     assert lax_validator.validate_json(json.dumps({'x': '1'}), strict=None) == Model(x=1)
     assert lax_validator.validate_json(json.dumps({'x': '1'}), strict=False) == Model(x=1)

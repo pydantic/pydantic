@@ -773,4 +773,48 @@ try:
 except PydanticUserError as exc_info:
     assert exc_info.code == 'invalid_annotated_type'
 ```
+
+## `config` is unused with TypeAdapter {#type-adapter-config-unused}
+
+You will get this error if you try to pass `config` to `TypeAdapter` when the type is a type that has it's own config that cannot be overridden (currently this is only `BaseModel`, `TypedDict` and `dataclass`):
+
+```py
+from typing_extensions import TypedDict
+
+from pydantic import ConfigDict, PydanticUserError, TypeAdapter
+
+
+class MyTypedDict(TypedDict):
+    x: int
+
+
+try:
+    TypeAdapter(MyTypedDict, config=ConfigDict(strict=True))
+except PydanticUserError as e:
+    print(e)
+    """
+    Cannot use `config` when the type is a BaseModel, dataclass or TypedDict. These types can have their own config and setting the config via the `config` parameter to TypeAdapter will not override it, thus the `config` you passed to TypeAdapter becomes meaningless, which is probably not what you want.
+
+    For further information visit https://errors.pydantic.dev/2/u/type-adapter-config-unused
+    """
+```
+
+Instead you'll need to subclass the type and override or set the config on it:
+
+```py
+from typing_extensions import TypedDict
+
+from pydantic import ConfigDict, TypeAdapter
+
+
+class MyTypedDict(TypedDict):
+    x: int
+
+    # or `model_config = ...` for BaseModel
+    __pydantic_config__ = ConfigDict(strict=True)
+
+
+TypeAdapter(MyTypedDict)  # ok
+```
+
 {% endraw %}
