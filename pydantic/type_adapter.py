@@ -3,10 +3,10 @@ from __future__ import annotations as _annotations
 
 import sys
 from dataclasses import is_dataclass
-from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, is_typeddict, overload
+from typing import TYPE_CHECKING, Any, Dict, Generic, Iterable, Set, TypeVar, Union, overload
 
 from pydantic_core import CoreSchema, SchemaSerializer, SchemaValidator, Some
-from typing_extensions import Literal
+from typing_extensions import Literal, is_typeddict
 
 from pydantic.errors import PydanticUserError
 from pydantic.main import BaseModel
