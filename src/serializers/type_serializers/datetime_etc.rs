@@ -20,7 +20,7 @@ pub(crate) fn date_to_string(py_date: &PyDate) -> PyResult<String> {
 }
 
 pub(crate) fn time_to_string(py_time: &PyTime) -> PyResult<String> {
-    pytime_as_time(py_time).map(|dt| dt.to_string())
+    pytime_as_time(py_time, None).map(|dt| dt.to_string())
 }
 
 macro_rules! build_serializer {

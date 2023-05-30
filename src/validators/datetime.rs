@@ -95,10 +95,8 @@ impl Validator for DateTimeValidator {
                 }
             }
 
-            match (&constraints.tz, speedate_dt.time.tz_offset) {
-                (Some(TZConstraint::Aware), None) => return Err(ValError::new(ErrorType::DatetimeAware, input)),
-                (Some(TZConstraint::Naive), Some(_)) => return Err(ValError::new(ErrorType::DatetimeNaive, input)),
-                _ => (),
+            if let Some(ref tz_constraint) = constraints.tz {
+                tz_constraint.tz_check(speedate_dt.time.tz_offset, input)?
             }
         }
         Ok(datetime.try_into_py(py)?)
@@ -223,25 +221,50 @@ impl NowConstraint {
 }
 
 #[derive(Debug, Clone)]
-pub enum TZConstraint {
-    Aware,
+pub(super) enum TZConstraint {
     Naive,
+    Aware(Option<i32>),
 }
 
 impl TZConstraint {
-    pub fn from_str(s: &str) -> PyResult<Self> {
+    pub(super) fn from_str(s: &str) -> PyResult<Self> {
         match s {
-            "aware" => Ok(TZConstraint::Aware),
             "naive" => Ok(TZConstraint::Naive),
+            "aware" => Ok(TZConstraint::Aware(None)),
             _ => py_schema_err!("Invalid tz_constraint {:?}", s),
         }
     }
 
-    pub fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+    pub(super) fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
         let py = schema.py();
-        match schema.get_as(intern!(py, "tz_constraint"))? {
-            Some(kind) => Ok(Some(Self::from_str(kind)?)),
-            None => Ok(None),
+        let tz_constraint = match schema.get_item(intern!(py, "tz_constraint")) {
+            Some(c) => c,
+            None => return Ok(None),
+        };
+        if let Ok(s) = tz_constraint.downcast::<PyString>() {
+            let s = s.to_str()?;
+            Ok(Some(Self::from_str(s)?))
+        } else {
+            let tz: i32 = tz_constraint.extract()?;
+            Ok(Some(TZConstraint::Aware(Some(tz))))
         }
+    }
+
+    pub(super) fn tz_check<'d>(&self, tz_offset: Option<i32>, input: &'d impl Input<'d>) -> ValResult<'d, ()> {
+        match (self, tz_offset) {
+            (TZConstraint::Aware(_), None) => return Err(ValError::new(ErrorType::TimezoneAware, input)),
+            (TZConstraint::Aware(Some(tz_expected)), Some(tz_actual)) => {
+                let tz_expected = *tz_expected;
+                if tz_expected != tz_actual {
+                    return Err(ValError::new(
+                        ErrorType::TimezoneOffset { tz_expected, tz_actual },
+                        input,
+                    ));
+                }
+            }
+            (TZConstraint::Naive, Some(_)) => return Err(ValError::new(ErrorType::TimezoneNaive, input)),
+            _ => (),
+        }
+        Ok(())
     }
 }

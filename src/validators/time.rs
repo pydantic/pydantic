@@ -1,6 +1,7 @@
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyString, PyTime};
+
 use speedate::Time;
 
 use crate::build_tools::is_strict;
@@ -9,20 +10,13 @@ use crate::input::{EitherTime, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
 
+use super::datetime::TZConstraint;
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
 pub struct TimeValidator {
     strict: bool,
     constraints: Option<TimeConstraints>,
-}
-
-#[derive(Debug, Clone)]
-struct TimeConstraints {
-    le: Option<Time>,
-    lt: Option<Time>,
-    ge: Option<Time>,
-    gt: Option<Time>,
 }
 
 impl BuildValidator for TimeValidator {
@@ -33,25 +27,11 @@ impl BuildValidator for TimeValidator {
         config: Option<&PyDict>,
         _definitions: &mut DefinitionsBuilder<CombinedValidator>,
     ) -> PyResult<CombinedValidator> {
-        let py = schema.py();
-        let has_constraints = schema.get_item(intern!(py, "le")).is_some()
-            || schema.get_item(intern!(py, "lt")).is_some()
-            || schema.get_item(intern!(py, "ge")).is_some()
-            || schema.get_item(intern!(py, "gt")).is_some();
-
-        Ok(Self {
+        let s = Self {
             strict: is_strict(schema, config)?,
-            constraints: match has_constraints {
-                true => Some(TimeConstraints {
-                    le: convert_pytime(schema, intern!(py, "le"))?,
-                    lt: convert_pytime(schema, intern!(py, "lt"))?,
-                    ge: convert_pytime(schema, intern!(py, "ge"))?,
-                    gt: convert_pytime(schema, intern!(py, "gt"))?,
-                }),
-                false => None,
-            },
-        }
-        .into())
+            constraints: TimeConstraints::from_py(schema)?,
+        };
+        Ok(s.into())
     }
 }
 
@@ -87,6 +67,10 @@ impl Validator for TimeValidator {
             check_constraint!(lt, LessThan);
             check_constraint!(ge, GreaterThanEqual);
             check_constraint!(gt, GreaterThan);
+
+            if let Some(ref tz_constraint) = constraints.tz {
+                tz_constraint.tz_check(raw_time.tz_offset, input)?
+            }
         }
         Ok(time.try_into_py(py)?)
     }
@@ -112,5 +96,32 @@ fn convert_pytime(schema: &PyDict, field: &PyString) -> PyResult<Option<Time>> {
     match schema.get_as::<&PyTime>(field)? {
         Some(date) => Ok(Some(EitherTime::Py(date).as_raw()?)),
         None => Ok(None),
+    }
+}
+
+#[derive(Debug, Clone)]
+struct TimeConstraints {
+    le: Option<Time>,
+    lt: Option<Time>,
+    ge: Option<Time>,
+    gt: Option<Time>,
+    tz: Option<TZConstraint>,
+}
+
+impl TimeConstraints {
+    fn from_py(schema: &PyDict) -> PyResult<Option<Self>> {
+        let py = schema.py();
+        let c = Self {
+            le: convert_pytime(schema, intern!(py, "le"))?,
+            lt: convert_pytime(schema, intern!(py, "lt"))?,
+            ge: convert_pytime(schema, intern!(py, "ge"))?,
+            gt: convert_pytime(schema, intern!(py, "gt"))?,
+            tz: TZConstraint::from_py(schema)?,
+        };
+        if c.le.is_some() || c.lt.is_some() || c.ge.is_some() || c.gt.is_some() || c.tz.is_some() {
+            Ok(Some(c))
+        } else {
+            Ok(None)
+        }
     }
 }

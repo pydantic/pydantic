@@ -138,14 +138,14 @@ impl<'a> EitherTimedelta<'a> {
     }
 }
 
-pub fn pytime_as_time(py_time: &PyAny) -> PyResult<Time> {
+pub fn pytime_as_time(py_time: &PyAny, py_dt: Option<&PyAny>) -> PyResult<Time> {
     let py = py_time.py();
 
     let tzinfo = py_time.getattr(intern!(py, "tzinfo"))?;
     let tz_offset: Option<i32> = if tzinfo.is_none() {
         None
     } else {
-        let offset_delta = tzinfo.call_method1(intern!(py, "utcoffset"), (py_time,))?;
+        let offset_delta = tzinfo.call_method1(intern!(py, "utcoffset"), (py_dt,))?;
         // as per the docs, utcoffset() can return None
         if offset_delta.is_none() {
             None
@@ -168,7 +168,7 @@ impl<'a> EitherTime<'a> {
     pub fn as_raw(&self) -> PyResult<Time> {
         match self {
             Self::Raw(time) => Ok(time.clone()),
-            Self::Py(py_time) => pytime_as_time(py_time),
+            Self::Py(py_time) => pytime_as_time(py_time, None),
         }
     }
 
@@ -220,7 +220,7 @@ impl<'a> From<&'a PyDateTime> for EitherDateTime<'a> {
 pub fn pydatetime_as_datetime(py_dt: &PyAny) -> PyResult<DateTime> {
     Ok(DateTime {
         date: pydate_as_date(py_dt)?,
-        time: pytime_as_time(py_dt)?,
+        time: pytime_as_time(py_dt, Some(py_dt))?,
     })
 }
 
