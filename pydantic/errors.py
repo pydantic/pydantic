@@ -54,6 +54,7 @@ PydanticErrorCodes = Literal[
     'model-serializer-signature',
     'multiple-field-serializers',
     'invalid_annotated_type',
+    'type-adapter-config-unused',
 ]
 
 
