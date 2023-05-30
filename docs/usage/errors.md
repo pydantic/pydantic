@@ -784,12 +784,12 @@ from typing_extensions import TypedDict
 from pydantic import ConfigDict, PydanticUserError, TypeAdapter
 
 
-class Model(TypedDict):
-    pass
+class MyTypedDict(TypedDict):
+    x: int
 
 
 try:
-    TypeAdapter(Model, config=ConfigDict(strict=True))
+    TypeAdapter(MyTypedDict, config=ConfigDict(strict=True))
 except PydanticUserError as e:
     print(e)
     """
@@ -807,14 +807,14 @@ from typing_extensions import TypedDict
 from pydantic import ConfigDict, TypeAdapter
 
 
-class Model(TypedDict):
+class MyTypedDict(TypedDict):
+    x: int
+
     # or `model_config = ...` for BaseModel
-    __pydantic_config__ = ConfigDict(
-        strict=True
-    )
+    __pydantic_config__ = ConfigDict(strict=True)
 
 
-TypeAdapter(Model)  # ok
+TypeAdapter(MyTypedDict)  # ok
 ```
 
 {% endraw %}
