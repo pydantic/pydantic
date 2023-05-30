@@ -1,5 +1,5 @@
 import re
-from datetime import date, datetime, time
+from datetime import date, datetime, time, timezone
 from decimal import Decimal
 from typing import Any, Dict
 
@@ -16,6 +16,7 @@ from ..conftest import Err, PyAndJson
         pytest.param(time(12, 13, 14), time(12, 13, 14), id='time'),
         pytest.param(time(12, 13, 14, 123), time(12, 13, 14, 123), id='time-micro'),
         pytest.param('12:13:14', time(12, 13, 14), id='str'),
+        pytest.param('12:13:14Z', time(12, 13, 14, tzinfo=timezone.utc), id='str-tz'),
         pytest.param(b'12:13:14', time(12, 13, 14), id='bytes'),
         pytest.param((1,), Err('Input should be a valid time [type=time_type'), id='tuple'),
         pytest.param(date(2022, 6, 8), Err('Input should be a valid time [type=time_type'), id='date'),

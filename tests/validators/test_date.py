@@ -18,7 +18,9 @@ from ..conftest import Err, PyAndJson
         pytest.param(b'2022-06-08', date(2022, 6, 8), id='bytes'),
         pytest.param((1,), Err('Input should be a valid date [type=date_type'), id='tuple'),
         pytest.param(1654646400, date(2022, 6, 8), id='int'),
+        pytest.param('1654646400', date(2022, 6, 8), id='int-as-str'),
         pytest.param(1654646400.00, date(2022, 6, 8), id='float'),
+        pytest.param('1654646400.00', date(2022, 6, 8), id='float-as-str'),
         pytest.param(Decimal('1654646400'), date(2022, 6, 8), id='decimal'),
         # (253_402_300_800_000, Err('format YYYY-MM-DD, dates after 9999 are not supported as unix timestamps')),
         pytest.param(253_402_300_800_000, Err('Input should be a valid date'), id='int-too-high'),
@@ -33,6 +35,10 @@ from ..conftest import Err, PyAndJson
             ),
             id='datetime-inexact',
         ),
+        pytest.param(1654646400 + 4, Err('type=date_from_datetime_inexact'), id='int-inexact'),
+        pytest.param(1654646400.1, Err('type=date_from_datetime_inexact'), id='float-inexact'),
+        pytest.param('1654646404', Err('type=date_from_datetime_inexact'), id='int-str-inexact'),
+        pytest.param('1654646400.1', Err('type=date_from_datetime_inexact'), id='float-str-inexact'),
         pytest.param(True, Err('Input should be a valid date'), id='bool'),
         pytest.param(time(1, 2, 3), Err('Input should be a valid date [type=date_type'), id='time'),
         pytest.param(
@@ -63,7 +69,7 @@ def test_date(input_value, expected):
     if isinstance(expected, Err):
         with pytest.raises(ValidationError, match=re.escape(expected.message)):
             result = v.validate_python(input_value)
-            print(f'input_value={input_value} result={result}')
+            print(f'input_value={input_value!r} result={result}')
         assert v.isinstance_python(input_value) is False
     else:
         output = v.validate_python(input_value)

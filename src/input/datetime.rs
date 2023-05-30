@@ -27,22 +27,20 @@ impl<'a> From<&'a PyDate> for EitherDate<'a> {
     }
 }
 
-macro_rules! pydate_as_date {
-    ($py_date:expr) => {
-        speedate::Date {
-            year: $py_date.getattr(pyo3::intern!($py_date.py(), "year"))?.extract()?,
-            month: $py_date.getattr(pyo3::intern!($py_date.py(), "month"))?.extract()?,
-            day: $py_date.getattr(pyo3::intern!($py_date.py(), "day"))?.extract()?,
-        }
-    };
+pub fn pydate_as_date(py_date: &PyAny) -> PyResult<Date> {
+    let py = py_date.py();
+    Ok(Date {
+        year: py_date.getattr(intern!(py, "year"))?.extract()?,
+        month: py_date.getattr(intern!(py, "month"))?.extract()?,
+        day: py_date.getattr(intern!(py, "day"))?.extract()?,
+    })
 }
-pub(crate) use pydate_as_date;
 
 impl<'a> EitherDate<'a> {
     pub fn as_raw(&self) -> PyResult<Date> {
         match self {
             Self::Raw(date) => Ok(date.clone()),
-            Self::Py(py_date) => Ok(pydate_as_date!(py_date)),
+            Self::Py(py_date) => pydate_as_date(py_date),
         }
     }
 
@@ -140,34 +138,64 @@ impl<'a> EitherTimedelta<'a> {
     }
 }
 
-macro_rules! pytime_as_time {
-    ($py_time:expr) => {
-        speedate::Time {
-            hour: $py_time.getattr(pyo3::intern!($py_time.py(), "hour"))?.extract()?,
-            minute: $py_time.getattr(pyo3::intern!($py_time.py(), "minute"))?.extract()?,
-            second: $py_time.getattr(pyo3::intern!($py_time.py(), "second"))?.extract()?,
-            microsecond: $py_time
-                .getattr(pyo3::intern!($py_time.py(), "microsecond"))?
-                .extract()?,
+pub fn pytime_as_time(py_time: &PyAny) -> PyResult<Time> {
+    let py = py_time.py();
+
+    let tzinfo = py_time.getattr(intern!(py, "tzinfo"))?;
+    let tz_offset: Option<i32> = if tzinfo.is_none() {
+        None
+    } else {
+        let offset_delta = tzinfo.call_method1(intern!(py, "utcoffset"), (py_time,))?;
+        // as per the docs, utcoffset() can return None
+        if offset_delta.is_none() {
+            None
+        } else {
+            let offset_seconds: f64 = offset_delta.call_method0(intern!(py, "total_seconds"))?.extract()?;
+            Some(offset_seconds.round() as i32)
         }
     };
+
+    Ok(Time {
+        hour: py_time.getattr(intern!(py, "hour"))?.extract()?,
+        minute: py_time.getattr(intern!(py, "minute"))?.extract()?,
+        second: py_time.getattr(intern!(py, "second"))?.extract()?,
+        microsecond: py_time.getattr(intern!(py, "microsecond"))?.extract()?,
+        tz_offset,
+    })
 }
-pub(crate) use pytime_as_time;
 
 impl<'a> EitherTime<'a> {
     pub fn as_raw(&self) -> PyResult<Time> {
         match self {
             Self::Raw(time) => Ok(time.clone()),
-            Self::Py(py_time) => Ok(pytime_as_time!(py_time)),
+            Self::Py(py_time) => pytime_as_time(py_time),
         }
     }
 
     pub fn try_into_py(self, py: Python<'_>) -> PyResult<PyObject> {
         let time = match self {
             Self::Py(time) => Ok(time),
-            Self::Raw(time) => PyTime::new(py, time.hour, time.minute, time.second, time.microsecond, None),
+            Self::Raw(time) => PyTime::new(
+                py,
+                time.hour,
+                time.minute,
+                time.second,
+                time.microsecond,
+                time_as_tzinfo(py, &time)?,
+            ),
         }?;
         Ok(time.into_py(py))
+    }
+}
+
+fn time_as_tzinfo<'py>(py: Python<'py>, time: &Time) -> PyResult<Option<&'py PyTzInfo>> {
+    match time.tz_offset {
+        Some(offset) => {
+            let tz_info = TzInfo::new(offset);
+            let py_tz_info = Py::new(py, tz_info)?.to_object(py).into_ref(py);
+            Ok(Some(py_tz_info.extract()?))
+        }
+        None => Ok(None),
     }
 }
 
@@ -189,24 +217,10 @@ impl<'a> From<&'a PyDateTime> for EitherDateTime<'a> {
     }
 }
 
-pub fn pydatetime_as_datetime(py_dt: &PyDateTime) -> PyResult<DateTime> {
-    let py = py_dt.py();
-
-    let mut offset: Option<i32> = None;
-    let tzinfo = py_dt.getattr(intern!(py, "tzinfo"))?;
-    if !tzinfo.is_none() {
-        let offset_delta = tzinfo.call_method1(intern!(py, "utcoffset"), (py_dt.as_ref(),))?;
-        // as per the docs, utcoffset() can return None
-        if !offset_delta.is_none() {
-            let offset_seconds: f64 = offset_delta.call_method0(intern!(py, "total_seconds"))?.extract()?;
-            offset = Some(offset_seconds.round() as i32);
-        }
-    }
-
+pub fn pydatetime_as_datetime(py_dt: &PyAny) -> PyResult<DateTime> {
     Ok(DateTime {
-        date: pydate_as_date!(py_dt),
-        time: pytime_as_time!(py_dt),
-        offset,
+        date: pydate_as_date(py_dt)?,
+        time: pytime_as_time(py_dt)?,
     })
 }
 
@@ -220,33 +234,17 @@ impl<'a> EitherDateTime<'a> {
 
     pub fn try_into_py(self, py: Python<'a>) -> PyResult<PyObject> {
         let dt = match self {
-            Self::Raw(datetime) => match datetime.offset {
-                Some(offset) => {
-                    let tz_info = TzInfo::new(offset);
-                    PyDateTime::new(
-                        py,
-                        datetime.date.year as i32,
-                        datetime.date.month,
-                        datetime.date.day,
-                        datetime.time.hour,
-                        datetime.time.minute,
-                        datetime.time.second,
-                        datetime.time.microsecond,
-                        Some(Py::new(py, tz_info)?.to_object(py).extract(py)?),
-                    )?
-                }
-                None => PyDateTime::new(
-                    py,
-                    datetime.date.year as i32,
-                    datetime.date.month,
-                    datetime.date.day,
-                    datetime.time.hour,
-                    datetime.time.minute,
-                    datetime.time.second,
-                    datetime.time.microsecond,
-                    None,
-                )?,
-            },
+            Self::Raw(datetime) => PyDateTime::new(
+                py,
+                datetime.date.year as i32,
+                datetime.date.month,
+                datetime.date.day,
+                datetime.time.hour,
+                datetime.time.minute,
+                datetime.time.second,
+                datetime.time.microsecond,
+                time_as_tzinfo(py, &datetime.time)?,
+            )?,
             Self::Py(dt) => dt,
         };
         Ok(dt.into_py(py))
@@ -431,15 +429,15 @@ impl TzInfo {
         Self { seconds }
     }
 
-    fn utcoffset<'p>(&self, py: Python<'p>, _dt: &PyDateTime) -> PyResult<&'p PyDelta> {
+    fn utcoffset<'p>(&self, py: Python<'p>, _dt: &PyAny) -> PyResult<&'p PyDelta> {
         PyDelta::new(py, 0, self.seconds, 0, true)
     }
 
-    fn tzname(&self, _dt: &PyDateTime) -> String {
+    fn tzname(&self, _dt: &PyAny) -> String {
         self.__str__()
     }
 
-    fn dst(&self, _dt: &PyDateTime) -> Option<&PyDelta> {
+    fn dst(&self, _dt: &PyAny) -> Option<&PyDelta> {
         None
     }
 
