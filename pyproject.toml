@@ -184,6 +184,7 @@ exclude_lines = [
     '@overload',
     '@typing.overload',
     '\(Protocol\):$',
+    'typing.assert_never',
 ]
 
 [tool.coverage.paths]
