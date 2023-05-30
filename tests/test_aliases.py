@@ -405,10 +405,14 @@ def test_serialization_alias_from_alias():
 def test_aliases_json_schema():
     class Model(BaseModel):
         x: str = Field(alias='x_alias', validation_alias='x_val_alias', serialization_alias='x_ser_alias')
+        y: str = Field(alias=AliasChoices('y_alias', 'another_alias'))
 
     assert Model.model_json_schema() == {
-        'properties': {'x_val_alias': {'title': 'X Val Alias', 'type': 'string'}},
-        'required': ['x_val_alias'],
+        'properties': {
+            'x_val_alias': {'title': 'X Val Alias', 'type': 'string'},
+            'y_alias': {'title': 'Y Alias', 'type': 'string'},
+        },
+        'required': ['x_val_alias', 'y_alias'],
         'title': 'Model',
         'type': 'object',
     }

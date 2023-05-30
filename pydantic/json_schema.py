@@ -207,7 +207,7 @@ class GenerateJsonSchema:
             method_name = f"{key.replace('-', '_')}_schema"
             try:
                 mapping[key] = getattr(self, method_name)
-            except AttributeError as e:
+            except AttributeError as e:  # pragma: no cover
                 raise TypeError(
                     f'No method for generating JsonSchema for core_schema.type={key!r} '
                     f'(expected: {type(self).__name__}.{method_name})'
@@ -222,8 +222,7 @@ class GenerateJsonSchema:
         returns the generated definitions paired with a mapping from the input keys to the definition references.
 
         Args:
-            inputs (Sequence[tuple[JsonSchemaKeyT, JsonSchemaMode, core_schema.CoreSchema]]): A sequence of tuples,
-                where:
+            inputs: A sequence of tuples, where:
 
                 - `JsonSchemaKeyT` will be paired with `JsonSchemaMode` to form the keys of the first returned
                     dictionary.
@@ -231,7 +230,7 @@ class GenerateJsonSchema:
                 - `core_schema.CoreSchema` is a Pydantic `core_schema`.
 
         Returns:
-            tuple: A 2-tuple, where:
+            A 2-tuple, where:
 
                 - The first element is a dictionary whose keys are tuples of a JSON schema key type and mode, and
                     whose values are `DefsRef`.
@@ -271,11 +270,11 @@ class GenerateJsonSchema:
         Generates a JSON schema for a specified schema in a specified mode.
 
         Args:
-            schema (CoreSchema): A Pydantic model.
-            mode (JsonSchemaMode): The mode in which to generate the schema. Defaults to 'validation'.
+            schema: A Pydantic model.
+            mode: The mode in which to generate the schema. Defaults to 'validation'.
 
         Returns:
-            JsonSchemaValue: A JSON schema representing the specified schema.
+            A JSON schema representing the specified schema.
 
         Raises:
             PydanticUserError: If the JSON schema generator has already been used to generate a JSON schema.
@@ -741,7 +740,7 @@ class GenerateJsonSchema:
             default = schema['default']
         elif 'default_factory' in schema:
             default = schema['default_factory']()
-        else:
+        else:  # pragma: no cover
             raise ValueError('`schema` has neither default nor default_factory')
 
         try:
@@ -763,6 +762,9 @@ class GenerateJsonSchema:
 
     def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
         null_schema = {'type': 'null'}
+        from rich.pretty import pprint
+
+        pprint(schema)
         inner_json_schema = self.generate_inner(schema['schema'])
 
         if inner_json_schema == null_schema:
@@ -1037,7 +1039,7 @@ class GenerateJsonSchema:
         elif self.mode == 'validation':
             return True
         else:
-            assert_never(self.mode)
+            assert_never(self.mode)  # pragma: no cover
 
     def field_is_required(
         self, field: core_schema.ModelField | core_schema.DataclassField | core_schema.TypedDictField
@@ -1054,7 +1056,7 @@ class GenerateJsonSchema:
             else:
                 return field['schema']['type'] != 'default'
         else:
-            assert_never(self.mode)
+            assert_never(self.mode)  # pragma: no cover
 
     def dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema) -> JsonSchemaValue:
         named_required_fields: list[tuple[str, bool, CoreSchemaField]] = [
@@ -1561,6 +1563,7 @@ def model_json_schema(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     mode: JsonSchemaMode = 'validation',
 ) -> dict[str, Any]:
+    """Utility function to generate a JSON Schema for a model."""
     schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
 
@@ -1574,7 +1577,22 @@ def models_json_schema(
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> tuple[dict[tuple[type[BaseModel] | type[PydanticDataclass], JsonSchemaMode], DefsRef], JsonSchemaValue]:
-    # TODO: Put this in the "methods" module once that is created?
+    """Utility function to generate a JSON Schema for multiple models.
+
+    Args:
+        models: A sequence of tuples of the form (model, mode).
+        by_alias: Whether field aliases should be used as keys in the generated JSON Schema.
+        title: The title of the generated JSON Schema.
+        description: The description of the generated JSON Schema.
+        ref_template: The reference template to use for generating JSON Schema references.
+        schema_generator: The schema generator to use for generating the JSON Schema.
+
+    Returns:
+        A 2-tuple, where:
+            - The first element is a dictionary whose keys are tuples of a JSON schema key type and mode, and
+                whose values are `DefsRef`.
+            - The second element is the generated JSON Schema.
+    """
     instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     inputs = [(m, mode, m.__pydantic_core_schema__) for m, mode in models]
     key_map, definitions = instance.generate_definitions(inputs)
