@@ -20,9 +20,8 @@ from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from ..config import ConfigDict
-
 from ..annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
+from ..config import ConfigDict
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import AliasChoices, AliasPath, FieldInfo
 from ..json_schema import JsonSchemaValue
@@ -983,6 +982,9 @@ class GenerateSchema:
         if config is not None:
             config_wrapper = ConfigWrapper(config, check=False)
             self._config_wrapper_stack.append(config_wrapper)
+            core_config = config_wrapper.core_config(dataclass)
+        else:
+            core_config = None
 
         try:
             args_schema = core_schema.dataclass_args_schema(
@@ -1007,6 +1009,7 @@ class GenerateSchema:
             ref=dataclass_ref,
             fields=[field.name for field in dataclasses.fields(dataclass)],
             slots=has_slots,
+            config=core_config,
         )
         schema = self._apply_model_serializers(dc_schema, decorators.model_serializers.values())
         return apply_model_validators(schema, model_validators, 'outer')

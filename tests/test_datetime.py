@@ -170,12 +170,13 @@ def datetime_model_fixture():
         (b'2012-04-23T10:20:30.400-02:00', datetime(2012, 4, 23, 10, 20, 30, 400_000, create_tz(-120))),
         (datetime(2017, 5, 5), datetime(2017, 5, 5)),
         (0, datetime(1970, 1, 1, 0, 0, 0)),
-        # Invalid inputs
+        # Numeric inputs as strings
         ('1494012444.883309', datetime(2017, 5, 5, 19, 27, 24, 883309)),
         ('1494012444', datetime(2017, 5, 5, 19, 27, 24)),
         (b'1494012444', datetime(2017, 5, 5, 19, 27, 24)),
         ('1494012444000.883309', datetime(2017, 5, 5, 19, 27, 24, 883301)),
         ('-1494012444000.883309', datetime(1922, 8, 29, 4, 32, 35, 999000)),
+        # Invalid inputs
         ('2012-4-9 4:8:16', Err('Input should be a valid datetime, invalid character in month')),
         ('x20120423091500', Err('Input should be a valid datetime, invalid character in year')),
         ('2012-04-56T09:15:90', Err('Input should be a valid datetime, day value is outside expected range')),
