@@ -42,7 +42,7 @@ from pydantic import (
     computed_field,
     field_validator,
 )
-from pydantic._internal._core_metadata import build_metadata_dict
+from pydantic._internal._core_metadata import CoreMetadataHandler, build_metadata_dict
 from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
 from pydantic.config import ConfigDict
@@ -4147,3 +4147,32 @@ def test_get_json_schema_gets_called_if_schema_is_replaced() -> None:
 
     # insert_assert(js_schema)
     assert js_schema == {'type': 'string', 'minLength': 1}
+
+
+def test_core_metadata_core_schema_metadata():
+    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
+        CoreMetadataHandler({'metadata': 'test'})
+
+    core_metadata_handler = CoreMetadataHandler({})
+    core_metadata_handler._schema = {}
+    assert core_metadata_handler.metadata == {}
+    core_metadata_handler._schema = {'metadata': 'test'}
+    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
+        core_metadata_handler.metadata
+
+
+def test_build_metadata_dict_initial_metadata():
+    assert build_metadata_dict(initial_metadata={'foo': 'bar'}) == {'foo': 'bar', 'pydantic_js_functions': []}
+
+    with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
+        build_metadata_dict(initial_metadata='test')
+
+
+def test_core_metadata_get_json_schema():
+    core_metadata_handler = CoreMetadataHandler({})
+    assert core_metadata_handler.get_json_schema({}, lambda c: c) == {}
+
+    core_metadata_handler = CoreMetadataHandler(
+        {'metadata': {'pydantic_js_function': lambda c, h: f'schema = {c}, {h.__name__}'}}
+    )
+    assert core_metadata_handler.get_json_schema({'foo': 'bar'}, lambda c: c) == "schema = {'foo': 'bar'}, <lambda>"
