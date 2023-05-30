@@ -95,7 +95,7 @@ impl Validator for DateTimeValidator {
                 }
             }
 
-            match (&constraints.tz, speedate_dt.offset) {
+            match (&constraints.tz, speedate_dt.time.tz_offset) {
                 (Some(TZConstraint::Aware), None) => return Err(ValError::new(ErrorType::DatetimeAware, input)),
                 (Some(TZConstraint::Naive), Some(_)) => return Err(ValError::new(ErrorType::DatetimeNaive, input)),
                 _ => (),

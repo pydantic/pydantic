@@ -153,8 +153,9 @@ fn date_from_datetime<'data>(
         minute: 0,
         second: 0,
         microsecond: 0,
+        tz_offset: None,
     };
-    if dt.time == zero_time && dt.offset.is_none() {
+    if dt.time == zero_time {
         Ok(EitherDate::Raw(dt.date))
     } else {
         Err(ValError::new(ErrorType::DateFromDatetimeInexact, input))
