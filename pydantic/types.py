@@ -579,7 +579,10 @@ class _SecretFieldValidator:
                 custom_error_type=error_kind,
             ),
             serialization=core_schema.plain_serializer_function_ser_schema(
-                self.serialize, info_arg=True, json_return_type='str'
+                self.serialize,
+                info_arg=True,
+                return_schema=core_schema.str_schema(),
+                when_used='json',
             ),
         )
 
