@@ -292,7 +292,6 @@ def test_root_model_literal():
     assert RootModel[int](42).root == 42
 
 
-@pytest.mark.xfail(reason='TODO: fix `RootModel.__eq__`')
 def test_root_model_equality():
     assert RootModel[int](42) == RootModel[int](42)
     assert RootModel[int](42) != RootModel[int](7)
@@ -308,6 +307,13 @@ def test_root_model_with_private_attrs_equality():
 
     m._private_attr = 'xyz'
     assert m != Model(42)
+
+
+def test_root_model_nested_equality():
+    class Model(BaseModel):
+        value: RootModel[int]
+
+    assert Model(value=42).value == RootModel[int](42)
 
 
 @pytest.mark.xfail(reason='TODO: raise error for `extra` with `RootModel`')
@@ -336,8 +342,7 @@ def test_root_model_as_attr_with_validate_defaults():
         rooted_value: RootModel[int] = 42
 
     m = Model()
-    # assert m.rooted_value == RootModel[int](42)  # see `test_root_model_equality`
-    assert m.rooted_value.root == 42
+    assert m.rooted_value == RootModel[int](42)
     assert m.model_dump() == {'rooted_value': 42}
 
 

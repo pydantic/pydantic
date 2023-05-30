@@ -1096,14 +1096,14 @@ RootModelRootType = typing.TypeVar('RootModelRootType')
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     __pydantic_root_model__ = True
+    __pydantic_fields_set__ = {'root'}  # It's fine having a set here as it will never change
+    __pydantic_private__ = None
     __pydantic_extra__ = None
 
     root: RootModelRootType
 
     def __init__(__pydantic_self__, root: RootModelRootType) -> None:  # type: ignore
         __tracebackhide__ = True
-        # TODO: this is required set setattr works on RootModels, should be moved to rust
-        _object_setattr(__pydantic_self__, '__pydantic_fields_set__', {'root'})
         __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 
     __init__.__pydantic_base_init__ = True  # type: ignore
@@ -1111,6 +1111,11 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     @classmethod
     def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
         return super().model_construct(root=root, _fields_set=_fields_set)
+
+    def __eq__(self, other: Any) -> bool:
+        if not isinstance(other, RootModel):
+            return NotImplemented
+        return self.model_fields['root'].annotation == other.model_fields['root'].annotation and super().__eq__(other)
 
     def __repr_args__(self) -> _repr.ReprArgs:
         yield 'root', self.root
