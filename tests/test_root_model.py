@@ -3,6 +3,7 @@ from typing import Any, Dict, List, Optional
 import pytest
 from pydantic_core import CoreSchema
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
+from typing_extensions import Annotated
 
 from pydantic import (
     Base64Str,
@@ -347,17 +348,44 @@ def test_extra_error(extra_value):
             model_config = ConfigDict(extra=extra_value)
 
 
-@pytest.mark.xfail(reason='TODO: support applying defaults with `RootModel`')
 def test_root_model_default_value():
     class Model(RootModel):
         root: int = 42
 
     m = Model()
     assert m.root == 42
-    assert m.model_dump == 42
+    assert m.model_dump() == 42
 
 
-def test_root_model_as_attr_with_validate_defaults():
+def test_root_model_wrong_default_value_without_validate_default():
+    class Model(RootModel):
+        root: int = '42'
+
+    m = Model()
+    assert m.root == '42'
+
+
+def test_root_model_default_value_with_validate_default():
+    class Model(RootModel):
+        model_config = ConfigDict(validate_default=True)
+
+        root: int = '42'
+
+    m = Model()
+    assert m.root == 42
+    assert m.model_dump() == 42
+
+
+def test_root_model_default_value_with_validate_default_on_field():
+    class Model(RootModel):
+        root: Annotated[int, Field(validate_default=True, default='42')]
+
+    m = Model()
+    assert m.root == 42
+    assert m.model_dump() == 42
+
+
+def test_root_model_as_attr_with_validate_default():
     class Model(BaseModel):
         model_config = ConfigDict(validate_default=True)
 
@@ -368,18 +396,17 @@ def test_root_model_as_attr_with_validate_defaults():
     assert m.model_dump() == {'rooted_value': 42}
 
 
-@pytest.mark.xfail(reason='TODO: support applying defaults with `RootModel`')
 def test_root_model_in_root_model_default():
     class Nested(RootModel):
         root: int = 42
 
-    Model = RootModel[Nested]
+    class Model(RootModel):
+        root: Nested = Nested()
 
     m = Model()
     assert m.root.root == 42
 
 
-@pytest.mark.xfail(reason='TODO: support applying defaults with `RootModel`')
 def test_nested_root_model_naive_default():
     class Nested(RootModel):
         root: int = 42
@@ -391,7 +418,6 @@ def test_nested_root_model_naive_default():
     assert m.value.root == 42
 
 
-@pytest.mark.xfail(reason='TODO: support applying defaults with `RootModel`')
 def test_nested_root_model_proper_default():
     class Nested(RootModel):
         root: int = 42
