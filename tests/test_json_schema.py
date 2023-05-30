@@ -427,6 +427,18 @@ def test_enum_includes_extra_without_other_params():
     }
 
 
+def test_invalid_json_schema_extra():
+    class MyModel(BaseModel):
+        model_config = ConfigDict(json_schema_extra=1)
+
+        name: str
+
+    with pytest.raises(
+        ValueError, match=re.escape("model_config['json_schema_extra']=1 should be a dict, callable, or None")
+    ):
+        MyModel.model_json_schema()
+
+
 def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
         spam = 'spam'
@@ -2790,6 +2802,36 @@ def test_modify_schema_dict_keys() -> None:
             'my_field': {'additionalProperties': {'test': 'passed'}, 'title': 'My Field', 'type': 'object'}  # <----
         },
         'required': ['my_field'],
+        'title': 'MyModel',
+        'type': 'object',
+    }
+
+
+def test_remove_anyof_redundancy() -> None:
+    class A:
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return handler({'type': 'str'})
+
+    class B:
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return handler({'type': 'str'})
+
+    class MyModel(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        # Union of two objects should give a JSON with an `anyOf` field, but in this case
+        # since the fields are the same, the `anyOf` is removed.
+        field: Union[A, B]
+
+    assert MyModel.model_json_schema() == {
+        'properties': {'field': {'title': 'Field', 'type': 'string'}},
+        'required': ['field'],
         'title': 'MyModel',
         'type': 'object',
     }

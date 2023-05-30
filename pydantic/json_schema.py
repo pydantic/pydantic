@@ -590,10 +590,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a `List` value.
 
         Args:
-            schema (core_schema.ListSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
@@ -605,10 +605,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a tuple of schemas.
 
         Args:
-            schema (core_schema.TuplePositionalSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         json_schema: JsonSchemaValue = {'type': 'array'}
         json_schema['minItems'] = len(schema['items_schema'])
@@ -762,9 +762,6 @@ class GenerateJsonSchema:
 
     def nullable_schema(self, schema: core_schema.NullableSchema) -> JsonSchemaValue:
         null_schema = {'type': 'null'}
-        from rich.pretty import pprint
-
-        pprint(schema)
         inner_json_schema = self.generate_inner(schema['schema'])
 
         if inner_json_schema == null_schema:
