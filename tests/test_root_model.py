@@ -65,6 +65,7 @@ def test_root_model_specialized(root_type, root_value, dump_value):
 
     assert m.model_dump() == dump_value
     assert dict(m) == {'root': m.root}
+    assert m.__pydantic_fields_set__ == {'root'}
 
 
 @parametrize_root_model()
@@ -78,6 +79,7 @@ def test_root_model_inherited(root_type, root_value, dump_value):
 
     assert m.model_dump() == dump_value
     assert dict(m) == {'root': m.root}
+    assert m.__pydantic_fields_set__ == {'root'}
 
 
 def test_root_model_validation_error():
@@ -355,6 +357,7 @@ def test_root_model_default_value():
     m = Model()
     assert m.root == 42
     assert m.model_dump() == 42
+    assert m.__pydantic_fields_set__ == set()
 
 
 def test_root_model_default_factory():
@@ -364,6 +367,7 @@ def test_root_model_default_factory():
     m = Model()
     assert m.root == 42
     assert m.model_dump() == 42
+    assert m.__pydantic_fields_set__ == set()
 
 
 def test_root_model_wrong_default_value_without_validate_default():
