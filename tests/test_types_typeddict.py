@@ -8,9 +8,11 @@ from typing import Any, Dict, Generic, List, Optional, TypeVar
 import pytest
 import typing_extensions
 from annotated_types import Lt
+from pydantic_core import core_schema
 from typing_extensions import Annotated, TypedDict
 
 from pydantic import BaseModel, ConfigDict, Field, PositiveInt, PydanticUserError, ValidationError
+from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
 from pydantic.type_adapter import TypeAdapter
@@ -192,16 +194,73 @@ def test_typeddict_schema(TypedDict):
     class DataTD(TypedDict):
         a: int
 
+    class CustomTD(TypedDict):
+        b: int
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            schema = handler(source_type)
+            schema['computed_fields'] = [
+                core_schema.computed_field(property_name='another_b', return_schema=core_schema.int_schema())
+            ]
+            return schema
+
     class Model(BaseModel):
         data: Data
         data_td: DataTD
+        custom_td: CustomTD
 
-    assert Model.model_json_schema() == {
+    assert Model.model_json_schema(mode='validation') == {
         'title': 'Model',
         'type': 'object',
-        'properties': {'data': {'$ref': '#/$defs/Data'}, 'data_td': {'$ref': '#/$defs/DataTD'}},
-        'required': ['data', 'data_td'],
+        'properties': {
+            'custom_td': {'$ref': '#/$defs/CustomTD'},
+            'data': {'$ref': '#/$defs/Data'},
+            'data_td': {'$ref': '#/$defs/DataTD'},
+        },
+        'required': ['data', 'data_td', 'custom_td'],
         '$defs': {
+            'CustomTD': {
+                'type': 'object',
+                'title': 'CustomTD',
+                'properties': {'b': {'title': 'B', 'type': 'integer'}},
+                'required': ['b'],
+            },
+            'Data': {
+                'type': 'object',
+                'title': 'Data',
+                'properties': {'a': {'title': 'A', 'type': 'integer'}},
+                'required': ['a'],
+            },
+            'DataTD': {
+                'type': 'object',
+                'title': 'DataTD',
+                'properties': {'a': {'title': 'A', 'type': 'integer'}},
+                'required': ['a'],
+            },
+        },
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {
+            'custom_td': {'$ref': '#/$defs/CustomTD'},
+            'data': {'$ref': '#/$defs/Data'},
+            'data_td': {'$ref': '#/$defs/DataTD'},
+        },
+        'required': ['data', 'data_td', 'custom_td'],
+        '$defs': {
+            'CustomTD': {
+                'type': 'object',
+                'title': 'CustomTD',
+                'properties': {
+                    'b': {'title': 'B', 'type': 'integer'},
+                    'another_b': {'title': 'Another B', 'type': 'integer'},
+                },
+                'required': ['b', 'another_b'],
+            },
             'Data': {
                 'type': 'object',
                 'title': 'Data',
