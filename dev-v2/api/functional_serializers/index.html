@@ -1915,11 +1915,11 @@ Defaults to 'always'.</p></td>
 <span class="sd">        Gets the Pydantic core schema.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            source_type (Any): The source type.</span>
-<span class="sd">            handler (GetCoreSchemaHandler): The `GetCoreSchemaHandler` instance.</span>
+<span class="sd">            source_type: The source type.</span>
+<span class="sd">            handler: The `GetCoreSchemaHandler` instance.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            core_schema.CoreSchema: The Pydantic core schema.</span>
+<span class="sd">            The Pydantic core schema.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
         <span class="n">return_type</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">get_function_return_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">)</span>
@@ -2065,8 +2065,8 @@ and can modify the resulting value before returning it as the final output of se
 <span class="sd">        This method is used to get the Pydantic core schema of the class.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            source_type (Any): Source type.</span>
-<span class="sd">            handler (GetCoreSchemaHandler): Core schema handler.</span>
+<span class="sd">            source_type: Source type.</span>
+<span class="sd">            handler: Core schema handler.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            The generated core schema of the class.</span>
@@ -2158,7 +2158,7 @@ and can modify the resulting value before returning it as the final output of se
         <tr>
           <td><code>mode</code></td>
           <td>
-                <code>str</code>
+                <code><span title="typing_extensions.Literal">Literal</span>[&#39;plain&#39;, &#39;wrap&#39;]</code>
           </td>
           <td><p><code>plain</code> means the function will be called instead of the default serialization logic,
 <code>wrap</code> means the function will be called with an argument to optionally call the
@@ -2204,13 +2204,13 @@ default serialization logic.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>Callable</code></td>          <td>
+          <td>
                 <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
           </td>
           <td><p>A decorator that can be used to decorate a function to be used as a field serializer.</p></td>
@@ -2280,8 +2280,8 @@ default serialization logic.</p></td>
 <span class="sd">    - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        fields (str): Which field(s) the method should be called on.</span>
-<span class="sd">        mode (str): `plain` means the function will be called instead of the default serialization logic,</span>
+<span class="sd">        fields: Which field(s) the method should be called on.</span>
+<span class="sd">        mode: `plain` means the function will be called instead of the default serialization logic,</span>
 <span class="sd">            `wrap` means the function will be called with an argument to optionally call the</span>
 <span class="sd">            default serialization logic.</span>
 <span class="sd">        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.</span>
@@ -2289,7 +2289,7 @@ default serialization logic.</p></td>
 <span class="sd">        check_fields (bool): Whether to check that the fields actually exist on the model.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Callable: A decorator that can be used to decorate a function to be used as a field serializer.</span>
+<span class="sd">        A decorator that can be used to decorate a function to be used as a field serializer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span>
@@ -2394,13 +2394,13 @@ to optionally call the default serialization logic.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>Callable</code></td>          <td>
+          <td>
                 <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
           </td>
           <td><p>A decorator that can be used to decorate a function to be used as a model serializer.</p></td>
@@ -2456,15 +2456,15 @@ to optionally call the default serialization logic.</p></td>
 <span class="sd">    (`when_used` is not permitted here since it makes no sense.)</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __f (Callable[..., Any] | None): The function to be decorated.</span>
-<span class="sd">        mode (Literal[&#39;plain&#39;, &#39;wrap&#39;]): The serialization mode. `&#39;plain&#39;` means the function will be called</span>
+<span class="sd">        __f: The function to be decorated.</span>
+<span class="sd">        mode: The serialization mode. `&#39;plain&#39;` means the function will be called</span>
 <span class="sd">            instead of the default serialization logic, `&#39;wrap&#39;` means the function will be called with an argument</span>
 <span class="sd">            to optionally call the default serialization logic.</span>
 <span class="sd">        when_used: Determines the serializer will be be used for serialization.</span>
 <span class="sd">        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Callable: A decorator that can be used to decorate a function to be used as a model serializer.</span>
+<span class="sd">        A decorator that can be used to decorate a function to be used as a model serializer.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
