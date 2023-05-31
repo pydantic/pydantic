@@ -2567,6 +2567,37 @@ def test_namedtuple_default():
     }
 
 
+def test_namedtuple_modify_schema():
+    class Coordinates(NamedTuple):
+        x: float
+        y: float
+
+    class CustomCoordinates(Coordinates):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            schema = handler(source)
+            schema['arguments_schema']['metadata']['pydantic_js_prefer_positional_arguments'] = False
+            return schema
+
+    class Location(BaseModel):
+        coords: CustomCoordinates = CustomCoordinates(34, 42)
+
+    assert Location.model_json_schema() == {
+        'properties': {
+            'coords': {
+                'additionalProperties': False,
+                'properties': {'x': {'title': 'X', 'type': 'number'}, 'y': {'title': 'Y', 'type': 'number'}},
+                'required': ['x', 'y'],
+                'title': 'Coords',
+                'type': 'object',
+                'default': [34, 42],
+            }
+        },
+        'title': 'Location',
+        'type': 'object',
+    }
+
+
 def test_advanced_generic_schema():  # noqa: C901
     T = TypeVar('T')
     K = TypeVar('K')

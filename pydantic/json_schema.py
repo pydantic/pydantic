@@ -948,6 +948,8 @@ class GenerateJsonSchema:
                     # should ensure the first such item is what belongs in the JSON schema
                     name = path[0]
                     break
+        else:
+            assert_never(alias)
         return name
 
     def typed_dict_field_schema(self, schema: core_schema.TypedDictField) -> JsonSchemaValue:
