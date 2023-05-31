@@ -627,14 +627,13 @@ class GenerateJsonSchema:
         Returns a schema that matches a tuple of a given schema.
 
         Args:
-            schema (core_schema.TupleVariableSchema): The schema.
+            schema: The schema.
 
         Returns:
             JsonSchemaValue: The generated JSON schema.
         """
-        json_schema: JsonSchemaValue = {'type': 'array', 'items': {}}
-        if 'items_schema' in schema:
-            json_schema['items'] = self.generate_inner(schema['items_schema'])
+        items = self.generate_inner(schema['items_schema'])  # type: ignore
+        json_schema: JsonSchemaValue = {'type': 'array', 'items': items}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
         return json_schema
 
