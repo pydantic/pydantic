@@ -10,20 +10,20 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/functional_serializers/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/annotated/">
       
       
-        <link rel="prev" href="../fields/">
+        <link rel="prev" href="../alias_generators/">
       
       
-        <link rel="next" href="../functional_validators/">
+        <link rel="next" href="../color/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.14">
     
     
       
-        <title>pydantic.functional_serializers - pydantic</title>
+        <title>pydantic.annotated - pydantic</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pydantic.functional_serializers" class="md-skip">
+        <a href="#pydantic.annotated" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +135,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              pydantic.functional_serializers
+              pydantic.annotated
             
           </span>
         </div>
@@ -1412,11 +1412,90 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../annotated/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic.annotated
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         pydantic.annotated
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.annotated" class="md-nav__link">
+    pydantic.annotated
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.annotated.GetCoreSchemaHandler" class="md-nav__link">
+    GetCoreSchemaHandler
+  </a>
+  
+    <nav class="md-nav" aria-label="GetCoreSchemaHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated.GetCoreSchemaHandler.generate_schema" class="md-nav__link">
+    generate_schema()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.annotated.GetJsonSchemaHandler" class="md-nav__link">
+    GetJsonSchemaHandler
+  </a>
+  
+    <nav class="md-nav" aria-label="GetJsonSchemaHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated.GetJsonSchemaHandler.resolve_ref_schema" class="md-nav__link">
+    resolve_ref_schema()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1496,78 +1575,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          pydantic.functional_serializers
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../functional_serializers/" class="md-nav__link">
         pydantic.functional_serializers
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers" class="md-nav__link">
-    pydantic.functional_serializers
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers.PlainSerializer" class="md-nav__link">
-    PlainSerializer
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers.WrapSerializer" class="md-nav__link">
-    WrapSerializer
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers.field_serializer" class="md-nav__link">
-    field_serializer()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers.model_serializer" class="md-nav__link">
-    model_serializer()
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1746,37 +1758,49 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers" class="md-nav__link">
-    pydantic.functional_serializers
+  <a href="#pydantic.annotated" class="md-nav__link">
+    pydantic.annotated
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers.PlainSerializer" class="md-nav__link">
-    PlainSerializer
+  <a href="#pydantic.annotated.GetCoreSchemaHandler" class="md-nav__link">
+    GetCoreSchemaHandler
   </a>
+  
+    <nav class="md-nav" aria-label="GetCoreSchemaHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated.GetCoreSchemaHandler.generate_schema" class="md-nav__link">
+    generate_schema()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers.WrapSerializer" class="md-nav__link">
-    WrapSerializer
+  <a href="#pydantic.annotated.GetJsonSchemaHandler" class="md-nav__link">
+    GetJsonSchemaHandler
+  </a>
+  
+    <nav class="md-nav" aria-label="GetJsonSchemaHandler">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.annotated.GetJsonSchemaHandler.resolve_ref_schema" class="md-nav__link">
+    resolve_ref_schema()
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers.field_serializer" class="md-nav__link">
-    field_serializer()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.functional_serializers.model_serializer" class="md-nav__link">
-    model_serializer()
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
@@ -1799,12 +1823,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>pydantic.functional_serializers</h1>
+  <h1>pydantic.annotated</h1>
 
 <div class="doc doc-object doc-module">
 
 
-<a id="pydantic.functional_serializers"></a>
+<a id="pydantic.annotated"></a>
   <div class="doc doc-contents first">
 
   
@@ -1822,64 +1846,234 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 
-<h2 id="pydantic.functional_serializers.PlainSerializer" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">PlainSerializer</span>
+<h2 id="pydantic.annotated.GetCoreSchemaHandler" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">GetCoreSchemaHandler</span>
 
 
-<a href="#pydantic.functional_serializers.PlainSerializer" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic.annotated.GetCoreSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
   <div class="doc doc-contents ">
 
   
-      <p>Plain serializers use a function to modify the output of serialization.</p>
+      <p>Handler to call into the next CoreSchema schema generation function</p>
 
-  <p><strong>Attributes:</strong></p>
+
+        <details class="quote">
+          <summary>Source code in <code>pydantic/annotated.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GetCoreSchemaHandler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Handler to call into the next CoreSchema schema generation function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Call the inner handler and get the CoreSchema it returns.</span>
+<span class="sd">        This will call the next CoreSchema modifying function up until it calls</span>
+<span class="sd">        into Pydantic&#39;s internal schema generation machinery, which will raise a</span>
+<span class="sd">        `pydantic.errors.PydanticSchemaGenerationError` error if it cannot generate</span>
+<span class="sd">        a CoreSchema for the given source type.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            __source_type: The input type.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CoreSchema: the `pydantic-core` CoreSchema generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">generate_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a schema unrelated to the current context.</span>
+<span class="sd">        Use this function if e.g. you are handling schema generation for a sequence</span>
+<span class="sd">        and want to generate a schema for its items.</span>
+<span class="sd">        Otherwise, you may end up doing something like applying a `min_length` constraint</span>
+<span class="sd">        that was intended for the sequence itself to it&#39;s items!</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            __source_type: The input type.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            CoreSchema: the `pydantic-core` CoreSchema generated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic.annotated.GetCoreSchemaHandler.generate_schema" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">generate_schema</span>
+
+
+<a href="#pydantic.annotated.GetCoreSchemaHandler.generate_schema" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">generate_schema</span><span class="p">(</span><span class="n">__source_type</span><span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Generate a schema unrelated to the current context.
+Use this function if e.g. you are handling schema generation for a sequence
+and want to generate a schema for its items.
+Otherwise, you may end up doing something like applying a <code>min_length</code> constraint
+that was intended for the sequence itself to it's items!</p>
+
+  <p><strong>Parameters:</strong></p>
   <table>
     <thead>
       <tr>
         <th>Name</th>
         <th>Type</th>
         <th>Description</th>
+        <th>Default</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td><code>func</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.SerializerFunction">SerializerFunction</span></code>
-          </td>
-          <td><p>The serializer function.</p></td>
-        </tr>
-        <tr>
-          <td><code>return_type</code></td>
+          <td><code>__source_type</code></td>
           <td>
                 <code><span title="typing.Any">Any</span></code>
           </td>
-          <td><p>Optional return type for the function, if omitted it will be inferred from the type annotation.</p></td>
-        </tr>
-        <tr>
-          <td><code>when_used</code></td>
+          <td><p>The input type.</p></td>
           <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;always&#39;, &#39;unless-none&#39;, &#39;json&#39;, &#39;json-unless-none&#39;]</code>
+              <em>required</em>
           </td>
-          <td><p>The serialization condition.
-Defaults to 'always'.</p></td>
         </tr>
     </tbody>
   </table>
 
+  <p><strong>Returns:</strong></p>
+  <table>
+    <thead>
+      <tr>
+<th>Name</th>        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+        <tr>
+<td><code>CoreSchema</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.CoreSchema">CoreSchema</span></code>
+          </td>
+          <td><p>the <code>pydantic-core</code> CoreSchema generated.</p></td>
+        </tr>
+    </tbody>
+  </table>
+
+      <details class="quote">
+        <summary>Source code in <code>pydantic/annotated.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span>
+<span class="normal">87</span>
+<span class="normal">88</span>
+<span class="normal">89</span>
+<span class="normal">90</span>
+<span class="normal">91</span>
+<span class="normal">92</span>
+<span class="normal">93</span>
+<span class="normal">94</span>
+<span class="normal">95</span>
+<span class="normal">96</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">generate_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate a schema unrelated to the current context.</span>
+<span class="sd">    Use this function if e.g. you are handling schema generation for a sequence</span>
+<span class="sd">    and want to generate a schema for its items.</span>
+<span class="sd">    Otherwise, you may end up doing something like applying a `min_length` constraint</span>
+<span class="sd">    that was intended for the sequence itself to it&#39;s items!</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        __source_type: The input type.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        CoreSchema: the `pydantic-core` CoreSchema generated.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+</code></pre></div></td></tr></table></div>
+      </details>
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.annotated.GetJsonSchemaHandler" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">GetJsonSchemaHandler</span>
+
+
+<a href="#pydantic.annotated.GetJsonSchemaHandler" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Handler to call into the next JSON schema generation function</p>
+
 
         <details class="quote">
-          <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
+          <summary>Source code in <code>pydantic/annotated.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">21</span>
 <span class="normal">22</span>
 <span class="normal">23</span>
 <span class="normal">24</span>
@@ -1908,193 +2102,52 @@ Defaults to 'always'.</p></td>
 <span class="normal">47</span>
 <span class="normal">48</span>
 <span class="normal">49</span>
-<span class="normal">50</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">PlainSerializer</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Plain serializers use a function to modify the output of serialization.</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        func (core_schema.SerializerFunction): The serializer function.</span>
-<span class="sd">        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.</span>
-<span class="sd">        when_used (Literal[&#39;always&#39;, &#39;unless-none&#39;, &#39;json&#39;, &#39;json-unless-none&#39;], optional): The serialization condition.</span>
-<span class="sd">            Defaults to &#39;always&#39;.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">func</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">SerializerFunction</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span>
-
-    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Gets the Pydantic core schema.</span>
-
-<span class="sd">        Args:</span>
-<span class="sd">            source_type: The source type.</span>
-<span class="sd">            handler: The `GetCoreSchemaHandler` instance.</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            The Pydantic core schema.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
-        <span class="n">return_type</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">get_function_return_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">)</span>
-        <span class="n">return_schema</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">return_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">return_type</span><span class="p">)</span>
-        <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;serialization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">plain_serializer_function_ser_schema</span><span class="p">(</span>
-            <span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span>
-            <span class="n">info_arg</span><span class="o">=</span><span class="n">_decorators</span><span class="o">.</span><span class="n">inspect_annotated_serializer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;plain&#39;</span><span class="p">),</span>
-            <span class="n">return_schema</span><span class="o">=</span><span class="n">return_schema</span><span class="p">,</span>
-            <span class="n">when_used</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">when_used</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">schema</span>
-</code></pre></div></td></tr></table></div>
-        </details>
-
-  
-
-  <div class="doc doc-children">
-
-
-
-
-
-
-
-
-
-
-
-  </div>
-
-  </div>
-
-</div>
-
-<div class="doc doc-object doc-class">
-
-
-
-<h2 id="pydantic.functional_serializers.WrapSerializer" class="doc doc-heading">
-        <span class="doc doc-object-name doc-class-name">WrapSerializer</span>
-
-
-<a href="#pydantic.functional_serializers.WrapSerializer" class="headerlink" title="Permanent link">&para;</a></h2>
-
-
-  <div class="doc doc-contents ">
-
-  
-      <p>Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization logic,
-and can modify the resulting value before returning it as the final output of serialization.</p>
-
-  <p><strong>Attributes:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>func</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.core_schema" href="../pydantic_core_schema/#pydantic_core.core_schema">core_schema</a>.<span title="pydantic_core.core_schema.WrapSerializerFunction">WrapSerializerFunction</span></code>
-          </td>
-          <td><p>The function to be wrapped.</p></td>
-        </tr>
-        <tr>
-          <td><code>return_type</code></td>
-          <td>
-                <code><span title="typing.Any">Any</span></code>
-          </td>
-          <td><p>Optional return type for the function, if omitted it will be inferred from the type annotation.</p></td>
-        </tr>
-        <tr>
-          <td><code>when_used</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;always&#39;, &#39;unless-none&#39;, &#39;json&#39;, &#39;json-unless-none&#39;]</code>
-          </td>
-          <td><p>Determines the serializer will be used for serialization.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-
-        <details class="quote">
-          <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">53</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
 <span class="normal">54</span>
 <span class="normal">55</span>
 <span class="normal">56</span>
 <span class="normal">57</span>
-<span class="normal">58</span>
-<span class="normal">59</span>
-<span class="normal">60</span>
-<span class="normal">61</span>
-<span class="normal">62</span>
-<span class="normal">63</span>
-<span class="normal">64</span>
-<span class="normal">65</span>
-<span class="normal">66</span>
-<span class="normal">67</span>
-<span class="normal">68</span>
-<span class="normal">69</span>
-<span class="normal">70</span>
-<span class="normal">71</span>
-<span class="normal">72</span>
-<span class="normal">73</span>
-<span class="normal">74</span>
-<span class="normal">75</span>
-<span class="normal">76</span>
-<span class="normal">77</span>
-<span class="normal">78</span>
-<span class="normal">79</span>
-<span class="normal">80</span>
-<span class="normal">81</span>
-<span class="normal">82</span>
-<span class="normal">83</span>
-<span class="normal">84</span>
-<span class="normal">85</span>
-<span class="normal">86</span>
-<span class="normal">87</span>
-<span class="normal">88</span>
-<span class="normal">89</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="k">class</span> <span class="nc">WrapSerializer</span><span class="p">:</span>
+<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">GetJsonSchemaHandler</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization logic,</span>
-<span class="sd">    and can modify the resulting value before returning it as the final output of serialization.</span>
-
-<span class="sd">    Attributes:</span>
-<span class="sd">        func (core_schema.WrapSerializerFunction): The function to be wrapped.</span>
-<span class="sd">        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.</span>
-<span class="sd">        when_used: Determines the serializer will be used for serialization.</span>
+<span class="sd">    Handler to call into the next JSON schema generation function</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="n">func</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">WrapSerializerFunction</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span>
+    <span class="n">mode</span><span class="p">:</span> <span class="n">JsonSchemaMode</span>
 
-    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        This method is used to get the Pydantic core schema of the class.</span>
+    <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__core_schema</span><span class="p">:</span> <span class="n">CoreSchemaOrField</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Call the inner handler and get the JsonSchemaValue it returns.</span>
+<span class="sd">        This will call the next JSON schema modifying function up until it calls</span>
+<span class="sd">        into `pydantic.json_schema.GenerateJsonSchema`, which will raise a</span>
+<span class="sd">        `pydantic.errors.PydanticInvalidForJsonSchema` error if it cannot generate</span>
+<span class="sd">        a JSON schema.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            source_type: Source type.</span>
-<span class="sd">            handler: Core schema handler.</span>
+<span class="sd">            __core_schema: A `pydantic_core.core_schema.CoreSchema`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            The generated core schema of the class.</span>
+<span class="sd">            JsonSchemaValue: the JSON schema generated by the inner JSON schema modify</span>
+<span class="sd">            functions.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
-        <span class="n">return_type</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">get_function_return_type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">return_type</span><span class="p">)</span>
-        <span class="n">return_schema</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">return_type</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">return_type</span><span class="p">)</span>
-        <span class="n">schema</span><span class="p">[</span><span class="s1">&#39;serialization&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">wrap_serializer_function_ser_schema</span><span class="p">(</span>
-            <span class="n">function</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span>
-            <span class="n">info_arg</span><span class="o">=</span><span class="n">_decorators</span><span class="o">.</span><span class="n">inspect_annotated_serializer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">),</span>
-            <span class="n">return_schema</span><span class="o">=</span><span class="n">return_schema</span><span class="p">,</span>
-            <span class="n">when_used</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">when_used</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">schema</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+
+    <span class="k">def</span> <span class="nf">resolve_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__maybe_ref_json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the real schema for a `{&quot;$ref&quot;: ...}` schema.</span>
+<span class="sd">        If the schema given is not a `$ref` schema, it will be returned as is.</span>
+<span class="sd">        This means you don&#39;t have to check before calling this function.</span>
+
+<span class="sd">        Args:</span>
+<span class="sd">            __maybe_ref_json_schema: A JsonSchemaValue, ref based or not.</span>
+
+<span class="sd">        Raises:</span>
+<span class="sd">            LookupError: if the ref is not found.</span>
+
+<span class="sd">        Returns:</span>
+<span class="sd">            JsonSchemaValue: A JsonSchemaValue that has no `$ref`.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
         </details>
 
@@ -2110,43 +2163,23 @@ and can modify the resulting value before returning it as the final output of se
 
 
 
-
-
-  </div>
-
-  </div>
-
-</div>
-
-
 <div class="doc doc-object doc-function">
 
 
 
-<h2 id="pydantic.functional_serializers.field_serializer" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">field_serializer</span>
+<h3 id="pydantic.annotated.GetJsonSchemaHandler.resolve_ref_schema" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">resolve_ref_schema</span>
 
 
-<a href="#pydantic.functional_serializers.field_serializer" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">field_serializer</span><span class="p">(</span>
-    <span class="o">*</span><span class="n">fields</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">when_used</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
-    <span class="n">check_fields</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
+<a href="#pydantic.annotated.GetJsonSchemaHandler.resolve_ref_schema" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">__maybe_ref_json_schema</span><span class="p">)</span>
 </code></pre></div>
 
   <div class="doc doc-contents ">
   
-      <p>Decorate methods on the class indicating that they should be used to serialize fields.</p>
-<p>Four signatures are supported:</p>
-<ul>
-<li><code>(self, value: Any, info: FieldSerializationInfo)</code></li>
-<li><code>(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)</code></li>
-<li><code>(value: Any, info: SerializationInfo)</code></li>
-<li><code>(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)</code></li>
-</ul>
+      <p>Get the real schema for a <code>{"$ref": ...}</code> schema.
+If the schema given is not a <code>$ref</code> schema, it will be returned as is.
+This means you don't have to check before calling this function.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -2160,56 +2193,32 @@ and can modify the resulting value before returning it as the final output of se
     </thead>
     <tbody>
         <tr>
-          <td><code>fields</code></td>
+          <td><code>__maybe_ref_json_schema</code></td>
           <td>
-                <code>str</code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
           </td>
-          <td><p>Which field(s) the method should be called on.</p></td>
+          <td><p>A JsonSchemaValue, ref based or not.</p></td>
           <td>
-                <code>()</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>mode</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;plain&#39;, &#39;wrap&#39;]</code>
-          </td>
-          <td><p><code>plain</code> means the function will be called instead of the default serialization logic,
-<code>wrap</code> means the function will be called with an argument to optionally call the
-default serialization logic.</p></td>
-          <td>
-                <code>&#39;plain&#39;</code>
+              <em>required</em>
           </td>
         </tr>
+    </tbody>
+  </table>
+
+  <p><strong>Raises:</strong></p>
+  <table>
+    <thead>
+      <tr>
+        <th>Type</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
         <tr>
-          <td><code>return_type</code></td>
           <td>
-                <code><span title="typing.Any">Any</span></code>
+                <code>LookupError</code>
           </td>
-          <td><p>Optional return type for the function, if omitted it will be inferred from the type annotation.</p></td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>when_used</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;always&#39;, &#39;unless-none&#39;, &#39;json&#39;, &#39;json-unless-none&#39;]</code>
-          </td>
-          <td><p>Determines the serializer will be used for serialization.</p></td>
-          <td>
-                <code>&#39;always&#39;</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>check_fields</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td><p>Whether to check that the fields actually exist on the model.</p></td>
-          <td>
-                <code>None</code>
-          </td>
+          <td><p>if the ref is not found.</p></td>
         </tr>
     </tbody>
   </table>
@@ -2218,284 +2227,65 @@ default serialization logic.</p></td>
   <table>
     <thead>
       <tr>
-        <th>Type</th>
+<th>Name</th>        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td>
-                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
+<td><code>JsonSchemaValue</code></td>          <td>
+                <code><a class="autorefs autorefs-internal" title="pydantic.json_schema.JsonSchemaValue" href="../json_schema/#pydantic.json_schema.JsonSchemaValue">JsonSchemaValue</a></code>
           </td>
-          <td><p>A decorator that can be used to decorate a function to be used as a field serializer.</p></td>
+          <td><p>A JsonSchemaValue that has no <code>$ref</code>.</p></td>
         </tr>
     </tbody>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span>
-<span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
-    <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span><span class="p">,</span>
-    <span class="n">check_fields</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decorate methods on the class indicating that they should be used to serialize fields.</span>
-
-<span class="sd">    Four signatures are supported:</span>
-
-<span class="sd">    - `(self, value: Any, info: FieldSerializationInfo)`</span>
-<span class="sd">    - `(self, value: Any, nxt: SerializerFunctionWrapHandler, info: FieldSerializationInfo)`</span>
-<span class="sd">    - `(value: Any, info: SerializationInfo)`</span>
-<span class="sd">    - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`</span>
+        <summary>Source code in <code>pydantic/annotated.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">resolve_ref_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">__maybe_ref_json_schema</span><span class="p">:</span> <span class="n">JsonSchemaValue</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the real schema for a `{&quot;$ref&quot;: ...}` schema.</span>
+<span class="sd">    If the schema given is not a `$ref` schema, it will be returned as is.</span>
+<span class="sd">    This means you don&#39;t have to check before calling this function.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        fields: Which field(s) the method should be called on.</span>
-<span class="sd">        mode: `plain` means the function will be called instead of the default serialization logic,</span>
-<span class="sd">            `wrap` means the function will be called with an argument to optionally call the</span>
-<span class="sd">            default serialization logic.</span>
-<span class="sd">        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.</span>
-<span class="sd">        when_used: Determines the serializer will be used for serialization.</span>
-<span class="sd">        check_fields (bool): Whether to check that the fields actually exist on the model.</span>
+<span class="sd">        __maybe_ref_json_schema: A JsonSchemaValue, ref based or not.</span>
+
+<span class="sd">    Raises:</span>
+<span class="sd">        LookupError: if the ref is not found.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A decorator that can be used to decorate a function to be used as a field serializer.</span>
+<span class="sd">        JsonSchemaValue: A JsonSchemaValue that has no `$ref`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span>
-        <span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">staticmethod</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="nb">classmethod</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">FieldSerializerDecoratorInfo</span><span class="p">(</span>
-            <span class="n">fields</span><span class="o">=</span><span class="n">fields</span><span class="p">,</span>
-            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
-            <span class="n">return_type</span><span class="o">=</span><span class="n">_decorators</span><span class="o">.</span><span class="n">get_function_return_type</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">),</span>
-            <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span><span class="p">,</span>
-            <span class="n">check_fields</span><span class="o">=</span><span class="n">check_fields</span><span class="p">,</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
-
-    <span class="k">return</span> <span class="n">dec</span>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
 
 </div>
 
-<div class="doc doc-object doc-function">
 
 
+  </div>
 
-<h2 id="pydantic.functional_serializers.model_serializer" class="doc doc-heading">
-        <span class="doc doc-object-name doc-function-name">model_serializer</span>
-
-
-<a href="#pydantic.functional_serializers.model_serializer" class="headerlink" title="Permanent link">&para;</a></h2>
-<div class="highlight"><pre><span></span><code><span class="n">model_serializer</span><span class="p">(</span>
-    <span class="n">__f</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;plain&quot;</span><span class="p">,</span>
-    <span class="n">when_used</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="o">=</span><span class="kc">None</span>
-<span class="p">)</span>
-</code></pre></div>
-
-  <div class="doc doc-contents ">
-  
-      <p>Decorate a function which will be called to serialize the model.</p>
-<p>(<code>when_used</code> is not permitted here since it makes no sense.)</p>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>__f</code></td>
-          <td>
-                <code><span title="typing.Callable">Callable</span>[..., <span title="typing.Any">Any</span>] | None</code>
-          </td>
-          <td><p>The function to be decorated.</p></td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>mode</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;plain&#39;, &#39;wrap&#39;]</code>
-          </td>
-          <td><p>The serialization mode. <code>'plain'</code> means the function will be called
-instead of the default serialization logic, <code>'wrap'</code> means the function will be called with an argument
-to optionally call the default serialization logic.</p></td>
-          <td>
-                <code>&#39;plain&#39;</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>when_used</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[&#39;always&#39;, &#39;unless-none&#39;, &#39;json&#39;, &#39;json-unless-none&#39;]</code>
-          </td>
-          <td><p>Determines the serializer will be be used for serialization.</p></td>
-          <td>
-                <code>&#39;always&#39;</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>return_type</code></td>
-          <td>
-                <code><span title="typing.Any">Any</span></code>
-          </td>
-          <td><p>Optional return type for the function, if omitted it will be inferred from the type annotation.</p></td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Returns:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Type</th>
-        <th>Description</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td>
-                <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
-          </td>
-          <td><p>A decorator that can be used to decorate a function to be used as a model serializer.</p></td>
-        </tr>
-    </tbody>
-  </table>
-
-      <details class="quote">
-        <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">198</span>
-<span class="normal">199</span>
-<span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span>
-<span class="normal">209</span>
-<span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_serializer</span><span class="p">(</span>
-    <span class="n">__f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="o">*</span><span class="p">,</span>
-    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
-    <span class="n">when_used</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;always&#39;</span><span class="p">,</span> <span class="s1">&#39;unless-none&#39;</span><span class="p">,</span> <span class="s1">&#39;json&#39;</span><span class="p">,</span> <span class="s1">&#39;json-unless-none&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;always&#39;</span><span class="p">,</span>
-    <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Decorate a function which will be called to serialize the model.</span>
-
-<span class="sd">    (`when_used` is not permitted here since it makes no sense.)</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        __f: The function to be decorated.</span>
-<span class="sd">        mode: The serialization mode. `&#39;plain&#39;` means the function will be called</span>
-<span class="sd">            instead of the default serialization logic, `&#39;wrap&#39;` means the function will be called with an argument</span>
-<span class="sd">            to optionally call the default serialization logic.</span>
-<span class="sd">        when_used: Determines the serializer will be be used for serialization.</span>
-<span class="sd">        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">        A decorator that can be used to decorate a function to be used as a model serializer.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>
-        <span class="n">dec_info</span> <span class="o">=</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">ModelSerializerDecoratorInfo</span><span class="p">(</span>
-            <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">return_type</span><span class="o">=</span><span class="n">_decorators</span><span class="o">.</span><span class="n">get_function_return_type</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">return_type</span><span class="p">),</span> <span class="n">when_used</span><span class="o">=</span><span class="n">when_used</span>
-        <span class="p">)</span>
-        <span class="k">return</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">dec_info</span><span class="p">)</span>
-
-    <span class="k">if</span> <span class="n">__f</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">dec</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">dec</span><span class="p">(</span><span class="n">__f</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
-</code></pre></div></td></tr></table></div>
-      </details>
   </div>
 
 </div>
+
 
 
 

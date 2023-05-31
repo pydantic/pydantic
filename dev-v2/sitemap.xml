@@ -31,6 +31,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/annotated/</loc>
+         <lastmod>2023-05-31</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/color/</loc>
          <lastmod>2023-05-31</lastmod>
          <changefreq>daily</changefreq>

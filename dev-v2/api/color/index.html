@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/api/color/">
       
       
-        <link rel="prev" href="../type_adapter/">
+        <link rel="prev" href="../annotated/">
       
       
         <link rel="next" href="../config/">
@@ -1414,8 +1414,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../type_adapter/" class="md-nav__link">
-        pydantic.type_adapter
+      <a href="../annotated/" class="md-nav__link">
+        pydantic.annotated
       </a>
     </li>
   
@@ -1713,6 +1713,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <li class="md-nav__item">
       <a href="../networks/" class="md-nav__link">
         pydantic.networks
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../type_adapter/" class="md-nav__link">
+        pydantic.type_adapter
       </a>
     </li>
   
@@ -2198,7 +2212,9 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 <span class="normal">251</span>
 <span class="normal">252</span>
 <span class="normal">253</span>
-<span class="normal">254</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Color</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">):</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Color</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents a color.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2243,11 +2259,11 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 <span class="sd">        otherwise returns the hexadecimal representation of the color or raises `ValueError`.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            fallback (bool): If True, falls back to returning the hexadecimal representation of</span>
+<span class="sd">            fallback: If True, falls back to returning the hexadecimal representation of</span>
 <span class="sd">                the color instead of raising a ValueError when no named color is found.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The name of the color, or the hexadecimal representation of the color.</span>
+<span class="sd">            The name of the color, or the hexadecimal representation of the color.</span>
 
 <span class="sd">        Raises:</span>
 <span class="sd">            ValueError: When no named color is found and fallback is `False`.</span>
@@ -2271,7 +2287,7 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 <span class="sd">        a &quot;short&quot; representation of the color is possible and whether there&#39;s an alpha channel.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            str: The hexadecimal representation of the color.</span>
+<span class="sd">            The hexadecimal representation of the color.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rgba</span><span class="p">[:</span><span class="mi">3</span><span class="p">]]</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rgba</span><span class="o">.</span><span class="n">alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -2299,14 +2315,15 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 <span class="sd">        Returns the color as an RGB or RGBA tuple.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            alpha (Optional[bool]): Whether to include the alpha channel. There are three options for this input:</span>
-<span class="sd">                `None` (default): Include alpha only if it&#39;s set. (e.g. not `None`)</span>
-<span class="sd">                `True`: Always include alpha.</span>
-<span class="sd">                `False`: Always omit alpha.</span>
+<span class="sd">            alpha: Whether to include the alpha channel. There are three options for this input:</span>
+
+<span class="sd">                - `None` (default): Include alpha only if it&#39;s set. (e.g. not `None`)</span>
+<span class="sd">                - `True`: Always include alpha.</span>
+<span class="sd">                - `False`: Always omit alpha.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            ColorTuple: A tuple that contains the values of the red, green, and blue channels in the range 0 to 255.</span>
-<span class="sd">            If alpha is included, it is in the range 0 to 1.</span>
+<span class="sd">            A tuple that contains the values of the red, green, and blue channels in the range 0 to 255.</span>
+<span class="sd">                If alpha is included, it is in the range 0 to 1.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rgba</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -2336,13 +2353,14 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 <span class="sd">        Returns the color as an HSL or HSLA tuple.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            alpha (Optional[bool]): Whether to include the alpha channel.</span>
-<span class="sd">                `None` (default): Include the alpha channel only if it&#39;s set (e.g. not `None`).</span>
-<span class="sd">                `True`: Always include alpha.</span>
-<span class="sd">                `False`: Always omit alpha.</span>
+<span class="sd">            alpha: Whether to include the alpha channel.</span>
+
+<span class="sd">                - `None` (default): Include the alpha channel only if it&#39;s set (e.g. not `None`).</span>
+<span class="sd">                - `True`: Always include alpha.</span>
+<span class="sd">                - `False`: Always omit alpha.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            HslColorTuple: The color as a tuple of hue, saturation, lightness, and alpha (if included).</span>
+<span class="sd">            The color as a tuple of hue, saturation, lightness, and alpha (if included).</span>
 <span class="sd">                All elements are in the range 0 to 1.</span>
 
 <span class="sd">        Note:</span>
@@ -2423,13 +2441,13 @@ a "short" representation of the color is possible and whether there's an alpha c
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>str</code></td>          <td>
+          <td>
                 <code>str</code>
           </td>
           <td><p>The hexadecimal representation of the color.</p></td>
@@ -2462,7 +2480,7 @@ a "short" representation of the color is possible and whether there's an alpha c
 <span class="sd">    a &quot;short&quot; representation of the color is possible and whether there&#39;s an alpha channel.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: The hexadecimal representation of the color.</span>
+<span class="sd">        The hexadecimal representation of the color.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">values</span> <span class="o">=</span> <span class="p">[</span><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rgba</span><span class="p">[:</span><span class="mi">3</span><span class="p">]]</span>
     <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rgba</span><span class="o">.</span><span class="n">alpha</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -2496,8 +2514,7 @@ a "short" representation of the color is possible and whether there's an alpha c
 
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">189</span>
-<span class="normal">190</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">190</span>
 <span class="normal">191</span>
 <span class="normal">192</span>
 <span class="normal">193</span>
@@ -2505,7 +2522,8 @@ a "short" representation of the color is possible and whether there's an alpha c
 <span class="normal">195</span>
 <span class="normal">196</span>
 <span class="normal">197</span>
-<span class="normal">198</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hsl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">198</span>
+<span class="normal">199</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hsl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Color as an `hsl(&lt;h&gt;, &lt;s&gt;, &lt;l&gt;)` or `hsl(&lt;h&gt;, &lt;s&gt;, &lt;l&gt;, &lt;a&gt;)` string.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2553,10 +2571,12 @@ a "short" representation of the color is possible and whether there's an alpha c
           <td>
                 <code><span title="typing.Optional">Optional</span>[bool]</code>
           </td>
-          <td><p>Whether to include the alpha channel.
-<code>None</code> (default): Include the alpha channel only if it's set (e.g. not <code>None</code>).
-<code>True</code>: Always include alpha.
-<code>False</code>: Always omit alpha.</p></td>
+          <td><p>Whether to include the alpha channel.</p>
+<ul>
+<li><code>None</code> (default): Include the alpha channel only if it's set (e.g. not <code>None</code>).</li>
+<li><code>True</code>: Always include alpha.</li>
+<li><code>False</code>: Always omit alpha.</li>
+</ul></td>
           <td>
                 <code>None</code>
           </td>
@@ -2568,13 +2588,13 @@ a "short" representation of the color is possible and whether there's an alpha c
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>HslColorTuple</code></td>          <td>
+          <td>
                 <code><span title="pydantic.color.HslColorTuple">HslColorTuple</span></code>
           </td>
           <td><p>The color as a tuple of hue, saturation, lightness, and alpha (if included).
@@ -2589,8 +2609,7 @@ All elements are in the range 0 to 1.</p></td>
 </details>
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">200</span>
-<span class="normal">201</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">201</span>
 <span class="normal">202</span>
 <span class="normal">203</span>
 <span class="normal">204</span>
@@ -2616,18 +2635,21 @@ All elements are in the range 0 to 1.</p></td>
 <span class="normal">224</span>
 <span class="normal">225</span>
 <span class="normal">226</span>
-<span class="normal">227</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hsl_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HslColorTuple</span><span class="p">:</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hsl_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HslColorTuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the color as an HSL or HSLA tuple.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        alpha (Optional[bool]): Whether to include the alpha channel.</span>
-<span class="sd">            `None` (default): Include the alpha channel only if it&#39;s set (e.g. not `None`).</span>
-<span class="sd">            `True`: Always include alpha.</span>
-<span class="sd">            `False`: Always omit alpha.</span>
+<span class="sd">        alpha: Whether to include the alpha channel.</span>
+
+<span class="sd">            - `None` (default): Include the alpha channel only if it&#39;s set (e.g. not `None`).</span>
+<span class="sd">            - `True`: Always include alpha.</span>
+<span class="sd">            - `False`: Always omit alpha.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        HslColorTuple: The color as a tuple of hue, saturation, lightness, and alpha (if included).</span>
+<span class="sd">        The color as a tuple of hue, saturation, lightness, and alpha (if included).</span>
 <span class="sd">            All elements are in the range 0 to 1.</span>
 
 <span class="sd">    Note:</span>
@@ -2696,13 +2718,13 @@ the color instead of raising a ValueError when no named color is found.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>str</code></td>          <td>
+          <td>
                 <code>str</code>
           </td>
           <td><p>The name of the color, or the hexadecimal representation of the color.</p></td>
@@ -2761,11 +2783,11 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="sd">    otherwise returns the hexadecimal representation of the color or raises `ValueError`.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        fallback (bool): If True, falls back to returning the hexadecimal representation of</span>
+<span class="sd">        fallback: If True, falls back to returning the hexadecimal representation of</span>
 <span class="sd">            the color instead of raising a ValueError when no named color is found.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        str: The name of the color, or the hexadecimal representation of the color.</span>
+<span class="sd">        The name of the color, or the hexadecimal representation of the color.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: When no named color is found and fallback is `False`.</span>
@@ -2864,10 +2886,12 @@ the color instead of raising a ValueError when no named color is found.</p></td>
           <td>
                 <code><span title="typing.Optional">Optional</span>[bool]</code>
           </td>
-          <td><p>Whether to include the alpha channel. There are three options for this input:
-<code>None</code> (default): Include alpha only if it's set. (e.g. not <code>None</code>)
-<code>True</code>: Always include alpha.
-<code>False</code>: Always omit alpha.</p></td>
+          <td><p>Whether to include the alpha channel. There are three options for this input:</p>
+<ul>
+<li><code>None</code> (default): Include alpha only if it's set. (e.g. not <code>None</code>)</li>
+<li><code>True</code>: Always include alpha.</li>
+<li><code>False</code>: Always omit alpha.</li>
+</ul></td>
           <td>
                 <code>None</code>
           </td>
@@ -2879,22 +2903,17 @@ the color instead of raising a ValueError when no named color is found.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>ColorTuple</code></td>          <td>
+          <td>
                 <code><span title="pydantic.color.ColorTuple">ColorTuple</span></code>
           </td>
-          <td><p>A tuple that contains the values of the red, green, and blue channels in the range 0 to 255.</p></td>
-        </tr>
-        <tr>
-<td></td>          <td>
-                <code><span title="pydantic.color.ColorTuple">ColorTuple</span></code>
-          </td>
-          <td><p>If alpha is included, it is in the range 0 to 1.</p></td>
+          <td><p>A tuple that contains the values of the red, green, and blue channels in the range 0 to 255.
+If alpha is included, it is in the range 0 to 1.</p></td>
         </tr>
     </tbody>
   </table>
@@ -2925,19 +2944,21 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="normal">184</span>
 <span class="normal">185</span>
 <span class="normal">186</span>
-<span class="normal">187</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_rgb_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ColorTuple</span><span class="p">:</span>
+<span class="normal">187</span>
+<span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_rgb_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ColorTuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the color as an RGB or RGBA tuple.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        alpha (Optional[bool]): Whether to include the alpha channel. There are three options for this input:</span>
-<span class="sd">            `None` (default): Include alpha only if it&#39;s set. (e.g. not `None`)</span>
-<span class="sd">            `True`: Always include alpha.</span>
-<span class="sd">            `False`: Always omit alpha.</span>
+<span class="sd">        alpha: Whether to include the alpha channel. There are three options for this input:</span>
+
+<span class="sd">            - `None` (default): Include alpha only if it&#39;s set. (e.g. not `None`)</span>
+<span class="sd">            - `True`: Always include alpha.</span>
+<span class="sd">            - `False`: Always omit alpha.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        ColorTuple: A tuple that contains the values of the red, green, and blue channels in the range 0 to 255.</span>
-<span class="sd">        If alpha is included, it is in the range 0 to 1.</span>
+<span class="sd">        A tuple that contains the values of the red, green, and blue channels in the range 0 to 255.</span>
+<span class="sd">            If alpha is included, it is in the range 0 to 1.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rgba</span><span class="p">[:</span><span class="mi">3</span><span class="p">])</span>
     <span class="k">if</span> <span class="n">alpha</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -3117,13 +3138,13 @@ the color instead of raising a ValueError when no named color is found.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>int</code></td>          <td>
+          <td>
                 <code>int</code>
           </td>
           <td><p>The integer equivalent of the given float value rounded to the nearest whole number.</p></td>
@@ -3151,9 +3172,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">443</span>
-<span class="normal">444</span>
-<span class="normal">445</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">445</span>
 <span class="normal">446</span>
 <span class="normal">447</span>
 <span class="normal">448</span>
@@ -3164,15 +3183,17 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="normal">453</span>
 <span class="normal">454</span>
 <span class="normal">455</span>
-<span class="normal">456</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts a float value between 0 and 1 (inclusive) to an integer between 0 and 255 (inclusive).</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        c (float): The float value to be converted. Must be between 0 and 1 (inclusive).</span>
+<span class="sd">        c: The float value to be converted. Must be between 0 and 1 (inclusive).</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        int: The integer equivalent of the given float value rounded to the nearest whole number.</span>
+<span class="sd">        The integer equivalent of the given float value rounded to the nearest whole number.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If the given float value is outside the acceptable range of 0 to 1 (inclusive).</span>
@@ -3244,7 +3265,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code>float</code>
+                <code><span title="typing.Optional">Optional</span>[float]</code>
           </td>
           <td><p>A float representing the alpha value. Defaults to None.</p></td>
           <td>
@@ -3258,13 +3279,13 @@ the color instead of raising a ValueError when no named color is found.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>RGBA</code></td>          <td>
+          <td>
                 <code><a class="autorefs autorefs-internal" title="pydantic.color.RGBA" href="#pydantic.color.RGBA">RGBA</a></code>
           </td>
           <td><p>An instance of the <code>RGBA</code> class with the corresponding color and alpha values.</p></td>
@@ -3274,9 +3295,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">339</span>
-<span class="normal">340</span>
-<span class="normal">341</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">341</span>
 <span class="normal">342</span>
 <span class="normal">343</span>
 <span class="normal">344</span>
@@ -3287,18 +3306,20 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="normal">349</span>
 <span class="normal">350</span>
 <span class="normal">351</span>
-<span class="normal">352</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ints_to_rgba</span><span class="p">(</span><span class="n">r</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">g</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">b</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ints_to_rgba</span><span class="p">(</span><span class="n">r</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">g</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">b</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts integer or string values for RGB color and an optional alpha value to an `RGBA` object.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        r (Union[int, str]): An integer or string representing the red color value.</span>
-<span class="sd">        g (Union[int, str]): An integer or string representing the green color value.</span>
-<span class="sd">        b (Union[int, str]): An integer or string representing the blue color value.</span>
-<span class="sd">        alpha (float, optional): A float representing the alpha value. Defaults to None.</span>
+<span class="sd">        r: An integer or string representing the red color value.</span>
+<span class="sd">        g: An integer or string representing the green color value.</span>
+<span class="sd">        b: An integer or string representing the blue color value.</span>
+<span class="sd">        alpha: A float representing the alpha value. Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        RGBA: An instance of the `RGBA` class with the corresponding color and alpha values.</span>
+<span class="sd">        An instance of the `RGBA` class with the corresponding color and alpha values.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="n">RGBA</span><span class="p">(</span><span class="n">parse_color_value</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">parse_color_value</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">parse_color_value</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>
 </code></pre></div></td></tr></table></div>
@@ -3379,13 +3400,13 @@ the color instead of raising a ValueError when no named color is found.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>float</code></td>          <td>
+          <td>
                 <code>float</code>
           </td>
           <td><p>A number between 0 and 1.</p></td>
@@ -3395,9 +3416,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">355</span>
-<span class="normal">356</span>
-<span class="normal">357</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">357</span>
 <span class="normal">358</span>
 <span class="normal">359</span>
 <span class="normal">360</span>
@@ -3420,19 +3439,21 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="normal">377</span>
 <span class="normal">378</span>
 <span class="normal">379</span>
-<span class="normal">380</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_color_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">max_val</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">255</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_color_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">max_val</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">255</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parse the color value provided and return a number between 0 and 1.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        value (Union[int, str]): An integer or string color value.</span>
-<span class="sd">        max_val (int, optional): Maximum range value. Defaults to 255.</span>
+<span class="sd">        value: An integer or string color value.</span>
+<span class="sd">        max_val: Maximum range value. Defaults to 255.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        PydanticCustomError: If the value is not a valid color.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        float: A number between 0 and 1.</span>
+<span class="sd">        A number between 0 and 1.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">color</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
@@ -3505,7 +3526,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
           <td>
                 <code><span title="typing.Optional">Optional</span>[float]</code>
           </td>
-          <td><p>Optional[float]: The parsed value as a float, or <code>None</code> if the value was None or equal 1.</p></td>
+          <td><p>The parsed value as a float, or <code>None</code> if the value was None or equal 1.</p></td>
         </tr>
     </tbody>
   </table>
@@ -3530,9 +3551,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">383</span>
-<span class="normal">384</span>
-<span class="normal">385</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">385</span>
 <span class="normal">386</span>
 <span class="normal">387</span>
 <span class="normal">388</span>
@@ -3558,15 +3577,17 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="normal">408</span>
 <span class="normal">409</span>
 <span class="normal">410</span>
-<span class="normal">411</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_float_alpha</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_float_alpha</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parse an alpha value checking it&#39;s a valid float in the range 0 to 1.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        value (Union[None, str, float, int]): The input value to parse.</span>
+<span class="sd">        value: The input value to parse.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Optional[float]: The parsed value as a float, or `None` if the value was None or equal 1.</span>
+<span class="sd">        The parsed value as a float, or `None` if the value was None or equal 1.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        PydanticCustomError: If the input value cannot be successfully parsed as a float in the expected range.</span>
@@ -3677,13 +3698,13 @@ the color instead of raising a ValueError when no named color is found.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>RGBA</code></td>          <td>
+          <td>
                 <code><a class="autorefs autorefs-internal" title="pydantic.color.RGBA" href="#pydantic.color.RGBA">RGBA</a></code>
           </td>
           <td><p>An instance of <code>RGBA</code>.</p></td>
@@ -3693,9 +3714,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">414</span>
-<span class="normal">415</span>
-<span class="normal">416</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">416</span>
 <span class="normal">417</span>
 <span class="normal">418</span>
 <span class="normal">419</span>
@@ -3719,19 +3738,21 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="normal">437</span>
 <span class="normal">438</span>
 <span class="normal">439</span>
-<span class="normal">440</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_hsl</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">h_units</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sat</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">light</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_hsl</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">h_units</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sat</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">light</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parse raw hue, saturation, lightness, and alpha values and convert to RGBA.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        h (str): The hue value.</span>
-<span class="sd">        h_units (str): The unit for hue value.</span>
-<span class="sd">        sat (str): The saturation value.</span>
-<span class="sd">        light (str): The lightness value.</span>
-<span class="sd">        alpha (Optional[float]): Alpha value.</span>
+<span class="sd">        h: The hue value.</span>
+<span class="sd">        h_units: The unit for hue value.</span>
+<span class="sd">        sat: The saturation value.</span>
+<span class="sd">        light: The lightness value.</span>
+<span class="sd">        alpha: Alpha value.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        RGBA: An instance of `RGBA`.</span>
+<span class="sd">        An instance of `RGBA`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">s_value</span><span class="p">,</span> <span class="n">l_value</span> <span class="o">=</span> <span class="n">parse_color_value</span><span class="p">(</span><span class="n">sat</span><span class="p">,</span> <span class="mi">100</span><span class="p">),</span> <span class="n">parse_color_value</span><span class="p">(</span><span class="n">light</span><span class="p">,</span> <span class="mi">100</span><span class="p">)</span>
 
@@ -3804,16 +3825,16 @@ the color instead of raising a ValueError when no named color is found.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>RGBA</code></td>          <td>
+          <td>
                 <code><a class="autorefs autorefs-internal" title="pydantic.color.RGBA" href="#pydantic.color.RGBA">RGBA</a></code>
           </td>
-          <td><p>An RGBA tuple parsed from the input string.</p></td>
+          <td><p>An <code>RGBA</code> tuple parsed from the input string.</p></td>
         </tr>
     </tbody>
   </table>
@@ -3838,9 +3859,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">281</span>
 <span class="normal">282</span>
 <span class="normal">283</span>
 <span class="normal">284</span>
@@ -3895,7 +3914,9 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="normal">333</span>
 <span class="normal">334</span>
 <span class="normal">335</span>
-<span class="normal">336</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_str</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_str</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parse a string representing a color to an RGBA tuple.</span>
 
@@ -3908,10 +3929,10 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="sd">    * `rgba(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;, &lt;a&gt;)`</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        value (str): A string representing a color.</span>
+<span class="sd">        value: A string representing a color.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        RGBA: An RGBA tuple parsed from the input string.</span>
+<span class="sd">        An `RGBA` tuple parsed from the input string.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        ValueError: If the input string cannot be parsed to an RGBA tuple.</span>
@@ -4003,16 +4024,16 @@ the color instead of raising a ValueError when no named color is found.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>RGBA</code></td>          <td>
+          <td>
                 <code><a class="autorefs autorefs-internal" title="pydantic.color.RGBA" href="#pydantic.color.RGBA">RGBA</a></code>
           </td>
-          <td><p>An RGBA tuple parsed from the input tuple.</p></td>
+          <td><p>An <code>RGBA</code> tuple parsed from the input tuple.</p></td>
         </tr>
     </tbody>
   </table>
@@ -4037,9 +4058,7 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">259</span>
 <span class="normal">260</span>
 <span class="normal">261</span>
 <span class="normal">262</span>
@@ -4056,14 +4075,16 @@ the color instead of raising a ValueError when no named color is found.</p></td>
 <span class="normal">273</span>
 <span class="normal">274</span>
 <span class="normal">275</span>
-<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a tuple or list to get RGBA values.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        value (Tuple[Any, ...]): A tuple or list.</span>
+<span class="sd">        value: A tuple or list.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        RGBA: An RGBA tuple parsed from the input tuple.</span>
+<span class="sd">        An `RGBA` tuple parsed from the input tuple.</span>
 
 <span class="sd">    Raises:</span>
 <span class="sd">        PydanticCustomError: If tuple is not valid.</span>
