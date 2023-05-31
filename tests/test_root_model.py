@@ -361,8 +361,7 @@ def test_root_model_wrong_default_value_without_validate_default():
     class Model(RootModel):
         root: int = '42'
 
-    m = Model()
-    assert m.root == '42'
+    assert Model().root == '42'
 
 
 def test_root_model_default_value_with_validate_default():
