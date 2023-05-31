@@ -37,8 +37,8 @@ from ._internal import (
     _utils,
     _validators,
 )
+from ._internal._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ._migration import getattr_migration
-from .annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
 from .config import ConfigDict
 from .errors import PydanticUserError
 from .json_schema import JsonSchemaValue

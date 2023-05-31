@@ -10,7 +10,7 @@ from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, TypeAlias
 
 from ._internal import _decorators, _internal_dataclass
-from .annotated import GetCoreSchemaHandler
+from ._internal._annotated_handlers import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
 if sys.version_info < (3, 11):

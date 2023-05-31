@@ -23,8 +23,8 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
+from ._internal._annotated_handlers import GetCoreSchemaHandler
 from ._migration import getattr_migration
-from .annotated import GetCoreSchemaHandler
 from .config import ConfigDict
 from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
