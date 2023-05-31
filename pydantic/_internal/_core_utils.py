@@ -287,6 +287,11 @@ class _WalkCoreSchema:
         new_schema['definitions'] = new_definitions
         return new_schema
 
+    def handle_null_schema(self, schema: core_schema.NullableSchema, f: Walk) -> core_schema.CoreSchema:
+        if 'schema' in schema:
+            schema['schema'] = self.walk(schema['schema'], f)
+        return schema
+
     def handle_list_schema(self, schema: core_schema.ListSchema, f: Walk) -> core_schema.CoreSchema:
         if 'items_schema' in schema:
             schema['items_schema'] = self.walk(schema['items_schema'], f)

@@ -553,10 +553,10 @@ class GenerateJsonSchema:
         Returns a schema that checks if a value is an instance of a class, equivalent to Python's `isinstance` method.
 
         Args:
-            schema (core_schema.IsInstanceSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return self.handle_invalid_for_json_schema(schema, f'core_schema.IsInstanceSchema ({schema["cls"]})')
 
@@ -565,10 +565,10 @@ class GenerateJsonSchema:
         Returns a schema that checks if a value is a subtype of a class, equivalent to Python's `issubclass` method.
 
         Args:
-            schema (core_schema.IsSubclassSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         # Note: This is for compatibility with V1; you can override if you want different behavior.
         return {}
@@ -578,10 +578,10 @@ class GenerateJsonSchema:
         Returns a schema that checks if a value is callable, equivalent to Python's `callable` method.
 
         Args:
-            schema (core_schema.CallableSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return self.handle_invalid_for_json_schema(schema, 'core_schema.CallableSchema')
 
@@ -644,10 +644,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a `Set` schema.
 
         Args:
-            schema (core_schema.SetSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return self._common_set_schema(schema)
 
@@ -656,10 +656,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a `frozenset` schema.
 
         Args:
-            schema (core_schema.FrozenSetSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return self._common_set_schema(schema)
 
@@ -674,10 +674,10 @@ class GenerateJsonSchema:
         Returns a JSON schema that represents the provided GeneratorSchema.
 
         Args:
-            schema (core_schema.GeneratorSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
@@ -689,10 +689,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a dict schema.
 
         Args:
-            schema (core_schema.DictSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         json_schema: JsonSchemaValue = {'type': 'object'}
 
