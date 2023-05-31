@@ -4193,3 +4193,12 @@ def test_type_adapter_json_schemas_title_description():
     )
     assert json_schema['title'] == 'test title'
     assert json_schema['description'] == 'test description'
+
+
+def test_type_adapter_json_schemas_without_definitions():
+    _, top_level_schema = TypeAdapter.json_schemas(
+        [(int, 'validation', TypeAdapter(int))],
+        ref_template='#/components/schemas/{model}',
+    )
+
+    assert 'definitions' not in top_level_schema
