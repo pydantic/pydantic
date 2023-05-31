@@ -8,7 +8,7 @@ from typing import Any, Callable, Dict, Optional, Pattern
 
 import pytest
 from pydantic_core import PydanticSerializationError, core_schema, to_jsonable_python
-from typing_extensions import Annotated
+from typing_extensions import Annotated, TypedDict
 
 from pydantic import (
     BaseModel,
@@ -868,3 +868,17 @@ def test_clear_return_schema():
 
     return_serializer = re.search(r'return_serializer: *\w+', repr(Model.__pydantic_serializer__)).group(0)
     assert return_serializer == 'return_serializer: Any'
+
+
+def test_type_adapter_dump_json():
+    class Model(TypedDict):
+        x: int
+        y: float
+
+        @model_serializer(mode='plain')
+        def ser_model(self) -> Dict[str, Any]:
+            return {'x': self['x'] * 2, 'y': self['y'] * 3}
+
+    ta = TypeAdapter(Model)
+
+    assert ta.dump_json(Model({'x': 1, 'y': 2.5})) == b'{"x":2,"y":7.5}'

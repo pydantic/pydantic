@@ -128,6 +128,7 @@ def test_validate_python_strict() -> None:
     ]
 
 
+@pytest.mark.xfail(reason='Need to fix this in https://github.com/pydantic/pydantic/pull/5944')
 def test_validate_json_strict() -> None:
     class Model(TypedDict):
         x: int

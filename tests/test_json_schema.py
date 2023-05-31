@@ -4176,3 +4176,29 @@ def test_core_metadata_get_json_schema():
         {'metadata': {'pydantic_js_function': lambda c, h: f'schema = {c}, {h.__name__}'}}
     )
     assert core_metadata_handler.get_json_schema({'foo': 'bar'}, lambda c: c) == "schema = {'foo': 'bar'}, <lambda>"
+
+
+def test_type_adapter_json_schemas_title_description():
+    class Model(BaseModel):
+        a: str
+
+    _, json_schema = TypeAdapter.json_schemas([(Model, 'validation', TypeAdapter(Model))])
+    assert 'title' not in json_schema
+    assert 'description' not in json_schema
+
+    _, json_schema = TypeAdapter.json_schemas(
+        [(Model, 'validation', TypeAdapter(Model))],
+        title='test title',
+        description='test description',
+    )
+    assert json_schema['title'] == 'test title'
+    assert json_schema['description'] == 'test description'
+
+
+def test_type_adapter_json_schemas_without_definitions():
+    _, json_schema = TypeAdapter.json_schemas(
+        [(int, 'validation', TypeAdapter(int))],
+        ref_template='#/components/schemas/{model}',
+    )
+
+    assert 'definitions' not in json_schema

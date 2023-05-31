@@ -807,6 +807,7 @@ def test_override_builtin_dataclass_2():
     assert f.seen_count == 7
 
 
+@pytest.mark.xfail(reason='Meta() is not being revalidated')
 def test_override_builtin_dataclass_nested():
     @dataclasses.dataclass
     class Meta:

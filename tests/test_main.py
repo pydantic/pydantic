@@ -2063,14 +2063,10 @@ def test_model_validate_strict() -> None:
     assert LaxModel.model_validate({'x': '1'}, strict=False) == LaxModel(x=1)
     with pytest.raises(ValidationError) as exc_info:
         LaxModel.model_validate({'x': '1'}, strict=True)
+    # there's no such thing on the model itself
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'model_class_type',
-            'loc': (),
-            'msg': 'Input should be an instance of LaxModel',
-            'input': {'x': '1'},
-            'ctx': {'class_name': 'LaxModel'},
-        }
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
 
     with pytest.raises(ValidationError) as exc_info:
@@ -2081,14 +2077,9 @@ def test_model_validate_strict() -> None:
     assert StrictModel.model_validate({'x': '1'}, strict=False) == StrictModel(x=1)
     with pytest.raises(ValidationError) as exc_info:
         LaxModel.model_validate({'x': '1'}, strict=True)
+    # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
-        {
-            'type': 'model_class_type',
-            'loc': (),
-            'msg': 'Input should be an instance of LaxModel',
-            'input': {'x': '1'},
-            'ctx': {'class_name': 'LaxModel'},
-        }
+        {'type': 'int_type', 'loc': ('x',), 'msg': 'Input should be a valid integer', 'input': '1'}
     ]
 
 
