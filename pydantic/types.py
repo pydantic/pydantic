@@ -96,6 +96,8 @@ __all__ = (
     'Base64Bytes',
     'Base64Str',
     'SkipValidation',
+    'InstanceOf',
+    'WithJsonSchema',
 )
 
 
@@ -1031,10 +1033,19 @@ else:
 
         @classmethod
         def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            from pydantic import PydanticSchemaGenerationError
+
             # use the generic _origin_ as the second argument to isinstance when appropriate
             python_schema = core_schema.is_instance_schema(_generics.get_origin(source) or source)
-            json_schema = handler(source)
-            return core_schema.json_or_python_schema(python_schema=python_schema, json_schema=json_schema)
+
+            try:
+                # Try to generate the "standard" schema, which will be used when loading from JSON
+                json_schema = handler(source)
+            except PydanticSchemaGenerationError:
+                # If that fails, just produce a schema that can validate from python
+                return python_schema
+            else:
+                return core_schema.json_or_python_schema(python_schema=python_schema, json_schema=json_schema)
 
 
 __getattr__ = getattr_migration(__name__)

@@ -153,6 +153,8 @@ __all__ = [
     'Base64Bytes',
     'Base64Str',
     'SkipValidation',
+    'InstanceOf',
+    'WithJsonSchema',
     # type_adapter
     'TypeAdapter',
     # version
