@@ -1096,6 +1096,8 @@ RootModelRootType = typing.TypeVar('RootModelRootType')
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     __pydantic_root_model__ = True
+    # TODO: Make `__pydantic_fields_set__` logic consistent with `BaseModel`, i.e. it should be `set()` if default value
+    # was used
     __pydantic_fields_set__ = {'root'}  # It's fine having a set here as it will never change
     __pydantic_private__ = None
     __pydantic_extra__ = None
