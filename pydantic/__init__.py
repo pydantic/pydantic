@@ -174,17 +174,19 @@ __all__ = [
 ]
 
 # A mapping of {<member name>: <module name>} defining dynamic imports
-__all_dynamic__ = {'RootModel': '.root_model'}
+_dynamic_imports = {'RootModel': '.root_model'}
 if typing.TYPE_CHECKING:
     from .root_model import *
 
-__getattr_migration__ = getattr_migration(__name__)
+_getattr_migration = getattr_migration(__name__)
 
 
 def __getattr__(attr_name: str) -> object:
-    if attr_name in __all_dynamic__:
-        from importlib import import_module
+    dynamic_attr = _dynamic_imports.get(attr_name)
+    if dynamic_attr is None:
+        return _getattr_migration(attr_name)
 
-        module = import_module(__all_dynamic__[attr_name], package=__package__)
-        return getattr(module, attr_name)
-    return __getattr_migration__(attr_name)
+    from importlib import import_module
+
+    module = import_module(_dynamic_imports[attr_name], package=__package__)
+    return getattr(module, attr_name)

@@ -11,7 +11,7 @@ if typing.TYPE_CHECKING:
     Model = typing.TypeVar('Model', bound='BaseModel')
 
 
-__all__ = ['RootModel']
+__all__ = ('RootModel',)
 
 
 RootModelRootType = typing.TypeVar('RootModelRootType')
