@@ -2219,6 +2219,33 @@ def test_schema_attributes():
     }
 
 
+def test_tuple_modify_schema():
+    class MyTuple(Tuple[int, str]):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.tuple_positional_schema(
+                [core_schema.int_schema(), core_schema.str_schema()], extra_schema=core_schema.int_schema()
+            )
+
+    class Model(BaseModel):
+        x: MyTuple
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'x': {
+                'items': {'type': 'integer'},
+                'minItems': 2,
+                'prefixItems': [{'type': 'integer'}, {'type': 'string'}],
+                'title': 'X',
+                'type': 'array',
+            }
+        },
+        'required': ['x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
