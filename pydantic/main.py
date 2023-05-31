@@ -13,6 +13,7 @@ import pydantic_core
 import typing_extensions
 
 from ._internal import (
+    _annotated_handlers,
     _config,
     _decorators,
     _fields,
@@ -23,7 +24,6 @@ from ._internal import (
     _typing_extra,
     _utils,
 )
-from ._internal._annotated_handlers import GetCoreSchemaHandler
 from ._migration import getattr_migration
 from .config import ConfigDict
 from .deprecated import copy_internals as _deprecated_copy_internals
@@ -33,7 +33,6 @@ from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
 from .json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
-    GetJsonSchemaHandler,
     JsonSchemaMode,
     JsonSchemaValue,
     model_json_schema,
@@ -138,7 +137,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __init__.__pydantic_base_init__ = True  # type: ignore
 
     @classmethod
-    def __get_pydantic_core_schema__(cls, __source: type[BaseModel], __handler: GetCoreSchemaHandler) -> CoreSchema:
+    def __get_pydantic_core_schema__(
+        cls, __source: type[BaseModel], __handler: _annotated_handlers.GetCoreSchemaHandler
+    ) -> CoreSchema:
         """Hook into generating the model's CoreSchema.
 
         Args:
@@ -165,7 +166,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __get_pydantic_json_schema__(
         cls,
         __core_schema: CoreSchema,
-        __handler: GetJsonSchemaHandler,
+        __handler: _annotated_handlers.GetJsonSchemaHandler,
     ) -> JsonSchemaValue:
         """Hook into generating the model's JSON schema.
 

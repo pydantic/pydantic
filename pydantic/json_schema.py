@@ -49,8 +49,6 @@ JsonSchemaValue = Dict[str, Any]
 """
 A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary values.
 """
-# re export GetJsonSchemaHandler
-GetJsonSchemaHandler = _schema_generation_shared.GetJsonSchemaHandler
 
 JsonSchemaMode = Literal['validation', 'serialization']
 """

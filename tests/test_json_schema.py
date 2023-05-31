@@ -37,6 +37,7 @@ from pydantic import (
     BaseModel,
     Field,
     GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
     ImportString,
     PydanticUserError,
     RootModel,
@@ -52,7 +53,6 @@ from pydantic.errors import PydanticInvalidForJsonSchema
 from pydantic.json_schema import (
     DEFAULT_REF_TEMPLATE,
     GenerateJsonSchema,
-    GetJsonSchemaHandler,
     JsonSchemaValue,
     PydanticJsonSchemaWarning,
     model_json_schema,

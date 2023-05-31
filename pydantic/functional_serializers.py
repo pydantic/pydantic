@@ -7,8 +7,7 @@ from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, TypeAlias
 
-from ._internal import _decorators, _internal_dataclass
-from ._internal._annotated_handlers import GetCoreSchemaHandler
+from ._internal import _annotated_handlers, _decorators, _internal_dataclass
 
 
 @_internal_dataclass.slots_dataclass(frozen=True)
@@ -27,7 +26,9 @@ class PlainSerializer:
     return_type: Any = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(
+        self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
         """
         Gets the Pydantic core schema.
 
@@ -66,7 +67,9 @@ class WrapSerializer:
     return_type: Any = None
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always'
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(
+        self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
+    ) -> core_schema.CoreSchema:
         """
         This method is used to get the Pydantic core schema of the class.
 

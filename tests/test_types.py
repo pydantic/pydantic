@@ -61,6 +61,7 @@ from pydantic import (
     FutureDate,
     FutureDatetime,
     GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
     Json,
     NaiveDatetime,
     NameEmail,
@@ -100,7 +101,7 @@ from pydantic import (
 )
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
-from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
+from pydantic.json_schema import JsonSchemaValue
 from pydantic.types import AllowInfNan, ImportString, InstanceOf, SecretField, SkipValidation, Strict, TransformSchema
 
 try:
