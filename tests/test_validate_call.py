@@ -9,7 +9,7 @@ import pytest
 from pydantic_core import ArgsKwargs
 from typing_extensions import Annotated
 
-from pydantic import Field, PydanticInvalidForJsonSchema, TypeAdapter, ValidationError, validate_call
+from pydantic import Field, TypeAdapter, ValidationError, validate_call
 
 skip_pre_38 = pytest.mark.skipif(sys.version_info < (3, 8), reason='testing >= 3.8 behaviour only')
 skip_pre_39 = pytest.mark.skipif(sys.version_info < (3, 9), reason='testing >= 3.9 behaviour only')
@@ -397,7 +397,6 @@ def test_class_method():
     ]
 
 
-@skip_pre_38
 def test_json_schema():
     @validate_call
     def foo(a: int, b: int = None):
@@ -413,28 +412,32 @@ def test_json_schema():
         'additionalProperties': False,
     }
 
-    @validate_call
-    def foo(a: int, /, b: int):
-        return f'{a}, {b}'
+    # TODO: Uncomment when support for 3.7 is dropped.
+    # @validate_call
+    # def foo(a: int, /, b: int):
+    #     return f'{a}, {b}'
 
-    assert foo(1, 2) == '1, 2'
-    assert TypeAdapter(foo).json_schema() == {
-        'maxItems': 2,
-        'minItems': 2,
-        'prefixItems': [{'title': 'A', 'type': 'integer'}, {'title': 'B', 'type': 'integer'}],
-        'type': 'array',
-    }
+    # assert foo(1, 2) == '1, 2'
+    # assert TypeAdapter(foo).json_schema() == {
+    #     'maxItems': 2,
+    #     'minItems': 2,
+    #     'prefixItems': [{'title': 'A', 'type': 'integer'}, {'title': 'B', 'type': 'integer'}],
+    #     'type': 'array',
+    # }
 
-    @validate_call
-    def foo(a: int, /, *, b: int, c: int):
-        return f'{a}, {b}, {c}'
+    # @validate_call
+    # def foo(a: int, /, *, b: int, c: int):
+    #     return f'{a}, {b}, {c}'
 
-    assert foo(1, b=2, c=3) == '1, 2, 3'
-    with pytest.raises(
-        PydanticInvalidForJsonSchema,
-        match='Unable to generate JSON schema for arguments validator with positional-only and keyword-only arguments',
-    ):
-        TypeAdapter(foo).json_schema()
+    # assert foo(1, b=2, c=3) == '1, 2, 3'
+    # with pytest.raises(
+    #     PydanticInvalidForJsonSchema,
+    #     match=(
+    #       'Unable to generate JSON schema for arguments validator '
+    #       'with positional-only and keyword-only arguments'
+    #     ),
+    # ):
+    #     TypeAdapter(foo).json_schema()
 
 
 def test_alias_generator():
