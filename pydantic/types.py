@@ -425,7 +425,7 @@ class PathType:
     @staticmethod
     def validate_new(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.exists():
-            raise PydanticCustomError('path_exists', 'path already exists')
+            raise PydanticCustomError('path_exists', 'Path already exists')
         elif not path.parent.exists():
             raise PydanticCustomError('parent_does_not_exist', 'Parent directory does not exist')
         else:

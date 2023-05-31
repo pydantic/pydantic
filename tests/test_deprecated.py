@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Type
 import pytest
 from typing_extensions import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, root_validator
+from pydantic import BaseModel, ConfigDict, Field, PydanticUserError, ValidationError, conlist, root_validator
 from pydantic.config import Extra
 from pydantic.deprecated.decorator import validate_arguments
 from pydantic.deprecated.json import custom_pydantic_encoder, pydantic_encoder, timedelta_isoformat
@@ -418,6 +418,13 @@ def test_unique_items_items():
 
         class Model(BaseModel):
             x: List[int] = Field(None, unique_items=True)
+
+
+def test_unique_items_conlist():
+    with pytest.raises(PydanticUserError, match='`unique_items` is removed. use `Set` instead'):
+
+        class Model(BaseModel):
+            x: conlist(int, unique_items=True)
 
 
 def test_allow_mutation():
