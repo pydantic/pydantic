@@ -32,11 +32,11 @@ class PlainSerializer:
         Gets the Pydantic core schema.
 
         Args:
-            source_type (Any): The source type.
-            handler (GetCoreSchemaHandler): The `GetCoreSchemaHandler` instance.
+            source_type: The source type.
+            handler: The `GetCoreSchemaHandler` instance.
 
         Returns:
-            core_schema.CoreSchema: The Pydantic core schema.
+            The Pydantic core schema.
         """
         schema = handler(source_type)
         return_type = _decorators.get_function_return_type(self.func, self.return_type)
@@ -71,8 +71,8 @@ class WrapSerializer:
         This method is used to get the Pydantic core schema of the class.
 
         Args:
-            source_type (Any): Source type.
-            handler (GetCoreSchemaHandler): Core schema handler.
+            source_type: Source type.
+            handler: Core schema handler.
 
         Returns:
             The generated core schema of the class.
@@ -150,8 +150,8 @@ def field_serializer(
     - `(value: Any, nxt: SerializerFunctionWrapHandler, info: SerializationInfo)`
 
     Args:
-        fields (str): Which field(s) the method should be called on.
-        mode (str): `plain` means the function will be called instead of the default serialization logic,
+        fields: Which field(s) the method should be called on.
+        mode: `plain` means the function will be called instead of the default serialization logic,
             `wrap` means the function will be called with an argument to optionally call the
             default serialization logic.
         return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
@@ -159,7 +159,7 @@ def field_serializer(
         check_fields (bool): Whether to check that the fields actually exist on the model.
 
     Returns:
-        Callable: A decorator that can be used to decorate a function to be used as a field serializer.
+        A decorator that can be used to decorate a function to be used as a field serializer.
     """
 
     def dec(
@@ -208,15 +208,15 @@ def model_serializer(
     (`when_used` is not permitted here since it makes no sense.)
 
     Args:
-        __f (Callable[..., Any] | None): The function to be decorated.
-        mode (Literal['plain', 'wrap']): The serialization mode. `'plain'` means the function will be called
+        __f: The function to be decorated.
+        mode: The serialization mode. `'plain'` means the function will be called
             instead of the default serialization logic, `'wrap'` means the function will be called with an argument
             to optionally call the default serialization logic.
         when_used: Determines the serializer will be be used for serialization.
         return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
 
     Returns:
-        Callable: A decorator that can be used to decorate a function to be used as a model serializer.
+        A decorator that can be used to decorate a function to be used as a model serializer.
     """
 
     def dec(f: Callable[..., Any]) -> _decorators.PydanticDescriptorProxy[Any]:
