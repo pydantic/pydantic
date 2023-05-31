@@ -3,7 +3,18 @@ from typing import Any, Dict, List, Optional
 import pytest
 from pydantic_core.core_schema import SerializerFunctionWrapHandler
 
-from pydantic import Base64Str, BaseModel, RootModel, ValidationError, field_serializer, model_validator
+from pydantic import (
+    Base64Str,
+    BaseModel,
+    ConfigDict,
+    Field,
+    PrivateAttr,
+    PydanticUserError,
+    RootModel,
+    ValidationError,
+    field_serializer,
+    model_validator,
+)
 
 
 def parametrize_root_model():
@@ -221,6 +232,145 @@ def test_model_validator_after():
             v.root *= 2
             return v
 
-    Model('1')
     assert Model('1').root == 2
     assert Model('21').root == 42
+
+
+def test_private_attr():
+    class Model(RootModel[int]):
+        _private_attr: str
+        _private_attr_default: str = PrivateAttr(default='abc')
+
+    m = Model(42)
+
+    assert m.root == 42
+    assert m._private_attr_default == 'abc'
+    with pytest.raises(AttributeError, match='_private_attr'):
+        m._private_attr
+
+    m._private_attr = 7
+    m._private_attr_default = 8
+    m._other_private_attr = 9
+    # TODO: Should this be an `AttributeError`?
+    with pytest.raises(ValueError, match='other_attr'):
+        m.other_attr = 10
+
+    assert m._private_attr == 7
+    assert m._private_attr_default == 8
+    assert m._other_private_attr == 9
+    assert m.model_dump() == 42
+
+
+def test_validate_assignment_false():
+    Model = RootModel[int]
+
+    m = Model(42)
+    m.root = 'abc'
+    assert m.root == 'abc'
+
+
+def test_validate_assignment_true():
+    class Model(RootModel[int]):
+        model_config = ConfigDict(validate_assignment=True)
+
+    m = Model(42)
+
+    with pytest.raises(ValidationError) as e:
+        m.root = 'abc'
+
+    assert e.value.errors(include_url=False) == [
+        {
+            'input': 'abc',
+            'loc': (),
+            'msg': 'Input should be a valid integer, unable to parse string as an integer',
+            'type': 'int_parsing',
+        }
+    ]
+
+
+def test_root_model_literal():
+    assert RootModel[int](42).root == 42
+
+
+@pytest.mark.xfail(reason='TODO: fix `RootModel.__eq__`')
+def test_root_model_equality():
+    assert RootModel[int](42) == RootModel[int](42)
+    assert RootModel[int](42) != RootModel[int](7)
+    assert RootModel[int](42) != RootModel[float](42)
+
+
+def test_root_model_with_private_attrs_equality():
+    class Model(RootModel[int]):
+        _private_attr: str = PrivateAttr(default='abc')
+
+    m = Model(42)
+    assert m == Model(42)
+
+    m._private_attr = 'xyz'
+    assert m != Model(42)
+
+
+@pytest.mark.xfail(reason='TODO: raise error for `extra` with `RootModel`')
+@pytest.mark.parametrize('extra_value', ['ignore', 'allow', 'forbid'])
+def test_extra_error(extra_value):
+    with pytest.raises(PydanticUserError, match='extra'):
+
+        class Model(RootModel[int]):
+            model_config = ConfigDict(extra=extra_value)
+
+
+@pytest.mark.xfail(reason='TODO: support applying defaults with `RootModel`')
+def test_root_model_default_value():
+    class Model(RootModel):
+        root: int = 42
+
+    m = Model()
+    assert m.root == 42
+    assert m.model_dump == 42
+
+
+def test_root_model_as_attr_with_validate_defaults():
+    class Model(BaseModel):
+        model_config = ConfigDict(validate_default=True)
+
+        rooted_value: RootModel[int] = 42
+
+    m = Model()
+    # assert m.rooted_value == RootModel[int](42)  # see `test_root_model_equality`
+    assert m.rooted_value.root == 42
+    assert m.model_dump() == {'rooted_value': 42}
+
+
+@pytest.mark.xfail(reason='TODO: support applying defaults with `RootModel`')
+def test_root_model_in_root_model_default():
+    class Nested(RootModel):
+        root: int = 42
+
+    Model = RootModel[Nested]
+
+    m = Model()
+    assert m.root.root == 42
+
+
+@pytest.mark.xfail(reason='TODO: support applying defaults with `RootModel`')
+def test_nested_root_model_naive_default():
+    class Nested(RootModel):
+        root: int = 42
+
+    class Model(BaseModel):
+        value: Nested
+
+    m = Model(value=Nested())
+    assert m.value.root == 42
+
+
+@pytest.mark.xfail(reason='TODO: support applying defaults with `RootModel`')
+def test_nested_root_model_proper_default():
+    class Nested(RootModel):
+        root: int = 42
+
+    class Model(BaseModel):
+        value: Nested = Field(default_factory=Nested)
+
+    m = Model()
+    assert m.value.root == 42

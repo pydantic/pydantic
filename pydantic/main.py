@@ -1102,7 +1102,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     def __init__(__pydantic_self__, root: RootModelRootType) -> None:  # type: ignore
         __tracebackhide__ = True
-        # this is required set setattr works on RootModels, should be moved to rust
+        # TODO: this is required set setattr works on RootModels, should be moved to rust
         _object_setattr(__pydantic_self__, '__pydantic_fields_set__', {'root'})
         __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 
