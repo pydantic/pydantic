@@ -549,7 +549,7 @@ class _SecretFieldValidator:
             # hence we just use `secret_display`
             return _secret_display(value.get_secret_value())
         else:
-            return value  # pragma: no cover
+            return value
 
     def __get_pydantic_json_schema__(
         self, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
