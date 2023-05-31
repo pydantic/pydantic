@@ -599,6 +599,7 @@ def test_set():
     'field_type,extra_props',
     [
         (tuple, {'items': {}}),
+        (Tuple, {'items': {}}),
         (
             Tuple[str, int, Union[str, int, float], float],
             {
@@ -2219,7 +2220,7 @@ def test_schema_attributes():
     }
 
 
-def test_tuple_modify_schema():
+def test_tuple_with_extra_schema():
     class MyTuple(Tuple[int, str]):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
