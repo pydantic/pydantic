@@ -3930,6 +3930,14 @@ def test_secretstr_error():
     ]
 
 
+def test_secret_str_hashable():
+    assert type(hash(SecretStr('abs'))) is int
+
+
+def test_secret_bytes_hashable():
+    assert type(hash(SecretBytes(b'abs'))) is int
+
+
 def test_secret_str_min_max_length():
     class Foobar(BaseModel):
         password: SecretStr = Field(min_length=6, max_length=10)
