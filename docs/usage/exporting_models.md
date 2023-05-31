@@ -255,8 +255,7 @@ from typing import Any, Type
 
 from pydantic_core import core_schema
 
-from pydantic import BaseModel
-from pydantic.annotated import GetCoreSchemaHandler
+from pydantic import BaseModel, GetCoreSchemaHandler
 
 
 class DayThisYear(date):

@@ -36,6 +36,7 @@ from typing_extensions import Annotated, Literal
 from pydantic import (
     BaseModel,
     Field,
+    GetCoreSchemaHandler,
     ImportString,
     PydanticUserError,
     RootModel,
@@ -44,7 +45,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic._internal._core_metadata import CoreMetadataHandler, build_metadata_dict
-from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
 from pydantic.config import ConfigDict
 from pydantic.dataclasses import dataclass

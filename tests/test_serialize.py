@@ -14,6 +14,7 @@ from pydantic import (
     BaseModel,
     Field,
     FieldSerializationInfo,
+    GetCoreSchemaHandler,
     SecretField,
     SecretStr,
     SerializationInfo,
@@ -26,7 +27,6 @@ from pydantic import (
 from pydantic._internal import _known_annotated_metadata
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
-from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.config import ConfigDict
 from pydantic.functional_serializers import PlainSerializer, WrapSerializer
 from pydantic.types import _SecretFieldValidator

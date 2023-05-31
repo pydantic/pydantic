@@ -60,6 +60,7 @@ from pydantic import (
     FiniteFloat,
     FutureDate,
     FutureDatetime,
+    GetCoreSchemaHandler,
     Json,
     NaiveDatetime,
     NameEmail,
@@ -97,7 +98,6 @@ from pydantic import (
     field_validator,
     validate_call,
 )
-from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
 from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue

@@ -13,10 +13,9 @@ from uuid import UUID
 import pytest
 from pydantic_core import CoreSchema, SchemaSerializer, core_schema
 
-from pydantic import BaseModel, ConfigDict, NameEmail
+from pydantic import BaseModel, ConfigDict, GetCoreSchemaHandler, NameEmail
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
-from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.deprecated.json import pydantic_encoder, timedelta_isoformat

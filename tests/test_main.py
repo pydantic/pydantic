@@ -28,6 +28,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     Field,
+    GetCoreSchemaHandler,
     PrivateAttr,
     PydanticUndefinedAnnotation,
     PydanticUserError,
@@ -37,7 +38,6 @@ from pydantic import (
     constr,
     field_validator,
 )
-from pydantic.annotated import GetCoreSchemaHandler
 
 
 def test_success():
