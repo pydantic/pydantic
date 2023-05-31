@@ -8,7 +8,7 @@ def to_pascal(snake: str) -> str:
     """Convert a snake_case string to PascalCase.
 
     Args:
-        snake (str): The snake_case string to convert.
+        snake: The snake_case string to convert.
 
     Returns:
         str: The PascalCase string.
@@ -21,7 +21,7 @@ def to_camel(snake: str) -> str:
     """Convert a snake_case string to camelCase.
 
     Args:
-        snake (str): The snake_case string to convert.
+        snake: The snake_case string to convert.
 
     Returns:
         str: The converted camelCase string.
@@ -34,7 +34,7 @@ def to_snake(camel: str) -> str:
     """Convert a PascalCase or camelCase string to snake_case.
 
     Args:
-        camel (str): The string to convert.
+        camel: The string to convert.
 
     Returns:
         str: The converted string in snake_case.
