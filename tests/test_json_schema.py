@@ -567,7 +567,7 @@ def test_optional_modify_schema():
         def __get_pydantic_core_schema__(
             cls, source_type: Any, handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
-            return core_schema.nullable_schema(core_schema.nullable_schema(core_schema.none_schema()))
+            return core_schema.nullable_schema(core_schema.none_schema())
 
     class Model(BaseModel):
         x: MyNone
