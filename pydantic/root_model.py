@@ -10,7 +10,7 @@ from .main import BaseModel
 if typing.TYPE_CHECKING:
     from typing import Any
 
-    import typing_extensions
+    from typing_extensions import Literal
 
     Model = typing.TypeVar('Model', bound='BaseModel')
 
@@ -46,7 +46,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
     root: RootModelRootType
 
     def __init__(
-        __pydantic_self__, root: RootModelRootType | typing_extensions.Literal[_RootModelNoValue] = _RootModelNoValue
+        __pydantic_self__, root: RootModelRootType | Literal[_RootModelNoValue] = _RootModelNoValue
     ) -> None:  # type: ignore
         __tracebackhide__ = True
         if root is _RootModelNoValue:
