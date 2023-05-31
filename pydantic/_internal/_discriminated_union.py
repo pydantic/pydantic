@@ -1,7 +1,6 @@
 from __future__ import annotations as _annotations
 
-from enum import Enum
-from typing import Sequence
+from typing import Any, Sequence
 
 from pydantic_core import core_schema
 
@@ -347,20 +346,13 @@ class _ApplyInferredDiscriminator:
         schema. This function does that, but also handles nested unions and defaults.
         """
         if schema['type'] == 'literal':
-            values = []
-            for v in schema['expected']:
-                if isinstance(v, Enum):
-                    v = v.value
-                if not isinstance(v, (str, int)):
-                    raise TypeError(f'Unsupported value for discriminator field: {v!r}')
-                values.append(v)
-            return values
+            return schema['expected']
 
         elif schema['type'] == 'union':
             # Generally when multiple values are allowed they should be placed in a single `Literal`, but
             # we add this case to handle the situation where a field is annotated as a `Union` of `Literal`s.
             # For example, this lets us handle `Union[Literal['key'], Union[Literal['Key'], Literal['KEY']]]`
-            values = []
+            values: list[Any] = []
             for choice in schema['choices']:
                 choice_values = self._infer_discriminator_values_for_inner_schema(choice, source)
                 values.extend(choice_values)
@@ -380,22 +372,16 @@ class _ApplyInferredDiscriminator:
         """This method updates `self.tagged_union_choices` so that all provided (discriminator) `values` map to the
         provided `choice`, validating that none of these values already map to another (different) choice.
         """
-        primary_value: str | int | None = None
         for discriminator_value in values:
             if discriminator_value in self._tagged_union_choices:
                 # It is okay if `value` is already in tagged_union_choices as long as it maps to the same value.
                 # Because tagged_union_choices may map values to other values, we need to walk the choices dict
                 # until we get to a "real" choice, and confirm that is equal to the one assigned.
                 existing_choice = self._tagged_union_choices[discriminator_value]
-                while isinstance(existing_choice, (str, int)):
-                    existing_choice = self._tagged_union_choices[existing_choice]
                 if existing_choice != choice:
                     raise TypeError(
                         f'Value {discriminator_value!r} for discriminator '
                         f'{self.discriminator!r} mapped to multiple choices'
                     )
-            elif primary_value is None:
-                self._tagged_union_choices[discriminator_value] = choice
-                primary_value = discriminator_value
             else:
-                self._tagged_union_choices[discriminator_value] = primary_value
+                self._tagged_union_choices[discriminator_value] = choice

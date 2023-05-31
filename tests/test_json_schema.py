@@ -3334,139 +3334,143 @@ def test_discriminated_annotated_union_literal_enum():
         pet: Pet
         number: int
 
+    # insert_assert(Model.model_json_schema())
     assert Model.model_json_schema() == {
-        '$defs': {
-            'BlackCatWithHeight': {
-                'properties': {
-                    'black_infos': {'title': 'Black ' 'Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 0, 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet ' 'Type'},
-                },
-                'required': ['pet_type', 'color', 'info', 'black_infos'],
-                'title': 'BlackCatWithHeight',
-                'type': 'object',
-            },
-            'BlackCatWithWeight': {
-                'properties': {
-                    'black_infos': {'title': 'Black ' 'Infos', 'type': 'string'},
-                    'color': {'const': 'black', 'title': 'Color'},
-                    'info': {'const': 1, 'title': 'Info'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet ' 'Type'},
-                },
-                'required': ['pet_type', 'color', 'info', 'black_infos'],
-                'title': 'BlackCatWithWeight',
-                'type': 'object',
-            },
-            'Dog': {
-                'properties': {
-                    'dog_name': {'title': 'Dog Name', 'type': 'string'},
-                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
-                },
-                'required': ['pet_type', 'dog_name'],
-                'title': 'Dog',
-                'type': 'object',
-            },
-            'WhiteCat': {
-                'properties': {
-                    'color': {'const': 'white', 'title': 'Color'},
-                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
-                    'white_infos': {'title': 'White Infos', 'type': 'string'},
-                },
-                'required': ['pet_type', 'color', 'white_infos'],
-                'title': 'WhiteCat',
-                'type': 'object',
-            },
-        },
+        'type': 'object',
         'properties': {
-            'number': {'title': 'Number', 'type': 'integer'},
             'pet': {
-                'discriminator': {
-                    'mapping': {
-                        'cat': {
-                            'discriminator': {
-                                'mapping': {
-                                    'black': {
-                                        'discriminator': {
-                                            'mapping': {
-                                                '0': '#/$defs/BlackCatWithHeight',
-                                                '1': '#/$defs/BlackCatWithWeight',
-                                            },
-                                            'propertyName': 'info',
-                                        },
-                                        'oneOf': [
-                                            {'$ref': '#/$defs/BlackCatWithHeight'},
-                                            {'$ref': '#/$defs/BlackCatWithWeight'},
-                                        ],
-                                    },
-                                    'white': '#/$defs/WhiteCat',
-                                },
-                                'propertyName': 'color',
-                            },
-                            'oneOf': [
-                                {
-                                    'discriminator': {
-                                        'mapping': {
-                                            '0': '#/$defs/BlackCatWithHeight',
-                                            '1': '#/$defs/BlackCatWithWeight',
-                                        },
-                                        'propertyName': 'info',
-                                    },
-                                    'oneOf': [
-                                        {'$ref': '#/$defs/BlackCatWithHeight'},
-                                        {'$ref': '#/$defs/BlackCatWithWeight'},
-                                    ],
-                                },
-                                {'$ref': '#/$defs/WhiteCat'},
-                            ],
-                        },
-                        'dog': '#/$defs/Dog',
-                    },
-                    'propertyName': 'pet_type',
-                },
                 'oneOf': [
                     {
-                        'discriminator': {
-                            'mapping': {
-                                'black': {
-                                    'discriminator': {
-                                        'mapping': {
-                                            '0': '#/$defs/BlackCatWithHeight',
-                                            '1': '#/$defs/BlackCatWithWeight',
-                                        },
-                                        'propertyName': 'info',
-                                    },
-                                    'oneOf': [
-                                        {'$ref': '#/$defs/BlackCatWithHeight'},
-                                        {'$ref': '#/$defs/BlackCatWithWeight'},
-                                    ],
-                                },
-                                'white': '#/$defs/WhiteCat',
-                            },
-                            'propertyName': 'color',
-                        },
                         'oneOf': [
                             {
-                                'discriminator': {
-                                    'mapping': {'0': '#/$defs/BlackCatWithHeight', '1': '#/$defs/BlackCatWithWeight'},
-                                    'propertyName': 'info',
-                                },
                                 'oneOf': [
                                     {'$ref': '#/$defs/BlackCatWithHeight'},
                                     {'$ref': '#/$defs/BlackCatWithWeight'},
                                 ],
+                                'discriminator': {
+                                    'propertyName': 'info',
+                                    'mapping': {
+                                        'PetInfo.height': '#/$defs/BlackCatWithHeight',
+                                        'PetInfo.weight': '#/$defs/BlackCatWithWeight',
+                                    },
+                                },
                             },
                             {'$ref': '#/$defs/WhiteCat'},
                         ],
+                        'discriminator': {
+                            'propertyName': 'color',
+                            'mapping': {
+                                'PetColor.black': {
+                                    'oneOf': [
+                                        {'$ref': '#/$defs/BlackCatWithHeight'},
+                                        {'$ref': '#/$defs/BlackCatWithWeight'},
+                                    ],
+                                    'discriminator': {
+                                        'propertyName': 'info',
+                                        'mapping': {
+                                            'PetInfo.height': '#/$defs/BlackCatWithHeight',
+                                            'PetInfo.weight': '#/$defs/BlackCatWithWeight',
+                                        },
+                                    },
+                                },
+                                'PetColor.white': '#/$defs/WhiteCat',
+                            },
+                        },
                     },
                     {'$ref': '#/$defs/Dog'},
                 ],
+                'discriminator': {
+                    'propertyName': 'pet_type',
+                    'mapping': {
+                        'PetType.cat': {
+                            'oneOf': [
+                                {
+                                    'oneOf': [
+                                        {'$ref': '#/$defs/BlackCatWithHeight'},
+                                        {'$ref': '#/$defs/BlackCatWithWeight'},
+                                    ],
+                                    'discriminator': {
+                                        'propertyName': 'info',
+                                        'mapping': {
+                                            'PetInfo.height': '#/$defs/BlackCatWithHeight',
+                                            'PetInfo.weight': '#/$defs/BlackCatWithWeight',
+                                        },
+                                    },
+                                },
+                                {'$ref': '#/$defs/WhiteCat'},
+                            ],
+                            'discriminator': {
+                                'propertyName': 'color',
+                                'mapping': {
+                                    'PetColor.black': {
+                                        'oneOf': [
+                                            {'$ref': '#/$defs/BlackCatWithHeight'},
+                                            {'$ref': '#/$defs/BlackCatWithWeight'},
+                                        ],
+                                        'discriminator': {
+                                            'propertyName': 'info',
+                                            'mapping': {
+                                                'PetInfo.height': '#/$defs/BlackCatWithHeight',
+                                                'PetInfo.weight': '#/$defs/BlackCatWithWeight',
+                                            },
+                                        },
+                                    },
+                                    'PetColor.white': '#/$defs/WhiteCat',
+                                },
+                            },
+                        },
+                        'PetType.dog': '#/$defs/Dog',
+                    },
+                },
                 'title': 'Pet',
             },
+            'number': {'type': 'integer', 'title': 'Number'},
         },
         'required': ['pet', 'number'],
         'title': 'Model',
-        'type': 'object',
+        '$defs': {
+            'BlackCatWithHeight': {
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'title': 'Color'},
+                    'info': {'const': 0, 'title': 'Info'},
+                    'black_infos': {'type': 'string', 'title': 'Black Infos'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+                'title': 'BlackCatWithHeight',
+            },
+            'BlackCatWithWeight': {
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'black', 'title': 'Color'},
+                    'info': {'const': 1, 'title': 'Info'},
+                    'black_infos': {'type': 'string', 'title': 'Black Infos'},
+                },
+                'required': ['pet_type', 'color', 'info', 'black_infos'],
+                'title': 'BlackCatWithWeight',
+            },
+            'WhiteCat': {
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'const': 'cat', 'title': 'Pet Type'},
+                    'color': {'const': 'white', 'title': 'Color'},
+                    'white_infos': {'type': 'string', 'title': 'White Infos'},
+                },
+                'required': ['pet_type', 'color', 'white_infos'],
+                'title': 'WhiteCat',
+            },
+            'Dog': {
+                'type': 'object',
+                'properties': {
+                    'pet_type': {'const': 'dog', 'title': 'Pet Type'},
+                    'dog_name': {'type': 'string', 'title': 'Dog Name'},
+                },
+                'required': ['pet_type', 'dog_name'],
+                'title': 'Dog',
+            },
+        },
     }
 
 
