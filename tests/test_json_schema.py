@@ -66,6 +66,7 @@ from pydantic.types import (
     UUID5,
     DirectoryPath,
     FilePath,
+    InstanceOf,
     Json,
     NegativeFloat,
     NegativeInt,
@@ -4063,14 +4064,22 @@ def test_sequences_int_json_schema(sequence_type):
         ),
     ],
 )
-def test_arbitrary_type_json_schema(field_schema, model_schema):
+@pytest.mark.parametrize('instance_of', [True, False])
+def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
     class ArbitraryClass:
         pass
 
-    class Model(BaseModel):
-        model_config = dict(arbitrary_types_allowed=True)
+    if instance_of:
 
-        x: Annotated[ArbitraryClass, WithJsonSchema(field_schema)]
+        class Model(BaseModel):
+            x: Annotated[InstanceOf[ArbitraryClass], WithJsonSchema(field_schema)]
+
+    else:
+
+        class Model(BaseModel):
+            model_config = dict(arbitrary_types_allowed=True)
+
+            x: Annotated[ArbitraryClass, WithJsonSchema(field_schema)]
 
     assert Model.model_json_schema() == model_schema
 

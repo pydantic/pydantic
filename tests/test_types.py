@@ -5249,7 +5249,7 @@ def test_typing_literal_field():
     assert Model(foo='foo').foo == 'foo'
 
 
-def test_is_instance_annotation():
+def test_instance_of_annotation():
     class Model(BaseModel):
         x: InstanceOf[Sequence[int]]  # Note: the generic parameter gets ignored by runtime validation
 
@@ -5277,6 +5277,31 @@ def test_is_instance_annotation():
     assert exc_info.value.errors(include_url=False) == [
         {'input': 'abc', 'loc': ('x',), 'msg': 'Input should be a valid array', 'type': 'list_type'}
     ]
+
+
+def test_instanceof_invalid_core_schema():
+    class MyClass:
+        pass
+
+    class MyModel(BaseModel):
+        a: InstanceOf[MyClass]
+
+    MyModel(a=MyClass())
+    with pytest.raises(ValidationError) as exc_info:
+        MyModel(a=1)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'ctx': {'class': 'test_instanceof_invalid_core_schema.<locals>.MyClass'},
+            'input': 1,
+            'loc': ('a',),
+            'msg': 'Input should be an instance of ' 'test_instanceof_invalid_core_schema.<locals>.MyClass',
+            'type': 'is_instance_of',
+        }
+    ]
+    with pytest.raises(
+        PydanticInvalidForJsonSchema, match='Cannot generate a JsonSchema for core_schema.IsInstanceSchema'
+    ):
+        MyModel.model_json_schema()
 
 
 def test_constraints_arbitrary_type() -> None:
