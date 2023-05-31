@@ -3271,6 +3271,50 @@ def test_directory_path_validation_fails(value):
     ]
 
 
+@pytest.mark.parametrize('value', ('tests/test_types.py', Path('tests/test_types.py')))
+def test_new_path_validation_path_already_exists(value):
+    class Model(BaseModel):
+        foo: NewPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'path_exists',
+            'loc': ('foo',),
+            'msg': 'Path already exists',
+            'input': value,
+        }
+    ]
+
+
+@pytest.mark.parametrize('value', ('/nonexistentdir/foo.py', Path('/nonexistentdir/foo.py')))
+def test_new_path_validation_parent_does_not_exist(value):
+    class Model(BaseModel):
+        foo: NewPath
+
+    with pytest.raises(ValidationError) as exc_info:
+        Model(foo=value)
+    assert exc_info.value.errors(include_url=False) == [
+        {
+            'type': 'parent_does_not_exist',
+            'loc': ('foo',),
+            'msg': 'Parent directory does not exist',
+            'input': value,
+        }
+    ]
+
+
+@pytest.mark.parametrize(
+    'value,result', (('tests/foo.py', Path('tests/foo.py')), (Path('tests/foo.py'), Path('tests/foo.py')))
+)
+def test_new_path_validation_success(value, result):
+    class Model(BaseModel):
+        foo: NewPath
+
+    assert Model(foo=value).foo == result
+
+
 def test_number_gt():
     class Model(BaseModel):
         a: conint(gt=-1) = 0
@@ -3783,6 +3827,8 @@ def test_secretstr():
     assert str(f.empty_password) == ''
     assert repr(f.password) == "SecretStr('**********')"
     assert repr(f.empty_password) == "SecretStr('')"
+    assert len(f.password) == 4
+    assert len(f.empty_password) == 0
 
     # Assert retrieval of secret value is correct
     assert f.password.get_secret_value() == '1234'
@@ -3830,6 +3876,7 @@ def test_secretstr_idempotent():
         conbytes,
         SecretBytes,
         constr,
+        SecretField,
         StrictStr,
         SecretStr,
         ImportString,
@@ -5440,3 +5487,20 @@ def test_annotated_default_value_functional_validator() -> None:
 
         # insert_assert(t.json_schema())
         assert t.json_schema() == {'type': 'array', 'items': {'type': 'integer'}, 'default': ['1', '2']}
+
+
+@pytest.mark.parametrize(
+    'pydantic_type,expected',
+    (
+        (Json, 'Json'),
+        (PastDate, 'PastDate'),
+        (FutureDate, 'FutureDate'),
+        (AwareDatetime, 'AwareDatetime'),
+        (NaiveDatetime, 'NaiveDatetime'),
+        (PastDatetime, 'PastDatetime'),
+        (FutureDatetime, 'FutureDatetime'),
+        (ImportString, 'ImportString'),
+    ),
+)
+def test_types_repr(pydantic_type, expected):
+    assert repr(pydantic_type()) == expected

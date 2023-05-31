@@ -425,7 +425,7 @@ class PathType:
     @staticmethod
     def validate_new(path: Path, _: core_schema.ValidationInfo) -> Path:
         if path.exists():
-            raise PydanticCustomError('path_exists', 'path already exists')
+            raise PydanticCustomError('path_exists', 'Path already exists')
         elif not path.parent.exists():
             raise PydanticCustomError('parent_does_not_exist', 'Parent directory does not exist')
         else:
@@ -498,9 +498,6 @@ class SecretField(Generic[SecretType]):
     def __eq__(self, other: Any) -> bool:
         return isinstance(other, self.__class__) and self.get_secret_value() == other.get_secret_value()
 
-    def __hash__(self) -> int:
-        return hash(self.get_secret_value())
-
     def __len__(self) -> int:
         return len(self._secret_value)
 
@@ -549,7 +546,7 @@ class _SecretFieldValidator:
             # hence we just use `secret_display`
             return _secret_display(value.get_secret_value())
         else:
-            return value
+            return value  # pragma: no cover
 
     def __get_pydantic_json_schema__(
         self, _core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
