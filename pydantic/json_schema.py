@@ -327,10 +327,10 @@ class GenerateJsonSchema:
         Generates a JSON schema for a given `CoreSchemaOrField`.
 
         Args:
-            schema (CoreSchemaOrField): The given `CoreSchemaOrField` to generate JSON schema for.
+            schema: The given `CoreSchemaOrField` to generate JSON schema for.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         # If a schema with the same CoreRef has been handled, just return a reference to it
         # Note that this assumes that it will _never_ be the case that the same CoreRef is used
@@ -349,10 +349,10 @@ class GenerateJsonSchema:
             Generate a JSON schema based on the input schema.
 
             Args:
-                schema_or_field (CoreSchemaOrField): The schema data to generate a JSON schema from.
+                schema_or_field: The schema data to generate a JSON schema from.
 
             Returns:
-                JsonSchemaValue: The generated JSON schema.
+                The generated JSON schema.
 
             Raises:
                 TypeError: If an unexpected schema type is encountered.
@@ -392,10 +392,10 @@ class GenerateJsonSchema:
         Returns a schema that matches any value.
 
         Args:
-            schema (core_schema.AnySchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return {}
 
@@ -404,10 +404,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a `None` value.
 
         Args:
-            schema (core_schema.NoneSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return {'type': 'null'}
 
@@ -416,10 +416,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a Boolean value.
 
         Args:
-            schema (core_schema.NoneSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return {'type': 'boolean'}
 
@@ -428,10 +428,10 @@ class GenerateJsonSchema:
         Returns a schema that matches an int value.
 
         Args:
-            schema (core_schema.IntSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         json_schema: dict[str, Any] = {'type': 'integer'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
@@ -443,10 +443,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a Float value.
 
         Args:
-            schema (core_schema.FloatSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         json_schema: dict[str, Any] = {'type': 'number'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.numeric)
@@ -458,10 +458,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a string value.
 
         Args:
-            schema (core_schema.StringSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         json_schema = {'type': 'string'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.string)
@@ -472,10 +472,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a bytes value.
 
         Args:
-            schema (core_schema.BytesSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         json_schema = {'type': 'string', 'format': 'binary'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.bytes)
@@ -486,10 +486,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a date value.
 
         Args:
-            schema (core_schema.DateSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         json_schema = {'type': 'string', 'format': 'date'}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.date)
@@ -500,10 +500,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a time value.
 
         Args:
-            schema (core_schema.TimeSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return {'type': 'string', 'format': 'time'}
 
@@ -512,10 +512,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a `datetime` value.
 
         Args:
-            schema (core_schema.DatetimeSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return {'type': 'string', 'format': 'date-time'}
 
@@ -524,10 +524,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a `timedelta` value.
 
         Args:
-            schema (core_schema.TimedeltaSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         return {'type': 'string', 'format': 'duration'}
 
@@ -536,10 +536,10 @@ class GenerateJsonSchema:
         Returns a schema that matches a `Literal` value.
 
         Args:
-            schema (core_schema.LiteralSchema): The schema.
+            schema: The schema.
 
         Returns:
-            JsonSchemaValue: The generated JSON schema.
+            The generated JSON schema.
         """
         expected = [v.value if isinstance(v, Enum) else v for v in schema['expected']]
 
@@ -864,11 +864,8 @@ class GenerateJsonSchema:
         return openapi_discriminator
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
-        try:
-            # Note: If we wanted to generate a schema for the _serialization_, would want to use the _last_ step:
-            return self.generate_inner(schema['steps'][0])
-        except IndexError as e:
-            raise ValueError('Cannot generate a JsonSchema for a zero-step ChainSchema') from e
+        # Note: If we wanted to generate a schema for the _serialization_, would want to use the _last_ step:
+        return self.generate_inner(schema['steps'][0])
 
     def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:
         """
@@ -1117,7 +1114,9 @@ class GenerateJsonSchema:
             if positional_possible:
                 return self.p_arguments_schema(p_only_arguments + kw_or_p_arguments, var_args_schema)
 
-        raise PydanticInvalidForJsonSchema(
+        # TODO: When support for Python 3.7 is dropped, uncomment the block on `test_json_schema`
+        # to cover this test case.
+        raise PydanticInvalidForJsonSchema(  # pragma: no cover
             'Unable to generate JSON schema for arguments validator with positional-only and keyword-only arguments'
         )
 
@@ -1261,7 +1260,7 @@ class GenerateJsonSchema:
             return True  # anything else should have title set
 
         else:
-            raise PydanticInvalidForJsonSchema(f'Unexpected schema type: schema={schema}')
+            raise PydanticInvalidForJsonSchema(f'Unexpected schema type: schema={schema}')  # pragma: no cover
 
     def normalize_name(self, name: str) -> str:
         return re.sub(r'[^a-zA-Z0-9.\-_]', '_', name).replace('.', '__')

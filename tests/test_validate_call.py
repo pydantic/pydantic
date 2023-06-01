@@ -439,6 +439,36 @@ def test_json_schema():
     # ):
     #     TypeAdapter(foo).json_schema()
 
+    @validate_call
+    def foo(*numbers: int) -> int:
+        return sum(numbers)
+
+    assert foo(1, 2, 3) == 6
+    assert TypeAdapter(foo).json_schema() == {'items': {'type': 'integer'}, 'prefixItems': [], 'type': 'array'}
+
+    @validate_call
+    def foo(**scores: int) -> str:
+        return ', '.join(f'{k}={v}' for k, v in sorted(scores.items()))
+
+    assert foo(a=1, b=2) == 'a=1, b=2'
+    assert TypeAdapter(foo).json_schema() == {
+        'additionalProperties': {'type': 'integer'},
+        'properties': {},
+        'type': 'object',
+    }
+
+    @validate_call
+    def foo(a: Annotated[int, Field(..., alias='A')]):
+        return a
+
+    assert foo(1) == 1
+    assert TypeAdapter(foo).json_schema() == {
+        'additionalProperties': False,
+        'properties': {'A': {'title': 'A', 'type': 'integer'}},
+        'required': ['A'],
+        'type': 'object',
+    }
+
 
 def test_alias_generator():
     @validate_call(config=dict(alias_generator=lambda x: x * 2))
