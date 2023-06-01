@@ -4384,7 +4384,7 @@ def test_type_adapter_json_schemas_without_definitions():
 
 
 def test_custom_chain_schema():
-    class MySequence(Sequence[int]):
+    class MySequence:
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             list_schema = core_schema.list_schema()
@@ -4397,6 +4397,26 @@ def test_custom_chain_schema():
 
     assert Model.model_json_schema() == {
         'properties': {'a': {'items': {}, 'title': 'A', 'type': 'array'}},
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_json_or_python_schema():
+    class MyJsonOrPython:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            int_schema = core_schema.int_schema()
+            return core_schema.json_or_python_schema(json_schema=int_schema, python_schema=int_schema)
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        a: MyJsonOrPython
+
+    assert Model.model_json_schema() == {
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
         'required': ['a'],
         'title': 'Model',
         'type': 'object',
