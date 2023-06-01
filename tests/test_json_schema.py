@@ -1086,6 +1086,12 @@ def test_json_type():
         },
         'required': ['a', 'b', 'c'],
     }
+    assert Model.model_json_schema(mode='serialization') == {
+        'properties': {'a': {'title': 'A'}, 'b': {'title': 'B', 'type': 'integer'}, 'c': {'title': 'C'}},
+        'required': ['a', 'b', 'c'],
+        'title': 'Model',
+        'type': 'object',
+    }
 
 
 def test_ipv4address_type():
@@ -4414,6 +4420,26 @@ def test_json_or_python_schema():
         model_config = ConfigDict(arbitrary_types_allowed=True)
 
         a: MyJsonOrPython
+
+    assert Model.model_json_schema() == {
+        'properties': {'a': {'title': 'A', 'type': 'integer'}},
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
+def test_lax_or_strict_schema():
+    class MyLaxOrStrict:
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            int_schema = core_schema.int_schema()
+            return core_schema.lax_or_strict_schema(lax_schema=int_schema, strict_schema=int_schema, strict=True)
+
+    class Model(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        a: MyLaxOrStrict
 
     assert Model.model_json_schema() == {
         'properties': {'a': {'title': 'A', 'type': 'integer'}},
