@@ -86,6 +86,8 @@ def gen_models():
     class ConstrainedDateModel(pydantic.BaseModel):
         condatet: pydantic.condate(gt=date(1980, 1, 1), lt=date(2180, 12, 31))
         condatee: pydantic.condate(ge=date(1980, 1, 1), le=date(2180, 12, 31))
+        future: pydantic.FutureDate
+        past: pydantic.PastDate
 
     yield from (
         MiscModel,
