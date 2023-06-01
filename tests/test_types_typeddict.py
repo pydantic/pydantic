@@ -697,13 +697,13 @@ def test_typeddict_alias_generator(TypedDict):
     class Model(BaseModel):
         d: MyDict
 
-    analyzed = TypeAdapter(MyDict, config=ConfigDict(alias_generator=alias_generator))
-    model = analyzed.validate_python({'alias_foo': 'bar'})
+    ta = TypeAdapter(MyDict, config=ConfigDict(alias_generator=alias_generator))
+    model = ta.validate_python({'alias_foo': 'bar'})
 
     assert model['foo'] == 'bar'
 
     with pytest.raises(ValidationError) as exc_info:
-        analyzed.validate_python({'foo': 'bar'})
+        ta.validate_python({'foo': 'bar'})
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'missing', 'loc': ('alias_foo',), 'msg': 'Field required', 'input': {'foo': 'bar'}},
         {'input': 'bar', 'loc': ('foo',), 'msg': 'Extra inputs are not permitted', 'type': 'extra_forbidden'},
