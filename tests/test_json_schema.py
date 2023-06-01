@@ -3925,6 +3925,20 @@ def test_annotated_get_json_schema() -> None:
     assert sum(calls) == 1
 
 
+def test_model_with_strict_mode():
+    class Model(BaseModel):
+        model_config = ConfigDict(strict=True)
+
+        a: str
+
+    assert Model.model_json_schema() == {
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_model_with_schema_extra():
     class Model(BaseModel):
         a: str
