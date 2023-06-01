@@ -1,16 +1,13 @@
 from __future__ import annotations as _annotations
 
-import enum
 import typing
 
-from ._internal import _repr
+from ._internal import _fields, _repr
 from ._internal._model_construction import object_setattr
 from .main import BaseModel
 
 if typing.TYPE_CHECKING:
     from typing import Any
-
-    from typing_extensions import Literal
 
     Model = typing.TypeVar('Model', bound='BaseModel')
 
@@ -19,13 +16,6 @@ __all__ = ('RootModel',)
 
 
 RootModelRootType = typing.TypeVar('RootModelRootType')
-
-
-class _RootModelSpecialValues(enum.Enum):
-    no_value = enum.auto()
-
-
-_RootModelNoValue = _RootModelSpecialValues.no_value
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
@@ -42,14 +32,23 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     root: RootModelRootType
 
+    def __new__(cls, root: RootModelRootType | _fields._UndefinedType = _fields.Undefined) -> RootModel:
+        __pydantic_self__ = super().__new__(cls)
+        # We need to set `__pydantic_fields_set__` here for cases when `RootModel` is being created by pydantic-core in
+        # its bare parametrized form without subclassing. This could happen when `RootModel[<type>]` is being used as a
+        # field with a default value that is being created via validator.
+        # See `tests/test_root_model.py::test_root_model_as_attr_with_validate_default`
+        if root is _fields.Undefined:
+            object_setattr(__pydantic_self__, '__pydantic_fields_set__', set())
+        else:
+            object_setattr(__pydantic_self__, '__pydantic_fields_set__', {'root'})
+        return __pydantic_self__
+
     def __init__(
-        __pydantic_self__, root: RootModelRootType | Literal[_RootModelNoValue] = _RootModelNoValue
+        __pydantic_self__, root: RootModelRootType | _fields._UndefinedType = _fields.Undefined
     ) -> None:  # type: ignore
         __tracebackhide__ = True
-        if root is not _RootModelNoValue:
-            object_setattr(__pydantic_self__, '__pydantic_fields_set__', {'root'})
-        else:
-            object_setattr(__pydantic_self__, '__pydantic_fields_set__', set())
+        if root is _fields.Undefined:
             root_field = __pydantic_self__.model_fields['root']
             root = root_field.get_default(call_default_factory=True)
             if not (__pydantic_self__.model_config.get('validate_default', False) or root_field.validate_default):

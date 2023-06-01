@@ -386,6 +386,7 @@ def test_root_model_default_value_with_validate_default():
     m = Model()
     assert m.root == 42
     assert m.model_dump() == 42
+    assert m.__pydantic_fields_set__ == set()
 
 
 def test_root_model_default_value_with_validate_default_on_field():
@@ -395,6 +396,7 @@ def test_root_model_default_value_with_validate_default_on_field():
     m = Model()
     assert m.root == 42
     assert m.model_dump() == 42
+    assert m.__pydantic_fields_set__ == set()
 
 
 def test_root_model_as_attr_with_validate_default():
@@ -406,6 +408,7 @@ def test_root_model_as_attr_with_validate_default():
     m = Model()
     assert m.rooted_value == RootModel[int](42)
     assert m.model_dump() == {'rooted_value': 42}
+    assert m.rooted_value.__pydantic_fields_set__ == set()
 
 
 def test_root_model_in_root_model_default():
@@ -417,6 +420,8 @@ def test_root_model_in_root_model_default():
 
     m = Model()
     assert m.root.root == 42
+    assert m.__pydantic_fields_set__ == set()
+    assert m.root.__pydantic_fields_set__ == set()
 
 
 def test_nested_root_model_naive_default():
@@ -428,6 +433,7 @@ def test_nested_root_model_naive_default():
 
     m = Model(value=Nested())
     assert m.value.root == 42
+    assert m.value.__pydantic_fields_set__ == set()
 
 
 def test_nested_root_model_proper_default():
@@ -439,6 +445,7 @@ def test_nested_root_model_proper_default():
 
     m = Model()
     assert m.value.root == 42
+    assert m.value.__pydantic_fields_set__ == set()
 
 
 def test_root_model_json_schema_meta():
