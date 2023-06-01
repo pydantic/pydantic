@@ -825,8 +825,6 @@ class GenerateJsonSchema:
         Extract a compatible OpenAPI discriminator from the schema and one_of choices that end up in the final schema.
         """
         openapi_discriminator: str | None = None
-        if 'discriminator' not in schema:
-            return None
 
         if isinstance(schema['discriminator'], str):
             return schema['discriminator']
@@ -863,6 +861,7 @@ class GenerateJsonSchema:
 
     def chain_schema(self, schema: core_schema.ChainSchema) -> JsonSchemaValue:
         # Note: If we wanted to generate a schema for the _serialization_, would want to use the _last_ step:
+        # There are always more than zero steps, since the ChainSchema is validated on the pydantic-core side.
         return self.generate_inner(schema['steps'][0])
 
     def lax_or_strict_schema(self, schema: core_schema.LaxOrStrictSchema) -> JsonSchemaValue:

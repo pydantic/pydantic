@@ -456,6 +456,20 @@ def test_field_regex():
             x: str = Field('test', regex=r'^test$')
 
 
+def test_modify_schema_error():
+    with pytest.raises(
+        PydanticUserError,
+        match='The `__modify_schema__` method is not supported in Pydantic v2. '
+        'Use `__get_pydantic_json_schema__` instead.',
+    ):
+
+        class Model(BaseModel):
+            def __modify_schema__(self, field_schema: Dict[str, Any]) -> None:
+                pass
+
+        Model()
+
+
 def test_field_extra_arguments():
     m = 'Extra keyword arguments on `Field` is deprecated and will be removed. use `json_schema_extra` instead'
     with pytest.warns(DeprecationWarning, match=m):

@@ -9,7 +9,6 @@ import inspect
 import re
 import sys
 import typing
-import warnings
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
@@ -613,7 +612,11 @@ class GenerateSchema:
         json_schema_updates.update(field_info.json_schema_extra or {})
 
         def json_schema_update_func(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            return {**handler(schema), **json_schema_updates}
+            json_schema = handler(schema)
+            # NOTE: We check if it's None in case we are using the older `__modify_schema__`.
+            if json_schema is None:
+                return {**schema, **json_schema_updates}
+            return {**json_schema, **json_schema_updates}
 
         metadata = build_metadata_dict(js_functions=[json_schema_update_func])
 
@@ -1461,12 +1464,12 @@ def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSch
     """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`"""
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
-    if js_modify_function is None and hasattr(tp, '__modify_schema__'):
-        warnings.warn(
-            'The __modify_schema__ method is deprecated, use __get_pydantic_json_schema__ instead',
-            DeprecationWarning,
+    if hasattr(tp, '__modify_schema__'):
+        raise PydanticUserError(
+            'The `__modify_schema__` method is not supported in Pydantic v2. '
+            'Use `__get_pydantic_json_schema__` instead.',
+            code='custom-json-schema',
         )
-        return lambda c, h: tp.__modify_schema__(h(c))
 
     # handle GenericAlias' but ignore Annotated which "lies" about it's origin (in this case it would be `int`)
     if hasattr(tp, '__origin__') and not isinstance(tp, type(Annotated[int, 'placeholder'])):
