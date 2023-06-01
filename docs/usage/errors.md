@@ -96,17 +96,18 @@ and the second a callable `handler` that receives a `CoreSchema` as parameter, a
 below:
 
 ```py title="New way"
+from typing import Any, Dict
+
 from pydantic_core import CoreSchema
 
-from pydantic import BaseModel
-from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
+from pydantic import BaseModel, GetJsonSchemaHandler
 
 
 class Model(BaseModel):
     @classmethod
     def __get_pydantic_json_schema__(
         cls, schema: CoreSchema, handler: GetJsonSchemaHandler
-    ) -> JsonSchemaValue:
+    ) -> Dict[str, Any]:
         json_schema = handler(schema)
         json_schema.update(examples='examples')
         return json_schema
