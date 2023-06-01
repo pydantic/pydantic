@@ -761,8 +761,8 @@ import json
 
 from pydantic_core import CoreSchema
 
-from pydantic import BaseModel
-from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
+from pydantic import BaseModel, GetJsonSchemaHandler
+from pydantic.json_schema import JsonSchemaValue
 
 
 class Person(BaseModel):

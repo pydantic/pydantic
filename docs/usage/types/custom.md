@@ -12,7 +12,12 @@ from typing import Any
 from pydantic_core import PydanticCustomError, core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, GetCoreSchemaHandler, GetJsonSchemaHandler, ValidationError
+from pydantic import (
+    BaseModel,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+    ValidationError,
+)
 from pydantic.json_schema import JsonSchemaValue
 
 # https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom#Validation
