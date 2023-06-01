@@ -172,7 +172,6 @@ source = ['pydantic']
 omit = ['pydantic/deprecated/*', 'pydantic/v1/*']
 branch = true
 context = '${CONTEXT}'
-dynamic_context = "test_function"
 
 [tool.coverage.report]
 precision = 2
