@@ -457,6 +457,18 @@ def test_json_schema():
         'type': 'object',
     }
 
+    @validate_call
+    def foo(a: Annotated[int, Field(..., alias='A')]):
+        return a
+
+    assert foo(1) == 1
+    assert TypeAdapter(foo).json_schema() == {
+        'additionalProperties': False,
+        'properties': {'A': {'title': 'A', 'type': 'integer'}},
+        'required': ['A'],
+        'type': 'object',
+    }
+
 
 def test_alias_generator():
     @validate_call(config=dict(alias_generator=lambda x: x * 2))
