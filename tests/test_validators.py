@@ -32,7 +32,7 @@ V1_VALIDATOR_DEPRECATION_MATCH = r'Pydantic V1 style `@validator` validators are
 
 
 def test_annotated_validator_after() -> None:
-    MyInt = Annotated[int, AfterValidator(lambda x: x if x != -1 else 0)]
+    MyInt = Annotated[int, AfterValidator(lambda x, _info: x if x != -1 else 0)]
 
     class Model(BaseModel):
         x: MyInt
@@ -45,7 +45,7 @@ def test_annotated_validator_after() -> None:
 
 
 def test_annotated_validator_before() -> None:
-    FloatMaybeInf = Annotated[float, BeforeValidator(lambda x: x if x != 'zero' else 0.0)]
+    FloatMaybeInf = Annotated[float, BeforeValidator(lambda x, _info: x if x != 'zero' else 0.0)]
 
     class Model(BaseModel):
         x: FloatMaybeInf
@@ -56,7 +56,7 @@ def test_annotated_validator_before() -> None:
 
 
 def test_annotated_validator_plain() -> None:
-    MyInt = Annotated[int, PlainValidator(lambda x: x if x != -1 else 0)]
+    MyInt = Annotated[int, PlainValidator(lambda x, _info: x if x != -1 else 0)]
 
     class Model(BaseModel):
         x: MyInt
