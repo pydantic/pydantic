@@ -4,6 +4,7 @@ import weakref
 from collections import OrderedDict, defaultdict, deque
 from copy import deepcopy
 from itertools import islice, zip_longest
+import logging
 from types import BuiltinFunctionType, CodeType, FunctionType, GeneratorType, LambdaType, ModuleType
 from typing import (
     TYPE_CHECKING,
@@ -44,14 +45,16 @@ from .version import version_info
 if TYPE_CHECKING:
     from inspect import Signature
     from pathlib import Path
-
+    
     from .config import BaseConfig
     from .dataclasses import Dataclass
     from .fields import ModelField
     from .main import BaseModel
     from .typing import AbstractSetIntStr, DictIntStrAny, IntStr, MappingIntStrAny, ReprArgs
-
+    
     RichReprResult = Iterable[Union[Any, Tuple[Any], Tuple[str, Any], Tuple[str, Any, Any]]]
+
+log = logging.getLogger(__name__)
 
 __all__ = (
     'import_string',
@@ -124,12 +127,12 @@ def import_string(dotted_path: str) -> Any:
     last name in the path. Raise ImportError if the import fails.
     """
     from importlib import import_module
-
+    
     try:
         module_path, class_name = dotted_path.strip(' ').rsplit('.', 1)
     except ValueError as e:
         raise ImportError(f'"{dotted_path}" doesn\'t look like a module path') from e
-
+    
     module = import_module(module_path)
     try:
         return getattr(module, class_name)
@@ -210,14 +213,37 @@ def is_valid_identifier(identifier: str) -> bool:
 KeyType = TypeVar('KeyType')
 
 
-def deep_update(mapping: Dict[KeyType, Any], *updating_mappings: Dict[KeyType, Any]) -> Dict[KeyType, Any]:
+def deep_update(
+    setting,
+    mapping: Dict[KeyType, Any],
+    *updating_mappings: Dict[KeyType, Any]
+) -> Dict[KeyType, Any]:
+    _setting_fields = list(setting.__fields__.keys()) if setting else []
+    source_len = len(updating_mappings) + 1
+    _find_fields = []
     updated_mapping = mapping.copy()
-    for updating_mapping in updating_mappings:
+    if _setting_fields:
+        _fields = [_field for _field in _setting_fields if _field in updated_mapping]
+        _find_fields.extend(_fields)
+        log.debug(f"config: {', '.join(_fields)} "
+                  f"load from no.{source_len} source")
+    for source_index, updating_mapping in enumerate(updating_mappings):
         for k, v in updating_mapping.items():
             if k in updated_mapping and isinstance(updated_mapping[k], dict) and isinstance(v, dict):
-                updated_mapping[k] = deep_update(updated_mapping[k], v)
+                updated_mapping[k] = deep_update(None, updated_mapping[k], v)
+                if k in _setting_fields:
+                    _find_fields.append(k)
+                    log.debug(f"config: {k} "
+                              f"load from no.{source_len - source_index - 1} source")
             else:
                 updated_mapping[k] = v
+                if k in _setting_fields:
+                    _find_fields.append(k)
+                    log.debug(f"config: {k} "
+                              f"load from no.{source_len - source_index - 1} source")
+    
+    log.debug(f"config: {', '.join([_field for _field in _setting_fields if _field not in _find_fields])} "
+              f"load from no.1 source")
     return updated_mapping
 
 
@@ -239,20 +265,20 @@ def generate_model_signature(
     Generate signature for model based on its fields
     """
     from inspect import Parameter, Signature, signature
-
+    
     from .config import Extra
-
+    
     present_params = signature(init).parameters.values()
     merged_params: Dict[str, Parameter] = {}
     var_kw = None
     use_var_kw = False
-
+    
     for param in islice(present_params, 1, None):  # skip self arg
         if param.kind is param.VAR_KEYWORD:
             var_kw = param
             continue
         merged_params[param.name] = param
-
+    
     if var_kw:  # if custom init has no var_kw, fields which are not declared in it cannot be passed through
         allow_names = config.allow_population_by_field_name
         for field_name, field in fields.items():
@@ -265,16 +291,16 @@ def generate_model_signature(
                 else:
                     use_var_kw = True
                     continue
-
+            
             # TODO: replace annotation with actual expected types once #1055 solved
             kwargs = {'default': field.default} if not field.required else {}
             merged_params[param_name] = Parameter(
                 param_name, Parameter.KEYWORD_ONLY, annotation=field.annotation, **kwargs
             )
-
+    
     if config.extra is Extra.allow:
         use_var_kw = True
-
+    
     if var_kw and use_var_kw:
         # Make sure the parameter for extra kwargs
         # does not have the same name as a field
@@ -288,23 +314,23 @@ def generate_model_signature(
         else:
             # else start from var_kw
             var_kw_name = var_kw.name
-
+        
         # generate a name that's definitely unique
         while var_kw_name in fields:
             var_kw_name += '_'
         merged_params[var_kw_name] = var_kw.replace(name=var_kw_name)
-
+    
     return Signature(parameters=list(merged_params.values()), return_annotation=None)
 
 
 def get_model(obj: Union[Type['BaseModel'], Type['Dataclass']]) -> Type['BaseModel']:
     from .main import BaseModel
-
+    
     try:
         model_cls = obj.__pydantic_model__  # type: ignore
     except AttributeError:
         model_cls = obj
-
+    
     if not issubclass(model_cls, BaseModel):
         raise TypeError('Unsupported type, must be either BaseModel or dataclass')
     return model_cls
@@ -343,7 +369,7 @@ def unique_list(
             result.append(v)
         else:
             result[result_names.index(v_name)] = v
-
+    
     return result
 
 
@@ -352,7 +378,7 @@ class PyObjectStr(str):
     String class where repr doesn't include quotes. Useful with Representation when you want to return a string
     representation of something that valid (or pseudo-valid) python.
     """
-
+    
     def __repr__(self) -> str:
         return str(self)
 
@@ -364,9 +390,9 @@ class Representation:
     __pretty__ is used by [devtools](https://python-devtools.helpmanual.io/) to provide human readable representations
     of objects.
     """
-
+    
     __slots__: Tuple[str, ...] = tuple()
-
+    
     def __repr_args__(self) -> 'ReprArgs':
         """
         Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
@@ -377,16 +403,16 @@ class Representation:
         """
         attrs = ((s, getattr(self, s)) for s in self.__slots__)
         return [(a, v) for a, v in attrs if v is not None]
-
+    
     def __repr_name__(self) -> str:
         """
         Name of the instance's class, used in __repr__.
         """
         return self.__class__.__name__
-
+    
     def __repr_str__(self, join_str: str) -> str:
         return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
-
+    
     def __pretty__(self, fmt: Callable[[Any], Any], **kwargs: Any) -> Generator[Any, None, None]:
         """
         Used by devtools (https://python-devtools.helpmanual.io/) to provide a human readable representations of objects
@@ -401,13 +427,13 @@ class Representation:
             yield 0
         yield -1
         yield ')'
-
+    
     def __str__(self) -> str:
         return self.__repr_str__(' ')
-
+    
     def __repr__(self) -> str:
         return f'{self.__repr_name__()}({self.__repr_str__(", ")})'
-
+    
     def __rich_repr__(self) -> 'RichReprResult':
         """Get fields for Rich library"""
         for name, field_repr in self.__repr_args__():
@@ -423,58 +449,58 @@ class GetterDict(Representation):
 
     We can't inherit from Mapping[str, Any] because it upsets cython so we have to implement all methods ourselves.
     """
-
+    
     __slots__ = ('_obj',)
-
+    
     def __init__(self, obj: Any):
         self._obj = obj
-
+    
     def __getitem__(self, key: str) -> Any:
         try:
             return getattr(self._obj, key)
         except AttributeError as e:
             raise KeyError(key) from e
-
+    
     def get(self, key: Any, default: Any = None) -> Any:
         return getattr(self._obj, key, default)
-
+    
     def extra_keys(self) -> Set[Any]:
         """
         We don't want to get any other attributes of obj if the model didn't explicitly ask for them
         """
         return set()
-
+    
     def keys(self) -> List[Any]:
         """
         Keys of the pseudo dictionary, uses a list not set so order information can be maintained like python
         dictionaries.
         """
         return list(self)
-
+    
     def values(self) -> List[Any]:
         return [self[k] for k in self]
-
+    
     def items(self) -> Iterator[Tuple[str, Any]]:
         for k in self:
             yield k, self.get(k)
-
+    
     def __iter__(self) -> Iterator[str]:
         for name in dir(self._obj):
             if not name.startswith('_'):
                 yield name
-
+    
     def __len__(self) -> int:
         return sum(1 for _ in self)
-
+    
     def __contains__(self, item: Any) -> bool:
         return item in self.keys()
-
+    
     def __eq__(self, other: Any) -> bool:
         return dict(self) == dict(other.items())
-
+    
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, dict(self))]
-
+    
     def __repr_name__(self) -> str:
         return f'GetterDict[{display_as_type(self._obj)}]'
 
@@ -483,17 +509,17 @@ class ValueItems(Representation):
     """
     Class for more convenient calculation of excluded or included fields on values.
     """
-
+    
     __slots__ = ('_items', '_type')
-
+    
     def __init__(self, value: Any, items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> None:
         items = self._coerce_items(items)
-
+        
         if isinstance(value, (list, tuple)):
             items = self._normalize_indexes(items, len(value))
-
+        
         self._items: 'MappingIntStrAny' = items
-
+    
     def is_excluded(self, item: Any) -> bool:
         """
         Check if item is fully excluded.
@@ -501,7 +527,7 @@ class ValueItems(Representation):
         :param item: key or index of a value
         """
         return self.is_true(self._items.get(item))
-
+    
     def is_included(self, item: Any) -> bool:
         """
         Check if value is contained in self._items
@@ -509,16 +535,16 @@ class ValueItems(Representation):
         :param item: key or index of value
         """
         return item in self._items
-
+    
     def for_element(self, e: 'IntStr') -> Optional[Union['AbstractSetIntStr', 'MappingIntStrAny']]:
         """
         :param e: key or index of element on value
         :return: raw values for element if self._items is dict and contain needed element
         """
-
+        
         item = self._items.get(e)
         return item if not self.is_true(item) else None
-
+    
     def _normalize_indexes(self, items: 'MappingIntStrAny', v_length: int) -> 'DictIntStrAny':
         """
         :param items: dict or set of indexes which will be normalized
@@ -529,7 +555,7 @@ class ValueItems(Representation):
         >>> self._normalize_indexes({'__all__': True}, 4)
         {0: True, 1: True, 2: True, 3: True}
         """
-
+        
         normalized_items: 'DictIntStrAny' = {}
         all_items = None
         for i, v in items.items():
@@ -545,7 +571,7 @@ class ValueItems(Representation):
                 )
             normalized_i = v_length + i if i < 0 else i
             normalized_items[normalized_i] = self.merge(v, normalized_items.get(normalized_i))
-
+        
         if not all_items:
             return normalized_items
         if self.is_true(all_items):
@@ -557,7 +583,7 @@ class ValueItems(Representation):
             if not self.is_true(normalized_item):
                 normalized_items[i] = self.merge(all_items, normalized_item)
         return normalized_items
-
+    
     @classmethod
     def merge(cls, base: Any, override: Any, intersect: bool = False) -> Any:
         """
@@ -582,21 +608,21 @@ class ValueItems(Representation):
             return override
         if cls.is_true(override):
             return base if intersect else override
-
+        
         # intersection or union of keys while preserving ordering:
         if intersect:
             merge_keys = [k for k in base if k in override] + [k for k in override if k in base]
         else:
             merge_keys = list(base) + [k for k in override if k not in base]
-
+        
         merged: 'DictIntStrAny' = {}
         for k in merge_keys:
             merged_item = cls.merge(base.get(k), override.get(k), intersect=intersect)
             if merged_item is not None:
                 merged[k] = merged_item
-
+        
         return merged
-
+    
     @staticmethod
     def _coerce_items(items: Union['AbstractSetIntStr', 'MappingIntStrAny']) -> 'MappingIntStrAny':
         if isinstance(items, Mapping):
@@ -610,17 +636,17 @@ class ValueItems(Representation):
                 f'Unexpected type of exclude value {class_name}',
             )
         return items
-
+    
     @classmethod
     def _coerce_value(cls, value: Any) -> Any:
         if value is None or cls.is_true(value):
             return value
         return cls._coerce_items(value)
-
+    
     @staticmethod
     def is_true(v: Any) -> bool:
         return v is True or v is ...
-
+    
     def __repr_args__(self) -> 'ReprArgs':
         return [(None, self._items)]
 
@@ -629,16 +655,16 @@ class ClassAttribute:
     """
     Hide class attribute from its instances
     """
-
+    
     __slots__ = (
         'name',
         'value',
     )
-
+    
     def __init__(self, name: str, value: Any) -> None:
         self.name = name
         self.value = value
-
+    
     def __get__(self, instance: Any, owner: Type[Any]) -> None:
         if instance is None:
             return self.value
@@ -665,7 +691,7 @@ def path_type(p: 'Path') -> str:
     for method, name in path_types.items():
         if getattr(p, method)():
             return name
-
+    
     return 'unknown'
 
 
@@ -678,7 +704,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
     Use obj.copy() for built-in empty collections
     Use copy.deepcopy() for non-empty collections and unknown objects
     """
-
+    
     obj_type = obj.__class__
     if obj_type in IMMUTABLE_NON_COLLECTIONS_TYPES:
         return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
@@ -689,7 +715,7 @@ def smart_deepcopy(obj: Obj) -> Obj:
     except (TypeError, ValueError, RuntimeError):
         # do we really dare to catch ALL errors? Seems a bit risky
         pass
-
+    
     return deepcopy(obj)  # slowest way when we actually might need a deepcopy
 
 
@@ -759,27 +785,27 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
     `tp` can be a `BaseModel` class or directly an `Annotated` `Union` of many.
     """
     is_root_model = getattr(tp, '__custom_root_type__', False)
-
+    
     if get_origin(tp) is Annotated:
         tp = get_args(tp)[0]
-
+    
     if hasattr(tp, '__pydantic_model__'):
         tp = tp.__pydantic_model__
-
+    
     if is_union(get_origin(tp)):
         alias, all_values = _get_union_alias_and_all_values(tp, discriminator_key)
         return alias, tuple(v for values in all_values for v in values)
     elif is_root_model:
         union_type = tp.__fields__[ROOT_KEY].type_
         alias, all_values = _get_union_alias_and_all_values(union_type, discriminator_key)
-
+        
         if len(set(all_values)) > 1:
             raise ConfigError(
                 f'Field {discriminator_key!r} is not the same for all submodels of {display_as_type(tp)!r}'
             )
-
+        
         return alias, all_values[0]
-
+    
     else:
         try:
             t_discriminator_type = tp.__fields__[discriminator_key].type_
@@ -787,10 +813,10 @@ def get_discriminator_alias_and_values(tp: Any, discriminator_key: str) -> Tuple
             raise TypeError(f'Type {tp.__name__!r} is not a valid `BaseModel` or `dataclass`') from e
         except KeyError as e:
             raise ConfigError(f'Model {tp.__name__!r} needs a discriminator field for key {discriminator_key!r}') from e
-
+        
         if not is_literal_type(t_discriminator_type):
             raise ConfigError(f'Field {discriminator_key!r} of model {tp.__name__!r} needs to be a `Literal`')
-
+        
         return tp.__fields__[discriminator_key].alias, all_literal_values(t_discriminator_type)
 
 

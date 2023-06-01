@@ -72,7 +72,7 @@ class BaseSettings(BaseModel):
             init_settings=init_settings, env_settings=env_settings, file_secret_settings=file_secret_settings
         )
         if sources:
-            return deep_update(*reversed([source(self) for source in sources]))
+            return deep_update(self, *reversed([source(self) for source in sources]))
         else:
             # no one should mean to do this, but I think returning an empty dict is marginally preferable
             # to an informative error and much better than a confusing error
@@ -200,7 +200,7 @@ class EnvSettingsSource:
                             raise SettingsError(f'error parsing env var "{env_name}"') from e
 
                     if isinstance(env_val, dict):
-                        d[field.alias] = deep_update(env_val, self.explode_env_vars(field, env_vars))
+                        d[field.alias] = deep_update(None, env_val, self.explode_env_vars(field, env_vars))
                     else:
                         d[field.alias] = env_val
             elif env_val is not None:
