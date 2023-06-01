@@ -11,8 +11,7 @@ from annotated_types import Lt
 from pydantic_core import core_schema
 from typing_extensions import Annotated, TypedDict
 
-from pydantic import BaseModel, ConfigDict, Field, PositiveInt, PydanticUserError, ValidationError
-from pydantic.annotated import GetCoreSchemaHandler
+from pydantic import BaseModel, ConfigDict, Field, GetCoreSchemaHandler, PositiveInt, PydanticUserError, ValidationError
 from pydantic.functional_serializers import field_serializer, model_serializer
 from pydantic.functional_validators import field_validator, model_validator
 from pydantic.type_adapter import TypeAdapter
