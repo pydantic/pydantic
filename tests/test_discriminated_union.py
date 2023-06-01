@@ -348,10 +348,8 @@ class FooStrEnum(str, Enum):
 
 
 ENUM_TEST_CASES = [
-    pytest.param(Enum, {'a': 1, 'b': 2}, marks=pytest.mark.xfail(reason='Plain Enum discriminator not yet supported')),
-    pytest.param(
-        Enum, {'a': 'v_a', 'b': 'v_b'}, marks=pytest.mark.xfail(reason='Plain Enum discriminator not yet supported')
-    ),
+    pytest.param(Enum, {'a': 1, 'b': 2}),
+    pytest.param(Enum, {'a': 'v_a', 'b': 'v_b'}),
     (FooIntEnum, {'a': 1, 'b': 2}),
     (IntEnum, {'a': 1, 'b': 2}),
     (FooStrEnum, {'a': 'v_a', 'b': 'v_b'}),
@@ -377,7 +375,8 @@ def test_discriminated_union_enum(base_class, choices):
         sub: Union[A, B] = Field(..., discriminator='m')
 
     assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b}}).sub, B)
-    assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b.value}}).sub, B)
+    if isinstance(EnumValue.b, (int, str)):
+        assert isinstance(Top.model_validate({'sub': {'m': EnumValue.b.value}}).sub, B)
     with pytest.raises(ValidationError) as exc_info:
         Top.model_validate({'sub': {'m': 3}})
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Any, Callable, Iterable, TypeVar, Union, cast
+from typing import Any, Callable, Hashable, Iterable, TypeVar, Union, cast
 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import TypeAliasType, TypeGuard, get_args
@@ -306,7 +306,7 @@ class _WalkCoreSchema:
         return schema
 
     def handle_tagged_union_schema(self, schema: core_schema.TaggedUnionSchema, f: Walk) -> core_schema.CoreSchema:
-        new_choices: dict[str | int, str | int | core_schema.CoreSchema] = {}
+        new_choices: dict[Hashable, core_schema.CoreSchema] = {}
         for k, v in schema['choices'].items():
             new_choices[k] = v if isinstance(v, (str, int)) else self.walk(v, f)
         schema['choices'] = new_choices

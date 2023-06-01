@@ -1,6 +1,6 @@
 from __future__ import annotations as _annotations
 
-from typing import Any, Sequence
+from typing import Any, Hashable, Sequence
 
 from pydantic_core import core_schema
 
@@ -77,7 +77,7 @@ class _ApplyInferredDiscriminator:
 
         # `_tagged_union_choices` is built during the call to `apply`, and will hold the choices to be included
         # in the output TaggedUnionSchema that will replace the union from the input schema
-        self._tagged_union_choices: dict[str | int, str | int | core_schema.CoreSchema] = {}
+        self._tagged_union_choices: dict[Hashable, core_schema.CoreSchema] = {}
 
         # `_used` is changed to True after applying the discriminator to prevent accidental re-use
         self._used = False
