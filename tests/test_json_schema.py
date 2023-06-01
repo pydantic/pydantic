@@ -37,6 +37,7 @@ from pydantic import (
     BaseModel,
     Field,
     ImportString,
+    PydanticUserError,
     RootModel,
     ValidationError,
     computed_field,
@@ -57,7 +58,7 @@ from pydantic.json_schema import (
     model_json_schema,
     models_json_schema,
 )
-from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, NameEmail
+from pydantic.networks import AnyUrl, EmailStr, IPvAnyAddress, IPvAnyInterface, IPvAnyNetwork, MultiHostUrl, NameEmail
 from pydantic.type_adapter import TypeAdapter
 from pydantic.types import (
     UUID1,
@@ -427,6 +428,18 @@ def test_enum_includes_extra_without_other_params():
     }
 
 
+def test_invalid_json_schema_extra():
+    class MyModel(BaseModel):
+        model_config = ConfigDict(json_schema_extra=1)
+
+        name: str
+
+    with pytest.raises(
+        ValueError, match=re.escape("model_config['json_schema_extra']=1 should be a dict, callable, or None")
+    ):
+        MyModel.model_json_schema()
+
+
 def test_list_enum_schema_extras():
     class FoodChoice(str, Enum):
         spam = 'spam'
@@ -548,6 +561,25 @@ def test_optional():
     }
 
 
+def test_optional_modify_schema():
+    class MyNone(Type[None]):
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls, source_type: Any, handler: GetCoreSchemaHandler
+        ) -> core_schema.CoreSchema:
+            return core_schema.nullable_schema(core_schema.none_schema())
+
+    class Model(BaseModel):
+        x: MyNone
+
+    assert Model.model_json_schema() == {
+        'properties': {'x': {'title': 'X', 'type': 'null'}},
+        'required': ['x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_any():
     class Model(BaseModel):
         a: Any
@@ -586,6 +618,7 @@ def test_set():
     'field_type,extra_props',
     [
         (tuple, {'items': {}}),
+        (Tuple, {'items': {}}),
         (
             Tuple[str, int, Union[str, int, float], float],
             {
@@ -728,6 +761,10 @@ class Foo(BaseModel):
                 'title': 'Model',
                 'type': 'object',
             },
+        ),
+        (
+            Union[int, int],
+            {'properties': {'a': {'title': 'A', 'type': 'integer'}}, 'required': ['a']},
         ),
         (Dict[str, Any], {'properties': {'a': {'title': 'A', 'type': 'object'}}, 'required': ['a']}),
     ],
@@ -872,6 +909,7 @@ def test_str_constrained_types(field_type, expected_schema):
             Annotated[AnyUrl, Field(max_length=2**16)],
             {'title': 'A', 'type': 'string', 'format': 'uri', 'minLength': 1, 'maxLength': 2**16},
         ),
+        (MultiHostUrl, {'title': 'A', 'type': 'string', 'format': 'multi-host-uri', 'minLength': 1}),
     ],
 )
 def test_special_str_types(field_type, expected_schema):
@@ -2201,6 +2239,33 @@ def test_schema_attributes():
     }
 
 
+def test_tuple_with_extra_schema():
+    class MyTuple(Tuple[int, str]):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            return core_schema.tuple_positional_schema(
+                [core_schema.int_schema(), core_schema.str_schema()], extra_schema=core_schema.int_schema()
+            )
+
+    class Model(BaseModel):
+        x: MyTuple
+
+    assert Model.model_json_schema() == {
+        'properties': {
+            'x': {
+                'items': {'type': 'integer'},
+                'minItems': 2,
+                'prefixItems': [{'type': 'integer'}, {'type': 'string'}],
+                'title': 'X',
+                'type': 'array',
+            }
+        },
+        'required': ['x'],
+        'title': 'Model',
+        'type': 'object',
+    }
+
+
 def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
@@ -2503,6 +2568,37 @@ def test_namedtuple_default():
     }
 
 
+def test_namedtuple_modify_schema():
+    class Coordinates(NamedTuple):
+        x: float
+        y: float
+
+    class CustomCoordinates(Coordinates):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+            schema = handler(source)
+            schema['arguments_schema']['metadata']['pydantic_js_prefer_positional_arguments'] = False
+            return schema
+
+    class Location(BaseModel):
+        coords: CustomCoordinates = CustomCoordinates(34, 42)
+
+    assert Location.model_json_schema() == {
+        'properties': {
+            'coords': {
+                'additionalProperties': False,
+                'properties': {'x': {'title': 'X', 'type': 'number'}, 'y': {'title': 'Y', 'type': 'number'}},
+                'required': ['x', 'y'],
+                'title': 'Coords',
+                'type': 'object',
+                'default': [34, 42],
+            }
+        },
+        'title': 'Location',
+        'type': 'object',
+    }
+
+
 def test_advanced_generic_schema():  # noqa: C901
     T = TypeVar('T')
     K = TypeVar('K')
@@ -2785,6 +2881,36 @@ def test_modify_schema_dict_keys() -> None:
             'my_field': {'additionalProperties': {'test': 'passed'}, 'title': 'My Field', 'type': 'object'}  # <----
         },
         'required': ['my_field'],
+        'title': 'MyModel',
+        'type': 'object',
+    }
+
+
+def test_remove_anyof_redundancy() -> None:
+    class A:
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return handler({'type': 'str'})
+
+    class B:
+        @classmethod
+        def __get_pydantic_json_schema__(
+            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
+            return handler({'type': 'str'})
+
+    class MyModel(BaseModel):
+        model_config = ConfigDict(arbitrary_types_allowed=True)
+
+        # Union of two objects should give a JSON with an `anyOf` field, but in this case
+        # since the fields are the same, the `anyOf` is removed.
+        field: Union[A, B]
+
+    assert MyModel.model_json_schema() == {
+        'properties': {'field': {'title': 'Field', 'type': 'string'}},
+        'required': ['field'],
         'title': 'MyModel',
         'type': 'object',
     }
@@ -3598,6 +3724,36 @@ def test_override_generate_json_schema():
         'title': 'MyModel',
         'type': 'object',
     }
+
+
+def test_generate_json_schema_generate_twice():
+    generator = GenerateJsonSchema()
+
+    class Model(BaseModel):
+        title: str
+
+    generator.generate(Model.__pydantic_core_schema__)
+
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            'This JSON schema generator has already been used to generate a JSON schema. '
+            'You must create a new instance of GenerateJsonSchema to generate a new JSON schema.'
+        ),
+    ):
+        generator.generate(Model.__pydantic_core_schema__)
+
+    generator = GenerateJsonSchema()
+    generator.generate_definitions([(Model, 'validation', Model.__pydantic_core_schema__)])
+
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            'This JSON schema generator has already been used to generate a JSON schema. '
+            'You must create a new instance of GenerateJsonSchema to generate a new JSON schema.'
+        ),
+    ):
+        generator.generate_definitions([(Model, 'validation', Model.__pydantic_core_schema__)])
 
 
 def test_nested_default_json_schema():

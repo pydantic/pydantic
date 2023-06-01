@@ -402,16 +402,40 @@ def test_serialization_alias_from_alias():
     assert 'foo' in sig.parameters
 
 
-def test_aliases_json_schema():
+@pytest.mark.parametrize(
+    'field,expected',
+    [
+        pytest.param(
+            Field(alias='x_alias', validation_alias='x_val_alias', serialization_alias='x_ser_alias'),
+            {
+                'properties': {'x_val_alias': {'title': 'X Val Alias', 'type': 'string'}},
+                'required': ['x_val_alias'],
+            },
+            id='single_alias',
+        ),
+        pytest.param(
+            Field(validation_alias=AliasChoices('y_alias', 'another_alias')),
+            {
+                'properties': {'y_alias': {'title': 'Y Alias', 'type': 'string'}},
+                'required': ['y_alias'],
+            },
+            id='multiple_aliases',
+        ),
+        pytest.param(
+            Field(validation_alias=AliasChoices(AliasPath('z_alias', 'even_another_alias'), 'and_another')),
+            {
+                'properties': {'and_another': {'title': 'And Another', 'type': 'string'}},
+                'required': ['and_another'],
+            },
+            id='multiple_aliases_with_path',
+        ),
+    ],
+)
+def test_aliases_json_schema(field, expected):
     class Model(BaseModel):
-        x: str = Field(alias='x_alias', validation_alias='x_val_alias', serialization_alias='x_ser_alias')
+        x: str = field
 
-    assert Model.model_json_schema() == {
-        'properties': {'x_val_alias': {'title': 'X Val Alias', 'type': 'string'}},
-        'required': ['x_val_alias'],
-        'title': 'Model',
-        'type': 'object',
-    }
+    assert Model.model_json_schema() == {'title': 'Model', 'type': 'object', **expected}
 
 
 @pytest.mark.parametrize(

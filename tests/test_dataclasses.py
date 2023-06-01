@@ -22,6 +22,7 @@ from pydantic import (
     PydanticUserError,
     TypeAdapter,
     ValidationError,
+    computed_field,
     field_serializer,
     field_validator,
     model_validator,
@@ -1202,6 +1203,52 @@ def test_complex_nested_vanilla_dataclass():
         'properties': {'s': {'$ref': '#/$defs/Sentence'}},
         'required': ['s'],
         'title': 'M',
+        'type': 'object',
+    }
+
+
+def test_json_schema_with_computed_field():
+    @dataclasses.dataclass
+    class MyDataclass:
+        x: int
+
+        @computed_field
+        @property
+        def double_x(self) -> int:
+            return 2 * self.x
+
+    class Model(BaseModel):
+        dc: MyDataclass
+
+    assert Model.model_json_schema(mode='validation') == {
+        '$defs': {
+            'MyDataclass': {
+                'properties': {'x': {'title': 'X', 'type': 'integer'}},
+                'required': ['x'],
+                'title': 'MyDataclass',
+                'type': 'object',
+            }
+        },
+        'properties': {'dc': {'$ref': '#/$defs/MyDataclass'}},
+        'required': ['dc'],
+        'title': 'Model',
+        'type': 'object',
+    }
+    assert Model.model_json_schema(mode='serialization') == {
+        '$defs': {
+            'MyDataclass': {
+                'properties': {
+                    'double_x': {'title': 'Double X', 'type': 'integer'},
+                    'x': {'title': 'X', 'type': 'integer'},
+                },
+                'required': ['x', 'double_x'],
+                'title': 'MyDataclass',
+                'type': 'object',
+            }
+        },
+        'properties': {'dc': {'$ref': '#/$defs/MyDataclass'}},
+        'required': ['dc'],
+        'title': 'Model',
         'type': 'object',
     }
 
