@@ -13,7 +13,7 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/api/color/">
       
       
-        <link rel="prev" href="../annotated/">
+        <link rel="prev" href="../alias_generators/">
       
       
         <link rel="next" href="../config/">
@@ -1412,20 +1412,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-  
-    <li class="md-nav__item">
-      <a href="../annotated/" class="md-nav__link">
-        pydantic.annotated
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
     
   
   
@@ -2241,7 +2227,7 @@ eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes 
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">_GetJsonSchemaHandler</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
         <span class="n">field_schema</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">field_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;color&#39;</span><span class="p">)</span>

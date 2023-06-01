@@ -1508,20 +1508,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/annotated/" class="md-nav__link">
-        pydantic.annotated
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../api/color/" class="md-nav__link">
         pydantic.color
       </a>
@@ -2554,8 +2540,7 @@ This method receives two positional arguments:</p>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">core_schema</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
 
 
 <span class="nd">@dataclass</span>
@@ -2620,8 +2605,7 @@ This method receives two positional arguments:</p>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">core_schema</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
 
 
 <span class="nd">@dataclass</span>
@@ -2693,8 +2677,7 @@ This method receives two positional arguments:</p>
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="nd">@dataclass</span>
@@ -2755,8 +2738,7 @@ This method receives two positional arguments:</p>
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="nd">@dataclass</span>
@@ -2821,8 +2803,7 @@ To modify the schema first call the handler and then mutate the result:</p>
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
 
 
 <span class="k">class</span> <span class="nc">SmallString</span><span class="p">:</span>
@@ -2858,8 +2839,7 @@ To modify the schema first call the handler and then mutate the result:</p>
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
 
 
 <span class="k">class</span> <span class="nc">SmallString</span><span class="p">:</span>
@@ -2900,8 +2880,7 @@ To modify the schema first call the handler and then mutate the result:</p>
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
 
 
 <span class="k">class</span> <span class="nc">AllowAnySubclass</span><span class="p">:</span>
@@ -2951,8 +2930,7 @@ To modify the schema first call the handler and then mutate the result:</p>
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span>
 
 
 <span class="k">class</span> <span class="nc">AllowAnySubclass</span><span class="p">:</span>
@@ -3622,8 +3600,8 @@ sub-models in its <code>definitions</code>:</p>
 
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-<span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">GetJsonSchemaHandler</span><span class="p">,</span> <span class="n">JsonSchemaValue</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetJsonSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">JsonSchemaValue</span>
 
 
 <span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>

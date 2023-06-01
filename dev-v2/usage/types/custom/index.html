@@ -1469,20 +1469,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../../api/annotated/" class="md-nav__link">
-        pydantic.annotated
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../../../api/color/" class="md-nav__link">
         pydantic.color
       </a>
@@ -1786,8 +1772,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">PydanticCustomError</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">GetJsonSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="n">GetJsonSchemaHandler</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">JsonSchemaValue</span>
 
 <span class="c1"># https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom#Validation</span>
@@ -1891,8 +1881,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">PydanticCustomError</span><span class="p">,</span> <span class="n">core_schema</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-<span class="kn">from</span> <span class="nn">pydantic.annotated</span> <span class="kn">import</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">GetJsonSchemaHandler</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="p">(</span>
+    <span class="n">BaseModel</span><span class="p">,</span>
+    <span class="n">GetCoreSchemaHandler</span><span class="p">,</span>
+    <span class="n">GetJsonSchemaHandler</span><span class="p">,</span>
+    <span class="n">ValidationError</span><span class="p">,</span>
+<span class="p">)</span>
 <span class="kn">from</span> <span class="nn">pydantic.json_schema</span> <span class="kn">import</span> <span class="n">JsonSchemaValue</span>
 
 <span class="c1"># https://en.wikipedia.org/wiki/Postcodes_in_the_United_Kingdom#Validation</span>

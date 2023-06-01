@@ -1414,20 +1414,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../annotated/" class="md-nav__link">
-        pydantic.annotated
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../color/" class="md-nav__link">
         pydantic.color
       </a>
@@ -1799,7 +1785,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
       <details class="quote">
         <summary>Source code in <code>pydantic/networks.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">319</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">318</span>
+<span class="normal">319</span>
 <span class="normal">320</span>
 <span class="normal">321</span>
 <span class="normal">322</span>
@@ -1827,8 +1814,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">344</span>
 <span class="normal">345</span>
 <span class="normal">346</span>
-<span class="normal">347</span>
-<span class="normal">348</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
+<span class="normal">347</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">validate_email</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Email address validation using https://pypi.org/project/email-validator/</span>
 
