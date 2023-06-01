@@ -148,16 +148,16 @@ def field_validator(
     Decorate methods on the class indicating that they should be used to validate fields.
 
     Args:
-        __field (str): The first field the field_validator should be called on; this is separate
+        __field: The first field the field_validator should be called on; this is separate
             from `fields` to ensure an error is raised if you don't pass at least one.
-        *fields (tuple): Additional field(s) the field_validator should be called on.
-        mode (FieldValidatorModes): Specifies whether to validate the fields before or after validation.
+        *fields: Additional field(s) the field_validator should be called on.
+        mode: Specifies whether to validate the fields before or after validation.
              Defaults to 'after'.
-        check_fields (bool | None): If set to True, checks that the fields actually exist on the model.
+        check_fields: If set to True, checks that the fields actually exist on the model.
             Defaults to None.
 
     Returns:
-        Callable: A decorator that can be used to decorate a function to be used as a field_validator.
+        A decorator that can be used to decorate a function to be used as a field_validator.
     """
     if isinstance(__field, FunctionType):
         raise PydanticUserError(
@@ -305,11 +305,11 @@ def model_validator(
     Decorate model methods for validation purposes.
 
     Args:
-        mode (Literal['wrap', 'before', 'after']): A required string literal that specifies the validation mode.
+        mode: A required string literal that specifies the validation mode.
             It can be one of the following: 'wrap', 'before', or 'after'.
 
     Returns:
-        Any: A decorator that can be used to decorate a function to be used as a model validator.
+        A decorator that can be used to decorate a function to be used as a model validator.
     """
 
     def dec(f: Any) -> _decorators.PydanticDescriptorProxy[Any]:
