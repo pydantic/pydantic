@@ -224,7 +224,11 @@ class DecimalValidator:
                 raise PydanticCustomError('decimal_parsing', 'Input should be a valid decimal')
 
         if not self.allow_inf_nan or self.check_digits:
-            _1, digit_tuple, exponent = value.as_tuple()
+            try:
+                normalized_value = value.normalize()
+            except decimal.InvalidOperation:
+                normalized_value = value
+            _1, digit_tuple, exponent = normalized_value.as_tuple()
             if not self.allow_inf_nan and exponent in {'F', 'n', 'N'}:
                 raise PydanticKnownError('finite_number')
 

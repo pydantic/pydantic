@@ -2962,6 +2962,20 @@ ANY_THING = object()
         (dict(max_digits=4, decimal_places=1), Decimal('999'), Decimal('999')),
         (dict(max_digits=20, decimal_places=2), Decimal('742403889818000000'), Decimal('742403889818000000')),
         (dict(max_digits=20, decimal_places=2), Decimal('7.42403889818E+17'), Decimal('7.42403889818E+17')),
+        (dict(max_digits=6, decimal_places=2), Decimal('000000000001111.700000'), Decimal('000000000001111.700000')),
+        (
+            dict(max_digits=6, decimal_places=2),
+            Decimal('0000000000011111.700000'),
+            [
+                {
+                    'type': 'decimal_whole_digits',
+                    'loc': ('foo',),
+                    'msg': 'ensure that there are no more than 4 digits before the decimal point',
+                    'input': Decimal('11111.700000'),
+                    'ctx': {'whole_digits': 4},
+                }
+            ],
+        ),
         (
             dict(max_digits=20, decimal_places=2),
             Decimal('7424742403889818000000'),
@@ -2993,15 +3007,15 @@ ANY_THING = object()
         ),
         (dict(max_digits=5, decimal_places=5), Decimal('70E-5'), Decimal('70E-5')),
         (
-            dict(max_digits=5, decimal_places=5),
+            dict(max_digits=4, decimal_places=4),
             Decimal('70E-6'),
             [
                 {
                     'loc': ('foo',),
-                    'msg': 'ensure that there are no more than 5 digits in total',
+                    'msg': 'ensure that there are no more than 4 digits in total',
                     'type': 'decimal_max_digits',
-                    'input': Decimal('0.000070'),
-                    'ctx': {'max_digits': 5},
+                    'input': Decimal('0.00007'),
+                    'ctx': {'max_digits': 4},
                 }
             ],
         ),
