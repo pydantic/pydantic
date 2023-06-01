@@ -612,11 +612,7 @@ class GenerateSchema:
         json_schema_updates.update(field_info.json_schema_extra or {})
 
         def json_schema_update_func(schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-            json_schema = handler(schema)
-            # NOTE: We check if it's None in case we are using the older `__modify_schema__`.
-            if json_schema is None:
-                return {**schema, **json_schema_updates}
-            return {**json_schema, **json_schema_updates}
+            return {**handler(schema), **json_schema_updates}
 
         metadata = build_metadata_dict(js_functions=[json_schema_update_func])
 
