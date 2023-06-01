@@ -1820,7 +1820,7 @@ from <code>fields</code> to ensure an error is raised if you don't pass at least
         <tr>
           <td><code>*fields</code></td>
           <td>
-                <code>tuple</code>
+                <code>str</code>
           </td>
           <td><p>Additional field(s) the field_validator should be called on.</p></td>
           <td>
@@ -1856,13 +1856,13 @@ Defaults to None.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>Callable</code></td>          <td>
+          <td>
                 <code><span title="typing.Callable">Callable</span>[[<span title="typing.Any">Any</span>], <span title="typing.Any">Any</span>]</code>
           </td>
           <td><p>A decorator that can be used to decorate a function to be used as a field_validator.</p></td>
@@ -1931,16 +1931,16 @@ Defaults to None.</p></td>
 <span class="sd">    Decorate methods on the class indicating that they should be used to validate fields.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __field (str): The first field the field_validator should be called on; this is separate</span>
+<span class="sd">        __field: The first field the field_validator should be called on; this is separate</span>
 <span class="sd">            from `fields` to ensure an error is raised if you don&#39;t pass at least one.</span>
-<span class="sd">        *fields (tuple): Additional field(s) the field_validator should be called on.</span>
-<span class="sd">        mode (FieldValidatorModes): Specifies whether to validate the fields before or after validation.</span>
+<span class="sd">        *fields: Additional field(s) the field_validator should be called on.</span>
+<span class="sd">        mode: Specifies whether to validate the fields before or after validation.</span>
 <span class="sd">             Defaults to &#39;after&#39;.</span>
-<span class="sd">        check_fields (bool | None): If set to True, checks that the fields actually exist on the model.</span>
+<span class="sd">        check_fields: If set to True, checks that the fields actually exist on the model.</span>
 <span class="sd">            Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Callable: A decorator that can be used to decorate a function to be used as a field_validator.</span>
+<span class="sd">        A decorator that can be used to decorate a function to be used as a field_validator.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">__field</span><span class="p">,</span> <span class="n">FunctionType</span><span class="p">):</span>
         <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span>
@@ -2022,13 +2022,13 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p></td>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>Any</code></td>          <td>
+          <td>
                 <code><span title="typing.Any">Any</span></code>
           </td>
           <td><p>A decorator that can be used to decorate a function to be used as a model validator.</p></td>
@@ -2067,11 +2067,11 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p></td>
 <span class="sd">    Decorate model methods for validation purposes.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        mode (Literal[&#39;wrap&#39;, &#39;before&#39;, &#39;after&#39;]): A required string literal that specifies the validation mode.</span>
+<span class="sd">        mode: A required string literal that specifies the validation mode.</span>
 <span class="sd">            It can be one of the following: &#39;wrap&#39;, &#39;before&#39;, or &#39;after&#39;.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Any: A decorator that can be used to decorate a function to be used as a model validator.</span>
+<span class="sd">        A decorator that can be used to decorate a function to be used as a model validator.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">dec</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_decorators</span><span class="o">.</span><span class="n">PydanticDescriptorProxy</span><span class="p">[</span><span class="n">Any</span><span class="p">]:</span>

@@ -1797,7 +1797,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>__func</code></td>
           <td>
-                <code><span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span></code>
+                <code><span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span> | None</code>
           </td>
           <td><p>The function to be decorated.</p></td>
           <td>
@@ -1807,7 +1807,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>config</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a></code>
+                <code><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a> | None</code>
           </td>
           <td><p>The configuration dictionary.</p></td>
           <td>
@@ -1831,13 +1831,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>Callable</code></td>          <td>
+          <td>
                 <code><span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span> | <span title="typing.Callable">Callable</span>[[<span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span>], <span title="pydantic.validate_call.AnyCallableT">AnyCallableT</span>]</code>
           </td>
           <td><p>The decorated function.</p></td>
@@ -1881,12 +1881,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">    Decorator to validate the arguments passed to a function and, optionally, the return value.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __func (AnyCallableT): The function to be decorated.</span>
-<span class="sd">        config (ConfigDict): The configuration dictionary.</span>
-<span class="sd">        validate_return (bool): Whether to validate the return value.</span>
+<span class="sd">        __func: The function to be decorated.</span>
+<span class="sd">        config: The configuration dictionary.</span>
+<span class="sd">        validate_return: Whether to validate the return value.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Callable: The decorated function.</span>
+<span class="sd">        The decorated function.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="n">function</span><span class="p">:</span> <span class="n">AnyCallableT</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">AnyCallableT</span><span class="p">:</span>
