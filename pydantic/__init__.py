@@ -9,6 +9,12 @@ from pydantic_core.core_schema import (
 )
 
 from . import dataclasses
+from ._internal._annotated_handlers import (
+    GetCoreSchemaHandler as GetCoreSchemaHandler,
+)
+from ._internal._annotated_handlers import (
+    GetJsonSchemaHandler as GetJsonSchemaHandler,
+)
 from ._migration import getattr_migration
 from .config import ConfigDict, Extra
 from .deprecated.class_validators import root_validator, validator
@@ -159,6 +165,9 @@ __all__ = [
     'TypeAdapter',
     # version
     'VERSION',
+    # annotated handlers
+    'GetCoreSchemaHandler',
+    'GetJsonSchemaHandler',
 ]
 
 

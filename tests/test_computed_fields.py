@@ -9,6 +9,7 @@ from pydantic_core import ValidationError, core_schema
 from pydantic import (
     BaseModel,
     Field,
+    GetCoreSchemaHandler,
     PrivateAttr,
     TypeAdapter,
     computed_field,
@@ -16,7 +17,6 @@ from pydantic import (
     field_validator,
 )
 from pydantic.alias_generators import to_camel
-from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticUserError
 
 try:

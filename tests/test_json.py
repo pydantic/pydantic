@@ -13,17 +13,16 @@ from uuid import UUID
 import pytest
 from pydantic_core import CoreSchema, SchemaSerializer, core_schema
 
-from pydantic import BaseModel, ConfigDict, NameEmail
+from pydantic import BaseModel, ConfigDict, GetCoreSchemaHandler, GetJsonSchemaHandler, NameEmail
 from pydantic._internal._config import ConfigWrapper
 from pydantic._internal._generate_schema import GenerateSchema
-from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.color import Color
 from pydantic.dataclasses import dataclass as pydantic_dataclass
 from pydantic.deprecated.json import pydantic_encoder, timedelta_isoformat
 from pydantic.functional_serializers import (
     field_serializer,
 )
-from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
+from pydantic.json_schema import JsonSchemaValue
 from pydantic.types import DirectoryPath, FilePath, SecretBytes, SecretStr, condecimal
 
 try:

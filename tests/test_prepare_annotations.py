@@ -7,10 +7,17 @@ from annotated_types import Gt, Lt
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated
 
-from pydantic import AllowInfNan, BaseModel, ConfigDict, TypeAdapter, ValidationError
-from pydantic.annotated import GetCoreSchemaHandler
+from pydantic import (
+    AllowInfNan,
+    BaseModel,
+    ConfigDict,
+    GetCoreSchemaHandler,
+    GetJsonSchemaHandler,
+    TypeAdapter,
+    ValidationError,
+)
 from pydantic.functional_validators import AfterValidator
-from pydantic.json_schema import GetJsonSchemaHandler, JsonSchemaValue
+from pydantic.json_schema import JsonSchemaValue
 
 
 def test_prepare_annotations_without_get_core_schema() -> None:

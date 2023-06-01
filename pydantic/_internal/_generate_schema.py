@@ -20,12 +20,12 @@ from typing import TYPE_CHECKING, Any, Callable, ForwardRef, Iterable, Mapping, 
 from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal, TypeAliasType, TypedDict, get_args, get_origin, is_typeddict
 
-from ..annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ..config import ConfigDict
 from ..errors import PydanticSchemaGenerationError, PydanticUndefinedAnnotation, PydanticUserError
 from ..fields import AliasChoices, AliasPath, FieldInfo
 from ..json_schema import JsonSchemaValue
 from . import _discriminated_union, _known_annotated_metadata, _typing_extra
+from ._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 from ._config import ConfigWrapper
 from ._core_metadata import (
     CoreMetadataHandler,

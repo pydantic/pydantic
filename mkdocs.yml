@@ -106,7 +106,6 @@ nav:
 - API Documentation:
   - 'pydantic': api/main.md
   - 'pydantic.alias_generators': api/alias_generators.md
-  - 'pydantic.annotated': api/annotated.md
   - 'pydantic.color': api/color.md
   - 'pydantic.config': api/config.md
   - 'pydantic.dataclasses': api/dataclasses.md

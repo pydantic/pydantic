@@ -9,8 +9,8 @@ from pydantic_core import core_schema
 from pydantic_core import core_schema as _core_schema
 from typing_extensions import Literal, TypeAlias
 
+from . import GetCoreSchemaHandler as _GetCoreSchemaHandler
 from ._internal import _decorators, _internal_dataclass
-from .annotated import GetCoreSchemaHandler
 from .errors import PydanticUserError
 
 if sys.version_info < (3, 11):
@@ -25,7 +25,7 @@ _inspect_validator = _decorators.inspect_validator
 class AfterValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'after')
         if info_arg:
@@ -38,7 +38,7 @@ class AfterValidator:
 class BeforeValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'before')
         if info_arg:
@@ -51,7 +51,7 @@ class BeforeValidator:
 class PlainValidator:
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         info_arg = _inspect_validator(self.func, 'plain')
         if info_arg:
             return core_schema.general_plain_validator_function(self.func)  # type: ignore
@@ -63,7 +63,7 @@ class PlainValidator:
 class WrapValidator:
     func: core_schema.GeneralWrapValidatorFunction | core_schema.FieldWrapValidatorFunction
 
-    def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> core_schema.CoreSchema:
+    def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
         schema = handler(source_type)
         info_arg = _inspect_validator(self.func, 'wrap')
         if info_arg:

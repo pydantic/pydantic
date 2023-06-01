@@ -6,9 +6,8 @@ from annotated_types import BaseMetadata, GroupedMetadata, Gt, Lt
 from pydantic_core import core_schema
 from typing_extensions import Annotated
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, GetCoreSchemaHandler
 from pydantic._internal._fields import Undefined
-from pydantic.annotated import GetCoreSchemaHandler
 from pydantic.errors import PydanticSchemaGenerationError
 
 NO_VALUE = object()

@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Any, Callable
 
 from pydantic_core import core_schema
 
-from ..annotated import GetCoreSchemaHandler, GetJsonSchemaHandler
+from ._annotated_handlers import GetCoreSchemaHandler, GetJsonSchemaHandler
 
 if TYPE_CHECKING:
     from ..json_schema import GenerateJsonSchema, JsonSchemaValue

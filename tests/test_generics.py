@@ -36,6 +36,7 @@ from typing_extensions import Annotated, Literal, OrderedDict, TypeVarTuple, Unp
 from pydantic import (
     BaseModel,
     Field,
+    GetCoreSchemaHandler,
     Json,
     PositiveInt,
     PydanticSchemaGenerationError,
@@ -56,7 +57,6 @@ from pydantic._internal._generics import (
     recursively_defined_type_refs,
     replace_types,
 )
-from pydantic.annotated import GetCoreSchemaHandler
 
 
 @pytest.fixture()

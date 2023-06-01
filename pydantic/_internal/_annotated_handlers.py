@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Any, Union
 from pydantic_core import core_schema
 
 if TYPE_CHECKING:
-    from .json_schema import JsonSchemaMode, JsonSchemaValue
+    from ..json_schema import JsonSchemaMode, JsonSchemaValue
 
     CoreSchemaOrField = Union[
         core_schema.CoreSchema,

@@ -8,8 +8,7 @@ from typing import TYPE_CHECKING, Any
 from pydantic_core import MultiHostUrl, PydanticCustomError, Url, core_schema
 from typing_extensions import Annotated, TypeAlias
 
-from ._internal import _fields, _repr
-from ._internal._schema_generation_shared import GetJsonSchemaHandler
+from ._internal import _fields, _repr, _schema_generation_shared
 from ._migration import getattr_migration
 from .json_schema import JsonSchemaValue
 
@@ -156,7 +155,7 @@ else:
 
         @classmethod
         def __get_pydantic_json_schema__(
-            cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+            cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
         ) -> JsonSchemaValue:
             field_schema = handler(core_schema)
             field_schema.update(type='string', format='email')
@@ -179,7 +178,7 @@ class NameEmail(_repr.Representation):
 
     @classmethod
     def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = handler(core_schema)
         field_schema.update(type='string', format='name-email')
@@ -225,7 +224,7 @@ class IPvAnyAddress:
 
     @classmethod
     def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = {}
         field_schema.update(type='string', format='ipvanyaddress')
@@ -259,7 +258,7 @@ class IPvAnyInterface:
 
     @classmethod
     def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = {}
         field_schema.update(type='string', format='ipvanyinterface')
@@ -295,7 +294,7 @@ class IPvAnyNetwork:
 
     @classmethod
     def __get_pydantic_json_schema__(
-        cls, core_schema: core_schema.CoreSchema, handler: GetJsonSchemaHandler
+        cls, core_schema: core_schema.CoreSchema, handler: _schema_generation_shared.GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         field_schema = {}
         field_schema.update(type='string', format='ipvanynetwork')
