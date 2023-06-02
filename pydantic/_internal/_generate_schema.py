@@ -57,7 +57,7 @@ from ._fields import (
     collect_dataclass_fields,
     get_type_hints_infer_globalns,
 )
-from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
+from ._forward_ref import PydanticRecursiveRef
 from ._generics import get_standard_typevars_map, recursively_defined_type_refs, replace_types
 from ._schema_generation_shared import (
     CallbackGetCoreSchemaHandler,
@@ -383,22 +383,6 @@ class GenerateSchema:
 
         if isinstance(obj, PydanticRecursiveRef):
             return core_schema.definition_reference_schema(schema_ref=obj.type_ref)
-
-        if isinstance(obj, PydanticForwardRef):
-            if not obj.deferred_actions:
-                return obj.schema
-            resolved_model = obj.resolve_model()
-            if isinstance(resolved_model, PydanticForwardRef):
-                # If you still have a PydanticForwardRef after resolving, it should be deeply nested enough that it will
-                # eventually be substituted out. So it is safe to return an invalid schema here.
-                # TODO: Replace this with a (new) CoreSchema that, if present at any level, makes validation fail
-                #   Issue: https://github.com/pydantic/pydantic-core/issues/619
-                return core_schema.none_schema(
-                    metadata={'invalid': True, 'pydantic_debug_self_schema': resolved_model.schema}
-                )
-            else:
-                model_ref = get_type_ref(resolved_model)
-                return core_schema.definition_reference_schema(model_ref)
 
         try:
             if obj in {bool, int, float, str, bytes, list, set, frozenset, dict}:
@@ -839,14 +823,12 @@ class GenerateSchema:
                 sv = core_schema.tuple_variable_schema(self.generate_schema(params[0]))
                 return sv
 
-            # not sure this case is valid in python, but may as well support it here since pydantic-core does
-            *items_schema, extra_schema = params
-            return core_schema.tuple_positional_schema(
+            # NOTE: This is not valid in Python, but not removing it because it's
+            # going to be useful for https://github.com/pydantic/pydantic/issues/5952
+            *items_schema, extra_schema = params  # pragma: no cover
+            return core_schema.tuple_positional_schema(  # pragma: no cover
                 [self.generate_schema(p) for p in items_schema], extra_schema=self.generate_schema(extra_schema)
             )
-        elif len(params) == 1 and params[0] == ():
-            # special case for `Tuple[()]` which means `Tuple[]` - an empty tuple
-            return core_schema.tuple_positional_schema([])
         else:
             return core_schema.tuple_positional_schema([self.generate_schema(p) for p in params])
 

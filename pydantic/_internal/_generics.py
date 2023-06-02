@@ -13,7 +13,7 @@ from weakref import WeakValueDictionary
 import typing_extensions
 
 from ._core_utils import get_type_ref
-from ._forward_ref import PydanticForwardRef, PydanticRecursiveRef
+from ._forward_ref import PydanticRecursiveRef
 from ._typing_extra import TypeVarType, typing_base
 from ._utils import all_identical, is_basemodel
 
@@ -316,10 +316,6 @@ def replace_types(type_: Any, type_map: Mapping[Any, Any] | None) -> Any:
             return type_
         return resolved_list
 
-    if isinstance(type_, PydanticForwardRef):
-        # queue the replacement as a deferred action
-        return type_.replace_types(type_map)
-
     # If all else fails, we try to resolve the type directly and otherwise just
     # return the input with no modifications.
     return type_map.get(type_, type_)
@@ -339,7 +335,7 @@ _generic_recursion_cache: ContextVar[set[str] | None] = ContextVar('_generic_rec
 @contextmanager
 def generic_recursion_self_type(
     origin: type[BaseModel], args: tuple[Any, ...]
-) -> Iterator[PydanticForwardRef | PydanticRecursiveRef | None]:
+) -> Iterator[PydanticRecursiveRef | None]:
     """
     This contextmanager should be placed around the recursive calls used to build a generic type,
     and accept as arguments the generic origin type and the type arguments being passed to it.

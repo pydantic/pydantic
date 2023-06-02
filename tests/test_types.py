@@ -3748,12 +3748,22 @@ def test_pattern(pattern_type, pattern_value, matching_value, non_matching_value
     f2 = Foobar(pattern=p)
     assert f2.pattern is p
 
-    # assert Foobar.model_json_schema() == {
-    #     'type': 'object',
-    #     'title': 'Foobar',
-    #     'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
-    #     'required': ['pattern'],
-    # }
+    assert Foobar.model_json_schema() == {
+        'type': 'object',
+        'title': 'Foobar',
+        'properties': {'pattern': {'type': 'string', 'format': 'regex', 'title': 'Pattern'}},
+        'required': ['pattern'],
+    }
+
+
+def test_pattern_with_invalid_param():
+    with pytest.raises(
+        PydanticSchemaGenerationError,
+        match=re.escape('Unable to generate pydantic-core schema for typing.Pattern[int].'),
+    ):
+
+        class Foo(BaseModel):
+            pattern: Pattern[int]
 
 
 @pytest.mark.parametrize(
