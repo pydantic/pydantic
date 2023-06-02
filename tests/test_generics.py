@@ -1441,6 +1441,37 @@ def test_generic_with_referenced_generic_type_1():
     ReferenceModel[int]
 
 
+def test_generic_with_referenced_generic_type_bound():
+    T = TypeVar('T', bound=int)
+
+    class ModelWithType(BaseModel, Generic[T]):
+        # Type resolves to type origin of "type" which is non-subscriptible for
+        # python < 3.9 so we want to make sure it works for other versions
+        some_type: Type[T]
+
+    class ReferenceModel(BaseModel, Generic[T]):
+        abstract_base_with_type: ModelWithType[T]
+
+    class MyInt(int):
+        ...
+
+    ReferenceModel[MyInt]
+
+
+def test_generic_with_referenced_generic_type_constraints():
+    T = TypeVar('T', int, str)
+
+    class ModelWithType(BaseModel, Generic[T]):
+        # Type resolves to type origin of "type" which is non-subscriptible for
+        # python < 3.9 so we want to make sure it works for other versions
+        some_type: Type[T]
+
+    class ReferenceModel(BaseModel, Generic[T]):
+        abstract_base_with_type: ModelWithType[T]
+
+    ReferenceModel[int]
+
+
 def test_generic_with_referenced_nested_typevar():
     T = TypeVar('T')
 
