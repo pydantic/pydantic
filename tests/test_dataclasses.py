@@ -19,6 +19,7 @@ from pydantic import (
     BaseModel,
     ConfigDict,
     FieldValidationInfo,
+    PydanticUndefinedAnnotation,
     PydanticUserError,
     TypeAdapter,
     ValidationError,
@@ -2294,3 +2295,18 @@ def test_dataclass_slots_mixed(dataclass_decorator):
     assert dc.x2 == 2
     assert SubModel.z == 'z-classvar'
     assert SubModel.z2 == 'z2-classvar'
+
+
+def test_rebuild_dataclass():
+    @pydantic.dataclasses.dataclass
+    class MyDataClass:
+        x: str
+
+    assert rebuild_dataclass(MyDataClass) is None
+
+    @pydantic.dataclasses.dataclass()
+    class MyDataClass1:
+        d2: Optional['Foo'] = None  # noqa F821
+
+    with pytest.raises(PydanticUndefinedAnnotation, match="name 'Foo' is not defined"):
+        rebuild_dataclass(MyDataClass1, _parent_namespace_depth=0)
