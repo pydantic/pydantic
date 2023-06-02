@@ -73,7 +73,7 @@ In other cases, the error message should indicate how to rebuild the class with 
 
 ## Custom JSON Schema {#custom-json-schema}
 
-The `__modify_schema__` method is not supported in V2. You should use the `__get_pydantic_json_schema__` method instead.
+The `__modify_schema__` method is no longer supported in V2. You should use the `__get_pydantic_json_schema__` method instead.
 
 The `__modify_schema__` used to receive a single argument representing the JSON schema. See the example below:
 
