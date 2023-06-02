@@ -166,20 +166,28 @@ class TypeAdapter(Generic[T]):
         self.validator = validator
         self.serializer = serializer
 
-    def validate_python(self, __object: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> T:
+    def validate_python(
+        self,
+        __object: Any,
+        *,
+        strict: bool | None = None,
+        from_attributes: bool | None = None,
+        context: dict[str, Any] | None = None,
+    ) -> T:
         """
         Validate a Python object against the model.
 
         Args:
             __object (Any): The Python object to validate against the model.
             strict (bool | None, optional): Whether to strictly check types. Defaults to None.
+            from_attributes (bool | None, optional): Whether to extract data from object attributes. Defaults to None.
             context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.
 
         Returns:
             T: The validated object.
 
         """
-        return self.validator.validate_python(__object, strict=strict, context=context)
+        return self.validator.validate_python(__object, strict=strict, from_attributes=from_attributes, context=context)
 
     def validate_json(
         self, __data: str | bytes, *, strict: bool | None = None, context: dict[str, Any] | None = None
