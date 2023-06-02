@@ -812,6 +812,7 @@ class GenerateSchema:
         """
         params = get_args(tuple_type)
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
+        # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
         if not params:
             if tuple_type == typing.Tuple:
                 return core_schema.tuple_variable_schema()
@@ -829,6 +830,10 @@ class GenerateSchema:
             return core_schema.tuple_positional_schema(  # pragma: no cover
                 [self.generate_schema(p) for p in items_schema], extra_schema=self.generate_schema(extra_schema)
             )
+        elif len(params) == 1 and params[0] == ():
+            # special case for `Tuple[()]` which means `Tuple[]` - an empty tuple
+            # NOTE: This conditional can be removed when we drop support for Python 3.10.
+            return core_schema.tuple_positional_schema([])
         else:
             return core_schema.tuple_positional_schema([self.generate_schema(p) for p in params])
 
