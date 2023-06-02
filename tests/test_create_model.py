@@ -1,5 +1,5 @@
 import platform
-from typing import Optional, Tuple
+from typing import Generic, Optional, Tuple, TypeVar
 
 import pytest
 
@@ -65,6 +65,16 @@ def test_create_model_pickle(create_module):
         assert m2.bar == m.bar == 123
         assert m2 == m
         assert m2 is not m
+
+
+def test_create_model_multi_inheritance():
+    class Mixin:
+        pass
+
+    Generic_T = Generic[TypeVar('T')]
+    FooModel = create_model('FooModel', value=(int, ...), __base__=(BaseModel, Generic_T))
+
+    assert FooModel.__orig_bases__ == (BaseModel, Generic_T)
 
 
 def test_invalid_name():
