@@ -1165,6 +1165,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#custom-json-schema" class="md-nav__link">
+    Custom JSON Schema
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#decorator-missing-field" class="md-nav__link">
     Decorator on missing field
   </a>
@@ -1928,6 +1935,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#custom-json-schema" class="md-nav__link">
+    Custom JSON Schema
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#decorator-missing-field" class="md-nav__link">
     Decorator on missing field
   </a>
@@ -2226,6 +2240,64 @@ encounter when working with Pydantic, along with suggestions for addressing the 
 <span class="n">foo</span> <span class="o">=</span> <span class="n">Foo</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">}})</span>
 </code></pre></div>
 <p>In other cases, the error message should indicate how to rebuild the class with the appropriate type defined.</p>
+<h2 id="custom-json-schema">Custom JSON Schema<a class="headerlink" href="#custom-json-schema" title="Permanent link">&para;</a></h2>
+<p>The <code>__modify_schema__</code> method is no longer supported in V2. You should use the <code>__get_pydantic_json_schema__</code> method instead.</p>
+<p>The <code>__modify_schema__</code> used to receive a single argument representing the JSON schema. See the example below:</p>
+<div class="highlight"><span class="filename">Old way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span>
+
+<span class="k">try</span><span class="p">:</span>
+
+    <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+        <span class="nd">@classmethod</span>
+        <span class="k">def</span> <span class="nf">__modify_schema__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">field_schema</span><span class="p">):</span>
+            <span class="n">field_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="s1">&#39;examples&#39;</span><span class="p">)</span>
+
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;custom-json-schema&#39;</span>
+</code></pre></div>
+<p>The new method <code>__get_pydantic_json_schema__</code> receives two arguments: the first is a dictionary denoted as <code>CoreSchema</code>,
+and the second a callable <code>handler</code> that receives a <code>CoreSchema</code> as parameter, and returns a JSON schema. See the example
+below:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><span class="filename">New way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetJsonSchemaHandler</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">json_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+        <span class="n">json_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="s1">&#39;examples&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">json_schema</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><span class="filename">New way</span><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetJsonSchemaHandler</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="n">json_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+        <span class="n">json_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="s1">&#39;examples&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">json_schema</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="decorator-missing-field">Decorator on missing field<a class="headerlink" href="#decorator-missing-field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define a decorator with a field that is not valid.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
@@ -2260,7 +2332,7 @@ encounter when working with Pydantic, along with suggestions for addressing the 
 </code></pre></div>
 <h2 id="discriminator-no-field">Discriminator no field<a class="headerlink" href="#discriminator-no-field" title="Permanent link">&para;</a></h2>
 <p>This error is raised when a model in discriminated unions doesn't define a discriminator field.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.8 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.8 and above</label><label for="__tabbed_2_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
@@ -2345,7 +2417,7 @@ encounter when working with Pydantic, along with suggestions for addressing the 
 </div>
 <h2 id="discriminator-alias-type">Discriminator alias type<a class="headerlink" href="#discriminator-alias-type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define a non-string alias on a discriminator field.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:3"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><input id="__tabbed_2_3" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.8 and above</label><label for="__tabbed_2_3">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.8 and above</label><label for="__tabbed_3_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
@@ -2433,7 +2505,7 @@ encounter when working with Pydantic, along with suggestions for addressing the 
 </div>
 <h2 id="discriminator-needs-literal">Discriminator needs literal<a class="headerlink" href="#discriminator-needs-literal" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define a non-<code>Literal</code> type on a discriminator field.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.8 and above</label><label for="__tabbed_3_3">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.8 and above</label><label for="__tabbed_4_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
@@ -2521,7 +2593,7 @@ encounter when working with Pydantic, along with suggestions for addressing the 
 </div>
 <h2 id="discriminator-alias">Discriminator alias<a class="headerlink" href="#discriminator-alias" title="Permanent link">&para;</a></h2>
 <p>This error is raised when you define different aliases on discriminator fields.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="4:3"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><input id="__tabbed_4_3" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.8 and above</label><label for="__tabbed_4_3">Python 3.10 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:3"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><input id="__tabbed_5_3" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.8 and above</label><label for="__tabbed_5_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
@@ -3017,7 +3089,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 </code></pre></div>
 <h2 id="invalid_annotated_type">Invalid annotated type<a class="headerlink" href="#invalid_annotated_type" title="Permanent link">&para;</a></h2>
 <p>This error is raised when an annotation cannot annotate a type.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">Annotated</span>
@@ -3051,7 +3123,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 </div>
 <h2 id="type-adapter-config-unused"><code>config</code> is unused with TypeAdapter<a class="headerlink" href="#type-adapter-config-unused" title="Permanent link">&para;</a></h2>
 <p>You will get this error if you try to pass <code>config</code> to <code>TypeAdapter</code> when the type is a type that has it's own config that cannot be overridden (currently this is only <code>BaseModel</code>, <code>TypedDict</code> and <code>dataclass</code>):</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="6:2"><input checked="checked" id="__tabbed_6_1" name="__tabbed_6" type="radio" /><input id="__tabbed_6_2" name="__tabbed_6" type="radio" /><div class="tabbed-labels"><label for="__tabbed_6_1">Python 3.7 and above</label><label for="__tabbed_6_2">Python 3.11 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.11 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
@@ -3098,7 +3170,7 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 </div>
 </div>
 <p>Instead you'll need to subclass the type and override or set the config on it:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.11 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="8:2"><input checked="checked" id="__tabbed_8_1" name="__tabbed_8" type="radio" /><input id="__tabbed_8_2" name="__tabbed_8" type="radio" /><div class="tabbed-labels"><label for="__tabbed_8_1">Python 3.7 and above</label><label for="__tabbed_8_2">Python 3.11 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">TypedDict</span>
