@@ -180,7 +180,7 @@ class TypeAdapter(Generic[T]):
         Args:
             __object (Any): The Python object to validate against the model.
             strict (bool | None, optional): Whether to strictly check types. Defaults to None.
-            from_attributes (bool | None, optional): Weather to extract data from object attributes. Defaults to None.
+            from_attributes (bool | None, optional): Whether to extract data from object attributes. Defaults to None.
             context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.
 
         Returns:
