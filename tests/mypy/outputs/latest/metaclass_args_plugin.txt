@@ -1,0 +1,5 @@
+11: error: Argument "i" to "ConfigClassUsed" has incompatible type "None"; expected "int"  [arg-type]
+18: error: Argument "i" to "MetaclassArgumentsNoDefault" has incompatible type "None"; expected "int"  [arg-type]
+25: error: Argument "i" to "MetaclassArgumentsWithDefault" has incompatible type "None"; expected "int"  [arg-type]
+32: error: Unexpected keyword argument "i" for "NoArguments"  [call-arg]
+33: error: Argument "j" to "NoArguments" has incompatible type "None"; expected "int"  [arg-type]
