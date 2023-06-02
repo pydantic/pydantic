@@ -71,6 +71,48 @@ foo = Foo(a={'b': {'a': None}})
 
 In other cases, the error message should indicate how to rebuild the class with the appropriate type defined.
 
+## Custom JSON Schema {#custom-json-schema}
+
+The `__modify_schema__` method is no longer supported in V2. You should use the `__get_pydantic_json_schema__` method instead.
+
+The `__modify_schema__` used to receive a single argument representing the JSON schema. See the example below:
+
+```py title="Old way"
+from pydantic import BaseModel, PydanticUserError
+
+try:
+
+    class Model(BaseModel):
+        @classmethod
+        def __modify_schema__(cls, field_schema):
+            field_schema.update(examples='examples')
+
+except PydanticUserError as exc_info:
+    assert exc_info.code == 'custom-json-schema'
+```
+
+The new method `__get_pydantic_json_schema__` receives two arguments: the first is a dictionary denoted as `CoreSchema`,
+and the second a callable `handler` that receives a `CoreSchema` as parameter, and returns a JSON schema. See the example
+below:
+
+```py title="New way"
+from typing import Any, Dict
+
+from pydantic_core import CoreSchema
+
+from pydantic import BaseModel, GetJsonSchemaHandler
+
+
+class Model(BaseModel):
+    @classmethod
+    def __get_pydantic_json_schema__(
+        cls, schema: CoreSchema, handler: GetJsonSchemaHandler
+    ) -> Dict[str, Any]:
+        json_schema = handler(schema)
+        json_schema.update(examples='examples')
+        return json_schema
+```
+
 ## Decorator on missing field {#decorator-missing-field}
 
 This error is raised when you define a decorator with a field that is not valid.
