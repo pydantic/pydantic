@@ -316,6 +316,17 @@ def test_root_model_nested_equality():
     assert Model(value=42).value == RootModel[int](42)
 
 
+def test_root_model_base_model_equality():
+    class R(RootModel[int]):
+        pass
+
+    class B(BaseModel):
+        root: int
+
+    assert R(42) != B(root=42)
+    assert B(root=42) != R(42)
+
+
 @pytest.mark.xfail(reason='TODO: raise error for `extra` with `RootModel`')
 @pytest.mark.parametrize('extra_value', ['ignore', 'allow', 'forbid'])
 def test_extra_error(extra_value):

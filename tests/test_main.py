@@ -1885,7 +1885,7 @@ def test_model_rebuild_localns():
         x: int
 
     class B(BaseModel):
-        a: 'Model'  # noqa F821
+        a: 'Model'  # noqa: F821
 
     B.model_rebuild(_types_namespace={'Model': A})
 
@@ -1894,10 +1894,26 @@ def test_model_rebuild_localns():
     assert isinstance(m.a, A)
 
     class C(BaseModel):
-        a: 'Model'  # noqa F821
+        a: 'Model'  # noqa: F821
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Model' is not defined"):
         C.model_rebuild(_types_namespace={'A': A})
+
+
+def test_model_rebuild_zero_depth():
+    class Model(BaseModel):
+        x: 'X_Type'
+
+    X_Type = str
+
+    with pytest.raises(NameError, match='X_Type'):
+        Model.model_rebuild(_parent_namespace_depth=0)
+
+    Model.__pydantic_parent_namespace__.update({'X_Type': int})
+    Model.model_rebuild(_parent_namespace_depth=0)
+
+    m = Model(x=42)
+    assert m.model_dump() == {'x': 42}
 
 
 @pytest.fixture(scope='session', name='InnerEqualityModel')
@@ -2002,10 +2018,15 @@ def test_model_copy_extra():
     assert m3.model_dump() == {'x': 4, 'y': 2, 'z': 3}
     assert m3.model_extra == {'y': 2, 'z': 3}
 
-    m3.__pydantic_extra__ = None
     m4 = m.model_copy(update={'x': 4, 'z': 3})
     assert m4.model_dump() == {'x': 4, 'y': 2, 'z': 3}
     assert m4.model_extra == {'y': 2, 'z': 3}
+
+    m = Model(x=1, a=2)
+    m.__pydantic_extra__ = None
+    m5 = m.model_copy(update={'x': 4, 'b': 3})
+    assert m5.model_dump() == {'x': 4, 'b': 3}
+    assert m5.model_extra == {'b': 3}
 
 
 def test_model_parametrized_name_not_generic():
