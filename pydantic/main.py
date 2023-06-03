@@ -245,7 +245,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             cls: The model class to use.
             obj: The object to validate.
             strict: Whether to raise an exception on invalid fields. Defaults to None.
-            from_attributes (bool | None, optional): Whether to extract data from object attributes. Defaults to None.
+            from_attributes: Whether to extract data from object attributes. Defaults to None.
             context: Additional context to pass to the validator. Defaults to None.
 
         Raises:
