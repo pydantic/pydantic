@@ -636,7 +636,7 @@ def test_set():
         (Tuple[()], {'maxItems': 0, 'minItems': 0}),
         (
             Tuple[str, ...],
-            {'items': {'type': 'string'}, 'title': 'A', 'type': 'array'},
+            {'items': {'type': 'string'}, 'type': 'array'},
         ),
     ],
 )
@@ -650,6 +650,10 @@ def test_tuple(field_type, extra_props):
         'properties': {'a': {'title': 'A', 'type': 'array', **extra_props}},
         'required': ['a'],
     }
+
+    ta = TypeAdapter(field_type)
+
+    assert ta.json_schema() == {'type': 'array', **extra_props}
 
 
 def test_deque():
