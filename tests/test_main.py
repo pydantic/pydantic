@@ -2352,3 +2352,12 @@ def test_validate_python_from_attributes() -> None:
 
     res = ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=True)
     assert res == ModelFromAttributesFalse(x=1)
+
+
+def test_model_signature_annotated() -> None:
+    class Model(BaseModel):
+        x: Annotated[int, 123]
+
+    # we used to accidentally convert `__metadata__` to a list
+    # which caused things like `typing.get_args()` to fail
+    assert Model.__signature__.parameters['x'].annotation.__metadata__ == (123,)
