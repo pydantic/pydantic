@@ -656,7 +656,12 @@ def make_typed_dict() -> Any:
     'model_factory',
     [
         make_base_model,
-        pytest.param(make_typed_dict, marks=pytest.mark.xfail(reason='computed fields do not work with TypedDict yet')),
+        pytest.param(
+            make_typed_dict,
+            marks=pytest.mark.xfail(
+                reason='computed fields do not work with TypedDict yet. See https://github.com/pydantic/pydantic-core/issues/657'
+            ),
+        ),
         make_dataclass,
     ],
 )
