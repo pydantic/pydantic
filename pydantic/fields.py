@@ -494,7 +494,8 @@ class FieldInfo(_repr.Representation):
         if not self.metadata:
             return self.annotation
         else:
-            return typing_extensions._AnnotatedAlias(self.annotation, self.metadata)
+            # Annotated arguments must be a tuple
+            return typing_extensions.Annotated[(self.annotation, *self.metadata)]  # type: ignore
 
     def apply_typevars_map(self, typevars_map: dict[Any, Any] | None, types_namespace: dict[str, Any] | None) -> None:
         """
