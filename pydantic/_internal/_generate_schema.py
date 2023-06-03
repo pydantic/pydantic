@@ -744,6 +744,7 @@ class GenerateSchema:
 
         td_schema = core_schema.typed_dict_schema(
             fields,
+            computed_fields=[self._computed_field_schema(d) for d in decorators.computed_fields.values()],
             extra_behavior='forbid',
             ref=typed_dict_ref,
             metadata=metadata,
