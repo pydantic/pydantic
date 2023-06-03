@@ -1,10 +1,11 @@
 import random
 import sys
 from abc import ABC, abstractmethod
-from typing import Any, ClassVar, List, Tuple
+from typing import Any, Callable, ClassVar, List, Tuple
 
 import pytest
 from pydantic_core import ValidationError, core_schema
+from typing_extensions import TypedDict
 
 from pydantic import (
     BaseModel,
@@ -596,15 +597,11 @@ def test_alias_generator():
     }
 
 
-def test_multiple_references_to_schema() -> None:
-    """
-    https://github.com/pydantic/pydantic/issues/5980
-    """
-
+def make_base_model() -> Any:
     class CompModel(BaseModel):
         pass
 
-    class MyModel(BaseModel):
+    class Model(BaseModel):
         @computed_field
         @property
         def comp_1(self) -> CompModel:
@@ -615,16 +612,71 @@ def test_multiple_references_to_schema() -> None:
         def comp_2(self) -> CompModel:
             return CompModel()
 
-    assert MyModel().model_dump() == {'comp_1': {}, 'comp_2': {}}
+    return Model
 
-    # insert_assert(MyModel.model_json_schema())
-    assert MyModel.model_json_schema() == {'type': 'object', 'properties': {}, 'title': 'MyModel'}
 
-    # insert_assert(MyModel.model_json_schema(mode='serialization'))
-    assert MyModel.model_json_schema(mode='serialization') == {
+def make_dataclass() -> Any:
+    class CompModel(BaseModel):
+        pass
+
+    @dataclasses.dataclass
+    class Model:
+        @computed_field
+        @property
+        def comp_1(self) -> CompModel:
+            return CompModel()
+
+        @computed_field
+        @property
+        def comp_2(self) -> CompModel:
+            return CompModel()
+
+    return Model
+
+
+def make_typed_dict() -> Any:
+    class CompModel(BaseModel):
+        pass
+
+    class Model(TypedDict):
+        @computed_field  # type: ignore
+        @property
+        def comp_1(self) -> CompModel:
+            return CompModel()
+
+        @computed_field  # type: ignore
+        @property
+        def comp_2(self) -> CompModel:
+            return CompModel()
+
+    return Model
+
+
+@pytest.mark.parametrize(
+    'model_factory',
+    [
+        make_base_model,
+        pytest.param(make_typed_dict, marks=pytest.mark.xfail(reason='computed fields do not work with TypedDict yet')),
+        make_dataclass,
+    ],
+)
+def test_multiple_references_to_schema(model_factory: Callable[[], Any]) -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/5980
+    """
+
+    model = model_factory()
+
+    ta = TypeAdapter(model)
+
+    assert ta.dump_python(model()) == {'comp_1': {}, 'comp_2': {}}
+
+    assert ta.json_schema() == {'type': 'object', 'properties': {}, 'title': 'Model'}
+
+    assert ta.json_schema(mode='serialization') == {
         'type': 'object',
         'properties': {'comp_1': {'$ref': '#/$defs/CompModel'}, 'comp_2': {'$ref': '#/$defs/CompModel'}},
         'required': ['comp_1', 'comp_2'],
-        'title': 'MyModel',
+        'title': 'Model',
         '$defs': {'CompModel': {'type': 'object', 'properties': {}, 'title': 'CompModel'}},
     }

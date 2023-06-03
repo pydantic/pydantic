@@ -383,6 +383,13 @@ class _WalkCoreSchema:
     def handle_typed_dict_schema(self, schema: core_schema.TypedDictSchema, f: Walk) -> core_schema.CoreSchema:
         if 'extra_validator' in schema:
             schema['extra_validator'] = self.walk(schema['extra_validator'], f)
+        replaced_computed_fields: list[core_schema.ComputedField] = []
+        for computed_field in schema.get('computed_fields', None) or ():
+            replaced_field = computed_field.copy()
+            replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
+            replaced_computed_fields.append(replaced_field)
+        if replaced_computed_fields:
+            schema['computed_fields'] = replaced_computed_fields
         replaced_fields: dict[str, core_schema.TypedDictField] = {}
         for k, v in schema['fields'].items():
             replaced_field = v.copy()
@@ -393,6 +400,13 @@ class _WalkCoreSchema:
 
     def handle_dataclass_args_schema(self, schema: core_schema.DataclassArgsSchema, f: Walk) -> core_schema.CoreSchema:
         replaced_fields: list[core_schema.DataclassField] = []
+        replaced_computed_fields: list[core_schema.ComputedField] = []
+        for computed_field in schema.get('computed_fields', None) or ():
+            replaced_field = computed_field.copy()
+            replaced_field['return_schema'] = self.walk(computed_field['return_schema'], f)
+            replaced_computed_fields.append(replaced_field)
+        if replaced_computed_fields:
+            schema['computed_fields'] = replaced_computed_fields
         for field in schema['fields']:
             replaced_field = field.copy()
             replaced_field['schema'] = self.walk(field['schema'], f)
