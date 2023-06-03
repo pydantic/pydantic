@@ -3,6 +3,7 @@ import platform
 import re
 import sys
 from copy import deepcopy
+from dataclasses import dataclass
 from enum import Enum
 from typing import (
     Any,
@@ -2304,3 +2305,50 @@ def test_nested_types_ignored():
 
         class BadModel(BaseModel):
             x = NonNestedType
+
+
+def test_validate_python_from_attributes() -> None:
+    class Model(BaseModel):
+        x: int
+
+    class ModelFromAttributesTrue(Model):
+        model_config = ConfigDict(from_attributes=True)
+
+    class ModelFromAttributesFalse(Model):
+        model_config = ConfigDict(from_attributes=False)
+
+    @dataclass
+    class UnrelatedClass:
+        x: int = 1
+
+    input = UnrelatedClass(1)
+
+    for from_attributes in (False, None):
+        with pytest.raises(ValidationError) as exc_info:
+            Model.model_validate(UnrelatedClass(), from_attributes=from_attributes)
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+        ]
+
+    res = Model.model_validate(UnrelatedClass(), from_attributes=True)
+    assert res == Model(x=1)
+
+    with pytest.raises(ValidationError) as exc_info:
+        ModelFromAttributesTrue.model_validate(UnrelatedClass(), from_attributes=False)
+    assert exc_info.value.errors(include_url=False) == [
+        {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+    ]
+
+    for from_attributes in (True, None):
+        res = ModelFromAttributesTrue.model_validate(UnrelatedClass(), from_attributes=from_attributes)
+        assert res == ModelFromAttributesTrue(x=1)
+
+    for from_attributes in (False, None):
+        with pytest.raises(ValidationError) as exc_info:
+            ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=from_attributes)
+        assert exc_info.value.errors(include_url=False) == [
+            {'type': 'dict_type', 'loc': (), 'msg': 'Input should be a valid dictionary', 'input': input}
+        ]
+
+    res = ModelFromAttributesFalse.model_validate(UnrelatedClass(), from_attributes=True)
+    assert res == ModelFromAttributesFalse(x=1)

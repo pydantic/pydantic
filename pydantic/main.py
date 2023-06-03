@@ -232,7 +232,12 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_validate(
-        cls: type[Model], obj: Any, *, strict: bool | None = None, context: dict[str, Any] | None = None
+        cls: type[Model],
+        obj: Any,
+        *,
+        strict: bool | None = None,
+        from_attributes: bool | None = None,
+        context: dict[str, Any] | None = None,
     ) -> Model:
         """Validate a pydantic model instance.
 
@@ -240,6 +245,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             cls: The model class to use.
             obj: The object to validate.
             strict: Whether to raise an exception on invalid fields. Defaults to None.
+            from_attributes (bool | None, optional): Whether to extract data from object attributes. Defaults to None.
             context: Additional context to pass to the validator. Defaults to None.
 
         Raises:
@@ -250,7 +256,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         # `__tracebackhide__` tells pytest and some other tools to omit this function from tracebacks
         __tracebackhide__ = True
-        return cls.__pydantic_validator__.validate_python(obj, strict=strict, context=context)
+        return cls.__pydantic_validator__.validate_python(
+            obj, strict=strict, from_attributes=from_attributes, context=context
+        )
 
     @property
     def model_fields_set(self) -> set[str]:
