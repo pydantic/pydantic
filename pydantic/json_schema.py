@@ -630,8 +630,6 @@ class GenerateJsonSchema:
         Returns:
             JsonSchemaValue: The generated JSON schema.
         """
-        # NOTE: The `items_schema` is always added, even when we explicitly create a
-        # tuple variable schema without an `items_schema`.
         items_schema = {} if 'items_schema' not in schema else self.generate_inner(schema['items_schema'])
         json_schema = {'type': 'array', 'items': items_schema}
         self.update_with_validations(json_schema, schema, self.ValidationsMapping.array)
