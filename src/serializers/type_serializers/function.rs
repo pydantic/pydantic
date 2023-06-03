@@ -189,7 +189,7 @@ fn on_error(py: Python, err: PyErr, function_name: &str, extra: &Extra) -> PyRes
         }
     } else if let Ok(err) = exception.extract::<PydanticSerializationError>() {
         py_err!(PydanticSerializationError; "{}", err)
-    } else if exception.is_instance_of::<PyRecursionError>().unwrap_or(false) {
+    } else if exception.is_instance_of::<PyRecursionError>() {
         py_err!(PydanticSerializationError; "Error calling function `{}`: RecursionError", function_name)
     } else {
         let new_err = py_error_type!(PydanticSerializationError; "Error calling function `{}`: {}", function_name, err);
