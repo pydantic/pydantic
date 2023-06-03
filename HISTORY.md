@@ -1,3 +1,9 @@
+## v2.0b2 (2023-06-03)
+
+Add `from_attributes` runtime flag to `TypeAdapter.validate_python` and `BaseModel.model_validate`.
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0b2)
+
 ## v2.0b1 (2023-06-01)
 
 First beta pre-release of Pydantic V2
