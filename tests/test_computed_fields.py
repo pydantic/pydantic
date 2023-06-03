@@ -594,3 +594,37 @@ def test_alias_generator():
         'myAliasedComputedField1': 4,
         'my_alias_2': 5,
     }
+
+
+def test_multiple_references_to_schema() -> None:
+    """
+    https://github.com/pydantic/pydantic/issues/5980
+    """
+
+    class CompModel(BaseModel):
+        pass
+
+    class MyModel(BaseModel):
+        @computed_field
+        @property
+        def comp_1(self) -> CompModel:
+            return CompModel()
+
+        @computed_field
+        @property
+        def comp_2(self) -> CompModel:
+            return CompModel()
+
+    assert MyModel().model_dump() == {'comp_1': {}, 'comp_2': {}}
+
+    # insert_assert(MyModel.model_json_schema())
+    assert MyModel.model_json_schema() == {'type': 'object', 'properties': {}, 'title': 'MyModel'}
+
+    # insert_assert(MyModel.model_json_schema(mode='serialization'))
+    assert MyModel.model_json_schema(mode='serialization') == {
+        'type': 'object',
+        'properties': {'comp_1': {'$ref': '#/$defs/CompModel'}, 'comp_2': {'$ref': '#/$defs/CompModel'}},
+        'required': ['comp_1', 'comp_2'],
+        'title': 'MyModel',
+        '$defs': {'CompModel': {'type': 'object', 'properties': {}, 'title': 'CompModel'}},
+    }
