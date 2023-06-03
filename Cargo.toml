@@ -26,7 +26,7 @@ include = [
 ]
 
 [dependencies]
-pyo3 = "0.18.2"
+pyo3 = "0.19.0"
 regex = "1.6.0"
 strum = { version = "0.24.1", features = ["derive"] }
 strum_macros = "0.24.3"
@@ -59,9 +59,9 @@ codegen-units = 1
 strip = true
 
 [dev-dependencies]
-pyo3 = { version = "0.18.2", features = ["auto-initialize"] }
+pyo3 = { version = "0.19.0", features = ["auto-initialize"] }
 
 [build-dependencies]
 version_check = "0.9.4"
 # used where logic has to be version/distribution specific, e.g. pypy
-pyo3-build-config = "0.18.2"
+pyo3-build-config = "0.19.0"
