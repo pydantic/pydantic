@@ -319,7 +319,7 @@ def test_extra_used_as_enum(
     attribute: str,
     value: str,
 ) -> None:
-    with pytest.raises(
+    with pytest.warns(
         DeprecationWarning,
         match=re.escape("`pydantic.config.Extra` is deprecated, use literal values instead (e.g. `extra='allow'`)"),
     ):
