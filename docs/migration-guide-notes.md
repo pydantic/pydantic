@@ -3,9 +3,6 @@
 Migration guide
 ---------------
 
-* Validation
-	* @root_validator must not be bare [we should at least error..]
-
 * Validation behavior changes (Maybe a separate top-level section)
 	* [idea: this contains the part of the coercion table that has changed from v1 to v2]
 	* Some examples:
