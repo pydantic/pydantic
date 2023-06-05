@@ -56,7 +56,6 @@ nav:
     - Booleans: usage/types/booleans.md
     - ByteSize: usage/types/bytesize.md
     - Callables: usage/types/callables.md
-    - Color Types: usage/types/color_types.md
     - Datetimes: usage/types/datetime.md
     - Dicts and Mapping: usage/types/dicts_mapping.md
     - Encoded Types: usage/types/encoded.md
@@ -65,7 +64,6 @@ nav:
     - JSON: usage/types/json.md
     - Lists and Tuples: usage/types/list_types.md
     - Number Types: usage/types/number_types.md
-    - Payment Card Numbers: usage/types/payment_cards.md
     - Secret Types: usage/types/secrets.md
     - Sequence, Iterable, & Iterator: usage/types/sequence_iterable.md
     - Sets and frozenset: usage/types/set_types.md
