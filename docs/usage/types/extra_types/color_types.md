@@ -1,8 +1,3 @@
-!!! warning
-    To use this type, you need to install the [pydantic-extra-types](https://pypi.org/project/pydantic-extra-types/) package:
-
-    ```bash
-    pip install pydantic-extra-types
-    ```
+{{ install_pydantic_extra_types }}
 
 {{ external_markdown('https://raw.githubusercontent.com/pydantic/pydantic-extra-types/main/docs/color_types.md', '') }}
