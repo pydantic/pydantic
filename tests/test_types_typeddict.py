@@ -829,3 +829,13 @@ def test_typeddict_model_serializer(TypedDict) -> None:
     ta = TypeAdapter(Model)
 
     assert ta.dump_python(Model({'x': 1, 'y': 2.5})) == {'x': 2, 'y': 7.5}
+
+
+def test_model_config() -> None:
+    class Model(TypedDict):
+        x: str
+        __pydantic_config__ = ConfigDict(str_to_lower=True)  # type: ignore
+
+    ta = TypeAdapter(Model)
+
+    assert ta.validate_python({'x': 'ABC'}) == {'x': 'abc'}
