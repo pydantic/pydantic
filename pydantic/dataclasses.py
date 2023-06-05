@@ -178,10 +178,12 @@ def dataclass(
 
         original_cls = cls
 
-        cls_config = getattr(cls, '__pydantic_config__', None)
         config_dict = config
-        if config_dict is None and cls_config is not None:
-            config_dict = cls_config
+        if config_dict is None:
+            # if not explicitly provided, read from the type
+            cls_config = getattr(cls, '__pydantic_config__', None)
+            if cls_config is not None:
+                config_dict = cls_config
         config_wrapper = _config.ConfigWrapper(config_dict)
         decorators = _decorators.DecoratorInfos.build(cls)
 
