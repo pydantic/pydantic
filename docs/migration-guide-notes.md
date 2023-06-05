@@ -3,36 +3,15 @@
 Migration guide
 ---------------
 
-* Dataclasses
-	* Cannot parse tuples/lists into dataclasses used as fields, only dicts
-	* Config is not "pushed down" for vanilla dataclases
-	* __pydantic_model__ on pydantic dataclasses (use TypeAdapter; may not need to use a pydantic dataclass)
-
-
 * Validation
-	* @root_validator is deprecated (and may have had changes to what it should return..?)
-		* Can't run with `skip_on_failure=False`
-		* must not be bare [we should at least error..]
-		* should be replaced by @model_validator; note under some circumstances `@model_validator` may receive an instance, not a dict
-	* @validator is deprecated
-		* should be replaced by @field_validator
-		* @field_validator does not support each_item; use annotations on the generic parameters
-			* Explain that List[int] = Field(..., ge=0) -> List[Annotated[int, Field(ge=0)]]
-		* changes to signature of functions (no longer provide field or config -- use info)
-	* Raising a TypeError inside a validator no longer produces a ValidationError
-	* `validate_arguments` raises TypeError if you call the function with an invalid signature
-	* always=True / validate_default will apply "standard" field validators, not just custom
-		* [what does always=True mean in this case?]
-	* Changes in validator overriding behavior, and removal of `allow_reuse`
+	* @root_validator must not be bare [we should at least error..]
 	* Change to validation of unions where _instances_ are accepted before being validated
-
 
 * Validation behavior changes (Maybe a separate top-level section)
 	* [idea: this contains the part of the coercion table that has changed from v1 to v2]
 	* Some examples:
 		* int, float, decimal no longer coerced to string
 		* iterable of pairs no longer coerced to a dict
-
 
 * Types
 	* Standard types
