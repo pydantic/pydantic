@@ -30,6 +30,7 @@ def test_rich_repr(User):
     ]
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_rich_repr_color(User):
     color = Color((10, 20, 30, 0.1))
     rich_repr = list(color.__rich_repr__())

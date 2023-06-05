@@ -6,6 +6,10 @@ from pydantic_core import PydanticCustomError
 from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
 
+pytestmark = pytest.mark.filterwarnings(
+    'ignore:The `Color` class is deprecated, install `pydantic-extra-types` instead.:DeprecationWarning'
+)
+
 
 @pytest.mark.parametrize(
     'raw_color, as_tuple',

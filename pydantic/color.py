@@ -13,6 +13,7 @@ from colorsys import hls_to_rgb, rgb_to_hls
 from typing import Any, Callable, Optional, Tuple, Type, Union, cast
 
 from pydantic_core import CoreSchema, PydanticCustomError, core_schema
+from typing_extensions import deprecated
 
 from ._internal import _repr, _utils
 from ._internal._schema_generation_shared import GetJsonSchemaHandler as _GetJsonSchemaHandler
@@ -64,6 +65,11 @@ repeat_colors = {int(c * 2, 16) for c in '0123456789abcdef'}
 rads = 2 * math.pi
 
 
+# TODO: Remove the comment when we add a section about `pydantic-extra-types` on the docs.
+@deprecated(
+    'The `Color` class is deprecated, install `pydantic-extra-types` instead. '
+    # 'See https://pydantic-docs.helpmanual.io/usage/types/#pydantic-extra-types'
+)
 class Color(_repr.Representation):
     """
     Represents a color.
