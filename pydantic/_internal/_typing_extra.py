@@ -280,13 +280,7 @@ if sys.version_info < (3, 9):
 
         Implemented as EAFP with memory.
         """
-        global _make_forward_ref
-        try:
-            res = typing.ForwardRef(arg, is_argument, is_class=is_class)  # type: ignore
-            _make_forward_ref = typing.ForwardRef  # type: ignore
-            return res
-        except TypeError:
-            return typing.ForwardRef(arg, is_argument)
+        return typing.ForwardRef(arg, is_argument)
 
 else:
     _make_forward_ref = typing.ForwardRef
