@@ -188,7 +188,7 @@ def root_validator(
 
 
 def root_validator(
-    *,
+    *__args,
     pre: bool = False,
     skip_on_failure: bool = False,
     allow_reuse: bool = False,
@@ -198,7 +198,7 @@ def root_validator(
     modify) data either before or after standard model parsing/validation is performed.
 
     Args:
-        pre (bool, optional): Whether or not this validator should be called before the standard
+        pre (bool, optional): Whether this validator should be called before the standard
             validators (else after). Defaults to False.
         skip_on_failure (bool, optional): Whether to stop validation and return as soon as a
             failure is encountered. Defaults to False.
@@ -215,12 +215,18 @@ def root_validator(
         DeprecationWarning,
         stacklevel=2,
     )
+
+    if __args:
+        # Ensure a nice error is raised if someone attempts to use the bare decorator
+        return root_validator()(*__args)  # type: ignore
+
     if allow_reuse is True:  # pragma: no cover
         warn(_ALLOW_REUSE_WARNING_MESSAGE, DeprecationWarning)
     mode: Literal['before', 'after'] = 'before' if pre is True else 'after'
     if pre is False and skip_on_failure is not True:
         raise PydanticUserError(
-            'If you use `@root_validator` with pre=False (the default) you MUST specify `skip_on_failure=True`.',
+            'If you use `@root_validator` with pre=False (the default) you MUST specify `skip_on_failure=True`.'
+            ' Note that `@root_validator` is deprecated and should be replaced with `@model_validator`.',
             code='root-validator-pre-skip',
         )
 
