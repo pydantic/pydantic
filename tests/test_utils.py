@@ -287,6 +287,7 @@ def test_pretty():
     ]
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_pretty_color():
     c = Color('red')
     assert str(c) == 'red'

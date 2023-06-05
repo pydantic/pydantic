@@ -641,3 +641,22 @@ def test_deprecated_module(tmp_path: Path) -> None:
             pass
 
         validate_arguments()(test)
+
+
+def test_deprecated_color():
+    from pydantic.color import Color
+
+    with pytest.warns(
+        DeprecationWarning, match='The `Color` class is deprecated, use `pydantic_extra_types.Color` instead.'
+    ):
+        Color('red')
+
+
+def test_deprecated_payment():
+    from pydantic import PaymentCardNumber
+
+    with pytest.warns(
+        DeprecationWarning,
+        match='The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types.PaymentCardNumber` instead.',
+    ):
+        PaymentCardNumber('4242424242424242')
