@@ -484,13 +484,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
+        defaults: dict[str, Any] = {}  # keeping this separate from `fields_values` helps us compute `_fields_set`
         for name, field in cls.model_fields.items():
             if field.alias and field.alias in values:
-                fields_values[name] = values[field.alias]
+                fields_values[name] = values.pop(field.alias)
             elif name in values:
-                fields_values[name] = values[name]
+                fields_values[name] = values.pop(name)
             elif not field.is_required():
-                fields_values[name] = field.get_default(call_default_factory=True)
+                defaults[name] = field.get_default(call_default_factory=True)
+        if _fields_set is None:
+            _fields_set = set(fields_values.keys())
+        fields_values.update(defaults)
+
         _extra: dict[str, Any] | None = None
         if cls.model_config.get('extra') == 'allow':
             _extra = {}
@@ -499,8 +504,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         else:
             fields_values.update(values)
         _object_setattr(m, '__dict__', fields_values)
-        if _fields_set is None:
-            _fields_set = set(values.keys())
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         _object_setattr(m, '__pydantic_extra__', _extra)
 
