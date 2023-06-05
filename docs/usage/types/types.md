@@ -2,6 +2,8 @@ Where possible Pydantic uses [standard library types](standard_types.md) to defi
 the learning curve. For many useful applications, however, no standard library type exists,
 so Pydantic implements many commonly used types.
 
+There are also more complex types that can be found in the [Pydantic Extra Types].
+
 If no existing type suits your purpose you can also implement your [own Pydantic-compatible types](custom.md#custom-data-types) with custom properties and validation.
 
 The following sections describe the types supported by Pydantic.
@@ -11,7 +13,6 @@ The following sections describe the types supported by Pydantic.
 * [Booleans](booleans.md) &mdash; `bool` types.
 * [ByteSize](bytesize.md) &mdash; a type that allows handling byte string representations in your model.
 * [Callables](callables.md) &mdash; `Callable` types.
-* [Color Types](color_types.md) &mdash; color validation types.
 * [Datetimes](datetime.md) &mdash; `datetime`, `date`, `time`, and `timedelta` types.
 * [Dicts and Mapping Types](dicts_mapping.md) &mdash; `dict` types and mapping types.
 * [Enums and Choices](enums.md) &mdash; uses Python's standard `enum` classes to define choices.
@@ -19,7 +20,6 @@ The following sections describe the types supported by Pydantic.
 * [JSON](json.md) &mdash; a type that allows you to store JSON data in your model.
 * [Lists and Tuples](list_types.md) &mdash; `list` and `tuple` types.
 * [Number Types](number_types.md) &mdash; `int`, `float`, `Decimal`, and other number types.
-* [Payment Card Numbers](payment_cards.md) &mdash; a type that allows you to store payment card numbers in your model.
 * [Secret Types](secrets.md) &mdash; types for storing sensitive information that you do not want to be visible in logging or tracebacks.
 * [Sequence, Iterable, & Iterator](sequence_iterable.md) &mdash; iterable types including `Sequence`, `Iterable`, and `Iterator`.
 * [Sets and frozenset](set_types.md) &mdash; `set` and `frozenset` types.
@@ -32,3 +32,8 @@ The following sections describe the types supported by Pydantic.
 * [Base64 and other encodings](encoded.md) &mdash; types that allow serializing values into an encoded form, e.g. `base64`.
 * [Custom Data Types](custom.md) &mdash; create your own custom data types.
 * [Field Type Conversions](../conversion_table.md) &mdash; strict and lax conversion between different field types.
+* Extra Types: Types that can be found in the [Pydantic Extra Types].
+    * [Color Types](extra_types/color_types.md) &mdash; color validation types.
+    * [Payment Card Numbers](extra_types/payment_cards.md) &mdash; a type that allows you to store payment card numbers in your model.
+
+[Pydantic Extra Types]: https://github.com/pydantic/pydantic-extra-types
