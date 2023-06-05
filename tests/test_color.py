@@ -7,7 +7,7 @@ from pydantic import BaseModel, ValidationError
 from pydantic.color import Color
 
 pytestmark = pytest.mark.filterwarnings(
-    'ignore:The `Color` class is deprecated, install `pydantic-extra-types` instead.:DeprecationWarning'
+    'ignore:The `Color` class is deprecated, use `pydantic_extra_types.Color` instead.:DeprecationWarning'
 )
 
 

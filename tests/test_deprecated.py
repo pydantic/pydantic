@@ -647,7 +647,7 @@ def test_deprecated_color():
     from pydantic.color import Color
 
     with pytest.warns(
-        DeprecationWarning, match='The `Color` class is deprecated, install `pydantic-extra-types` instead.'
+        DeprecationWarning, match='The `Color` class is deprecated, use `pydantic_extra_types.Color` instead.'
     ):
         Color('red')
 

@@ -67,7 +67,7 @@ rads = 2 * math.pi
 
 # TODO: Remove the comment when we add a section about `pydantic-extra-types` on the docs.
 @deprecated(
-    'The `Color` class is deprecated, install `pydantic-extra-types` instead. '
+    'The `Color` class is deprecated, use `pydantic_extra_types.Color` instead.'
     # 'See https://pydantic-docs.helpmanual.io/usage/types/#pydantic-extra-types'
 )
 class Color(_repr.Representation):
