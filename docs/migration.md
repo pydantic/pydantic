@@ -2,7 +2,7 @@
 description: Migrating from Pydantic V1.
 ---
 
-## Install Pydantic V2 alpha
+## Install Pydantic V2 beta
 
 Your feedback will be a critical part of ensuring that we have made the right tradeoffs with the API changes in V2.
 
@@ -10,46 +10,86 @@ To get started with the Pydantic V2 alpha, install it from PyPI.
 We recommend using a virtual environment to isolate your testing environment:
 
 ```bash
-pip install --pre -U "pydantic>=2.0a1"
+pip install --pre -U "pydantic>=2.0b1"
 ```
 
-!!! warning "Alpha release!"
-    Note that there are still some rough edges and incomplete features, and while trying out the Pydantic V2 alpha releases you may experience errors.
+!!! warning "Beta release!"
+    Note that there are still some rough edges, and while trying out the Pydantic V2 beta releases you may experience errors.
 
-    We encourage you to try out the alpha releases in a test environment and not in production.
-    Some features are still in development, and we will continue to make changes to the API.
+    We encourage you to try out the beta releases in a test environment and not in production.
+    While we do not currently intend to make changes to the API, it's still possible that we
+    will discover problems requiring breaking changes.
 
-If you do encounter any issues, please [create an issue in GitHub](https://github.com/pydantic/pydantic/issues) using the `bug V2` label.
-This will help us to actively monitor and track errors, and to continue to improve the library’s performance.
+If you do encounter any issues, please [create an issue in GitHub](https://github.com/pydantic/pydantic/issues) using
+the `bug V2` label. This will help us to actively monitor and track errors, and to continue to improve the library's
+performance.
 
-## Migration notes
+## Migration Guide
 
-**Please note:** this is just the beginning of a migration guide. We'll work hard up to the final release to prepare
-a full migration guide, but for now the following pointers should be some help while experimenting with V2.
+### Changes to `pydantic.BaseModel`
 
-### Changes to BaseModel
+* Various method names have been changed; all non-deprecated `BaseModel` methods now have names matching either the
+  format `model_.*` or `__.*pydantic.*__`. Where possible, we have retained the deprecated methods with their old names
+  to help ease migration, but calling them will emit `DeprecationWarning`s.
+  * [TODO: Add table of method name migrations]
+  * Some of the built-in data-loading functionality has been slated for removal. In particular,
+    `parse_raw` and `parse_file` are now deprecated. You should load the data and then pass it to `model_validate`.
+* The `from_orm` method has been removed; you can now just use `model_validate` (equivalent to `parse_obj` from
+  Pydantic V1) to achieve something similar, as long as you've set `from_attributes=True` in the model config.
+* The `__eq__` method has changed for models.
+  * Models can only be equal to other BaseModel instances.
+  * For two model instances to be equal, they must have the same:
+    * Type (or, in the case of generic models, non-parametrized generic origin type)
+    * Field values
+    * Extra values (only relevant when `model_config['extra'] == 'allow'`)
+    * Private attribute values
+  * In particular:
+    * Models are no longer equal to the dicts containing their data.
+    * Non-generic models of different types are never equal.
+    * Generic models with different origin types are never equal.
+      * We don't require *exact* type equality so that, for example,
+        instances of `MyGenericModel[Any]` could be equal to instances of `MyGenericModel[int]`.
+    * Models with different values of private attributes are no longer equal
+* We have replaced the use of the `__root__` field to specify a "custom root model" with a new type called `RootModel`
+  which is intended to replace the functionality of using a field called `__root__` in V1.
+  * [TODO: Add link to documentation of `RootModel`. For now, you can find example usage in `tests/test_root_model.py`.]
+* We have removed support for specifying `json_encoders` in the model config. This functionality was generally used
+  to achieve custom serialization logic, but in V2 we have made significant improvements to customizing serialization.
+  In particular, we have added the `@field_serializer`, `@model_serializer`, and `@computed_field` decorators, which
+  are a better solution in most cases.
+  * If your usage of `json_encoders` is not compatible with the new serialization decorators,
+    please create a GitHub issue letting us know.
+  * [TODO: Add link to documentation of serialization decorators. For now, you can find example usage in
+    `tests/test_serialize.py` and `tests/test_computed_fields.py`.]
 
-* Various method names have been changed; `BaseModel` methods all start with `model_` now.
-  Where possible, we have retained the old method names to help ease migration, but calling them will result in `DeprecationWarning`s.
-  * Some of the built-in data loading functionality has been slated for removal.
-    In particular, `parse_raw` and `parse_file` are now deprecated. You should load the data and then pass it to `model_validate`.
-* The `from_orm` method has been removed; you can now just use `model_validate` (equivalent to `parse_obj` from Pydantic V1) to achieve something similar,
-  as long as you've set `from_attributes=True` in the model config.
-* The `__eq__` method has changed for models; models are no longer considered equal to the dicts.
-* Custom `__init__` overrides won't be called. This should be replaced with a `@root_validator`.
-* Due to inconsistency with the rest of the library, we have removed the special behavior of models
-  using the `__root__` field, and have disallowed the use of an attribute with this name to prevent confusion.
-  However, you can achieve equivalent behavior with a "standard" field name through the use of `@root_validator`,
-  `@model_serializer`, and `__get_pydantic_json_schema__`. You can see an example of this
-  [here](https://github.com/pydantic/pydantic/blob/2b9459f20d094a46fa3093b43c34444240f03646/tests/test_parse.py#L95-L113).
+### Changes to `pydantic.Field`
+* `Field` no longer supports arbitrary keyword arguments to be added to the JSON schema. Instead, any extra
+  data you want to add to the JSON schema should be passed as a dictionary to the `json_schema_extra` keyword argument.
+* [TODO: need to document all other changes...]
+
+### Changes to `pydantic.generics.GenericModel`
+* The `pydantic.generics.GenericModel` class is no longer necessary, and has been removed. Instead, you can now
+  create generic BaseModel subclasses by just adding `Generic` as a parent class on a `BaseModel` subclass directly.
+  * This looks like `class MyGenericModel(BaseModel, Generic[T]): ...`.
+* While it may not raise an error, we strongly advise against using _parametrized_ generics in `isinstance` checks.
+  * For example, you should not do `isinstance(my_model, MyGenericModel[int])`.
+    However, it is fine to do `isinstance(my_model, MyGenericModel)`.
+    * (Note that for standard generics, it would raise an error to do a subclass check with a parameterized generic.)
+  * If you need to perform `isinstance` checks against parametrized generics, you can do this by subclassing the
+    parametrized generic class.
+    * This looks like `class MyIntModel(MyGenericModel[int]): ...` and `isinstance(my_model, MyIntModel)`.
+* [TODO: Link to documentation of generic models]
 
 ### Changes to Pydantic Dataclasses
 
-* The `__post_init__` in Pydantic dataclasses will now be called after validation, rather than before.
-* We no longer support `extra='allow'` for Pydantic dataclasses, where extra attributes passed to the initializer would be
-  stored as extra fields on the dataclass. `extra='ignore'` is still supported for the purposes of allowing extra fields while parsing data; they just aren't stored.
-* `__post_init_post_parse__` has been removed.
-* Nested dataclasses no longer accept tuples as input, only dict.
+* The `__post_init__` in Pydantic dataclasses will now be called _after_ validation, rather than before.
+  * The `__post_init_post_parse__` has been removed.
+* When used as fields, dataclasses no longer accept tuples as validation inputs, only dicts.
+* We no longer support `extra='allow'` for Pydantic dataclasses, where extra fields passed to the initializer would be
+  stored as extra attributes on the dataclass. `extra='ignore'` is still supported for the purpose of ignoring
+  unexpected fields while parsing data, they just won't be stored on the instance.
+
+
 
 ### Changes to Config
 
