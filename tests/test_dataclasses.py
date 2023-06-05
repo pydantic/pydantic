@@ -2337,4 +2337,4 @@ def test_model_config_override_in_decorator() -> None:
         __pydantic_config__ = ConfigDict(str_to_lower=True)
 
     ta = TypeAdapter(Model)
-    assert ta.validate_python({'x': 'ABC'}).x == 'ABC'
+    assert ta.validate_python({'x': 'ABC '}).x == 'ABC'
