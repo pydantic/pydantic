@@ -246,11 +246,6 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
-         <loc>https://docs.pydantic.dev/latest/usage/types/color_types/</loc>
-         <lastmod>2023-06-05</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
          <loc>https://docs.pydantic.dev/latest/usage/types/custom/</loc>
          <lastmod>2023-06-05</lastmod>
          <changefreq>daily</changefreq>
@@ -292,11 +287,6 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/usage/types/number_types/</loc>
-         <lastmod>2023-06-05</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.pydantic.dev/latest/usage/types/payment_cards/</loc>
          <lastmod>2023-06-05</lastmod>
          <changefreq>daily</changefreq>
     </url>
@@ -352,6 +342,16 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/usage/types/uuids/</loc>
+         <lastmod>2023-06-05</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/usage/types/extra_types/color_types/</loc>
+         <lastmod>2023-06-05</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/usage/types/extra_types/payment_cards/</loc>
          <lastmod>2023-06-05</lastmod>
          <changefreq>daily</changefreq>
     </url>

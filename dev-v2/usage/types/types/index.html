@@ -627,20 +627,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../color_types/" class="md-nav__link">
-        Color Types
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
       <a href="../datetime/" class="md-nav__link">
         Datetimes
       </a>
@@ -741,20 +727,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <li class="md-nav__item">
       <a href="../number_types/" class="md-nav__link">
         Number Types
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../payment_cards/" class="md-nav__link">
-        Payment Card Numbers
       </a>
     </li>
   
@@ -910,6 +882,68 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <a href="../custom/" class="md-nav__link">
         Custom Data Types
       </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_25" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_2_25" id="__nav_2_2_25_label" tabindex="0">
+          Extra Types
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_25_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_2_25">
+          <span class="md-nav__icon md-icon"></span>
+          Extra Types
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extra_types/color_types/" class="md-nav__link">
+        Color Types
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../extra_types/payment_cards/" class="md-nav__link">
+        Payment Card Numbers
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
     </li>
   
 
@@ -1685,6 +1719,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <p>Where possible Pydantic uses <a href="../standard_types/">standard library types</a> to define fields, thus smoothing
 the learning curve. For many useful applications, however, no standard library type exists,
 so Pydantic implements many commonly used types.</p>
+<p>There are also more complex types that can be found in the <a href="https://github.com/pydantic/pydantic-extra-types">Pydantic Extra Types</a>.</p>
 <p>If no existing type suits your purpose you can also implement your <a href="../custom/#custom-data-types">own Pydantic-compatible types</a> with custom properties and validation.</p>
 <p>The following sections describe the types supported by Pydantic.</p>
 <ul>
@@ -1692,7 +1727,6 @@ so Pydantic implements many commonly used types.</p>
 <li><a href="../booleans/">Booleans</a> &mdash; <code>bool</code> types.</li>
 <li><a href="../bytesize/">ByteSize</a> &mdash; a type that allows handling byte string representations in your model.</li>
 <li><a href="../callables/">Callables</a> &mdash; <code>Callable</code> types.</li>
-<li><a href="../color_types/">Color Types</a> &mdash; color validation types.</li>
 <li><a href="../datetime/">Datetimes</a> &mdash; <code>datetime</code>, <code>date</code>, <code>time</code>, and <code>timedelta</code> types.</li>
 <li><a href="../dicts_mapping/">Dicts and Mapping Types</a> &mdash; <code>dict</code> types and mapping types.</li>
 <li><a href="../enums/">Enums and Choices</a> &mdash; uses Python's standard <code>enum</code> classes to define choices.</li>
@@ -1700,7 +1734,6 @@ so Pydantic implements many commonly used types.</p>
 <li><a href="../json/">JSON</a> &mdash; a type that allows you to store JSON data in your model.</li>
 <li><a href="../list_types/">Lists and Tuples</a> &mdash; <code>list</code> and <code>tuple</code> types.</li>
 <li><a href="../number_types/">Number Types</a> &mdash; <code>int</code>, <code>float</code>, <code>Decimal</code>, and other number types.</li>
-<li><a href="../payment_cards/">Payment Card Numbers</a> &mdash; a type that allows you to store payment card numbers in your model.</li>
 <li><a href="../secrets/">Secret Types</a> &mdash; types for storing sensitive information that you do not want to be visible in logging or tracebacks.</li>
 <li><a href="../sequence_iterable/">Sequence, Iterable, &amp; Iterator</a> &mdash; iterable types including <code>Sequence</code>, <code>Iterable</code>, and <code>Iterator</code>.</li>
 <li><a href="../set_types/">Sets and frozenset</a> &mdash; <code>set</code> and <code>frozenset</code> types.</li>
@@ -1713,6 +1746,11 @@ so Pydantic implements many commonly used types.</p>
 <li><a href="../encoded/">Base64 and other encodings</a> &mdash; types that allow serializing values into an encoded form, e.g. <code>base64</code>.</li>
 <li><a href="../custom/">Custom Data Types</a> &mdash; create your own custom data types.</li>
 <li><a href="../../conversion_table/">Field Type Conversions</a> &mdash; strict and lax conversion between different field types.</li>
+<li>Extra Types: Types that can be found in the <a href="https://github.com/pydantic/pydantic-extra-types">Pydantic Extra Types</a>.<ul>
+<li><a href="../extra_types/color_types/">Color Types</a> &mdash; color validation types.</li>
+<li><a href="../extra_types/payment_cards/">Payment Card Numbers</a> &mdash; a type that allows you to store payment card numbers in your model.</li>
+</ul>
+</li>
 </ul>
 
 
