@@ -205,13 +205,14 @@ class Model(BaseModel):
 Model(x=1)
 ```
 
-#### `TypeError` in a validator no longer gets converted into `ValidationError`
+#### `TypeError` is no longer converted to `ValidationError` in validators
 
-Previously, raising `TypeError` within a validator function wrapped that error into a `ValidationError` and,
-in the case of use facing errors like in FastAPI, would display those errors to users. This lead to a variety of bugs,
-for example calling a function with the wrong signature would produce a user-facing `ValidationError`.
+Previously, when raising a `TypeError` within a validator function, that error would be wrapped into a `ValidationError`
+and, in some cases (such as with FastAPI), these errors might be displayed to end users. This led to a variety of
+undesirable behavior — for example, calling a function with the wrong signature might produce a user-facing
+`ValidationError`.
 
-However, in pydantic V2, if a `TypeError` is raised in a validator it is no longer converted into a `ValidationError`:
+However, in pydantic V2, when a `TypeError` is raised in a validator it is no longer converted into a `ValidationError`:
 
 ```python
 import pytest
@@ -246,15 +247,13 @@ and linters would give for defining a method with the same name multiple times i
 In nearly all cases, if you were using `allow_reuse=True`, you should be able to simply delete that keyword argument and
 have things keep working as expected.
 
-#### Validating arguments without calling the decorated function
+#### `@validate_arguments` has been renamed to `@validate_call`
 
-Previously, when using `@validate_arguments` to decorate a function for validated calls, a `validate` method was bound
-to the decorated function and could be used to validate arguments without actually calling the decorated function.
+In V2, the `@validate_arguments` decorator has been renamed to `@validate_call`.
 
-Due to limited use and changes in implementation, this functionality has been removed.
-
-Note also that in V2, `@validate_arguments` has been renamed to `@validate_call`.
-
+In V1, the decorated function had various attributes added, such as `raw_function`, and `validate` (which could be used
+to validate arguments without actually calling the decorated function). Due to limited use of these attributes,
+and performance-oriented changes in implementation, we have not preserved this functionality in `@validate_call`.
 
 ### Removed validator types
 

@@ -5,7 +5,6 @@ Migration guide
 
 * Validation
 	* @root_validator must not be bare [we should at least error..]
-	* Change to validation of unions where _instances_ are accepted before being validated
 
 * Validation behavior changes (Maybe a separate top-level section)
 	* [idea: this contains the part of the coercion table that has changed from v1 to v2]
@@ -15,6 +14,7 @@ Migration guide
 
 * Types
 	* Standard types
+        * Change to validation of unions where _instances_ are accepted before being validated
 		* Issue with validating "large" ints (need to re-confirm, but I think it's an issue for JSON still; #5151)
 		* Annotations of subclasses of builtins will be validated into the builtin (re-confirm; #5151)
 		* No longer accept a plain dict or mapping as input to a list/set/frozenset field
@@ -48,3 +48,5 @@ Migration guide
 		* __post_init_post_parse__
 		* ... [list things in `REMOVED_IN_V2`]
 		* ... [list config keys in `V2_REMOVED_KEYS`]
+
+* Various deprecated things are available in `pydantic.v1`
