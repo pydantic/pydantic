@@ -1,3 +1,5 @@
+import typing
+
 import pydantic_core
 from pydantic_core.core_schema import (
     FieldSerializationInfo,
@@ -80,7 +82,6 @@ __all__ = [
     # main
     'BaseModel',
     'create_model',
-    'RootModel',
     # network
     'AnyUrl',
     'AnyHttpUrl',
@@ -101,6 +102,8 @@ __all__ = [
     'MySQLDsn',
     'MariaDBDsn',
     'validate_email',
+    # root_model
+    'RootModel',
     # tools
     'parse_obj_as',
     'schema_of',
@@ -170,5 +173,20 @@ __all__ = [
     'GetJsonSchemaHandler',
 ]
 
+# A mapping of {<member name>: <module name>} defining dynamic imports
+_dynamic_imports = {'RootModel': '.root_model'}
+if typing.TYPE_CHECKING:
+    from .root_model import RootModel
 
-__getattr__ = getattr_migration(__name__)
+_getattr_migration = getattr_migration(__name__)
+
+
+def __getattr__(attr_name: str) -> object:
+    dynamic_attr = _dynamic_imports.get(attr_name)
+    if dynamic_attr is None:
+        return _getattr_migration(attr_name)
+
+    from importlib import import_module
+
+    module = import_module(_dynamic_imports[attr_name], package=__package__)
+    return getattr(module, attr_name)

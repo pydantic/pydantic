@@ -1,4 +1,6 @@
+import importlib
 import importlib.util
+import platform
 import sys
 from pathlib import Path
 from types import ModuleType
@@ -22,9 +24,21 @@ def test_init_export():
             continue
         exported.add(name)
 
+    exported.update(pydantic._dynamic_imports)
+
     assert pydantic_all == exported, "pydantic.__all__ doesn't match actual exports"
 
 
+@pytest.mark.parametrize(('attr_name', 'module_name'), list(pydantic._dynamic_imports.items()))
+def test_public_api_dynamic_imports(attr_name, module_name):
+    imported_object = getattr(importlib.import_module(module_name, package='pydantic'), attr_name)
+    assert isinstance(imported_object, object)
+
+
+@pytest.mark.skipif(
+    platform.python_implementation() == 'PyPy' and platform.python_version_tuple() < ('3', '8'),
+    reason='Produces a weird error on pypy<3.8',
+)
 @pytest.mark.filterwarnings('ignore::DeprecationWarning')
 def test_public_internal():
     """
