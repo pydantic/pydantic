@@ -335,18 +335,18 @@ print(Character.model_json_schema(by_alias=True))
 
 By default, model and dataclass instances are not revalidated during validation.
 
-```py
-from __future__ import annotations
+```py upgrade="skip"
+from typing import List
 
 from pydantic import BaseModel
 
 
 class User(BaseModel, revalidate_instances='never'):  # (1)!
-    hobbies: list[str]
+    hobbies: List[str]
 
 
 class SubUser(User):
-    sins: list[str]
+    sins: List[str]
 
 
 class Transaction(BaseModel):
@@ -376,18 +376,18 @@ print(t)
 If you want to revalidate instances during validation, you can set `revalidate_instances` to `'always'`
 in the model's config.
 
-```py
-from __future__ import annotations
+```py upgrade="skip"
+from typing import List
 
 from pydantic import BaseModel, ValidationError
 
 
 class User(BaseModel, revalidate_instances='always'):  # (1)!
-    hobbies: list[str]
+    hobbies: List[str]
 
 
 class SubUser(User):
-    sins: list[str]
+    sins: List[str]
 
 
 class Transaction(BaseModel):
@@ -424,18 +424,18 @@ print(t)  # (3)!
 It's also possible to set `revalidate_instances` to `'subclass-instances'` to only revalidate instances
 of subclasses of the model.
 
-```py
-from __future__ import annotations
+```py upgrade="skip"
+from typing import List
 
 from pydantic import BaseModel
 
 
 class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
-    hobbies: list[str]
+    hobbies: List[str]
 
 
 class SubUser(User):
-    sins: list[str]
+    sins: List[str]
 
 
 class Transaction(BaseModel):
