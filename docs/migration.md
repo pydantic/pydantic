@@ -53,15 +53,16 @@ performance.
 * We have replaced the use of the `__root__` field to specify a "custom root model" with a new type called `RootModel`
   which is intended to replace the functionality of using a field called `__root__` in V1.
   * [TODO: Add link to documentation of `RootModel`. For now, you can find example usage in `tests/test_root_model.py`.]
-* We have removed support for specifying `json_encoders` in the model config. This functionality was generally used
-  to achieve custom serialization logic, but in V2 we have made significant improvements to customizing serialization.
-  In particular, we have added the `@field_serializer`, `@model_serializer`, and `@computed_field` decorators, which
-  are a better solution in most cases.
-  * If your usage of `json_encoders` is not compatible with the new serialization decorators,
-    please create a GitHub issue letting us know.
+* We have significantly expanded Pydantic's capabilities related to customizing serialization. In particular, we have
+  added the `@field_serializer`, `@model_serializer`, and `@computed_field` decorators, which each address various
+  shortcomings from Pydantic V1.
   * [TODO: Add link to documentation of serialization decorators. For now, you can find example usage in
-    `tests/test_serialize.py` and `tests/test_computed_fields.py`.]
-
+      `tests/test_serialize.py` and `tests/test_computed_fields.py`.]
+  * Due to performance overhead and implementation complexity, we have now removed support for specifying
+    `json_encoders` in the model config. This functionality was originally added for the purpose of achieving custom
+    serialization logic, and we think the new serialization decorators are a better choice in most common scenarios.
+    However, if your usage of `json_encoders` is not compatible with the new serialization decorators,
+    please create a GitHub issue letting us know.
 
 ### Changes to `pydantic.generics.GenericModel`
 * The `pydantic.generics.GenericModel` class is no longer necessary, and has been removed. Instead, you can now
@@ -95,8 +96,8 @@ performance.
 * Pydantic dataclasses no longer have an attribute `__pydantic_model__`, and no longer use an underlying BaseModel
   to perform validation or provide other functionality. To perform validation, generate a JSON schema, or make use of
   any other functionality that may have required `__pydantic_model__` in V1, you should now wrap the dataclass with a
-  `TypeAdapter` and make use of its methods.
-  * [TODO: Add link to TypeAdapter documentation]
+  `TypeAdapter` (discussed more below) and make use of its methods.
+  * [TODO: Add link to TypeAdapter documentation. For now, you can find example usage in `tests/test_type_adapter.py`.]
 * In V1, if you used a vanilla (i.e., non-Pydantic) dataclass as a field, the config of the parent type would be used
   as though it was the config for the dataclass itself as well. In V2, this is no longer the case.
   * [TODO: Need to specify how to override the config used for vanilla dataclass; possibly need to add functionality?]
@@ -255,39 +256,32 @@ In V1, the decorated function had various attributes added, such as `raw_functio
 to validate arguments without actually calling the decorated function). Due to limited use of these attributes,
 and performance-oriented changes in implementation, we have not preserved this functionality in `@validate_call`.
 
-### Removed validator types
+### Changes to Handling of Standard Types
 
-* The `stricturl` type has been removed.
+#### Dict
 
+Iterables of pairs (which include empty iterables) no longer pass validation for fields of type `dict`.
 
-### Changes to Validation of specific types
-
-* Integers outside the valid range of 64 bit integers will cause `ValidationError`s during parsing.
-  To work around this, use an `IsInstance` validator (more details to come).
-* Subclasses of built-ins won't validate into their subclass types; you'll need to use an `IsInstance` validator to validate these types.
-
-
-### TypeAdapter
-
-Pydantic V1 didn't have good support for validation or serializing non-`BaseModel`.
-To work with them you had to create a "root" model or use the utility functions in `pydantic.tools` (`parse_obj_as` and `schema_of`).
-In Pydantic V2 this is _a lot_ easier: the `TypeAdapter` class lets you build an object that behaves almost like a `BaseModel` class which you can use for a lot of the use cases of root models and as a complete replacement for `parse_obj_as` and `schema_of`.
+#### Unions
+While union types will still attempt validation of each choice from left to right, they now preserve the type of the
+input whenever possible, even if the correct type is not the first choice for which the input would pass validation.
+As a demonstration, consider the following example:
 
 ```python
-from typing import List
+from pydantic import BaseModel
 
-from pydantic import TypeAdapter
 
-validator = TypeAdapter(List[int])
-assert validator.validate_python(['1', '2', '3']) == [1, 2, 3]
-print(validator.json_schema())
-#> {'type': 'array', 'items': {'type': 'integer'}}
+class Model(BaseModel):
+    x: int | str
+
+print(Model(x='1'))
+#> x='1'
 ```
 
-Note that this API is provisional and may change before the final release of Pydantic V2.
+In Pydantic V1, the printed result would have been `x=1`, since the value would pass validation as an `int`.
+In V2, we recognize that the value is an instance of one of the cases and short-circuit the standard union validation.
 
-
-### Required, Optional, and Nullable fields
+#### Required, Optional, and Nullable fields
 
 Pydantic V1 had a somewhat loose idea about "required" versus "nullable" fields. In Pydantic V2 these concepts are more clearly defined.
 
@@ -317,7 +311,91 @@ except ValidationError as e:
     """
 ```
 
+### Introduction of TypeAdapter
 
-## Other changes
+Pydantic V1 had weak support for validating or serializing non-`BaseModel` types.
 
-* `GetterDict` has been removed, as it was just an implementation detail for `orm_mode`, which has been removed.
+To work with them, you had to either create a "root" model or use the utility functions in `pydantic.tools`
+(namely, `parse_obj_as` and `schema_of`).
+
+In Pydantic V2 this is _a lot_ easier: the `TypeAdapter` class lets you create an object with methods for validating,
+serializing, and producing JSON schemas for arbitrary types. This serves as a complete replacement for `parse_obj_as`
+and `schema_of` (which are now deprecated), and also covers some of the use cases of "root" models
+(`RootModel`, discussed above, covers the others).
+
+```python
+from typing import List
+
+from pydantic import TypeAdapter
+
+adapter = TypeAdapter(List[int])
+assert adapter.validate_python(['1', '2', '3']) == [1, 2, 3]
+print(adapter.json_schema())
+#> {'type': 'array', 'items': {'type': 'integer'}}
+```
+
+Due to limitations of inferring generic types with common type checkers, to get proper typing in some scenarios, you
+may need to explicitly specify the generic parameter:
+```python
+from pydantic import TypeAdapter
+
+adapter: TypeAdapter[str | int] = TypeAdapter(str | int)
+...
+```
+
+[TODO: Add link to TypeAdapter documentation. For now, you can find example usage in `tests/test_type_adapter.py`.]
+
+### Defining Custom Types
+
+We have completely overhauled the way custom types are defined in pydantic.
+
+We have exposed hooks for generating both `pydantic-core` and JSON schemas, allowing you to get all the performance
+benefits of Pydantic V2 even when using your own custom types.
+
+We have also introduced ways to use `typing.Annotated` to add custom validation to your own types.
+
+The main changes are:
+* `__get_validators__` should be replaced with `__get_pydantic_core_schema__`
+  * [TODO: Add link to documentation of `__get_pydantic_core_schema__`]
+* `__modify_schema__` becomes `__get_pydantic_json_schema__`
+  * [TODO: Add link to documentation of `__get_pydantic_json_schema__`]
+
+Additionally, you can use `typing.Annotated` to modify or provide the `__get_pydantic_core_schema__` and
+`__get_pydantic_json_schema__` functions of a type by annotating it, rather than modifying the type itself.
+This provides a powerful and flexible mechanism for integrating third party types with Pydantic, and in some cases
+may help you remove hacks from v1 introduced to work around the limitations for custom types.
+
+[TODO: Add link to full documentation for custom types, including `__prepare_pydantic_annotations__` etc.]
+
+### Changes to JSON schema generation
+
+We received many requests over the years to make changes to the JSON schemas that pydantic generates.
+
+In V2, we have tried to address many of the common requests:
+
+* The JSON schema for `Optional` fields now indicates that the value `null` is allowed
+* The `Decimal` type is now exposed in JSON schema (and serialized) as a string
+* The JSON schema we generate by default now targets draft 2020-12 (with some OpenAPI extensions).
+* When they differ, you can now specify if you want the JSON schema representing the inputs to validation,
+  or the outputs from serialization.
+
+However, there have been many reasonable requests over the years for changes which we have not chosen to implement.
+
+In V1, even if you were willing to implement changes yourself, it was very difficult because the JSON schema
+generation process involved various recursive function calls; to override one, you'd have to copy and modify the whole
+implementation.
+
+In V2, one of our design goals was to make it easier to customize JSON schema generation. To this end, we have
+introduced the class `GenerateJsonSchema` which implements the translation of a type's pydantic-core schema into
+a JSON schema. By design, this class breaks the JSON schema generation process into smaller methods that can be
+easily overridden in subclasses to modify the "global" approach to generating JSON schema.
+
+The various methods that can be used to produce JSON schema (such as `BaseModel.model_json_schema` or
+`TypeAdapter.json_schema`) accept a keyword argument `schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema`,
+and you can pass your custom subclass to these methods in order to use your own approach to generating JSON schema.
+
+Hopefully this means that if you disagree with any of the choices we've made, or if you are reliant on behaviors in V1
+that have changed in V2, you can use a custom `schema_generator`, modifying the `GenerateJsonSchema` class as necessary
+for your application.
+
+[TODO: Add link to documentation of `GenerateJsonSchema`]
