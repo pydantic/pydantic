@@ -76,10 +76,10 @@ except ValidationError as e:
    See:
 
     ```py
-    from datetime import datetime
     from dataclasses import dataclass
+    from datetime import datetime
 
-    from pydantic import ConfigDict, ValidationError
+    from pydantic import ConfigDict
 
 
     @dataclass
@@ -247,7 +247,7 @@ If data source field names do not match your code style (e. g. CamelCase fields)
 you can automatically generate aliases using `alias_generator`:
 
 ```py
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 
 def to_camel(string: str) -> str:
@@ -407,7 +407,7 @@ except ValidationError as e:
     """
     1 validation error for Transaction
     user.hobbies.0
-    Input should be a valid string [type=string_type, input_value=1, input_type=int]
+      Input should be a valid string [type=string_type, input_value=1, input_type=int]
     """
 
 my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
