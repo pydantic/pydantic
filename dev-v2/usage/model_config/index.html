@@ -1538,10 +1538,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#smart-union" class="md-nav__link">
+  <a href="#revalidate-instances" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Smart Union
+        Revalidate instances
       
     </span>
   </a>
@@ -2874,10 +2874,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#smart-union" class="md-nav__link">
+  <a href="#revalidate-instances" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Smart Union
+        Revalidate instances
       
     </span>
   </a>
@@ -2928,12 +2928,17 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Model Config</h1>
 
-<p>Behaviour of <em>pydantic</em> can be controlled via the <code>Config</code> class on a model or a <em>pydantic</em> dataclass.</p>
+<p>Behaviour of <em>pydantic</em> can be controlled via the <code>model_config</code> attribute on a <code>BaseModel</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Before <strong>v2.0</strong>, the <code>Config</code> class was used. This is still supported, but deprecated.</p>
+</div>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+
     <span class="n">v</span><span class="p">:</span> <span class="nb">str</span>
 
 
@@ -2965,14 +2970,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;oh no&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></p>
-<p>Similarly, if using the <code>@dataclass</code> decorator:
+<p>Similarly, if using the <code>@dataclass</code> decorator from <em>pydantic</em>:
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ValidationError</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
 <span class="kn">from</span> <span class="nn">pydantic.dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
 
 
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">str_max_length</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># (1)!</span>
 <span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
     <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
@@ -2990,6 +2995,26 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">      String should have at most 10 characters [type=string_too_long, input_value=&#39;xxxxxxxxxxxxxxxxxxxx&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></p>
+<ol>
+<li>
+<p>If using the <code>dataclass</code> from the standard library, you should use <code>__pydantic_config__</code> instead.
+   See:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
+
+
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">:</span>
+    <span class="n">__pydantic_config__</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="nb">id</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;John Doe&#39;</span>
+    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div>
+</li>
+</ol>
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
 <dl>
 <dt><strong><code>title</code></strong></dt>
@@ -3013,13 +3038,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   and <code>'allow'</code> will assign the attributes to the model.</dd>
 <dt><strong><code>allow_mutation</code></strong></dt>
 <dd>whether or not models are faux-immutable, i.e. whether <code>__setattr__</code> is allowed (default: <code>True</code>)</dd>
-</dl>
-<p><strong><code>frozen</code></strong></p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>This parameter is in beta</p>
-</div>
-<dl>
+<dt><strong><code>frozen</code></strong></dt>
 <dd>setting <code>frozen=True</code> does everything that <code>allow_mutation=False</code> does, and also generates a <code>__hash__()</code> method for the model. This makes instances of the model potentially hashable if all the attributes are hashable. (default: <code>False</code>)</dd>
 <dt><strong><code>use_enum_values</code></strong></dt>
 <dd>whether to populate models with the <code>value</code> property of enums, rather than the raw enum.
@@ -3040,7 +3059,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </dl>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>The name of this configuration setting was changed in <strong>v1.0</strong> from
+<p>The name of this configuration setting was changed in <strong>v2.0</strong> from
 <code>allow_population_by_alias</code> to <code>populate_by_name</code>.</p>
 </div>
 <dl>
@@ -3053,7 +3072,46 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   raised on model declaration (default: <code>False</code>). See an example in
   <a href="../types/types/#arbitrary-types-allowed">Field Types</a>.</dd>
 <dt><strong><code>from_attributes</code></strong></dt>
-<dd>whether to allow usage of <a href="../models/#orm-mode-aka-arbitrary-class-instances">ORM mode</a></dd>
+<dd>whether to allow usage of <a href="../models/#orm-mode-aka-arbitrary-class-instances">ORM mode</a> (default: <code>False</code>)</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The name of this configuration setting was changed in <strong>v2.0</strong> from
+<code>orm_mode</code> to <code>from_attributes</code>.</p>
+</div>
+<dl>
+<dt><strong><code>loc_by_alias</code></strong></dt>
+<dd>whether to use the alias for error <code>loc</code>s (default: <code>True</code>)</dd>
+<dt><strong><code>revalidate_instances</code></strong></dt>
+<dd>when and how to revalidate models and dataclasses during validation. Accepts the string values of
+  <code>'never'</code>, <code>'always'</code> and <code>'subclass-instances'</code> (default: <code>'never'</code>).</dd>
+</dl>
+<ul>
+<li><code>'never'</code> will not revalidate models and dataclasses during validation.</li>
+<li><code>'always'</code> will revalidate models and dataclasses during validation.</li>
+<li><code>'subclass-instances'</code> will revalidate models and dataclasses during validation if the instance is a subclass of the model or dataclass.</li>
+</ul>
+<dl>
+<dt><strong><code>ser_json_timedelta</code></strong></dt>
+<dd>the format of JSON serialized timedeltas. Accepts the string values of
+  <code>'iso8601'</code> and <code>'float'</code> (default: <code>'iso8601'</code>).</dd>
+</dl>
+<ul>
+<li><code>'iso8601'</code> will serialize timedeltas to ISO 8601 durations.</li>
+<li><code>'float'</code> will serialize timedeltas to the total number of seconds.</li>
+</ul>
+<dl>
+<dt><strong><code>ser_json_bytes</code></strong></dt>
+<dd>the encoding of JSON serialized bytes. Accepts the string values of
+  <code>'utf8'</code> and <code>'base64'</code> (default: <code>'utf8'</code>).</dd>
+</dl>
+<ul>
+<li><code>'utf8'</code> will serialize bytes to UTF-8 strings.</li>
+<li><code>'base64'</code> will serialize bytes to base64 strings.</li>
+</ul>
+<dl>
+<dt><strong><code>validate_default</code></strong></dt>
+<dd>whether to validate default values during validation (default: <code>False</code>).</dd>
 <dt><strong><code>getter_dict</code></strong></dt>
 <dd>a custom class (which should inherit from <code>GetterDict</code>) to use when decomposing arbitrary classes
 for validation, for use with <code>from_attributes</code>; see <a href="../models/#data-binding">Data binding</a>.</dd>
@@ -3076,12 +3134,13 @@ see <a href="#hide-input-in-errors">the dedicated section</a></dd>
 </dl>
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
 <p>If you wish to change the behaviour of <em>pydantic</em> globally, you can create your own custom <code>BaseModel</code>
-with custom <code>Config</code> since the config is inherited
+with custom <code>model_config</code> since the config is inherited
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">PydanticBaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">class</span> <span class="nc">BaseModel</span><span class="p">(</span><span class="n">PydanticBaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">MyClass</span><span class="p">:</span>
@@ -3094,7 +3153,7 @@ with custom <code>Config</code> since the config is inherited
 <h2 id="alias-generator">Alias Generator<a class="headerlink" href="#alias-generator" title="Permanent link">&para;</a></h2>
 <p>If data source field names do not match your code style (e. g. CamelCase fields),
 you can automatically generate aliases using <code>alias_generator</code>:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 
 <span class="k">def</span> <span class="nf">to_camel</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
@@ -3102,7 +3161,8 @@ you can automatically generate aliases using <code>alias_generator</code>:</p>
 
 
 <span class="k">class</span> <span class="nc">Voice</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">alias_generator</span><span class="o">=</span><span class="n">to_camel</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">alias_generator</span><span class="o">=</span><span class="n">to_camel</span><span class="p">)</span>
+
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">language_code</span><span class="p">:</span> <span class="nb">str</span>
 
@@ -3117,6 +3177,7 @@ you can automatically generate aliases using <code>alias_generator</code>:</p>
 e.g. <code>CamelCase</code>. If you'd like instead to use lower camel case e.g. <code>camelCase</code>,
 instead use the <code>to_lower_camel</code> function.</p>
 <h2 id="alias-precedence">Alias Precedence<a class="headerlink" href="#alias-precedence" title="Permanent link">&para;</a></h2>
+<p>TODO: This section needs to be re-written.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>Alias priority logic changed in <strong>v1.4</strong> to resolve buggy and unexpected behaviour in previous versions.
@@ -3171,176 +3232,133 @@ on a field in a parent model.</p>
 <span class="sd">}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<h2 id="smart-union">Smart Union<a class="headerlink" href="#smart-union" title="Permanent link">&para;</a></h2>
-<p><strong>TODO: Smart Union behaviour has roughly become the default, this needs to be moved to the stuff on unions</strong></p>
-<p>By default, as explained <a href="../types/types/#unions">here</a>, <em>pydantic</em> tries to validate (and coerce if it can) in the order of the <code>Union</code>.
-So sometimes you may have unexpected coerced data.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:2"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+<h2 id="revalidate-instances">Revalidate instances<a class="headerlink" href="#revalidate-instances" title="Permanent link">&para;</a></h2>
+<p>By default, model and dataclass instances are not revalidated during validation.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;never&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
+    <span class="n">hobbies</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">SubUser</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">sins</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Foo</span><span class="p">,</span> <span class="n">Bar</span><span class="p">]</span>
+<span class="k">class</span> <span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">Bar</span><span class="p">()))</span>
-<span class="c1">#&gt; x=1 y=Bar()</span>
+<span class="n">my_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;reading&#39;</span><span class="p">])</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="c1">#&gt; user=User(hobbies=[&#39;reading&#39;])</span>
+
+<span class="n">my_user</span><span class="o">.</span><span class="n">hobbies</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># (2)!</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>  <span class="c1"># (3)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="c1">#&gt; user=User(hobbies=[1])</span>
+
+<span class="n">my_sub_user</span> <span class="o">=</span> <span class="n">SubUser</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;scuba diving&#39;</span><span class="p">],</span> <span class="n">sins</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;lying&#39;</span><span class="p">])</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_sub_user</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="c1">#&gt; user=SubUser(hobbies=[&#39;scuba diving&#39;], sins=[&#39;lying&#39;])</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<ol>
+<li><code>revalidate_instances</code> is set to <code>'never'</code> by **default.</li>
+<li>The assignment is not validated, unless you set <code>validate_assignment</code> to <code>True</code> in the model's config.</li>
+<li>Since <code>revalidate_instances</code> is set to <code>never</code>, this is not revalidated.</li>
+</ol>
+<p>If you want to revalidate instances during validation, you can set <code>revalidate_instances</code> to <code>'always'</code>
+in the model's config.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
+    <span class="n">hobbies</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">SubUser</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">sins</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">Foo</span> <span class="o">|</span> <span class="n">Bar</span>
+<span class="k">class</span> <span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">Bar</span><span class="p">()))</span>
-<span class="c1">#&gt; x=1 y=Bar()</span>
+<span class="n">my_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;reading&#39;</span><span class="p">])</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="c1">#&gt; user=User(hobbies=[&#39;reading&#39;])</span>
+
+<span class="n">my_user</span><span class="o">.</span><span class="n">hobbies</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Transaction</span>
+<span class="sd">    user.hobbies.0</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value=1, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<span class="n">my_sub_user</span> <span class="o">=</span> <span class="n">SubUser</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;scuba diving&#39;</span><span class="p">],</span> <span class="n">sins</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;lying&#39;</span><span class="p">])</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_sub_user</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>  <span class="c1"># (3)!</span>
+<span class="c1">#&gt; user=User(hobbies=[&#39;scuba diving&#39;])</span>
 </code></pre></div>
-</div>
-</div>
-</div>
-<p>To prevent this, you can enable <code>Config.smart_union</code>. <em>Pydantic</em> will then check all allowed types before even trying to coerce.
-Know that this is of course slower, especially if your <code>Union</code> is quite big.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
+<ol>
+<li><code>revalidate_instances</code> is set to <code>'always'</code>.</li>
+<li>The model is revalidated, since <code>revalidate_instances</code> is set to <code>'always'</code>.</li>
+<li>Using <code>'never'</code> we would have gotten <code>user=SubUser(hobbies=['scuba diving'], sins=['lying'])</code>.</li>
+</ol>
+<p>It's also possible to set <code>revalidate_instances</code> to <code>'subclass-instances'</code> to only revalidate instances
+of subclasses of the model.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">revalidate_instances</span><span class="o">=</span><span class="s1">&#39;subclass-instances&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
+    <span class="n">hobbies</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="k">pass</span>
+<span class="k">class</span> <span class="nc">SubUser</span><span class="p">(</span><span class="n">User</span><span class="p">):</span>
+    <span class="n">sins</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">Foo</span><span class="p">,</span> <span class="n">Bar</span><span class="p">]</span>
+<span class="k">class</span> <span class="nc">Transaction</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">user</span><span class="p">:</span> <span class="n">User</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">Bar</span><span class="p">()))</span>
-<span class="c1">#&gt; x=1 y=Bar()</span>
+<span class="n">my_user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;reading&#39;</span><span class="p">])</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="c1">#&gt; user=User(hobbies=[&#39;reading&#39;])</span>
+
+<span class="n">my_user</span><span class="o">.</span><span class="n">hobbies</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_user</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="c1">#&gt; user=User(hobbies=[1])</span>
+
+<span class="n">my_sub_user</span> <span class="o">=</span> <span class="n">SubUser</span><span class="p">(</span><span class="n">hobbies</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;scuba diving&#39;</span><span class="p">],</span> <span class="n">sins</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;lying&#39;</span><span class="p">])</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">Transaction</span><span class="p">(</span><span class="n">user</span><span class="o">=</span><span class="n">my_sub_user</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>  <span class="c1"># (3)!</span>
+<span class="c1">#&gt; user=User(hobbies=[&#39;scuba diving&#39;])</span>
 </code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Foo</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-
-<span class="k">class</span> <span class="nc">Bar</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="k">pass</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span>
-    <span class="n">y</span><span class="p">:</span> <span class="n">Foo</span> <span class="o">|</span> <span class="n">Bar</span>
-
-
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="n">Bar</span><span class="p">()))</span>
-<span class="c1">#&gt; x=1 y=Bar()</span>
-</code></pre></div>
-</div>
-</div>
-</div>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Note that this option <strong>does not support compound types yet</strong> (e.g. differentiate <code>List[int]</code> and <code>List[str]</code>).
-This option will be improved further once a strict mode is added in <em>pydantic</em> and will probably be the default behaviour in v2!</p>
-</div>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:3"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><input id="__tabbed_3_3" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label><label for="__tabbed_3_3">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
-
-
-<span class="c1"># Expected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[1, 2]</span>
-
-<span class="c1"># Unexpected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[1, 2]</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Union</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span>
-
-
-<span class="c1"># Expected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[1, 2]</span>
-
-<span class="c1"># Unexpected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[1, 2]</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">x</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-
-
-<span class="c1"># Expected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[1, 2]</span>
-
-<span class="c1"># Unexpected coercion</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]))</span>
-<span class="c1">#&gt; x=[1, 2]</span>
-</code></pre></div>
-</div>
-</div>
-</div>
+<ol>
+<li><code>revalidate_instances</code> is set to <code>'subclass-instances'</code>.</li>
+<li>This is not revalidated, since <code>my_user</code> is not a subclass of <code>User</code>.</li>
+<li>Using <code>'never'</code> we would have gotten <code>user=SubUser(hobbies=['scuba diving'], sins=['lying'])</code>.</li>
+</ol>
 <h2 id="protected-namespaces">Protected Namespaces<a class="headerlink" href="#protected-namespaces" title="Permanent link">&para;</a></h2>
 <p><em>Pydantic</em> prevents collisions between model attributes and <code>BaseModel</code>'s own methods by
 namespacing them with the prefix <code>model_</code>.
-This is customizable using the <code>protected_namespaces</code> option in the model's config so that
+This is customizable using the <code>protected_namespaces</code> setting in the model's config so that
 you can allow overriding <code>model_</code> or add your own protected namespaces.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3369,7 +3387,7 @@ you can allow overriding <code>model_</code> or add your own protected namespace
     <span class="c1">#&gt; Field &quot;also_protect_field&quot; has conflict with protected namespace &quot;also_protect_&quot;</span>
 </code></pre></div>
 <h2 id="hide-input-in-errors">Hide Input in Errors<a class="headerlink" href="#hide-input-in-errors" title="Permanent link">&para;</a></h2>
-<p><em>Pydantic</em> shows input value and input type when it raises <code>ValidationError</code> during the validation.</p>
+<p><em>Pydantic</em> shows the input value and type when it raises <code>ValidationError</code> during the validation.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
@@ -3450,7 +3468,7 @@ you can allow overriding <code>model_</code> or add your own protected namespace
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.6c7302c4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../..", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "../../assets/javascripts/workers/search.6c7302c4.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
       <script src="../../assets/javascripts/bundle.a3190745.min.js"></script>
