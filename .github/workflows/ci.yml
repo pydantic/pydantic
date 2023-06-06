@@ -27,6 +27,7 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           cache: true
+          version: 2.7.0
 
       - name: install
         run: pdm install -G linting -G email
@@ -48,6 +49,7 @@ jobs:
         # cloudflare pages build containers run 3.8, hence using it here
         python-version: '3.8'
         cache: true
+        version: 2.7.0
 
     - name: install
       run: |
@@ -69,6 +71,7 @@ jobs:
         with:
           python-version: '3.10'
           cache: true
+          version: 2.7.0
 
       - name: install deps
         run: |
@@ -110,6 +113,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
+        version: 2.7.0
 
     - name: install deps
       run: pdm install -G testing
@@ -170,6 +174,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
+        version: 2.7.0
 
     - name: install deps
       run: |
@@ -280,6 +285,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: true
+        version: 2.7.0
 
     - name: install deps
       run: |
@@ -351,6 +357,7 @@ jobs:
         with:
           python-version: '3.10'
           cache: true
+          version: 2.7.0
 
       - name: install
         run: |
