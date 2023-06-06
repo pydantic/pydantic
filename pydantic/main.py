@@ -998,9 +998,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Returns:
             A copy of the model with included, excluded and updated fields as specified.
-
-        Raises:
-            DeprecationWarning: The `copy` method is deprecated; use `model_copy` instead.
         """
         warnings.warn(
             'The `copy` method is deprecated; use `model_copy` instead. '
