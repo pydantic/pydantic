@@ -176,7 +176,7 @@ __all__ = [
 # A mapping of {<member name>: <module name>} defining dynamic imports
 _dynamic_imports = {'RootModel': '.root_model'}
 if typing.TYPE_CHECKING:
-    from .root_model import *
+    from .root_model import RootModel
 
 _getattr_migration = getattr_migration(__name__)
 
