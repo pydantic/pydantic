@@ -408,7 +408,6 @@ except ValidationError as e:
     1 validation error for Transaction
     user.hobbies.0
     Input should be a valid string [type=string_type, input_value=1, input_type=int]
-        For further information visit https://errors.pydantic.dev/0.38.0/v/string_type
     """
 
 my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
