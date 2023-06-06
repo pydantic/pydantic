@@ -800,6 +800,36 @@ except ValidationError as e:
 
 For many use cases `TypeAdapter` can replace BaseModels with a `__root__` field in Pydantic V1.
 
+### Parsing data into a specified type
+
+`TypeAdapter` can be used to apply the parsing logic used to populate pydantic models in a more ad-hoc way.
+This function behaves similarly to `BaseModel.model_validate`, but works with arbitrary pydantic-compatible types.
+
+This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
+For example:
+
+```py
+from typing import List
+
+from pydantic import BaseModel, TypeAdapter
+
+
+class Item(BaseModel):
+    id: int
+    name: str
+
+
+# `item_data` could come from an API call, eg., via something like:
+# item_data = requests.get('https://my-api.com/items').json()
+item_data = [{'id': 1, 'name': 'My Item'}]
+
+items = TypeAdapter(List[Item]).validate_python(item_data)
+print(items)
+#> [Item(id=1, name='My Item')]
+```
+
+`TypeAdapter` is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
+
 ## Custom root types
 
 Pydantic models can be defined with a custom root type by declaring the `RootModel`.
@@ -862,6 +892,9 @@ print([pet for pet in pets])
 
 Models can be configured to be immutable via `frozen = True`. When this is set, attempting to change the
 values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
+
+!!! note
+    Same behavior in Pydantic V1 can be achieved via `allow_mutation = False`. This config is deprecated in Pydantic V2.
 
 !!! warning
     Immutability in Python is never strict. If developers are determined/stupid they can always
@@ -1076,37 +1109,6 @@ print(m._secret_value)
 
 Private attribute names must start with underscore to prevent conflicts with model fields: both `_attr` and `__attr__`
 are supported.
-
-## Parsing data into a specified type
-
-Pydantic includes a standalone utility function `TypeAdapter` that can be used to apply the parsing
-logic used to populate pydantic models in a more ad-hoc way. This function behaves similarly to
-`BaseModel.model_validate`, but works with arbitrary pydantic-compatible types.
-
-This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
-For example:
-
-```py
-from typing import List
-
-from pydantic import BaseModel, TypeAdapter
-
-
-class Item(BaseModel):
-    id: int
-    name: str
-
-
-# `item_data` could come from an API call, eg., via something like:
-# item_data = requests.get('https://my-api.com/items').json()
-item_data = [{'id': 1, 'name': 'My Item'}]
-
-items = TypeAdapter(List[Item]).validate_python(item_data)
-print(items)
-#> [Item(id=1, name='My Item')]
-```
-
-`TypeAdapter` is capable of parsing data into any of the types pydantic can handle as fields of a `BaseModel`.
 
 ## Data conversion
 
