@@ -1,4 +1,7 @@
-Behaviour of _pydantic_ can be controlled via the `Config` class on a model or a _pydantic_ dataclass.
+Behaviour of _pydantic_ can be controlled via the `model_config` attribute on a `BaseModel`.
+
+!!! note
+    Before **v2.0**, the `Config` class was used. This is still supported, but deprecated.
 
 ```py
 from pydantic import BaseModel, ConfigDict, ValidationError
@@ -6,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 class Model(BaseModel):
     model_config = ConfigDict(str_max_length=10)
+
     v: str
 
 
@@ -40,15 +44,15 @@ except ValidationError as e:
     """
 ```
 
-Similarly, if using the `@dataclass` decorator:
+Similarly, if using the `@dataclass` decorator from _pydantic_:
 ```py
 from datetime import datetime
 
-from pydantic import ValidationError
+from pydantic import ConfigDict, ValidationError
 from pydantic.dataclasses import dataclass
 
 
-@dataclass(config=dict(str_max_length=10, validate_assignment=True))
+@dataclass(config=ConfigDict(str_max_length=10, validate_assignment=True)) # (1)!
 class User:
     id: int
     name: str = 'John Doe'
@@ -66,6 +70,26 @@ except ValidationError as e:
       String should have at most 10 characters [type=string_too_long, input_value='xxxxxxxxxxxxxxxxxxxx', input_type=str]
     """
 ```
+
+
+1. If using the `dataclass` from the standard library, you should use `__pydantic_config__` instead.
+   See:
+
+    ```py
+    from datetime import datetime
+    from dataclasses import dataclass
+
+    from pydantic import ConfigDict, ValidationError
+
+
+    @dataclass
+    class User:
+        __pydantic_config__ = ConfigDict(strict=True)
+
+        id: int
+        name: str = 'John Doe'
+        signup_ts: datetime = None
+    ```
 
 ## Options
 
@@ -100,12 +124,7 @@ except ValidationError as e:
 : whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed (default: `True`)
 
 **`frozen`**
-
-!!! warning
-    This parameter is in beta
-
 : setting `frozen=True` does everything that `allow_mutation=False` does, and also generates a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the attributes are hashable. (default: `False`)
-
 
 **`use_enum_values`**
 : whether to populate models with the `value` property of enums, rather than the raw enum.
@@ -128,7 +147,7 @@ except ValidationError as e:
   attribute, as well as the alias (default: `False`)
 
 !!! note
-    The name of this configuration setting was changed in **v1.0** from
+    The name of this configuration setting was changed in **v2.0** from
     `allow_population_by_alias` to `populate_by_name`.
 
 **`error_msg_templates`**
@@ -142,7 +161,39 @@ except ValidationError as e:
   [Field Types](types/types.md#arbitrary-types-allowed).
 
 **`from_attributes`**
-: whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances)
+: whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances) (default: `False`)
+
+!!! note
+    The name of this configuration setting was changed in **v2.0** from
+    `orm_mode` to `from_attributes`.
+
+**`loc_by_alias`**
+: whether to use the alias for error `loc`s (default: `True`)
+
+**`revalidate_instances`**
+: when and how to revalidate models and dataclasses during validation. Accepts the string values of
+  `'never'`, `'always'` and `'subclass-instances'` (default: `'never'`).
+
+  * `'never'` will not revalidate models and dataclasses during validation.
+  * `'always'` will revalidate models and dataclasses during validation.
+  * `'subclass-instances'` will revalidate models and dataclasses during validation if the instance is a subclass of the model or dataclass.
+
+**`ser_json_timedelta`**
+: the format of JSON serialized timedeltas. Accepts the string values of
+  `'iso8601'` and `'float'` (default: `'iso8601'`).
+
+  * `'iso8601'` will serialize timedeltas to ISO 8601 durations.
+  * `'float'` will serialize timedeltas to the total number of seconds.
+
+**`ser_json_bytes`**
+: the encoding of JSON serialized bytes. Accepts the string values of
+  `'utf8'` and `'base64'` (default: `'utf8'`).
+
+  * `'utf8'` will serialize bytes to UTF-8 strings.
+  * `'base64'` will serialize bytes to base64 strings.
+
+**`validate_default`**
+: whether to validate default values during validation (default: `False`).
 
 **`getter_dict`**
 : a custom class (which should inherit from `GetterDict`) to use when decomposing arbitrary classes
@@ -172,13 +223,14 @@ see [the dedicated section](#hide-input-in-errors)
 ## Change behaviour globally
 
 If you wish to change the behaviour of _pydantic_ globally, you can create your own custom `BaseModel`
-with custom `Config` since the config is inherited
+with custom `model_config` since the config is inherited
 ```py
 from pydantic import BaseModel as PydanticBaseModel
+from pydantic import ConfigDict
 
 
 class BaseModel(PydanticBaseModel):
-    model_config = dict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 class MyClass:
@@ -203,7 +255,8 @@ def to_camel(string: str) -> str:
 
 
 class Voice(BaseModel):
-    model_config = dict(alias_generator=to_camel)
+    model_config = ConfigDict(alias_generator=to_camel)
+
     name: str
     language_code: str
 
@@ -220,6 +273,8 @@ e.g. `CamelCase`. If you'd like instead to use lower camel case e.g. `camelCase`
 instead use the `to_lower_camel` function.
 
 ## Alias Precedence
+
+TODO: This section needs to be re-written.
 
 !!! warning
     Alias priority logic changed in **v1.4** to resolve buggy and unexpected behaviour in previous versions.
@@ -276,91 +331,133 @@ print(Character.model_json_schema(by_alias=True))
 """
 ```
 
-## Smart Union
+## Revalidate instances
 
-**TODO: Smart Union behaviour has roughly become the default, this needs to be moved to the stuff on unions**
-
-By default, as explained [here](types/types.md#unions), _pydantic_ tries to validate (and coerce if it can) in the order of the `Union`.
-So sometimes you may have unexpected coerced data.
+By default, model and dataclass instances are not revalidated during validation.
 
 ```py
-from typing import Union
+from __future__ import annotations
 
 from pydantic import BaseModel
 
 
-class Foo(BaseModel):
-    pass
+class User(BaseModel, revalidate_instances='never'): # (1)!
+    hobbies: list[str]
 
+class SubUser(User):
+    sins: list[str]
 
-class Bar(BaseModel):
-    pass
+class Transaction(BaseModel):
+    user: User
 
+my_user = User(hobbies=['reading'])
+t = Transaction(user=my_user)
+print(t)
+#> user=User(hobbies=['reading'])
 
-class Model(BaseModel):
-    x: Union[str, int]
-    y: Union[Foo, Bar]
+my_user.hobbies = [1] # (2)!
+t = Transaction(user=my_user)  # (3)!
+print(t)
+#> user=User(hobbies=[1])
 
-
-print(Model(x=1, y=Bar()))
-#> x=1 y=Bar()
+my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+t = Transaction(user=my_sub_user)
+print(t)
+#> user=SubUser(hobbies=['scuba diving'], sins=['lying'])
 ```
 
-To prevent this, you can enable `Config.smart_union`. _Pydantic_ will then check all allowed types before even trying to coerce.
-Know that this is of course slower, especially if your `Union` is quite big.
+1. `revalidate_instances` is set to `'never'` by **default.
+2. The assignment is not validated, unless you set `validate_assignment` to `True` in the model's config.
+3. Since `revalidate_instances` is set to `never`, this is not revalidated.
+
+If you want to revalidate instances during validation, you can set `revalidate_instances` to `'always'`
+in the model's config.
 
 ```py
-from typing import Union
+from __future__ import annotations
+
+from pydantic import BaseModel, ValidationError
+
+
+class User(BaseModel, revalidate_instances='always'): # (1)!
+    hobbies: list[str]
+
+class SubUser(User):
+    sins: list[str]
+
+class Transaction(BaseModel):
+    user: User
+
+my_user = User(hobbies=['reading'])
+t = Transaction(user=my_user)
+print(t)
+#> user=User(hobbies=['reading'])
+
+my_user.hobbies = [1]
+try:
+    t = Transaction(user=my_user)  # (2)!
+except ValidationError as e:
+    print(e)
+    """
+    1 validation error for Transaction
+    user.hobbies.0
+    Input should be a valid string [type=string_type, input_value=1, input_type=int]
+        For further information visit https://errors.pydantic.dev/0.38.0/v/string_type
+    """
+
+my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+t = Transaction(user=my_sub_user)
+print(t)  # (3)!
+#> user=User(hobbies=['scuba diving'])
+```
+
+1. `revalidate_instances` is set to `'always'`.
+2. The model is revalidated, since `revalidate_instances` is set to `'always'`.
+3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
+
+It's also possible to set `revalidate_instances` to `'subclass-instances'` to only revalidate instances
+of subclasses of the model.
+
+```py
+from __future__ import annotations
 
 from pydantic import BaseModel
 
 
-class Foo(BaseModel):
-    pass
+class User(BaseModel, revalidate_instances='subclass-instances'): # (1)!
+    hobbies: list[str]
 
+class SubUser(User):
+    sins: list[str]
 
-class Bar(BaseModel):
-    pass
+class Transaction(BaseModel):
+    user: User
 
+my_user = User(hobbies=['reading'])
+t = Transaction(user=my_user)
+print(t)
+#> user=User(hobbies=['reading'])
 
-class Model(BaseModel):
-    x: Union[str, int]
-    y: Union[Foo, Bar]
+my_user.hobbies = [1]
+t = Transaction(user=my_user)  # (2)!
+print(t)
+#> user=User(hobbies=[1])
 
-
-print(Model(x=1, y=Bar()))
-#> x=1 y=Bar()
+my_sub_user = SubUser(hobbies=['scuba diving'], sins=['lying'])
+t = Transaction(user=my_sub_user)
+print(t)  # (3)!
+#> user=User(hobbies=['scuba diving'])
 ```
 
-!!! warning
-    Note that this option **does not support compound types yet** (e.g. differentiate `List[int]` and `List[str]`).
-    This option will be improved further once a strict mode is added in _pydantic_ and will probably be the default behaviour in v2!
-
-```py
-from typing import List, Union
-
-from pydantic import BaseModel
-
-
-class Model(BaseModel):
-    x: Union[List[str], List[int]]
-
-
-# Expected coercion
-print(Model(x=[1, '2']))
-#> x=[1, 2]
-
-# Unexpected coercion
-print(Model(x=[1, 2]))
-#> x=[1, 2]
-```
-
+1. `revalidate_instances` is set to `'subclass-instances'`.
+2. This is not revalidated, since `my_user` is not a subclass of `User`.
+3. Using `'never'` we would have gotten `user=SubUser(hobbies=['scuba diving'], sins=['lying'])`.
 
 ## Protected Namespaces
 
 _Pydantic_ prevents collisions between model attributes and `BaseModel`'s own methods by
 namespacing them with the prefix `model_`.
-This is customizable using the `protected_namespaces` option in the model's config so that
+This is customizable using the `protected_namespaces` setting in the model's config so that
 you can allow overriding `model_` or add your own protected namespaces.
 
 ```py
@@ -395,8 +492,8 @@ except NameError as e:
 ```
 
 ## Hide Input in Errors
-_Pydantic_ shows input value and input type when it raises `ValidationError` during the validation.
 
+_Pydantic_ shows the input value and type when it raises `ValidationError` during the validation.
 
 ```py
 from pydantic import BaseModel, ValidationError

@@ -23,6 +23,7 @@ theme:
       name: "Switch to light mode"
   features:
     - content.tabs.link
+    - content.code.annotate
     - announce.dismiss
     - navigation.tabs
   logo: 'logo-white.svg'
