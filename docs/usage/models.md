@@ -802,7 +802,7 @@ For many use cases `TypeAdapter` can replace BaseModels with a `__root__` field 
 
 ### Parsing data into a specified type
 
-`TypeAdapter` can be used to apply the parsing logic used to populate pydantic models in a more ad-hoc way.
+`TypeAdapter` can be used to apply the parsing logic to populate pydantic models in a more ad-hoc way.
 This function behaves similarly to `BaseModel.model_validate`, but works with arbitrary pydantic-compatible types.
 
 This is especially useful when you want to parse results into a type that is not a direct subclass of `BaseModel`.
