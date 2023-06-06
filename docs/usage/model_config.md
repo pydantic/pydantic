@@ -52,7 +52,7 @@ from pydantic import ConfigDict, ValidationError
 from pydantic.dataclasses import dataclass
 
 
-@dataclass(config=ConfigDict(str_max_length=10, validate_assignment=True)) # (1)!
+@dataclass(config=ConfigDict(str_max_length=10, validate_assignment=True))  # (1)!
 class User:
     id: int
     name: str = 'John Doe'
@@ -341,21 +341,24 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
-class User(BaseModel, revalidate_instances='never'): # (1)!
+class User(BaseModel, revalidate_instances='never'):  # (1)!
     hobbies: list[str]
+
 
 class SubUser(User):
     sins: list[str]
 
+
 class Transaction(BaseModel):
     user: User
+
 
 my_user = User(hobbies=['reading'])
 t = Transaction(user=my_user)
 print(t)
 #> user=User(hobbies=['reading'])
 
-my_user.hobbies = [1] # (2)!
+my_user.hobbies = [1]  # (2)!
 t = Transaction(user=my_user)  # (3)!
 print(t)
 #> user=User(hobbies=[1])
@@ -379,14 +382,17 @@ from __future__ import annotations
 from pydantic import BaseModel, ValidationError
 
 
-class User(BaseModel, revalidate_instances='always'): # (1)!
+class User(BaseModel, revalidate_instances='always'):  # (1)!
     hobbies: list[str]
+
 
 class SubUser(User):
     sins: list[str]
 
+
 class Transaction(BaseModel):
     user: User
+
 
 my_user = User(hobbies=['reading'])
 t = Transaction(user=my_user)
@@ -424,14 +430,17 @@ from __future__ import annotations
 from pydantic import BaseModel
 
 
-class User(BaseModel, revalidate_instances='subclass-instances'): # (1)!
+class User(BaseModel, revalidate_instances='subclass-instances'):  # (1)!
     hobbies: list[str]
+
 
 class SubUser(User):
     sins: list[str]
 
+
 class Transaction(BaseModel):
     user: User
+
 
 my_user = User(hobbies=['reading'])
 t = Transaction(user=my_user)
