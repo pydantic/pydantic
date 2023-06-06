@@ -894,7 +894,7 @@ Models can be configured to be immutable via `frozen = True`. When this is set, 
 values of instance attributes will raise errors. See [model config](model_config.md) for more details on `Config`.
 
 !!! note
-    Same behavior in Pydantic V1 can be achieved via `allow_mutation = False`. This config is deprecated in Pydantic V2.
+    This behavior can be achieved in Pydantic V1 via `allow_mutation = False`. This config is deprecated in Pydantic V2.
 
 !!! warning
     Immutability in Python is never strict. If developers are determined/stupid they can always
