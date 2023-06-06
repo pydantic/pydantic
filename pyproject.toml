@@ -112,11 +112,6 @@ memray = [
     "pytest-memray",
 ]
 
-# https://pdm.fming.dev/latest/usage/config/#index-configuration-merging
-[[tool.pdm.source]]
-name = "private"
-url = "https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs-material/"
-
 [tool.pdm.resolution.overrides]
 # requires Python > 3.8, we only test with 3.8 in CI but because of it it won't lock properly
 pytest-memray = "1.4.0"

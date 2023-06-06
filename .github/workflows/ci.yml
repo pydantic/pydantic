@@ -50,7 +50,9 @@ jobs:
         cache: true
 
     - name: install
-      run: pdm install -G docs
+      run: |
+        pdm install -G docs
+        pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs-material/mkdocs_material-9.1.5+insiders.4.32.4-py3-none-any.whl
       env:
         MKDOCS_TOKEN: ${{ secrets.mkdocs_token }}
 
@@ -351,9 +353,11 @@ jobs:
           cache: true
 
       - name: install
-        run: pdm install -G docs
+        run: |
+          pdm install -G docs
+          pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs-material/mkdocs_material-9.1.5+insiders.4.32.4-py3-none-any.whl
         env:
-          MKDOCS_TOKEN: ${{ secrets.mkdocs_token }}
+          MKDOCS_TOKEN: ${{ secrets.MKDOCS_TOKEN }}
 
       - run: pdm run python -c 'import docs.plugins.main'
 
