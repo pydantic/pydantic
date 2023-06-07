@@ -1,15 +1,52 @@
-## v1.10.8 (2023-05-23)
+## v2.0b2 (2023-06-03)
 
-* Fix a bug in `Literal` usage with `typing-extension==4.6.0`, #5826 by @hramezani
-* This solves the (closed) issue #3849 where aliased fields that use discriminated union fail to validate when the data contains the non-aliased field name, #5736 by @benwah
-* Update email-validator dependency to >=2.0.0post2, #5627 by @adriangb
-* update `AnyClassMethod` for changes in [python/typeshed#9771](https://github.com/python/typeshed/issues/9771), #5505 by @ITProKyle
+Add `from_attributes` runtime flag to `TypeAdapter.validate_python` and `BaseModel.model_validate`.
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0b2)
+
+## v2.0b1 (2023-06-01)
+
+First beta pre-release of Pydantic V2
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0b1)
+
+## v2.0a4 (2023-05-05)
+
+Fourth pre-release of Pydantic V2
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0a4)
+
+## v2.0a3 (2023-04-20)
+
+Third pre-release of Pydantic V2
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0a3)
+
+## v2.0a2 (2023-04-12)
+
+Second pre-release of Pydantic V2
+
+See the full changelog [here](https://github.com/pydantic/pydantic/releases/tag/v2.0a2)
 
 ## v2.0a1 (2023-04-03)
 
 First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
+
+## v1.10.9 (2023-06-07)
+
+* Fix trailing zeros not ignored in Decimal validation, #5968 by @hramezani
+* Fix mypy plugin for v1.4.0, #5928 by @cdce8p
+* Add future and past date hypothesis strategies, #5850 by @bschoenmaeckers
+* Discourage usage of Cython 3 with Pydantic 1.x, #5845 by @lig
+
+## v1.10.8 (2023-05-23)
+
+* Fix a bug in `Literal` usage with `typing-extension==4.6.0`, #5826 by @hramezani
+* This solves the (closed) issue #3849 where aliased fields that use discriminated union fail to validate when the data contains the non-aliased field name, #5736 by @benwah
+* Update email-validator dependency to >=2.0.0post2, #5627 by @adriangb
+* update `AnyClassMethod` for changes in [python/typeshed#9771](https://github.com/python/typeshed/issues/9771), #5505 by @ITProKyle
 
 ## v1.10.7 (2023-03-22)
 
