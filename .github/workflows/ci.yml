@@ -54,12 +54,6 @@ jobs:
     - name: install dependencies
       run: pdm install -G docs
 
-    - name: install mkdocs-material-insiders
-      if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/')
-      run: pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs-material/mkdocs_material-9.1.5+insiders.4.32.4-py3-none-any.whl
-      env:
-        MKDOCS_TOKEN: ${{ secrets.mkdocs_token }}
-
     - run: pdm run python -c 'import docs.plugins.main'
     - run: pdm run mkdocs build --verbose
 
