@@ -35,5 +35,7 @@ The following sections describe the types supported by Pydantic.
 * Extra Types: Types that can be found in the [Pydantic Extra Types].
     * [Color Types](extra_types/color_types.md) &mdash; color validation types.
     * [Payment Card Numbers](extra_types/payment_cards.md) &mdash; a type that allows you to store payment card numbers in your model.
+    * [Phone Numbers](extra_types/phone_numbers.md) &mdash; a type that allows you to store phone numbers in your model.
+    * [Routing Numbers](extra_types/routing_numbers.md) &mdash; a type that allows you to store ABA transit routing numbers in your model.
 
 [Pydantic Extra Types]: https://github.com/pydantic/pydantic-extra-types
