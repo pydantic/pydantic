@@ -124,8 +124,9 @@ nav:
   - 'pydantic.types': api/types.md
   - 'pydantic.validate_call': api/validate_call.md
   - 'pydantic.version': api/version.md
-  - 'pydantic_core.__init__': api/pydantic_core_init.md
+  - 'pydantic_core': api/pydantic_core_init.md
   - 'pydantic_core.core_schema': api/pydantic_core_schema.md
+  - 'pydantic_settings': api/pydantic_settings.md
 
 markdown_extensions:
 - tables
