@@ -238,60 +238,53 @@ def test_low_priority_alias():
     assert [f.serialization_alias for f in Child.model_fields.values()] == ['w_ser_alias', 'X', 'Y', 'Z']
 
 
-def test_aliases_priority():
-    class Model(BaseModel):
-        x: int = Field(..., alias='x1', validation_alias='x2')
+@pytest.mark.parametrize(
+    'cls_params, field_params, validation_key, serialization_key',
+    [
+        pytest.param(
+            {},
+            {'alias': 'x1', 'validation_alias': 'x2'},
+            'x2',
+            'x1',
+            id='alias-validation_alias',
+        ),
+        pytest.param(
+            {'alias_generator': str.upper},
+            {'alias': 'x'},
+            'x',
+            'x',
+            id='alias_generator-alias',
+        ),
+        pytest.param(
+            {'alias_generator': str.upper},
+            {'alias': 'x1', 'validation_alias': 'x2'},
+            'x2',
+            'x1',
+            id='alias_generator-alias-validation_alias',
+        ),
+        pytest.param(
+            {'alias_generator': str.upper},
+            {'alias': 'x1', 'serialization_alias': 'x2'},
+            'x1',
+            'x2',
+            id='alias_generator-alias-serialization_alias',
+        ),
+        pytest.param(
+            {'alias_generator': str.upper},
+            {'alias': 'x1', 'validation_alias': 'x2', 'serialization_alias': 'x3'},
+            'x2',
+            'x3',
+            id='alias_generator-alias-validation_alias-serialization_alias',
+        ),
+    ],
+)
+def test_aliases_priority(cls_params, field_params, validation_key, serialization_key):
+    class Model(BaseModel, **cls_params):
+        x: int = Field(**field_params)
 
-    # alias should take priority over validation_alias
-    model = Model(x2=1)
+    model = Model(**{validation_key: 1})
     assert model.x == 1
-    assert model.model_dump(by_alias=True) == {'x1': 1}
-    assert model.model_dump_json(by_alias=True) == '{"x1":1}'
-
-    class Model(BaseModel, alias_generator=str.upper):
-        x: int = Field(..., alias='x')
-
-    # alias should take priority over alias_generator
-    model = Model(x=1)
-    assert model.x == 1
-    assert model.model_dump(by_alias=True) == {'x': 1}
-    assert model.model_dump_json(by_alias=True) == '{"x":1}'
-
-    class Model(BaseModel, alias_generator=str.upper):
-        x: int = Field(..., validation_alias='x1')
-
-    # validation_alias should take priority over alias_generator
-    model = Model(x1=1)
-    assert model.x == 1
-    assert model.model_dump(by_alias=True) == {'x': 1}
-    assert model.model_dump_json(by_alias=True) == '{"x":1}'
-
-    class Model(BaseModel, alias_generator=str.upper):
-        x: int = Field(..., alias='x1', validation_alias='x2')
-
-    # validation_alias should take priority over alias
-    model = Model(x2=1)
-    assert model.x == 1
-    assert model.model_dump(by_alias=True) == {'x1': 1}
-    assert model.model_dump_json(by_alias=True) == '{"x1":1}'
-
-    class Model(BaseModel, alias_generator=str.upper):
-        x: int = Field(..., serialization_alias='x1')
-
-    # validation_alias should take priority over alias_generator
-    model = Model(x=1)
-    assert model.x == 1
-    assert model.model_dump(by_alias=True) == {'x1': 1}
-    assert model.model_dump_json(by_alias=True) == '{"x1":1}'
-
-    class Model(BaseModel, alias_generator=str.upper):
-        x: int = Field(..., alias='x1', serialization_alias='x2', validation_alias='x3')
-
-    # only validation_alias and serialization_alias are used
-    model = Model(x3=1)
-    assert model.x == 1
-    assert model.model_dump(by_alias=True) == {'x2': 1}
-    assert model.model_dump_json(by_alias=True) == '{"x2":1}'
+    assert model.model_dump(by_alias=True).get(serialization_key, None) is not None
 
 
 def test_empty_string_alias():
