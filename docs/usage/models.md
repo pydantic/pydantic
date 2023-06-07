@@ -158,7 +158,7 @@ to the model field names. One common application of this functionality is integr
 (ORMs).
 
 To do this, use the `model_config` property on the model with `from_attributes` set to `True`. See
-[Model Config](model_config.md) and [ConfigDict](../api/config.md) for more information.
+[Model Config](model_config.md) and [ConfigDict](/api/config/#pydantic.config.ConfigDict) for more information.
 
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
@@ -1247,4 +1247,4 @@ print('id(c1.arr) == id(c2.arr)  ', id(c1.arr) == id(c2.arr))
 ```
 
 !!! note
-    There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting [`config.revalidate_instances='always'`](/api/config/) in your model.
+    There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting [`config.revalidate_instances='always'`](/api/config/#pydantic.config.ConfigDict) in your model.

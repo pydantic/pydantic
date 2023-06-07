@@ -5,7 +5,7 @@ and exported in a number of ways:
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
-See [arguments](../../api/main/#pydantic.main.BaseModel.model_dump) for more information.
+See [arguments](/api/main/#pydantic.main.BaseModel.model_dump) for more information.
 
 Example:
 
@@ -100,7 +100,7 @@ for name, value in m:
 ## `model_copy(...)`
 
 `model_copy()` allows models to be duplicated, which is particularly useful for immutable models.
-See [arguments](../../api/main/#pydantic.main.BaseModel.model_copy) for more information.
+See [arguments](/api/main/#pydantic.main.BaseModel.model_copy) for more information.
 
 Example:
 
@@ -135,7 +135,7 @@ print(id(m.bar) == id(m.model_copy(deep=True).bar))
 The `.model_dump_json()` method will serialise a model to JSON. (For `RootModel` [custom root type](models.md#custom-root-types),
 only the values are serialised)
 
-See [arguments](../../api/main/#pydantic.main.BaseModel.model_dump_json) for more information.
+See [arguments](/api/main/#pydantic.main.BaseModel.model_dump_json) for more information.
 
 *pydantic* can serialise many commonly used types to JSON (e.g. `datetime`, `date` or `UUID`) which would normally
 fail with a simple `json.dumps(foobar)`.
@@ -244,8 +244,6 @@ class User(BaseModel):
             for friend in v
         ]
 
-
-User.model_rebuild()
 
 wolfgang = User(
     name='Wolfgang',
