@@ -51,12 +51,8 @@ jobs:
         cache: true
         version: 2.7.0
 
-    - name: install
-      run: |
-        pdm install -G docs
-        pdm run pip install https://files.scolvin.com/${MKDOCS_TOKEN}/mkdocs-material/mkdocs_material-9.1.5+insiders.4.32.4-py3-none-any.whl
-      env:
-        MKDOCS_TOKEN: ${{ secrets.mkdocs_token }}
+    - name: install dependencies
+      run: pdm install -G docs
 
     - run: pdm run python -c 'import docs.plugins.main'
     - run: pdm run mkdocs build --verbose
