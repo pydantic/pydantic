@@ -355,4 +355,14 @@
          <lastmod>2023-06-07</lastmod>
          <changefreq>daily</changefreq>
     </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/usage/types/extra_types/phone_numbers/</loc>
+         <lastmod>2023-06-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/usage/types/extra_types/routing_numbers/</loc>
+         <lastmod>2023-06-07</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
 </urlset>
