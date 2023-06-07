@@ -5,19 +5,7 @@ and exported in a number of ways:
 
 This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.
 
-Arguments:
-
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
-* `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
-* `exclude_unset`: whether fields which were not explicitly set when creating the model should
-  be excluded from the returned dictionary; default `False`.
-* `exclude_defaults`: whether fields which are equal to their default values (whether set or otherwise) should
-  be excluded from the returned dictionary; default `False`
-* `exclude_none`: whether fields which are equal to `None` should be excluded from the returned dictionary; default
-  `False`
-* `round_trip`: whether to enable serialization and deserialization round-trip support; default `False`
-* `warnings`: whether to log warnings when invalid fields are encountered; default `True`
+See [arguments](../../api/main/#pydantic.main.BaseModel.model_dump) for more information.
 
 Example:
 
@@ -112,11 +100,7 @@ for name, value in m:
 ## `model_copy(...)`
 
 `model_copy()` allows models to be duplicated, which is particularly useful for immutable models.
-
-Arguments:
-
-* `update`: an optional dictionary of values to change when creating the copied model; default `None`
-* `deep`: whether to make a deep copy of the new model; default `False`
+See [arguments](../../api/main/#pydantic.main.BaseModel.model_copy) for more information.
 
 Example:
 
@@ -151,20 +135,7 @@ print(id(m.bar) == id(m.model_copy(deep=True).bar))
 The `.model_dump_json()` method will serialise a model to JSON. (For `RootModel` [custom root type](models.md#custom-root-types),
 only the values are serialised)
 
-Arguments:
-
-* `indent`: indentation to use in the JSON output. If `None` is passed, the output will be compact; default `None`
-* `include`: fields to include in the returned dictionary; see [below](#advanced-include-and-exclude)
-* `exclude`: fields to exclude from the returned dictionary; see [below](#advanced-include-and-exclude)
-* `by_alias`: whether field aliases should be used as keys in the returned dictionary; default `False`
-* `exclude_unset`: whether fields which were not set when creating the model and have their default values should
-  be excluded from the returned dictionary; default `False`.
-* `exclude_defaults`: whether fields which are equal to their default values (whether set or otherwise) should
-  be excluded from the returned dictionary; default `False`
-* `exclude_none`: whether fields which are equal to `None` should be excluded from the returned dictionary; default
-  `False`
-* `round_trip`: whether to use serialization/deserialization between JSON and class instance; default `False`
-* `warnings`: whether to log warnings when invalid fields are encountered; default `True`
+See [arguments](../../api/main/#pydantic.main.BaseModel.model_dump_json) for more information.
 
 *pydantic* can serialise many commonly used types to JSON (e.g. `datetime`, `date` or `UUID`) which would normally
 fail with a simple `json.dumps(foobar)`.
@@ -238,9 +209,8 @@ class Model(BaseModel):
 print(Model(x='test value').model_dump_json())
 #> {"x":"srialized test value"}
 ```
-
-By default, `timedelta` is encoded as a simple float of total seconds. The `timedelta_isoformat` is provided
-as an optional alternative which implements [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) time diff encoding.
+!!! note
+    Serialisation can be customised in Pydantic V1 using the `json_encoders` config property.
 
 ### Serialising self-reference or other models
 
@@ -248,7 +218,7 @@ By default, models are serialised as dictionaries.
 If you want to serialise them differently, you can use `model_serializer` decorator.
 
 ```py
-from typing import List, Optional
+from typing import List
 
 from pydantic import BaseModel, field_serializer, model_serializer
 
@@ -265,7 +235,7 @@ class Address(BaseModel):
 class User(BaseModel):
     name: str
     address: Address
-    friends: Optional[List['User']] = None
+    friends: List['User'] = []
 
     @field_serializer('friends')
     def ser_friends(v: List['User']) -> List[str]:
