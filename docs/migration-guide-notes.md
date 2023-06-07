@@ -36,3 +36,8 @@ Migration guide
 		* ... [list config keys in `V2_REMOVED_KEYS`]
 
 * Various deprecated things are available in `pydantic.v1`
+
+* BaseSettings has been moved to `pydantic-settings`
+* `pydantic-extra-types`?
+
+* (Try not to mix "Migration" and "New Features"; create a separate document/page for "New Features")
