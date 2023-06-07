@@ -1,0 +1,5 @@
+11: error: Unexpected keyword argument "i" for "ConfigClassUsed"  [call-arg]
+18: error: Unexpected keyword argument "i" for "MetaclassArgumentsNoDefault"  [call-arg]
+25: error: Unexpected keyword argument "i" for "MetaclassArgumentsWithDefault"  [call-arg]
+32: error: Unexpected keyword argument "i" for "NoArguments"  [call-arg]
+33: error: Argument "j" to "NoArguments" has incompatible type "None"; expected "int"  [arg-type]
