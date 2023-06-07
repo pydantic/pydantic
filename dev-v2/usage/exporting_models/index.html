@@ -1620,10 +1620,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#modelcopy" class="md-nav__link">
+  <a href="#model_copy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        model.copy(...)
+        model_copy(...)
       
     </span>
   </a>
@@ -1643,10 +1643,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#json_encoders" class="md-nav__link">
+  <a href="#custom-serializer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        json_encoders
+        Custom serializer
       
     </span>
   </a>
@@ -2949,10 +2949,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#modelcopy" class="md-nav__link">
+  <a href="#model_copy" class="md-nav__link">
     <span class="md-ellipsis">
       
-        model.copy(...)
+        model_copy(...)
       
     </span>
   </a>
@@ -2972,10 +2972,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#json_encoders" class="md-nav__link">
+  <a href="#custom-serializer" class="md-nav__link">
     <span class="md-ellipsis">
       
-        json_encoders
+        Custom serializer
       
     </span>
   </a>
@@ -3074,21 +3074,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 and exported in a number of ways:</p>
 <h2 id="modelmodel_dump"><code>model.model_dump(...)</code><a class="headerlink" href="#modelmodel_dump" title="Permanent link">&para;</a></h2>
 <p>This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.</p>
-<p>Arguments:</p>
-<ul>
-<li><code>include</code>: fields to include in the returned dictionary; see <a href="#advanced-include-and-exclude">below</a></li>
-<li><code>exclude</code>: fields to exclude from the returned dictionary; see <a href="#advanced-include-and-exclude">below</a></li>
-<li><code>by_alias</code>: whether field aliases should be used as keys in the returned dictionary; default <code>False</code></li>
-<li><code>exclude_unset</code>: whether fields which were not explicitly set when creating the model should
-  be excluded from the returned dictionary; default <code>False</code>.
-  Prior to <strong>v1.0</strong>, <code>exclude_unset</code> was known as <code>skip_defaults</code>; use of <code>skip_defaults</code> is now deprecated</li>
-<li><code>exclude_defaults</code>: whether fields which are equal to their default values (whether set or otherwise) should
-  be excluded from the returned dictionary; default <code>False</code></li>
-<li><code>exclude_none</code>: whether fields which are equal to <code>None</code> should be excluded from the returned dictionary; default
-  <code>False</code></li>
-</ul>
+<p>See <a href="../../api/main/#pydantic.main.BaseModel.model_dump">arguments</a> for more information.</p>
 <p>Example:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Json</span>
 
 
 <span class="k">class</span> <span class="nc">BarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -3096,8 +3089,8 @@ and exported in a number of ways:</p>
 
 
 <span class="k">class</span> <span class="nc">FooBarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">banana</span><span class="p">:</span> <span class="nb">float</span>
-    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">banana</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.1</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;foo_alias&#39;</span><span class="p">)</span>
     <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
 
 
@@ -3110,7 +3103,148 @@ and exported in a number of ways:</p>
 <span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
 <span class="c1">#&gt; {&#39;banana&#39;: 3.14}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo_alias&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Json</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;{&quot;a&quot;: 1}&#39;</span><span class="p">,</span> <span class="s1">&#39;[1, 2]&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: [{&#39;a&#39;: 1}, [1, 2]]}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;{&quot;a&quot;: 1}&#39;</span><span class="p">,</span> <span class="s1">&#39;[1, 2]&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">round_trip</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;x&#39;: [&#39;{&quot;a&quot;:1}&#39;, &#39;[1,2]&#39;]}</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Json</span>
+
+
+<span class="k">class</span> <span class="nc">BarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">whatever</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">FooBarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">banana</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.1</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;foo_alias&#39;</span><span class="p">)</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+
+<span class="c1"># returns a dictionary:</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; {&#39;banana&#39;: 3.14}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo_alias&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Json</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;{&quot;a&quot;: 1}&#39;</span><span class="p">,</span> <span class="s1">&#39;[1, 2]&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: [{&#39;a&#39;: 1}, [1, 2]]}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;{&quot;a&quot;: 1}&#39;</span><span class="p">,</span> <span class="s1">&#39;[1, 2]&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">round_trip</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;x&#39;: [&#39;{&quot;a&quot;:1}&#39;, &#39;[1,2]&#39;]}</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">Json</span>
+
+
+<span class="k">class</span> <span class="nc">BarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">whatever</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="k">class</span> <span class="nc">FooBarModel</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">banana</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="mf">1.1</span>
+    <span class="n">foo</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">serialization_alias</span><span class="o">=</span><span class="s1">&#39;foo_alias&#39;</span><span class="p">)</span>
+    <span class="n">bar</span><span class="p">:</span> <span class="n">BarModel</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
+
+<span class="c1"># returns a dictionary:</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">include</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;foo&#39;</span><span class="p">,</span> <span class="s1">&#39;bar&#39;</span><span class="p">}))</span>
+<span class="c1">#&gt; {&#39;banana&#39;: 3.14}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;banana&#39;: 3.14, &#39;foo_alias&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_unset</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">1.1</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">exclude_defaults</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+<span class="nb">print</span><span class="p">(</span>
+    <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span>
+        <span class="n">exclude_none</span><span class="o">=</span><span class="kc">True</span>
+    <span class="p">)</span>
+<span class="p">)</span>
+<span class="c1">#&gt; {&#39;foo&#39;: &#39;hello&#39;, &#39;bar&#39;: {&#39;whatever&#39;: 123}}</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="n">Json</span><span class="p">[</span><span class="n">Any</span><span class="p">]]</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;{&quot;a&quot;: 1}&#39;</span><span class="p">,</span> <span class="s1">&#39;[1, 2]&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;x&#39;: [{&#39;a&#39;: 1}, [1, 2]]}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;{&quot;a&quot;: 1}&#39;</span><span class="p">,</span> <span class="s1">&#39;[1, 2]&#39;</span><span class="p">])</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">round_trip</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;x&#39;: [&#39;{&quot;a&quot;:1}&#39;, &#39;[1,2]&#39;]}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 <h2 id="dictmodel-and-iteration"><code>dict(model)</code> and iteration<a class="headerlink" href="#dictmodel-and-iteration" title="Permanent link">&para;</a></h2>
 <p><em>pydantic</em> models can also be converted to dictionaries using <code>dict(model)</code>, and you can also
 iterate over a model's field using <code>for field_name, value in model:</code>. With this approach the raw field values are
@@ -3139,15 +3273,9 @@ returned, so sub-models will not be converted to dictionaries.</p>
     <span class="c1">#&gt; foo: hello</span>
     <span class="c1">#&gt; bar: whatever=123</span>
 </code></pre></div>
-<h2 id="modelcopy"><code>model.copy(...)</code><a class="headerlink" href="#modelcopy" title="Permanent link">&para;</a></h2>
-<p><code>copy()</code> allows models to be duplicated, which is particularly useful for immutable models.</p>
-<p>Arguments:</p>
-<ul>
-<li><code>include</code>: fields to include in the returned dictionary; see <a href="#advanced-include-and-exclude">below</a></li>
-<li><code>exclude</code>: fields to exclude from the returned dictionary; see <a href="#advanced-include-and-exclude">below</a></li>
-<li><code>update</code>: a dictionary of values to change when creating the copied model</li>
-<li><code>deep</code>: whether to make a deep copy of the new model; default <code>False</code></li>
-</ul>
+<h2 id="model_copy"><code>model_copy(...)</code><a class="headerlink" href="#model_copy" title="Permanent link">&para;</a></h2>
+<p><code>model_copy()</code> allows models to be duplicated, which is particularly useful for immutable models.
+See <a href="../../api/main/#pydantic.main.BaseModel.model_copy">arguments</a> for more information.</p>
 <p>Example:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -3164,9 +3292,6 @@ returned, so sub-models will not be converted to dictionaries.</p>
 
 <span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">banana</span><span class="o">=</span><span class="mf">3.14</span><span class="p">,</span> <span class="n">foo</span><span class="o">=</span><span class="s1">&#39;hello&#39;</span><span class="p">,</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
 
-<span class="c1"># TODO!</span>
-<span class="c1"># print(m.model_copy(include={&#39;foo&#39;, &#39;bar&#39;}))</span>
-<span class="c1"># print(m.model_copy(exclude={&#39;foo&#39;, &#39;bar&#39;}))</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_copy</span><span class="p">(</span><span class="n">update</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;banana&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}))</span>
 <span class="c1">#&gt; banana=0 foo=&#39;hello&#39; bar=BarModel(whatever=123)</span>
 <span class="nb">print</span><span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">bar</span><span class="p">)</span> <span class="o">==</span> <span class="nb">id</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_copy</span><span class="p">()</span><span class="o">.</span><span class="n">bar</span><span class="p">))</span>
@@ -3177,24 +3302,9 @@ returned, so sub-models will not be converted to dictionaries.</p>
 <span class="c1"># deep copy gives a new object reference for `bar`</span>
 </code></pre></div>
 <h2 id="modelmodel_dump_json"><code>model.model_dump_json(...)</code><a class="headerlink" href="#modelmodel_dump_json" title="Permanent link">&para;</a></h2>
-<p>The <code>.model_dump_json()</code> method will serialise a model to JSON. (For models with a <a href="../models/#custom-root-types">custom root type</a>,
-only the value for the <code>__root__</code> key is serialised)</p>
-<p>Arguments:</p>
-<ul>
-<li><code>include</code>: fields to include in the returned dictionary; see <a href="#advanced-include-and-exclude">below</a></li>
-<li><code>exclude</code>: fields to exclude from the returned dictionary; see <a href="#advanced-include-and-exclude">below</a></li>
-<li><code>by_alias</code>: whether field aliases should be used as keys in the returned dictionary; default <code>False</code></li>
-<li><code>exclude_unset</code>: whether fields which were not set when creating the model and have their default values should
-  be excluded from the returned dictionary; default <code>False</code>.
-  Prior to <strong>v1.0</strong>, <code>exclude_unset</code> was known as <code>skip_defaults</code>; use of <code>skip_defaults</code> is now deprecated</li>
-<li><code>exclude_defaults</code>: whether fields which are equal to their default values (whether set or otherwise) should
-  be excluded from the returned dictionary; default <code>False</code></li>
-<li><code>exclude_none</code>: whether fields which are equal to <code>None</code> should be excluded from the returned dictionary; default
-  <code>False</code></li>
-<li><code>encoder</code>: a custom encoder function passed to the <code>default</code> argument of <code>json.dumps()</code>; defaults to a custom
-  encoder designed to take care of all common types</li>
-<li><code>**dumps_kwargs</code>: any other keyword arguments are passed to <code>json.dumps()</code>, e.g. <code>indent</code>.</li>
-</ul>
+<p>The <code>.model_dump_json()</code> method will serialise a model to JSON. (For <code>RootModel</code> <a href="../models/#custom-root-types">custom root type</a>,
+only the values are serialised)</p>
+<p>See <a href="../../api/main/#pydantic.main.BaseModel.model_dump_json">arguments</a> for more information.</p>
 <p><em>pydantic</em> can serialise many commonly used types to JSON (e.g. <code>datetime</code>, <code>date</code> or <code>UUID</code>) which would normally
 fail with a simple <code>json.dumps(foobar)</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
@@ -3214,17 +3324,30 @@ fail with a simple <code>json.dumps(foobar)</code>.</p>
 <span class="n">m</span> <span class="o">=</span> <span class="n">FooBarModel</span><span class="p">(</span><span class="n">foo</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2032</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="n">bar</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;whatever&#39;</span><span class="p">:</span> <span class="mi">123</span><span class="p">})</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
 <span class="c1">#&gt; {&quot;foo&quot;:&quot;2032-06-01T12:13:14&quot;,&quot;bar&quot;:{&quot;whatever&quot;:123}}</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{</span>
+<span class="sd">  &quot;foo&quot;: &quot;2032-06-01T12:13:14&quot;,</span>
+<span class="sd">  &quot;bar&quot;: {</span>
+<span class="sd">    &quot;whatever&quot;: 123</span>
+<span class="sd">  }</span>
+<span class="sd">}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
-<h3 id="json_encoders"><code>json_encoders</code><a class="headerlink" href="#json_encoders" title="Permanent link">&para;</a></h3>
-<p>Serialisation can be customised on a model using the <code>json_encoders</code> config property; the keys should be types (or names of types for forward references), and
-the values should be functions which serialise that type (see the example below):</p>
+<h3 id="custom-serializer">Custom serializer<a class="headerlink" href="#custom-serializer" title="Permanent link">&para;</a></h3>
+<p>Serialisation can be customised on a field and model using <code>field_serializer</code> and <code>model_serializer</code> decorators. (see the example below):</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">field_serializer</span><span class="p">,</span> <span class="n">model_serializer</span>
 
 
 <span class="k">class</span> <span class="nc">WithCustomEncoders</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">ser_json_timedelta</span><span class="o">=</span><span class="s1">&#39;iso8601&#39;</span><span class="p">)</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">ser_json_timedelta</span><span class="o">=</span><span class="s1">&#39;iso8601&#39;</span><span class="p">)</span>
+
     <span class="n">dt</span><span class="p">:</span> <span class="n">datetime</span>
     <span class="n">diff</span><span class="p">:</span> <span class="n">timedelta</span>
 
@@ -3238,42 +3361,97 @@ the values should be functions which serialise that type (see the example below)
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
 <span class="c1">#&gt; {&quot;dt&quot;:1969660800.0,&quot;diff&quot;:&quot;P4DT14400S&quot;}</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@model_serializer</span>
+    <span class="k">def</span> <span class="nf">ser_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;srialized </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;test value&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;x&quot;:&quot;srialized test value&quot;}</span>
 </code></pre></div>
-<p>By default, <code>timedelta</code> is encoded as a simple float of total seconds. The <code>timedelta_isoformat</code> is provided
-as an optional alternative which implements <a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a> time diff encoding.</p>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">timedelta</span><span class="p">,</span> <span class="n">timezone</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">field_serializer</span><span class="p">,</span> <span class="n">model_serializer</span>
+
+
+<span class="k">class</span> <span class="nc">WithCustomEncoders</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">ser_json_timedelta</span><span class="o">=</span><span class="s1">&#39;iso8601&#39;</span><span class="p">)</span>
+
+    <span class="n">dt</span><span class="p">:</span> <span class="n">datetime</span>
+    <span class="n">diff</span><span class="p">:</span> <span class="n">timedelta</span>
+
+    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;dt&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">serialize_dt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dt</span><span class="p">:</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">_info</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">dt</span><span class="o">.</span><span class="n">timestamp</span><span class="p">()</span>
+
+
+<span class="n">m</span> <span class="o">=</span> <span class="n">WithCustomEncoders</span><span class="p">(</span>
+    <span class="n">dt</span><span class="o">=</span><span class="n">datetime</span><span class="p">(</span><span class="mi">2032</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tzinfo</span><span class="o">=</span><span class="n">timezone</span><span class="o">.</span><span class="n">utc</span><span class="p">),</span> <span class="n">diff</span><span class="o">=</span><span class="n">timedelta</span><span class="p">(</span><span class="n">hours</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;dt&quot;:1969660800.0,&quot;diff&quot;:&quot;P4DT14400S&quot;}</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">x</span><span class="p">:</span> <span class="nb">str</span>
+
+    <span class="nd">@model_serializer</span>
+    <span class="k">def</span> <span class="nf">ser_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;x&#39;</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;srialized </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">}</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="s1">&#39;test value&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="c1">#&gt; {&quot;x&quot;:&quot;srialized test value&quot;}</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Serialisation can be customised in Pydantic V1 using the <code>json_encoders</code> config property.</p>
+</div>
 <h3 id="serialising-self-reference-or-other-models">Serialising self-reference or other models<a class="headerlink" href="#serialising-self-reference-or-other-models" title="Permanent link">&para;</a></h3>
 <p>By default, models are serialised as dictionaries.
-If you want to serialise them differently, you can add <code>models_as_dict=False</code> when calling <code>json()</code> method
-and add the classes of the model in <code>json_encoders</code>.
-In case of forward references, you can use a string with the class name instead of the class itself</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
+If you want to serialise them differently, you can use <code>model_serializer</code> decorator.</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="c1"># TODO we need to serializers for this example</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span><span class="p">,</span> <span class="n">model_serializer</span>
 
 
 <span class="k">class</span> <span class="nc">Address</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">city</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">country</span><span class="p">:</span> <span class="nb">str</span>
 
+    <span class="nd">@model_serializer</span>
+    <span class="k">def</span> <span class="nf">ser_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)&#39;</span>
+
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">address</span><span class="p">:</span> <span class="n">Address</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-        <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;User&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> &#39;</span>
-            <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-        <span class="p">}</span>
+    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;friends&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">ser_friends</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">friend</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">friend</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">friend</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span>
+            <span class="k">for</span> <span class="n">friend</span> <span class="ow">in</span> <span class="n">v</span>
+        <span class="p">]</span>
 
 
-<span class="n">User</span><span class="o">.</span><span class="n">update_forward_refs</span><span class="p">()</span>
+<span class="n">User</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
 
 <span class="n">wolfgang</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Wolfgang&#39;</span><span class="p">,</span>
@@ -3283,35 +3461,39 @@ In case of forward references, you can use a string with the class name instead 
         <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;London&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;UK&#39;</span><span class="p">)),</span>
     <span class="p">],</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">wolfgang</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">models_as_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">wolfgang</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{&quot;name&quot;:&quot;Wolfgang&quot;,&quot;address&quot;:&quot;Berlin (Deutschland)&quot;,&quot;friends&quot;:[&quot;Pierre in Paris (FR)&quot;,&quot;John in London (UK)&quot;]}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="c1"># TODO we need to serializers for this example</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">field_serializer</span><span class="p">,</span> <span class="n">model_serializer</span>
 
 
 <span class="k">class</span> <span class="nc">Address</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">city</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">country</span><span class="p">:</span> <span class="nb">str</span>
 
+    <span class="nd">@model_serializer</span>
+    <span class="k">def</span> <span class="nf">ser_model</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)&#39;</span>
+
 
 <span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
     <span class="n">address</span><span class="p">:</span> <span class="n">Address</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
 
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-        <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;User&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> &#39;</span>
-            <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-        <span class="p">}</span>
+    <span class="nd">@field_serializer</span><span class="p">(</span><span class="s1">&#39;friends&#39;</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">ser_friends</span><span class="p">(</span><span class="n">v</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">friend</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">friend</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">friend</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span>
+            <span class="k">for</span> <span class="n">friend</span> <span class="ow">in</span> <span class="n">v</span>
+        <span class="p">]</span>
 
 
-<span class="n">User</span><span class="o">.</span><span class="n">update_forward_refs</span><span class="p">()</span>
+<span class="n">User</span><span class="o">.</span><span class="n">model_rebuild</span><span class="p">()</span>
 
 <span class="n">wolfgang</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
     <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Wolfgang&#39;</span><span class="p">,</span>
@@ -3321,56 +3503,17 @@ In case of forward references, you can use a string with the class name instead 
         <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;London&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;UK&#39;</span><span class="p">)),</span>
     <span class="p">],</span>
 <span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">wolfgang</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">models_as_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
-</code></pre></div>
-</div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="c1"># TODO we need to serializers for this example</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Address</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">city</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">country</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
-    <span class="n">address</span><span class="p">:</span> <span class="n">Address</span>
-    <span class="n">friends</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="s1">&#39;User&#39;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-
-    <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
-        <span class="n">json_encoders</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="n">Address</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">a</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">a</span><span class="o">.</span><span class="n">country</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-            <span class="s1">&#39;User&#39;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">u</span><span class="p">:</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">name</span><span class="si">}</span><span class="s1"> in </span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">city</span><span class="si">}</span><span class="s1"> &#39;</span>
-            <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">u</span><span class="o">.</span><span class="n">address</span><span class="o">.</span><span class="n">country</span><span class="p">[:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">,</span>
-        <span class="p">}</span>
-
-
-<span class="n">User</span><span class="o">.</span><span class="n">update_forward_refs</span><span class="p">()</span>
-
-<span class="n">wolfgang</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span>
-    <span class="n">name</span><span class="o">=</span><span class="s1">&#39;Wolfgang&#39;</span><span class="p">,</span>
-    <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;Berlin&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;Deutschland&#39;</span><span class="p">),</span>
-    <span class="n">friends</span><span class="o">=</span><span class="p">[</span>
-        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Pierre&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;Paris&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;France&#39;</span><span class="p">)),</span>
-        <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John&#39;</span><span class="p">,</span> <span class="n">address</span><span class="o">=</span><span class="n">Address</span><span class="p">(</span><span class="n">city</span><span class="o">=</span><span class="s1">&#39;London&#39;</span><span class="p">,</span> <span class="n">country</span><span class="o">=</span><span class="s1">&#39;UK&#39;</span><span class="p">)),</span>
-    <span class="p">],</span>
-<span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">wolfgang</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">(</span><span class="n">models_as_dict</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">wolfgang</span><span class="o">.</span><span class="n">model_dump_json</span><span class="p">())</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">{&quot;name&quot;:&quot;Wolfgang&quot;,&quot;address&quot;:&quot;Berlin (Deutschland)&quot;,&quot;friends&quot;:[&quot;Pierre in Paris (FR)&quot;,&quot;John in London (UK)&quot;]}</span>
+<span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
 </div>
 </div>
 </div>
 <h3 id="serialising-subclasses">Serialising subclasses<a class="headerlink" href="#serialising-subclasses" title="Permanent link">&para;</a></h3>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>New in version <strong>v1.5</strong>.</p>
-<p>Subclasses of common types were not automatically serialised to JSON before <strong>v1.5</strong>.</p>
-</div>
 <p>Subclasses of common types are automatically encoded like their super-classes:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="4:2"><input checked="checked" id="__tabbed_4_1" name="__tabbed_4" type="radio" /><input id="__tabbed_4_2" name="__tabbed_4" type="radio" /><div class="tabbed-labels"><label for="__tabbed_4_1">Python 3.7 and above</label><label for="__tabbed_4_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">timedelta</span>
@@ -3453,7 +3596,7 @@ In case of forward references, you can use a string with the class name instead 
 </div>
 </div>
 <h2 id="pickledumpsmodel"><code>pickle.dumps(model)</code><a class="headerlink" href="#pickledumpsmodel" title="Permanent link">&para;</a></h2>
-<p>Using the same plumbing as <code>copy()</code>, <em>pydantic</em> models support efficient pickling and unpickling.</p>
+<p>Using the same plumbing as <code>model_copy()</code>, <em>pydantic</em> models support efficient pickling and unpickling.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># TODO need to get pickling to work</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 
@@ -3473,7 +3616,7 @@ In case of forward references, you can use a string with the class name instead 
 <span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="p">)</span>
 </code></pre></div>
 <h2 id="advanced-include-and-exclude">Advanced include and exclude<a class="headerlink" href="#advanced-include-and-exclude" title="Permanent link">&para;</a></h2>
-<p>The <code>dict</code>, <code>json</code>, and <code>copy</code> methods support <code>include</code> and <code>exclude</code> arguments which can either be
+<p>The <code>model_dump</code> and <code>model_dump_json</code> methods support <code>include</code> and <code>exclude</code> arguments which can either be
 sets or dictionaries. This allows nested selection of which fields to export:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">SecretStr</span>
 
@@ -3510,9 +3653,9 @@ sets or dictionaries. This allows nested selection of which fields to export:</p
 <p>The <code>True</code> indicates that we want to exclude or include an entire key, just as if we included it in a set.
 Of course, the same can be done at any depth level.</p>
 <p>Special care must be taken when including or excluding fields from a list or tuple of submodels or dictionaries.  In this scenario,
-<code>dict</code> and related methods expect integer keys for element-wise inclusion or exclusion. To exclude a field from <strong>every</strong>
+<code>model_dump</code> and related methods expect integer keys for element-wise inclusion or exclusion. To exclude a field from <strong>every</strong>
 member of a list or tuple, the dictionary key <code>'__all__'</code> can be used as follows:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="3:2"><input checked="checked" id="__tabbed_3_1" name="__tabbed_3" type="radio" /><input id="__tabbed_3_2" name="__tabbed_3" type="radio" /><div class="tabbed-labels"><label for="__tabbed_3_1">Python 3.7 and above</label><label for="__tabbed_3_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="5:2"><input checked="checked" id="__tabbed_5_1" name="__tabbed_5" type="radio" /><input id="__tabbed_5_2" name="__tabbed_5" type="radio" /><div class="tabbed-labels"><label for="__tabbed_5_1">Python 3.7 and above</label><label for="__tabbed_5_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">datetime</span>
@@ -3697,9 +3840,10 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
 </div>
 </div>
 </div>
-<p>The same holds for the <code>json</code> and <code>copy</code> methods.</p>
+<p>The same holds for the <code>model_dump_json</code> method.</p>
 <h3 id="model-and-field-level-include-and-exclude">Model and field level include and exclude<a class="headerlink" href="#model-and-field-level-include-and-exclude" title="Permanent link">&para;</a></h3>
-<p>In addition to the explicit arguments <code>exclude</code> and <code>include</code> passed to <code>dict</code>, <code>json</code> and <code>copy</code> methods, we can also pass the <code>include</code>/<code>exclude</code> arguments directly to the <code>Field</code> constructor or the equivalent <code>field</code> entry in the models <code>Config</code> class:</p>
+<p>In addition to the explicit arguments <code>exclude</code> and <code>include</code> passed to <code>model_dump</code> and <code>model_dump_json</code> methods,
+we can also pass the <code>include</code>/<code>exclude</code> arguments directly to the <code>Field</code> constructor:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
 
 
@@ -3725,11 +3869,8 @@ member of a list or tuple, the dictionary key <code>'__all__'</code> can be used
 <span class="c1">#&gt; {&#39;id&#39;: &#39;1234567890&#39;}</span>
 <span class="c1"># TODO this is wrong! not all of &quot;user&quot; should be excluded</span>
 </code></pre></div>
-<p>In the case where multiple strategies are used, <code>exclude</code>/<code>include</code> fields are merged according to the following rules:</p>
-<ul>
-<li>First, model config level settings (via <code>"fields"</code> entry) are merged per field with the field constructor settings (i.e. <code>Field(..., exclude=True)</code>), with the field constructor taking priority.</li>
-<li>The resulting settings are merged per class with the explicit settings on <code>dict</code>, <code>json</code>, <code>copy</code> calls with the explicit settings taking priority.</li>
-</ul>
+<p>Setting explicitly <code>exclude</code>/<code>include</code> on <code>model_dump</code> and <code>model_dump_json</code> has priority to
+<code>exclude</code>/<code>include</code> in field constructor (i.e. <code>Field(..., exclude=True)</code>):</p>
 <p>Note that while merging settings, <code>exclude</code> entries are merged by computing the "union" of keys, while <code>include</code> entries are merged by computing the "intersection" of keys.</p>
 <p>The resulting merged exclude settings:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">SecretStr</span>
