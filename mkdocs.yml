@@ -79,6 +79,8 @@ nav:
     - Extra Types:
       - Color Types: usage/types/extra_types/color_types.md
       - Payment Card Numbers: usage/types/extra_types/payment_cards.md
+      - Phone Numbers: usage/types/extra_types/phone_numbers.md
+      - Routing Number: usage/types/extra_types/routing_number.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
   - usage/schema.md
