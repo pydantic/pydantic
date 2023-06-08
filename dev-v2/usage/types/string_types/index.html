@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#emailstr" class="md-skip">
+        <a href="#str" class="md-skip">
           Skip to content
         </a>
       
@@ -815,6 +815,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       Page contents
     </label>
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#str" class="md-nav__link">
+    str
+  </a>
+  
+</li>
       
         <li class="md-nav__item">
   <a href="#emailstr" class="md-nav__link">
@@ -2057,6 +2064,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#str" class="md-nav__link">
+    str
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#emailstr" class="md-nav__link">
     EmailStr
   </a>
@@ -2118,40 +2132,23 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>String Types</h1>
 
-<dl>
-<dt><code>str</code></dt>
-<dd>strings are accepted as-is, <code>int</code> <code>float</code> and <code>Decimal</code> are coerced using <code>str(v)</code>, <code>bytes</code> and <code>bytearray</code> are
-  converted using <code>v.decode()</code>, enums inheriting from <code>str</code> are converted using <code>v.value</code>,
-  and all other types cause an error</dd>
-<dt><code>EmailStr</code></dt>
-<dd>requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed;
-  the input string must be a valid email address, and the output is a simple string</dd>
-<dt><code>NameEmail</code></dt>
-<dd>requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed;
-  the input string must be either a valid email address or in the format <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code>,
-  and the output is a <code>NameEmail</code> object which has two properties: <code>name</code> and <code>email</code>.
-  For <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code> the name would be <code>"Fred Bloggs"</code>;
-  for <code>fred.bloggs@example.com</code> it would be <code>"fred.bloggs"</code>.</dd>
-<dt><code>ImportString</code></dt>
-<dd>expects a string and loads the Python object importable at that dotted path; attributes of modules may be separated
-  from the module by <code>:</code> or <code>.</code>, e.g. if <code>'math:cos'</code> was provided, the resulting field value would be the function
-<code>cos</code>. If a <code>.</code> is used and both an attribute and submodule are present at the same path, the module will be preferred.</dd>
-<dt><code>constr</code></dt>
-<dd>type method for constraining strs;
-  see <a href="#constrained-types">Constrained Types</a></dd>
-</dl>
+<h2 id="str">str<a class="headerlink" href="#str" title="Permanent link">&para;</a></h2>
+<p>Strings are accepted as-is, <code>bytes</code> and <code>bytearray</code> are converted using <code>v.decode()</code>,
+enums inheriting from <code>str</code> are converted using <code>v.value</code>, and all other types cause an error</p>
 <h2 id="emailstr">EmailStr<a class="headerlink" href="#emailstr" title="Permanent link">&para;</a></h2>
-<p><code>EmailStr</code> requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed;
-  the input string must be a valid email address, and the output is a simple string</p>
+<p><code>EmailStr</code> requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed.
+The input string must be a valid email address, and the output is a simple string</p>
 <h2 id="nameemail">NameEmail<a class="headerlink" href="#nameemail" title="Permanent link">&para;</a></h2>
-<p><code>NameEmail</code> requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed;
-  the input string must be either a valid email address or in the format <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code>,
-  and the output is a <code>NameEmail</code> object which has two properties: <code>name</code> and <code>email</code>.
-  For <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code> the name would be <code>"Fred Bloggs"</code>;
-  for <code>fred.bloggs@example.com</code> it would be <code>"fred.bloggs"</code>.</p>
+<p><code>NameEmail</code> requires <a href="https://github.com/JoshData/python-email-validator">email-validator</a> to be installed.
+The input string must be either a valid email address or in the format <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code>,
+and the output is a <code>NameEmail</code> object which has two properties: <code>name</code> and <code>email</code>.
+For <code>Fred Bloggs &lt;fred.bloggs@example.com&gt;</code> the name would be <code>"Fred Bloggs"</code>.
+For <code>fred.bloggs@example.com</code> it would be <code>"fred.bloggs"</code>.</p>
 <h2 id="importstring">ImportString<a class="headerlink" href="#importstring" title="Permanent link">&para;</a></h2>
-<p><code>ImportString</code> expects a string and loads the Python object importable at that dotted path; e.g. if <code>'math.cos'</code>
-was provided, the resulting field value would be the function <code>cos</code>; see <a href="#importstring">ImportString</a></p>
+<p><code>ImportString</code> expects a string and loads the Python object importable at that dotted path.
+Attributes of modules may be separated from the module by <code>:</code> or <code>.</code>, e.g. if <code>'math:cos'</code> was provided,
+the resulting field value would be the function<code>cos</code>. If a <code>.</code> is used and both an attribute and submodule
+are present at the same path, the module will be preferred.</p>
 <p>On model instantiation, pointers will be evaluated and imported. There is
 some nuance to this behavior, demonstrated in the examples below.</p>
 <blockquote>
