@@ -46,27 +46,6 @@ print(Foo(b={'a': '321'}))
 #> a=123 b=Foo(a=321, b=None)
 ```
 
-When the referenced type is not defined yet, and reference it by string, you'll need to call `model_rebuild`
-after the model has been created before it can be used:
-
-```py
-from pydantic import BaseModel
-
-
-class Bar(BaseModel):
-    foo: 'Foo'
-
-
-class Foo(BaseModel):
-    x: int
-
-
-Bar.model_rebuild()
-
-print(Bar(foo={'x': '123'}))
-#> foo=Foo(x=123)
-```
-
 ## Self-referencing Models
 
 Data structures with self-referencing models are also supported. Self-referencing fields will be automatically
