@@ -57,33 +57,33 @@ user = User(id='42')
 print(TypeAdapter(User).json_schema())
 """
 {
-    'type': 'object',
     'properties': {
-        'id': {'type': 'integer', 'title': 'Id'},
-        'name': {'type': 'string', 'default': 'John Doe', 'title': 'Name'},
-        'friends': {
-            'type': 'array',
-            'items': {'type': 'integer'},
-            'default': [0],
-            'title': 'Friends',
-        },
         'age': {
             'anyOf': [{'type': 'integer'}, {'type': 'null'}],
             'default': None,
-            'title': 'The age of the user',
             'description': 'do not lie!',
+            'title': 'The age of the user',
+        },
+        'friends': {
+            'default': [0],
+            'items': {'type': 'integer'},
+            'title': 'Friends',
+            'type': 'array',
         },
         'height': {
             'anyOf': [
-                {'type': 'integer', 'maximum': 300, 'minimum': 50},
+                {'maximum': 300, 'minimum': 50, 'type': 'integer'},
                 {'type': 'null'},
             ],
             'default': None,
             'title': 'The height in cm',
         },
+        'id': {'title': 'Id', 'type': 'integer'},
+        'name': {'default': 'John Doe', 'title': 'Name', 'type': 'string'},
     },
     'required': ['id'],
     'title': 'User',
+    'type': 'object',
 }
 """
 ```

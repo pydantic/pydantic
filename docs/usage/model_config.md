@@ -319,14 +319,14 @@ class Character(Voice):
 print(Character.model_json_schema(by_alias=True))
 """
 {
-    'type': 'object',
     'properties': {
-        'ActorName': {'type': 'string', 'default': None, 'title': 'Actorname'},
-        'LanguageCode': {'type': 'string', 'default': None, 'title': 'Languagecode'},
-        'Mood': {'type': 'string', 'default': None, 'title': 'Mood'},
-        'Act': {'type': 'integer', 'default': 1, 'title': 'Act'},
+        'Act': {'default': 1, 'title': 'Act', 'type': 'integer'},
+        'ActorName': {'default': None, 'title': 'Actorname', 'type': 'string'},
+        'LanguageCode': {'default': None, 'title': 'Languagecode', 'type': 'string'},
+        'Mood': {'default': None, 'title': 'Mood', 'type': 'string'},
     },
     'title': 'Character',
+    'type': 'object',
 }
 """
 ```

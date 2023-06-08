@@ -114,7 +114,7 @@ def test_by_alias():
         },
         'required': ['Snap'],
     }
-    assert list(ApplePie.model_json_schema(by_alias=True)['properties'].keys()) == ['Snap', 'Crackle']
+    assert list(ApplePie.model_json_schema(by_alias=True)['properties'].keys()) == ['Crackle', 'Snap']
     assert list(ApplePie.model_json_schema(by_alias=False)['properties'].keys()) == ['a', 'b']
 
 
