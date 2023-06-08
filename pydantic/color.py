@@ -6,6 +6,10 @@ A few colors have multiple names referring to the sames colors, eg. `grey` and `
 
 In these cases the _last_ color when sorted alphabetically takes preferences,
 eg. `Color((0, 255, 255)).as_named() == 'cyan'` because "cyan" comes after "aqua".
+
+Warning: Deprecated
+    The `Color` class is deprecated, use `pydantic_extra_types` instead.
+    See more about it [here](/usage/types/extra_types/color_types/).
 """
 import math
 import re
@@ -65,10 +69,9 @@ repeat_colors = {int(c * 2, 16) for c in '0123456789abcdef'}
 rads = 2 * math.pi
 
 
-# TODO: Remove the comment when we add a section about `pydantic-extra-types` on the docs.
 @deprecated(
-    'The `Color` class is deprecated, use `pydantic_extra_types.Color` instead.'
-    # 'See https://pydantic-docs.helpmanual.io/usage/types/#pydantic-extra-types'
+    'The `Color` class is deprecated, use `pydantic_extra_types` instead. '
+    'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/color_types/.'
 )
 class Color(_repr.Representation):
     """
