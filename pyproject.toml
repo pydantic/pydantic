@@ -84,7 +84,8 @@ docs = [
     "mkdocs-embed-external-markdown>=2.3.0",
     "black>=23.3.0",
     "pytest-examples>=0.0.9",
-    "pydantic-settings>=2.0b1"
+    "pydantic-settings>=2.0b1",
+    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
 ]
 linting = [
     "black",

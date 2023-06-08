@@ -108,25 +108,33 @@ nav:
   - blog/pydantic-v2-alpha.md
   - blog/pydantic-v2.md
 - API Documentation:
-  - 'pydantic': api/main.md
-  - 'pydantic.alias_generators': api/alias_generators.md
-  - 'pydantic.color': api/color.md
-  - 'pydantic.config': api/config.md
-  - 'pydantic.dataclasses': api/dataclasses.md
-  - 'pydantic.errors': api/errors.md
-  - 'pydantic.fields': api/fields.md
-  - 'pydantic.functional_serializers': api/functional_serializers.md
-  - 'pydantic.functional_validators': api/functional_validators.md
-  - 'pydantic.json_schema': api/json_schema.md
-  - 'pydantic.mypy': api/mypy.md
-  - 'pydantic.networks': api/networks.md
-  - 'pydantic.type_adapter': api/type_adapter.md
-  - 'pydantic.types': api/types.md
-  - 'pydantic.validate_call': api/validate_call.md
-  - 'pydantic.version': api/version.md
-  - 'pydantic_core': api/pydantic_core_init.md
-  - 'pydantic_core.core_schema': api/pydantic_core_schema.md
-  - 'pydantic_settings': api/pydantic_settings.md
+  - Pydantic:
+    - 'pydantic': api/main.md
+    - 'pydantic.alias_generators': api/alias_generators.md
+    - 'pydantic.config': api/config.md
+    - 'pydantic.dataclasses': api/dataclasses.md
+    - 'pydantic.errors': api/errors.md
+    - 'pydantic.fields': api/fields.md
+    - 'pydantic.functional_serializers': api/functional_serializers.md
+    - 'pydantic.functional_validators': api/functional_validators.md
+    - 'pydantic.json_schema': api/json_schema.md
+    - 'pydantic.mypy': api/mypy.md
+    - 'pydantic.networks': api/networks.md
+    - 'pydantic.type_adapter': api/type_adapter.md
+    - 'pydantic.types': api/types.md
+    - 'pydantic.validate_call': api/validate_call.md
+    - 'pydantic.version': api/version.md
+  - Pydantic Core:
+    - 'pydantic_core': api/pydantic_core_init.md
+    - 'pydantic_core.core_schema': api/pydantic_core_schema.md
+  - Pydantic Settings:
+    - 'pydantic_settings': api/pydantic_settings.md
+  - Pydantic Extra Types:
+    - 'pydantic_extra_types.color': api/pydantic_extra_types_color.md
+    - 'pydantic_extra_types.country': api/pydantic_extra_types_country.md
+    - 'pydantic_extra_types.payment': api/pydantic_extra_types_payment.md
+    - 'pydantic_extra_types.phone_numbers': api/pydantic_extra_types_phone_numbers.md
+    - 'pydantic_extra_types.routing_number': api/pydantic_extra_types_routing_number.md
 
 markdown_extensions:
 - tables
