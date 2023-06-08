@@ -77,6 +77,7 @@ nav:
     - Encoded: usage/types/encoded.md
     - Custom Data Types: usage/types/custom.md
     - Extra Types:
+      - Extra Types Overview: usage/types/extra_types/extra_types.md
       - Color Types: usage/types/extra_types/color_types.md
       - Payment Card Numbers: usage/types/extra_types/payment_cards.md
       - Phone Numbers: usage/types/extra_types/phone_numbers.md
@@ -111,6 +112,7 @@ nav:
   - Pydantic:
     - 'pydantic': api/main.md
     - 'pydantic.alias_generators': api/alias_generators.md
+    - 'pydantic.color': api/color.md
     - 'pydantic.config': api/config.md
     - 'pydantic.dataclasses': api/dataclasses.md
     - 'pydantic.errors': api/errors.md
