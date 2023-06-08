@@ -53,8 +53,7 @@ class ConfigDict(TypedDict, total=False):
         str_min_length: The minimum length for str & bytes types. Defaults to `None`.
         str_max_length: The maximum length for str & bytes types. Defaults to `None`.
         extra: Whether to ignore, allow, or forbid extra attributes during model initialization.
-            Accepts the string values of `'ignore'`, `'allow'`, or `'forbid'`,
-            or values of the `Extra` enum. Defaults to `Extra.ignore`.
+            Accepts the string values of `'ignore'`, `'allow'`, or `'forbid'`. Defaults to `'ignore'`.
 
             - `'forbid'` will cause validation to fail if extra attributes are included
             - `'ignore'` will silently ignore any extra attributes
