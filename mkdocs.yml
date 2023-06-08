@@ -122,6 +122,7 @@ nav:
     - 'pydantic.json_schema': api/json_schema.md
     - 'pydantic.mypy': api/mypy.md
     - 'pydantic.networks': api/networks.md
+    - 'pydantic.root_model': api/root_model.md
     - 'pydantic.type_adapter': api/type_adapter.md
     - 'pydantic.types': api/types.md
     - 'pydantic.validate_call': api/validate_call.md
