@@ -2166,7 +2166,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <a id="pydantic.errors"></a>
   <div class="doc doc-contents first">
   
-      <p>Pydantic errors.</p>
+      <p>Pydantic-specific errors.</p>
 
   
 
@@ -2305,7 +2305,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         Bases: <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticErrorMixin" href="#pydantic.errors.PydanticErrorMixin">PydanticErrorMixin</a></code>, <code>ImportError</code></p>
 
   
-      <p>Error raised when an import fails due to module changes between V1 and V2.</p>
+      <p>An error raised when an import fails due to module changes between V1 and V2.</p>
 
   <p><strong>Attributes:</strong></p>
   <table>
@@ -2333,8 +2333,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/errors.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">118</span>
-<span class="normal">119</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">119</span>
 <span class="normal">120</span>
 <span class="normal">121</span>
 <span class="normal">122</span>
@@ -2342,9 +2341,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">124</span>
 <span class="normal">125</span>
 <span class="normal">126</span>
-<span class="normal">127</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticImportError</span><span class="p">(</span><span class="n">PydanticErrorMixin</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
+<span class="normal">127</span>
+<span class="normal">128</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticImportError</span><span class="p">(</span><span class="n">PydanticErrorMixin</span><span class="p">,</span> <span class="ne">ImportError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Error raised when an import fails due to module changes between V1 and V2.</span>
+<span class="sd">    An error raised when an import fails due to module changes between V1 and V2.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        message: Description of the error.</span>
@@ -2391,7 +2391,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         Bases: <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticUserError" href="#pydantic.errors.PydanticUserError">PydanticUserError</a></code></p>
 
   
-      <p>Error raised during failures to generate a JSON schema for some <code>CoreSchema</code>.</p>
+      <p>An error raised during failures to generate a JSON schema for some <code>CoreSchema</code>.</p>
 
   <p><strong>Attributes:</strong></p>
   <table>
@@ -2419,8 +2419,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/errors.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
-<span class="normal">143</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">143</span>
 <span class="normal">144</span>
 <span class="normal">145</span>
 <span class="normal">146</span>
@@ -2428,9 +2427,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">148</span>
 <span class="normal">149</span>
 <span class="normal">150</span>
-<span class="normal">151</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticInvalidForJsonSchema</span><span class="p">(</span><span class="n">PydanticUserError</span><span class="p">):</span>
+<span class="normal">151</span>
+<span class="normal">152</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticInvalidForJsonSchema</span><span class="p">(</span><span class="n">PydanticUserError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Error raised during failures to generate a JSON schema for some `CoreSchema`.</span>
+<span class="sd">    An error raised during failures to generate a JSON schema for some `CoreSchema`.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        message: Description of the error.</span>
@@ -2477,7 +2477,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         Bases: <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticUserError" href="#pydantic.errors.PydanticUserError">PydanticUserError</a></code></p>
 
   
-      <p>Error raised during failures to generate a <code>CoreSchema</code> for some type.</p>
+      <p>An error raised during failures to generate a <code>CoreSchema</code> for some type.</p>
 
   <p><strong>Attributes:</strong></p>
   <table>
@@ -2505,8 +2505,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/errors.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">130</span>
-<span class="normal">131</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">131</span>
 <span class="normal">132</span>
 <span class="normal">133</span>
 <span class="normal">134</span>
@@ -2514,9 +2513,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
-<span class="normal">139</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticSchemaGenerationError</span><span class="p">(</span><span class="n">PydanticUserError</span><span class="p">):</span>
+<span class="normal">139</span>
+<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticSchemaGenerationError</span><span class="p">(</span><span class="n">PydanticUserError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Error raised during failures to generate a `CoreSchema` for some type.</span>
+<span class="sd">    An error raised during failures to generate a `CoreSchema` for some type.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        message: Description of the error.</span>
@@ -2628,8 +2628,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
-<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticUndefinedAnnotation</span><span class="p">(</span><span class="n">PydanticErrorMixin</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.</span>
+<span class="normal">115</span>
+<span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticUndefinedAnnotation</span><span class="p">(</span><span class="n">PydanticErrorMixin</span><span class="p">,</span> <span class="ne">NameError</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.</span>
 
 <span class="sd">    Attributes:</span>
 <span class="sd">        name: Name of the error.</span>
@@ -2743,8 +2745,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
       <details class="quote">
         <summary>Source code in <code>pydantic/errors.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">100</span>
-<span class="normal">101</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">101</span>
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
@@ -2758,7 +2759,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">112</span>
 <span class="normal">113</span>
 <span class="normal">114</span>
-<span class="normal">115</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">115</span>
+<span class="normal">116</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">from_name_error</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">name_error</span><span class="p">:</span> <span class="ne">NameError</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Self</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Convert a `NameError` to a `PydanticUndefinedAnnotation` error.</span>
@@ -2804,7 +2806,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         Bases: <code><a class="autorefs autorefs-internal" title="pydantic.errors.PydanticErrorMixin" href="#pydantic.errors.PydanticErrorMixin">PydanticErrorMixin</a></code>, <code>TypeError</code></p>
 
   
-      <p>Error raised due to incorrect use of Pydantic.</p>
+      <p>An error raised due to incorrect use of Pydantic.</p>
 
 
         <details class="quote">
@@ -2814,7 +2816,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">84</span>
 <span class="normal">85</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PydanticUserError</span><span class="p">(</span><span class="n">PydanticErrorMixin</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Error raised due to incorrect use of Pydantic.</span>
+<span class="sd">    An error raised due to incorrect use of Pydantic.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></td></tr></table></div>
         </details>
