@@ -4,7 +4,7 @@
 Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/pep-0563/))
 "just work".
 
-```py requires="3.9"
+```py
 from __future__ import annotations
 
 from typing import Any
@@ -27,10 +27,6 @@ In cases where the referenced type is not yet defined, `ForwardRef` can be used 
 type directly or by its string is a simpler solution in the case of
 [self-referencing models](#self-referencing-models)).
 
-In some cases, a `ForwardRef` won't be able to be resolved during model creation.
-For example, this happens whenever a model references itself as a field type.
-When this happens, you'll need to call `update_forward_refs` after the model has been created before it can be used:
-
 ```py
 from typing import ForwardRef
 
@@ -50,55 +46,26 @@ print(Foo(b={'a': '321'}))
 #> a=123 b=Foo(a=321, b=None)
 ```
 
-!!! warning
-    To resolve strings (type names) into annotations (types), *pydantic* needs a namespace dict in which to
-    perform the lookup. For this it uses `module.__dict__`, just like `get_type_hints`.
-    This means *pydantic* may not play well with types not defined in the global scope of a module.
-
-For example, this works fine:
-
-```py test="skip - works fine in reality, but fails with pytest-examples"
-from __future__ import annotations
-
-from pydantic import (
-    BaseModel,
-    HttpUrl,  # HttpUrl is defined in the module's global scope
-)
-
-
-def this_works():
-    class Model(BaseModel):
-        a: HttpUrl
-
-    print(Model(a='https://example.com'))
-    #> a=Url('https://example.com/')
-
-
-this_works()
-```
-
-While this will break:
+When the referenced type is not defined yet, and reference it by string, you'll need to call `model_rebuild`
+after the model has been created before it can be used:
 
 ```py
-from __future__ import annotations
-
 from pydantic import BaseModel
 
 
-def this_works():
-    from pydantic import HttpUrl  # HttpUrl is defined in function local scope
-
-    class Model(BaseModel):
-        a: HttpUrl
-
-    print(Model(a='https://example.com'))
-    #> a=Url('https://example.com/')
+class Bar(BaseModel):
+    foo: 'Foo'
 
 
-this_works()
+class Foo(BaseModel):
+    x: int
+
+
+Bar.model_rebuild()
+
+print(Bar(foo={'x': '123'}))
+#> foo=Foo(x=123)
 ```
-
-Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.
 
 ## Self-referencing Models
 
