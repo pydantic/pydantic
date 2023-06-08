@@ -104,9 +104,9 @@ class TypeAdapter(Generic[T]):
     with the difference that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
 
     Attributes:
-        core_schema (CoreSchema): The core schema for the type.
-        validator (SchemaValidator): The schema validator for the type.
-        serializer (SchemaSerializer): The schema serializer for the type.
+        core_schema: The core schema for the type.
+        validator: The schema validator for the type.
+        serializer: The schema serializer for the type.
     """
 
     if TYPE_CHECKING:
@@ -240,7 +240,7 @@ class TypeAdapter(Generic[T]):
 
         Args:
             __instance: The Python object to serialize.
-            mode: The output format. Defaults to 'python'.
+            mode: The output format. Defaults to `'python'`.
             include: Fields to include in the output. Defaults to `None`.
             exclude: Fields to exclude from the output. Defaults to `None`.
             by_alias: Whether to use alias names for field names. Defaults to `False`.
@@ -289,7 +289,7 @@ class TypeAdapter(Generic[T]):
             indent: Number of spaces for JSON indentation. Defaults to `None`.
             include: Fields to include. Defaults to `None`.
             exclude: Fields to exclude. Defaults to `None`.
-            by_alias: Whether to use alias names. Defaults to `None`.
+            by_alias: Whether to use alias names for field names. Defaults to `False`.
             exclude_unset: Whether to exclude unset fields. Defaults to `False`.
             exclude_defaults: Whether to exclude fields with default values. Defaults to `False`.
             exclude_none: Whether to exclude fields with a value of `None`. Defaults to `False`.
@@ -325,8 +325,8 @@ class TypeAdapter(Generic[T]):
         Generate a JSON schema for the model.
 
         Args:
-            by_alias: Whether to use alias names. Defaults to `False`.
-            ref_template: The format string used for generating `$ref` strings. Defaults to `DEFAULT_REF_TEMPLATE`.
+            by_alias: Whether to use alias names for field names. Defaults to `True`.
+            ref_template: The format string used for generating $ref strings. Defaults to `DEFAULT_REF_TEMPLATE`.
             schema_generator: The generator class used for creating the schema. Defaults to `GenerateJsonSchema`.
 
         Returns:
@@ -349,9 +349,9 @@ class TypeAdapter(Generic[T]):
         Generate JSON schemas for multiple type adapters.
 
         Args:
-            __inputs: Inputs to schema generation.
-                The first two items will form the keys of the (first) output mapping; the type adapters will provide
-                the core schemas that get converted into definitions in the output JSON schema.
+            __inputs: Inputs to schema generation. The first two items will form the keys of the (first)
+                output mapping; the type adapters will provide the core schemas that get converted into
+                definitions in the output JSON schema.
             by_alias: Whether to use alias names. Defaults to `True`.
             title: The title for the schema. Defaults to `None`.
             description: The description for the schema. Defaults to `None`.
@@ -360,7 +360,7 @@ class TypeAdapter(Generic[T]):
 
         Returns:
             The first item contains the mapping of key + mode to a definitions reference, which will be a key
-                of the `$def`s mapping in the JSON schema included as the second member of the returned tuple.
+                of the $defs mapping in the JSON schema included as the second member of the returned tuple.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
 

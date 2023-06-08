@@ -85,17 +85,17 @@ print(model.post_code)
 print(Model.model_json_schema())
 """
 {
-    'type': 'object',
     'properties': {
         'post_code': {
-            'type': 'string',
-            'pattern': '^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
             'examples': ['SP11 9DG', 'W1J 7BU'],
+            'pattern': '^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
             'title': 'Post Code',
+            'type': 'string',
         }
     },
     'required': ['post_code'],
     'title': 'Model',
+    'type': 'object',
 }
 """
 try:

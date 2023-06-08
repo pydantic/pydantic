@@ -603,10 +603,8 @@ class _EmptyKwargs(typing_extensions.TypedDict):
     This class exists solely to ensure that type checking warns about passing `**extra` in `Field`.
     """
 
-    pass
 
-
-def Field(  # noqa C901
+def Field(  # C901
     default: Any = _Undefined,
     *,
     default_factory: typing.Callable[[], Any] | None = None,
@@ -730,9 +728,8 @@ def Field(  # noqa C901
         if not json_schema_extra:
             json_schema_extra = extra  # type: ignore
 
-    if validation_alias:
-        if not isinstance(validation_alias, (str, AliasChoices, AliasPath)):
-            raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`')
+    if validation_alias and not isinstance(validation_alias, (str, AliasChoices, AliasPath)):
+        raise TypeError('Invalid `validation_alias` type. it should be `str`, `AliasChoices`, or `AliasPath`')
 
     if serialization_alias is None and isinstance(alias, str):
         serialization_alias = alias
@@ -776,8 +773,8 @@ class ModelPrivateAttr(_repr.Representation):
     """A descriptor for private attributes in class models.
 
     Attributes:
-        default (Any): The default value of the attribute if not provided.
-        default_factory (typing.Callable[[], Any]): A callable function that generates the default value of the
+        default: The default value of the attribute if not provided.
+        default_factory: A callable function that generates the default value of the
             attribute if not provided.
     """
 
@@ -810,7 +807,7 @@ class ModelPrivateAttr(_repr.Representation):
             set_name(cls, name)
 
     def get_default(self) -> Any:
-        """Returns the default value for the object.
+        """Retrieve the default value of the object.
 
         If `self.default_factory` is `None`, the method will return a deep copy of the `self.default` object.
 
@@ -890,24 +887,6 @@ class ComputedFieldInfo:
 # this should really be `property[T], cached_proprety[T]` but property is not generic unlike cached_property
 # See https://github.com/python/typing/issues/985 and linked issues
 PropertyT = typing.TypeVar('PropertyT')
-"""
-`TypeVar` that can be used to specify the type of a property.
-
-This can be used in combination with the `@property` decorator to specify the type
-of the property.
-
-Example:
-    ```py
-    class MyClass:
-        @property
-        def my_property(self) -> PropertyT:
-            return self._my_property
-
-        @my_property.setter
-        def my_property(self, value: PropertyT) -> None:
-            self._my_property = value
-    ```
-"""
 
 
 @typing.overload

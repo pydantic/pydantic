@@ -199,7 +199,7 @@ from pydantic import TypeAdapter
 validator = TypeAdapter(List[int])
 assert validator.validate_python(['1', '2', '3']) == [1, 2, 3]
 print(validator.json_schema())
-#> {'type': 'array', 'items': {'type': 'integer'}}
+#> {'items': {'type': 'integer'}, 'type': 'array'}
 ```
 
 Note that this API is provisional and may change before the final release of Pydantic V2.

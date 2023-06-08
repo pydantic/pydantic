@@ -46,6 +46,18 @@ __all__ = [
 
 @_dataclasses.dataclass
 class UrlConstraints(_fields.PydanticMetadata):
+    """
+    Url constraints.
+
+    Attributes:
+        max_length: The maximum length of the url. Defaults to `None`.
+        allowed_schemes: The allowed schemes. Defaults to `None`.
+        host_required: Whether the host is required. Defaults to `None`.
+        default_host: The default host. Defaults to `None`.
+        default_port: The default port. Defaults to `None`.
+        default_path: The default path. Defaults to `None`.
+    """
+
     max_length: int | None = None
     allowed_schemes: list[str] | None = None
     host_required: bool | None = None
@@ -167,6 +179,24 @@ else:
 
 
 class NameEmail(_repr.Representation):
+    """Validate a name and email address combination.
+
+    Example:
+        ```py
+        from pydantic import BaseModel, NameEmail
+
+        class User(BaseModel):
+            email: NameEmail
+
+        print(User(email='John Doe <john.doe@mail.com>'))
+        #> email=NameEmail(name='John Doe', email='john.doe@mail.com')
+        ```
+
+    Attributes:
+        name: The name.
+        email: The email address.
+    """
+
     __slots__ = 'name', 'email'
 
     def __init__(self, name: str, email: str):
@@ -209,6 +239,8 @@ class NameEmail(_repr.Representation):
 
 
 class IPvAnyAddress:
+    """Validate an IPv4 or IPv6 address."""
+
     __slots__ = ()
 
     def __new__(cls, value: Any) -> IPv4Address | IPv6Address:  # type: ignore[misc]
@@ -243,6 +275,8 @@ class IPvAnyAddress:
 
 
 class IPvAnyInterface:
+    """Validate an IPv4 or IPv6 interface."""
+
     __slots__ = ()
 
     def __new__(cls, value: NetworkType) -> IPv4Interface | IPv6Interface:  # type: ignore[misc]
@@ -277,6 +311,8 @@ class IPvAnyInterface:
 
 
 class IPvAnyNetwork:
+    """Validate an IPv4 or IPv6 network."""
+
     __slots__ = ()
 
     def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:  # type: ignore[misc]

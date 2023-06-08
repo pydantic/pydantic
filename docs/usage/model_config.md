@@ -93,132 +93,7 @@ except ValidationError as e:
 
 ## Options
 
-**`title`**
-: the title for the generated JSON Schema
-
-**`str_strip_whitespace`**
-: whether to strip leading and trailing whitespace for str & byte types (default: `False`)
-
-**`str_to_upper`**
-: whether to make all characters uppercase for str & byte types (default: `False`)
-
-**`str_to_lower`**
-: whether to make all characters lowercase for str & byte types (default: `False`)
-
-**`str_min_length`**
-: the min length for str & byte types (default: `0`)
-
-**`str_max_length`**
-: the max length for str & byte types (default: `None`)
-
-**`validate_all`**
-: whether to validate field defaults (default: `False`)
-
-**`extra`**
-: whether to ignore, allow, or forbid extra attributes during model initialization. Accepts the string values of
-  `'ignore'`, `'allow'`, or `'forbid'`, or values of the `Extra` enum (default: `Extra.ignore`).
-  `'forbid'` will cause validation to fail if extra attributes are included, `'ignore'` will silently ignore any extra attributes,
-  and `'allow'` will assign the attributes to the model.
-
-**`allow_mutation`**
-: whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed (default: `True`)
-
-**`frozen`**
-: setting `frozen=True` does everything that `allow_mutation=False` does, and also generates a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the attributes are hashable. (default: `False`)
-
-**`use_enum_values`**
-: whether to populate models with the `value` property of enums, rather than the raw enum.
-  This may be useful if you want to serialise `model.model_dump()` later (default: `False`)
-
-**`fields`**
-: a `dict` containing schema information for each field; this is equivalent to
-  using [the `Field` class](schema.md), except when a field is already
-  defined through annotation or the Field class, in which case only
-  `alias`, `include`, `exclude`, `min_length`, `max_length`, `regex`, `gt`, `lt`, `gt`, `le`,
-  `multiple_of`, `max_digits`, `decimal_places`, `min_items`, `max_items`, `unique_items`
-  and `allow_mutation` can be set (for example you cannot set default of `default_factory`)
-   (default: `None`)
-
-**`validate_assignment`**
-: whether to perform validation on *assignment* to attributes (default: `False`)
-
-**`populate_by_name`**
-: whether an aliased field may be populated by its name as given by the model
-  attribute, as well as the alias (default: `False`)
-
-!!! note
-    The name of this configuration setting was changed in **v2.0** from
-    `allow_population_by_alias` to `populate_by_name`.
-
-**`error_msg_templates`**
-: a `dict` used to override the default error message templates.
-  Pass in a dictionary with keys matching the error messages you want to override (default: `{}`)
-
-**`arbitrary_types_allowed`**
-: whether to allow arbitrary user types for fields (they are validated simply by
-  checking if the value is an instance of the type). If `False`, `RuntimeError` will be
-  raised on model declaration (default: `False`). See an example in
-  [Field Types](types/types.md#arbitrary-types-allowed).
-
-**`from_attributes`**
-: whether to allow usage of [ORM mode](models.md#orm-mode-aka-arbitrary-class-instances) (default: `False`)
-
-!!! note
-    The name of this configuration setting was changed in **v2.0** from
-    `orm_mode` to `from_attributes`.
-
-**`loc_by_alias`**
-: whether to use the alias for error `loc`s (default: `True`)
-
-**`revalidate_instances`**
-: when and how to revalidate models and dataclasses during validation. Accepts the string values of
-  `'never'`, `'always'` and `'subclass-instances'` (default: `'never'`).
-
-  * `'never'` will not revalidate models and dataclasses during validation.
-  * `'always'` will revalidate models and dataclasses during validation.
-  * `'subclass-instances'` will revalidate models and dataclasses during validation if the instance is a subclass of the model or dataclass.
-
-**`ser_json_timedelta`**
-: the format of JSON serialized timedeltas. Accepts the string values of
-  `'iso8601'` and `'float'` (default: `'iso8601'`).
-
-  * `'iso8601'` will serialize timedeltas to ISO 8601 durations.
-  * `'float'` will serialize timedeltas to the total number of seconds.
-
-**`ser_json_bytes`**
-: the encoding of JSON serialized bytes. Accepts the string values of
-  `'utf8'` and `'base64'` (default: `'utf8'`).
-
-  * `'utf8'` will serialize bytes to UTF-8 strings.
-  * `'base64'` will serialize bytes to base64 strings.
-
-**`validate_default`**
-: whether to validate default values during validation (default: `False`).
-
-**`getter_dict`**
-: a custom class (which should inherit from `GetterDict`) to use when decomposing arbitrary classes
-for validation, for use with `from_attributes`; see [Data binding](models.md#data-binding).
-
-**`alias_generator`**
-: a callable that takes a field name and returns an alias for it; see [the dedicated section](#alias-generator)
-
-**`ignored_types`**
-: a tuple of types that may occur as values of class attributes without annotations; this is typically used for
-custom descriptors (classes that behave like `property`). If an attribute is set on a class without an annotation
-and has a type that is not in this tuple (or otherwise recognized by pydantic), an error will be raised.
-
-**`allow_inf_nan`**
-: whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields, defaults to `True`,
-  set to `False` for compatibility with `JSON`,
-  see [#3994](https://github.com/pydantic/pydantic/pull/3994) for more details, added in **V1.10**
-
-**`protected_namespaces`**
-: a `tuple` of strings that prevent model to have field which conflict with them (default: `('model_', )`).
-see [the dedicated section](#protected-namespaces)
-
-**`hide_input_in_errors`**
-: whether to show input value and input type in `ValidationError` representation defaults to `False`.
-see [the dedicated section](#hide-input-in-errors)
+See the [`ConfigDict` API documentation](/api/config/#pydantic.config.ConfigDict) for the full list of settings.
 
 ## Change behaviour globally
 
@@ -319,14 +194,14 @@ class Character(Voice):
 print(Character.model_json_schema(by_alias=True))
 """
 {
-    'type': 'object',
     'properties': {
-        'ActorName': {'type': 'string', 'default': None, 'title': 'Actorname'},
-        'LanguageCode': {'type': 'string', 'default': None, 'title': 'Languagecode'},
-        'Mood': {'type': 'string', 'default': None, 'title': 'Mood'},
-        'Act': {'type': 'integer', 'default': 1, 'title': 'Act'},
+        'Act': {'default': 1, 'title': 'Act', 'type': 'integer'},
+        'ActorName': {'default': None, 'title': 'Actorname', 'type': 'string'},
+        'LanguageCode': {'default': None, 'title': 'Languagecode', 'type': 'string'},
+        'Mood': {'default': None, 'title': 'Mood', 'type': 'string'},
     },
     'title': 'Character',
+    'type': 'object',
 }
 """
 ```

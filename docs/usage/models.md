@@ -856,7 +856,7 @@ print(Pets(['dog', 'cat']).model_dump_json())
 print(Pets.model_validate(['dog', 'cat']))
 #> root=['dog', 'cat']
 print(Pets.model_json_schema())
-#> {'type': 'array', 'items': {'type': 'string'}}
+#> {'items': {'type': 'string'}, 'type': 'array'}
 
 print(PetsByName({'Otis': 'dog', 'Milo': 'cat'}))
 #> root={'Otis': 'dog', 'Milo': 'cat'}
