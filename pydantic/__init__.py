@@ -25,7 +25,14 @@ from .deprecated.tools import *
 from .errors import *
 from .fields import AliasChoices, AliasPath, Field, PrivateAttr, computed_field
 from .functional_serializers import PlainSerializer, WrapSerializer, field_serializer, model_serializer
-from .functional_validators import field_validator, model_validator
+from .functional_validators import (
+    AfterValidator,
+    BeforeValidator,
+    PlainValidator,
+    WrapValidator,
+    field_validator,
+    model_validator,
+)
 from .main import *
 from .networks import *
 from .type_adapter import TypeAdapter
@@ -49,6 +56,10 @@ __all__ = [
     'ValidatorFunctionWrapHandler',
     'field_validator',
     'model_validator',
+    'AfterValidator',
+    'BeforeValidator',
+    'PlainValidator',
+    'WrapValidator',
     # deprecated V1 functional validators
     'root_validator',
     'validator',
