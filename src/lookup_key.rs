@@ -10,7 +10,7 @@ use crate::errors::{ErrorType, ValLineError};
 use crate::input::{Input, JsonInput, JsonObject};
 use crate::tools::{extract_i64, py_err};
 
-/// Used got getting items from python dicts, python objects, or JSON objects, in different ways
+/// Used for getting items from python dicts, python objects, or JSON objects, in different ways
 #[derive(Debug, Clone)]
 pub(crate) enum LookupKey {
     /// simply look up a key in a dict, equivalent to `d.get(key)`
@@ -29,7 +29,7 @@ pub(crate) enum LookupKey {
         py_key2: Py<PyString>,
         path2: LookupPath,
     },
-    /// look up keys buy one or more "paths" a path might be `['foo', 'bar']` to get `d.?foo.?bar`
+    /// look up keys by one or more "paths" a path might be `['foo', 'bar']` to get `d.?foo.?bar`
     /// ints are also supported to index arrays/lists/tuples and dicts with int keys
     /// we reuse Location as the enum is the same, and the meaning is the same
     PathChoices(Vec<LookupPath>),

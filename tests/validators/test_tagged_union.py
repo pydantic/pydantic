@@ -3,7 +3,7 @@ from enum import Enum
 import pytest
 from dirty_equals import IsAnyStr
 
-from pydantic_core import SchemaError, SchemaValidator, ValidationError
+from pydantic_core import SchemaValidator, ValidationError
 
 from ..conftest import Err, PyAndJson
 from .test_typed_dict import Cls
@@ -126,7 +126,6 @@ def test_simple_tagged_union(py_and_json: PyAndJson, input_value, expected):
     'input_value,expected',
     [
         ({'foo': 123, 'bar': '123'}, {'foo': 123, 'bar': 123}),
-        ({'foo': '123', 'bar': '123'}, {'foo': 123, 'bar': 123}),
         ({'foo': 'banana', 'spam': [1, 2, '3']}, {'foo': 'banana', 'spam': [1, 2, 3]}),
         (
             {'foo': 123, 'bar': 'wrong'},
@@ -206,19 +205,22 @@ def test_enum_keys():
     class BarEnum(int, Enum):
         ONE = 1
 
+    class PlainEnum(Enum):
+        TWO = 'two'
+
     v = SchemaValidator(
         {
             'type': 'tagged-union',
             'discriminator': 'foo',
             'choices': {
-                1: {
+                BarEnum.ONE: {
                     'type': 'typed-dict',
                     'fields': {
                         'foo': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                         'bar': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
                     },
                 },
-                'banana': {
+                FooEnum.BANANA: {
                     'type': 'typed-dict',
                     'fields': {
                         'foo': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
@@ -228,21 +230,36 @@ def test_enum_keys():
                         },
                     },
                 },
+                PlainEnum.TWO: {
+                    'type': 'typed-dict',
+                    'fields': {
+                        'foo': {'type': 'typed-dict-field', 'schema': {'type': 'any'}},
+                        'baz': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
+                    },
+                },
             },
         }
     )
 
-    assert v.validate_python({'foo': FooEnum.BANANA, 'spam': [1, 2, '3']}) == {'foo': 'banana', 'spam': [1, 2, 3]}
-    assert v.validate_python({'foo': BarEnum.ONE, 'bar': '123'}) == {'foo': 1, 'bar': 123}
+    assert v.validate_python({'foo': FooEnum.BANANA, 'spam': [1, 2, '3']}) == {'foo': FooEnum.BANANA, 'spam': [1, 2, 3]}
+    assert v.validate_python({'foo': BarEnum.ONE, 'bar': '123'}) == {'foo': BarEnum.ONE, 'bar': 123}
+    assert v.validate_python({'foo': PlainEnum.TWO, 'baz': '123'}) == {'foo': PlainEnum.TWO, 'baz': 123}
     with pytest.raises(ValidationError) as exc_info:
         v.validate_python({'foo': FooEnum.APPLE, 'spam': [1, 2, '3']})
     assert exc_info.value.errors(include_url=False) == [
         {
             'type': 'union_tag_invalid',
             'loc': (),
-            'msg': "Input tag 'apple' found using 'foo' does not match any of the expected tags: 1, 'banana'",
+            'msg': (
+                "Input tag 'FooEnum.APPLE' found using 'foo' does not match any of the expected tags:"
+                " <BarEnum.ONE: 1>, <FooEnum.BANANA: 'banana'>, <PlainEnum.TWO: 'two'>"
+            ),
             'input': {'foo': FooEnum.APPLE, 'spam': [1, 2, '3']},
-            'ctx': {'discriminator': "'foo'", 'tag': 'apple', 'expected_tags': "1, 'banana'"},
+            'ctx': {
+                'discriminator': "'foo'",
+                'tag': 'FooEnum.APPLE',
+                'expected_tags': "<BarEnum.ONE: 1>, <FooEnum.BANANA: 'banana'>, <PlainEnum.TWO: 'two'>",
+            },
         }
     ]
 
@@ -606,100 +623,3 @@ def test_custom_error_type():
             'input': {'foo': 'other', 'bar': 'Bar'},
         }
     ]
-
-
-@pytest.mark.parametrize(
-    'input_value,expected',
-    [
-        ({'food': 'apple', 'a': 'ap', 'b': '13'}, {'a': 'ap', 'b': 13}),
-        ({'food': 'durian', 'a': 'ap', 'b': '13'}, {'a': 'ap', 'b': 13}),
-        ({'food': 1, 'a': 123, 'b': '13'}, {'a': 123, 'b': 13}),
-        ({'food': 'banana', 'c': 'C', 'd': [1, '2']}, {'c': 'C', 'd': [1, 2]}),
-        ({'food': 'cherry', 'c': 'C', 'd': [1, '2']}, {'c': 'C', 'd': [1, 2]}),
-        ({'food': 2, 'a': 123, 'b': '13'}, {'a': 123, 'b': 13}),
-        (
-            {'food': 'wrong'},
-            Err(
-                'union_tag_invalid',
-                [
-                    {
-                        'type': 'union_tag_invalid',
-                        'loc': (),
-                        'msg': (
-                            "Input tag 'wrong' found using 'food' does not match any of the expected tags: "
-                            "'apple', 'banana', 1, 'cherry', 'durian', 2"
-                        ),
-                        'input': {'food': 'wrong'},
-                        'ctx': {
-                            'discriminator': "'food'",
-                            'tag': 'wrong',
-                            'expected_tags': "'apple', 'banana', 1, 'cherry', 'durian', 2",
-                        },
-                    }
-                ],
-            ),
-        ),
-    ],
-)
-def test_tag_repeated(py_and_json: PyAndJson, input_value, expected):
-    v = py_and_json(
-        {
-            'type': 'tagged-union',
-            'discriminator': 'food',
-            'choices': {
-                'apple': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                    },
-                },
-                'banana': {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'c': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                        'd': {'type': 'typed-dict-field', 'schema': {'type': 'list', 'items_schema': {'type': 'int'}}},
-                    },
-                },
-                'cherry': 'banana',
-                'durian': 'apple',
-                1: {
-                    'type': 'typed-dict',
-                    'fields': {
-                        'a': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                        'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                    },
-                },
-                2: 1,
-            },
-        }
-    )
-    if isinstance(expected, Err):
-        # insert_assert(exc_info.value.errors(include_url=False))
-        with pytest.raises(ValidationError, match=expected.message) as exc_info:
-            v.validate_test(input_value)
-        # debug(exc_info.value.errors(include_url=False))
-        assert exc_info.value.errors(include_url=False) == expected.errors
-
-    else:
-        assert v.validate_test(input_value) == expected
-
-
-def test_tag_repeated_invalid():
-    with pytest.raises(SchemaError, match="SchemaError: String values in choices don't match any keys: `wrong`"):
-        SchemaValidator(
-            {
-                'type': 'tagged-union',
-                'discriminator': 'food',
-                'choices': {
-                    'apple': {
-                        'type': 'typed-dict',
-                        'fields': {
-                            'a': {'type': 'typed-dict-field', 'schema': {'type': 'str'}},
-                            'b': {'type': 'typed-dict-field', 'schema': {'type': 'int'}},
-                        },
-                    },
-                    'cherry': 'wrong',
-                },
-            }
-        )

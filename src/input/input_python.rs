@@ -195,6 +195,14 @@ impl<'a> Input<'a> for PyAny {
         }
     }
 
+    fn exact_int(&'a self) -> ValResult<EitherInt<'a>> {
+        if PyInt::is_exact_type_of(self) {
+            Ok(EitherInt::Py(self))
+        } else {
+            Err(ValError::new(ErrorType::IntType, self))
+        }
+    }
+
     fn lax_str(&'a self) -> ValResult<EitherString<'a>> {
         if let Ok(py_str) = <PyString as PyTryFrom>::try_from_exact(self) {
             Ok(py_str.into())
