@@ -45,11 +45,10 @@ A type alias for defined schema types that represents a union of `core_schema.Co
 `core_schema.CoreSchemaFieldType`.
 """
 
-JsonSchemaValue = Dict[str, Any]  # type: ignore
+JsonSchemaValue = Dict[str, Any]
 """
 A type alias for a JSON schema value. This is a dictionary of string keys to arbitrary values.
 """
-
 
 JsonSchemaMode = Literal['validation', 'serialization']
 """
