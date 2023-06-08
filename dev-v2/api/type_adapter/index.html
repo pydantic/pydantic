@@ -2182,7 +2182,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>core_schema</code></td>
           <td>
-                <code><span title="pydantic_core.CoreSchema">CoreSchema</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2193,7 +2192,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>validator</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.SchemaValidator" href="../pydantic_core_init/#pydantic_core.SchemaValidator">SchemaValidator</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2204,7 +2202,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>serializer</code></td>
           <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic_core.SchemaSerializer" href="../pydantic_core_init/#pydantic_core.SchemaSerializer">SchemaSerializer</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2490,17 +2487,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">368</span>
 <span class="normal">369</span>
 <span class="normal">370</span>
-<span class="normal">371</span>
-<span class="normal">372</span>
-<span class="normal">373</span>
-<span class="normal">374</span>
-<span class="normal">375</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TypeAdapter</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
+<span class="normal">371</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">TypeAdapter</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">T</span><span class="p">]):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A class representing the type adapter.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        core_schema (CoreSchema): The core schema for the type.</span>
-<span class="sd">        validator (SchemaValidator): The schema validator for the type.</span>
-<span class="sd">        serializer (SchemaSerializer): The schema serializer for the type.</span>
+<span class="sd">        core_schema: The core schema for the type.</span>
+<span class="sd">        validator: The schema validator for the type.</span>
+<span class="sd">        serializer: The schema serializer for the type.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
@@ -2576,10 +2569,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">        Validate a Python object against the model.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            __object (Any): The Python object to validate against the model.</span>
-<span class="sd">            strict (bool | None, optional): Whether to strictly check types. Defaults to None.</span>
-<span class="sd">            from_attributes (bool | None, optional): Whether to extract data from object attributes. Defaults to None.</span>
-<span class="sd">            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.</span>
+<span class="sd">            __object: The Python object to validate against the model.</span>
+<span class="sd">            strict: Whether to strictly check types. Defaults to None.</span>
+<span class="sd">            from_attributes: Whether to extract data from object attributes. Defaults to None.</span>
+<span class="sd">            context: Additional context to use during validation. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            T: The validated object.</span>
@@ -2593,9 +2586,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate a JSON string or bytes against the model.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            __data (str | bytes): The JSON data to validate against the model.</span>
-<span class="sd">            strict (bool | None, optional): Whether to strictly check types. Defaults to None.</span>
-<span class="sd">            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.</span>
+<span class="sd">            __data: The JSON data to validate against the model.</span>
+<span class="sd">            strict: Whether to strictly check types. Defaults to None.</span>
+<span class="sd">            context: Additional context to use during validation. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            T: The validated object.</span>
@@ -2607,11 +2600,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the default value for this model / type.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            strict (bool | None, optional): Whether to strictly check types. Defaults to None.</span>
-<span class="sd">            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.</span>
+<span class="sd">            strict: Whether to strictly check types. Defaults to None.</span>
+<span class="sd">            context: Additional context to use during validation. Defaults to None.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Some[T] | None: The default value wrapped in a Some if there is one or None if not.</span>
+<span class="sd">            The default value wrapped in a Some if there is one or None if not.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validator</span><span class="o">.</span><span class="n">get_default_value</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
 
@@ -2632,21 +2625,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Dump a Python object to a serialized format.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            __instance (T): The Python object to serialize.</span>
-<span class="sd">            mode (Literal[&#39;json&#39;, &#39;python&#39;], optional): The output format. Defaults to &#39;python&#39;.</span>
-<span class="sd">            include (IncEx | None, optional): Fields to include in the output. Defaults to None.</span>
-<span class="sd">            exclude (IncEx | None, optional): Fields to exclude from the output. Defaults to None.</span>
-<span class="sd">            by_alias (bool, optional): Whether to use alias names for field names. Defaults to False.</span>
-<span class="sd">            exclude_unset (bool, optional): Whether to exclude unset fields. Defaults to False.</span>
-<span class="sd">            exclude_defaults (bool, optional): Whether to exclude fields with default values. Defaults to False.</span>
-<span class="sd">            exclude_none (bool, optional): Whether to exclude fields with None values. Defaults to False.</span>
-<span class="sd">            round_trip (bool, optional): Whether to output the serialized data in a way that is compatible with</span>
-<span class="sd">                deserialization. Defaults to False.</span>
-<span class="sd">            warnings (bool, optional): Whether to display serialization warnings. Defaults to True.</span>
+<span class="sd">            __instance: The Python object to serialize.</span>
+<span class="sd">            mode: The output format. Defaults to `&#39;python&#39;`.</span>
+<span class="sd">            include: Fields to include in the output. Defaults to `None`.</span>
+<span class="sd">            exclude: Fields to exclude from the output. Defaults to `None`.</span>
+<span class="sd">            by_alias: Whether to use alias names for field names. Defaults to `False`.</span>
+<span class="sd">            exclude_unset: Whether to exclude unset fields. Defaults to `False`.</span>
+<span class="sd">            exclude_defaults: Whether to exclude fields with default values. Defaults to `False`.</span>
+<span class="sd">            exclude_none: Whether to exclude fields with None values. Defaults to `False`.</span>
+<span class="sd">            round_trip: Whether to output the serialized data in a way that is compatible with</span>
+<span class="sd">                deserialization. Defaults to `False`.</span>
+<span class="sd">            warnings: Whether to display serialization warnings. Defaults to `True`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Any: The serialized object.</span>
-
+<span class="sd">            The serialized object.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span><span class="o">.</span><span class="n">to_python</span><span class="p">(</span>
             <span class="n">__instance</span><span class="p">,</span>
@@ -2678,20 +2670,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Serialize the given instance to JSON.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            __instance (T): The instance to be serialized.</span>
-<span class="sd">            indent (Optional[int]): Number of spaces for JSON indentation (default: None).</span>
-<span class="sd">            include (Optional[IncEx]): Fields to include (default: None).</span>
-<span class="sd">            exclude (Optional[IncEx]): Fields to exclude (default: None).</span>
-<span class="sd">            by_alias (bool): Whether to use alias names (default: False).</span>
-<span class="sd">            exclude_unset (bool): Whether to exclude unset fields (default: False).</span>
-<span class="sd">            exclude_defaults (bool): Whether to exclude fields with default values (default: False).</span>
-<span class="sd">            exclude_none (bool): Whether to exclude fields with a value of None (default: False).</span>
-<span class="sd">            round_trip (bool): Whether to serialize and deserialize the instance to ensure</span>
-<span class="sd">                round-tripping (default: False).</span>
-<span class="sd">            warnings (bool): Whether to emit serialization warnings (default: True).</span>
+<span class="sd">            __instance: The instance to be serialized.</span>
+<span class="sd">            indent: Number of spaces for JSON indentation. Defaults to `None`.</span>
+<span class="sd">            include: Fields to include. Defaults to `None`.</span>
+<span class="sd">            exclude: Fields to exclude. Defaults to `None`.</span>
+<span class="sd">            by_alias: Whether to use alias names for field names. Defaults to `False`.</span>
+<span class="sd">            exclude_unset: Whether to exclude unset fields. Defaults to `False`.</span>
+<span class="sd">            exclude_defaults: Whether to exclude fields with default values. Defaults to `False`.</span>
+<span class="sd">            exclude_none: Whether to exclude fields with a value of `None`. Defaults to `False`.</span>
+<span class="sd">            round_trip: Whether to serialize and deserialize the instance to ensure</span>
+<span class="sd">                round-tripping. Defaults to `False`.</span>
+<span class="sd">            warnings: Whether to emit serialization warnings. Defaults to `True`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            bytes: The JSON representation of the given instance as bytes.</span>
+<span class="sd">            The JSON representation of the given instance as bytes.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span>
             <span class="n">__instance</span><span class="p">,</span>
@@ -2717,13 +2709,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate a JSON schema for the model.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            by_alias (bool): Whether to use alias names (default: True).</span>
-<span class="sd">            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</span>
-<span class="sd">            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the schema</span>
-<span class="sd">                (default: GenerateJsonSchema).</span>
+<span class="sd">            by_alias: Whether to use alias names for field names. Defaults to `True`.</span>
+<span class="sd">            ref_template: The format string used for generating $ref strings. Defaults to `DEFAULT_REF_TEMPLATE`.</span>
+<span class="sd">            schema_generator: The generator class used for creating the schema. Defaults to `GenerateJsonSchema`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            Dict[str, Any]: The JSON schema for the model as a dictionary.</span>
+<span class="sd">            The JSON schema for the model as a dictionary.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
@@ -2741,19 +2732,17 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate JSON schemas for multiple type adapters.</span>
 
 <span class="sd">        Args:</span>
-<span class="sd">            __inputs (Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]): Inputs to schema generation.</span>
-<span class="sd">                The first two items will form the keys of the (first) output mapping; the type adapters will provide</span>
-<span class="sd">                the core schemas that get converted into definitions in the output JSON schema.</span>
-<span class="sd">            by_alias (bool): Whether to use alias names (default: True).</span>
-<span class="sd">            title (Optional[str]): The title for the schema (default: None).</span>
-<span class="sd">            description (Optional[str]): The description for the schema (default: None).</span>
-<span class="sd">            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</span>
-<span class="sd">            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the</span>
-<span class="sd">                schema (default: GenerateJsonSchema).</span>
+<span class="sd">            __inputs: Inputs to schema generation. The first two items will form the keys of the (first)</span>
+<span class="sd">                output mapping; the type adapters will provide the core schemas that get converted into</span>
+<span class="sd">                definitions in the output JSON schema.</span>
+<span class="sd">            by_alias: Whether to use alias names. Defaults to `True`.</span>
+<span class="sd">            title: The title for the schema. Defaults to `None`.</span>
+<span class="sd">            description: The description for the schema. Defaults to `None`.</span>
+<span class="sd">            ref_template: The format string used for generating $ref strings. Defaults to `DEFAULT_REF_TEMPLATE`.</span>
+<span class="sd">            schema_generator: The generator class used for creating the schema. Defaults to `GenerateJsonSchema`.</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:</span>
-<span class="sd">                The first item contains the mapping of key + mode to a definitions reference, which will be a key</span>
+<span class="sd">            The first item contains the mapping of key + mode to a definitions reference, which will be a key</span>
 <span class="sd">                of the $defs mapping in the JSON schema included as the second member of the returned tuple.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
@@ -2842,11 +2831,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>indent</code></td>
           <td>
-                <code>Optional[int]</code>
+                <code>int | None</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Number of spaces for JSON indentation (default: None).</p>
+              <p>Number of spaces for JSON indentation. Defaults to <code>None</code>.</p>
             </div>
           </td>
           <td>
@@ -2856,11 +2845,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>include</code></td>
           <td>
-                <code>Optional[<span title="pydantic.type_adapter.IncEx">IncEx</span>]</code>
+                <code><span title="pydantic.type_adapter.IncEx">IncEx</span> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Fields to include (default: None).</p>
+              <p>Fields to include. Defaults to <code>None</code>.</p>
             </div>
           </td>
           <td>
@@ -2870,11 +2859,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>exclude</code></td>
           <td>
-                <code>Optional[<span title="pydantic.type_adapter.IncEx">IncEx</span>]</code>
+                <code><span title="pydantic.type_adapter.IncEx">IncEx</span> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Fields to exclude (default: None).</p>
+              <p>Fields to exclude. Defaults to <code>None</code>.</p>
             </div>
           </td>
           <td>
@@ -2888,7 +2877,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to use alias names (default: False).</p>
+              <p>Whether to use alias names for field names. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -2902,7 +2891,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude unset fields (default: False).</p>
+              <p>Whether to exclude unset fields. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -2916,7 +2905,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude fields with default values (default: False).</p>
+              <p>Whether to exclude fields with default values. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -2930,7 +2919,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude fields with a value of None (default: False).</p>
+              <p>Whether to exclude fields with a value of <code>None</code>. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -2945,7 +2934,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <td>
             <div class="doc-md-description">
               <p>Whether to serialize and deserialize the instance to ensure
-round-tripping (default: False).</p>
+round-tripping. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -2959,7 +2948,7 @@ round-tripping (default: False).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to emit serialization warnings (default: True).</p>
+              <p>Whether to emit serialization warnings. Defaults to <code>True</code>.</p>
             </div>
           </td>
           <td>
@@ -2973,13 +2962,13 @@ round-tripping (default: False).</p>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>bytes</code></td>          <td>
+          <td>
                 <code>bytes</code>
           </td>
           <td>
@@ -2993,7 +2982,8 @@ round-tripping (default: False).</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">266</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">265</span>
+<span class="normal">266</span>
 <span class="normal">267</span>
 <span class="normal">268</span>
 <span class="normal">269</span>
@@ -3035,8 +3025,7 @@ round-tripping (default: False).</p>
 <span class="normal">305</span>
 <span class="normal">306</span>
 <span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span>
+<span class="normal">308</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_json</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">__instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3053,20 +3042,20 @@ round-tripping (default: False).</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Serialize the given instance to JSON.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __instance (T): The instance to be serialized.</span>
-<span class="sd">        indent (Optional[int]): Number of spaces for JSON indentation (default: None).</span>
-<span class="sd">        include (Optional[IncEx]): Fields to include (default: None).</span>
-<span class="sd">        exclude (Optional[IncEx]): Fields to exclude (default: None).</span>
-<span class="sd">        by_alias (bool): Whether to use alias names (default: False).</span>
-<span class="sd">        exclude_unset (bool): Whether to exclude unset fields (default: False).</span>
-<span class="sd">        exclude_defaults (bool): Whether to exclude fields with default values (default: False).</span>
-<span class="sd">        exclude_none (bool): Whether to exclude fields with a value of None (default: False).</span>
-<span class="sd">        round_trip (bool): Whether to serialize and deserialize the instance to ensure</span>
-<span class="sd">            round-tripping (default: False).</span>
-<span class="sd">        warnings (bool): Whether to emit serialization warnings (default: True).</span>
+<span class="sd">        __instance: The instance to be serialized.</span>
+<span class="sd">        indent: Number of spaces for JSON indentation. Defaults to `None`.</span>
+<span class="sd">        include: Fields to include. Defaults to `None`.</span>
+<span class="sd">        exclude: Fields to exclude. Defaults to `None`.</span>
+<span class="sd">        by_alias: Whether to use alias names for field names. Defaults to `False`.</span>
+<span class="sd">        exclude_unset: Whether to exclude unset fields. Defaults to `False`.</span>
+<span class="sd">        exclude_defaults: Whether to exclude fields with default values. Defaults to `False`.</span>
+<span class="sd">        exclude_none: Whether to exclude fields with a value of `None`. Defaults to `False`.</span>
+<span class="sd">        round_trip: Whether to serialize and deserialize the instance to ensure</span>
+<span class="sd">            round-tripping. Defaults to `False`.</span>
+<span class="sd">        warnings: Whether to emit serialization warnings. Defaults to `True`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        bytes: The JSON representation of the given instance as bytes.</span>
+<span class="sd">        The JSON representation of the given instance as bytes.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span><span class="o">.</span><span class="n">to_json</span><span class="p">(</span>
         <span class="n">__instance</span><span class="p">,</span>
@@ -3146,7 +3135,7 @@ round-tripping (default: False).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The output format. Defaults to 'python'.</p>
+              <p>The output format. Defaults to <code>'python'</code>.</p>
             </div>
           </td>
           <td>
@@ -3160,7 +3149,7 @@ round-tripping (default: False).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Fields to include in the output. Defaults to None.</p>
+              <p>Fields to include in the output. Defaults to <code>None</code>.</p>
             </div>
           </td>
           <td>
@@ -3174,7 +3163,7 @@ round-tripping (default: False).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Fields to exclude from the output. Defaults to None.</p>
+              <p>Fields to exclude from the output. Defaults to <code>None</code>.</p>
             </div>
           </td>
           <td>
@@ -3188,7 +3177,7 @@ round-tripping (default: False).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to use alias names for field names. Defaults to False.</p>
+              <p>Whether to use alias names for field names. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -3202,7 +3191,7 @@ round-tripping (default: False).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude unset fields. Defaults to False.</p>
+              <p>Whether to exclude unset fields. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -3216,7 +3205,7 @@ round-tripping (default: False).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude fields with default values. Defaults to False.</p>
+              <p>Whether to exclude fields with default values. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -3230,7 +3219,7 @@ round-tripping (default: False).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to exclude fields with None values. Defaults to False.</p>
+              <p>Whether to exclude fields with None values. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -3245,7 +3234,7 @@ round-tripping (default: False).</p>
           <td>
             <div class="doc-md-description">
               <p>Whether to output the serialized data in a way that is compatible with
-deserialization. Defaults to False.</p>
+deserialization. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -3259,7 +3248,7 @@ deserialization. Defaults to False.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to display serialization warnings. Defaults to True.</p>
+              <p>Whether to display serialization warnings. Defaults to <code>True</code>.</p>
             </div>
           </td>
           <td>
@@ -3273,13 +3262,13 @@ deserialization. Defaults to False.</p>
   <table>
     <thead>
       <tr>
-<th>Name</th>        <th>Type</th>
+        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-<td><code>Any</code></td>          <td>
+          <td>
                 <code><span title="typing.Any">Any</span></code>
           </td>
           <td>
@@ -3336,8 +3325,7 @@ deserialization. Defaults to False.</p>
 <span class="normal">260</span>
 <span class="normal">261</span>
 <span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_python</span><span class="p">(</span>
+<span class="normal">263</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">dump_python</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="n">__instance</span><span class="p">:</span> <span class="n">T</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3354,21 +3342,20 @@ deserialization. Defaults to False.</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Dump a Python object to a serialized format.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __instance (T): The Python object to serialize.</span>
-<span class="sd">        mode (Literal[&#39;json&#39;, &#39;python&#39;], optional): The output format. Defaults to &#39;python&#39;.</span>
-<span class="sd">        include (IncEx | None, optional): Fields to include in the output. Defaults to None.</span>
-<span class="sd">        exclude (IncEx | None, optional): Fields to exclude from the output. Defaults to None.</span>
-<span class="sd">        by_alias (bool, optional): Whether to use alias names for field names. Defaults to False.</span>
-<span class="sd">        exclude_unset (bool, optional): Whether to exclude unset fields. Defaults to False.</span>
-<span class="sd">        exclude_defaults (bool, optional): Whether to exclude fields with default values. Defaults to False.</span>
-<span class="sd">        exclude_none (bool, optional): Whether to exclude fields with None values. Defaults to False.</span>
-<span class="sd">        round_trip (bool, optional): Whether to output the serialized data in a way that is compatible with</span>
-<span class="sd">            deserialization. Defaults to False.</span>
-<span class="sd">        warnings (bool, optional): Whether to display serialization warnings. Defaults to True.</span>
+<span class="sd">        __instance: The Python object to serialize.</span>
+<span class="sd">        mode: The output format. Defaults to `&#39;python&#39;`.</span>
+<span class="sd">        include: Fields to include in the output. Defaults to `None`.</span>
+<span class="sd">        exclude: Fields to exclude from the output. Defaults to `None`.</span>
+<span class="sd">        by_alias: Whether to use alias names for field names. Defaults to `False`.</span>
+<span class="sd">        exclude_unset: Whether to exclude unset fields. Defaults to `False`.</span>
+<span class="sd">        exclude_defaults: Whether to exclude fields with default values. Defaults to `False`.</span>
+<span class="sd">        exclude_none: Whether to exclude fields with None values. Defaults to `False`.</span>
+<span class="sd">        round_trip: Whether to output the serialized data in a way that is compatible with</span>
+<span class="sd">            deserialization. Defaults to `False`.</span>
+<span class="sd">        warnings: Whether to display serialization warnings. Defaults to `True`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Any: The serialized object.</span>
-
+<span class="sd">        The serialized object.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">serializer</span><span class="o">.</span><span class="n">to_python</span><span class="p">(</span>
         <span class="n">__instance</span><span class="p">,</span>
@@ -3461,7 +3448,7 @@ deserialization. Defaults to False.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Some[T] | None: The default value wrapped in a Some if there is one or None if not.</p>
+              <p>The default value wrapped in a Some if there is one or None if not.</p>
             </div>
           </td>
         </tr>
@@ -3484,11 +3471,11 @@ deserialization. Defaults to False.</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Get the default value for this model / type.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        strict (bool | None, optional): Whether to strictly check types. Defaults to None.</span>
-<span class="sd">        context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.</span>
+<span class="sd">        strict: Whether to strictly check types. Defaults to None.</span>
+<span class="sd">        context: Additional context to use during validation. Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Some[T] | None: The default value wrapped in a Some if there is one or None if not.</span>
+<span class="sd">        The default value wrapped in a Some if there is one or None if not.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">validator</span><span class="o">.</span><span class="n">get_default_value</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">,</span> <span class="n">context</span><span class="o">=</span><span class="n">context</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
@@ -3537,7 +3524,7 @@ deserialization. Defaults to False.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to use alias names (default: True).</p>
+              <p>Whether to use alias names for field names. Defaults to <code>True</code>.</p>
             </div>
           </td>
           <td>
@@ -3551,7 +3538,7 @@ deserialization. Defaults to False.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</p>
+              <p>The format string used for generating $ref strings. Defaults to <code>DEFAULT_REF_TEMPLATE</code>.</p>
             </div>
           </td>
           <td>
@@ -3561,12 +3548,11 @@ deserialization. Defaults to False.</p>
         <tr>
           <td><code>schema_generator</code></td>
           <td>
-                <code>Type[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
+                <code>type[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The generator class used for creating the schema
-(default: GenerateJsonSchema).</p>
+              <p>The generator class used for creating the schema. Defaults to <code>GenerateJsonSchema</code>.</p>
             </div>
           </td>
           <td>
@@ -3591,7 +3577,7 @@ deserialization. Defaults to False.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Dict[str, Any]: The JSON schema for the model as a dictionary.</p>
+              <p>The JSON schema for the model as a dictionary.</p>
             </div>
           </td>
         </tr>
@@ -3600,7 +3586,8 @@ deserialization. Defaults to False.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">311</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">310</span>
+<span class="normal">311</span>
 <span class="normal">312</span>
 <span class="normal">313</span>
 <span class="normal">314</span>
@@ -3618,9 +3605,7 @@ deserialization. Defaults to False.</p>
 <span class="normal">326</span>
 <span class="normal">327</span>
 <span class="normal">328</span>
-<span class="normal">329</span>
-<span class="normal">330</span>
-<span class="normal">331</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
+<span class="normal">329</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">json_schema</span><span class="p">(</span>
     <span class="bp">self</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">by_alias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
@@ -3631,13 +3616,12 @@ deserialization. Defaults to False.</p>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate a JSON schema for the model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        by_alias (bool): Whether to use alias names (default: True).</span>
-<span class="sd">        ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</span>
-<span class="sd">        schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the schema</span>
-<span class="sd">            (default: GenerateJsonSchema).</span>
+<span class="sd">        by_alias: Whether to use alias names for field names. Defaults to `True`.</span>
+<span class="sd">        ref_template: The format string used for generating $ref strings. Defaults to `DEFAULT_REF_TEMPLATE`.</span>
+<span class="sd">        schema_generator: The generator class used for creating the schema. Defaults to `GenerateJsonSchema`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Dict[str, Any]: The JSON schema for the model as a dictionary.</span>
+<span class="sd">        The JSON schema for the model as a dictionary.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">schema_generator_instance</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">)</span>
@@ -3693,9 +3677,9 @@ deserialization. Defaults to False.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Inputs to schema generation.
-The first two items will form the keys of the (first) output mapping; the type adapters will provide
-the core schemas that get converted into definitions in the output JSON schema.</p>
+              <p>Inputs to schema generation. The first two items will form the keys of the (first)
+output mapping; the type adapters will provide the core schemas that get converted into
+definitions in the output JSON schema.</p>
             </div>
           </td>
           <td>
@@ -3709,7 +3693,7 @@ the core schemas that get converted into definitions in the output JSON schema.<
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to use alias names (default: True).</p>
+              <p>Whether to use alias names. Defaults to <code>True</code>.</p>
             </div>
           </td>
           <td>
@@ -3719,11 +3703,11 @@ the core schemas that get converted into definitions in the output JSON schema.<
         <tr>
           <td><code>title</code></td>
           <td>
-                <code>Optional[str]</code>
+                <code>str | None</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The title for the schema (default: None).</p>
+              <p>The title for the schema. Defaults to <code>None</code>.</p>
             </div>
           </td>
           <td>
@@ -3733,11 +3717,11 @@ the core schemas that get converted into definitions in the output JSON schema.<
         <tr>
           <td><code>description</code></td>
           <td>
-                <code>Optional[str]</code>
+                <code>str | None</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The description for the schema (default: None).</p>
+              <p>The description for the schema. Defaults to <code>None</code>.</p>
             </div>
           </td>
           <td>
@@ -3751,7 +3735,7 @@ the core schemas that get converted into definitions in the output JSON schema.<
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</p>
+              <p>The format string used for generating $ref strings. Defaults to <code>DEFAULT_REF_TEMPLATE</code>.</p>
             </div>
           </td>
           <td>
@@ -3761,12 +3745,11 @@ the core schemas that get converted into definitions in the output JSON schema.<
         <tr>
           <td><code>schema_generator</code></td>
           <td>
-                <code>Type[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
+                <code>type[<a class="autorefs autorefs-internal" title="pydantic.json_schema.GenerateJsonSchema" href="../json_schema/#pydantic.json_schema.GenerateJsonSchema">GenerateJsonSchema</a>]</code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The generator class used for creating the
-schema (default: GenerateJsonSchema).</p>
+              <p>The generator class used for creating the schema. Defaults to <code>GenerateJsonSchema</code>.</p>
             </div>
           </td>
           <td>
@@ -3791,8 +3774,7 @@ schema (default: GenerateJsonSchema).</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:
-The first item contains the mapping of key + mode to a definitions reference, which will be a key
+              <p>The first item contains the mapping of key + mode to a definitions reference, which will be a key
 of the $defs mapping in the JSON schema included as the second member of the returned tuple.</p>
             </div>
           </td>
@@ -3802,7 +3784,9 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 
       <details class="quote">
         <summary>Source code in <code>pydantic/type_adapter.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">333</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
 <span class="normal">334</span>
 <span class="normal">335</span>
 <span class="normal">336</span>
@@ -3840,11 +3824,7 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 <span class="normal">368</span>
 <span class="normal">369</span>
 <span class="normal">370</span>
-<span class="normal">371</span>
-<span class="normal">372</span>
-<span class="normal">373</span>
-<span class="normal">374</span>
-<span class="normal">375</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">371</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">json_schemas</span><span class="p">(</span>
     <span class="n">__inputs</span><span class="p">:</span> <span class="n">Iterable</span><span class="p">[</span><span class="nb">tuple</span><span class="p">[</span><span class="n">JsonSchemaKeyT</span><span class="p">,</span> <span class="n">JsonSchemaMode</span><span class="p">,</span> <span class="n">TypeAdapter</span><span class="p">[</span><span class="n">Any</span><span class="p">]]],</span>
     <span class="o">*</span><span class="p">,</span>
@@ -3857,19 +3837,17 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate JSON schemas for multiple type adapters.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __inputs (Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]): Inputs to schema generation.</span>
-<span class="sd">            The first two items will form the keys of the (first) output mapping; the type adapters will provide</span>
-<span class="sd">            the core schemas that get converted into definitions in the output JSON schema.</span>
-<span class="sd">        by_alias (bool): Whether to use alias names (default: True).</span>
-<span class="sd">        title (Optional[str]): The title for the schema (default: None).</span>
-<span class="sd">        description (Optional[str]): The description for the schema (default: None).</span>
-<span class="sd">        ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).</span>
-<span class="sd">        schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the</span>
-<span class="sd">            schema (default: GenerateJsonSchema).</span>
+<span class="sd">        __inputs: Inputs to schema generation. The first two items will form the keys of the (first)</span>
+<span class="sd">            output mapping; the type adapters will provide the core schemas that get converted into</span>
+<span class="sd">            definitions in the output JSON schema.</span>
+<span class="sd">        by_alias: Whether to use alias names. Defaults to `True`.</span>
+<span class="sd">        title: The title for the schema. Defaults to `None`.</span>
+<span class="sd">        description: The description for the schema. Defaults to `None`.</span>
+<span class="sd">        ref_template: The format string used for generating $ref strings. Defaults to `DEFAULT_REF_TEMPLATE`.</span>
+<span class="sd">        schema_generator: The generator class used for creating the schema. Defaults to `GenerateJsonSchema`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:</span>
-<span class="sd">            The first item contains the mapping of key + mode to a definitions reference, which will be a key</span>
+<span class="sd">        The first item contains the mapping of key + mode to a definitions reference, which will be a key</span>
 <span class="sd">            of the $defs mapping in the JSON schema included as the second member of the returned tuple.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">schema_generator_instance</span> <span class="o">=</span> <span class="n">schema_generator</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="n">by_alias</span><span class="p">,</span> <span class="n">ref_template</span><span class="o">=</span><span class="n">ref_template</span><span class="p">)</span>
@@ -4009,9 +3987,9 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate a JSON string or bytes against the model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __data (str | bytes): The JSON data to validate against the model.</span>
-<span class="sd">        strict (bool | None, optional): Whether to strictly check types. Defaults to None.</span>
-<span class="sd">        context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.</span>
+<span class="sd">        __data: The JSON data to validate against the model.</span>
+<span class="sd">        strict: Whether to strictly check types. Defaults to None.</span>
+<span class="sd">        context: Additional context to use during validation. Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        T: The validated object.</span>
@@ -4173,10 +4151,10 @@ of the $defs mapping in the JSON schema included as the second member of the ret
 <span class="sd">    Validate a Python object against the model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        __object (Any): The Python object to validate against the model.</span>
-<span class="sd">        strict (bool | None, optional): Whether to strictly check types. Defaults to None.</span>
-<span class="sd">        from_attributes (bool | None, optional): Whether to extract data from object attributes. Defaults to None.</span>
-<span class="sd">        context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.</span>
+<span class="sd">        __object: The Python object to validate against the model.</span>
+<span class="sd">        strict: Whether to strictly check types. Defaults to None.</span>
+<span class="sd">        from_attributes: Whether to extract data from object attributes. Defaults to None.</span>
+<span class="sd">        context: Additional context to use during validation. Defaults to None.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        T: The validated object.</span>

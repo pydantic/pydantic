@@ -2166,7 +2166,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>message</code></td>
           <td>
-                <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2177,7 +2176,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>code</code></td>
           <td>
-                <code><span title="pydantic.errors.PydanticErrorCodes">PydanticErrorCodes</span> | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2213,8 +2211,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">    A mixin class for common functionality shared by all Pydantic-specific errors.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        message (str): A message describing the error.</span>
-<span class="sd">        code (PydanticErrorCodes | None): An optional error code from PydanticErrorCodes enum.</span>
+<span class="sd">        message: A message describing the error.</span>
+<span class="sd">        code: An optional error code from PydanticErrorCodes enum.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">code</span><span class="p">:</span> <span class="n">PydanticErrorCodes</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -2280,7 +2278,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>message</code></td>
           <td>
-                <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2308,7 +2305,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">    Error raised when an import fails due to module changes between V1 and V2.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        message (str): Description of the error.</span>
+<span class="sd">        message: Description of the error.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -2367,7 +2364,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>message</code></td>
           <td>
-                <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2395,7 +2391,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">    Error raised during failures to generate a JSON schema for some `CoreSchema`.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        message (str): Description of the error.</span>
+<span class="sd">        message: Description of the error.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -2454,7 +2450,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>message</code></td>
           <td>
-                <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2482,7 +2477,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">    Error raised during failures to generate a `CoreSchema` for some type.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        message (str): Description of the error.</span>
+<span class="sd">        message: Description of the error.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
@@ -2541,7 +2536,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>name</code></td>
           <td>
-                <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2552,7 +2546,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <tr>
           <td><code>message</code></td>
           <td>
-                <code>str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2597,8 +2590,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        name (str): Name of the error.</span>
-<span class="sd">        message (str): Description of the error.</span>
+<span class="sd">        name: Name of the error.</span>
+<span class="sd">        message: Description of the error.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">message</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>

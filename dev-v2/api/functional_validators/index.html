@@ -1621,6 +1621,47 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.AfterValidator" class="md-nav__link">
+    AfterValidator
+  </a>
+  
+    <nav class="md-nav" aria-label="AfterValidator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.AfterValidator--2" class="md-nav__link">
+    &gt; 2
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.BeforeValidator" class="md-nav__link">
+    BeforeValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.PlainValidator" class="md-nav__link">
+    PlainValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.WrapValidator" class="md-nav__link">
+    WrapValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.field_validator" class="md-nav__link">
     field_validator()
   </a>
@@ -2002,6 +2043,47 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.AfterValidator" class="md-nav__link">
+    AfterValidator
+  </a>
+  
+    <nav class="md-nav" aria-label="AfterValidator">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.AfterValidator--2" class="md-nav__link">
+    &gt; 2
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.BeforeValidator" class="md-nav__link">
+    BeforeValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.PlainValidator" class="md-nav__link">
+    PlainValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.functional_validators.WrapValidator" class="md-nav__link">
+    WrapValidator
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic.functional_validators.field_validator" class="md-nav__link">
     field_validator()
   </a>
@@ -2052,6 +2134,581 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.AfterValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">AfterValidator</span>
+
+
+<a href="#pydantic.functional_validators.AfterValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>A metadata class that indicates that a validation should be applied <strong>after</strong> the inner validation logic.</p>
+
+<details class="example" open>
+  <summary>Example</summary>
+  <p>```py
+from typing import Annotated</p>
+<p>from pydantic import BaseModel, AfterValidator, ValidationError</p>
+<p>MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]</p>
+<p>class Model(BaseModel):
+    a: MyInt</p>
+<p>print(Model(a=1).a)</p>
+<h3 id="pydantic.functional_validators.AfterValidator--2">&gt; 2<a class="headerlink" href="#pydantic.functional_validators.AfterValidator--2" title="Permanent link">&para;</a></h3>
+<p>try:
+    Model(a='a')
+except ValidationError as e:
+    print(e.json(indent=2))
+    """
+[
+    {
+        "type": "int_parsing",
+        "loc": [
+            "a"
+        ],
+        "msg": "Input should be a valid integer, unable to parse string as an integer",
+        "input": "a",
+        "url": "https://errors.pydantic.dev/0.38.0/v/int_parsing"
+    }
+]
+"""</p>
+</details>
+
+        <details class="quote">
+          <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">AfterValidator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&#39;&#39;&#39;</span>
+<span class="sd">    A metadata class that indicates that a validation should be applied **after** the inner validation logic.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```py</span>
+<span class="sd">        from typing import Annotated</span>
+
+<span class="sd">        from pydantic import BaseModel, AfterValidator, ValidationError</span>
+
+
+<span class="sd">        MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]</span>
+
+<span class="sd">        class Model(BaseModel):</span>
+<span class="sd">            a: MyInt</span>
+
+<span class="sd">        print(Model(a=1).a)</span>
+<span class="sd">        # &gt; 2</span>
+
+<span class="sd">        try:</span>
+<span class="sd">            Model(a=&#39;a&#39;)</span>
+<span class="sd">        except ValidationError as e:</span>
+<span class="sd">            print(e.json(indent=2))</span>
+<span class="sd">            &quot;&quot;&quot;</span>
+<span class="sd">        [</span>
+<span class="sd">            {</span>
+<span class="sd">                &quot;type&quot;: &quot;int_parsing&quot;,</span>
+<span class="sd">                &quot;loc&quot;: [</span>
+<span class="sd">                    &quot;a&quot;</span>
+<span class="sd">                ],</span>
+<span class="sd">                &quot;msg&quot;: &quot;Input should be a valid integer, unable to parse string as an integer&quot;,</span>
+<span class="sd">                &quot;input&quot;: &quot;a&quot;,</span>
+<span class="sd">                &quot;url&quot;: &quot;https://errors.pydantic.dev/0.38.0/v/int_parsing&quot;</span>
+<span class="sd">            }</span>
+<span class="sd">        ]</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">    &#39;&#39;&#39;</span>
+
+    <span class="n">func</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">NoInfoValidatorFunction</span> <span class="o">|</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">GeneralValidatorFunction</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">_GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
+        <span class="n">info_arg</span> <span class="o">=</span> <span class="n">_inspect_validator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">info_arg</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_after_validator_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_after_validator_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.BeforeValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">BeforeValidator</span>
+
+
+<a href="#pydantic.functional_validators.BeforeValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>A metadata class that indicates that a validation should be applied <strong>before</strong> the inner validation logic.</p>
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">BeforeValidator</span>
+
+
+<span class="n">MyInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">BeforeValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="n">v</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">MyInt</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1"># &gt; 2</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;a&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="ne">TypeError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+    <span class="c1">#&gt; can only concatenate str (not &quot;int&quot;) to str</span>
+</code></pre></div>
+</details>
+
+        <details class="quote">
+          <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">BeforeValidator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A metadata class that indicates that a validation should be applied **before** the inner validation logic.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```py</span>
+<span class="sd">        from typing import Annotated</span>
+
+<span class="sd">        from pydantic import BaseModel, BeforeValidator</span>
+
+
+<span class="sd">        MyInt = Annotated[int, BeforeValidator(lambda v: v + 1)]</span>
+
+<span class="sd">        class Model(BaseModel):</span>
+<span class="sd">            a: MyInt</span>
+
+<span class="sd">        print(Model(a=1).a)</span>
+<span class="sd">        # &gt; 2</span>
+
+<span class="sd">        try:</span>
+<span class="sd">            Model(a=&#39;a&#39;)</span>
+<span class="sd">        except TypeError as e:</span>
+<span class="sd">            print(e)</span>
+<span class="sd">            #&gt; can only concatenate str (not &quot;int&quot;) to str</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">func</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">NoInfoValidatorFunction</span> <span class="o">|</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">GeneralValidatorFunction</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">_GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
+        <span class="n">info_arg</span> <span class="o">=</span> <span class="n">_inspect_validator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">info_arg</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_before_validator_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_before_validator_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.PlainValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PlainValidator</span>
+
+
+<a href="#pydantic.functional_validators.PlainValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>A metadata class that indicates that a validation should be applied <strong>instead</strong> of the inner validation logic.</p>
+
+<details class="example" open>
+  <summary>Example</summary>
+  <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PlainValidator</span>
+
+
+<span class="n">MyInt</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">PlainValidator</span><span class="p">(</span><span class="k">lambda</span> <span class="n">v</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">MyInt</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s1">&#39;1&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1"># &gt; 2</span>
+</code></pre></div>
+</details>
+
+        <details class="quote">
+          <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">PlainValidator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.</span>
+
+<span class="sd">    Example:</span>
+<span class="sd">        ```py</span>
+<span class="sd">        from typing import Annotated</span>
+
+<span class="sd">        from pydantic import BaseModel, PlainValidator</span>
+
+
+<span class="sd">        MyInt = Annotated[int, PlainValidator(lambda v: int(v) + 1)]</span>
+
+<span class="sd">        class Model(BaseModel):</span>
+<span class="sd">            a: MyInt</span>
+
+<span class="sd">        print(Model(a=&#39;1&#39;).a)</span>
+<span class="sd">        # &gt; 2</span>
+<span class="sd">        ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">func</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">NoInfoValidatorFunction</span> <span class="o">|</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">GeneralValidatorFunction</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">_GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="n">info_arg</span> <span class="o">=</span> <span class="n">_inspect_validator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;plain&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">info_arg</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_plain_validator_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_plain_validator_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic.functional_validators.WrapValidator" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">WrapValidator</span>
+
+
+<a href="#pydantic.functional_validators.WrapValidator" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>A metadata class that indicates that a validation should be applied <strong>around</strong> the inner validation logic.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Annotated</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span><span class="p">,</span> <span class="n">WrapValidator</span>
+
+
+<span class="k">def</span> <span class="nf">validate_timestamp</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">handler</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">v</span> <span class="o">==</span> <span class="s2">&quot;now&quot;</span><span class="p">:</span>
+        <span class="c1"># we don&#39;t want to bother with further validation, just return the new value</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+    <span class="k">except</span> <span class="n">ValidationError</span><span class="p">:</span>
+        <span class="c1"># validation failed, in this case we want to return a default value</span>
+        <span class="k">return</span> <span class="n">datetime</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+
+
+<span class="n">MyTimestamp</span> <span class="o">=</span> <span class="n">Annotated</span><span class="p">[</span><span class="n">datetime</span><span class="p">,</span> <span class="n">WrapValidator</span><span class="p">(</span><span class="n">validate_timestamp</span><span class="p">)]</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">a</span><span class="p">:</span> <span class="n">MyTimestamp</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s2">&quot;now&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1"># &gt; 2023-01-22 23:10:00.000000</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="s2">&quot;invalid&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">a</span><span class="p">)</span>
+<span class="c1"># &gt; 2000-01-01 00:00:00.000000</span>
+</code></pre></div>
+
+
+        <details class="quote">
+          <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">WrapValidator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A metadata class that indicates that a validation should be applied **around** the inner validation logic.</span>
+
+<span class="sd">    ```py</span>
+<span class="sd">    from datetime import datetime</span>
+<span class="sd">    from typing import Annotated</span>
+
+<span class="sd">    from pydantic import BaseModel, ValidationError, WrapValidator</span>
+
+
+<span class="sd">    def validate_timestamp(v, handler):</span>
+<span class="sd">        if v == &quot;now&quot;:</span>
+<span class="sd">            # we don&#39;t want to bother with further validation, just return the new value</span>
+<span class="sd">            return datetime.now()</span>
+<span class="sd">        try:</span>
+<span class="sd">            return handler(v)</span>
+<span class="sd">        except ValidationError:</span>
+<span class="sd">            # validation failed, in this case we want to return a default value</span>
+<span class="sd">            return datetime(2000, 1, 1)</span>
+
+
+<span class="sd">    MyTimestamp = Annotated[datetime, WrapValidator(validate_timestamp)]</span>
+
+
+<span class="sd">    class Model(BaseModel):</span>
+<span class="sd">        a: MyTimestamp</span>
+
+
+<span class="sd">    print(Model(a=&quot;now&quot;).a)</span>
+<span class="sd">    # &gt; 2023-01-22 23:10:00.000000</span>
+<span class="sd">    print(Model(a=&quot;invalid&quot;).a)</span>
+<span class="sd">    # &gt; 2000-01-01 00:00:00.000000</span>
+<span class="sd">    ```</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">func</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">GeneralWrapValidatorFunction</span> <span class="o">|</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">FieldWrapValidatorFunction</span>
+
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">_GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="n">schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
+        <span class="n">info_arg</span> <span class="o">=</span> <span class="n">_inspect_validator</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">info_arg</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_wrap_validator_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">func</span><span class="p">,</span> <span class="n">schema</span><span class="o">=</span><span class="n">schema</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
 
 
 <div class="doc doc-object doc-function">
@@ -2169,56 +2826,56 @@ Defaults to None.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">141</span>
-<span class="normal">142</span>
-<span class="normal">143</span>
-<span class="normal">144</span>
-<span class="normal">145</span>
-<span class="normal">146</span>
-<span class="normal">147</span>
-<span class="normal">148</span>
-<span class="normal">149</span>
-<span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span>
-<span class="normal">159</span>
-<span class="normal">160</span>
-<span class="normal">161</span>
-<span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span>
-<span class="normal">171</span>
-<span class="normal">172</span>
-<span class="normal">173</span>
-<span class="normal">174</span>
-<span class="normal">175</span>
-<span class="normal">176</span>
-<span class="normal">177</span>
-<span class="normal">178</span>
-<span class="normal">179</span>
-<span class="normal">180</span>
-<span class="normal">181</span>
-<span class="normal">182</span>
-<span class="normal">183</span>
-<span class="normal">184</span>
-<span class="normal">185</span>
-<span class="normal">186</span>
-<span class="normal">187</span>
-<span class="normal">188</span>
-<span class="normal">189</span>
-<span class="normal">190</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_validator</span><span class="p">(</span>
     <span class="n">__field</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">FieldValidatorModes</span> <span class="o">=</span> <span class="s1">&#39;after&#39;</span><span class="p">,</span>
@@ -2343,28 +3000,28 @@ It can be one of the following: 'wrap', 'before', or 'after'.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_validators.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">300</span>
-<span class="normal">301</span>
-<span class="normal">302</span>
-<span class="normal">303</span>
-<span class="normal">304</span>
-<span class="normal">305</span>
-<span class="normal">306</span>
-<span class="normal">307</span>
-<span class="normal">308</span>
-<span class="normal">309</span>
-<span class="normal">310</span>
-<span class="normal">311</span>
-<span class="normal">312</span>
-<span class="normal">313</span>
-<span class="normal">314</span>
-<span class="normal">315</span>
-<span class="normal">316</span>
-<span class="normal">317</span>
-<span class="normal">318</span>
-<span class="normal">319</span>
-<span class="normal">320</span>
-<span class="normal">321</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">model_validator</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;wrap&#39;</span><span class="p">,</span> <span class="s1">&#39;before&#39;</span><span class="p">,</span> <span class="s1">&#39;after&#39;</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
