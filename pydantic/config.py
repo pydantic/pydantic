@@ -45,30 +45,79 @@ class ConfigDict(TypedDict, total=False):
     """A dictionary-like class for configuring Pydantic models.
 
     Attributes:
-        title: Optional title for the configuration. Defaults to `None`.
-        str_to_lower: Whether to convert strings to lowercase. Defaults to `False`.
-        str_to_upper: Whether to convert strings to uppercase. Defaults to `False`.
-        str_strip_whitespace: Whether to strip whitespace from strings. Defaults to `False`.
-        str_min_length: The minimum length for strings. Defaults to `None`.
-        str_max_length: The maximum length for strings. Defaults to `None`.
-        extra: Extra values to include in this configuration. Defaults to `None`.
-        frozen: Whether to freeze the configuration. Defaults to `False`.
-        populate_by_name: Whether to populate fields by name. Defaults to `False`.
-        use_enum_values: Whether to use enum values. Defaults to `False`.
-        validate_assignment: Whether to validate assignments. Defaults to `False`.
-        arbitrary_types_allowed: Whether to allow arbitrary types. Defaults to `False`.
-        from_attributes: Whether to set attributes from the configuration. Defaults to `False`.
+        title: The title for the generated JSON schema. Defaults to `None`.
+        str_to_lower: Whether to convert all characters to lowercase for str & bytes types. Defaults to `False`.
+        str_to_upper: Whether to convert all characters to uppercase for str & bytes types. Defaults to `False`.
+        str_strip_whitespace: Whether to strip leading and trailing whitespace for str & bytes types.
+            Defaults to `False`.
+        str_min_length: The minimum length for str & bytes types. Defaults to `None`.
+        str_max_length: The maximum length for str & bytes types. Defaults to `None`.
+        extra: Whether to ignore, allow, or forbid extra attributes during model initialization.
+            Accepts the string values of `'ignore'`, `'allow'`, or `'forbid'`,
+            or values of the `Extra` enum. Defaults to `Extra.ignore`.
+
+            - `'forbid'` will cause validation to fail if extra attributes are included
+            - `'ignore'` will silently ignore any extra attributes
+            - `'allow'` will assign the attributes to the model
+        frozen: Whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates
+            a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the
+            attributes are hashable. Defaults to `False`.
+
+            !!! note
+                On V1, this setting was called `allow_mutation`, and was `True` by default.
+        populate_by_name: Whether an aliased field may be populated by its name as given by the model
+            attribute, as well as the alias. Defaults to `False`.
+
+            !!! note
+                The name of this configuration setting was changed in **v2.0** from
+                `allow_population_by_alias` to `populate_by_name`.
+        use_enum_values: Whether to populate models with the `value` property of enums, rather than the raw enum.
+            This may be useful if you want to serialise `model.model_dump()` later. Defaults to `False`.
+        validate_assignment: Whether to perform validation on *assignment* to attributes. Defaults to `False`.
+        arbitrary_types_allowed: Whether to allow arbitrary user types for fields (they are validated simply by
+            checking if the value is an instance of the type). If `False`, `RuntimeError` will be raised on model
+            declaration. Defaults to `False`.
+
+            See an example in [Field Types](/api/types/custom.md#arbitrary-types-allowed).
+        from_attributes: Whether to allow model creation from object attributes. Defaults to `False`.
+
+            !!! note
+                The name of this configuration setting was changed in **v2.0** from `orm_mode` to `from_attributes`.
         loc_by_alias: Whether to use the alias for error `loc`s. Defaults to `True`.
-        alias_generator: A function to generate aliases. Defaults to `None`.
-        ignored_types: A tuple of types to ignore. Defaults to `()`.
-        allow_inf_nan: Whether to allow infinity and NaN. Defaults to `False`.
+        alias_generator: a callable that takes a field name and returns an alias for it.
+
+            See [the dedicated section](#alias-generator).
+        ignored_types: A tuple of types that may occur as values of class attributes without annotations. This is
+            typically used for custom descriptors (classes that behave like `property`). If an attribute is set on a
+            class without an annotation and has a type that is not in this tuple (or otherwise recognized by
+            _pydantic_), an error will be raised. Defaults to `()`.
+        allow_inf_nan: Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`.
         strict: Whether to make the configuration strict. Defaults to `False`.
-        revalidate_instances: When and how to revalidate models and dataclasses during validation. Defaults to 'never'.
-        ser_json_timedelta: The format of JSON serialized timedeltas. Defaults to 'iso8601'.
-        ser_json_bytes: The encoding of JSON serialized bytes. Defaults to 'utf8'.
+        revalidate_instances: When and how to revalidate models and dataclasses during validation. Accepts the string
+            values of `'never'`, `'always'` and `'subclass-instances'`. Defaults to `'never'`.
+
+            - `'never'` will not revalidate models and dataclasses during validation
+            - `'always'` will revalidate models and dataclasses during validation
+            - `'subclass-instances'` will revalidate models and dataclasses during validation if the instance is a
+                subclass of the model or dataclass
+        ser_json_timedelta: The format of JSON serialized timedeltas. Accepts the string values of `'iso8601'` and
+            `'float'`. Defaults to `'iso8601'`.
+
+            - `'iso8601'` will serialize timedeltas to ISO 8601 durations.
+            - `'float'` will serialize timedeltas to the total number of seconds.
+        ser_json_bytes: The encoding of JSON serialized bytes. Accepts the string values of `'utf8'` and `'base64'`.
+            Defaults to `'utf8'`.
+
+            - `'utf8'` will serialize bytes to UTF-8 strings.
+            - `'base64'` will serialize bytes to base64 strings.
         validate_default: Whether to validate default values during validation. Defaults to `False`.
-        protected_namespaces: A list of protected namespaces. Defaults to `('model_', )`.
+        protected_namespaces: A `tuple` of strings that prevent model to have field which conflict with them.
+            Defaults to `('model_', )`).
+
+            See [the dedicated section](#protected-namespaces).
         hide_input_in_errors: Whether to hide inputs when printing errors. Defaults to `False`.
+
+            See [the dedicated section](#hide-input-in-errors).
     """
 
     title: str | None
