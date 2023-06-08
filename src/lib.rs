@@ -5,7 +5,7 @@ extern crate core;
 
 use pyo3::prelude::*;
 
-#[cfg(feature = "mimalloc")]
+#[cfg(feature = "mimalloc-allocator")]
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
