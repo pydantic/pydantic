@@ -126,6 +126,11 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/root_model/</loc>
+         <lastmod>2023-06-08</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/type_adapter/</loc>
          <lastmod>2023-06-08</lastmod>
          <changefreq>daily</changefreq>
