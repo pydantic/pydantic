@@ -699,7 +699,7 @@ class PaymentCardBrand(str, Enum):
 
 
 @deprecated(
-    'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead.'
+    'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
     'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/payment_cards/.'
 )
 class PaymentCardNumber(str):
