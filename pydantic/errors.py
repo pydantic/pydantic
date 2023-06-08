@@ -1,5 +1,5 @@
 """
-Pydantic errors.
+Pydantic-specific errors.
 """
 from __future__ import annotations as _annotations
 
@@ -81,12 +81,13 @@ class PydanticErrorMixin:
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
     """
-    Error raised due to incorrect use of Pydantic.
+    An error raised due to incorrect use of Pydantic.
     """
 
 
 class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
-    """A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.
+    """
+    A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.
 
     Attributes:
         name: Name of the error.
@@ -117,7 +118,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
 
 class PydanticImportError(PydanticErrorMixin, ImportError):
     """
-    Error raised when an import fails due to module changes between V1 and V2.
+    An error raised when an import fails due to module changes between V1 and V2.
 
     Attributes:
         message: Description of the error.
@@ -129,7 +130,7 @@ class PydanticImportError(PydanticErrorMixin, ImportError):
 
 class PydanticSchemaGenerationError(PydanticUserError):
     """
-    Error raised during failures to generate a `CoreSchema` for some type.
+    An error raised during failures to generate a `CoreSchema` for some type.
 
     Attributes:
         message: Description of the error.
@@ -141,7 +142,7 @@ class PydanticSchemaGenerationError(PydanticUserError):
 
 class PydanticInvalidForJsonSchema(PydanticUserError):
     """
-    Error raised during failures to generate a JSON schema for some `CoreSchema`.
+    An error raised during failures to generate a JSON schema for some `CoreSchema`.
 
     Attributes:
         message: Description of the error.
