@@ -51,7 +51,9 @@ crate-type = ["cdylib", "rlib"]
 extension-module = ["pyo3/extension-module"]
 # required for cargo bench
 auto-initialize = ["pyo3/auto-initialize"]
-default = ["mimalloc", "mimalloc/local_dynamic_tls", "pyo3/generate-import-lib", "pyo3/num-bigint"]
+# disabled for benchmarks since it makes microbenchmark performance more flakey
+mimalloc-allocator = ["mimalloc", "mimalloc/local_dynamic_tls"]
+default = ["pyo3/generate-import-lib", "pyo3/num-bigint"]
 
 [profile.release]
 lto = "fat"
