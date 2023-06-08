@@ -30,7 +30,7 @@ print(user)
 
 You can use all the standard _pydantic_ field types. Note, however, that arguments passed to constructor will be copied in order to perform validation and, where necessary coercion.
 
-The schema can be accessed by [TypeAdapter](models.md#using-pydantic-without-creating-a-basemodel).
+The schema can be accessed by [TypeAdapter](models.md#typeadapter).
 Also, fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
 
 ```py
@@ -386,7 +386,7 @@ methods decorated with `model_validator`.
 ## JSON dumping
 
 _Pydantic_ dataclasses do not feature a `.model_dump_json()` function. To dump them as JSON, you will need to
-make use of the [RootModel](models.md#custom-root-types) as follows:
+make use of the [RootModel](models.md#rootmodel-and-custom-root-types) as follows:
 
 ```py output="json"
 import dataclasses

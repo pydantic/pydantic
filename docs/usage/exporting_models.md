@@ -132,7 +132,7 @@ print(id(m.bar) == id(m.model_copy(deep=True).bar))
 
 ## `model.model_dump_json(...)`
 
-The `.model_dump_json()` method will serialise a model to JSON. (For `RootModel` [custom root type](models.md#custom-root-types),
+The `.model_dump_json()` method will serialise a model to JSON. (For `RootModel` [custom root type](models.md#rootmodel-and-custom-root-types),
 only the values are serialised)
 
 See [arguments](/api/main/#pydantic.main.BaseModel.model_dump_json) for more information.

@@ -102,7 +102,7 @@ class TypeAdapter(Generic[T]):
 
     A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
     for types that do not have such methods (such as dataclasses, primitive types, and more).
-    
+
     Note that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
 
     Attributes:
