@@ -1975,7 +1975,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Optional title for the configuration. Defaults to <code>None</code>.</p>
+              <p>The title for the generated JSON schema. Defaults to <code>None</code>.</p>
             </div>
           </td>
         </tr>
@@ -1986,7 +1986,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to convert strings to lowercase. Defaults to <code>False</code>.</p>
+              <p>Whether to convert all characters to lowercase for str &amp; bytes types. Defaults to <code>False</code>.</p>
             </div>
           </td>
         </tr>
@@ -1997,7 +1997,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to convert strings to uppercase. Defaults to <code>False</code>.</p>
+              <p>Whether to convert all characters to uppercase for str &amp; bytes types. Defaults to <code>False</code>.</p>
             </div>
           </td>
         </tr>
@@ -2008,7 +2008,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to strip whitespace from strings. Defaults to <code>False</code>.</p>
+              <p>Whether to strip leading and trailing whitespace for str &amp; bytes types.
+Defaults to <code>False</code>.</p>
             </div>
           </td>
         </tr>
@@ -2019,7 +2020,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The minimum length for strings. Defaults to <code>None</code>.</p>
+              <p>The minimum length for str &amp; bytes types. Defaults to <code>None</code>.</p>
             </div>
           </td>
         </tr>
@@ -2030,7 +2031,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The maximum length for strings. Defaults to <code>None</code>.</p>
+              <p>The maximum length for str &amp; bytes types. Defaults to <code>None</code>.</p>
             </div>
           </td>
         </tr>
@@ -2041,7 +2042,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Extra values to include in this configuration. Defaults to <code>None</code>.</p>
+              <p>Whether to ignore, allow, or forbid extra attributes during model initialization.
+Accepts the string values of <code>'ignore'</code>, <code>'allow'</code>, or <code>'forbid'</code>. Defaults to <code>'ignore'</code>.</p>
+<ul>
+<li><code>'forbid'</code> will cause validation to fail if extra attributes are included</li>
+<li><code>'ignore'</code> will silently ignore any extra attributes</li>
+<li><code>'allow'</code> will assign the attributes to the model</li>
+</ul>
             </div>
           </td>
         </tr>
@@ -2052,7 +2059,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to freeze the configuration. Defaults to <code>False</code>.</p>
+              <p>Whether or not models are faux-immutable, i.e. whether <code>__setattr__</code> is allowed, and also generates
+a <code>__hash__()</code> method for the model. This makes instances of the model potentially hashable if all the
+attributes are hashable. Defaults to <code>False</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>On V1, this setting was called <code>allow_mutation</code>, and was <code>True</code> by default.</p>
+</div>
             </div>
           </td>
         </tr>
@@ -2063,7 +2076,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to populate fields by name. Defaults to <code>False</code>.</p>
+              <p>Whether an aliased field may be populated by its name as given by the model
+attribute, as well as the alias. Defaults to <code>False</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The name of this configuration setting was changed in <strong>v2.0</strong> from
+<code>allow_population_by_alias</code> to <code>populate_by_name</code>.</p>
+</div>
             </div>
           </td>
         </tr>
@@ -2074,7 +2093,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to use enum values. Defaults to <code>False</code>.</p>
+              <p>Whether to populate models with the <code>value</code> property of enums, rather than the raw enum.
+This may be useful if you want to serialise <code>model.model_dump()</code> later. Defaults to <code>False</code>.</p>
             </div>
           </td>
         </tr>
@@ -2085,7 +2105,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to validate assignments. Defaults to <code>False</code>.</p>
+              <p>Whether to perform validation on <em>assignment</em> to attributes. Defaults to <code>False</code>.</p>
             </div>
           </td>
         </tr>
@@ -2096,7 +2116,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to allow arbitrary types. Defaults to <code>False</code>.</p>
+              <p>Whether to allow arbitrary user types for fields (they are validated simply by
+checking if the value is an instance of the type). If <code>False</code>, <code>RuntimeError</code> will be raised on model
+declaration. Defaults to <code>False</code>.</p>
+<p>See an example in <a href="/api/types/custom.md#arbitrary-types-allowed">Field Types</a>.</p>
             </div>
           </td>
         </tr>
@@ -2107,7 +2130,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to set attributes from the configuration. Defaults to <code>False</code>.</p>
+              <p>Whether to allow model creation from object attributes. Defaults to <code>False</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The name of this configuration setting was changed in <strong>v2.0</strong> from <code>orm_mode</code> to <code>from_attributes</code>.</p>
+</div>
             </div>
           </td>
         </tr>
@@ -2129,7 +2156,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A function to generate aliases. Defaults to <code>None</code>.</p>
+              <p>a callable that takes a field name and returns an alias for it.</p>
+<p>See <a href="#pydantic.config.ConfigDict--alias-generator">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>
@@ -2140,7 +2168,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A tuple of types to ignore. Defaults to <code>()</code>.</p>
+              <p>A tuple of types that may occur as values of class attributes without annotations. This is
+typically used for custom descriptors (classes that behave like <code>property</code>). If an attribute is set on a
+class without an annotation and has a type that is not in this tuple (or otherwise recognized by
+<em>pydantic</em>), an error will be raised. Defaults to <code>()</code>.</p>
             </div>
           </td>
         </tr>
@@ -2151,7 +2182,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Whether to allow infinity and NaN. Defaults to <code>False</code>.</p>
+              <p>Whether to allow infinity (<code>+inf</code> an <code>-inf</code>) and NaN values to float fields. Defaults to <code>True</code>.</p>
             </div>
           </td>
         </tr>
@@ -2173,7 +2204,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>When and how to revalidate models and dataclasses during validation. Defaults to 'never'.</p>
+              <p>When and how to revalidate models and dataclasses during validation. Accepts the string
+values of <code>'never'</code>, <code>'always'</code> and <code>'subclass-instances'</code>. Defaults to <code>'never'</code>.</p>
+<ul>
+<li><code>'never'</code> will not revalidate models and dataclasses during validation</li>
+<li><code>'always'</code> will revalidate models and dataclasses during validation</li>
+<li><code>'subclass-instances'</code> will revalidate models and dataclasses during validation if the instance is a
+    subclass of the model or dataclass</li>
+</ul>
             </div>
           </td>
         </tr>
@@ -2184,7 +2222,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The format of JSON serialized timedeltas. Defaults to 'iso8601'.</p>
+              <p>The format of JSON serialized timedeltas. Accepts the string values of <code>'iso8601'</code> and
+<code>'float'</code>. Defaults to <code>'iso8601'</code>.</p>
+<ul>
+<li><code>'iso8601'</code> will serialize timedeltas to ISO 8601 durations.</li>
+<li><code>'float'</code> will serialize timedeltas to the total number of seconds.</li>
+</ul>
             </div>
           </td>
         </tr>
@@ -2195,7 +2238,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>The encoding of JSON serialized bytes. Defaults to 'utf8'.</p>
+              <p>The encoding of JSON serialized bytes. Accepts the string values of <code>'utf8'</code> and <code>'base64'</code>.
+Defaults to <code>'utf8'</code>.</p>
+<ul>
+<li><code>'utf8'</code> will serialize bytes to UTF-8 strings.</li>
+<li><code>'base64'</code> will serialize bytes to base64 strings.</li>
+</ul>
             </div>
           </td>
         </tr>
@@ -2217,7 +2265,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A list of protected namespaces. Defaults to <code>('model_', )</code>.</p>
+              <p>A <code>tuple</code> of strings that prevent model to have field which conflict with them.
+Defaults to <code>('model_', )</code>).</p>
+<p>See <a href="#pydantic.config.ConfigDict--protected-namespaces">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>
@@ -2229,6 +2279,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <td>
             <div class="doc-md-description">
               <p>Whether to hide inputs when printing errors. Defaults to <code>False</code>.</p>
+<p>See <a href="#pydantic.config.ConfigDict--hide-input-in-errors">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>
@@ -2300,34 +2351,130 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">103</span>
 <span class="normal">104</span>
 <span class="normal">105</span>
-<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ConfigDict</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ConfigDict</span><span class="p">(</span><span class="n">TypedDict</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A dictionary-like class for configuring Pydantic models.</span>
 
 <span class="sd">    Attributes:</span>
-<span class="sd">        title: Optional title for the configuration. Defaults to `None`.</span>
-<span class="sd">        str_to_lower: Whether to convert strings to lowercase. Defaults to `False`.</span>
-<span class="sd">        str_to_upper: Whether to convert strings to uppercase. Defaults to `False`.</span>
-<span class="sd">        str_strip_whitespace: Whether to strip whitespace from strings. Defaults to `False`.</span>
-<span class="sd">        str_min_length: The minimum length for strings. Defaults to `None`.</span>
-<span class="sd">        str_max_length: The maximum length for strings. Defaults to `None`.</span>
-<span class="sd">        extra: Extra values to include in this configuration. Defaults to `None`.</span>
-<span class="sd">        frozen: Whether to freeze the configuration. Defaults to `False`.</span>
-<span class="sd">        populate_by_name: Whether to populate fields by name. Defaults to `False`.</span>
-<span class="sd">        use_enum_values: Whether to use enum values. Defaults to `False`.</span>
-<span class="sd">        validate_assignment: Whether to validate assignments. Defaults to `False`.</span>
-<span class="sd">        arbitrary_types_allowed: Whether to allow arbitrary types. Defaults to `False`.</span>
-<span class="sd">        from_attributes: Whether to set attributes from the configuration. Defaults to `False`.</span>
+<span class="sd">        title: The title for the generated JSON schema. Defaults to `None`.</span>
+<span class="sd">        str_to_lower: Whether to convert all characters to lowercase for str &amp; bytes types. Defaults to `False`.</span>
+<span class="sd">        str_to_upper: Whether to convert all characters to uppercase for str &amp; bytes types. Defaults to `False`.</span>
+<span class="sd">        str_strip_whitespace: Whether to strip leading and trailing whitespace for str &amp; bytes types.</span>
+<span class="sd">            Defaults to `False`.</span>
+<span class="sd">        str_min_length: The minimum length for str &amp; bytes types. Defaults to `None`.</span>
+<span class="sd">        str_max_length: The maximum length for str &amp; bytes types. Defaults to `None`.</span>
+<span class="sd">        extra: Whether to ignore, allow, or forbid extra attributes during model initialization.</span>
+<span class="sd">            Accepts the string values of `&#39;ignore&#39;`, `&#39;allow&#39;`, or `&#39;forbid&#39;`. Defaults to `&#39;ignore&#39;`.</span>
+
+<span class="sd">            - `&#39;forbid&#39;` will cause validation to fail if extra attributes are included</span>
+<span class="sd">            - `&#39;ignore&#39;` will silently ignore any extra attributes</span>
+<span class="sd">            - `&#39;allow&#39;` will assign the attributes to the model</span>
+<span class="sd">        frozen: Whether or not models are faux-immutable, i.e. whether `__setattr__` is allowed, and also generates</span>
+<span class="sd">            a `__hash__()` method for the model. This makes instances of the model potentially hashable if all the</span>
+<span class="sd">            attributes are hashable. Defaults to `False`.</span>
+
+<span class="sd">            !!! note</span>
+<span class="sd">                On V1, this setting was called `allow_mutation`, and was `True` by default.</span>
+<span class="sd">        populate_by_name: Whether an aliased field may be populated by its name as given by the model</span>
+<span class="sd">            attribute, as well as the alias. Defaults to `False`.</span>
+
+<span class="sd">            !!! note</span>
+<span class="sd">                The name of this configuration setting was changed in **v2.0** from</span>
+<span class="sd">                `allow_population_by_alias` to `populate_by_name`.</span>
+<span class="sd">        use_enum_values: Whether to populate models with the `value` property of enums, rather than the raw enum.</span>
+<span class="sd">            This may be useful if you want to serialise `model.model_dump()` later. Defaults to `False`.</span>
+<span class="sd">        validate_assignment: Whether to perform validation on *assignment* to attributes. Defaults to `False`.</span>
+<span class="sd">        arbitrary_types_allowed: Whether to allow arbitrary user types for fields (they are validated simply by</span>
+<span class="sd">            checking if the value is an instance of the type). If `False`, `RuntimeError` will be raised on model</span>
+<span class="sd">            declaration. Defaults to `False`.</span>
+
+<span class="sd">            See an example in [Field Types](/api/types/custom.md#arbitrary-types-allowed).</span>
+<span class="sd">        from_attributes: Whether to allow model creation from object attributes. Defaults to `False`.</span>
+
+<span class="sd">            !!! note</span>
+<span class="sd">                The name of this configuration setting was changed in **v2.0** from `orm_mode` to `from_attributes`.</span>
 <span class="sd">        loc_by_alias: Whether to use the alias for error `loc`s. Defaults to `True`.</span>
-<span class="sd">        alias_generator: A function to generate aliases. Defaults to `None`.</span>
-<span class="sd">        ignored_types: A tuple of types to ignore. Defaults to `()`.</span>
-<span class="sd">        allow_inf_nan: Whether to allow infinity and NaN. Defaults to `False`.</span>
+<span class="sd">        alias_generator: a callable that takes a field name and returns an alias for it.</span>
+
+<span class="sd">            See [the dedicated section](#alias-generator).</span>
+<span class="sd">        ignored_types: A tuple of types that may occur as values of class attributes without annotations. This is</span>
+<span class="sd">            typically used for custom descriptors (classes that behave like `property`). If an attribute is set on a</span>
+<span class="sd">            class without an annotation and has a type that is not in this tuple (or otherwise recognized by</span>
+<span class="sd">            _pydantic_), an error will be raised. Defaults to `()`.</span>
+<span class="sd">        allow_inf_nan: Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`.</span>
 <span class="sd">        strict: Whether to make the configuration strict. Defaults to `False`.</span>
-<span class="sd">        revalidate_instances: When and how to revalidate models and dataclasses during validation. Defaults to &#39;never&#39;.</span>
-<span class="sd">        ser_json_timedelta: The format of JSON serialized timedeltas. Defaults to &#39;iso8601&#39;.</span>
-<span class="sd">        ser_json_bytes: The encoding of JSON serialized bytes. Defaults to &#39;utf8&#39;.</span>
+<span class="sd">        revalidate_instances: When and how to revalidate models and dataclasses during validation. Accepts the string</span>
+<span class="sd">            values of `&#39;never&#39;`, `&#39;always&#39;` and `&#39;subclass-instances&#39;`. Defaults to `&#39;never&#39;`.</span>
+
+<span class="sd">            - `&#39;never&#39;` will not revalidate models and dataclasses during validation</span>
+<span class="sd">            - `&#39;always&#39;` will revalidate models and dataclasses during validation</span>
+<span class="sd">            - `&#39;subclass-instances&#39;` will revalidate models and dataclasses during validation if the instance is a</span>
+<span class="sd">                subclass of the model or dataclass</span>
+<span class="sd">        ser_json_timedelta: The format of JSON serialized timedeltas. Accepts the string values of `&#39;iso8601&#39;` and</span>
+<span class="sd">            `&#39;float&#39;`. Defaults to `&#39;iso8601&#39;`.</span>
+
+<span class="sd">            - `&#39;iso8601&#39;` will serialize timedeltas to ISO 8601 durations.</span>
+<span class="sd">            - `&#39;float&#39;` will serialize timedeltas to the total number of seconds.</span>
+<span class="sd">        ser_json_bytes: The encoding of JSON serialized bytes. Accepts the string values of `&#39;utf8&#39;` and `&#39;base64&#39;`.</span>
+<span class="sd">            Defaults to `&#39;utf8&#39;`.</span>
+
+<span class="sd">            - `&#39;utf8&#39;` will serialize bytes to UTF-8 strings.</span>
+<span class="sd">            - `&#39;base64&#39;` will serialize bytes to base64 strings.</span>
 <span class="sd">        validate_default: Whether to validate default values during validation. Defaults to `False`.</span>
-<span class="sd">        protected_namespaces: A list of protected namespaces. Defaults to `(&#39;model_&#39;, )`.</span>
+<span class="sd">        protected_namespaces: A `tuple` of strings that prevent model to have field which conflict with them.</span>
+<span class="sd">            Defaults to `(&#39;model_&#39;, )`).</span>
+
+<span class="sd">            See [the dedicated section](#protected-namespaces).</span>
 <span class="sd">        hide_input_in_errors: Whether to hide inputs when printing errors. Defaults to `False`.</span>
+
+<span class="sd">            See [the dedicated section](#hide-input-in-errors).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">title</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span>
