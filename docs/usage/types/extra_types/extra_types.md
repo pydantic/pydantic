@@ -7,5 +7,4 @@ The following types are supported by [Pydantic Extra Types]:
 * [Phone Numbers](/usage/types/extra_types/phone_numbers) &mdash; a type that allows you to store phone numbers in your model.
 * [Routing Numbers](/usage/types/extra_types/routing_numbers) &mdash; a type that allows you to store ABA transit routing numbers in your model.
 
-
 [Pydantic Extra Types]: https://github.com/pydantic/pydantic-extra-types
