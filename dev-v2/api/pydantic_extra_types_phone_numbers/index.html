@@ -10,20 +10,20 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/integrations/mypy/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/pydantic_extra_types_phone_numbers/">
       
       
-        <link rel="prev" href="../../usage/errors/">
+        <link rel="prev" href="../pydantic_extra_types_payment/">
       
       
-        <link rel="next" href="../pycharm/">
+        <link rel="next" href="../pydantic_extra_types_routing_number/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
     
     
       
-        <title>Mypy - pydantic</title>
+        <title>pydantic_extra_types.phone_numbers - pydantic</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#using-mypy-without-the-plugin" class="md-skip">
+        <a href="#pydantic_extra_types.phone_numbers" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +135,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Mypy
+              pydantic_extra_types.phone_numbers
             
           </span>
         </div>
@@ -281,15 +281,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
   
   
-    
-  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="./" class="md-tabs__link md-tabs__link--active">
+      <a href="../../integrations/mypy/" class="md-tabs__link">
         Integrations
       </a>
     </li>
@@ -327,6 +325,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
   
   
+    
+  
 
 
   
@@ -338,7 +338,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="../../api/main/" class="md-tabs__link">
+      <a href="../main/" class="md-tabs__link md-tabs__link--active">
         API Documentation
       </a>
     </li>
@@ -1227,16 +1227,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_4" >
       
       
       
@@ -1245,7 +1243,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_4_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_4">
           <span class="md-nav__icon md-icon"></span>
           Integrations
@@ -1256,172 +1254,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          Mypy
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../../integrations/mypy/" class="md-nav__link">
         Mypy
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#using-mypy-without-the-plugin" class="md-nav__link">
-    Using mypy without the plugin
-  </a>
-  
-    <nav class="md-nav" aria-label="Using mypy without the plugin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#strict-optional" class="md-nav__link">
-    Strict Optional
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#other-pydantic-interfaces" class="md-nav__link">
-    Other Pydantic interfaces
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#mypy-plugin-capabilities" class="md-nav__link">
-    Mypy Plugin Capabilities
-  </a>
-  
-    <nav class="md-nav" aria-label="Mypy Plugin Capabilities">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-signature-for-model__init__" class="md-nav__link">
-    Generate a signature for Model.__init__
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-typed-signature-for-modelmodel_construct" class="md-nav__link">
-    Generate a typed signature for Model.model_construct
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configallow_mutation" class="md-nav__link">
-    Respect Config.allow_mutation
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configfrom_attributes" class="md-nav__link">
-    Respect Config.from_attributes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-signature-for-dataclasses" class="md-nav__link">
-    Generate a signature for dataclasses
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-the-type-of-the-fields-default-and-default_factory" class="md-nav__link">
-    Respect the type of the Field's default and default_factory
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#warn-about-the-use-of-untyped-fields" class="md-nav__link">
-    Warn about the use of untyped fields
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-capabilities" class="md-nav__link">
-    Optional Capabilities:
-  </a>
-  
-    <nav class="md-nav" aria-label="Optional Capabilities:">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prevent-the-use-of-required-dynamic-aliases" class="md-nav__link">
-    Prevent the use of required dynamic aliases
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enabling-the-plugin" class="md-nav__link">
-    Enabling the Plugin
-  </a>
-  
-    <nav class="md-nav" aria-label="Enabling the Plugin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configuring-the-plugin" class="md-nav__link">
-    Configuring the Plugin
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1433,7 +1270,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../pycharm/" class="md-nav__link">
+      <a href="../../integrations/pycharm/" class="md-nav__link">
         PyCharm
       </a>
     </li>
@@ -1447,7 +1284,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../hypothesis/" class="md-nav__link">
+      <a href="../../integrations/hypothesis/" class="md-nav__link">
         Hypothesis
       </a>
     </li>
@@ -1461,7 +1298,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../visual_studio_code/" class="md-nav__link">
+      <a href="../../integrations/visual_studio_code/" class="md-nav__link">
         Visual Studio Code
       </a>
     </li>
@@ -1475,7 +1312,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../datamodel_code_generator/" class="md-nav__link">
+      <a href="../../integrations/datamodel_code_generator/" class="md-nav__link">
         datamodel-code-generator
       </a>
     </li>
@@ -1489,7 +1326,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../devtools/" class="md-nav__link">
+      <a href="../../integrations/devtools/" class="md-nav__link">
         devtools
       </a>
     </li>
@@ -1503,7 +1340,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../rich/" class="md-nav__link">
+      <a href="../../integrations/rich/" class="md-nav__link">
         Rich
       </a>
     </li>
@@ -1601,14 +1438,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
       
       
       
@@ -1617,7 +1456,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           API Documentation
@@ -1657,7 +1496,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/main/" class="md-nav__link">
+      <a href="../main/" class="md-nav__link">
         pydantic
       </a>
     </li>
@@ -1671,7 +1510,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/alias_generators/" class="md-nav__link">
+      <a href="../alias_generators/" class="md-nav__link">
         pydantic.alias_generators
       </a>
     </li>
@@ -1685,7 +1524,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/color/" class="md-nav__link">
+      <a href="../color/" class="md-nav__link">
         pydantic.color
       </a>
     </li>
@@ -1699,7 +1538,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/config/" class="md-nav__link">
+      <a href="../config/" class="md-nav__link">
         pydantic.config
       </a>
     </li>
@@ -1713,7 +1552,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/dataclasses/" class="md-nav__link">
+      <a href="../dataclasses/" class="md-nav__link">
         pydantic.dataclasses
       </a>
     </li>
@@ -1727,7 +1566,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/errors/" class="md-nav__link">
+      <a href="../errors/" class="md-nav__link">
         pydantic.errors
       </a>
     </li>
@@ -1741,7 +1580,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/fields/" class="md-nav__link">
+      <a href="../fields/" class="md-nav__link">
         pydantic.fields
       </a>
     </li>
@@ -1755,7 +1594,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/functional_serializers/" class="md-nav__link">
+      <a href="../functional_serializers/" class="md-nav__link">
         pydantic.functional_serializers
       </a>
     </li>
@@ -1769,7 +1608,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/functional_validators/" class="md-nav__link">
+      <a href="../functional_validators/" class="md-nav__link">
         pydantic.functional_validators
       </a>
     </li>
@@ -1783,7 +1622,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/json_schema/" class="md-nav__link">
+      <a href="../json_schema/" class="md-nav__link">
         pydantic.json_schema
       </a>
     </li>
@@ -1797,7 +1636,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/mypy/" class="md-nav__link">
+      <a href="../mypy/" class="md-nav__link">
         pydantic.mypy
       </a>
     </li>
@@ -1811,7 +1650,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/networks/" class="md-nav__link">
+      <a href="../networks/" class="md-nav__link">
         pydantic.networks
       </a>
     </li>
@@ -1825,7 +1664,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/type_adapter/" class="md-nav__link">
+      <a href="../type_adapter/" class="md-nav__link">
         pydantic.type_adapter
       </a>
     </li>
@@ -1839,7 +1678,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/types/" class="md-nav__link">
+      <a href="../types/" class="md-nav__link">
         pydantic.types
       </a>
     </li>
@@ -1853,7 +1692,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/validate_call/" class="md-nav__link">
+      <a href="../validate_call/" class="md-nav__link">
         pydantic.validate_call
       </a>
     </li>
@@ -1867,7 +1706,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/version/" class="md-nav__link">
+      <a href="../version/" class="md-nav__link">
         pydantic.version
       </a>
     </li>
@@ -1915,7 +1754,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_core_init/" class="md-nav__link">
+      <a href="../pydantic_core_init/" class="md-nav__link">
         pydantic_core
       </a>
     </li>
@@ -1929,7 +1768,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_core_schema/" class="md-nav__link">
+      <a href="../pydantic_core_schema/" class="md-nav__link">
         pydantic_core.core_schema
       </a>
     </li>
@@ -1977,7 +1816,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_settings/" class="md-nav__link">
+      <a href="../pydantic_settings/" class="md-nav__link">
         pydantic_settings
       </a>
     </li>
@@ -1996,14 +1835,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" checked>
       
       
       
@@ -2012,7 +1853,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_7_4">
           <span class="md-nav__icon md-icon"></span>
           Pydantic Extra Types
@@ -2025,7 +1866,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_color/" class="md-nav__link">
+      <a href="../pydantic_extra_types_color/" class="md-nav__link">
         pydantic_extra_types.color
       </a>
     </li>
@@ -2039,7 +1880,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_country/" class="md-nav__link">
+      <a href="../pydantic_extra_types_country/" class="md-nav__link">
         pydantic_extra_types.country
       </a>
     </li>
@@ -2053,7 +1894,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_payment/" class="md-nav__link">
+      <a href="../pydantic_extra_types_payment/" class="md-nav__link">
         pydantic_extra_types.payment
       </a>
     </li>
@@ -2065,11 +1906,57 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic_extra_types.phone_numbers
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         pydantic_extra_types.phone_numbers
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.phone_numbers" class="md-nav__link">
+    pydantic_extra_types.phone_numbers
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.phone_numbers.PhoneNumber" class="md-nav__link">
+    PhoneNumber
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2081,7 +1968,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../../api/pydantic_extra_types_routing_number/" class="md-nav__link">
+      <a href="../pydantic_extra_types_routing_number/" class="md-nav__link">
         pydantic_extra_types.routing_number
       </a>
     </li>
@@ -2129,131 +2016,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#using-mypy-without-the-plugin" class="md-nav__link">
-    Using mypy without the plugin
+  <a href="#pydantic_extra_types.phone_numbers" class="md-nav__link">
+    pydantic_extra_types.phone_numbers
   </a>
-  
-    <nav class="md-nav" aria-label="Using mypy without the plugin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#strict-optional" class="md-nav__link">
-    Strict Optional
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#other-pydantic-interfaces" class="md-nav__link">
-    Other Pydantic interfaces
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#mypy-plugin-capabilities" class="md-nav__link">
-    Mypy Plugin Capabilities
+  <a href="#pydantic_extra_types.phone_numbers.PhoneNumber" class="md-nav__link">
+    PhoneNumber
   </a>
-  
-    <nav class="md-nav" aria-label="Mypy Plugin Capabilities">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-signature-for-model__init__" class="md-nav__link">
-    Generate a signature for Model.__init__
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-typed-signature-for-modelmodel_construct" class="md-nav__link">
-    Generate a typed signature for Model.model_construct
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configallow_mutation" class="md-nav__link">
-    Respect Config.allow_mutation
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-configfrom_attributes" class="md-nav__link">
-    Respect Config.from_attributes
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#generate-a-signature-for-dataclasses" class="md-nav__link">
-    Generate a signature for dataclasses
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#respect-the-type-of-the-fields-default-and-default_factory" class="md-nav__link">
-    Respect the type of the Field's default and default_factory
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#warn-about-the-use-of-untyped-fields" class="md-nav__link">
-    Warn about the use of untyped fields
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#optional-capabilities" class="md-nav__link">
-    Optional Capabilities:
-  </a>
-  
-    <nav class="md-nav" aria-label="Optional Capabilities:">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#prevent-the-use-of-required-dynamic-aliases" class="md-nav__link">
-    Prevent the use of required dynamic aliases
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#enabling-the-plugin" class="md-nav__link">
-    Enabling the Plugin
-  </a>
-  
-    <nav class="md-nav" aria-label="Enabling the Plugin">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#configuring-the-plugin" class="md-nav__link">
-    Configuring the Plugin
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
   
 </li>
       
@@ -2276,216 +2048,136 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>Mypy</h1>
+  <h1>pydantic_extra_types.phone_numbers</h1>
 
-<p>Pydantic works well with <a href="http://mypy-lang.org/">mypy</a> right out of the box.</p>
-<p>However, Pydantic also ships with a mypy plugin that adds a number of important pydantic-specific
-features to mypy that improve its ability to type-check your code.</p>
-<p>For example, consider the following script:</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
-<div class="tabbed-content">
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+<div class="doc doc-object doc-module">
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
+<a id="pydantic_extra_types.phone_numbers"></a>
+  <div class="doc doc-contents first">
+
+  
+
+  <div class="doc doc-children">
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
-<span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
-</code></pre></div>
+
+
+
+
+
+
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_extra_types.phone_numbers.PhoneNumber" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">PhoneNumber</span>
+
+
+<a href="#pydantic_extra_types.phone_numbers.PhoneNumber" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>str</code></p>
+
+  
+      <p>An international phone number</p>
+
+
+        <details class="quote">
+          <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/phone_numbers.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PhoneNumber</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    An international phone number</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">supported_regions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">phonenumbers</span><span class="o">.</span><span class="n">SUPPORTED_REGIONS</span><span class="p">)</span>
+    <span class="n">supported_formats</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">PhoneNumberFormat</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">isupper</span><span class="p">()])</span>
+
+    <span class="n">default_region_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="n">phone_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;RFC3966&#39;</span>
+    <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_after_validator_function</span><span class="p">(</span>
+            <span class="bp">cls</span><span class="o">.</span><span class="n">_validate</span><span class="p">,</span>
+            <span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">max_length</span><span class="p">),</span>
+        <span class="p">)</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">phone_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">parsed_number</span> <span class="o">=</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">phone_number</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">default_region_code</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">phonenumberutil</span><span class="o">.</span><span class="n">NumberParseException</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;value_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid phone number&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">is_valid_number</span><span class="p">(</span><span class="n">parsed_number</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;value_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid phone number&#39;</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">format_number</span><span class="p">(</span><span class="n">parsed_number</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">phonenumbers</span><span class="o">.</span><span class="n">PhoneNumberFormat</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">phone_format</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
 </div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">datetime</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
 
 
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
-<span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
-</code></pre></div>
+  </div>
+
+  </div>
+
 </div>
-<div class="tabbed-block">
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
-
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
-    <span class="n">first_name</span> <span class="o">=</span> <span class="s1">&#39;John&#39;</span>
-    <span class="n">last_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">signup_ts</span><span class="p">:</span> <span class="n">datetime</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">list_of_ints</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span>
-
-
-<span class="n">m</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">age</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span> <span class="n">list_of_ints</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="s1">&#39;2&#39;</span><span class="p">,</span> <span class="sa">b</span><span class="s1">&#39;3&#39;</span><span class="p">])</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">m</span><span class="o">.</span><span class="n">middle_name</span><span class="p">)</span>  <span class="c1"># not a model field!</span>
-<span class="n">Model</span><span class="p">()</span>  <span class="c1"># will raise a validation error for age and list_of_ints</span>
-</code></pre></div>
-</div>
-</div>
-</div>
-<p>Without any special configuration, mypy catches one of the errors:</p>
-<div class="highlight"><pre><span></span><code>13: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;
-</code></pre></div>
-<p>But <a href="#enabling-the-plugin">with the plugin enabled</a>, it catches both:
-<div class="highlight"><pre><span></span><code>13: error: &quot;Model&quot; has no attribute &quot;middle_name&quot;
-16: error: Missing named argument &quot;age&quot; for &quot;Model&quot;
-16: error: Missing named argument &quot;list_of_ints&quot; for &quot;Model&quot;
-</code></pre></div></p>
-<p>With the pydantic mypy plugin, you can fearlessly refactor your models knowing mypy will catch any mistakes
-if your field names or types change.</p>
-<p>There are other benefits too! See below for more details.</p>
-<h2 id="using-mypy-without-the-plugin">Using mypy without the plugin<a class="headerlink" href="#using-mypy-without-the-plugin" title="Permanent link">&para;</a></h2>
-<p>You can run your code through mypy with:</p>
-<div class="highlight"><pre><span></span><code>mypy<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--ignore-missing-imports<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--follow-imports<span class="o">=</span>skip<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>--strict-optional<span class="w"> </span><span class="se">\</span>
-<span class="w">  </span>pydantic_mypy_test.py
-</code></pre></div>
-<h3 id="strict-optional">Strict Optional<a class="headerlink" href="#strict-optional" title="Permanent link">&para;</a></h3>
-<p>For your code to pass with <code>--strict-optional</code>, you need to to use <code>Optional[]</code> or an alias of <code>Optional[]</code>
-for all fields with <code>None</code> as the default. (This is standard with mypy.)</p>
-<p>Pydantic provides a few useful optional or union types:</p>
-<ul>
-<li><code>NoneStr</code> aka. <code>Optional[str]</code></li>
-<li><code>NoneBytes</code> aka. <code>Optional[bytes]</code></li>
-<li><code>StrBytes</code> aka. <code>Union[str, bytes]</code></li>
-<li><code>NoneStrBytes</code> aka. <code>Optional[StrBytes]</code></li>
-</ul>
-<p>If these aren't sufficient you can of course define your own.</p>
-<h3 id="other-pydantic-interfaces">Other Pydantic interfaces<a class="headerlink" href="#other-pydantic-interfaces" title="Permanent link">&para;</a></h3>
-<p>Pydantic <a href="/usage/dataclasses/">dataclasses</a> and the <a href="/usage/validation_decorator/"><code>validate_arguments</code> decorator</a>
-should also work well with mypy.</p>
-<h2 id="mypy-plugin-capabilities">Mypy Plugin Capabilities<a class="headerlink" href="#mypy-plugin-capabilities" title="Permanent link">&para;</a></h2>
-<h3 id="generate-a-signature-for-model__init__">Generate a signature for <code>Model.__init__</code><a class="headerlink" href="#generate-a-signature-for-model__init__" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Any required fields that don't have dynamically-determined aliases will be included as required
-  keyword arguments.</li>
-<li>If <code>Config.populate_by_name=True</code>, the generated signature will use the field names,
-  rather than aliases.</li>
-<li>If <code>Config.extra="forbid"</code> and you don't make use of dynamically-determined aliases, the generated signature
-  will not allow unexpected inputs.</li>
-<li><strong>Optional:</strong> If the <a href="#plugin-settings"><code>init_forbid_extra</code> <strong>plugin setting</strong></a> is set to <code>True</code>, unexpected inputs to
-  <code>__init__</code> will raise errors even if <code>Config.extra</code> is not <code>"forbid"</code>.</li>
-<li><strong>Optional:</strong> If the <a href="#plugin-settings"><code>init_typed</code> <strong>plugin setting</strong></a> is set to <code>True</code>, the generated signature
-  will use the types of the model fields (otherwise they will be annotated as <code>Any</code> to allow parsing).</li>
-</ul>
-<h3 id="generate-a-typed-signature-for-modelmodel_construct">Generate a typed signature for <code>Model.model_construct</code><a class="headerlink" href="#generate-a-typed-signature-for-modelmodel_construct" title="Permanent link">&para;</a></h3>
-<ul>
-<li>The <a href="/usage/models/#creating-models-without-validation"><code>model_construct</code></a> method is a faster alternative to <code>__init__</code>
-  when input data is known to be valid and does not need to be parsed. But because this method performs no runtime
-  validation, static checking is important to detect errors.</li>
-</ul>
-<h3 id="respect-configallow_mutation">Respect <code>Config.allow_mutation</code><a class="headerlink" href="#respect-configallow_mutation" title="Permanent link">&para;</a></h3>
-<ul>
-<li>If <code>Config.allow_mutation</code> is <code>False</code>, you'll get a mypy error if you try to change
-  the value of a model field; cf. <a href="/usage/models/#faux-immutability">faux immutability</a>.</li>
-</ul>
-<h3 id="respect-configfrom_attributes">Respect <code>Config.from_attributes</code><a class="headerlink" href="#respect-configfrom_attributes" title="Permanent link">&para;</a></h3>
-<ul>
-<li>If <code>Config.from_attributes</code> is <code>False</code>, you'll get a mypy error if you try to call <code>.from_orm()</code>;
-  cf. <a href="/usage/models/#orm-mode-aka-arbitrary-class-instances">ORM mode</a></li>
-</ul>
-<h3 id="generate-a-signature-for-dataclasses">Generate a signature for <code>dataclasses</code><a class="headerlink" href="#generate-a-signature-for-dataclasses" title="Permanent link">&para;</a></h3>
-<ul>
-<li>classes decorated with <a href="/usage/dataclasses/"><code>@pydantic.dataclasses.dataclass</code></a> are type checked the same as standard Python dataclasses</li>
-<li>The <code>@pydantic.dataclasses.dataclass</code> decorator accepts a <code>config</code> keyword argument which has the same meaning as <a href="/usage/model_config/">the <code>Config</code> sub-class</a>.</li>
-</ul>
-<h3 id="respect-the-type-of-the-fields-default-and-default_factory">Respect the type of the <code>Field</code>'s <code>default</code> and <code>default_factory</code><a class="headerlink" href="#respect-the-type-of-the-fields-default-and-default_factory" title="Permanent link">&para;</a></h3>
-<ul>
-<li>Field with both a <code>default</code> and a <code>default_factory</code> will result in an error during static checking.</li>
-<li>The type of the <code>default</code> and <code>default_factory</code> value must be compatible with the one of the field.</li>
-</ul>
-<h3 id="warn-about-the-use-of-untyped-fields">Warn about the use of untyped fields<a class="headerlink" href="#warn-about-the-use-of-untyped-fields" title="Permanent link">&para;</a></h3>
-<ul>
-<li>You'll get a mypy error any time you assign a public attribute on a model without annotating its type</li>
-<li>If your goal is to set a ClassVar, you should explicitly annotate the field using typing.ClassVar</li>
-</ul>
-<h2 id="optional-capabilities">Optional Capabilities:<a class="headerlink" href="#optional-capabilities" title="Permanent link">&para;</a></h2>
-<h3 id="prevent-the-use-of-required-dynamic-aliases">Prevent the use of required dynamic aliases<a class="headerlink" href="#prevent-the-use-of-required-dynamic-aliases" title="Permanent link">&para;</a></h3>
-<ul>
-<li>If the <a href="#plugin-settings"><code>warn_required_dynamic_aliases</code> <strong>plugin setting</strong></a> is set to <code>True</code>, you'll get a mypy
-  error any time you use a dynamically-determined alias or alias generator on a model with
-  <code>Config.populate_by_name=False</code>.</li>
-<li>This is important because if such aliases are present, mypy cannot properly type check calls to <code>__init__</code>.
-  In this case, it will default to treating all arguments as optional.</li>
-</ul>
-<h2 id="enabling-the-plugin">Enabling the Plugin<a class="headerlink" href="#enabling-the-plugin" title="Permanent link">&para;</a></h2>
-<p>To enable the plugin, just add <code>pydantic.mypy</code> to the list of plugins in your
-<a href="https://mypy.readthedocs.io/en/latest/config_file.html">mypy config file</a>
-(this could be <code>mypy.ini</code> or <code>setup.cfg</code>).</p>
-<p>To get started, all you need to do is create a <code>mypy.ini</code> file with following contents:
-<div class="highlight"><pre><span></span><code><span class="k">[mypy]</span>
-<span class="na">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pydantic.mypy</span>
-</code></pre></div></p>
-<p>The plugin is compatible with mypy versions <code>&gt;=0.930</code>.</p>
-<p>See the <a href="#configuring-the-plugin">plugin configuration</a> docs for more details.</p>
-<h3 id="configuring-the-plugin">Configuring the Plugin<a class="headerlink" href="#configuring-the-plugin" title="Permanent link">&para;</a></h3>
-<p>To change the values of the plugin settings, create a section in your mypy config file called <code>[pydantic-mypy]</code>,
-and add any key-value pairs for settings you want to override.</p>
-<p>A <code>mypy.ini</code> file with all plugin strictness flags enabled (and some other mypy strictness flags, too) might look like:</p>
-<div class="highlight"><pre><span></span><code><span class="k">[mypy]</span>
-<span class="na">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">pydantic.mypy</span>
-
-<span class="na">follow_imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">silent</span>
-<span class="na">warn_redundant_casts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">warn_unused_ignores</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">disallow_any_generics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">check_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">no_implicit_reexport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-
-<span class="c1"># for strict mypy: (this is the tricky one :-))</span>
-<span class="na">disallow_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-
-<span class="k">[pydantic-mypy]</span>
-<span class="na">init_forbid_extra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">init_typed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-<span class="na">warn_required_dynamic_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">True</span>
-</code></pre></div>
-<p>As of <code>mypy&gt;=0.900</code>, mypy config may also be included in the <code>pyproject.toml</code> file rather than <code>mypy.ini</code>.
-The same configuration as above would be:</p>
-<div class="highlight"><pre><span></span><code><span class="k">[tool.mypy]</span>
-<span class="n">plugins</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
-<span class="w">  </span><span class="s">&quot;pydantic.mypy&quot;</span>
-<span class="p">]</span>
-
-<span class="n">follow_imports</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s">&quot;silent&quot;</span>
-<span class="n">warn_redundant_casts</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">warn_unused_ignores</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">disallow_any_generics</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">check_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">no_implicit_reexport</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-
-<span class="c1"># for strict mypy: (this is the tricky one :-))</span>
-<span class="n">disallow_untyped_defs</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-
-<span class="k">[tool.pydantic-mypy]</span>
-<span class="n">init_forbid_extra</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">init_typed</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-<span class="n">warn_required_dynamic_aliases</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
-</code></pre></div>
 
 
 

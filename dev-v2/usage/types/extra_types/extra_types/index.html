@@ -10,21 +10,27 @@
       
       
       
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/usage/types/extra_types/extra_types/">
       
       
-      <link rel="icon" href="/latest/favicon.png">
+        <link rel="prev" href="../../custom/">
+      
+      
+        <link rel="next" href="../color_types/">
+      
+      <link rel="icon" href="../../../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
     
     
       
-        <title>pydantic</title>
+        <title>Extra Types Overview - pydantic</title>
       
     
     
-      <link rel="stylesheet" href="/latest/assets/stylesheets/main.26e3688c.min.css">
+      <link rel="stylesheet" href="../../../../assets/stylesheets/main.26e3688c.min.css">
       
         
-        <link rel="stylesheet" href="/latest/assets/stylesheets/palette.ecc896b0.min.css">
+        <link rel="stylesheet" href="../../../../assets/stylesheets/palette.ecc896b0.min.css">
       
       
 
@@ -40,13 +46,13 @@
       
     
     
-      <link rel="stylesheet" href="/latest/assets/_mkdocstrings.css">
+      <link rel="stylesheet" href="../../../../assets/_mkdocstrings.css">
     
-      <link rel="stylesheet" href="/latest/extra/terminal.css">
+      <link rel="stylesheet" href="../../../../extra/terminal.css">
     
-      <link rel="stylesheet" href="/latest/extra/tweaks.css">
+      <link rel="stylesheet" href="../../../../extra/tweaks.css">
     
-    <script>__md_scope=new URL("/latest",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    <script>__md_scope=new URL("../../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
     
       
 
@@ -106,9 +112,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 <header class="md-header" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href="/latest/." title="pydantic" class="md-header__button md-logo" aria-label="pydantic" data-md-component="logo">
+    <a href="../../../.." title="pydantic" class="md-header__button md-logo" aria-label="pydantic" data-md-component="logo">
       
-  <img src="/latest/logo-white.svg" alt="logo">
+  <img src="../../../../logo-white.svg" alt="logo">
 
     </a>
     <label class="md-header__button md-icon" for="__drawer">
@@ -124,7 +130,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              
+              Extra Types Overview
             
           </span>
         </div>
@@ -228,7 +234,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="/latest/." class="md-tabs__link">
+      <a href="../../../.." class="md-tabs__link">
         Get Started
       </a>
     </li>
@@ -238,13 +244,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
   
   
+    
+  
 
 
   
   
   
     <li class="md-tabs__item">
-      <a href="/latest/usage/models/" class="md-tabs__link">
+      <a href="../../../models/" class="md-tabs__link md-tabs__link--active">
         Usage
       </a>
     </li>
@@ -260,7 +268,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="/latest/errors/errors/" class="md-tabs__link">
+      <a href="../../../../errors/errors/" class="md-tabs__link">
         Error Messages
       </a>
     </li>
@@ -276,7 +284,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="/latest/integrations/mypy/" class="md-tabs__link">
+      <a href="../../../../integrations/mypy/" class="md-tabs__link">
         Integrations
       </a>
     </li>
@@ -289,7 +297,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
   <li class="md-tabs__item">
-    <a href="/latest/contributing/" class="md-tabs__link">
+    <a href="../../../../contributing/" class="md-tabs__link">
       Contribute
     </a>
   </li>
@@ -304,7 +312,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="/latest/blog/pydantic-v2-alpha/" class="md-tabs__link">
+      <a href="../../../../blog/pydantic-v2-alpha/" class="md-tabs__link">
         Blog
       </a>
     </li>
@@ -325,7 +333,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-tabs__item">
-      <a href="/latest/api/main/" class="md-tabs__link">
+      <a href="../../../../api/main/" class="md-tabs__link">
         API Documentation
       </a>
     </li>
@@ -355,9 +363,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 <nav class="md-nav md-nav--primary md-nav--lifted" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href="/latest/." title="pydantic" class="md-nav__button md-logo" aria-label="pydantic" data-md-component="logo">
+    <a href="../../../.." title="pydantic" class="md-nav__button md-logo" aria-label="pydantic" data-md-component="logo">
       
-  <img src="/latest/logo-white.svg" alt="logo">
+  <img src="../../../../logo-white.svg" alt="logo">
 
     </a>
     pydantic
@@ -412,7 +420,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/." class="md-nav__link">
+      <a href="../../../.." class="md-nav__link">
         Welcome to Pydantic
       </a>
     </li>
@@ -426,7 +434,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/install/" class="md-nav__link">
+      <a href="../../../../install/" class="md-nav__link">
         Installation
       </a>
     </li>
@@ -440,7 +448,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/migration/" class="md-nav__link">
+      <a href="../../../../migration/" class="md-nav__link">
         Migration Guide
       </a>
     </li>
@@ -454,7 +462,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/changelog/" class="md-nav__link">
+      <a href="../../../../changelog/" class="md-nav__link">
         Changelog
       </a>
     </li>
@@ -474,14 +482,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" checked>
       
       
       
@@ -490,7 +500,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2">
           <span class="md-nav__icon md-icon"></span>
           Usage
@@ -503,7 +513,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/models/" class="md-nav__link">
+      <a href="../../../models/" class="md-nav__link">
         Models
       </a>
     </li>
@@ -515,14 +525,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2" checked>
       
       
       
@@ -531,7 +543,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_2_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2_2">
           <span class="md-nav__icon md-icon"></span>
           Field Types
@@ -544,7 +556,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/types/" class="md-nav__link">
+      <a href="../../types/" class="md-nav__link">
         Types Overview
       </a>
     </li>
@@ -558,7 +570,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/standard_types/" class="md-nav__link">
+      <a href="../../standard_types/" class="md-nav__link">
         Standard Library Types
       </a>
     </li>
@@ -572,7 +584,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/booleans/" class="md-nav__link">
+      <a href="../../booleans/" class="md-nav__link">
         Booleans
       </a>
     </li>
@@ -586,7 +598,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/bytesize/" class="md-nav__link">
+      <a href="../../bytesize/" class="md-nav__link">
         ByteSize
       </a>
     </li>
@@ -600,7 +612,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/callables/" class="md-nav__link">
+      <a href="../../callables/" class="md-nav__link">
         Callables
       </a>
     </li>
@@ -614,7 +626,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/datetime/" class="md-nav__link">
+      <a href="../../datetime/" class="md-nav__link">
         Datetimes
       </a>
     </li>
@@ -628,7 +640,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/dicts_mapping/" class="md-nav__link">
+      <a href="../../dicts_mapping/" class="md-nav__link">
         Dicts and Mapping
       </a>
     </li>
@@ -642,7 +654,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/encoded/" class="md-nav__link">
+      <a href="../../encoded/" class="md-nav__link">
         Encoded Types
       </a>
     </li>
@@ -656,7 +668,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/enums/" class="md-nav__link">
+      <a href="../../enums/" class="md-nav__link">
         Enums and Choices
       </a>
     </li>
@@ -670,7 +682,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/file_types/" class="md-nav__link">
+      <a href="../../file_types/" class="md-nav__link">
         File Types
       </a>
     </li>
@@ -684,7 +696,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/json/" class="md-nav__link">
+      <a href="../../json/" class="md-nav__link">
         JSON
       </a>
     </li>
@@ -698,7 +710,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/list_types/" class="md-nav__link">
+      <a href="../../list_types/" class="md-nav__link">
         Lists and Tuples
       </a>
     </li>
@@ -712,7 +724,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/number_types/" class="md-nav__link">
+      <a href="../../number_types/" class="md-nav__link">
         Number Types
       </a>
     </li>
@@ -726,7 +738,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/secrets/" class="md-nav__link">
+      <a href="../../secrets/" class="md-nav__link">
         Secret Types
       </a>
     </li>
@@ -740,7 +752,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/sequence_iterable/" class="md-nav__link">
+      <a href="../../sequence_iterable/" class="md-nav__link">
         Sequence, Iterable, & Iterator
       </a>
     </li>
@@ -754,7 +766,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/set_types/" class="md-nav__link">
+      <a href="../../set_types/" class="md-nav__link">
         Sets and frozenset
       </a>
     </li>
@@ -768,7 +780,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/string_types/" class="md-nav__link">
+      <a href="../../string_types/" class="md-nav__link">
         String Types
       </a>
     </li>
@@ -782,7 +794,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/typevars/" class="md-nav__link">
+      <a href="../../typevars/" class="md-nav__link">
         Type and TypeVar
       </a>
     </li>
@@ -796,7 +808,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/types_fields/" class="md-nav__link">
+      <a href="../../types_fields/" class="md-nav__link">
         Types with Fields
       </a>
     </li>
@@ -810,7 +822,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/unions/" class="md-nav__link">
+      <a href="../../unions/" class="md-nav__link">
         Unions
       </a>
     </li>
@@ -824,7 +836,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/urls/" class="md-nav__link">
+      <a href="../../urls/" class="md-nav__link">
         URLs
       </a>
     </li>
@@ -838,7 +850,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/uuids/" class="md-nav__link">
+      <a href="../../uuids/" class="md-nav__link">
         UUIDs
       </a>
     </li>
@@ -852,7 +864,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/encoded/" class="md-nav__link">
+      <a href="../../encoded/" class="md-nav__link">
         Encoded
       </a>
     </li>
@@ -866,7 +878,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/custom/" class="md-nav__link">
+      <a href="../../custom/" class="md-nav__link">
         Custom Data Types
       </a>
     </li>
@@ -878,14 +890,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_25" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_2_25" checked>
       
       
       
@@ -894,7 +908,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_25_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_2_25_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_2_2_25">
           <span class="md-nav__icon md-icon"></span>
           Extra Types
@@ -905,11 +919,19 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="/latest/usage/types/extra_types/extra_types/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         Extra Types Overview
       </a>
+      
     </li>
   
 
@@ -921,7 +943,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/extra_types/color_types/" class="md-nav__link">
+      <a href="../color_types/" class="md-nav__link">
         Color Types
       </a>
     </li>
@@ -935,7 +957,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/extra_types/payment_cards/" class="md-nav__link">
+      <a href="../payment_cards/" class="md-nav__link">
         Payment Card Numbers
       </a>
     </li>
@@ -949,7 +971,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/extra_types/phone_numbers/" class="md-nav__link">
+      <a href="../phone_numbers/" class="md-nav__link">
         Phone Numbers
       </a>
     </li>
@@ -963,7 +985,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/types/extra_types/routing_numbers/" class="md-nav__link">
+      <a href="../routing_numbers/" class="md-nav__link">
         Routing Numbers
       </a>
     </li>
@@ -991,7 +1013,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/validators/" class="md-nav__link">
+      <a href="../../../validators/" class="md-nav__link">
         Validators
       </a>
     </li>
@@ -1005,7 +1027,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/model_config/" class="md-nav__link">
+      <a href="../../../model_config/" class="md-nav__link">
         Model Config
       </a>
     </li>
@@ -1019,7 +1041,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/schema/" class="md-nav__link">
+      <a href="../../../schema/" class="md-nav__link">
         Schema
       </a>
     </li>
@@ -1033,7 +1055,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/exporting_models/" class="md-nav__link">
+      <a href="../../../exporting_models/" class="md-nav__link">
         Exporting models
       </a>
     </li>
@@ -1047,7 +1069,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/computed_fields/" class="md-nav__link">
+      <a href="../../../computed_fields/" class="md-nav__link">
         Computed fields
       </a>
     </li>
@@ -1061,7 +1083,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/dataclasses/" class="md-nav__link">
+      <a href="../../../dataclasses/" class="md-nav__link">
         Dataclasses
       </a>
     </li>
@@ -1075,7 +1097,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/validation_decorator/" class="md-nav__link">
+      <a href="../../../validation_decorator/" class="md-nav__link">
         Validation decorator
       </a>
     </li>
@@ -1089,7 +1111,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/postponed_annotations/" class="md-nav__link">
+      <a href="../../../postponed_annotations/" class="md-nav__link">
         Postponed annotations
       </a>
     </li>
@@ -1103,7 +1125,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/conversion_table/" class="md-nav__link">
+      <a href="../../../conversion_table/" class="md-nav__link">
         Conversion table
       </a>
     </li>
@@ -1117,7 +1139,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/pydantic_settings/" class="md-nav__link">
+      <a href="../../../pydantic_settings/" class="md-nav__link">
         Settings Management
       </a>
     </li>
@@ -1166,7 +1188,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/errors/errors/" class="md-nav__link">
+      <a href="../../../../errors/errors/" class="md-nav__link">
         Error Handling
       </a>
     </li>
@@ -1180,7 +1202,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/validation_errors/" class="md-nav__link">
+      <a href="../../../validation_errors/" class="md-nav__link">
         Validation Errors
       </a>
     </li>
@@ -1194,7 +1216,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/usage/errors/" class="md-nav__link">
+      <a href="../../../errors/" class="md-nav__link">
         Usage Errors
       </a>
     </li>
@@ -1243,7 +1265,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/integrations/mypy/" class="md-nav__link">
+      <a href="../../../../integrations/mypy/" class="md-nav__link">
         Mypy
       </a>
     </li>
@@ -1257,7 +1279,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/integrations/pycharm/" class="md-nav__link">
+      <a href="../../../../integrations/pycharm/" class="md-nav__link">
         PyCharm
       </a>
     </li>
@@ -1271,7 +1293,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/integrations/hypothesis/" class="md-nav__link">
+      <a href="../../../../integrations/hypothesis/" class="md-nav__link">
         Hypothesis
       </a>
     </li>
@@ -1285,7 +1307,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/integrations/visual_studio_code/" class="md-nav__link">
+      <a href="../../../../integrations/visual_studio_code/" class="md-nav__link">
         Visual Studio Code
       </a>
     </li>
@@ -1299,7 +1321,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/integrations/datamodel_code_generator/" class="md-nav__link">
+      <a href="../../../../integrations/datamodel_code_generator/" class="md-nav__link">
         datamodel-code-generator
       </a>
     </li>
@@ -1313,7 +1335,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/integrations/devtools/" class="md-nav__link">
+      <a href="../../../../integrations/devtools/" class="md-nav__link">
         devtools
       </a>
     </li>
@@ -1327,7 +1349,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/integrations/rich/" class="md-nav__link">
+      <a href="../../../../integrations/rich/" class="md-nav__link">
         Rich
       </a>
     </li>
@@ -1349,7 +1371,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/contributing/" class="md-nav__link">
+      <a href="../../../../contributing/" class="md-nav__link">
         Contribute
       </a>
     </li>
@@ -1391,7 +1413,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/blog/pydantic-v2-alpha/" class="md-nav__link">
+      <a href="../../../../blog/pydantic-v2-alpha/" class="md-nav__link">
         Pydantic V2 Pre Release
       </a>
     </li>
@@ -1405,7 +1427,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/blog/pydantic-v2/" class="md-nav__link">
+      <a href="../../../../blog/pydantic-v2/" class="md-nav__link">
         Pydantic V2 Plan
       </a>
     </li>
@@ -1481,7 +1503,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/main/" class="md-nav__link">
+      <a href="../../../../api/main/" class="md-nav__link">
         pydantic
       </a>
     </li>
@@ -1495,7 +1517,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/alias_generators/" class="md-nav__link">
+      <a href="../../../../api/alias_generators/" class="md-nav__link">
         pydantic.alias_generators
       </a>
     </li>
@@ -1509,7 +1531,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/color/" class="md-nav__link">
+      <a href="../../../../api/color/" class="md-nav__link">
         pydantic.color
       </a>
     </li>
@@ -1523,7 +1545,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/config/" class="md-nav__link">
+      <a href="../../../../api/config/" class="md-nav__link">
         pydantic.config
       </a>
     </li>
@@ -1537,7 +1559,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/dataclasses/" class="md-nav__link">
+      <a href="../../../../api/dataclasses/" class="md-nav__link">
         pydantic.dataclasses
       </a>
     </li>
@@ -1551,7 +1573,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/errors/" class="md-nav__link">
+      <a href="../../../../api/errors/" class="md-nav__link">
         pydantic.errors
       </a>
     </li>
@@ -1565,7 +1587,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/fields/" class="md-nav__link">
+      <a href="../../../../api/fields/" class="md-nav__link">
         pydantic.fields
       </a>
     </li>
@@ -1579,7 +1601,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/functional_serializers/" class="md-nav__link">
+      <a href="../../../../api/functional_serializers/" class="md-nav__link">
         pydantic.functional_serializers
       </a>
     </li>
@@ -1593,7 +1615,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/functional_validators/" class="md-nav__link">
+      <a href="../../../../api/functional_validators/" class="md-nav__link">
         pydantic.functional_validators
       </a>
     </li>
@@ -1607,7 +1629,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/json_schema/" class="md-nav__link">
+      <a href="../../../../api/json_schema/" class="md-nav__link">
         pydantic.json_schema
       </a>
     </li>
@@ -1621,7 +1643,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/mypy/" class="md-nav__link">
+      <a href="../../../../api/mypy/" class="md-nav__link">
         pydantic.mypy
       </a>
     </li>
@@ -1635,7 +1657,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/networks/" class="md-nav__link">
+      <a href="../../../../api/networks/" class="md-nav__link">
         pydantic.networks
       </a>
     </li>
@@ -1649,7 +1671,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/type_adapter/" class="md-nav__link">
+      <a href="../../../../api/type_adapter/" class="md-nav__link">
         pydantic.type_adapter
       </a>
     </li>
@@ -1663,7 +1685,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/types/" class="md-nav__link">
+      <a href="../../../../api/types/" class="md-nav__link">
         pydantic.types
       </a>
     </li>
@@ -1677,7 +1699,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/validate_call/" class="md-nav__link">
+      <a href="../../../../api/validate_call/" class="md-nav__link">
         pydantic.validate_call
       </a>
     </li>
@@ -1691,7 +1713,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/version/" class="md-nav__link">
+      <a href="../../../../api/version/" class="md-nav__link">
         pydantic.version
       </a>
     </li>
@@ -1739,7 +1761,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/pydantic_core_init/" class="md-nav__link">
+      <a href="../../../../api/pydantic_core_init/" class="md-nav__link">
         pydantic_core
       </a>
     </li>
@@ -1753,7 +1775,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/pydantic_core_schema/" class="md-nav__link">
+      <a href="../../../../api/pydantic_core_schema/" class="md-nav__link">
         pydantic_core.core_schema
       </a>
     </li>
@@ -1801,7 +1823,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/pydantic_settings/" class="md-nav__link">
+      <a href="../../../../api/pydantic_settings/" class="md-nav__link">
         pydantic_settings
       </a>
     </li>
@@ -1849,7 +1871,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/pydantic_extra_types_color/" class="md-nav__link">
+      <a href="../../../../api/pydantic_extra_types_color/" class="md-nav__link">
         pydantic_extra_types.color
       </a>
     </li>
@@ -1863,7 +1885,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/pydantic_extra_types_country/" class="md-nav__link">
+      <a href="../../../../api/pydantic_extra_types_country/" class="md-nav__link">
         pydantic_extra_types.country
       </a>
     </li>
@@ -1877,7 +1899,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/pydantic_extra_types_payment/" class="md-nav__link">
+      <a href="../../../../api/pydantic_extra_types_payment/" class="md-nav__link">
         pydantic_extra_types.payment
       </a>
     </li>
@@ -1891,7 +1913,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
+      <a href="../../../../api/pydantic_extra_types_phone_numbers/" class="md-nav__link">
         pydantic_extra_types.phone_numbers
       </a>
     </li>
@@ -1905,7 +1927,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="/latest/api/pydantic_extra_types_routing_number/" class="md-nav__link">
+      <a href="../../../../api/pydantic_extra_types_routing_number/" class="md-nav__link">
         pydantic_extra_types.routing_number
       </a>
     </li>
@@ -1956,7 +1978,30 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
             <div class="md-content" data-md-component="content">
               <article class="md-content__inner md-typeset">
                 
-  <h1>404 - Not found</h1>
+  
+                  
+
+  
+  
+
+
+  <h1>Extra Types Overview</h1>
+
+<p>For types that are more complex, or don't need to be on <em>pydantic</em> itself, we have the <a href="https://github.com/pydantic/pydantic-extra-types">Pydantic Extra Types</a> project.</p>
+<p>The following types are supported by <a href="https://github.com/pydantic/pydantic-extra-types">Pydantic Extra Types</a>:</p>
+<ul>
+<li><a href="/usage/types/extra_types/color_types">Color Types</a> &mdash; color validation types.</li>
+<li><a href="/usage/types/extra_types/payment_cards">Payment Card Numbers</a> &mdash; a type that allows you to store payment card numbers in your model.</li>
+<li><a href="/usage/types/extra_types/phone_numbers">Phone Numbers</a> &mdash; a type that allows you to store phone numbers in your model.</li>
+<li><a href="/usage/types/extra_types/routing_numbers">Routing Numbers</a> &mdash; a type that allows you to store ABA transit routing numbers in your model.</li>
+</ul>
+
+
+
+
+
+                
+  <script src="/flarelytics/client.js"></script>
 
               </article>
             </div>
@@ -1991,12 +2036,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <div class="md-dialog__inner md-typeset"></div>
     </div>
     
-    <script id="__config" type="application/json">{"base": "/latest", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "/latest/assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+    <script id="__config" type="application/json">{"base": "../../../..", "features": ["content.tabs.link", "content.code.annotate", "announce.dismiss", "navigation.tabs"], "search": "../../../../assets/javascripts/workers/search.208ed371.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="/latest/assets/javascripts/bundle.b4d07000.min.js"></script>
+      <script src="../../../../assets/javascripts/bundle.b4d07000.min.js"></script>
       
-        <script src="/latest/extra/redirects.js"></script>
+        <script src="../../../../extra/redirects.js"></script>
       
     
   </body>

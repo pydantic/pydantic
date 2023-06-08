@@ -10,20 +10,20 @@
       
       
       
-        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/color/">
+        <link rel="canonical" href="https://docs.pydantic.dev/latest/api/pydantic_extra_types_color/">
       
       
-        <link rel="prev" href="../alias_generators/">
+        <link rel="prev" href="../pydantic_settings/">
       
       
-        <link rel="next" href="../config/">
+        <link rel="next" href="../pydantic_extra_types_country/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
     
     
       
-        <title>pydantic.color - pydantic</title>
+        <title>pydantic_extra_types.color - pydantic</title>
       
     
     
@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#pydantic.color" class="md-skip">
+        <a href="#pydantic_extra_types.color" class="md-skip">
           Skip to content
         </a>
       
@@ -135,7 +135,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              pydantic.color
+              pydantic_extra_types.color
             
           </span>
         </div>
@@ -1467,16 +1467,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-    
-  
   
     
-    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" checked>
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" >
       
       
       
@@ -1485,7 +1483,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="true">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="false">
         <label class="md-nav__title" for="__nav_7_1">
           <span class="md-nav__icon md-icon"></span>
           Pydantic
@@ -1524,161 +1522,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
-    
   
-  
-    <li class="md-nav__item md-nav__item--active">
-      
-      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
-      
-      
-      
-        <label class="md-nav__link md-nav__link--active" for="__toc">
-          pydantic.color
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <a href="./" class="md-nav__link md-nav__link--active">
+    <li class="md-nav__item">
+      <a href="../color/" class="md-nav__link">
         pydantic.color
       </a>
-      
-        
-
-  
-
-<nav class="md-nav md-nav--secondary" aria-label="Page contents">
-  
-  
-  
-  
-    <label class="md-nav__title" for="__toc">
-      <span class="md-nav__icon md-icon"></span>
-      Page contents
-    </label>
-    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color" class="md-nav__link">
-    pydantic.color
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color.Color" class="md-nav__link">
-    Color
-  </a>
-  
-    <nav class="md-nav" aria-label="Color">
-      <ul class="md-nav__list">
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_hex" class="md-nav__link">
-    as_hex()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_hsl" class="md-nav__link">
-    as_hsl()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_hsl_tuple" class="md-nav__link">
-    as_hsl_tuple()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_named" class="md-nav__link">
-    as_named()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_rgb" class="md-nav__link">
-    as_rgb()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_rgb_tuple" class="md-nav__link">
-    as_rgb_tuple()
-  </a>
-  
-</li>
-        
-          <li class="md-nav__item">
-  <a href="#pydantic.color.Color.original" class="md-nav__link">
-    original()
-  </a>
-  
-</li>
-        
-      </ul>
-    </nav>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color.float_to_255" class="md-nav__link">
-    float_to_255()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color.ints_to_rgba" class="md-nav__link">
-    ints_to_rgba()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color.parse_color_value" class="md-nav__link">
-    parse_color_value()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color.parse_float_alpha" class="md-nav__link">
-    parse_float_alpha()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color.parse_hsl" class="md-nav__link">
-    parse_hsl()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color.parse_str" class="md-nav__link">
-    parse_str()
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#pydantic.color.parse_tuple" class="md-nav__link">
-    parse_tuple()
-  </a>
-  
-</li>
-      
-    </ul>
-  
-</nav>
-      
     </li>
   
 
@@ -1987,14 +1835,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" checked>
       
       
       
@@ -2003,7 +1853,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_7_4">
           <span class="md-nav__icon md-icon"></span>
           Pydantic Extra Types
@@ -2014,11 +1864,168 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
               
   
   
+    
   
-    <li class="md-nav__item">
-      <a href="../pydantic_extra_types_color/" class="md-nav__link">
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic_extra_types.color
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
         pydantic_extra_types.color
       </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color" class="md-nav__link">
+    pydantic_extra_types.color
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.Color" class="md-nav__link">
+    Color
+  </a>
+  
+    <nav class="md-nav" aria-label="Color">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.Color.as_hex" class="md-nav__link">
+    as_hex()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.Color.as_hsl" class="md-nav__link">
+    as_hsl()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.Color.as_hsl_tuple" class="md-nav__link">
+    as_hsl_tuple()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.Color.as_named" class="md-nav__link">
+    as_named()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.Color.as_rgb" class="md-nav__link">
+    as_rgb()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.Color.as_rgb_tuple" class="md-nav__link">
+    as_rgb_tuple()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.Color.original" class="md-nav__link">
+    original()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.RGBA" class="md-nav__link">
+    RGBA
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.float_to_255" class="md-nav__link">
+    float_to_255()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.ints_to_rgba" class="md-nav__link">
+    ints_to_rgba()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.parse_color_value" class="md-nav__link">
+    parse_color_value()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.parse_float_alpha" class="md-nav__link">
+    parse_float_alpha()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.parse_hsl" class="md-nav__link">
+    parse_hsl()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.parse_str" class="md-nav__link">
+    parse_str()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.parse_tuple" class="md-nav__link">
+    parse_tuple()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -2120,14 +2127,14 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color" class="md-nav__link">
-    pydantic.color
+  <a href="#pydantic_extra_types.color" class="md-nav__link">
+    pydantic_extra_types.color
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color.Color" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.Color" class="md-nav__link">
     Color
   </a>
   
@@ -2135,49 +2142,49 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_hex" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.Color.as_hex" class="md-nav__link">
     as_hex()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_hsl" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.Color.as_hsl" class="md-nav__link">
     as_hsl()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_hsl_tuple" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.Color.as_hsl_tuple" class="md-nav__link">
     as_hsl_tuple()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_named" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.Color.as_named" class="md-nav__link">
     as_named()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_rgb" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.Color.as_rgb" class="md-nav__link">
     as_rgb()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.color.Color.as_rgb_tuple" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.Color.as_rgb_tuple" class="md-nav__link">
     as_rgb_tuple()
   </a>
   
 </li>
         
           <li class="md-nav__item">
-  <a href="#pydantic.color.Color.original" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.Color.original" class="md-nav__link">
     original()
   </a>
   
@@ -2189,49 +2196,56 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color.float_to_255" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.RGBA" class="md-nav__link">
+    RGBA
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_extra_types.color.float_to_255" class="md-nav__link">
     float_to_255()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color.ints_to_rgba" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.ints_to_rgba" class="md-nav__link">
     ints_to_rgba()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color.parse_color_value" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.parse_color_value" class="md-nav__link">
     parse_color_value()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color.parse_float_alpha" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.parse_float_alpha" class="md-nav__link">
     parse_float_alpha()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color.parse_hsl" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.parse_hsl" class="md-nav__link">
     parse_hsl()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color.parse_str" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.parse_str" class="md-nav__link">
     parse_str()
   </a>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#pydantic.color.parse_tuple" class="md-nav__link">
+  <a href="#pydantic_extra_types.color.parse_tuple" class="md-nav__link">
     parse_tuple()
   </a>
   
@@ -2256,12 +2270,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>pydantic.color</h1>
+  <h1>pydantic_extra_types.color</h1>
 
 <div class="doc doc-object doc-module">
 
 
-<a id="pydantic.color"></a>
+<a id="pydantic_extra_types.color"></a>
   <div class="doc doc-contents first">
   
       <p>Color definitions are used as per the CSS3
@@ -2270,11 +2284,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <p>In these cases the <em>last</em> color when sorted alphabetically takes preferences,
 eg. <code>Color((0, 255, 255)).as_named() == 'cyan'</code> because "cyan" comes after "aqua".</p>
 
-<details class="warning" open>
-  <summary>Deprecated</summary>
-  <p>The <code>Color</code> class is deprecated, use <code>pydantic_extra_types</code> instead.
-See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
-</details>
   
 
   <div class="doc doc-children">
@@ -2290,11 +2299,11 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
 
 
 
-<h2 id="pydantic.color.Color" class="doc doc-heading">
+<h2 id="pydantic_extra_types.color.Color" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">Color</span>
 
 
-<a href="#pydantic.color.Color" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_extra_types.color.Color" class="headerlink" title="Permanent link">&para;</a></h2>
 
 
   <div class="doc doc-contents ">
@@ -2306,8 +2315,12 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
 
 
         <details class="quote">
-          <summary>Source code in <code>pydantic/color.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 72</span>
+          <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
 <span class="normal"> 73</span>
 <span class="normal"> 74</span>
 <span class="normal"> 75</span>
@@ -2493,18 +2506,7 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
 <span class="normal">255</span>
 <span class="normal">256</span>
 <span class="normal">257</span>
-<span class="normal">258</span>
-<span class="normal">259</span>
-<span class="normal">260</span>
-<span class="normal">261</span>
-<span class="normal">262</span>
-<span class="normal">263</span>
-<span class="normal">264</span>
-<span class="normal">265</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span>
-    <span class="s1">&#39;The `Color` class is deprecated, use `pydantic_extra_types` instead. &#39;</span>
-    <span class="s1">&#39;See https://pydantic-docs.helpmanual.io/usage/types/extra_types/color_types/.&#39;</span>
-<span class="p">)</span>
-<span class="k">class</span> <span class="nc">Color</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">):</span>
+<span class="normal">258</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">Color</span><span class="p">(</span><span class="n">_repr</span><span class="o">.</span><span class="n">Representation</span><span class="p">):</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Represents a color.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2523,7 +2525,8 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
             <span class="n">value</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">_original</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
-                <span class="s1">&#39;color_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid color: value must be a tuple, list or string&#39;</span>
+                <span class="s1">&#39;color_error&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;value is not a valid color: value must be a tuple, list or string&#39;</span><span class="p">,</span>
             <span class="p">)</span>
 
         <span class="c1"># if we&#39;ve got here value must be a valid color</span>
@@ -2531,9 +2534,9 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">_GetJsonSchemaHandler</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">JsonSchemaValue</span><span class="p">:</span>
-        <span class="n">field_schema</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">field_schema</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="n">field_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="nb">type</span><span class="o">=</span><span class="s1">&#39;string&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;color&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">field_schema</span>
 
@@ -2600,7 +2603,7 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
                 <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_alpha_float</span><span class="p">(),</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span>
             <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">as_rgb_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ColorTuple</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">as_rgb_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ColorTuple</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the color as an RGB or RGBA tuple.</span>
 
@@ -2638,7 +2641,7 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
             <span class="n">h</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">li</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_hsl_tuple</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
             <span class="k">return</span> <span class="sa">f</span><span class="s1">&#39;hsl(</span><span class="si">{</span><span class="n">h</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">360</span><span class="si">:</span><span class="s1">0.0f</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">s</span><span class="si">:</span><span class="s1">0.0%</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">li</span><span class="si">:</span><span class="s1">0.0%</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="nb">round</span><span class="p">(</span><span class="n">a</span><span class="p">,</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s1">)&#39;</span>
 
-    <span class="k">def</span> <span class="nf">as_hsl_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HslColorTuple</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">as_hsl_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HslColorTuple</span><span class="p">:</span>
 <span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Returns the color as an HSL or HSLA tuple.</span>
 
@@ -2673,20 +2676,20 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">CoreSchema</span><span class="p">]</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">CoreSchema</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_plain_validator_function</span><span class="p">(</span>
             <span class="bp">cls</span><span class="o">.</span><span class="n">_validate</span><span class="p">,</span> <span class="n">serialization</span><span class="o">=</span><span class="n">core_schema</span><span class="o">.</span><span class="n">to_string_ser_schema</span><span class="p">()</span>
         <span class="p">)</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">__input_value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;Color&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">__input_value</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Color</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">__input_value</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_named</span><span class="p">(</span><span class="n">fallback</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">__repr_args__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;_repr.ReprArgs&#39;</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">__repr_args__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">_repr</span><span class="o">.</span><span class="n">ReprArgs</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">[(</span><span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_named</span><span class="p">(</span><span class="n">fallback</span><span class="o">=</span><span class="kc">True</span><span class="p">))]</span> <span class="o">+</span> <span class="p">[(</span><span class="s1">&#39;rgb&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_rgb_tuple</span><span class="p">())]</span>
 
     <span class="k">def</span> <span class="fm">__eq__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">other</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
@@ -2713,11 +2716,11 @@ See more about it <a href="/usage/types/extra_types/color_types/">here</a>.</p>
 
 
 
-<h3 id="pydantic.color.Color.as_hex" class="doc doc-heading">
+<h3 id="pydantic_extra_types.color.Color.as_hex" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">as_hex</span>
 
 
-<a href="#pydantic.color.Color.as_hex" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#pydantic_extra_types.color.Color.as_hex" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">as_hex</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2750,8 +2753,15 @@ a "short" representation of the color is possible and whether there's an alpha c
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">142</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
 <span class="normal">143</span>
 <span class="normal">144</span>
 <span class="normal">145</span>
@@ -2760,14 +2770,7 @@ a "short" representation of the color is possible and whether there's an alpha c
 <span class="normal">148</span>
 <span class="normal">149</span>
 <span class="normal">150</span>
-<span class="normal">151</span>
-<span class="normal">152</span>
-<span class="normal">153</span>
-<span class="normal">154</span>
-<span class="normal">155</span>
-<span class="normal">156</span>
-<span class="normal">157</span>
-<span class="normal">158</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hex</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">151</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hex</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns the hexadecimal representation of the color.</span>
 
 <span class="sd">    Hex string representing the color can be 3, 4, 6, or 8 characters depending on whether the string</span>
@@ -2794,11 +2797,11 @@ a "short" representation of the color is possible and whether there's an alpha c
 
 
 
-<h3 id="pydantic.color.Color.as_hsl" class="doc doc-heading">
+<h3 id="pydantic_extra_types.color.Color.as_hsl" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">as_hsl</span>
 
 
-<a href="#pydantic.color.Color.as_hsl" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#pydantic_extra_types.color.Color.as_hsl" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">as_hsl</span><span class="p">()</span>
 </code></pre></div>
 
@@ -2807,17 +2810,17 @@ a "short" representation of the color is possible and whether there's an alpha c
       <p>Color as an <code>hsl(&lt;h&gt;, &lt;s&gt;, &lt;l&gt;)</code> or <code>hsl(&lt;h&gt;, &lt;s&gt;, &lt;l&gt;, &lt;a&gt;)</code> string.</p>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">199</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
 <span class="normal">200</span>
-<span class="normal">201</span>
-<span class="normal">202</span>
-<span class="normal">203</span>
-<span class="normal">204</span>
-<span class="normal">205</span>
-<span class="normal">206</span>
-<span class="normal">207</span>
-<span class="normal">208</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hsl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">201</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hsl</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Color as an `hsl(&lt;h&gt;, &lt;s&gt;, &lt;l&gt;)` or `hsl(&lt;h&gt;, &lt;s&gt;, &lt;l&gt;, &lt;a&gt;)` string.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -2837,11 +2840,11 @@ a "short" representation of the color is possible and whether there's an alpha c
 
 
 
-<h3 id="pydantic.color.Color.as_hsl_tuple" class="doc doc-heading">
+<h3 id="pydantic_extra_types.color.Color.as_hsl_tuple" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">as_hsl_tuple</span>
 
 
-<a href="#pydantic.color.Color.as_hsl_tuple" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#pydantic_extra_types.color.Color.as_hsl_tuple" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">as_hsl_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
@@ -2863,7 +2866,7 @@ a "short" representation of the color is possible and whether there's an alpha c
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code><span title="typing.Optional">Optional</span>[bool]</code>
+                <code>bool | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2893,7 +2896,7 @@ a "short" representation of the color is possible and whether there's an alpha c
     <tbody>
         <tr>
           <td>
-                <code><span title="pydantic.color.HslColorTuple">HslColorTuple</span></code>
+                <code><span title="pydantic_extra_types.color.HslColorTuple">HslColorTuple</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -2910,8 +2913,15 @@ All elements are in the range 0 to 1.</p>
   <p>This is HSL as used in HTML and most other places, not HLS as used in Python's <code>colorsys</code>.</p>
 </details>
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">210</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
 <span class="normal">211</span>
 <span class="normal">212</span>
 <span class="normal">213</span>
@@ -2932,14 +2942,7 @@ All elements are in the range 0 to 1.</p>
 <span class="normal">228</span>
 <span class="normal">229</span>
 <span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span>
-<span class="normal">234</span>
-<span class="normal">235</span>
-<span class="normal">236</span>
-<span class="normal">237</span>
-<span class="normal">238</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hsl_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HslColorTuple</span><span class="p">:</span>
+<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_hsl_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">HslColorTuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the color as an HSL or HSLA tuple.</span>
 
@@ -2978,11 +2981,11 @@ All elements are in the range 0 to 1.</p>
 
 
 
-<h3 id="pydantic.color.Color.as_named" class="doc doc-heading">
+<h3 id="pydantic_extra_types.color.Color.as_named" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">as_named</span>
 
 
-<a href="#pydantic.color.Color.as_named" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#pydantic_extra_types.color.Color.as_named" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">as_named</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">fallback</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3065,8 +3068,15 @@ the color instead of raising a ValueError when no named color is found.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">115</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
 <span class="normal">116</span>
 <span class="normal">117</span>
 <span class="normal">118</span>
@@ -3084,14 +3094,7 @@ the color instead of raising a ValueError when no named color is found.</p>
 <span class="normal">130</span>
 <span class="normal">131</span>
 <span class="normal">132</span>
-<span class="normal">133</span>
-<span class="normal">134</span>
-<span class="normal">135</span>
-<span class="normal">136</span>
-<span class="normal">137</span>
-<span class="normal">138</span>
-<span class="normal">139</span>
-<span class="normal">140</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_named</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fallback</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">133</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_named</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">fallback</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the name of the color if it can be found in `COLORS_BY_VALUE` dictionary,</span>
 <span class="sd">    otherwise returns the hexadecimal representation of the color or raises `ValueError`.</span>
@@ -3127,11 +3130,11 @@ the color instead of raising a ValueError when no named color is found.</p>
 
 
 
-<h3 id="pydantic.color.Color.as_rgb" class="doc doc-heading">
+<h3 id="pydantic_extra_types.color.Color.as_rgb" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">as_rgb</span>
 
 
-<a href="#pydantic.color.Color.as_rgb" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#pydantic_extra_types.color.Color.as_rgb" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">as_rgb</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3140,18 +3143,18 @@ the color instead of raising a ValueError when no named color is found.</p>
       <p>Color as an <code>rgb(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;)</code> or <code>rgba(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;, &lt;a&gt;)</code> string.</p>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">160</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
 <span class="normal">161</span>
 <span class="normal">162</span>
-<span class="normal">163</span>
-<span class="normal">164</span>
-<span class="normal">165</span>
-<span class="normal">166</span>
-<span class="normal">167</span>
-<span class="normal">168</span>
-<span class="normal">169</span>
-<span class="normal">170</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_rgb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="normal">163</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_rgb</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Color as an `rgb(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;)` or `rgba(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;, &lt;a&gt;)` string.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3172,11 +3175,11 @@ the color instead of raising a ValueError when no named color is found.</p>
 
 
 
-<h3 id="pydantic.color.Color.as_rgb_tuple" class="doc doc-heading">
+<h3 id="pydantic_extra_types.color.Color.as_rgb_tuple" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">as_rgb_tuple</span>
 
 
-<a href="#pydantic.color.Color.as_rgb_tuple" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#pydantic_extra_types.color.Color.as_rgb_tuple" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">as_rgb_tuple</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3198,7 +3201,7 @@ the color instead of raising a ValueError when no named color is found.</p>
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code><span title="typing.Optional">Optional</span>[bool]</code>
+                <code>bool | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3228,7 +3231,7 @@ the color instead of raising a ValueError when no named color is found.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="pydantic.color.ColorTuple">ColorTuple</span></code>
+                <code><span title="pydantic_extra_types.color.ColorTuple">ColorTuple</span></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3241,8 +3244,15 @@ If alpha is included, it is in the range 0 to 1.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">172</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
 <span class="normal">173</span>
 <span class="normal">174</span>
 <span class="normal">175</span>
@@ -3260,14 +3270,7 @@ If alpha is included, it is in the range 0 to 1.</p>
 <span class="normal">187</span>
 <span class="normal">188</span>
 <span class="normal">189</span>
-<span class="normal">190</span>
-<span class="normal">191</span>
-<span class="normal">192</span>
-<span class="normal">193</span>
-<span class="normal">194</span>
-<span class="normal">195</span>
-<span class="normal">196</span>
-<span class="normal">197</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_rgb_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ColorTuple</span><span class="p">:</span>
+<span class="normal">190</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">as_rgb_tuple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ColorTuple</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Returns the color as an RGB or RGBA tuple.</span>
 
@@ -3303,11 +3306,11 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 
-<h3 id="pydantic.color.Color.original" class="doc doc-heading">
+<h3 id="pydantic_extra_types.color.Color.original" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">original</span>
 
 
-<a href="#pydantic.color.Color.original" class="headerlink" title="Permanent link">&para;</a></h3>
+<a href="#pydantic_extra_types.color.Color.original" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">original</span><span class="p">()</span>
 </code></pre></div>
 
@@ -3316,12 +3319,12 @@ If alpha is included, it is in the range 0 to 1.</p>
       <p>Original value passed to <code>Color</code>.</p>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">109</span>
-<span class="normal">110</span>
-<span class="normal">111</span>
-<span class="normal">112</span>
-<span class="normal">113</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ColorType</span><span class="p">:</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">original</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ColorType</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Original value passed to `Color`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -3340,16 +3343,91 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 </div>
 
+<div class="doc doc-object doc-class">
+
+
+
+<h2 id="pydantic_extra_types.color.RGBA" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">RGBA</span>
+
+
+<a href="#pydantic_extra_types.color.RGBA" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+
+  
+      <p>Internal use only as a representation of a color.</p>
+
+
+        <details class="quote">
+          <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">RGBA</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Internal use only as a representation of a color.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="vm">__slots__</span> <span class="o">=</span> <span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;_tuple&#39;</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">r</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">g</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">b</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">r</span> <span class="o">=</span> <span class="n">r</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">g</span> <span class="o">=</span> <span class="n">g</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">b</span> <span class="o">=</span> <span class="n">b</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_tuple</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tuple</span><span class="p">[</span><span class="n">item</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+        </details>
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
 
 <div class="doc doc-object doc-function">
 
 
 
-<h2 id="pydantic.color.float_to_255" class="doc doc-heading">
+<h2 id="pydantic_extra_types.color.float_to_255" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">float_to_255</span>
 
 
-<a href="#pydantic.color.float_to_255" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_extra_types.color.float_to_255" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3430,21 +3508,21 @@ If alpha is included, it is in the range 0 to 1.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">454</span>
-<span class="normal">455</span>
-<span class="normal">456</span>
-<span class="normal">457</span>
-<span class="normal">458</span>
-<span class="normal">459</span>
-<span class="normal">460</span>
-<span class="normal">461</span>
-<span class="normal">462</span>
-<span class="normal">463</span>
-<span class="normal">464</span>
-<span class="normal">465</span>
-<span class="normal">466</span>
-<span class="normal">467</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">float_to_255</span><span class="p">(</span><span class="n">c</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts a float value between 0 and 1 (inclusive) to an integer between 0 and 255 (inclusive).</span>
 
@@ -3468,11 +3546,11 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 
-<h2 id="pydantic.color.ints_to_rgba" class="doc doc-heading">
+<h2 id="pydantic_extra_types.color.ints_to_rgba" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">ints_to_rgba</span>
 
 
-<a href="#pydantic.color.ints_to_rgba" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_extra_types.color.ints_to_rgba" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">ints_to_rgba</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3494,7 +3572,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>r</code></td>
           <td>
-                <code><span title="typing.Union">Union</span>[int, str]</code>
+                <code>int | str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3508,7 +3586,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>g</code></td>
           <td>
-                <code><span title="typing.Union">Union</span>[int, str]</code>
+                <code>int | str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3522,7 +3600,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>b</code></td>
           <td>
-                <code><span title="typing.Union">Union</span>[int, str]</code>
+                <code>int | str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3536,7 +3614,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code><span title="typing.Optional">Optional</span>[float]</code>
+                <code>float | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3561,7 +3639,7 @@ If alpha is included, it is in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="pydantic.color.RGBA">RGBA</span></code>
+                <code><a class="autorefs autorefs-internal" title="pydantic_extra_types.color.RGBA" href="#pydantic_extra_types.color.RGBA">RGBA</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3573,7 +3651,7 @@ If alpha is included, it is in the range 0 to 1.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
         <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">350</span>
 <span class="normal">351</span>
 <span class="normal">352</span>
@@ -3587,7 +3665,22 @@ If alpha is included, it is in the range 0 to 1.</p>
 <span class="normal">360</span>
 <span class="normal">361</span>
 <span class="normal">362</span>
-<span class="normal">363</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ints_to_rgba</span><span class="p">(</span><span class="n">r</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">g</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">b</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">ints_to_rgba</span><span class="p">(</span>
+    <span class="n">r</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">g</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
+    <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Converts integer or string values for RGB color and an optional alpha value to an `RGBA` object.</span>
 
@@ -3600,7 +3693,12 @@ If alpha is included, it is in the range 0 to 1.</p>
 <span class="sd">    Returns:</span>
 <span class="sd">        An instance of the `RGBA` class with the corresponding color and alpha values.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">return</span> <span class="n">RGBA</span><span class="p">(</span><span class="n">parse_color_value</span><span class="p">(</span><span class="n">r</span><span class="p">),</span> <span class="n">parse_color_value</span><span class="p">(</span><span class="n">g</span><span class="p">),</span> <span class="n">parse_color_value</span><span class="p">(</span><span class="n">b</span><span class="p">),</span> <span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">RGBA</span><span class="p">(</span>
+        <span class="n">parse_color_value</span><span class="p">(</span><span class="n">r</span><span class="p">),</span>
+        <span class="n">parse_color_value</span><span class="p">(</span><span class="n">g</span><span class="p">),</span>
+        <span class="n">parse_color_value</span><span class="p">(</span><span class="n">b</span><span class="p">),</span>
+        <span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">alpha</span><span class="p">),</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -3611,11 +3709,11 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 
-<h2 id="pydantic.color.parse_color_value" class="doc doc-heading">
+<h2 id="pydantic_extra_types.color.parse_color_value" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">parse_color_value</span>
 
 
-<a href="#pydantic.color.parse_color_value" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_extra_types.color.parse_color_value" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">parse_color_value</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">max_val</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3637,7 +3735,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code><span title="typing.Union">Union</span>[int, str]</code>
+                <code>int | str</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3710,18 +3808,8 @@ If alpha is included, it is in the range 0 to 1.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">366</span>
-<span class="normal">367</span>
-<span class="normal">368</span>
-<span class="normal">369</span>
-<span class="normal">370</span>
-<span class="normal">371</span>
-<span class="normal">372</span>
-<span class="normal">373</span>
-<span class="normal">374</span>
-<span class="normal">375</span>
-<span class="normal">376</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">376</span>
 <span class="normal">377</span>
 <span class="normal">378</span>
 <span class="normal">379</span>
@@ -3736,7 +3824,20 @@ If alpha is included, it is in the range 0 to 1.</p>
 <span class="normal">388</span>
 <span class="normal">389</span>
 <span class="normal">390</span>
-<span class="normal">391</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_color_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">max_val</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">255</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_color_value</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span> <span class="n">max_val</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">255</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parse the color value provided and return a number between 0 and 1.</span>
 
@@ -3753,7 +3854,10 @@ If alpha is included, it is in the range 0 to 1.</p>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">color</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;color_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid color: color values must be a valid number&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+            <span class="s1">&#39;color_error&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;value is not a valid color: color values must be a valid number&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
     <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">color</span> <span class="o">&lt;=</span> <span class="n">max_val</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">color</span> <span class="o">/</span> <span class="n">max_val</span>
     <span class="k">else</span><span class="p">:</span>
@@ -3772,11 +3876,11 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 
-<h2 id="pydantic.color.parse_float_alpha" class="doc doc-heading">
+<h2 id="pydantic_extra_types.color.parse_float_alpha" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">parse_float_alpha</span>
 
 
-<a href="#pydantic.color.parse_float_alpha" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_extra_types.color.parse_float_alpha" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">parse_float_alpha</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 
@@ -3798,7 +3902,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code><span title="typing.Union">Union</span>[None, str, float, int]</code>
+                <code>None | str | float | int</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3823,7 +3927,7 @@ If alpha is included, it is in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="typing.Optional">Optional</span>[float]</code>
+                <code>float | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -3857,21 +3961,8 @@ If alpha is included, it is in the range 0 to 1.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">394</span>
-<span class="normal">395</span>
-<span class="normal">396</span>
-<span class="normal">397</span>
-<span class="normal">398</span>
-<span class="normal">399</span>
-<span class="normal">400</span>
-<span class="normal">401</span>
-<span class="normal">402</span>
-<span class="normal">403</span>
-<span class="normal">404</span>
-<span class="normal">405</span>
-<span class="normal">406</span>
-<span class="normal">407</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">407</span>
 <span class="normal">408</span>
 <span class="normal">409</span>
 <span class="normal">410</span>
@@ -3886,7 +3977,26 @@ If alpha is included, it is in the range 0 to 1.</p>
 <span class="normal">419</span>
 <span class="normal">420</span>
 <span class="normal">421</span>
-<span class="normal">422</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_float_alpha</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="nb">str</span><span class="p">,</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_float_alpha</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="kc">None</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">|</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parse an alpha value checking it&#39;s a valid float in the range 0 to 1.</span>
 
@@ -3907,14 +4017,20 @@ If alpha is included, it is in the range 0 to 1.</p>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;color_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid color: alpha values must be a valid float&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+            <span class="s1">&#39;color_error&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;value is not a valid color: alpha values must be a valid float&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">_utils</span><span class="o">.</span><span class="n">almost_equal_floats</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
         <span class="k">return</span> <span class="kc">None</span>
     <span class="k">elif</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">alpha</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">alpha</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;color_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid color: alpha values must be in the range 0 to 1&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+            <span class="s1">&#39;color_error&#39;</span><span class="p">,</span>
+            <span class="s1">&#39;value is not a valid color: alpha values must be in the range 0 to 1&#39;</span><span class="p">,</span>
+        <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -3925,11 +4041,11 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 
-<h2 id="pydantic.color.parse_hsl" class="doc doc-heading">
+<h2 id="pydantic_extra_types.color.parse_hsl" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">parse_hsl</span>
 
 
-<a href="#pydantic.color.parse_hsl" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_extra_types.color.parse_hsl" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">parse_hsl</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">h_units</span><span class="p">,</span> <span class="n">sat</span><span class="p">,</span> <span class="n">light</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </code></pre></div>
 
@@ -4007,7 +4123,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>alpha</code></td>
           <td>
-                <code><span title="typing.Optional">Optional</span>[float]</code>
+                <code>float | None</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4032,7 +4148,7 @@ If alpha is included, it is in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="pydantic.color.RGBA">RGBA</span></code>
+                <code><a class="autorefs autorefs-internal" title="pydantic_extra_types.color.RGBA" href="#pydantic_extra_types.color.RGBA">RGBA</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4044,34 +4160,34 @@ If alpha is included, it is in the range 0 to 1.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">425</span>
-<span class="normal">426</span>
-<span class="normal">427</span>
-<span class="normal">428</span>
-<span class="normal">429</span>
-<span class="normal">430</span>
-<span class="normal">431</span>
-<span class="normal">432</span>
-<span class="normal">433</span>
-<span class="normal">434</span>
-<span class="normal">435</span>
-<span class="normal">436</span>
-<span class="normal">437</span>
-<span class="normal">438</span>
-<span class="normal">439</span>
-<span class="normal">440</span>
-<span class="normal">441</span>
-<span class="normal">442</span>
-<span class="normal">443</span>
-<span class="normal">444</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">444</span>
 <span class="normal">445</span>
 <span class="normal">446</span>
 <span class="normal">447</span>
 <span class="normal">448</span>
 <span class="normal">449</span>
 <span class="normal">450</span>
-<span class="normal">451</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_hsl</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">h_units</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sat</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">light</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_hsl</span><span class="p">(</span><span class="n">h</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">h_units</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">sat</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">light</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Parse raw hue, saturation, lightness, and alpha values and convert to RGBA.</span>
 
@@ -4108,11 +4224,11 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 
-<h2 id="pydantic.color.parse_str" class="doc doc-heading">
+<h2 id="pydantic_extra_types.color.parse_str" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">parse_str</span>
 
 
-<a href="#pydantic.color.parse_str" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_extra_types.color.parse_str" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">parse_str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 
@@ -4126,6 +4242,7 @@ If alpha is included, it is in the range 0 to 1.</p>
 <li>hex long eg. <code>&lt;prefix&gt;ffffff</code> (prefix can be <code>#</code>, <code>0x</code> or nothing)</li>
 <li><code>rgb(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;)</code></li>
 <li><code>rgba(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;, &lt;a&gt;)</code></li>
+<li><code>transparent</code></li>
 </ul>
 
   <p><strong>Parameters:</strong></p>
@@ -4167,7 +4284,7 @@ If alpha is included, it is in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="pydantic.color.RGBA">RGBA</span></code>
+                <code><a class="autorefs autorefs-internal" title="pydantic_extra_types.color.RGBA" href="#pydantic_extra_types.color.RGBA">RGBA</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4201,8 +4318,15 @@ If alpha is included, it is in the range 0 to 1.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">290</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
 <span class="normal">291</span>
 <span class="normal">292</span>
 <span class="normal">293</span>
@@ -4270,6 +4394,7 @@ If alpha is included, it is in the range 0 to 1.</p>
 <span class="sd">    * hex long eg. `&lt;prefix&gt;ffffff` (prefix can be `#`, `0x` or nothing)</span>
 <span class="sd">    * `rgb(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;)`</span>
 <span class="sd">    * `rgba(&lt;r&gt;, &lt;g&gt;, &lt;b&gt;, &lt;a&gt;)`</span>
+<span class="sd">    * `transparent`</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        value: A string representing a color.</span>
@@ -4293,7 +4418,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <span class="o">*</span><span class="n">rgb</span><span class="p">,</span> <span class="n">a</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
         <span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">v</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">rgb</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">a</span><span class="p">:</span>
-            <span class="n">alpha</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
+            <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">a</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span> <span class="o">/</span> <span class="mi">255</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">alpha</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">ints_to_rgba</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span>
@@ -4316,7 +4441,13 @@ If alpha is included, it is in the range 0 to 1.</p>
     <span class="k">if</span> <span class="n">m</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">parse_hsl</span><span class="p">(</span><span class="o">*</span><span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">())</span>  <span class="c1"># type: ignore</span>
 
-    <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;color_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid color: string not recognised as a valid color&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">value_lower</span> <span class="o">==</span> <span class="s1">&#39;transparent&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">RGBA</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span>
+        <span class="s1">&#39;color_error&#39;</span><span class="p">,</span>
+        <span class="s1">&#39;value is not a valid color: string not recognised as a valid color&#39;</span><span class="p">,</span>
+    <span class="p">)</span>
 </code></pre></div></td></tr></table></div>
       </details>
   </div>
@@ -4327,11 +4458,11 @@ If alpha is included, it is in the range 0 to 1.</p>
 
 
 
-<h2 id="pydantic.color.parse_tuple" class="doc doc-heading">
+<h2 id="pydantic_extra_types.color.parse_tuple" class="doc doc-heading">
         <span class="doc doc-object-name doc-function-name">parse_tuple</span>
 
 
-<a href="#pydantic.color.parse_tuple" class="headerlink" title="Permanent link">&para;</a></h2>
+<a href="#pydantic_extra_types.color.parse_tuple" class="headerlink" title="Permanent link">&para;</a></h2>
 <div class="highlight"><pre><span></span><code><span class="n">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
 </code></pre></div>
 
@@ -4353,7 +4484,7 @@ If alpha is included, it is in the range 0 to 1.</p>
         <tr>
           <td><code>value</code></td>
           <td>
-                <code><span title="typing.Tuple">Tuple</span>[<span title="typing.Any">Any</span>, ...]</code>
+                <code>tuple[<span title="typing.Any">Any</span>, ...]</code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4378,7 +4509,7 @@ If alpha is included, it is in the range 0 to 1.</p>
     <tbody>
         <tr>
           <td>
-                <code><span title="pydantic.color.RGBA">RGBA</span></code>
+                <code><a class="autorefs autorefs-internal" title="pydantic_extra_types.color.RGBA" href="#pydantic_extra_types.color.RGBA">RGBA</a></code>
           </td>
           <td>
             <div class="doc-md-description">
@@ -4412,8 +4543,15 @@ If alpha is included, it is in the range 0 to 1.</p>
   </table>
 
       <details class="quote">
-        <summary>Source code in <code>pydantic/color.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">268</span>
+        <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/color.py</code></summary>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
 <span class="normal">269</span>
 <span class="normal">270</span>
 <span class="normal">271</span>
@@ -4425,14 +4563,7 @@ If alpha is included, it is in the range 0 to 1.</p>
 <span class="normal">277</span>
 <span class="normal">278</span>
 <span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
+<span class="normal">280</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">parse_tuple</span><span class="p">(</span><span class="n">value</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="o">...</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">RGBA</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse a tuple or list to get RGBA values.</span>
 
 <span class="sd">    Args:</span>

@@ -96,6 +96,31 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_color/</loc>
+         <lastmod>2023-06-08</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_country/</loc>
+         <lastmod>2023-06-08</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_payment/</loc>
+         <lastmod>2023-06-08</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_phone_numbers/</loc>
+         <lastmod>2023-06-08</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/api/pydantic_extra_types_routing_number/</loc>
+         <lastmod>2023-06-08</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/api/pydantic_settings/</loc>
          <lastmod>2023-06-08</lastmod>
          <changefreq>daily</changefreq>
@@ -352,6 +377,11 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/usage/types/extra_types/color_types/</loc>
+         <lastmod>2023-06-08</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/usage/types/extra_types/extra_types/</loc>
          <lastmod>2023-06-08</lastmod>
          <changefreq>daily</changefreq>
     </url>
