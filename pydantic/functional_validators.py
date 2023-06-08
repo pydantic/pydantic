@@ -23,6 +23,43 @@ _inspect_validator = _decorators.inspect_validator
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class AfterValidator:
+    '''
+    A metadata class that indicates that a validation should be applied **after** the inner validation logic.
+
+    Example:
+        ```py
+        from typing import Annotated
+
+        from pydantic import BaseModel, AfterValidator, ValidationError
+
+
+        MyInt = Annotated[int, AfterValidator(lambda v: v + 1)]
+
+        class Model(BaseModel):
+            a: MyInt
+
+        print(Model(a=1).a)
+        # > 2
+
+        try:
+            Model(a='a')
+        except ValidationError as e:
+            print(e.json(indent=2))
+            """
+        [
+            {
+                "type": "int_parsing",
+                "loc": [
+                    "a"
+                ],
+                "msg": "Input should be a valid integer, unable to parse string as an integer",
+                "input": "a",
+                "url": "https://errors.pydantic.dev/0.38.0/v/int_parsing"
+            }
+        ]
+        """
+    '''
+
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -36,6 +73,31 @@ class AfterValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class BeforeValidator:
+    """A metadata class that indicates that a validation should be applied **before** the inner validation logic.
+
+    Example:
+        ```py
+        from typing import Annotated
+
+        from pydantic import BaseModel, BeforeValidator
+
+
+        MyInt = Annotated[int, BeforeValidator(lambda v: v + 1)]
+
+        class Model(BaseModel):
+            a: MyInt
+
+        print(Model(a=1).a)
+        # > 2
+
+        try:
+            Model(a='a')
+        except TypeError as e:
+            print(e)
+            #> can only concatenate str (not "int") to str
+        ```
+    """
+
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -49,6 +111,25 @@ class BeforeValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class PlainValidator:
+    """A metadata class that indicates that a validation should be applied **instead** of the inner validation logic.
+
+    Example:
+        ```py
+        from typing import Annotated
+
+        from pydantic import BaseModel, PlainValidator
+
+
+        MyInt = Annotated[int, PlainValidator(lambda v: int(v) + 1)]
+
+        class Model(BaseModel):
+            a: MyInt
+
+        print(Model(a='1').a)
+        # > 2
+        ```
+    """
+
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:
@@ -61,6 +142,40 @@ class PlainValidator:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class WrapValidator:
+    """A metadata class that indicates that a validation should be applied **around** the inner validation logic.
+
+    ```py
+    from datetime import datetime
+    from typing import Annotated
+
+    from pydantic import BaseModel, ValidationError, WrapValidator
+
+
+    def validate_timestamp(v, handler):
+        if v == "now":
+            # we don't want to bother with further validation, just return the new value
+            return datetime.now()
+        try:
+            return handler(v)
+        except ValidationError:
+            # validation failed, in this case we want to return a default value
+            return datetime(2000, 1, 1)
+
+
+    MyTimestamp = Annotated[datetime, WrapValidator(validate_timestamp)]
+
+
+    class Model(BaseModel):
+        a: MyTimestamp
+
+
+    print(Model(a="now").a)
+    # > 2023-01-22 23:10:00.000000
+    print(Model(a="invalid").a)
+    # > 2000-01-01 00:00:00.000000
+    ```
+    """
+
     func: core_schema.GeneralWrapValidatorFunction | core_schema.FieldWrapValidatorFunction
 
     def __get_pydantic_core_schema__(self, source_type: Any, handler: _GetCoreSchemaHandler) -> core_schema.CoreSchema:

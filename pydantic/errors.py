@@ -64,8 +64,8 @@ class PydanticErrorMixin:
     A mixin class for common functionality shared by all Pydantic-specific errors.
 
     Attributes:
-        message (str): A message describing the error.
-        code (PydanticErrorCodes | None): An optional error code from PydanticErrorCodes enum.
+        message: A message describing the error.
+        code: An optional error code from PydanticErrorCodes enum.
     """
 
     def __init__(self, message: str, *, code: PydanticErrorCodes | None) -> None:
@@ -89,8 +89,8 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
     """A subclass of `NameError` raised when handling undefined annotations during `CoreSchema` generation.
 
     Attributes:
-        name (str): Name of the error.
-        message (str): Description of the error.
+        name: Name of the error.
+        message: Description of the error.
     """
 
     def __init__(self, name: str, message: str) -> None:
@@ -120,7 +120,7 @@ class PydanticImportError(PydanticErrorMixin, ImportError):
     Error raised when an import fails due to module changes between V1 and V2.
 
     Attributes:
-        message (str): Description of the error.
+        message: Description of the error.
     """
 
     def __init__(self, message: str) -> None:
@@ -132,7 +132,7 @@ class PydanticSchemaGenerationError(PydanticUserError):
     Error raised during failures to generate a `CoreSchema` for some type.
 
     Attributes:
-        message (str): Description of the error.
+        message: Description of the error.
     """
 
     def __init__(self, message: str) -> None:
@@ -144,7 +144,7 @@ class PydanticInvalidForJsonSchema(PydanticUserError):
     Error raised during failures to generate a JSON schema for some `CoreSchema`.
 
     Attributes:
-        message (str): Description of the error.
+        message: Description of the error.
     """
 
     def __init__(self, message: str) -> None:

@@ -16,10 +16,10 @@ class PlainSerializer:
     Plain serializers use a function to modify the output of serialization.
 
     Attributes:
-        func (core_schema.SerializerFunction): The serializer function.
+        func: The serializer function.
         return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
-        when_used (Literal['always', 'unless-none', 'json', 'json-unless-none'], optional): The serialization condition.
-            Defaults to 'always'.
+        when_used: The serialization condition. Accepts a string with values `'always'`, `'unless-none'`, `'json'`,
+            and `'json-unless-none'`. Defaults to 'always'.
     """
 
     func: core_schema.SerializerFunction
@@ -58,9 +58,10 @@ class WrapSerializer:
     and can modify the resulting value before returning it as the final output of serialization.
 
     Attributes:
-        func (core_schema.WrapSerializerFunction): The function to be wrapped.
+        func: The function to be wrapped.
         return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
-        when_used: Determines the serializer will be used for serialization.
+        when_used: Determines the serializer will be used for serialization. Accepts a string with values `'always'`,
+            `'unless-none'`, `'json'`, and `'json-unless-none'`. Defaults to 'always'.
     """
 
     func: core_schema.WrapSerializerFunction
@@ -159,7 +160,7 @@ def field_serializer(
             default serialization logic.
         return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
         when_used: Determines the serializer will be used for serialization.
-        check_fields (bool): Whether to check that the fields actually exist on the model.
+        check_fields: Whether to check that the fields actually exist on the model.
 
     Returns:
         A decorator that can be used to decorate a function to be used as a field serializer.

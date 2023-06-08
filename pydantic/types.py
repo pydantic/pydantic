@@ -103,6 +103,8 @@ __all__ = (
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):
+    """A field metadata class to indicate that a field should be validated in strict mode."""
+
     strict: bool = True
 
     def __hash__(self) -> int:
@@ -112,6 +114,7 @@ class Strict(_fields.PydanticMetadata):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 StrictBool = Annotated[bool, Strict()]
+"""A boolean that must be either ``True`` or ``False``."""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INTEGER TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -134,16 +137,23 @@ def conint(
 
 
 PositiveInt = Annotated[int, annotated_types.Gt(0)]
+"""An integer that must be greater than zero."""
 NegativeInt = Annotated[int, annotated_types.Lt(0)]
+"""An integer that must be less than zero."""
 NonPositiveInt = Annotated[int, annotated_types.Le(0)]
+"""An integer that must be less than or equal to zero."""
 NonNegativeInt = Annotated[int, annotated_types.Ge(0)]
+"""An integer that must be greater than or equal to zero."""
 StrictInt = Annotated[int, Strict()]
+"""An integer that must be validated in strict mode."""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @_dataclasses.dataclass
 class AllowInfNan(_fields.PydanticMetadata):
+    """A field metadata class to indicate that a field should allow ``-inf``, ``inf``, and ``nan``."""
+
     allow_inf_nan: bool = True
 
     def __hash__(self) -> int:
@@ -170,11 +180,17 @@ def confloat(
 
 
 PositiveFloat = Annotated[float, annotated_types.Gt(0)]
+"""A float that must be greater than zero."""
 NegativeFloat = Annotated[float, annotated_types.Lt(0)]
+"""A float that must be less than zero."""
 NonPositiveFloat = Annotated[float, annotated_types.Le(0)]
+"""A float that must be less than or equal to zero.""" ''
 NonNegativeFloat = Annotated[float, annotated_types.Ge(0)]
+"""A float that must be greater than or equal to zero."""
 StrictFloat = Annotated[float, Strict(True)]
+"""A float that must be validated in strict mode."""
 FiniteFloat = Annotated[float, AllowInfNan(False)]
+"""A float that must be finite (not ``-inf``, ``inf``, or ``nan``)."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -194,6 +210,7 @@ def conbytes(
 
 
 StrictBytes = Annotated[bytes, Strict()]
+"""A bytes that must be validated in strict mode."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -223,6 +240,7 @@ def constr(
 
 
 StrictStr = Annotated[str, Strict()]
+"""A string that must be validated in strict mode."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ COLLECTION TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -259,13 +277,13 @@ def conlist(
     """A wrapper around typing.List that adds validation.
 
     Args:
-        item_type (type[AnyItemType]): The type of the items in the list.
-        min_length (int | None, optional): The minimum length of the list. Defaults to None.
-        max_length (int | None, optional): The maximum length of the list. Defaults to None.
-        unique_items (bool | None, optional): Whether the items in the list must be unique. Defaults to None.
+        item_type: The type of the items in the list.
+        min_length: The minimum length of the list. Defaults to None.
+        max_length: The maximum length of the list. Defaults to None.
+        unique_items: Whether the items in the list must be unique. Defaults to None.
 
     Returns:
-        type[list[AnyItemType]]: The wrapped list type.
+        The wrapped list type.
     """
     if unique_items is not None:
         raise PydanticUserError(
@@ -289,6 +307,25 @@ if TYPE_CHECKING:
 else:
 
     class ImportString:
+        """A type that can be used to import a type from a string.
+
+        Example:
+            ```py
+            from datetime import date
+            from typing import Type
+
+            from pydantic import BaseModel, ImportString
+
+
+            class Foo(BaseModel):
+                call_date: ImportString[Type[date]]
+
+
+            foo = Foo(call_date="datetime.date")
+            assert foo.call_date(2021, 1, 1) == date(2021, 1, 1)
+            ```
+        """
+
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]
@@ -336,6 +373,19 @@ def condecimal(
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[Decimal]:
+    """A wrapper around Decimal that adds validation.
+
+    Args:
+        strict: Whether to validate the value in strict mode. Defaults to `None`.
+        gt: The value must be greater than this. Defaults to `None`.
+        ge: The value must be greater than or equal to this. Defaults to `None`.
+        lt: The value must be less than this. Defaults to `None`.
+        le: The value must be less than or equal to this. Defaults to `None`.
+        multiple_of: The value must be a multiple of this. Defaults to `None`.
+        max_digits: The maximum number of digits. Defaults to `None`.
+        decimal_places: The number of decimal places. Defaults to `None`.
+        allow_inf_nan: Whether to allow infinity and NaN. Defaults to `None`.
+    """
     return Annotated[  # type: ignore[return-value]
         Decimal,
         Strict(strict) if strict is not None else None,
@@ -380,9 +430,13 @@ class UuidVersion:
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
+"""A UUID1 annotated type."""
 UUID3 = Annotated[UUID, UuidVersion(3)]
+"""A UUID3 annotated type."""
 UUID4 = Annotated[UUID, UuidVersion(4)]
+"""A UUID4 annotated type."""
 UUID5 = Annotated[UUID, UuidVersion(5)]
+"""A UUID5 annotated type."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -442,8 +496,11 @@ class PathType:
 
 
 FilePath = Annotated[Path, PathType('file')]
+"""A path that must point to a file."""
 DirectoryPath = Annotated[Path, PathType('dir')]
+"""A path that must point to a directory."""
 NewPath = Annotated[Path, PathType('new')]
+"""A path for a new file or directory that must not already exist."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -598,11 +655,32 @@ class _SecretFieldValidator:
 
 
 class SecretStr(SecretField[str]):
+    """A string that is displayed as `**********` in reprs and can be used for passwords.
+
+    Example:
+        ```py
+        from pydantic import BaseModel, SecretStr
+
+        class User(BaseModel):
+            username: str
+            password: SecretStr
+
+        user = User(username='scolvin', password='password1')
+
+        print(user)
+        #> username='scolvin' password=SecretStr('**********')
+        print(user.password.get_secret_value())
+        #> password1
+        ```
+    """
+
     def _display(self) -> str:
         return _secret_display(self.get_secret_value())
 
 
 class SecretBytes(SecretField[bytes]):
+    """A bytes that is displayed as `**********` in reprs and can be used for passwords."""
+
     def _display(self) -> bytes:
         return _secret_display(self.get_secret_value()).encode()
 

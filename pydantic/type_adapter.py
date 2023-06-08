@@ -100,9 +100,9 @@ class TypeAdapter(Generic[T]):
     """A class representing the type adapter.
 
     Attributes:
-        core_schema (CoreSchema): The core schema for the type.
-        validator (SchemaValidator): The schema validator for the type.
-        serializer (SchemaSerializer): The schema serializer for the type.
+        core_schema: The core schema for the type.
+        validator: The schema validator for the type.
+        serializer: The schema serializer for the type.
     """
 
     if TYPE_CHECKING:
@@ -178,10 +178,10 @@ class TypeAdapter(Generic[T]):
         Validate a Python object against the model.
 
         Args:
-            __object (Any): The Python object to validate against the model.
-            strict (bool | None, optional): Whether to strictly check types. Defaults to None.
-            from_attributes (bool | None, optional): Whether to extract data from object attributes. Defaults to None.
-            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.
+            __object: The Python object to validate against the model.
+            strict: Whether to strictly check types. Defaults to None.
+            from_attributes: Whether to extract data from object attributes. Defaults to None.
+            context: Additional context to use during validation. Defaults to None.
 
         Returns:
             T: The validated object.
@@ -195,9 +195,9 @@ class TypeAdapter(Generic[T]):
         """Validate a JSON string or bytes against the model.
 
         Args:
-            __data (str | bytes): The JSON data to validate against the model.
-            strict (bool | None, optional): Whether to strictly check types. Defaults to None.
-            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.
+            __data: The JSON data to validate against the model.
+            strict: Whether to strictly check types. Defaults to None.
+            context: Additional context to use during validation. Defaults to None.
 
         Returns:
             T: The validated object.
@@ -209,11 +209,11 @@ class TypeAdapter(Generic[T]):
         """Get the default value for this model / type.
 
         Args:
-            strict (bool | None, optional): Whether to strictly check types. Defaults to None.
-            context (dict[str, Any] | None, optional): Additional context to use during validation. Defaults to None.
+            strict: Whether to strictly check types. Defaults to None.
+            context: Additional context to use during validation. Defaults to None.
 
         Returns:
-            Some[T] | None: The default value wrapped in a Some if there is one or None if not.
+            The default value wrapped in a Some if there is one or None if not.
         """
         return self.validator.get_default_value(strict=strict, context=context)
 
@@ -234,21 +234,20 @@ class TypeAdapter(Generic[T]):
         """Dump a Python object to a serialized format.
 
         Args:
-            __instance (T): The Python object to serialize.
-            mode (Literal['json', 'python'], optional): The output format. Defaults to 'python'.
-            include (IncEx | None, optional): Fields to include in the output. Defaults to None.
-            exclude (IncEx | None, optional): Fields to exclude from the output. Defaults to None.
-            by_alias (bool, optional): Whether to use alias names for field names. Defaults to False.
-            exclude_unset (bool, optional): Whether to exclude unset fields. Defaults to False.
-            exclude_defaults (bool, optional): Whether to exclude fields with default values. Defaults to False.
-            exclude_none (bool, optional): Whether to exclude fields with None values. Defaults to False.
-            round_trip (bool, optional): Whether to output the serialized data in a way that is compatible with
-                deserialization. Defaults to False.
-            warnings (bool, optional): Whether to display serialization warnings. Defaults to True.
+            __instance: The Python object to serialize.
+            mode: The output format. Defaults to `'python'`.
+            include: Fields to include in the output. Defaults to `None`.
+            exclude: Fields to exclude from the output. Defaults to `None`.
+            by_alias: Whether to use alias names for field names. Defaults to `False`.
+            exclude_unset: Whether to exclude unset fields. Defaults to `False`.
+            exclude_defaults: Whether to exclude fields with default values. Defaults to `False`.
+            exclude_none: Whether to exclude fields with None values. Defaults to `False`.
+            round_trip: Whether to output the serialized data in a way that is compatible with
+                deserialization. Defaults to `False`.
+            warnings: Whether to display serialization warnings. Defaults to `True`.
 
         Returns:
-            Any: The serialized object.
-
+            The serialized object.
         """
         return self.serializer.to_python(
             __instance,
@@ -280,20 +279,20 @@ class TypeAdapter(Generic[T]):
         """Serialize the given instance to JSON.
 
         Args:
-            __instance (T): The instance to be serialized.
-            indent (Optional[int]): Number of spaces for JSON indentation (default: None).
-            include (Optional[IncEx]): Fields to include (default: None).
-            exclude (Optional[IncEx]): Fields to exclude (default: None).
-            by_alias (bool): Whether to use alias names (default: False).
-            exclude_unset (bool): Whether to exclude unset fields (default: False).
-            exclude_defaults (bool): Whether to exclude fields with default values (default: False).
-            exclude_none (bool): Whether to exclude fields with a value of None (default: False).
-            round_trip (bool): Whether to serialize and deserialize the instance to ensure
-                round-tripping (default: False).
-            warnings (bool): Whether to emit serialization warnings (default: True).
+            __instance: The instance to be serialized.
+            indent: Number of spaces for JSON indentation. Defaults to `None`.
+            include: Fields to include. Defaults to `None`.
+            exclude: Fields to exclude. Defaults to `None`.
+            by_alias: Whether to use alias names for field names. Defaults to `False`.
+            exclude_unset: Whether to exclude unset fields. Defaults to `False`.
+            exclude_defaults: Whether to exclude fields with default values. Defaults to `False`.
+            exclude_none: Whether to exclude fields with a value of `None`. Defaults to `False`.
+            round_trip: Whether to serialize and deserialize the instance to ensure
+                round-tripping. Defaults to `False`.
+            warnings: Whether to emit serialization warnings. Defaults to `True`.
 
         Returns:
-            bytes: The JSON representation of the given instance as bytes.
+            The JSON representation of the given instance as bytes.
         """
         return self.serializer.to_json(
             __instance,
@@ -319,13 +318,12 @@ class TypeAdapter(Generic[T]):
         """Generate a JSON schema for the model.
 
         Args:
-            by_alias (bool): Whether to use alias names (default: True).
-            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
-            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the schema
-                (default: GenerateJsonSchema).
+            by_alias: Whether to use alias names for field names. Defaults to `True`.
+            ref_template: The format string used for generating $ref strings. Defaults to `DEFAULT_REF_TEMPLATE`.
+            schema_generator: The generator class used for creating the schema. Defaults to `GenerateJsonSchema`.
 
         Returns:
-            Dict[str, Any]: The JSON schema for the model as a dictionary.
+            The JSON schema for the model as a dictionary.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
         return schema_generator_instance.generate(self.core_schema, mode=mode)
@@ -343,19 +341,17 @@ class TypeAdapter(Generic[T]):
         """Generate JSON schemas for multiple type adapters.
 
         Args:
-            __inputs (Iterable[tuple[JsonSchemaKeyT, JsonSchemaMode, TypeAdapter[Any]]]): Inputs to schema generation.
-                The first two items will form the keys of the (first) output mapping; the type adapters will provide
-                the core schemas that get converted into definitions in the output JSON schema.
-            by_alias (bool): Whether to use alias names (default: True).
-            title (Optional[str]): The title for the schema (default: None).
-            description (Optional[str]): The description for the schema (default: None).
-            ref_template (str): The format string used for generating $ref strings (default: DEFAULT_REF_TEMPLATE).
-            schema_generator (Type[GenerateJsonSchema]): The generator class used for creating the
-                schema (default: GenerateJsonSchema).
+            __inputs: Inputs to schema generation. The first two items will form the keys of the (first)
+                output mapping; the type adapters will provide the core schemas that get converted into
+                definitions in the output JSON schema.
+            by_alias: Whether to use alias names. Defaults to `True`.
+            title: The title for the schema. Defaults to `None`.
+            description: The description for the schema. Defaults to `None`.
+            ref_template: The format string used for generating $ref strings. Defaults to `DEFAULT_REF_TEMPLATE`.
+            schema_generator: The generator class used for creating the schema. Defaults to `GenerateJsonSchema`.
 
         Returns:
-            tuple[dict[tuple[Hashable, JsonSchemaMode], DefsRef], JsonSchemaValue]:
-                The first item contains the mapping of key + mode to a definitions reference, which will be a key
+            The first item contains the mapping of key + mode to a definitions reference, which will be a key
                 of the $defs mapping in the JSON schema included as the second member of the returned tuple.
         """
         schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
