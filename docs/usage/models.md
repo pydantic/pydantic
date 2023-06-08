@@ -763,13 +763,17 @@ except ValidationError as e:
 
 ## `TypeAdapter`
 
-`TypeAdapter` enables using Pydantic for type validation and coercion without creating a `BaseModel`
+`TypeAdapter` enables using Pydantic for type validation, serialization, and JSON schema without creating a `BaseModel`
 
 You may have types that are not `BaseModel`s that you want to validate data against.
 Or you may want to validate a `List[SomeModel]`, or dump it to JSON.
 
-To do this, Pydantic provides `TypeAdapter`. A `TypeAdapter` instance behaves nearly the same as a `BaseModel` instance,
-with the difference that `TypeAdapter` is not an actual type, so you cannot use it in type annotations and such.
+To do this, Pydantic provides `TypeAdapter`.
+
+A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
+for types that do not have such methods (such as dataclasses, primitive types, and more).
+
+Note that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
 
 ```py
 from typing import List
@@ -801,7 +805,7 @@ except ValidationError as e:
     """
 ```
 
-For many use cases, `TypeAdapter` can replace `BaseModel`s with a `__root__` field in Pydantic V1.
+For some use cases, `TypeAdapter` can replace `BaseModel`s with a `__root__` field in Pydantic V1.
 
 ### Parsing data into a specified type
 

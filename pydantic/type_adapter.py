@@ -100,8 +100,10 @@ class TypeAdapter(Generic[T]):
     """
     A class representing the type adapter.
 
-    A `TypeAdapter` instance behaves nearly the same as a `BaseModel` instance,
-    with the difference that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
+    A `TypeAdapter` instance exposes some of the functionality from `BaseModel` instance methods
+    for types that do not have such methods (such as dataclasses, primitive types, and more).
+    
+    Note that `TypeAdapter` is not an actual type, so you cannot use it in type annotations.
 
     Attributes:
         core_schema: The core schema for the type.
@@ -200,7 +202,7 @@ class TypeAdapter(Generic[T]):
 
         Args:
             __data: The JSON data to validate against the model.
-            strict: Whether to strictly check types. Defaults to `None`.
+            strict: Pass a boolean to override the type checking strictness for the wrapped type. Defaults to `None`.
             context: Additional context to use during validation. Defaults to `None`.
 
         Returns:
@@ -210,7 +212,7 @@ class TypeAdapter(Generic[T]):
 
     def get_default_value(self, *, strict: bool | None = None, context: dict[str, Any] | None = None) -> Some[T] | None:
         """
-        Get the default value for the model.
+        Get the default value for the wrapped type.
 
         Args:
             strict: Whether to strictly check types. Defaults to `None`.
@@ -236,7 +238,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool = True,
     ) -> Any:
         """
-        Dump the model to a Python object.
+        Dump an instance of the adapted type to a Python object.
 
         Args:
             __instance: The Python object to serialize.
@@ -282,7 +284,7 @@ class TypeAdapter(Generic[T]):
         warnings: bool = True,
     ) -> bytes:
         """
-        Serialize the model to JSON.
+        Serialize an instance of the adapted type to JSON.
 
         Args:
             __instance: The instance to be serialized.
@@ -322,7 +324,7 @@ class TypeAdapter(Generic[T]):
         mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
         """
-        Generate a JSON schema for the model.
+        Generate a JSON schema for the adapted type.
 
         Args:
             by_alias: Whether to use alias names for field names. Defaults to `True`.
@@ -346,7 +348,7 @@ class TypeAdapter(Generic[T]):
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     ) -> tuple[dict[tuple[JsonSchemaKeyT, JsonSchemaMode], DefsRef], JsonSchemaValue]:
         """
-        Generate JSON schemas for multiple type adapters.
+        Generate a JSON schema including definitions from multiple type adapters.
 
         Args:
             __inputs: Inputs to schema generation. The first two items will form the keys of the (first)
