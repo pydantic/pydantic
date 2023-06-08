@@ -13,13 +13,17 @@
         <link rel="canonical" href="https://docs.pydantic.dev/latest/api/color/">
       
       
+        <link rel="prev" href="../alias_generators/">
+      
+      
+        <link rel="next" href="../config/">
       
       <link rel="icon" href="../../favicon.png">
       <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.15">
     
     
       
-        <title>Color - pydantic</title>
+        <title>pydantic.color - pydantic</title>
       
     
     
@@ -131,7 +135,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              Color
+              pydantic.color
             
           </span>
         </div>
@@ -321,23 +325,18 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
   
   
-
-
-  
-  
-  
     
+  
+
 
   
   
   
     <li class="md-tabs__item">
-      <a href="../main/" class="md-tabs__link">
+      <a href="../main/" class="md-tabs__link md-tabs__link--active">
         API Documentation
       </a>
     </li>
-  
-
   
 
       
@@ -1418,14 +1417,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
   
+    
+  
   
     
-    <li class="md-nav__item md-nav__item--nested">
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
       
       
       
       
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" >
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7" checked>
       
       
       
@@ -1434,37 +1435,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
           <span class="md-nav__icon md-icon"></span>
         </label>
       
-      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="false">
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_7_label" aria-expanded="true">
         <label class="md-nav__title" for="__nav_7">
           <span class="md-nav__icon md-icon"></span>
           API Documentation
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_1" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_7_1" id="__nav_7_1_label" tabindex="0">
-          Pydantic
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_1_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_1">
-          <span class="md-nav__icon md-icon"></span>
-          Pydantic
         </label>
         <ul class="md-nav__list" data-md-scrollfix>
           
@@ -1491,6 +1465,177 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <a href="../alias_generators/" class="md-nav__link">
         pydantic.alias_generators
       </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          pydantic.color
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        pydantic.color
+      </a>
+      
+        
+
+  
+
+<nav class="md-nav md-nav--secondary" aria-label="Page contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Page contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color" class="md-nav__link">
+    pydantic.color
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.Color" class="md-nav__link">
+    Color
+  </a>
+  
+    <nav class="md-nav" aria-label="Color">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.color.Color.as_hex" class="md-nav__link">
+    as_hex()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.color.Color.as_hsl" class="md-nav__link">
+    as_hsl()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.color.Color.as_hsl_tuple" class="md-nav__link">
+    as_hsl_tuple()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.color.Color.as_named" class="md-nav__link">
+    as_named()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.color.Color.as_rgb" class="md-nav__link">
+    as_rgb()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.color.Color.as_rgb_tuple" class="md-nav__link">
+    as_rgb_tuple()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pydantic.color.Color.original" class="md-nav__link">
+    original()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.RGBA" class="md-nav__link">
+    RGBA
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.float_to_255" class="md-nav__link">
+    float_to_255()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.ints_to_rgba" class="md-nav__link">
+    ints_to_rgba()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.parse_color_value" class="md-nav__link">
+    parse_color_value()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.parse_float_alpha" class="md-nav__link">
+    parse_float_alpha()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.parse_hsl" class="md-nav__link">
+    parse_hsl()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.parse_str" class="md-nav__link">
+    parse_str()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic.color.parse_tuple" class="md-nav__link">
+    parse_tuple()
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
     </li>
   
 
@@ -1678,40 +1823,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
             
           
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_2" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_7_2" id="__nav_7_2_label" tabindex="0">
-          Pydantic Core
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_2_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_2">
-          <span class="md-nav__icon md-icon"></span>
-          Pydantic Core
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
             
               
   
@@ -1740,40 +1851,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
             
           
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_3" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_7_3" id="__nav_7_3_label" tabindex="0">
-          Pydantic Settings
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_3_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_3">
-          <span class="md-nav__icon md-icon"></span>
-          Pydantic Settings
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
             
               
   
@@ -1783,117 +1860,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <a href="../pydantic_settings/" class="md-nav__link">
         pydantic_settings
       </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    
-    <li class="md-nav__item md-nav__item--nested">
-      
-      
-      
-      
-      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_7_4" >
-      
-      
-      
-        <label class="md-nav__link" for="__nav_7_4" id="__nav_7_4_label" tabindex="0">
-          Pydantic Extra Types
-          <span class="md-nav__icon md-icon"></span>
-        </label>
-      
-      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_7_4_label" aria-expanded="false">
-        <label class="md-nav__title" for="__nav_7_4">
-          <span class="md-nav__icon md-icon"></span>
-          Pydantic Extra Types
-        </label>
-        <ul class="md-nav__list" data-md-scrollfix>
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../pydantic_extra_types_color/" class="md-nav__link">
-        pydantic_extra_types.color
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../pydantic_extra_types_country/" class="md-nav__link">
-        pydantic_extra_types.country
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../pydantic_extra_types_payment/" class="md-nav__link">
-        pydantic_extra_types.payment
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../pydantic_extra_types_phone_numbers/" class="md-nav__link">
-        pydantic_extra_types.phone_numbers
-      </a>
-    </li>
-  
-
-            
-          
-            
-              
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../pydantic_extra_types_routing_number/" class="md-nav__link">
-        pydantic_extra_types.routing_number
-      </a>
-    </li>
-  
-
-            
-          
-        </ul>
-      </nav>
     </li>
   
 
@@ -2075,7 +2041,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 
 
-  <h1>Color</h1>
+  <h1>pydantic.color</h1>
 
 <div class="doc doc-object doc-module">
 
