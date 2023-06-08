@@ -7,13 +7,13 @@ Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/
 ```py
 from __future__ import annotations
 
-from typing import Any, List
+from typing import Any
 
 from pydantic import BaseModel
 
 
 class Model(BaseModel):
-    a: List[int]
+    a: list[int]
     b: Any
 
 
