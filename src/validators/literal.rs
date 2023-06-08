@@ -1,7 +1,8 @@
 // Validator for things inside of a typing.Literal[]
 // which can be an int, a string, bytes or an Enum value (including `class Foo(str, Enum)` type enums)
+use core::fmt::Debug;
 
-use ahash::AHashSet;
+use ahash::AHashMap;
 use pyo3::intern;
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyList};
@@ -15,15 +16,96 @@ use crate::tools::SchemaDict;
 use super::{BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 
 #[derive(Debug, Clone)]
-pub struct LiteralValidator {
+pub struct LiteralLookup<T: Clone + Debug> {
     // Specialized lookups for ints and strings because they
     // (1) are easy to convert between Rust and Python
     // (2) hashing them in Rust is very fast
     // (3) are the most commonly used things in Literal[...]
-    expected_int: Option<AHashSet<i64>>,
-    expected_str: Option<AHashSet<String>>,
+    expected_int: Option<AHashMap<i64, usize>>,
+    expected_str: Option<AHashMap<String, usize>>,
     // Catch all for Enum and bytes (the latter only because it is seldom used)
     expected_py: Option<Py<PyDict>>,
+    pub values: Vec<T>,
+}
+
+impl<T: Clone + Debug> LiteralLookup<T> {
+    pub fn new<'py>(py: Python<'py>, expected: impl Iterator<Item = (&'py PyAny, T)>) -> PyResult<Self> {
+        let mut expected_int = AHashMap::new();
+        let mut expected_str = AHashMap::new();
+        let expected_py = PyDict::new(py);
+        let mut values = Vec::new();
+        for (k, v) in expected {
+            let id = values.len();
+            values.push(v);
+            if let Ok(either_int) = k.exact_int() {
+                let int = either_int
+                    .into_i64(py)
+                    .map_err(|_| py_schema_error_type!("error extracting int {:?}", k))?;
+                expected_int.insert(int, id);
+            } else if let Ok(either_str) = k.exact_str() {
+                let str = either_str
+                    .as_cow()
+                    .map_err(|_| py_schema_error_type!("error extracting str {:?}", k))?;
+                expected_str.insert(str.to_string(), id);
+            } else {
+                expected_py.set_item(k, id)?;
+            }
+        }
+
+        Ok(Self {
+            expected_int: match expected_int.is_empty() {
+                true => None,
+                false => Some(expected_int),
+            },
+            expected_str: match expected_str.is_empty() {
+                true => None,
+                false => Some(expected_str),
+            },
+            expected_py: match expected_py.is_empty() {
+                true => None,
+                false => Some(expected_py.into()),
+            },
+            values,
+        })
+    }
+
+    pub fn validate<'data, I: Input<'data>>(
+        &self,
+        py: Python<'data>,
+        input: &'data I,
+    ) -> ValResult<'data, Option<(&'data I, &T)>> {
+        // dbg!(input.to_object(py).as_ref(py).repr().unwrap());
+        if let Some(expected_ints) = &self.expected_int {
+            if let Ok(either_int) = input.exact_int() {
+                let int = either_int.into_i64(py)?;
+                if let Some(id) = expected_ints.get(&int) {
+                    return Ok(Some((input, &self.values[*id])));
+                }
+            }
+        }
+        if let Some(expected_strings) = &self.expected_str {
+            // dbg!(expected_strings);
+            if let Ok(either_str) = input.exact_str() {
+                let cow = either_str.as_cow()?;
+                if let Some(id) = expected_strings.get(cow.as_ref()) {
+                    return Ok(Some((input, &self.values[*id])));
+                }
+            }
+        }
+        // must be an enum or bytes
+        if let Some(expected_py) = &self.expected_py {
+            if let Some(v) = expected_py.as_ref(py).get_item(input) {
+                let id: usize = v.extract().unwrap();
+                return Ok(Some((input, &self.values[id])));
+            }
+        };
+        Ok(None)
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct LiteralValidator {
+    lookup: LiteralLookup<PyObject>,
     expected_repr: String,
     name: String,
 }
@@ -41,32 +123,14 @@ impl BuildValidator for LiteralValidator {
             return py_schema_err!("`expected` should have length > 0");
         }
         let py = expected.py();
-        // Literal[...] only supports int, str, bytes or enums, all of which can be hashed
-        let mut expected_int = AHashSet::new();
-        let mut expected_str = AHashSet::new();
-        let expected_py = PyDict::new(py);
         let mut repr_args: Vec<String> = Vec::new();
         for item in expected.iter() {
             repr_args.push(item.repr()?.extract()?);
-            if let Ok(either_int) = item.strict_int() {
-                let int = either_int
-                    .into_i64(py)
-                    .map_err(|_| py_schema_error_type!("error extracting int {:?}", item))?;
-                expected_int.insert(int);
-            } else if let Ok(either_str) = item.strict_str() {
-                let str = either_str
-                    .as_cow()
-                    .map_err(|_| py_schema_error_type!("error extracting str {:?}", item))?;
-                expected_str.insert(str.to_string());
-            } else {
-                expected_py.set_item(item, item)?;
-            }
         }
         let (expected_repr, name) = expected_repr_name(repr_args, "literal");
+        let lookup = LiteralLookup::new(py, expected.iter().map(|v| (v, v.to_object(py))))?;
         Ok(CombinedValidator::Literal(Self {
-            expected_int: (!expected_int.is_empty()).then_some(expected_int),
-            expected_str: (!expected_str.is_empty()).then_some(expected_str),
-            expected_py: (!expected_py.is_empty()).then_some(expected_py.into()),
+            lookup,
             expected_repr,
             name,
         }))
@@ -82,34 +146,15 @@ impl Validator for LiteralValidator {
         _definitions: &'data Definitions<CombinedValidator>,
         _recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        if let Some(expected_ints) = &self.expected_int {
-            if let Ok(either_int) = input.strict_int() {
-                let int = either_int.into_i64(py)?;
-                if expected_ints.contains(&int) {
-                    return Ok(input.to_object(py));
-                }
-            }
+        match self.lookup.validate(py, input)? {
+            Some((_, v)) => Ok(v.clone()),
+            None => Err(ValError::new(
+                ErrorType::LiteralError {
+                    expected: self.expected_repr.clone(),
+                },
+                input,
+            )),
         }
-        if let Some(expected_strings) = &self.expected_str {
-            if let Ok(either_str) = input.strict_str() {
-                let cow = either_str.as_cow()?;
-                if expected_strings.contains(cow.as_ref()) {
-                    return Ok(input.to_object(py));
-                }
-            }
-        }
-        // must be an enum or bytes
-        if let Some(expected_py) = &self.expected_py {
-            if let Some(v) = expected_py.as_ref(py).get_item(input) {
-                return Ok(v.into());
-            }
-        };
-        Err(ValError::new(
-            ErrorType::LiteralError {
-                expected: self.expected_repr.clone(),
-            },
-            input,
-        ))
     }
 
     fn different_strict_behavior(

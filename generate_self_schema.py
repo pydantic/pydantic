@@ -95,7 +95,7 @@ def tagged_union(std_union_schema: Dict[str, Any], discriminator_key: str, ref: 
         first, *rest = literal
         tagged_choices[first] = choice
         for arg in rest:
-            tagged_choices[arg] = first
+            tagged_choices[arg] = choice
     s = {'type': 'tagged-union', 'discriminator': discriminator_key, 'choices': tagged_choices}
     if ref is not None:
         s['ref'] = ref
@@ -129,15 +129,8 @@ def type_dict_schema(typed_dict) -> dict[str, Any]:  # noqa: C901
                     schema = {'type': 'list', 'items_schema': schema_ref_validator}
                 elif fr_arg == 'Dict[str, CoreSchema]':
                     schema = {'type': 'dict', 'keys_schema': {'type': 'str'}, 'values_schema': schema_ref_validator}
-                elif fr_arg == 'Dict[Union[str, int], Union[str, int, CoreSchema]]':
-                    schema = {
-                        'type': 'dict',
-                        'keys_schema': {'type': 'union', 'choices': [{'type': 'str'}, {'type': 'int'}]},
-                        'values_schema': {
-                            'type': 'union',
-                            'choices': [{'type': 'str'}, {'type': 'int'}, schema_ref_validator],
-                        },
-                    }
+                elif fr_arg == 'Dict[Hashable, CoreSchema]':
+                    schema = {'type': 'dict', 'keys_schema': {'type': 'any'}, 'values_schema': schema_ref_validator}
                 else:
                     raise ValueError(f'Unknown Schema forward ref: {fr_arg}')
             else:
