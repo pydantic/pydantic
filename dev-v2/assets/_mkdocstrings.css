@@ -1,18 +1,13 @@
 
-/* Don't capitalize names. */
-h5.doc-heading {
-  text-transform: none !important;
-}
-
-/* Avoid breaking parameters name, etc. in table cells. */
+/* Avoid breaking parameter names, etc. in table cells. */
 .doc-contents td code {
   word-break: normal !important;
 }
 
-/* For pieces of Markdown rendered in table cells. */
-.doc-contents td p {
-  margin-top: 0 !important;
-  margin-bottom: 0 !important;
+/* No line break before first paragraph of descriptions. */
+.doc-md-description,
+.doc-md-description>p:first-child {
+  display: inline;
 }
 
 /* Max width for docstring sections tables. */
@@ -21,16 +16,49 @@ h5.doc-heading {
   display: table !important;
   width: 100%;
 }
+
 .doc .md-typeset__table tr {
   display: table-row;
-}
-
-/* Avoid line breaks in rendered fields. */
-.field-body p {
-  display: inline;
 }
 
 /* Defaults in Spacy table style. */
 .doc-param-default {
   float: right;
+}
+
+/* Keep headings consistent. */
+h1.doc-heading,
+h2.doc-heading,
+h3.doc-heading,
+h4.doc-heading,
+h5.doc-heading,
+h6.doc-heading {
+  font-weight: 400;
+  line-height: 1.5;
+  color: inherit;
+  text-transform: none;
+}
+
+h1.doc-heading {
+  font-size: 1.6rem;
+}
+
+h2.doc-heading {
+  font-size: 1.2rem;
+}
+
+h3.doc-heading {
+  font-size: 1.15rem;
+}
+
+h4.doc-heading {
+  font-size: 1.10rem;
+}
+
+h5.doc-heading {
+  font-size: 1.05rem;
+}
+
+h6.doc-heading {
+  font-size: 1rem;
 }
