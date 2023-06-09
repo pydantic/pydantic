@@ -1,4 +1,4 @@
-"""The networks module contains types for common network related fields."""
+"""The networks module contains types for common network-related fields."""
 from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
@@ -385,9 +385,9 @@ def validate_email(value: str) -> tuple[str, str]:
     Note:
         Note that:
 
-        * raw IP address (literal) domain parts are not allowed.
-        * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed
-        * spaces are striped from the beginning and end of addresses but no error is raised
+        * Raw IP address (literal) domain parts are not allowed.
+        * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed.
+        * Spaces are striped from the beginning and end of addresses, but no error is raised.
     """
     if email_validator is None:
         import_email_validator()
