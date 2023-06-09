@@ -2065,9 +2065,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <p>Installation is as simple as:</p>
 <div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>pydantic
 </code></pre></div>
-<p><em>pydantic</em> has no required dependencies except Python 3.7, 3.8, 3.9, 3.10 or 3.11 and
-<a href="https://pypi.org/project/typing-extensions/"><code>typing-extensions</code></a>.
-If you've got Python 3.7+ and <code>pip</code> installed, you're good to go.</p>
+<p><em>pydantic</em> has a few dependencies:</p>
+<ul>
+<li><a href="https://pypi.org/project/pydantic-core/"><code>pydantic-core</code></a>: Core validation logic for <em>pydantic</em> written in rust.</li>
+<li><a href="https://pypi.org/project/typing-extensions/"><code>typing-extensions</code></a>: Backport of the standard library <code>typing</code> module.</li>
+<li><a href="https://pypi.org/project/annotated-types/"><code>annotated-types</code></a>: Reusable constraint types to use with <code>typing.Annotated</code>.</li>
+</ul>
+<p>If you've got Python 3.7+ and <code>pip</code> installed, you're good to go.</p>
 <p>Pydantic is also available on <a href="https://www.anaconda.com">conda</a> under the <a href="https://conda-forge.org">conda-forge</a>
 channel:</p>
 <div class="highlight"><pre><span></span><code>conda<span class="w"> </span>install<span class="w"> </span>pydantic<span class="w"> </span>-c<span class="w"> </span>conda-forge
@@ -2083,9 +2087,9 @@ channel:</p>
 <p>Of course, you can also install requirements manually with <code>pip install email-validator</code>.</p>
 <h2 id="install-from-repository">Install from repository<a class="headerlink" href="#install-from-repository" title="Permanent link">&para;</a></h2>
 <p>And if you prefer to install <em>pydantic</em> directly from the repository:</p>
-<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>git+git://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic
+<div class="highlight"><pre><span></span><code>pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic
 <span class="c1"># or with extras</span>
-pip<span class="w"> </span>install<span class="w"> </span>git+git://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic<span class="o">[</span>email<span class="o">]</span>
+pip<span class="w"> </span>install<span class="w"> </span>git+https://github.com/pydantic/pydantic@main#egg<span class="o">=</span>pydantic<span class="o">[</span>email<span class="o">]</span>
 </code></pre></div>
 
 
