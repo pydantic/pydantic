@@ -26,7 +26,11 @@ class AfterValidator:
     '''
     A metadata class that indicates that a validation should be applied **after** the inner validation logic.
 
+    Attributes:
+        func: The validator function.
+
     Example:
+
         ```py
         from typing import Annotated
 
@@ -45,7 +49,7 @@ class AfterValidator:
             Model(a='a')
         except ValidationError as e:
             print(e.json(indent=2))
-            """
+        """
         [
             {
                 "type": "int_parsing",
@@ -58,6 +62,7 @@ class AfterValidator:
             }
         ]
         """
+        ```
     '''
 
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
