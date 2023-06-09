@@ -1943,6 +1943,26 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaError" class="md-nav__link">
+    SchemaError
+  </a>
+  
+    <nav class="md-nav" aria-label="SchemaError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.SchemaError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic_core.SchemaSerializer" class="md-nav__link">
     SchemaSerializer
   </a>
@@ -1994,6 +2014,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.to_json" class="md-nav__link">
+    to_json()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.to_jsonable_python" class="md-nav__link">
+    to_jsonable_python()
+  </a>
   
 </li>
       
@@ -2353,6 +2387,26 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#pydantic_core.SchemaError" class="md-nav__link">
+    SchemaError
+  </a>
+  
+    <nav class="md-nav" aria-label="SchemaError">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pydantic_core._pydantic_core.SchemaError.with_traceback" class="md-nav__link">
+    with_traceback()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#pydantic_core.SchemaSerializer" class="md-nav__link">
     SchemaSerializer
   </a>
@@ -2404,6 +2458,20 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         
       </ul>
     </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.to_json" class="md-nav__link">
+    to_json()
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pydantic_core.to_jsonable_python" class="md-nav__link">
+    to_jsonable_python()
+  </a>
   
 </li>
       
@@ -2899,6 +2967,69 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 
 
 
+<h2 id="pydantic_core.SchemaError" class="doc doc-heading">
+        <span class="doc doc-object-name doc-class-name">SchemaError</span>
+
+
+<a href="#pydantic_core.SchemaError" class="headerlink" title="Permanent link">&para;</a></h2>
+
+
+  <div class="doc doc-contents ">
+      <p class="doc doc-class-bases">
+        Bases: <code>Exception</code></p>
+
+
+
+
+  
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+<div class="doc doc-object doc-function">
+
+
+
+<h3 id="pydantic_core._pydantic_core.SchemaError.with_traceback" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">with_traceback</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-method descriptor"><code>method descriptor</code></small>
+  </span>
+
+<a href="#pydantic_core._pydantic_core.SchemaError.with_traceback" class="headerlink" title="Permanent link">&para;</a></h3>
+<div class="highlight"><pre><span></span><code><span class="n">with_traceback</span><span class="p">()</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+  
+      <p>Exception.with_traceback(tb) --
+set self.<strong>traceback</strong> to tb and return self.</p>
+
+  </div>
+
+</div>
+
+
+
+  </div>
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-class">
+
+
+
 <h2 id="pydantic_core.SchemaSerializer" class="doc doc-heading">
         <span class="doc doc-object-name doc-class-name">SchemaSerializer</span>
 
@@ -3134,6 +3265,75 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 
 </div>
 
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="pydantic_core.to_json" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">to_json</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-builtin"><code>builtin</code></small>
+  </span>
+
+<a href="#pydantic_core.to_json" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">to_json</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">indent</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">timedelta_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">bytes_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">serialize_unknown</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">fallback</span><span class="o">=</span><span class="bp">Ellipsis</span>
+<span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+
+  </div>
+
+</div>
+
+<div class="doc doc-object doc-function">
+
+
+
+<h2 id="pydantic_core.to_jsonable_python" class="doc doc-heading">
+        <span class="doc doc-object-name doc-function-name">to_jsonable_python</span>
+
+  
+  <span class="doc doc-labels">
+      <small class="doc doc-label doc-label-builtin"><code>builtin</code></small>
+  </span>
+
+<a href="#pydantic_core.to_jsonable_python" class="headerlink" title="Permanent link">&para;</a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">to_jsonable_python</span><span class="p">(</span>
+    <span class="n">value</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">timedelta_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">bytes_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">serialize_unknown</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">fallback</span><span class="o">=</span><span class="bp">Ellipsis</span>
+<span class="p">)</span>
+</code></pre></div>
+
+  <div class="doc doc-contents ">
+
+  </div>
+
+</div>
 
 
 
