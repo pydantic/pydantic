@@ -8,7 +8,7 @@ pip install pydantic
 
 * [`pydantic-core`](https://pypi.org/project/pydantic-core/): Core validation logic for _pydantic_ written in rust.
 * [`typing-extensions`](https://pypi.org/project/typing-extensions/): Backport of the standard library `typing` module.
-* [`annotated-types`](https://pypi.org/project/annotated-types/): Reusable constraint types to use with typing.Annotated.
+* [`annotated-types`](https://pypi.org/project/annotated-types/): Reusable constraint types to use with `typing.Annotated`.
 
 If you've got Python 3.7+ and `pip` installed, you're good to go.
 
