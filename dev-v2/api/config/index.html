@@ -2137,11 +2137,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">40</span>
 <span class="normal">41</span>
 <span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead.&#39;</span><span class="p">)</span>
+<span class="normal">43</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span><span class="s1">&#39;BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead.&#39;</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">BaseConfig</span><span class="p">(</span><span class="n">metaclass</span><span class="o">=</span><span class="n">_ConfigMetaclass</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    This class is only retained for backwards compatibility.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;This class is only retained for backwards compatibility.</span>
 
 <span class="sd">    The preferred approach going forward is to assign a `ConfigDict` to the `model_config` attribute of the Model class.</span>
 <span class="sd">    &quot;&quot;&quot;</span>

@@ -2285,6 +2285,21 @@ are validated on init.</p>
                 <code>False</code>
           </td>
         </tr>
+        <tr>
+          <td><code>slots</code></td>
+          <td>
+                <code>bool</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of
+new attributes after instantiation. Defaults to <code>False</code>.</p>
+            </div>
+          </td>
+          <td>
+                <code>False</code>
+          </td>
+        </tr>
     </tbody>
   </table>
 
@@ -2334,7 +2349,10 @@ are validated on init.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
 <span class="normal"> 99</span>
 <span class="normal">100</span>
 <span class="normal">101</span>
@@ -2447,11 +2465,7 @@ are validated on init.</p>
 <span class="normal">208</span>
 <span class="normal">209</span>
 <span class="normal">210</span>
-<span class="normal">211</span>
-<span class="normal">212</span>
-<span class="normal">213</span>
-<span class="normal">214</span>
-<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">))</span>
+<span class="normal">211</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">dataclass</span><span class="p">(</span>
     <span class="n">_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2466,8 +2480,7 @@ are validated on init.</p>
     <span class="n">kw_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">slots</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">type</span><span class="p">[</span><span class="n">_T</span><span class="p">]],</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]]</span> <span class="o">|</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,</span>
 <span class="sd">    but with added validation.</span>
 
 <span class="sd">    This function should be used similarly to `dataclasses.dataclass`.</span>
@@ -2488,6 +2501,8 @@ are validated on init.</p>
 <span class="sd">        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all pydantic dataclasses</span>
 <span class="sd">            are validated on init.</span>
 <span class="sd">        kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.</span>
+<span class="sd">        slots: Determines if the generated class should be a &#39;slots&#39; dataclass, which does not allow the addition of</span>
+<span class="sd">            new attributes after instantiation. Defaults to `False`.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A decorator that accepts a class as its argument and returns a Pydantic dataclass.</span>
@@ -2504,8 +2519,7 @@ are validated on init.</p>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">create_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Create a Pydantic dataclass from a regular dataclass.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Pydantic dataclass from a regular dataclass.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            cls: The class to create the Pydantic dataclass from.</span>
@@ -2513,7 +2527,6 @@ are validated on init.</p>
 <span class="sd">        Returns:</span>
 <span class="sd">            A Pydantic dataclass.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-
         <span class="n">original_cls</span> <span class="o">=</span> <span class="bp">cls</span>
 
         <span class="n">config_dict</span> <span class="o">=</span> <span class="n">config</span>
@@ -2719,7 +2732,12 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">235</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
 <span class="normal">236</span>
 <span class="normal">237</span>
 <span class="normal">238</span>
@@ -2760,13 +2778,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <span class="normal">273</span>
 <span class="normal">274</span>
 <span class="normal">275</span>
-<span class="normal">276</span>
-<span class="normal">277</span>
-<span class="normal">278</span>
-<span class="normal">279</span>
-<span class="normal">280</span>
-<span class="normal">281</span>
-<span class="normal">282</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_dataclass</span><span class="p">(</span>
+<span class="normal">276</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_dataclass</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -2774,8 +2786,7 @@ the initial attempt to build the schema, and automatic rebuilding fails.</p>
     <span class="n">_parent_namespace_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
     <span class="n">_types_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Try to rebuild the pydantic-core schema for the dataclass.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Try to rebuild the pydantic-core schema for the dataclass.</span>
 
 <span class="sd">    This may be necessary when one of the annotations is a ForwardRef which could not be resolved during</span>
 <span class="sd">    the initial attempt to build the schema, and automatic rebuilding fails.</span>

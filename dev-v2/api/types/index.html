@@ -3160,22 +3160,22 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
         <details class="quote">
           <summary>Source code in <code>pydantic/types.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1033</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1028</span>
+<span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span>
+<span class="normal">1033</span>
 <span class="normal">1034</span>
 <span class="normal">1035</span>
 <span class="normal">1036</span>
 <span class="normal">1037</span>
 <span class="normal">1038</span>
 <span class="normal">1039</span>
-<span class="normal">1040</span>
-<span class="normal">1041</span>
-<span class="normal">1042</span>
-<span class="normal">1043</span>
-<span class="normal">1044</span>
-<span class="normal">1045</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EncoderProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
+<span class="normal">1040</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">EncoderProtocol</span><span class="p">(</span><span class="n">Protocol</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Can throw `PydanticCustomError`&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Can throw `PydanticCustomError`.&quot;&quot;&quot;</span>
         <span class="o">...</span>
 
     <span class="nd">@classmethod</span>
@@ -3218,16 +3218,16 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <div class="doc doc-contents ">
   
-      <p>Can throw <code>PydanticCustomError</code></p>
+      <p>Can throw <code>PydanticCustomError</code>.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1034</span>
-<span class="normal">1035</span>
-<span class="normal">1036</span>
-<span class="normal">1037</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1029</span>
+<span class="normal">1030</span>
+<span class="normal">1031</span>
+<span class="normal">1032</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">decode</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Can throw `PydanticCustomError`&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Can throw `PydanticCustomError`.&quot;&quot;&quot;</span>
     <span class="o">...</span>
 </code></pre></div></td></tr></table></div>
       </details>
@@ -3416,7 +3416,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
         Bases: <code>str</code></p>
 
   
-      <p>Based on: https://en.wikipedia.org/wiki/Payment_card_number</p>
+      <p>Based on: https://en.wikipedia.org/wiki/Payment_card_number.</p>
 
 
         <details class="quote">
@@ -3520,19 +3520,12 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="normal">797</span>
 <span class="normal">798</span>
 <span class="normal">799</span>
-<span class="normal">800</span>
-<span class="normal">801</span>
-<span class="normal">802</span>
-<span class="normal">803</span>
-<span class="normal">804</span>
-<span class="normal">805</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span>
+<span class="normal">800</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@deprecated</span><span class="p">(</span>
     <span class="s1">&#39;The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. &#39;</span>
     <span class="s1">&#39;See https://pydantic-docs.helpmanual.io/usage/types/extra_types/payment_cards/.&#39;</span>
 <span class="p">)</span>
 <span class="k">class</span> <span class="nc">PaymentCardNumber</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Based on: https://en.wikipedia.org/wiki/Payment_card_number</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Based on: https://en.wikipedia.org/wiki/Payment_card_number.&quot;&quot;&quot;</span>
 
     <span class="n">strip_whitespace</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
     <span class="n">min_length</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span>
@@ -3577,9 +3570,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">validate_luhn_check_digit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Based on: https://en.wikipedia.org/wiki/Luhn_algorithm</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Based on: https://en.wikipedia.org/wiki/Luhn_algorithm.&quot;&quot;&quot;</span>
         <span class="n">sum_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
         <span class="n">parity</span> <span class="o">=</span> <span class="n">length</span> <span class="o">%</span> <span class="mi">2</span>
@@ -3597,9 +3588,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardBrand</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Validate length based on BIN for major brands:</span>
-<span class="sd">        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Validate length based on BIN for major brands:</span>
+<span class="sd">        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN).</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">card_number</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;4&#39;</span><span class="p">:</span>
             <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">visa</span>
@@ -3664,11 +3654,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   <div class="doc doc-contents ">
   
       <p>Validate length based on BIN for major brands:
-https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)</p>
+https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN).</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">771</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">767</span>
+<span class="normal">768</span>
+<span class="normal">769</span>
+<span class="normal">770</span>
+<span class="normal">771</span>
 <span class="normal">772</span>
 <span class="normal">773</span>
 <span class="normal">774</span>
@@ -3697,16 +3691,10 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 <span class="normal">797</span>
 <span class="normal">798</span>
 <span class="normal">799</span>
-<span class="normal">800</span>
-<span class="normal">801</span>
-<span class="normal">802</span>
-<span class="normal">803</span>
-<span class="normal">804</span>
-<span class="normal">805</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
+<span class="normal">800</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@staticmethod</span>
 <span class="k">def</span> <span class="nf">validate_brand</span><span class="p">(</span><span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PaymentCardBrand</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Validate length based on BIN for major brands:</span>
-<span class="sd">    https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Validate length based on BIN for major brands:</span>
+<span class="sd">    https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN).</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">card_number</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;4&#39;</span><span class="p">:</span>
         <span class="n">brand</span> <span class="o">=</span> <span class="n">PaymentCardBrand</span><span class="o">.</span><span class="n">visa</span>
@@ -3761,11 +3749,13 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 
   <div class="doc doc-contents ">
   
-      <p>Based on: https://en.wikipedia.org/wiki/Luhn_algorithm</p>
+      <p>Based on: https://en.wikipedia.org/wiki/Luhn_algorithm.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/types.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">751</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">749</span>
+<span class="normal">750</span>
+<span class="normal">751</span>
 <span class="normal">752</span>
 <span class="normal">753</span>
 <span class="normal">754</span>
@@ -3779,15 +3769,9 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
 <span class="normal">762</span>
 <span class="normal">763</span>
 <span class="normal">764</span>
-<span class="normal">765</span>
-<span class="normal">766</span>
-<span class="normal">767</span>
-<span class="normal">768</span>
-<span class="normal">769</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
+<span class="normal">765</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@classmethod</span>
 <span class="k">def</span> <span class="nf">validate_luhn_check_digit</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">card_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Based on: https://en.wikipedia.org/wiki/Luhn_algorithm</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Based on: https://en.wikipedia.org/wiki/Luhn_algorithm.&quot;&quot;&quot;</span>
     <span class="n">sum_</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">card_number</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">card_number</span><span class="p">)</span>
     <span class="n">parity</span> <span class="o">=</span> <span class="n">length</span> <span class="o">%</span> <span class="mi">2</span>
@@ -3986,8 +3970,8 @@ https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(
   <div class="doc doc-contents ">
 
   
-      <p>If this is applied as an annotation (e.g., via <code>x: Annotated[int, SkipValidation]</code>), validation will be skipped.
-You can also use <code>SkipValidation[int]</code> as a shorthand for <code>Annotated[int, SkipValidation]</code>.</p>
+      <p>If this is applied as an annotation (e.g., via <code>x: Annotated[int, SkipValidation]</code>), validation will be
+    skipped. You can also use <code>SkipValidation[int]</code> as a shorthand for <code>Annotated[int, SkipValidation]</code>.</p>
 <p>This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
 and know that it is safe to skip validation for one or more of the fields.</p>
 <p>Because this converts the validation schema to <code>any_schema</code>, subsequent annotation-applied transformations
@@ -3997,7 +3981,13 @@ annotation applied to a type.</p>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/types.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1179</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1173</span>
+<span class="normal">1174</span>
+<span class="normal">1175</span>
+<span class="normal">1176</span>
+<span class="normal">1177</span>
+<span class="normal">1178</span>
+<span class="normal">1179</span>
 <span class="normal">1180</span>
 <span class="normal">1181</span>
 <span class="normal">1182</span>
@@ -4013,18 +4003,10 @@ annotation applied to a type.</p>
 <span class="normal">1192</span>
 <span class="normal">1193</span>
 <span class="normal">1194</span>
-<span class="normal">1195</span>
-<span class="normal">1196</span>
-<span class="normal">1197</span>
-<span class="normal">1198</span>
-<span class="normal">1199</span>
-<span class="normal">1200</span>
-<span class="normal">1201</span>
-<span class="normal">1202</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
+<span class="normal">1195</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
 <span class="k">class</span> <span class="nc">SkipValidation</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be skipped.</span>
-<span class="sd">    You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be</span>
+<span class="sd">        skipped. You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.</span>
 
 <span class="sd">    This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,</span>
 <span class="sd">    and know that it is safe to skip validation for one or more of the fields.</span>
@@ -4149,22 +4131,18 @@ annotation applied to a type.</p>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/types.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1205</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1198</span>
+<span class="normal">1199</span>
+<span class="normal">1200</span>
+<span class="normal">1201</span>
+<span class="normal">1202</span>
+<span class="normal">1203</span>
+<span class="normal">1204</span>
+<span class="normal">1205</span>
 <span class="normal">1206</span>
-<span class="normal">1207</span>
-<span class="normal">1208</span>
-<span class="normal">1209</span>
-<span class="normal">1210</span>
-<span class="normal">1211</span>
-<span class="normal">1212</span>
-<span class="normal">1213</span>
-<span class="normal">1214</span>
-<span class="normal">1215</span>
-<span class="normal">1216</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
+<span class="normal">1207</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
 <span class="k">class</span> <span class="nc">TransformSchema</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    An annotation that can be used to apply a transform to a core schema.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;An annotation that can be used to apply a transform to a core schema.&quot;&quot;&quot;</span>
 
     <span class="n">transform</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">CoreSchema</span><span class="p">],</span> <span class="n">CoreSchema</span><span class="p">]</span>
 
@@ -4219,7 +4197,12 @@ will still be performed.</p>
 
         <details class="quote">
           <summary>Source code in <code>pydantic/types.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1150</span>
+          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">1145</span>
+<span class="normal">1146</span>
+<span class="normal">1147</span>
+<span class="normal">1148</span>
+<span class="normal">1149</span>
+<span class="normal">1150</span>
 <span class="normal">1151</span>
 <span class="normal">1152</span>
 <span class="normal">1153</span>
@@ -4235,16 +4218,9 @@ will still be performed.</p>
 <span class="normal">1163</span>
 <span class="normal">1164</span>
 <span class="normal">1165</span>
-<span class="normal">1166</span>
-<span class="normal">1167</span>
-<span class="normal">1168</span>
-<span class="normal">1169</span>
-<span class="normal">1170</span>
-<span class="normal">1171</span>
-<span class="normal">1172</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
+<span class="normal">1166</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@_internal_dataclass</span><span class="o">.</span><span class="n">slots_dataclass</span>
 <span class="k">class</span> <span class="nc">WithJsonSchema</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.</span>
 
 <span class="sd">    This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,</span>
 <span class="sd">    such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a</span>
