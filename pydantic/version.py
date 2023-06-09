@@ -1,9 +1,12 @@
+"""The `version` module holds the version information for Pydantic."""
 __all__ = 'VERSION', 'version_info'
 
 VERSION = '2.0b2'
+"""The version of Pydantic."""
 
 
 def version_info() -> str:
+    """Return complete version information for Pydantic and its dependencies."""
     import platform
     import sys
     from importlib import import_module
