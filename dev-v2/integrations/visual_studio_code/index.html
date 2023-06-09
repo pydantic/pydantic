@@ -2267,7 +2267,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   <h1>Visual Studio Code</h1>
 
 <p><em>pydantic</em> works well with any editor or IDE out of the box because it's made on top of standard Python type annotations.</p>
-<p>When using <a href="https://code.visualstudio.com/">Visual Studio Code (VS Code)</a>, there are some <strong>additional editor features</strong> supported, comparable to the ones provided by the <a href="/integrations/pycharm_plugin/">PyCharm plugin</a>.</p>
+<p>When using <a href="https://code.visualstudio.com/">Visual Studio Code (VS Code)</a>, there are some <strong>additional editor features</strong> supported, comparable to the ones provided by the <a href="../pycharm/">PyCharm plugin</a>.</p>
 <p>This means that you will have <strong>autocompletion</strong> (or "IntelliSense") and <strong>error checks</strong> for types and required arguments even while creating new <em>pydantic</em> model instances.</p>
 <p><img alt="pydantic autocompletion in VS Code" src="../../img/vs_code_01.png" /></p>
 <h2 id="configure-vs-code">Configure VS Code<a class="headerlink" href="#configure-vs-code" title="Permanent link">&para;</a></h2>
@@ -2300,7 +2300,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </div>
 <h3 id="configure-mypy">Configure mypy<a class="headerlink" href="#configure-mypy" title="Permanent link">&para;</a></h3>
 <p>You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pylance).</p>
-<p>This would include the errors detected by the <a href="/integrations/mypy/"><em>pydantic</em> mypy plugin</a>, if you configured it.</p>
+<p>This would include the errors detected by the <a href="../mypy/"><em>pydantic</em> mypy plugin</a>, if you configured it.</p>
 <p>To enable mypy in VS Code, do the following:</p>
 <ul>
 <li>Open the "User Settings"</li>
@@ -2410,7 +2410,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <p><strong>Pros</strong>: errors will be ignored only for a specific value, and you will still see any additional errors for the other arguments. There's no need for additional variables.</p>
 <p><strong>Cons</strong>: it requires importing <code>Any</code> and <code>cast</code>, and if you are not used to using <code>cast()</code>, it could seem strange at first.</p>
 <h3 id="config-in-class-arguments">Config in class arguments<a class="headerlink" href="#config-in-class-arguments" title="Permanent link">&para;</a></h3>
-<p><em>pydantic</em> has a rich set of <a href="/usage/model_config/">Model Configurations</a> available.</p>
+<p><em>pydantic</em> has a rich set of <a href="../../usage/model_config/">Model Configurations</a> available.</p>
 <p>These configurations can be set in an internal <code>class Config</code> on each model:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 

@@ -2231,8 +2231,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   <h1>Standard Library Types</h1>
 
 <p>Pydantic supports many common types from the Python standard library. If you need stricter processing see
-<a href="/usage/strict/">Strict Types</a>. If you need to constrain the values allowed (e.g. to require a positive <code>int</code>) see
-<a href="/usage/constrained/">Constrained Types</a>.</p>
+<a href="#strict-types">Strict types</a>. If you need to constrain the values allowed (e.g. to require a positive <code>int</code>) see
+<a href="#constrained-types">Constrained types</a>.</p>
 <table>
 <thead>
 <tr>
@@ -2247,11 +2247,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </tr>
 <tr>
 <td><code>bool</code></td>
-<td>See <a href="/usage/booleans/">Booleans</a> for details on how bools are validated and what values are permitted.</td>
+<td>See <a href="../booleans/">Booleans</a> for details on how bools are validated and what values are permitted.</td>
 </tr>
 <tr>
 <td><code>int</code></td>
-<td>Pydantic uses <code>int(v)</code> to coerce types to an <code>int</code>. See the <a href="/usage/models/#data-conversion">Data Conversion</a> warning on loss of information during data conversion.</td>
+<td>Pydantic uses <code>int(v)</code> to coerce types to an <code>int</code>. See the <a href="../../models/#data-conversion">Data Conversion</a> warning on loss of information during data conversion.</td>
 </tr>
 <tr>
 <td><code>float</code></td>
@@ -2291,19 +2291,19 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </tr>
 <tr>
 <td><code>datetime.date</code></td>
-<td>See <a href="/usage/datetime/">Datetime Types</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../datetime/">Datetime Types</a>  for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>datetime.time</code></td>
-<td>See <a href="/usage/datetime/">Datetime Types</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../datetime/">Datetime Types</a>  for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>datetime.datetime</code></td>
-<td>See <a href="/usage/datetime/">Datetime Types</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../datetime/">Datetime Types</a>  for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>datetime.timedelta</code></td>
-<td>See <a href="/usage/datetime/">Datetime Types</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../datetime/">Datetime Types</a>  for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Any</code></td>
@@ -2311,31 +2311,31 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </tr>
 <tr>
 <td><code>typing.Annotated</code></td>
-<td>Allows wrapping another type with arbitrary metadata, as per <a href="https://www.python.org/dev/peps/pep-0593/">PEP-593</a>. The <code>Annotated</code> hint may contain a single call to the <a href="/usage/schema/#typingannotated-fields"><code>Field</code> function</a>, but otherwise the additional metadata is ignored and the root type is used.</td>
+<td>Allows wrapping another type with arbitrary metadata, as per <a href="https://www.python.org/dev/peps/pep-0593/">PEP-593</a>. The <code>Annotated</code> hint may contain a single call to the [<code>Field</code> function]../schema.md#typingannotated-fields), but otherwise the additional metadata is ignored and the root type is used.</td>
 </tr>
 <tr>
 <td><code>typing.TypeVar</code></td>
-<td>Constrains the values allowed based on <code>constraints</code> or <code>bound</code>, see <a href="/usage/typevars/">TypeVar</a>.</td>
+<td>Constrains the values allowed based on <code>constraints</code> or <code>bound</code>, see <a href="../typevars/">TypeVar</a>.</td>
 </tr>
 <tr>
 <td><code>typing.Union</code></td>
-<td>See <a href="/usage/unions/">Unions</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../unions/">Unions</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Optional</code></td>
-<td><code>Optional[x]</code> is simply short hand for <code>Union[x, None]</code>. See <a href="/usage/unions/">Unions</a> below for more detail on parsing and validation and <a href="/usage/models/#required-fields">Required Fields</a> for details about required fields that can receive <code>None</code> as a value.</td>
+<td><code>Optional[x]</code> is simply short hand for <code>Union[x, None]</code>. See <a href="../unions/">Unions</a> below for more detail on parsing and validation and <a href="../../models/#required-fields">Required Fields</a> for details about required fields that can receive <code>None</code> as a value.</td>
 </tr>
 <tr>
 <td><code>typing.List</code></td>
-<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../list_types/">Lists and Tuples</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Tuple</code></td>
-<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../list_types/">Lists and Tuples</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td>Subclass of <code>typing.NamedTuple</code></td>
-<td>Same as <code>tuple</code>, but instantiates with the given namedtuple and validates fields since they are annotated. See <a href="/usage/annotated_types/">Annotated Types</a> below for more detail on parsing and validation.</td>
+<td>Same as <code>tuple</code>, but instantiates with the given namedtuple and validates fields since they are annotated.</td>
 </tr>
 <tr>
 <td>Subclass of <code>collections.namedtuple</code></td>
@@ -2343,39 +2343,39 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </tr>
 <tr>
 <td><code>typing.Dict</code></td>
-<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../dicts_mapping/">Dicts and mapping</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td>Subclass of <code>typing.TypedDict</code></td>
-<td>Same as <code>dict</code>, but Pydantic will validate the dictionary since keys are annotated. See <a href="/usage/annotated_types/">Annotated Types</a> below for more detail on parsing and validation.</td>
+<td>Same as <code>dict</code>, but Pydantic will validate the dictionary since keys are annotated.</td>
 </tr>
 <tr>
 <td><code>typing.Set</code></td>
-<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../set_types/">Sets and frozenset</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.FrozenSet</code></td>
-<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../set_types/">Sets and frozenset</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Deque</code></td>
-<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../sequence_iterable/">Sequence, Iterable &amp; Iterator</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Sequence</code></td>
-<td>See <a href="/usage/typing_iterables/">Typing Iterables</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../sequence_iterable/">Sequence, Iterable &amp; Iterator</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Iterable</code></td>
-<td>This is reserved for iterables that shouldn't be consumed. See <a href="/usage/typing_iterables/#infinite-generators">Infinite Generators</a> below for more detail on parsing and validation.</td>
+<td>This is reserved for iterables that shouldn't be consumed. See <a href="../sequence_iterable/">Sequence, Iterable &amp; Iterator</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Type</code></td>
-<td>See <a href="/usage/typevars/#type">Type</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../typevars/">Type and Typevars</a> for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Callable</code></td>
-<td>See <a href="/usage/callables/">Callables</a> below for more detail on parsing and validation.</td>
+<td>See <a href="../callables/">Callables</a> below for more detail on parsing and validation.</td>
 </tr>
 <tr>
 <td><code>typing.Pattern</code></td>
@@ -2383,27 +2383,27 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </tr>
 <tr>
 <td><code>ipaddress.IPv4Address</code></td>
-<td>Simply uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>. See <a href="../urls/">URLs</a> for other custom IP address types.</td>
 </tr>
 <tr>
 <td><nobr><code>ipaddress.IPv4Interface</code></nobr></td>
-<td>Simply uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv4Address(v)</code>. See <a href="../urls/">URLs</a> for other custom IP address types.</td>
 </tr>
 <tr>
 <td><code>ipaddress.IPv4Network</code></td>
-<td>Simply uses the type itself for validation by passing the value to <code>IPv4Network(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv4Network(v)</code>. See <a href="../urls/">URLs</a> for other custom IP address types.</td>
 </tr>
 <tr>
 <td><code>ipaddress.IPv6Address</code></td>
-<td>Simply uses the type itself for validation by passing the value to <code>IPv6Address(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv6Address(v)</code>. See <a href="../urls/">URLs</a> for other custom IP address types.</td>
 </tr>
 <tr>
 <td><code>ipaddress.IPv6Interface</code></td>
-<td>Simply uses the type itself for validation by passing the value to <code>IPv6Interface(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv6Interface(v)</code>. See <a href="../urls/">URLs</a> for other custom IP address types.</td>
 </tr>
 <tr>
 <td><code>ipaddress.IPv6Network</code></td>
-<td>Simply uses the type itself for validation by passing the value to <code>IPv6Network(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other custom IP address types.</td>
+<td>Simply uses the type itself for validation by passing the value to <code>IPv6Network(v)</code>. See <a href="../urls/">URLs</a> for other custom IP address types.</td>
 </tr>
 <tr>
 <td><code>enum.Enum</code></td>
@@ -2411,7 +2411,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </tr>
 <tr>
 <td>Subclass of <code>enum.Enum</code></td>
-<td>Checks that the value is a valid member of the <code>enum</code>. See <a href="/usage/enums/">Enums and Choices</a> for more details.</td>
+<td>Checks that the value is a valid member of the <code>enum</code>. See <a href="../enums/">Enums and Choices</a> for more details.</td>
 </tr>
 <tr>
 <td><code>enum.IntEnum</code></td>
@@ -2419,7 +2419,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </tr>
 <tr>
 <td>Subclass of <code>enum.IntEnum</code></td>
-<td>Checks that the value is a valid member of the integer <code>enum</code>. See <a href="/usage/enums/">Enums and Choices</a> for more details.</td>
+<td>Checks that the value is a valid member of the integer <code>enum</code>. See <a href="../enums/">Enums and Choices</a> for more details.</td>
 </tr>
 <tr>
 <td><code>decimal.Decimal</code></td>
@@ -2427,11 +2427,11 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </tr>
 <tr>
 <td><code>pathlib.Path</code></td>
-<td>Simply uses the type itself for validation by passing the value to <code>Path(v)</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other more strict path types.</td>
+<td>Simply uses the type itself for validation by passing the value to <code>Path(v)</code>. See <a href="../file_types/">File Types</a> for other more strict path types.</td>
 </tr>
 <tr>
 <td><code>uuid.UUID</code></td>
-<td>Strings and bytes (converted to strings) are passed to <code>UUID(v)</code>, with a fallback to <code>UUID(bytes=v)</code> for <code>bytes</code> and <code>bytearray</code>. See <a href="/usage/pydantic_types/">Pydantic Types</a> for other stricter UUID types.</td>
+<td>Strings and bytes (converted to strings) are passed to <code>UUID(v)</code>, with a fallback to <code>UUID(bytes=v)</code> for <code>bytes</code> and <code>bytearray</code>. See <a href="../uuids/">UUIDs</a> for other stricter UUID types.</td>
 </tr>
 <tr>
 <td><code>ByteSize</code></td>

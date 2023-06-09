@@ -2671,7 +2671,7 @@ Models possess the following methods and attributes:</p>
 to the model field names. One common application of this functionality is integration with object-relational mappings
 (ORMs).</p>
 <p>To do this, use the <code>model_config</code> property on the model with <code>from_attributes</code> set to <code>True</code>. See
-<a href="../model_config/">Model Config</a> and <a href="/api/config/#pydantic.config.ConfigDict">ConfigDict</a> for more information.</p>
+<a href="../model_config/">Model Config</a> and <a href="../../api/config/#pydantic.config.ConfigDict">ConfigDict</a> for more information.</p>
 <p>The example here uses <a href="https://www.sqlalchemy.org/">SQLAlchemy</a>, but the same approach should work for any ORM.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
@@ -3917,7 +3917,7 @@ as the value:</p>
 </code></pre></div>
 <p>Where <code>Field</code> refers to the <a href="../json_schema/#field-customization">field function</a>.</p>
 <p>Here <code>a</code>, <code>b</code> and <code>c</code> are all required. However, use of the ellipses in <code>b</code> will not work well
-with <a href="/mypy_plugin/">mypy</a>, and as of <strong>v1.0</strong> should be avoided in most cases.</p>
+with <a href="../../integrations/mypy/">mypy</a>, and as of <strong>v1.0</strong> should be avoided in most cases.</p>
 <h3 id="required-optional-fields">Required Optional fields<a class="headerlink" href="#required-optional-fields" title="Permanent link">&para;</a></h3>
 <p>If you want to specify a field that can take a <code>None</code> value while still being required,
 you can use <code>Optional</code> with <code>...</code>:</p>
@@ -4172,7 +4172,7 @@ it is just syntactic sugar for getting an attribute and either comparing it or d
 </div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting <a href="/api/config/#pydantic.config.ConfigDict"><code>config.revalidate_instances='always'</code></a> in your model.</p>
+<p>There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting <a href="../../api/config/#pydantic.config.ConfigDict"><code>config.revalidate_instances='always'</code></a> in your model.</p>
 </div>
 
 

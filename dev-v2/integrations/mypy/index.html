@@ -2306,7 +2306,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Mypy</h1>
 
-<p>Pydantic works well with <a href="http://mypy-lang.org/">mypy</a> right out of the box.</p>
+<p>Pydantic works well with <a href="http://mypy-lang.org.md">mypy</a> right out of the box.</p>
 <p>However, Pydantic also ships with a mypy plugin that adds a number of important pydantic-specific
 features to mypy that improve its ability to type-check your code.</p>
 <p>For example, consider the following script:</p>
@@ -2404,7 +2404,7 @@ for all fields with <code>None</code> as the default. (This is standard with myp
 </ul>
 <p>If these aren't sufficient you can of course define your own.</p>
 <h3 id="other-pydantic-interfaces">Other Pydantic interfaces<a class="headerlink" href="#other-pydantic-interfaces" title="Permanent link">&para;</a></h3>
-<p>Pydantic <a href="/usage/dataclasses/">dataclasses</a> and the <a href="/usage/validation_decorator/"><code>validate_arguments</code> decorator</a>
+<p>Pydantic <a href="../../usage/dataclasses/">dataclasses</a> and the <a href="../../usage/validation_decorator/"><code>validate_arguments</code> decorator</a>
 should also work well with mypy.</p>
 <h2 id="mypy-plugin-capabilities">Mypy Plugin Capabilities<a class="headerlink" href="#mypy-plugin-capabilities" title="Permanent link">&para;</a></h2>
 <h3 id="generate-a-signature-for-model__init__">Generate a signature for <code>Model.__init__</code><a class="headerlink" href="#generate-a-signature-for-model__init__" title="Permanent link">&para;</a></h3>
@@ -2415,31 +2415,31 @@ should also work well with mypy.</p>
   rather than aliases.</li>
 <li>If <code>Config.extra="forbid"</code> and you don't make use of dynamically-determined aliases, the generated signature
   will not allow unexpected inputs.</li>
-<li><strong>Optional:</strong> If the <a href="#plugin-settings"><code>init_forbid_extra</code> <strong>plugin setting</strong></a> is set to <code>True</code>, unexpected inputs to
+<li><strong>Optional:</strong> If the <a href="#configuring-the-plugin"><code>init_forbid_extra</code> <strong>plugin setting</strong></a> is set to <code>True</code>, unexpected inputs to
   <code>__init__</code> will raise errors even if <code>Config.extra</code> is not <code>"forbid"</code>.</li>
-<li><strong>Optional:</strong> If the <a href="#plugin-settings"><code>init_typed</code> <strong>plugin setting</strong></a> is set to <code>True</code>, the generated signature
+<li><strong>Optional:</strong> If the <a href="#configuring-the-plugin"><code>init_typed</code> <strong>plugin setting</strong></a> is set to <code>True</code>, the generated signature
   will use the types of the model fields (otherwise they will be annotated as <code>Any</code> to allow parsing).</li>
 </ul>
 <h3 id="generate-a-typed-signature-for-modelmodel_construct">Generate a typed signature for <code>Model.model_construct</code><a class="headerlink" href="#generate-a-typed-signature-for-modelmodel_construct" title="Permanent link">&para;</a></h3>
 <ul>
-<li>The <a href="/usage/models/#creating-models-without-validation"><code>model_construct</code></a> method is a faster alternative to <code>__init__</code>
+<li>The <a href="../../usage/models/#creating-models-without-validation"><code>model_construct</code></a> method is a faster alternative to <code>__init__</code>
   when input data is known to be valid and does not need to be parsed. But because this method performs no runtime
   validation, static checking is important to detect errors.</li>
 </ul>
 <h3 id="respect-configallow_mutation">Respect <code>Config.allow_mutation</code><a class="headerlink" href="#respect-configallow_mutation" title="Permanent link">&para;</a></h3>
 <ul>
 <li>If <code>Config.allow_mutation</code> is <code>False</code>, you'll get a mypy error if you try to change
-  the value of a model field; cf. <a href="/usage/models/#faux-immutability">faux immutability</a>.</li>
+  the value of a model field; cf. <a href="../../usage/models/#faux-immutability">faux immutability</a>.</li>
 </ul>
 <h3 id="respect-configfrom_attributes">Respect <code>Config.from_attributes</code><a class="headerlink" href="#respect-configfrom_attributes" title="Permanent link">&para;</a></h3>
 <ul>
 <li>If <code>Config.from_attributes</code> is <code>False</code>, you'll get a mypy error if you try to call <code>.from_orm()</code>;
-  cf. <a href="/usage/models/#orm-mode-aka-arbitrary-class-instances">ORM mode</a></li>
+  cf. <a href="../../usage/models/#orm-mode-aka-arbitrary-class-instances">ORM mode</a></li>
 </ul>
 <h3 id="generate-a-signature-for-dataclasses">Generate a signature for <code>dataclasses</code><a class="headerlink" href="#generate-a-signature-for-dataclasses" title="Permanent link">&para;</a></h3>
 <ul>
-<li>classes decorated with <a href="/usage/dataclasses/"><code>@pydantic.dataclasses.dataclass</code></a> are type checked the same as standard Python dataclasses</li>
-<li>The <code>@pydantic.dataclasses.dataclass</code> decorator accepts a <code>config</code> keyword argument which has the same meaning as <a href="/usage/model_config/">the <code>Config</code> sub-class</a>.</li>
+<li>classes decorated with <a href="../../usage/dataclasses/"><code>@pydantic.dataclasses.dataclass</code></a> are type checked the same as standard Python dataclasses</li>
+<li>The <code>@pydantic.dataclasses.dataclass</code> decorator accepts a <code>config</code> keyword argument which has the same meaning as <a href="../../usage/model_config/">the <code>Config</code> sub-class</a>.</li>
 </ul>
 <h3 id="respect-the-type-of-the-fields-default-and-default_factory">Respect the type of the <code>Field</code>'s <code>default</code> and <code>default_factory</code><a class="headerlink" href="#respect-the-type-of-the-fields-default-and-default_factory" title="Permanent link">&para;</a></h3>
 <ul>
@@ -2454,7 +2454,7 @@ should also work well with mypy.</p>
 <h2 id="optional-capabilities">Optional Capabilities:<a class="headerlink" href="#optional-capabilities" title="Permanent link">&para;</a></h2>
 <h3 id="prevent-the-use-of-required-dynamic-aliases">Prevent the use of required dynamic aliases<a class="headerlink" href="#prevent-the-use-of-required-dynamic-aliases" title="Permanent link">&para;</a></h3>
 <ul>
-<li>If the <a href="#plugin-settings"><code>warn_required_dynamic_aliases</code> <strong>plugin setting</strong></a> is set to <code>True</code>, you'll get a mypy
+<li>If the <a href="#configuring-the-plugin"><code>warn_required_dynamic_aliases</code> <strong>plugin setting</strong></a> is set to <code>True</code>, you'll get a mypy
   error any time you use a dynamically-determined alias or alias generator on a model with
   <code>Config.populate_by_name=False</code>.</li>
 <li>This is important because if such aliases are present, mypy cannot properly type check calls to <code>__init__</code>.

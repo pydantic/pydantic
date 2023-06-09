@@ -2216,7 +2216,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 and exported in a number of ways:</p>
 <h2 id="modelmodel_dump"><code>model.model_dump(...)</code><a class="headerlink" href="#modelmodel_dump" title="Permanent link">&para;</a></h2>
 <p>This is the primary way of converting a model to a dictionary. Sub-models will be recursively converted to dictionaries.</p>
-<p>See <a href="/api/main/#pydantic.main.BaseModel.model_dump">arguments</a> for more information.</p>
+<p>See <a href="../../api/main/#pydantic.main.BaseModel.model_dump">arguments</a> for more information.</p>
 <p>Example:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
@@ -2417,7 +2417,7 @@ returned, so sub-models will not be converted to dictionaries.</p>
 </code></pre></div>
 <h2 id="model_copy"><code>model_copy(...)</code><a class="headerlink" href="#model_copy" title="Permanent link">&para;</a></h2>
 <p><code>model_copy()</code> allows models to be duplicated, which is particularly useful for immutable models.
-See <a href="/api/main/#pydantic.main.BaseModel.model_copy">arguments</a> for more information.</p>
+See <a href="../../api/main/#pydantic.main.BaseModel.model_copy">arguments</a> for more information.</p>
 <p>Example:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
@@ -2446,7 +2446,7 @@ See <a href="/api/main/#pydantic.main.BaseModel.model_copy">arguments</a> for mo
 <h2 id="modelmodel_dump_json"><code>model.model_dump_json(...)</code><a class="headerlink" href="#modelmodel_dump_json" title="Permanent link">&para;</a></h2>
 <p>The <code>.model_dump_json()</code> method will serialise a model to JSON. (For <code>RootModel</code> <a href="../models/#custom-root-types">custom root type</a>,
 only the values are serialised)</p>
-<p>See <a href="/api/main/#pydantic.main.BaseModel.model_dump_json">arguments</a> for more information.</p>
+<p>See <a href="../../api/main/#pydantic.main.BaseModel.model_dump_json">arguments</a> for more information.</p>
 <p><em>pydantic</em> can serialise many commonly used types to JSON (e.g. <code>datetime</code>, <code>date</code> or <code>UUID</code>) which would normally
 fail with a simple <code>json.dumps(foobar)</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
