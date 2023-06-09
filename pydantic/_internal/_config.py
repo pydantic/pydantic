@@ -13,9 +13,7 @@ DEPRECATION_MESSAGE = 'Support for class-based `config` is deprecated, use Confi
 
 
 class ConfigWrapper:
-    """
-    Internal wrapper for Config which exposes ConfigDict items as attributes.
-    """
+    """Internal wrapper for Config which exposes ConfigDict items as attributes."""
 
     __slots__ = ('config_dict',)
 
@@ -64,17 +62,15 @@ class ConfigWrapper:
 
     @classmethod
     def for_model(cls, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]) -> Self:
-        """
-        Build a new `ConfigDict` instance for a `BaseModel` based on (from lowest to highest)
+        """Build a new `ConfigDict` instance for a `BaseModel` based on (from lowest to highest)
         - options defined in base
         - options defined in namespace
-        - options defined via kwargs
+        - options defined via kwargs.
 
         :param bases: tuple of base classes
         :param namespace: namespace of the class being created
         :param kwargs: kwargs passed to the class being created
         """
-
         config_new = ConfigDict()
         for base in bases:
             config = getattr(base, 'model_config', None)
@@ -111,8 +107,7 @@ class ConfigWrapper:
                     raise AttributeError(f'Config has no attribute {name!r}') from None
 
     def core_config(self, obj: Any) -> core_schema.CoreConfig:
-        """
-        Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
+        """Create a pydantic-core config, `obj` is just used to populate `title` if not set in config.
 
         Pass `obj=None` if you do not want to attempt to infer the `title`.
 
@@ -178,9 +173,7 @@ config_defaults = ConfigDict(
 
 
 def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> ConfigDict:
-    """
-    Create a `ConfigDict` instance from an existing dict, a class (e.g. old class-based config) or None.
-    """
+    """Create a `ConfigDict` instance from an existing dict, a class (e.g. old class-based config) or None."""
     if config is None:
         return ConfigDict()
 
@@ -224,9 +217,7 @@ V2_RENAMED_KEYS = {
 
 
 def check_deprecated(config_dict: ConfigDict) -> None:
-    """
-    Check for deprecated config keys and warn the user.
-    """
+    """Check for deprecated config keys and warn the user."""
     deprecated_removed_keys = V2_REMOVED_KEYS & config_dict.keys()
     deprecated_renamed_keys = V2_RENAMED_KEYS.keys() & config_dict.keys()
     if deprecated_removed_keys or deprecated_renamed_keys:

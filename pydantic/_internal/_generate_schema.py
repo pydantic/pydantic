@@ -1,6 +1,4 @@
-"""
-Convert python types to pydantic-core schema.
-"""
+"""Convert python types to pydantic-core schema."""
 from __future__ import annotations as _annotations
 
 import collections.abc
@@ -155,7 +153,7 @@ def apply_each_item_validators(
 def modify_model_json_schema(
     schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler, *, cls: Any
 ) -> JsonSchemaValue:
-    """Add title and description for model-like classes' JSON schema"""
+    """Add title and description for model-like classes' JSON schema."""
     wrapped_handler = UnpackedRefJsonSchemaHandler(handler)
 
     json_schema = handler(schema_or_field)
@@ -239,8 +237,7 @@ class GenerateSchema:
         return schema
 
     def model_schema(self, cls: type[BaseModel]) -> core_schema.CoreSchema:
-        """
-        Generate schema for a pydantic model.
+        """Generate schema for a pydantic model.
 
         Since models generate schemas for themselves this method is public and can be called
         from within BaseModel's metaclass.
@@ -309,8 +306,7 @@ class GenerateSchema:
         return apply_model_validators(schema, model_validators, 'outer')
 
     def _generate_schema_from_prepare_annotations(self, obj: Any) -> core_schema.CoreSchema | None:
-        """
-        Try to generate schema from either the `__get_pydantic_core_schema__` function or
+        """Try to generate schema from either the `__get_pydantic_core_schema__` function or
         `__pydantic_core_schema__` property.
 
         Note: `__get_pydantic_core_schema__` takes priority so it can
@@ -326,8 +322,7 @@ class GenerateSchema:
         return None
 
     def _generate_schema_from_property(self, obj: Any, source: Any) -> core_schema.CoreSchema | None:
-        """
-        Try to generate schema from either the `__get_pydantic_core_schema__` function or
+        """Try to generate schema from either the `__get_pydantic_core_schema__` function or
         `__pydantic_core_schema__` property.
 
         Note: `__get_pydantic_core_schema__` takes priority so it can
@@ -344,9 +339,7 @@ class GenerateSchema:
         return get_schema(source, CallbackGetCoreSchemaHandler(self._generate_schema, self.generate_schema))
 
     def _generate_schema(self, obj: Any) -> core_schema.CoreSchema:  # noqa: C901
-        """
-        Recursively generate a pydantic-core schema for any supported python type.
-        """
+        """Recursively generate a pydantic-core schema for any supported python type."""
         if isinstance(obj, dict):
             # we assume this is already a valid schema
             return obj  # type: ignore[return-value]
@@ -491,9 +484,7 @@ class GenerateSchema:
         *,
         required: bool = True,
     ) -> core_schema.TypedDictField:
-        """
-        Prepare a TypedDictField to represent a model or typeddict field.
-        """
+        """Prepare a TypedDictField to represent a model or typeddict field."""
         common_field = self._common_field_schema(name, field_info, decorators)
         return core_schema.typed_dict_field(
             common_field['schema'],
@@ -512,9 +503,7 @@ class GenerateSchema:
         *,
         required: bool = True,
     ) -> core_schema.ModelField:
-        """
-        Prepare a ModelField to represent a model field.
-        """
+        """Prepare a ModelField to represent a model field."""
         common_field = self._common_field_schema(name, field_info, decorators)
         return core_schema.model_field(
             common_field['schema'],
@@ -531,9 +520,7 @@ class GenerateSchema:
         field_info: FieldInfo,
         decorators: DecoratorInfos,
     ) -> core_schema.DataclassField:
-        """
-        Prepare a DataclassField to represent the parameter/field, of a dataclass
-        """
+        """Prepare a DataclassField to represent the parameter/field, of a dataclass."""
         common_field = self._common_field_schema(name, field_info, decorators)
         return core_schema.dataclass_field(
             name,
@@ -626,9 +613,7 @@ class GenerateSchema:
         )
 
     def _union_schema(self, union_type: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for a Union.
-        """
+        """Generate schema for a Union."""
         args = get_args(union_type)
         choices: list[core_schema.CoreSchema] = []
         nullable = False
@@ -679,16 +664,13 @@ class GenerateSchema:
         return schema
 
     def _literal_schema(self, literal_type: Any) -> core_schema.LiteralSchema:
-        """
-        Generate schema for a Literal.
-        """
+        """Generate schema for a Literal."""
         expected = _typing_extra.all_literal_values(literal_type)
         assert expected, f'literal "expected" cannot be empty, obj={literal_type}'
         return core_schema.literal_schema(expected)
 
     def _typed_dict_schema(self, typed_dict_cls: Any, origin: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for a TypedDict.
+        """Generate schema for a TypedDict.
 
         It is not possible to track required/optional keys in TypedDict without __required_keys__
         since TypedDict.__new__ erases the base classes (it replaces them with just `dict`)
@@ -755,9 +737,7 @@ class GenerateSchema:
         return apply_model_validators(schema, decorators.model_validators.values(), 'all')
 
     def _namedtuple_schema(self, namedtuple_cls: Any) -> core_schema.CallSchema:
-        """
-        Generate schema for a NamedTuple.
-        """
+        """Generate schema for a NamedTuple."""
         annotations: dict[str, Any] = get_type_hints_infer_globalns(
             namedtuple_cls, include_extras=True, localns=self.types_namespace
         )
@@ -782,9 +762,7 @@ class GenerateSchema:
         default: Any = Parameter.empty,
         mode: Literal['positional_only', 'positional_or_keyword', 'keyword_only'] | None = None,
     ) -> core_schema.ArgumentsParameter:
-        """
-        Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature.
-        """
+        """Prepare a ArgumentsParameter to represent a field in a namedtuple or function signature."""
         if default is Parameter.empty:
             field = FieldInfo.from_annotation(annotation)
         else:
@@ -808,9 +786,7 @@ class GenerateSchema:
         return parameter_schema
 
     def _tuple_schema(self, tuple_type: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`.
-        """
+        """Generate schema for a Tuple, e.g. `tuple[int, str]` or `tuple[int, ...]`."""
         params = get_args(tuple_type)
         # NOTE: subtle difference: `tuple[()]` gives `params=()`, whereas `typing.Tuple[()]` gives `params=((),)`
         # This is only true for <3.11, on Python 3.11+ `typing.Tuple[()]` gives `params=()`
@@ -846,9 +822,7 @@ class GenerateSchema:
         )
 
     def _subclass_schema(self, type_: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for a Type, e.g. `Type[int]`.
-        """
+        """Generate schema for a Type, e.g. `Type[int]`."""
         type_param = get_first_arg(type_)
         if type_param == Any:
             return self._type_schema()
@@ -865,9 +839,7 @@ class GenerateSchema:
             return core_schema.is_subclass_schema(type_param)
 
     def _sequence_schema(self, sequence_type: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for a Sequence, e.g. `Sequence[int]`.
-        """
+        """Generate schema for a Sequence, e.g. `Sequence[int]`."""
         item_type = get_first_arg(sequence_type)
 
         def json_schema_func(_schema: CoreSchemaOrField, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
@@ -889,9 +861,7 @@ class GenerateSchema:
         )
 
     def _iterable_schema(self, type_: Any) -> core_schema.GeneratorSchema:
-        """
-        Generate a schema for an `Iterable`.
-        """
+        """Generate a schema for an `Iterable`."""
         item_type = get_first_arg(type_)
 
         return core_schema.generator_schema(self.generate_schema(item_type))
@@ -931,9 +901,7 @@ class GenerateSchema:
     def _dataclass_schema(
         self, dataclass: type[StandardDataclass], origin: type[StandardDataclass] | None
     ) -> core_schema.CoreSchema:
-        """
-        Generate schema for a dataclass.
-        """
+        """Generate schema for a dataclass."""
         dataclass_ref, schema = self._get_or_cache_recursive_ref(dataclass)
         if schema is not None:
             return schema
@@ -1002,8 +970,7 @@ class GenerateSchema:
         return apply_model_validators(schema, model_validators, 'outer')
 
     def _callable_schema(self, function: Callable[..., Any]) -> core_schema.CallSchema:
-        """
-        Generate schema for a Callable.
+        """Generate schema for a Callable.
 
         TODO support functional validators once we support them in Config
         """
@@ -1090,9 +1057,7 @@ class GenerateSchema:
         return core_schema.computed_field(d.cls_var_name, return_schema=return_type_schema, alias=d.info.alias)
 
     def _annotated_schema(self, annotated_type: Any) -> core_schema.CoreSchema:
-        """
-        Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`.
-        """
+        """Generate schema for an Annotated type, e.g. `Annotated[int, Field(...)]` or `Annotated[int, Gt(0)]`."""
         source_type, *annotations = get_args(annotated_type)
         schema = self._apply_annotations(lambda x: x, source_type, annotations)
         # put the default validator last so that TypeAdapter.get_default_value() works
@@ -1115,13 +1080,12 @@ class GenerateSchema:
         return None
 
     def _prepare_annotations(self, source_type: Any, annotations: Iterable[Any]) -> tuple[Any, list[Any]]:
-        """
-        Call `__prepare_pydantic_annotations__` if it exists and return a tuple of (new_source_type, new_annotations).
+        """Call `__prepare_pydantic_annotations__` if it exists and return a tuple of
+            (new_source_type, new_annotations).
 
         This should be treated conceptually similar to the transformation
         `Annotated[source_type, *annotations]` -> `Annotated[new_source_type, *new_annotations]`
         """
-
         prepare = getattr(source_type, '__prepare_pydantic_annotations__', None)
 
         annotations = tuple(annotations)  # make them immutable to avoid confusion over mutating them
@@ -1142,8 +1106,7 @@ class GenerateSchema:
         source_type: Any,
         annotations: list[Any],
     ) -> CoreSchema:
-        """
-        Apply arguments from `Annotated` or from `FieldInfo` to a schema.
+        """Apply arguments from `Annotated` or from `FieldInfo` to a schema.
 
         This gets called by `GenerateSchema._annotated_schema` but differs from it in that it does
         not expect `source_type` to be an `Annotated` object, it expects it to be  the first argument of that
@@ -1234,9 +1197,7 @@ class GenerateSchema:
     def _apply_field_serializers(
         self, schema: core_schema.CoreSchema, serializers: list[Decorator[FieldSerializerDecoratorInfo]]
     ) -> core_schema.CoreSchema:
-        """
-        Apply field serializers to a schema.
-        """
+        """Apply field serializers to a schema."""
         if serializers:
             # use the last serializer to make it easy to override a serializer set on a parent model
             serializer = serializers[-1]
@@ -1269,9 +1230,7 @@ class GenerateSchema:
     def _apply_model_serializers(
         self, schema: core_schema.CoreSchema, serializers: Iterable[Decorator[ModelSerializerDecoratorInfo]]
     ) -> core_schema.CoreSchema:
-        """
-        Apply model serializers to a schema.
-        """
+        """Apply model serializers to a schema."""
         ref: str | None = schema.pop('ref', None)  # type: ignore
         if serializers:
             serializer = list(serializers)[-1]
@@ -1328,9 +1287,7 @@ def apply_validators(
     | Iterable[Decorator[ValidatorDecoratorInfo]]
     | Iterable[Decorator[FieldValidatorDecoratorInfo]],
 ) -> core_schema.CoreSchema:
-    """
-    Apply validators to a schema.
-    """
+    """Apply validators to a schema."""
     for validator in validators:
         info_arg = inspect_validator(validator.func, validator.info.mode)
         if not info_arg:
@@ -1344,8 +1301,7 @@ def apply_validators(
 
 
 def _validators_require_validate_default(validators: Iterable[Decorator[ValidatorDecoratorInfo]]) -> bool:
-    """
-    In v1, if any of the validators for a field had `always=True`, the default value would be validated.
+    """In v1, if any of the validators for a field had `always=True`, the default value would be validated.
 
     This serves as an auxiliary function for re-implementing that logic, by looping over a provided
     collection of (v1-style) ValidatorDecoratorInfo's and checking if any of them have `always=True`.
@@ -1365,8 +1321,7 @@ def apply_model_validators(
     validators: Iterable[Decorator[ModelValidatorDecoratorInfo]],
     mode: Literal['inner', 'outer', 'all'],
 ) -> core_schema.CoreSchema:
-    """
-    Apply model validators to a schema.
+    """Apply model validators to a schema.
 
     If mode == 'inner', only "before" validators are applied
     If mode == 'outer', validators other than "before" are applied
@@ -1435,9 +1390,7 @@ def wrap_default(field_info: FieldInfo, schema: core_schema.CoreSchema) -> core_
 
 
 def get_first_arg(type_: Any) -> Any:
-    """
-    Get the first argument from a typing object, e.g. `List[int]` -> `int`, or `Any` if no argument.
-    """
+    """Get the first argument from a typing object, e.g. `List[int]` -> `int`, or `Any` if no argument."""
     try:
         return get_args(type_)[0]
     except IndexError:
@@ -1445,7 +1398,7 @@ def get_first_arg(type_: Any) -> Any:
 
 
 def _extract_get_pydantic_json_schema(tp: Any, schema: CoreSchema) -> GetJsonSchemaFunction | None:
-    """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`"""
+    """Extract `__get_pydantic_json_schema__` from a type, handling the deprecated `__modify_schema__`."""
     js_modify_function = getattr(tp, '__get_pydantic_json_schema__', None)
 
     if hasattr(tp, '__modify_schema__'):

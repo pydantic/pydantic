@@ -1,6 +1,4 @@
-"""
-Old `@validator` and `@root_validator` function validators from V1.
-"""
+"""Old `@validator` and `@root_validator` function validators from V1."""
 
 from __future__ import annotations as _annotations
 
@@ -85,8 +83,7 @@ def validator(
     check_fields: bool | None = None,
     allow_reuse: bool = False,
 ) -> Callable[[_V1ValidatorType], _V1ValidatorType]:
-    """
-    Decorate methods on the class indicating that they should be used to validate fields.
+    """Decorate methods on the class indicating that they should be used to validate fields.
 
     Args:
         __field (str): The first field the validator should be called on; this is separate
@@ -193,8 +190,7 @@ def root_validator(
     skip_on_failure: bool = False,
     allow_reuse: bool = False,
 ) -> Any:
-    """
-    Decorate methods on a model indicating that they should be used to validate (and perhaps
+    """Decorate methods on a model indicating that they should be used to validate (and perhaps
     modify) data either before or after standard model parsing/validation is performed.
 
     Args:

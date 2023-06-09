@@ -19,9 +19,7 @@ __all__ = 'GetJsonSchemaHandler', 'GetCoreSchemaHandler'
 
 
 class GetJsonSchemaHandler:
-    """
-    Handler to call into the next JSON schema generation function
-    """
+    """Handler to call into the next JSON schema generation function."""
 
     mode: JsonSchemaMode
 
@@ -59,13 +57,10 @@ class GetJsonSchemaHandler:
 
 
 class GetCoreSchemaHandler:
-    """
-    Handler to call into the next CoreSchema schema generation function
-    """
+    """Handler to call into the next CoreSchema schema generation function."""
 
     def __call__(self, __source_type: Any) -> core_schema.CoreSchema:
-        """
-        Call the inner handler and get the CoreSchema it returns.
+        """Call the inner handler and get the CoreSchema it returns.
         This will call the next CoreSchema modifying function up until it calls
         into Pydantic's internal schema generation machinery, which will raise a
         `pydantic.errors.PydanticSchemaGenerationError` error if it cannot generate
@@ -80,8 +75,7 @@ class GetCoreSchemaHandler:
         raise NotImplementedError
 
     def generate_schema(self, __source_type: Any) -> core_schema.CoreSchema:
-        """
-        Generate a schema unrelated to the current context.
+        """Generate a schema unrelated to the current context.
         Use this function if e.g. you are handling schema generation for a sequence
         and want to generate a schema for its items.
         Otherwise, you may end up doing something like applying a `min_length` constraint

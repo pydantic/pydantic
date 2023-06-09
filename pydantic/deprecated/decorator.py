@@ -32,9 +32,7 @@ def validate_arguments(func: 'AnyCallableT') -> 'AnyCallableT':
 
 
 def validate_arguments(func: Optional['AnyCallableT'] = None, *, config: 'ConfigType' = None) -> Any:
-    """
-    Decorator to validate the arguments passed to a function.
-    """
+    """Decorator to validate the arguments passed to a function."""
     warnings.warn(
         'The `validate_arguments` method is deprecated; use `validate_call` instead.', DeprecationWarning, stacklevel=2
     )

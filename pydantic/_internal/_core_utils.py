@@ -67,8 +67,7 @@ def is_list_like_schema_with_items_schema(
 
 
 def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None = None) -> str:
-    """
-    Produces the ref to be used for this type by pydantic_core's core schemas.
+    """Produces the ref to be used for this type by pydantic_core's core schemas.
 
     This `args_override` argument was added for the purpose of creating valid recursive references
     when creating generic models without needing to create a concrete class.
@@ -102,8 +101,7 @@ def get_type_ref(type_: type[Any], args_override: tuple[type[Any], ...] | None =
 
 
 def consolidate_refs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    """
-    This function walks a schema recursively, replacing all but the first occurrence of each ref with
+    """This function walks a schema recursively, replacing all but the first occurrence of each ref with
     a definition-ref schema referencing that ref.
 
     This makes the fundamental assumption that any time two schemas have the same ref, occurrences
@@ -544,17 +542,15 @@ def _simplify_schema_references(schema: core_schema.CoreSchema, inline: bool) ->
 
 
 def flatten_schema_defs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    """
-    Simplify schema references by:
-      1. Grouping all definitions into a single top-level `definitions` schema, similar to a JSON schema's `#/$defs`.
+    """Simplify schema references by:
+    1. Grouping all definitions into a single top-level `definitions` schema, similar to a JSON schema's `#/$defs`.
     """
     return _simplify_schema_references(schema, inline=False)
 
 
 def inline_schema_defs(schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-    """
-    Simplify schema references by:
-      1. Inlining any definitions that are only referenced in one place and are not involved in a cycle.
-      2. Removing any unused `ref` references from schemas.
+    """Simplify schema references by:
+    1. Inlining any definitions that are only referenced in one place and are not involved in a cycle.
+    2. Removing any unused `ref` references from schemas.
     """
     return _simplify_schema_references(schema, inline=True)
