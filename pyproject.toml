@@ -182,7 +182,6 @@ convention = "google"
 'pydantic/json_schema.py' = ['D']
 'pydantic/main.py' = ['D']
 'pydantic/mypy.py' = ['D']
-'pydantic/networks.py' = ['D']
 'pydantic/root_model.py' = ['D']
 'pydantic/type_adapter.py' = ['D']
 'pydantic/types.py' = ['D']
