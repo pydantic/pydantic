@@ -146,6 +146,8 @@ markdown_extensions:
     permalink: true
     title: Page contents
 - admonition
+- pymdownx.details
+- pymdownx.superfences
 - pymdownx.highlight
 - pymdownx.extra
 - pymdownx.emoji:
