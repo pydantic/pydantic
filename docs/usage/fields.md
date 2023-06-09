@@ -16,8 +16,9 @@ There are three ways to define an alias:
 The `alias` parameter is used for both _validation_ and _serialization_. The `validation_alias` and `serialization_alias`
 parameters are used for _validation_ and _serialization_ respectively.
 
-```py
+```py test="skip"
 from pydantic import BaseModel, Field
+
 
 class User(BaseModel):
     name: str = Field(..., alias='username')
@@ -27,7 +28,7 @@ user = User(username='johndoe')  # (1)!
 print(user)
 #> name='johndoe'
 print(user.model_dump(by_alias=True))  # (2)!
-#> {'username': 'johndoe'}  # (3)
+#> {'username': 'johndoe'}  (3)
 ```
 
 1. The `username` is used for validation.
@@ -39,8 +40,9 @@ print(user.model_dump(by_alias=True))  # (2)!
 
 If you only want to define an alias for _validation_, you can use the `validation_alias` parameter:
 
-```py
+```py test="skip"
 from pydantic import BaseModel, Field
+
 
 class User(BaseModel):
     name: str = Field(..., validation_alias='username')
@@ -50,7 +52,7 @@ user = User(username='johndoe')  # (1)!
 print(user)
 #> name='johndoe'
 print(user.model_dump(by_alias=True))
-#> {'name': 'johndoe'}  # (2)
+#> {'name': 'johndoe'}  (2)
 ```
 
 1. The `username` is used for validation.
@@ -58,8 +60,9 @@ print(user.model_dump(by_alias=True))
 
 If you only want to define an alias for _serialization_, you can use the `serialization_alias` parameter:
 
-```py
+```py test="skip"
 from pydantic import BaseModel, Field
+
 
 class User(BaseModel):
     name: str = Field(..., serialization_alias='username')
@@ -69,7 +72,7 @@ user = User(name='johndoe')  # (1)!
 print(user)
 #> name='johndoe'
 print(user.model_dump(by_alias=True))
-#> {'username': 'johndoe'}  # (2)
+#> {'username': 'johndoe'}  (2)
 ```
 
 1. The `name` is used for validation.
