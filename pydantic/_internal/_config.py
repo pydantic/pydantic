@@ -65,14 +65,18 @@ class ConfigWrapper:
     @classmethod
     def for_model(cls, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]) -> Self:
         """
-        Build a new `ConfigDict` instance for a `BaseModel` based on (from lowest to highest)
+        Build a new `ConfigWrapper` instance for a `BaseModel` based on (from lowest to highest)
         - options defined in base
         - options defined in namespace
         - options defined via kwargs
 
-        :param bases: tuple of base classes
-        :param namespace: namespace of the class being created
-        :param kwargs: kwargs passed to the class being created
+        Args:
+            bases: A tuple of base classes.
+            namespace: The namespace of the class being created.
+            kwargs: The kwargs passed to the class being created.
+
+        Returns:
+            A `ConfigWrapper` instance for `BaseModel`.
         """
 
         config_new = ConfigDict()
@@ -117,6 +121,12 @@ class ConfigWrapper:
         Pass `obj=None` if you do not want to attempt to infer the `title`.
 
         We don't use getattr here since we don't want to populate with defaults.
+
+        Args:
+            obj: An object used to populate `title` if not set in config.
+
+        Returns:
+            A `CoreConfig` object created from config.
         """
         core_config = core_schema.CoreConfig(
             **core_schema.dict_not_none(
@@ -180,6 +190,12 @@ config_defaults = ConfigDict(
 def prepare_config(config: ConfigDict | dict[str, Any] | type[Any] | None) -> ConfigDict:
     """
     Create a `ConfigDict` instance from an existing dict, a class (e.g. old class-based config) or None.
+
+    Args:
+        config: The input config.
+
+    Returns:
+        A ConfigDict object created from config.
     """
     if config is None:
         return ConfigDict()
@@ -226,6 +242,9 @@ V2_RENAMED_KEYS = {
 def check_deprecated(config_dict: ConfigDict) -> None:
     """
     Check for deprecated config keys and warn the user.
+
+    Args:
+        config_dict: The input config.
     """
     deprecated_removed_keys = V2_REMOVED_KEYS & config_dict.keys()
     deprecated_renamed_keys = V2_RENAMED_KEYS.keys() & config_dict.keys()
