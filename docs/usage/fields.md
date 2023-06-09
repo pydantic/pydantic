@@ -84,9 +84,9 @@ print(user.model_dump(by_alias=True))  # (2)!
 1. The field name `'name'` is used for validation.
 2. The serialization alias `'username'` is used for serialization.
 
-In case you use `alias` _and_ `validation_alias` or `serialization_alias` at the same time, the `validation_alias`
-will have priority over `alias` for _validation_, and `serialization_alias` will have priority over `alias` for
-_serialization_.
+In case you use `alias` together with `validation_alias` or `serialization_alias` at the same time,
+the `validation_alias` will have priority over `alias` for validation, and `serialization_alias` will have priority
+over `alias` for serialization.
 
 You can read more about [Alias Precedence](/usage/model_config/#alias-precedence) in the
 [Model Config](/usage/model_config/) documentation.
@@ -172,7 +172,8 @@ You can read more about [Alias Precedence](/usage/model_config/#alias-precedence
     #> {'my_serialization_alias': 1}
     ```
 
-    All of the above will likely also apply to other tools that respect the `@typing.dataclass_transform` decorator,
-    such as Pyright.
+    All of the above will likely also apply to other tools that respect the
+    [`@typing.dataclass_transform`](https://docs.python.org/3/library/typing.html#typing.dataclass_transform)
+    decorator, such as Pyright.
 
 TODO: Document usage of other `Field` keyword arguments
