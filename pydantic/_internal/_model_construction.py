@@ -1,6 +1,4 @@
-"""
-Private logic for creating models.
-"""
+"""Private logic for creating models."""
 from __future__ import annotations as _annotations
 
 import typing
@@ -43,8 +41,8 @@ object_setattr = object.__setattr__
 
 
 class _ModelNamespaceDict(dict):  # type: ignore[type-arg]
-    """
-    A dictionary subclass that intercepts attribute setting on model classes and warns about overriding of decorators.
+    """A dictionary subclass that intercepts attribute setting on model classes and warns about overriding of
+        decorators.
 
     Args:
         k (str): The key to be set.
@@ -100,8 +98,8 @@ class ModelMetaclass(ABCMeta):
                     original_model_post_init = namespace['model_post_init']
 
                     def wrapped_model_post_init(self: BaseModel, __context: Any) -> None:
-                        """
-                        We need to both initialize private attributes and call the user-defined model_post_init method
+                        """We need to both initialize private attributes and call the user-defined model_post_init
+                        method.
                         """
                         init_private_attributes(self, __context)
                         original_model_post_init(self, __context)
@@ -190,9 +188,7 @@ class ModelMetaclass(ABCMeta):
             return super().__new__(mcs, cls_name, bases, namespace, **kwargs)
 
     def __getattr__(self, item: str) -> Any:
-        """
-        This is necessary to keep attribute access working for class attribute access
-        """
+        """This is necessary to keep attribute access working for class attribute access."""
         private_attributes = self.__dict__.get('__private_attributes__')
         if private_attributes and item in private_attributes:
             return private_attributes[item]
@@ -203,8 +199,7 @@ class ModelMetaclass(ABCMeta):
         return _ModelNamespaceDict()
 
     def __instancecheck__(self, instance: Any) -> bool:
-        """
-        Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
+        """Avoid calling ABC _abc_subclasscheck unless we're pretty sure.
 
         See #3829 and python/cpython#92810
         """
@@ -233,8 +228,7 @@ class ModelMetaclass(ABCMeta):
 
 
 def init_private_attributes(self: BaseModel, __context: Any) -> None:
-    """
-    This function is meant to behave like a BaseModel method to initialise private attributes.
+    """This function is meant to behave like a BaseModel method to initialise private attributes.
 
     It takes context as an argument since that's what pydantic-core passes when calling it.
     """
@@ -252,10 +246,9 @@ def inspect_namespace(  # noqa C901
     base_class_vars: set[str],
     base_class_fields: set[str],
 ) -> dict[str, ModelPrivateAttr]:
-    """
-    iterate over the namespace and:
+    """Iterate over the namespace and:
     * gather private attributes
-    * check for items which look like fields but are not (e.g. have no annotation) and warn
+    * check for items which look like fields but are not (e.g. have no annotation) and warn.
     """
     all_ignored_types = ignored_types + IGNORED_TYPES
 
@@ -340,9 +333,7 @@ def single_underscore(name: str) -> bool:
 def set_model_fields(
     cls: type[BaseModel], bases: tuple[type[Any], ...], config_wrapper: ConfigWrapper, types_namespace: dict[str, Any]
 ) -> None:
-    """
-    Collect and set `cls.model_fields` and `cls.__class_vars__`.
-    """
+    """Collect and set `cls.model_fields` and `cls.__class_vars__`."""
     typevars_map = get_model_typevars_map(cls)
     fields, class_vars = collect_model_fields(cls, bases, config_wrapper, types_namespace, typevars_map=typevars_map)
 
@@ -358,8 +349,7 @@ def complete_model_class(
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
 ) -> bool:
-    """
-    Finish building a model class.
+    """Finish building a model class.
 
     Returns `True` if the model is successfully completed, else `False`.
 
@@ -418,9 +408,7 @@ def complete_model_class(
 def generate_model_signature(
     init: Callable[..., None], fields: dict[str, FieldInfo], config_wrapper: ConfigWrapper
 ) -> Signature:
-    """
-    Generate signature for model based on its fields
-    """
+    """Generate signature for model based on its fields."""
     from inspect import Parameter, Signature, signature
     from itertools import islice
 
@@ -489,9 +477,7 @@ def generate_model_signature(
 
 
 class MockValidator:
-    """
-    Mocker for `pydantic_core.SchemaValidator` which just raises an error when one of its methods is accessed.
-    """
+    """Mocker for `pydantic_core.SchemaValidator` which just raises an error when one of its methods is accessed."""
 
     __slots__ = '_error_message', '_code', '_attempt_rebuild'
 
@@ -502,9 +488,7 @@ class MockValidator:
         code: PydanticErrorCodes,
         attempt_rebuild: Callable[[], SchemaValidator | None] | None = None,
     ) -> None:
-        """
-        Attempt rebuild
-        """
+        """Attempt rebuild."""
         self._error_message = error_message
         self._code: PydanticErrorCodes = code
         self._attempt_rebuild = attempt_rebuild
@@ -522,9 +506,8 @@ class MockValidator:
 
 
 def model_extra_private_getattr(self: BaseModel, item: str) -> Any:
-    """
-    This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
-    allow (and store) extra and/or private attributes
+    """This function is used to retrieve unrecognized attribute values from BaseModel subclasses which
+    allow (and store) extra and/or private attributes.
     """
     if item in self.__private_attributes__:
         attribute = self.__private_attributes__[item]

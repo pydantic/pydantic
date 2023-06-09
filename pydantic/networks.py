@@ -46,8 +46,7 @@ __all__ = [
 
 @_dataclasses.dataclass
 class UrlConstraints(_fields.PydanticMetadata):
-    """
-    Url constraints.
+    """Url constraints.
 
     Attributes:
         max_length: The maximum length of the url. Defaults to `None`.
@@ -352,8 +351,7 @@ pretty_email_regex = re.compile(r' *([\w ]*?) *<(.+?)> *')
 
 
 def validate_email(value: str) -> tuple[str, str]:
-    """
-    Email address validation using https://pypi.org/project/email-validator/
+    """Email address validation using https://pypi.org/project/email-validator/.
 
     Notes:
     * raw ip address (literal) domain parts are not allowed.

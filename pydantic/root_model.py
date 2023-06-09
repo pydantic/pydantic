@@ -18,8 +18,7 @@ RootModelRootType = typing.TypeVar('RootModelRootType')
 
 
 class RootModel(BaseModel, typing.Generic[RootModelRootType]):
-    """
-    A Pydantic `BaseModel` for the root object of the model.
+    """A Pydantic `BaseModel` for the root object of the model.
 
     Attributes:
         root (RootModelRootType): The root object of the model.
@@ -42,8 +41,7 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     @classmethod
     def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
-        """
-        Create a new model using the provided root object and update fields set.
+        """Create a new model using the provided root object and update fields set.
 
         Args:
             root: The root object of the model.

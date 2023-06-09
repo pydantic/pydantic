@@ -1,5 +1,4 @@
-"""
-Logic for generating pydantic-core schemas for standard library types.
+"""Logic for generating pydantic-core schemas for standard library types.
 
 Import of this module is deferred since it contains imports of many standard library modules.
 """
@@ -325,7 +324,7 @@ def decimal_prepare_pydantic_annotations(
 
 @slots_dataclass
 class InnerSchemaValidator:
-    """Use a fixed CoreSchema, avoiding interference from outward annotations"""
+    """Use a fixed CoreSchema, avoiding interference from outward annotations."""
 
     core_schema: CoreSchema
     js_schema: JsonSchemaValue | None = None

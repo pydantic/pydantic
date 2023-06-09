@@ -1,6 +1,4 @@
-"""
-Tools to provide pretty/human-readable display of objects.
-"""
+"""Tools to provide pretty/human-readable display of objects."""
 from __future__ import annotations as _annotations
 
 import types
@@ -19,8 +17,7 @@ if typing.TYPE_CHECKING:
 
 
 class PlainRepr(str):
-    """
-    String class where repr doesn't include quotes. Useful with Representation when you want to return a string
+    """String class where repr doesn't include quotes. Useful with Representation when you want to return a string
     representation of something that is valid (or pseudo-valid) python.
     """
 
@@ -38,8 +35,7 @@ class Representation:
     __slots__ = tuple()  # type: typing.Collection[str]
 
     def __repr_args__(self) -> ReprArgs:
-        """
-        Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
+        """Returns the attributes to show in __str__, __repr__, and __pretty__ this is generally overridden.
 
         Can either return:
         * name - value pairs, e.g.: `[('foo_name', 'foo'), ('bar_name', ['b', 'a', 'r'])]`
@@ -52,18 +48,14 @@ class Representation:
         return [(a, v) for a, v in attrs if v is not None]
 
     def __repr_name__(self) -> str:
-        """
-        Name of the instance's class, used in __repr__.
-        """
+        """Name of the instance's class, used in __repr__."""
         return self.__class__.__name__
 
     def __repr_str__(self, join_str: str) -> str:
         return join_str.join(repr(v) if a is None else f'{a}={v!r}' for a, v in self.__repr_args__())
 
     def __pretty__(self, fmt: typing.Callable[[Any], Any], **kwargs: Any) -> typing.Generator[Any, None, None]:
-        """
-        Used by devtools (https://python-devtools.helpmanual.io/) to pretty print objects.
-        """
+        """Used by devtools (https://python-devtools.helpmanual.io/) to pretty print objects."""
         yield self.__repr_name__() + '('
         yield 1
         for name, value in self.__repr_args__():
@@ -76,9 +68,7 @@ class Representation:
         yield ')'
 
     def __rich_repr__(self) -> RichReprResult:
-        """
-        Used by Rich (https://rich.readthedocs.io/en/stable/pretty.html) to pretty print objects.
-        """
+        """Used by Rich (https://rich.readthedocs.io/en/stable/pretty.html) to pretty print objects."""
         for name, field_repr in self.__repr_args__():
             if name is None:
                 yield field_repr
@@ -93,8 +83,7 @@ class Representation:
 
 
 def display_as_type(obj: Any) -> str:
-    """
-    Pretty representation of a type, should be as close as possible to the original type definition string.
+    """Pretty representation of a type, should be as close as possible to the original type definition string.
 
     Takes some logic from `typing._type_repr`.
     """

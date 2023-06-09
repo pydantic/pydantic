@@ -17,8 +17,7 @@ def apply_discriminator(
 
 
 class _ApplyInferredDiscriminator:
-    """
-    This class is used to convert an input schema containing a union schema into one where that union is
+    """This class is used to convert an input schema containing a union schema into one where that union is
     replaced with a tagged-union, with all the associated debugging and performance benefits.
 
     This is done by:
@@ -85,8 +84,7 @@ class _ApplyInferredDiscriminator:
         self._used = False
 
     def apply(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        """
-        Return a new CoreSchema based on `schema` that uses a tagged-union with the discriminator provided
+        """Return a new CoreSchema based on `schema` that uses a tagged-union with the discriminator provided
         to this class.
         """
         old_definitions = collect_definitions(schema)
@@ -104,8 +102,7 @@ class _ApplyInferredDiscriminator:
         return schema
 
     def _apply_to_root(self, schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
-        """
-        This method handles the outer-most stage of recursion over the input schema:
+        """This method handles the outer-most stage of recursion over the input schema:
         unwrapping nullable or definitions schemas, and calling the `_handle_choice`
         method iteratively on the choices extracted (recursively) from the possibly-wrapped union.
         """
@@ -159,8 +156,7 @@ class _ApplyInferredDiscriminator:
         )
 
     def _handle_choice(self, choice: core_schema.CoreSchema) -> None:
-        """
-        This method handles the "middle" stage of recursion over the input schema.
+        """This method handles the "middle" stage of recursion over the input schema.
         Specifically, it is responsible for handling each choice of the outermost union
         (and any "coalesced" choices obtained from inner unions).
 
@@ -210,8 +206,7 @@ class _ApplyInferredDiscriminator:
             self._set_unique_choice_for_values(choice, inferred_discriminator_values)
 
     def _is_discriminator_shared(self, choice: core_schema.TaggedUnionSchema) -> bool:
-        """
-        This method returns a boolean indicating whether the discriminator for the `choice`
+        """This method returns a boolean indicating whether the discriminator for the `choice`
         is the same as that being used for the outermost tagged union. This is used to
         determine whether this TaggedUnionSchema choice should be "coalesced" into the top level,
         or whether it should be treated as a separate (nested) choice.
@@ -225,8 +220,7 @@ class _ApplyInferredDiscriminator:
     def _infer_discriminator_values_for_choice(  # noqa C901
         self, choice: core_schema.CoreSchema, source_name: str | None
     ) -> list[str | int]:
-        """
-        This function recurses over `choice`, extracting all discriminator values that should map to this choice.
+        """This function recurses over `choice`, extracting all discriminator values that should map to this choice.
 
         `model_name` is accepted for the purpose of producing useful error messages.
         """
@@ -291,8 +285,7 @@ class _ApplyInferredDiscriminator:
     def _infer_discriminator_values_for_typed_dict_choice(
         self, choice: core_schema.TypedDictSchema, source_name: str | None = None
     ) -> list[str | int]:
-        """
-        This method just extracts the _infer_discriminator_values_for_choice logic specific to TypedDictSchema
+        """This method just extracts the _infer_discriminator_values_for_choice logic specific to TypedDictSchema
         for the sake of readability.
         """
         source = 'TypedDict' if source_name is None else f'TypedDict {source_name!r}'
@@ -349,9 +342,8 @@ class _ApplyInferredDiscriminator:
     def _infer_discriminator_values_for_inner_schema(
         self, schema: core_schema.CoreSchema, source: str
     ) -> list[str | int]:
-        """
-        When inferring discriminator values for a field, we typically extract the expected values from a literal schema.
-        This function does that, but also handles nested unions and defaults.
+        """When inferring discriminator values for a field, we typically extract the expected values from a literal
+        schema. This function does that, but also handles nested unions and defaults.
         """
         if schema['type'] == 'literal':
             values = []
@@ -384,8 +376,7 @@ class _ApplyInferredDiscriminator:
             )
 
     def _set_unique_choice_for_values(self, choice: core_schema.CoreSchema, values: Sequence[str | int]) -> None:
-        """
-        This method updates `self.tagged_union_choices` so that all provided (discriminator) `values` map to the
+        """This method updates `self.tagged_union_choices` so that all provided (discriminator) `values` map to the
         provided `choice`, validating that none of these values already map to another (different) choice.
         """
         primary_value: str | int | None = None

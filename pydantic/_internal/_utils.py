@@ -1,5 +1,4 @@
-"""
-Bucket of reusable internal utilities.
+"""Bucket of reusable internal utilities.
 
 This should be reduced as much as possible with functions only used in one place, moved to that place.
 """
@@ -81,8 +80,7 @@ def lenient_issubclass(cls: Any, class_or_tuple: Any) -> bool:  # pragma: no cov
 
 
 def is_basemodel(cls: Any) -> TypeGuard[type[BaseModel]]:
-    """
-    We can remove this function and go back to using lenient_issubclass, but this is nice because it
+    """We can remove this function and go back to using lenient_issubclass, but this is nice because it
     ensures that we get proper type-checking, which lenient_issubclass doesn't provide.
 
     Would be nice if there was a lenient_issubclass-equivalent in typing_extensions, or otherwise
@@ -95,8 +93,7 @@ def is_basemodel(cls: Any) -> TypeGuard[type[BaseModel]]:
 
 
 def is_valid_identifier(identifier: str) -> bool:
-    """
-    Checks that a string is a valid identifier and not a Python keyword.
+    """Checks that a string is a valid identifier and not a Python keyword.
     :param identifier: The identifier to test.
     :return: True if the identifier is valid.
     """
@@ -122,9 +119,7 @@ def update_not_none(mapping: dict[Any, Any], **update: Any) -> None:
 
 
 def almost_equal_floats(value_1: float, value_2: float, *, delta: float = 1e-8) -> bool:
-    """
-    Return True if two floats are almost equal
-    """
+    """Return True if two floats are almost equal."""
     return abs(value_1 - value_2) <= delta
 
 
@@ -136,10 +131,9 @@ def unique_list(
     *,
     name_factory: typing.Callable[[T], str] = str,
 ) -> list[T]:
-    """
-    Make a list unique while maintaining order.
+    """Make a list unique while maintaining order.
     We update the list if another one with the same name is set
-    (e.g. root validator overridden in subclass)
+    (e.g. root validator overridden in subclass).
     """
     result: list[T] = []
     result_names: list[str] = []
@@ -155,9 +149,7 @@ def unique_list(
 
 
 class ValueItems(_repr.Representation):
-    """
-    Class for more convenient calculation of excluded or included fields on values.
-    """
+    """Class for more convenient calculation of excluded or included fields on values."""
 
     __slots__ = ('_items', '_type')
 
@@ -170,33 +162,28 @@ class ValueItems(_repr.Representation):
         self._items: MappingIntStrAny = items  # type: ignore
 
     def is_excluded(self, item: Any) -> bool:
-        """
-        Check if item is fully excluded.
+        """Check if item is fully excluded.
 
         :param item: key or index of a value
         """
         return self.is_true(self._items.get(item))
 
     def is_included(self, item: Any) -> bool:
-        """
-        Check if value is contained in self._items
+        """Check if value is contained in self._items.
 
         :param item: key or index of value
         """
         return item in self._items
 
     def for_element(self, e: int | str) -> AbstractSetIntStr | MappingIntStrAny | None:
-        """
-        :param e: key or index of element on value
+        """:param e: key or index of element on value
         :return: raw values for element if self._items is dict and contain needed element
         """
-
         item = self._items.get(e)  # type: ignore
         return item if not self.is_true(item) else None
 
     def _normalize_indexes(self, items: MappingIntStrAny, v_length: int) -> dict[int | str, Any]:
-        """
-        :param items: dict or set of indexes which will be normalized
+        """:param items: dict or set of indexes which will be normalized
         :param v_length: length of sequence indexes of which will be
 
         >>> self._normalize_indexes({0: True, -2: True, -1: True}, 4)
@@ -204,7 +191,6 @@ class ValueItems(_repr.Representation):
         >>> self._normalize_indexes({'__all__': True}, 4)
         {0: True, 1: True, 2: True, 3: True}
         """
-
         normalized_items: dict[int | str, Any] = {}
         all_items = None
         for i, v in items.items():
@@ -235,8 +221,7 @@ class ValueItems(_repr.Representation):
 
     @classmethod
     def merge(cls, base: Any, override: Any, intersect: bool = False) -> Any:
-        """
-        Merge a `base` item with an `override` item.
+        """Merge a `base` item with an `override` item.
 
         Both `base` and `override` are converted to dictionaries if possible.
         Sets are converted to dictionaries with the sets entries as keys and
@@ -305,9 +290,7 @@ if typing.TYPE_CHECKING:
 else:
 
     class ClassAttribute:
-        """
-        Hide class attribute from its instances
-        """
+        """Hide class attribute from its instances."""
 
         __slots__ = 'name', 'value'
 
@@ -325,12 +308,10 @@ Obj = TypeVar('Obj')
 
 
 def smart_deepcopy(obj: Obj) -> Obj:
-    """
-    Return type as is for immutable built-in types
+    """Return type as is for immutable built-in types
     Use obj.copy() for built-in empty collections
-    Use copy.deepcopy() for non-empty collections and unknown objects
+    Use copy.deepcopy() for non-empty collections and unknown objects.
     """
-
     obj_type = obj.__class__
     if obj_type in IMMUTABLE_NON_COLLECTIONS_TYPES:
         return obj  # fastest case: obj is immutable and not collection therefore will not be copied anyway
@@ -349,8 +330,7 @@ _EMPTY = object()
 
 
 def all_identical(left: typing.Iterable[Any], right: typing.Iterable[Any]) -> bool:
-    """
-    Check that the items of `left` are the same objects as those in `right`.
+    """Check that the items of `left` are the same objects as those in `right`.
 
     >>> a, b = object(), object()
     >>> all_identical([a, b, a], [a, b, a])

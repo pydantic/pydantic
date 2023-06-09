@@ -30,8 +30,7 @@ if TYPE_CHECKING:
 
 
 def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth: int) -> CoreSchema:
-    """
-    `BaseModel` uses its own `__module__` to find out where it was defined
+    """`BaseModel` uses its own `__module__` to find out where it was defined
     and then look for symbols to resolve forward references in those globals.
     On the other hand this function can be called with arbitrary objects,
     including type aliases where `__module__` (always `typing.py`) is not useful.
@@ -80,9 +79,7 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
 
 
 def _getattr_no_parents(obj: Any, attribute: str) -> Any:
-    """
-    Returns the attribute value without attempting to look up attributes from parent types
-    """
+    """Returns the attribute value without attempting to look up attributes from parent types."""
     if hasattr(obj, '__dict__'):
         try:
             return obj.__dict__[attribute]
@@ -174,8 +171,7 @@ class TypeAdapter(Generic[T]):
         from_attributes: bool | None = None,
         context: dict[str, Any] | None = None,
     ) -> T:
-        """
-        Validate a Python object against the model.
+        """Validate a Python object against the model.
 
         Args:
             __object: The Python object to validate against the model.

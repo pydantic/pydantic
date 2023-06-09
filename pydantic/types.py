@@ -703,9 +703,7 @@ class PaymentCardBrand(str, Enum):
     'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/payment_cards/.'
 )
 class PaymentCardNumber(str):
-    """
-    Based on: https://en.wikipedia.org/wiki/Payment_card_number
-    """
+    """Based on: https://en.wikipedia.org/wiki/Payment_card_number."""
 
     strip_whitespace: ClassVar[bool] = True
     min_length: ClassVar[int] = 12
@@ -750,9 +748,7 @@ class PaymentCardNumber(str):
 
     @classmethod
     def validate_luhn_check_digit(cls, card_number: str) -> str:
-        """
-        Based on: https://en.wikipedia.org/wiki/Luhn_algorithm
-        """
+        """Based on: https://en.wikipedia.org/wiki/Luhn_algorithm."""
         sum_ = int(card_number[-1])
         length = len(card_number)
         parity = length % 2
@@ -770,9 +766,8 @@ class PaymentCardNumber(str):
 
     @staticmethod
     def validate_brand(card_number: str) -> PaymentCardBrand:
-        """
-        Validate length based on BIN for major brands:
-        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
+        """Validate length based on BIN for major brands:
+        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN).
         """
         if card_number[0] == '4':
             brand = PaymentCardBrand.visa
@@ -1033,7 +1028,7 @@ else:
 class EncoderProtocol(Protocol):
     @classmethod
     def decode(cls, data: bytes) -> bytes:
-        """Can throw `PydanticCustomError`"""
+        """Can throw `PydanticCustomError`."""
         ...
 
     @classmethod
@@ -1149,8 +1144,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_internal_dataclass.slots_dataclass
 class WithJsonSchema:
-    """
-    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
+    """Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
 
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
     such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
@@ -1178,9 +1172,8 @@ else:
 
     @_internal_dataclass.slots_dataclass
     class SkipValidation:
-        """
-        If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be skipped.
-        You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
+        """If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be
+            skipped. You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
 
         This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
         and know that it is safe to skip validation for one or more of the fields.
@@ -1204,9 +1197,7 @@ else:
 
 @_internal_dataclass.slots_dataclass
 class TransformSchema:
-    """
-    An annotation that can be used to apply a transform to a core schema.
-    """
+    """An annotation that can be used to apply a transform to a core schema."""
 
     transform: Callable[[CoreSchema], CoreSchema]
 

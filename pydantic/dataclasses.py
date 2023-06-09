@@ -1,6 +1,4 @@
-"""
-Provide an enhanced dataclass that performs validation.
-"""
+"""Provide an enhanced dataclass that performs validation."""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -40,7 +38,6 @@ if sys.version_info >= (3, 10):
         kw_only: bool = ...,
         slots: bool = ...,
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
-        """Overload for `dataclass`."""
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
@@ -110,8 +107,7 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """
-    A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
+    """A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
     but with added validation.
 
     This function should be used similarly to `dataclasses.dataclass`.
@@ -132,6 +128,8 @@ def dataclass(
         validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all pydantic dataclasses
             are validated on init.
         kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
+        slots: Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of
+            new attributes after instantiation. Defaults to `False`.
 
     Returns:
         A decorator that accepts a class as its argument and returns a Pydantic dataclass.
@@ -148,8 +146,7 @@ def dataclass(
         kwargs = {}
 
     def create_dataclass(cls: type[Any]) -> type[PydanticDataclass]:
-        """
-        Create a Pydantic dataclass from a regular dataclass.
+        """Create a Pydantic dataclass from a regular dataclass.
 
         Args:
             cls: The class to create the Pydantic dataclass from.
@@ -157,7 +154,6 @@ def dataclass(
         Returns:
             A Pydantic dataclass.
         """
-
         original_cls = cls
 
         config_dict = config
@@ -222,8 +218,7 @@ if (3, 8) <= sys.version_info < (3, 11):
     # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
 
     def _call_initvar(*args: Any, **kwargs: Any) -> NoReturn:
-        """
-        This function does nothing but raise an error that is as similar as possible to what you'd get
+        """This function does nothing but raise an error that is as similar as possible to what you'd get
         if you were to try calling `InitVar[int]()` without this monkeypatch. The whole purpose is just
         to ensure typing._type_check does not error if the type hint evaluates to `InitVar[<parameter>]`.
         """
@@ -240,8 +235,7 @@ def rebuild_dataclass(
     _parent_namespace_depth: int = 2,
     _types_namespace: dict[str, Any] | None = None,
 ) -> bool | None:
-    """
-    Try to rebuild the pydantic-core schema for the dataclass.
+    """Try to rebuild the pydantic-core schema for the dataclass.
 
     This may be necessary when one of the annotations is a ForwardRef which could not be resolved during
     the initial attempt to build the schema, and automatic rebuilding fails.
