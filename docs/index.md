@@ -18,9 +18,9 @@ Built-in Python type annotations are a useful way to hint about the expected typ
 
 Static type checkers like [mypy](https://mypy-lang.org/) use type annotations to catch potential type-related errors before running the program. But static type checkers can't catch all errors, and they don't affect the runtime behavior of the program.
 
-Pydantic, on the other hand, uses type annotations to perform [data validation](/usage/validators.md) and [type coercion](/usage/conversion_table.md) at runtime, which is particularly useful for ensuring the correctness of user or external data.
+Pydantic, on the other hand, uses type annotations to perform [data validation](usage/validators.md) and [type coercion](usage/conversion_table.md) at runtime, which is particularly useful for ensuring the correctness of user or external data.
 
-Pydantic enables you to convert input data to Python [standard library types and custom types](/usage/types/types.md) in a controlled manner, ensuring they meet the specifications you've provided. This eliminates a significant amount of manual data validation and transformation code, making your program more robust and less prone to errors. It's particularly helpful when dealing with untrusted user input such as form data, [JSON documents](/usage/schema.md), and other data types.
+Pydantic enables you to convert input data to Python [standard library types and custom types](usage/types/types.md) in a controlled manner, ensuring they meet the specifications you've provided. This eliminates a significant amount of manual data validation and transformation code, making your program more robust and less prone to errors. It's particularly helpful when dealing with untrusted user input such as form data, [JSON documents](usage/schema.md), and other data types.
 
 By providing a simple, declarative way of defining how data should be shaped, Pydantic helps you write cleaner, safer, and more reliable code.
 
