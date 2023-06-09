@@ -2127,6 +2127,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
       <p>A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python <code>dataclasses</code>,
 but with added validation.</p>
+<p>This function should be used similarly to <code>dataclasses.dataclass</code>.</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -2160,166 +2161,9 @@ but with added validation.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>If set to <code>False</code>, the <code>dataclass</code> will not generate an <code>__init__</code>,
-and you will need to provide one. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>False</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>repr</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Determines if a <code>__repr__</code> should be generated for the class. Defaults to <code>True</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>True</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>eq</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Determines if a <code>__eq__</code> should be generated for the class. Defaults to <code>True</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>True</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>order</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Determines if comparison magic methods should be generated, such as <code>__lt__</code>, but
-not <code>__eq__</code>. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>False</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>unsafe_hash</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Determines if an unsafe hashing function should be included in the class.</p>
-            </div>
-          </td>
-          <td>
-                <code>False</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>frozen</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Determines if the generated class should be a 'frozen' dataclass, which does not allow its
-attributes to be modified from its constructor. Defaults to <code>False</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>False</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>config</code></td>
-          <td>
-                <code><a class="autorefs autorefs-internal" title="pydantic.config.ConfigDict" href="../config/#pydantic.config.ConfigDict">ConfigDict</a> | type[object] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>A configuration for the <code>dataclass</code> generation. Defaults to <code>None</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>validate_on_init</code></td>
-          <td>
-                <code>bool | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Determines whether the <code>dataclass</code> will be validated upon creation.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>kw_only</code></td>
-          <td>
-                <code>bool</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>Determines if keyword-only parameters should be used on the <code>__init__</code> method. Defaults
-to <code>False</code>.</p>
-            </div>
-          </td>
-          <td>
-                <code>False</code>
-          </td>
-        </tr>
-    </tbody>
-  </table>
-
-  <p><strong>Parameters:</strong></p>
-  <table>
-    <thead>
-      <tr>
-        <th>Name</th>
-        <th>Type</th>
-        <th>Description</th>
-        <th>Default</th>
-      </tr>
-    </thead>
-    <tbody>
-        <tr>
-          <td><code>_cls</code></td>
-          <td>
-                <code>type[<span title="pydantic.dataclasses._T">_T</span>] | None</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>The target dataclass.</p>
-            </div>
-          </td>
-          <td>
-                <code>None</code>
-          </td>
-        </tr>
-        <tr>
-          <td><code>init</code></td>
-          <td>
-                <code><span title="typing_extensions.Literal">Literal</span>[False]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>If set to <code>False</code>, the dataclass will not generate an <code>__init__</code>,
-and you will need to provide one. Defaults to <code>False</code>.</p>
+              <p>Included for signature compatibility with <code>dataclasses.dataclass</code>, and is passed through to
+<code>dataclasses.dataclass</code> when appropriate. If specified, must be set to <code>False</code>, as pydantic inserts its
+own  <code>__init__</code> function. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -2419,7 +2263,8 @@ attributes to be modified from its constructor. Defaults to <code>False</code>.<
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines whether the dataclass will be validated upon creation.</p>
+              <p>A deprecated parameter included for backwards compatibility; in V2, all pydantic dataclasses
+are validated on init.</p>
             </div>
           </td>
           <td>
@@ -2433,8 +2278,7 @@ attributes to be modified from its constructor. Defaults to <code>False</code>.<
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines if keyword-only parameters should be used on the <code>__init__</code> method. Defaults
-to <code>False</code>.</p>
+              <p>Determines if <code>__init__</code> method parameters must be specified by keyword only. Defaults to <code>False</code>.</p>
             </div>
           </td>
           <td>
@@ -2459,17 +2303,7 @@ to <code>False</code>.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>A callable that takes a <code>type</code> as its argument, and returns a <code>type</code> of <code>PydanticDataclass</code>. This can</p>
-            </div>
-          </td>
-        </tr>
-        <tr>
-          <td>
-                <code><span title="typing.Callable">Callable</span>[[type[<span title="pydantic.dataclasses._T">_T</span>]], type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]] | type[<span title="pydantic._internal._dataclasses.PydanticDataclass">PydanticDataclass</span>]</code>
-          </td>
-          <td>
-            <div class="doc-md-description">
-              <p>also return a <code>tyoe</code> of <code>PydanticDataclass</code> directly.</p>
+              <p>A decorator that accepts a class as its argument and returns a Pydantic dataclass.</p>
             </div>
           </td>
         </tr>
@@ -2491,7 +2325,7 @@ to <code>False</code>.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Raised if <code>init</code> is not <code>False</code>.</p>
+              <p>Raised if <code>init</code> is not <code>False</code> or <code>validate_on_init</code> is <code>False</code>.</p>
             </div>
           </td>
         </tr>
@@ -2500,7 +2334,10 @@ to <code>False</code>.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">101</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
 <span class="normal">102</span>
 <span class="normal">103</span>
 <span class="normal">104</span>
@@ -2614,25 +2451,7 @@ to <code>False</code>.</p>
 <span class="normal">212</span>
 <span class="normal">213</span>
 <span class="normal">214</span>
-<span class="normal">215</span>
-<span class="normal">216</span>
-<span class="normal">217</span>
-<span class="normal">218</span>
-<span class="normal">219</span>
-<span class="normal">220</span>
-<span class="normal">221</span>
-<span class="normal">222</span>
-<span class="normal">223</span>
-<span class="normal">224</span>
-<span class="normal">225</span>
-<span class="normal">226</span>
-<span class="normal">227</span>
-<span class="normal">228</span>
-<span class="normal">229</span>
-<span class="normal">230</span>
-<span class="normal">231</span>
-<span class="normal">232</span>
-<span class="normal">233</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">))</span>
+<span class="normal">215</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="nd">@dataclass_transform</span><span class="p">(</span><span class="n">field_specifiers</span><span class="o">=</span><span class="p">(</span><span class="n">dataclasses</span><span class="o">.</span><span class="n">field</span><span class="p">,</span> <span class="n">Field</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">dataclass</span><span class="p">(</span>
     <span class="n">_cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">_T</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
@@ -2651,26 +2470,13 @@ to <code>False</code>.</p>
 <span class="sd">    A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,</span>
 <span class="sd">    but with added validation.</span>
 
-<span class="sd">    Args:</span>
-<span class="sd">        _cls (type[_T] | None): The target dataclass.</span>
-<span class="sd">        init (Literal[False]): If set to `False`, the `dataclass` will not generate an `__init__`,</span>
-<span class="sd">            and you will need to provide one. Defaults to `False`.</span>
-<span class="sd">        repr (bool): Determines if a `__repr__` should be generated for the class. Defaults to `True`.</span>
-<span class="sd">        eq (bool): Determines if a `__eq__` should be generated for the class. Defaults to `True`.</span>
-<span class="sd">        order (bool): Determines if comparison magic methods should be generated, such as `__lt__`, but</span>
-<span class="sd">            not `__eq__`. Defaults to `False`.</span>
-<span class="sd">        unsafe_hash (bool): Determines if an unsafe hashing function should be included in the class.</span>
-<span class="sd">        frozen (bool): Determines if the generated class should be a &#39;frozen&#39; dataclass, which does not allow its</span>
-<span class="sd">            attributes to be modified from its constructor. Defaults to `False`.</span>
-<span class="sd">        config (ConfigDict | type[object] | None): A configuration for the `dataclass` generation. Defaults to `None`.</span>
-<span class="sd">        validate_on_init (bool | None): Determines whether the `dataclass` will be validated upon creation.</span>
-<span class="sd">        kw_only (bool): Determines if keyword-only parameters should be used on the `__init__` method. Defaults</span>
-<span class="sd">            to `False`.</span>
+<span class="sd">    This function should be used similarly to `dataclasses.dataclass`.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        _cls: The target dataclass.</span>
-<span class="sd">        init: If set to `False`, the dataclass will not generate an `__init__`,</span>
-<span class="sd">            and you will need to provide one. Defaults to `False`.</span>
+<span class="sd">        init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to</span>
+<span class="sd">            `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its</span>
+<span class="sd">            own  `__init__` function. Defaults to `False`.</span>
 <span class="sd">        repr: Determines if a `__repr__` should be generated for the class. Defaults to `True`.</span>
 <span class="sd">        eq: Determines if a `__eq__` should be generated for the class. Defaults to `True`.</span>
 <span class="sd">        order: Determines if comparison magic methods should be generated, such as` __lt__`, but</span>
@@ -2679,18 +2485,18 @@ to <code>False</code>.</p>
 <span class="sd">        frozen: Determines if the generated class should be a &#39;frozen&#39; dataclass, which does not allow its</span>
 <span class="sd">            attributes to be modified from its constructor. Defaults to `False`.</span>
 <span class="sd">        config: A configuration for the dataclass generation. Defaults to `None`.</span>
-<span class="sd">        validate_on_init: Determines whether the dataclass will be validated upon creation.</span>
-<span class="sd">        kw_only: Determines if keyword-only parameters should be used on the `__init__` method. Defaults</span>
-<span class="sd">            to `False`.</span>
+<span class="sd">        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all pydantic dataclasses</span>
+<span class="sd">            are validated on init.</span>
+<span class="sd">        kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        A callable that takes a `type` as its argument, and returns a `type` of `PydanticDataclass`. This can</span>
-<span class="sd">        also return a `tyoe` of `PydanticDataclass` directly.</span>
+<span class="sd">        A decorator that accepts a class as its argument and returns a Pydantic dataclass.</span>
 
 <span class="sd">    Raises:</span>
-<span class="sd">        AssertionError: Raised if `init` is not `False`.</span>
+<span class="sd">        AssertionError: Raised if `init` is not `False` or `validate_on_init` is `False`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">assert</span> <span class="n">init</span> <span class="ow">is</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;pydantic.dataclasses.dataclass only supports init=False&#39;</span>
+    <span class="k">assert</span> <span class="n">validate_on_init</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;validate_on_init=False is no longer supported&#39;</span>
 
     <span class="k">if</span> <span class="n">sys</span><span class="o">.</span><span class="n">version_info</span> <span class="o">&gt;=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">10</span><span class="p">):</span>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kw_only</span><span class="o">=</span><span class="n">kw_only</span><span class="p">,</span> <span class="n">slots</span><span class="o">=</span><span class="n">slots</span><span class="p">)</span>
@@ -2698,16 +2504,14 @@ to <code>False</code>.</p>
         <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">def</span> <span class="nf">create_dataclass</span><span class="p">(</span><span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a Pydantic dataclass from a regular dataclass.</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Create a Pydantic dataclass from a regular dataclass.</span>
 
 <span class="sd">        Args:</span>
 <span class="sd">            cls: The class to create the Pydantic dataclass from.</span>
 
 <span class="sd">        Returns:</span>
 <span class="sd">            A Pydantic dataclass.</span>
-
-<span class="sd">        Raises:</span>
-<span class="sd">            TypeError: If a non-class value is provided.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
 
         <span class="n">original_cls</span> <span class="o">=</span> <span class="bp">cls</span>
@@ -2792,7 +2596,9 @@ to <code>False</code>.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Try to rebuild or reconstruct the dataclass core schema.</p>
+      <p>Try to rebuild the pydantic-core schema for the dataclass.</p>
+<p>This may be necessary when one of the annotations is a ForwardRef which could not be resolved during
+the initial attempt to build the schema, and automatic rebuilding fails.</p>
 <p>This is analogous to <code>BaseModel.model_rebuild</code>.</p>
 
   <p><strong>Parameters:</strong></p>
@@ -2894,8 +2700,17 @@ to <code>False</code>.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Returns <code>None</code> if model schema is complete and no rebuilding is required.
-If rebuilding <em>is</em> required, returns <code>True</code> if rebuilding was successful, otherwise <code>False</code>.</p>
+              <p>Returns <code>None</code> if the schema is already "complete" and rebuilding was not required.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+          <td>
+                <code>bool | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>If rebuilding <em>was</em> required, returns <code>True</code> if rebuilding was successful, otherwise <code>False</code>.</p>
             </div>
           </td>
         </tr>
@@ -2904,7 +2719,25 @@ If rebuilding <em>is</em> required, returns <code>True</code> if rebuilding was 
 
       <details class="quote">
         <summary>Source code in <code>pydantic/dataclasses.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">253</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
 <span class="normal">254</span>
 <span class="normal">255</span>
 <span class="normal">256</span>
@@ -2933,22 +2766,7 @@ If rebuilding <em>is</em> required, returns <code>True</code> if rebuilding was 
 <span class="normal">279</span>
 <span class="normal">280</span>
 <span class="normal">281</span>
-<span class="normal">282</span>
-<span class="normal">283</span>
-<span class="normal">284</span>
-<span class="normal">285</span>
-<span class="normal">286</span>
-<span class="normal">287</span>
-<span class="normal">288</span>
-<span class="normal">289</span>
-<span class="normal">290</span>
-<span class="normal">291</span>
-<span class="normal">292</span>
-<span class="normal">293</span>
-<span class="normal">294</span>
-<span class="normal">295</span>
-<span class="normal">296</span>
-<span class="normal">297</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_dataclass</span><span class="p">(</span>
+<span class="normal">282</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">rebuild_dataclass</span><span class="p">(</span>
     <span class="bp">cls</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">PydanticDataclass</span><span class="p">],</span>
     <span class="o">*</span><span class="p">,</span>
     <span class="n">force</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -2957,7 +2775,10 @@ If rebuilding <em>is</em> required, returns <code>True</code> if rebuilding was 
     <span class="n">_types_namespace</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Try to rebuild or reconstruct the dataclass core schema.</span>
+<span class="sd">    Try to rebuild the pydantic-core schema for the dataclass.</span>
+
+<span class="sd">    This may be necessary when one of the annotations is a ForwardRef which could not be resolved during</span>
+<span class="sd">    the initial attempt to build the schema, and automatic rebuilding fails.</span>
 
 <span class="sd">    This is analogous to `BaseModel.model_rebuild`.</span>
 
@@ -2969,8 +2790,8 @@ If rebuilding <em>is</em> required, returns <code>True</code> if rebuilding was 
 <span class="sd">        _types_namespace: The types namespace, defaults to `None`.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        Returns `None` if model schema is complete and no rebuilding is required.</span>
-<span class="sd">            If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.</span>
+<span class="sd">        Returns `None` if the schema is already &quot;complete&quot; and rebuilding was not required.</span>
+<span class="sd">        If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">force</span> <span class="ow">and</span> <span class="bp">cls</span><span class="o">.</span><span class="n">__pydantic_complete__</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
