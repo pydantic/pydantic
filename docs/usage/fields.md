@@ -13,8 +13,9 @@ There are three ways to define an alias:
 * `Field(..., validation_alias='foo')`
 * `Field(..., serialization_alias='foo')`
 
-The `alias` parameter is used for both _validation_ and _serialization_. The `validation_alias` and `serialization_alias`
-parameters are used for _validation_ and _serialization_ respectively.
+The `alias` parameter is used for both validation _and_ serialization. If you want to use 
+_different_ aliases for validation and serialization respectively, you can use the`validation_alias`
+and `serialization_alias` parameters, which will apply only in their respective use cases.
 
 ```py test="skip"
 from pydantic import BaseModel, Field
