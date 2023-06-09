@@ -31,7 +31,7 @@ Some of the main features of Pydantic include:
 - [**Custom and nested models**](/usage/models.md): You can define models (similar to classes) that contain other models, allowing for complex data structures to be neatly and efficiently represented.
 - [**Generic models**](/usage/models.md/#generic-models): Pydantic supports generic models, which allow the declaration of models that are "parameterized" on one or more fields.
 - [**Dataclasses**](/usage/dataclasses.md): Pydantic supports `dataclasses.dataclass`, offering same data validation as using `BaseModel`.
-- [**JSON schema generation**](/usage/json_schema.md): Pydantic models can be converted to and from a JSON Schema, which can be useful for documentation, code generation, or other purposes.
+- [**JSON schema generation**](/usage/json_schema.md): Pydantic models can be converted to a JSON Schema, which can be useful for documentation, code generation, or other purposes.
 - [**Error handling**](/errors/errors.md): Pydantic models raise informative errors when invalid data is provided, with the option to create your own [custom errors](/errors/errors.md/#custom-errors).
 - [**Settings management**](/usage/pydantic_settings.md): The `BaseSettings` class from [pydantic-settings](https://github.com/pydantic/pydantic-settings) provides a way to validate, document, and provide default values for environment variables.
 
