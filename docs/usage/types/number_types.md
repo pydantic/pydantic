@@ -65,7 +65,7 @@ class Model(BaseModel):
     mod_decimal: condecimal(multiple_of=Decimal('0.25'))
 ```
 
-Where `Field` refers to the [field function](../schema.md#field-customisation).
+Where `Field` refers to the [field function](../json_schema.md#field-customisation).
 
 ### Arguments to `conint`
 The following arguments are available when using the `conint` type function

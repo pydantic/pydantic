@@ -84,7 +84,8 @@ nav:
       - Routing Numbers: usage/types/extra_types/routing_numbers.md
   - usage/validators.md
   - 'Model Config': usage/model_config.md
-  - usage/schema.md
+  - usage/fields.md
+  - 'JSON Schema': usage/json_schema.md
   - usage/exporting_models.md
   - usage/computed_fields.md
   - usage/dataclasses.md
@@ -145,6 +146,8 @@ markdown_extensions:
     permalink: true
     title: Page contents
 - admonition
+- pymdownx.details
+- pymdownx.superfences
 - pymdownx.highlight
 - pymdownx.extra
 - pymdownx.emoji:
