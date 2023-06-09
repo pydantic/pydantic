@@ -553,7 +553,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _types_namespace: dict[str, Any] | None = None,
     ) -> bool | None:
         """
-        Tries to rebuild or reconstruct the model core schema.
+        Try to rebuild the pydantic-core schema for the model.
+
+        This may be necessary when one of the annotations is a ForwardRef which could not be resolved during
+        the initial attempt to build the schema, and automatic rebuilding fails.
 
         Args:
             force: Whether to force the rebuilding of the model schema, defaults to `False`.
@@ -562,8 +565,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _types_namespace: The types namespace, defaults to `None`.
 
         Returns:
-            Returns `None` if model schema is complete and no rebuilding is required.
-                If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.
+            Returns `None` if the schema is already "complete" and rebuilding was not required.
+            If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
         if not force and cls.__pydantic_complete__:
             return None
