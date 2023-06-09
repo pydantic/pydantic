@@ -1,6 +1,6 @@
 *pydantic* works well with any editor or IDE out of the box because it's made on top of standard Python type annotations.
 
-When using [Visual Studio Code (VS Code)](https://code.visualstudio.com/), there are some **additional editor features** supported, comparable to the ones provided by the [PyCharm plugin](/integrations/pycharm_plugin/).
+When using [Visual Studio Code (VS Code)](https://code.visualstudio.com/), there are some **additional editor features** supported, comparable to the ones provided by the [PyCharm plugin](../integrations/pycharm.md).
 
 This means that you will have **autocompletion** (or "IntelliSense") and **error checks** for types and required arguments even while creating new *pydantic* model instances.
 
@@ -54,7 +54,7 @@ And you will also get error checks for **invalid data types**.
 
 You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pylance).
 
-This would include the errors detected by the [*pydantic* mypy plugin](/integrations/mypy/), if you configured it.
+This would include the errors detected by the [*pydantic* mypy plugin](../integrations/mypy.md), if you configured it.
 
 To enable mypy in VS Code, do the following:
 
@@ -219,7 +219,7 @@ So, this is the equivalent of the previous example, without the additional varia
 
 ### Config in class arguments
 
-*pydantic* has a rich set of [Model Configurations](/usage/model_config/) available.
+*pydantic* has a rich set of [Model Configurations](../usage/model_config.md) available.
 
 These configurations can be set in an internal `class Config` on each model:
 
