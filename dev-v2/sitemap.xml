@@ -226,6 +226,16 @@
          <changefreq>daily</changefreq>
     </url>
     <url>
+         <loc>https://docs.pydantic.dev/latest/usage/fields/</loc>
+         <lastmod>2023-06-09</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
+         <loc>https://docs.pydantic.dev/latest/usage/json_schema/</loc>
+         <lastmod>2023-06-09</lastmod>
+         <changefreq>daily</changefreq>
+    </url>
+    <url>
          <loc>https://docs.pydantic.dev/latest/usage/model_config/</loc>
          <lastmod>2023-06-09</lastmod>
          <changefreq>daily</changefreq>
@@ -242,11 +252,6 @@
     </url>
     <url>
          <loc>https://docs.pydantic.dev/latest/usage/pydantic_settings/</loc>
-         <lastmod>2023-06-09</lastmod>
-         <changefreq>daily</changefreq>
-    </url>
-    <url>
-         <loc>https://docs.pydantic.dev/latest/usage/schema/</loc>
          <lastmod>2023-06-09</lastmod>
          <changefreq>daily</changefreq>
     </url>

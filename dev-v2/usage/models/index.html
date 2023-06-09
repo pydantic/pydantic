@@ -1278,8 +1278,22 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../schema/" class="md-nav__link">
-        Schema
+      <a href="../fields/" class="md-nav__link">
+        Fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json_schema/" class="md-nav__link">
+        JSON Schema
       </a>
     </li>
   
@@ -2526,9 +2540,9 @@ Models possess the following methods and attributes:</p>
     <a href="../exporting_models/#modeldumpjson">Exporting models</a>.</li>
 <li><code>model_extra</code>: get extra fields set during validation.</li>
 <li><code>model_fields_set</code>: set of fields which were set when the model instance was initialised.</li>
-<li><code>model_json_schema()</code>: returns a dictionary representing the model as JSON Schema. See <a href="../schema/">Schema</a>.</li>
+<li><code>model_json_schema()</code>: returns a dictionary representing the model as JSON Schema. See <a href="../json_schema/">JSON Schema</a>.</li>
 <li><code>model_modify_json_schema()</code>: a method for how the "generic" properties of the JSON schema are populated.
-    See <a href="../schema/">Schema</a>.</li>
+    See <a href="../json_schema/">JSON Schema</a>.</li>
 <li><code>model_parameterized_name()</code>: compute the class name for parametrizations of generic classes.</li>
 <li><code>model_post_init()</code>: perform additional initialization after the model is initialised.</li>
 <li><code>model_rebuild()</code>: rebuild the model schema.</li>
@@ -3862,7 +3876,7 @@ immutability of <code>foobar</code> doesn't stop <code>b</code> from being chang
 <ul>
 <li>validation is performed in the order fields are defined; <a href="../validators/">fields validators</a>
   can access the values of earlier fields, but not later ones</li>
-<li>field order is preserved in the model <a href="../schema/">schema</a></li>
+<li>field order is preserved in the model <a href="../json_schema/">schema</a></li>
 <li>field order is preserved in <a href="#error-handling">validation errors</a></li>
 <li>field order is preserved by <a href="../exporting_models/#modeldict"><code>.model_dump()</code> and <code>.model_dump_json()</code> etc.</a></li>
 </ul>
@@ -3901,7 +3915,7 @@ as the value:</p>
     <span class="n">b</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">...</span>
     <span class="n">c</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 </code></pre></div>
-<p>Where <code>Field</code> refers to the <a href="../schema/#field-customization">field function</a>.</p>
+<p>Where <code>Field</code> refers to the <a href="../json_schema/#field-customization">field function</a>.</p>
 <p>Here <code>a</code>, <code>b</code> and <code>c</code> are all required. However, use of the ellipses in <code>b</code> will not work well
 with <a href="/mypy_plugin/">mypy</a>, and as of <strong>v1.0</strong> should be avoided in most cases.</p>
 <h3 id="required-optional-fields">Required Optional fields<a class="headerlink" href="#required-optional-fields" title="Permanent link">&para;</a></h3>
@@ -3979,7 +3993,7 @@ To do this, you may want to use a <code>default_factory</code>.</p>
 <span class="k">assert</span> <span class="n">m1</span><span class="o">.</span><span class="n">uid</span> <span class="o">!=</span> <span class="n">m2</span><span class="o">.</span><span class="n">uid</span>
 <span class="k">assert</span> <span class="n">m1</span><span class="o">.</span><span class="n">updated</span> <span class="o">!=</span> <span class="n">m2</span><span class="o">.</span><span class="n">updated</span>
 </code></pre></div>
-<p>Where <code>Field</code> refers to the <a href="../schema/#field-customization">field function</a>.</p>
+<p>Where <code>Field</code> refers to the <a href="../fields/">field function</a>.</p>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>The <code>default_factory</code> expects the field type to be set.</p>

@@ -1034,8 +1034,22 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="../schema/" class="md-nav__link">
-        Schema
+      <a href="../fields/" class="md-nav__link">
+        Fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../json_schema/" class="md-nav__link">
+        JSON Schema
       </a>
     </li>
   
@@ -2468,9 +2482,9 @@ combinations of these:</p>
 <span class="c1">#&gt; a=1 b=2 c=(3, 4, 5, 6) d=8 e=9 f={&#39;f&#39;: 10, &#39;spam&#39;: 11}</span>
 </code></pre></div>
 <h2 id="using-field-to-describe-function-arguments">Using Field to describe function arguments<a class="headerlink" href="#using-field-to-describe-function-arguments" title="Permanent link">&para;</a></h2>
-<p><a href="../schema/#field-customization">Field</a> can also be used with <code>validate_call</code> to provide extra information about
+<p><a href="../json_schema/#field-customization">Field</a> can also be used with <code>validate_call</code> to provide extra information about
 the field and validations. In general it should be used in a type hint with
-<a href="../schema/#typingannotated-fields">Annotated</a>, unless <code>default_factory</code> is specified, in which case it should be used
+<a href="../json_schema/#typingannotated-fields">Annotated</a>, unless <code>default_factory</code> is specified, in which case it should be used
 as the default value of the field:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">

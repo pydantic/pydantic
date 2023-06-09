@@ -1092,8 +1092,22 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
   
     <li class="md-nav__item">
-      <a href="usage/schema/" class="md-nav__link">
-        Schema
+      <a href="usage/fields/" class="md-nav__link">
+        Fields
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="usage/json_schema/" class="md-nav__link">
+        JSON Schema
       </a>
     </li>
   
@@ -2094,13 +2108,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <a href="https://anaconda.org/conda-forge/pydantic"><img alt="CondaForge" src="https://img.shields.io/conda/v/conda-forge/pydantic.svg" /></a>
 <a href="https://pepy.tech/project/pydantic"><img alt="downloads" src="https://pepy.tech/badge/pydantic/month" /></a><br>
 <a href="https://github.com/pydantic/pydantic/blob/main/LICENSE"><img alt="license" src="https://img.shields.io/github/license/pydantic/pydantic.svg" /></a></p>
-<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/0b22c95499d44293b37ea1465ada3cb8cdc01352">0b22c95</a>.</p>
+<p>Documentation for development version: <a href="https://github.com/pydantic/pydantic/commit/4cd7fba3787d7cdbd3c74a1ee98dfab37f1119a5">4cd7fba</a>.</p>
 <p>Pydantic is the most widely used Python library for data validation and coercion using Python type annotations.</p>
 <h2 id="why-use-pydantic">Why use Pydantic?<a class="headerlink" href="#why-use-pydantic" title="Permanent link">&para;</a></h2>
 <p>Built-in Python type annotations are a useful way to hint about the expected type of data, improving code clarity and supporting development tools. However, Python's type annotations are optional and don't affect the runtime behavior of the program.</p>
 <p>Static type checkers like <a href="https://mypy-lang.org/">mypy</a> use type annotations to catch potential type-related errors before running the program. But static type checkers can't catch all errors, and they don't affect the runtime behavior of the program.</p>
 <p>Pydantic, on the other hand, uses type annotations to perform <a href="/usage/validators.md">data validation</a> and <a href="/usage/conversion_table.md">type coercion</a> at runtime, which is particularly useful for ensuring the correctness of user or external data.</p>
-<p>Pydantic enables you to convert input data to Python <a href="/usage/types/types.md">standard library types and custom types</a> in a controlled manner, ensuring they meet the specifications you've provided. This eliminates a significant amount of manual data validation and transformation code, making your program more robust and less prone to errors. It's particularly helpful when dealing with untrusted user input such as form data, <a href="/usage/schema.md">JSON documents</a>, and other data types.</p>
+<p>Pydantic enables you to convert input data to Python <a href="/usage/types/types.md">standard library types and custom types</a> in a controlled manner, ensuring they meet the specifications you've provided. This eliminates a significant amount of manual data validation and transformation code, making your program more robust and less prone to errors. It's particularly helpful when dealing with untrusted user input such as form data, <a href="/usage/json_schema.md">JSON documents</a>, and other data types.</p>
 <p>By providing a simple, declarative way of defining how data should be shaped, Pydantic helps you write cleaner, safer, and more reliable code.</p>
 <h2 id="features-of-pydantic">Features of Pydantic<a class="headerlink" href="#features-of-pydantic" title="Permanent link">&para;</a></h2>
 <p>Some of the main features of Pydantic include:</p>
@@ -2111,7 +2125,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <li><a href="/usage/models.md"><strong>Custom and nested models</strong></a>: You can define models (similar to classes) that contain other models, allowing for complex data structures to be neatly and efficiently represented.</li>
 <li><a href="/usage/models.md/#generic-models"><strong>Generic models</strong></a>: Pydantic supports generic models, which allow the declaration of models that are "parameterized" on one or more fields.</li>
 <li><a href="/usage/dataclasses.md"><strong>Dataclasses</strong></a>: Pydantic supports <code>dataclasses.dataclass</code>, offering same data validation as using <code>BaseModel</code>.</li>
-<li><a href="/usage/schema.md"><strong>Model schema generation</strong></a>: Pydantic models can be converted to and from a JSON Schema, which can be useful for documentation, code generation, or other purposes.</li>
+<li><a href="/usage/json_schema.md"><strong>JSON schema generation</strong></a>: Pydantic models can be converted to a JSON Schema, which can be useful for documentation, code generation, or other purposes.</li>
 <li><a href="/errors/errors.md"><strong>Error handling</strong></a>: Pydantic models raise informative errors when invalid data is provided, with the option to create your own <a href="/errors/errors.md/#custom-errors">custom errors</a>.</li>
 <li><a href="/usage/pydantic_settings.md"><strong>Settings management</strong></a>: The <code>BaseSettings</code> class from <a href="https://github.com/pydantic/pydantic-settings">pydantic-settings</a> provides a way to validate, document, and provide default values for environment variables.</li>
 </ul>
