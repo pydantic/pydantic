@@ -170,7 +170,7 @@ exclude=['pydantic/v1']
 convention = "google"
 
 [tool.ruff.per-file-ignores]
-'docs/plugins/*' = ['D']
+'docs/*' = ['D']
 'pydantic/_*' = ['D']
 'pydantic/__init__.py' = ['F405', 'F403']
 'tests/test_forward_ref.py' = ['F821']
