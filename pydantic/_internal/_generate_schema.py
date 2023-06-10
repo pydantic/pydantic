@@ -1492,7 +1492,7 @@ class _Definitions:
         Get a definition for `tp` if one exists.
 
         If a definition exists, a tuple of `(ref_string, CoreSchema)` is returned.
-        If no definition exists yet a tuple of (ref_string, None) is returned.
+        If no definition exists yet, a tuple of `(ref_string, None)` is returned.
 
         Note that the returned CoreSchema will always be a DefinitionReferenceSchema,
         not the actual definition itself.
