@@ -88,6 +88,7 @@ class _ApplyInferredDiscriminator:
         to this class.
         """
         old_definitions = collect_definitions(schema)
+        self.definitions = {**old_definitions, **self.definitions}
         assert not self._used
         schema = self._apply_to_root(schema)
         if self._should_be_nullable and not self._is_nullable:

@@ -98,7 +98,8 @@ def complete_dataclass(
                 cls,
                 CallbackGetCoreSchemaHandler(
                     partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-                    gen_schema.generate_schema,
+                    gen_schema,
+                    ref_mode='unpack',
                 ),
             )
         else:
@@ -127,6 +128,8 @@ def complete_dataclass(
         return False
 
     core_config = config_wrapper.core_config(cls)
+
+    schema = gen_schema.collect_definitions(schema)
 
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set

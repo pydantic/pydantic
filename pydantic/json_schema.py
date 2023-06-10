@@ -181,6 +181,14 @@ class GenerateJsonSchema:
 
         self.mode: JsonSchemaMode = 'validation'
 
+        # When we encounter definitions we need to try to build them immediately
+        # so that they are available schemas that reference them
+        # But it's possible that that CoreSchema was never going to be used
+        # (e.g. because the CoreSchema that references short circuits is JSON schema generation without needing
+        #  the reference) so instead of failing altogether if we can't build a definition we
+        # store the error raised and re-throw it if we end up needing that def
+        self.core_defs_invalid_for_json_schema: dict[DefsRef, PydanticInvalidForJsonSchema] = {}
+
     def build_schema_type_to_method(
         self,
     ) -> dict[CoreSchemaOrFieldType, Callable[[CoreSchemaOrField], JsonSchemaValue]]:
@@ -335,6 +343,27 @@ class GenerateJsonSchema:
         # Generate the JSON schema, accounting for the json_schema_override and core_schema_override
         metadata_handler = _core_metadata.CoreMetadataHandler(schema)
 
+        def populate_defs(core_schema: CoreSchema, json_schema: JsonSchemaValue) -> JsonSchemaValue:
+            if 'ref' in core_schema:
+                core_ref = CoreRef(core_schema['ref'])  # type: ignore[typeddict-item]
+                defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
+                json_ref = JsonRef(ref_json_schema['$ref'])
+                self.json_to_defs_refs[json_ref] = defs_ref
+                # Replace the schema if it's not a reference to itself
+                # What we want to avoid is having the def be just a ref to itself
+                # which is what would happen if we blindly assigned any
+                if json_schema.get('$ref', None) != json_ref:
+                    self.definitions[defs_ref] = json_schema
+                    self.core_defs_invalid_for_json_schema.pop(defs_ref, None)
+                json_schema = ref_json_schema
+            if '$ref' in json_schema and len(json_schema.keys()) > 1:
+                # technically you can't have any other keys next to a "$ref"
+                # but it's an easy mistake to make and not hard to correct automatically here
+                json_schema = json_schema.copy()
+                ref = json_schema.pop('$ref')
+                json_schema = {'allOf': [{'$ref': ref}], **json_schema}
+            return json_schema
+
         def handler_func(schema_or_field: CoreSchemaOrField) -> JsonSchemaValue:
             """Generate a JSON schema based on the input schema.
 
@@ -353,12 +382,8 @@ class GenerateJsonSchema:
                 json_schema = generate_for_schema_type(schema_or_field)
             else:
                 raise TypeError(f'Unexpected schema type: schema={schema_or_field}')
-            # Populate the definitions
-            if 'ref' in schema:
-                core_ref = CoreRef(schema['ref'])  # type: ignore[typeddict-item]
-                defs_ref, ref_json_schema = self.get_cache_defs_ref_schema(core_ref)
-                self.definitions[defs_ref] = json_schema
-                json_schema = ref_json_schema
+            if _core_utils.is_core_schema(schema_or_field):
+                json_schema = populate_defs(schema_or_field, json_schema)
             return json_schema
 
         current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, handler_func)
@@ -370,7 +395,10 @@ class GenerateJsonSchema:
                 current_handler: _core_metadata.GetJsonSchemaHandler = current_handler,
                 js_modify_function: _core_metadata.GetJsonSchemaFunction = js_modify_function,
             ) -> JsonSchemaValue:
-                return js_modify_function(schema_or_field, current_handler)
+                json_schema = js_modify_function(schema_or_field, current_handler)
+                if _core_utils.is_core_schema(schema_or_field):
+                    json_schema = populate_defs(schema_or_field, json_schema)
+                return json_schema
 
             current_handler = _schema_generation_shared.GenerateJsonSchemaHandler(self, new_handler_func)
 
@@ -1178,8 +1206,14 @@ class GenerateJsonSchema:
 
     def definitions_schema(self, schema: core_schema.DefinitionsSchema) -> JsonSchemaValue:
         for definition in schema['definitions']:
-            self.generate_inner(definition)
-        return self.generate_inner(schema['schema'])
+            try:
+                self.generate_inner(definition)
+            except PydanticInvalidForJsonSchema as e:
+                core_ref: CoreRef = CoreRef(definition['ref'])  # type: ignore
+                self.core_defs_invalid_for_json_schema[self.get_defs_ref((core_ref, self.mode))] = e
+                continue
+        res = self.generate_inner(schema['schema'])
+        return res
 
     def definition_ref_schema(self, schema: core_schema.DefinitionReferenceSchema) -> JsonSchemaValue:
         core_ref = CoreRef(schema['schema_ref'])
@@ -1388,7 +1422,10 @@ class GenerateJsonSchema:
         return json_schema
 
     def get_schema_from_definitions(self, json_ref: JsonRef) -> JsonSchemaValue | None:
-        return self.definitions.get(self.json_to_defs_refs[json_ref])
+        def_ref = self.json_to_defs_refs[json_ref]
+        if def_ref in self.core_defs_invalid_for_json_schema:
+            raise self.core_defs_invalid_for_json_schema[def_ref]
+        return self.definitions.get(def_ref, None)
 
     def encode_default(self, dft: Any) -> Any:
         return pydantic_core.to_jsonable_python(dft)
@@ -1465,7 +1502,10 @@ class GenerateJsonSchema:
                     json_refs[json_ref] += 1
                     if already_visited:
                         return  # prevent recursion on a definition that was already visited
-                    _add_json_refs(self.definitions[self.json_to_defs_refs[json_ref]])
+                    def_ref = self.json_to_defs_refs[json_ref]
+                    if def_ref in self.core_defs_invalid_for_json_schema:
+                        raise self.core_defs_invalid_for_json_schema[def_ref]
+                    _add_json_refs(self.definitions[def_ref])
                 for v in schema.values():
                     _add_json_refs(v)
             elif isinstance(schema, list):

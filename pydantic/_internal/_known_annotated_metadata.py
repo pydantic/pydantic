@@ -139,10 +139,12 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # 
             return v
 
         return cs.no_info_after_validator_function(val_func, schema)
-
-    # for all other annotations just update the schema
-    # this includes things like `strict` which apply to pretty much every schema
-    schema.update(schema_update)  # type: ignore
+    elif schema_update:
+        # for all other annotations just update the schema
+        # this includes things like `strict` which apply to pretty much every schema
+        schema.update(schema_update)  # type: ignore
+    else:
+        return None
 
     return schema
 
