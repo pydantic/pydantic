@@ -152,7 +152,7 @@ def test_serialize_decorator_always():
         x: Optional[int]
 
         @field_serializer('x')
-        def customise_x_serialisation(v, _info) -> str:
+        def customise_x_serialization(v, _info) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -161,7 +161,7 @@ def test_serialize_decorator_always():
     m = MyModel(x=None)
     # can't use v:, on None, hence error
     error_msg = (
-        'Error calling function `customise_x_serialisation`: '
+        'Error calling function `customise_x_serialization`: '
         'TypeError: unsupported format string passed to NoneType.__format__'
     )
     with pytest.raises(PydanticSerializationError, match=error_msg):
@@ -175,7 +175,7 @@ def test_serialize_decorator_json():
         x: int
 
         @field_serializer('x', when_used='json')
-        def customise_x_serialisation(v) -> str:
+        def customise_x_serialization(v) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 1234}
@@ -188,7 +188,7 @@ def test_serialize_decorator_unless_none():
         x: Optional[int]
 
         @field_serializer('x', when_used='unless-none')
-        def customise_x_serialisation(v):
+        def customise_x_serialization(v):
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -353,7 +353,7 @@ def test_serialize_decorator_self_info():
         x: Optional[int]
 
         @field_serializer('x')
-        def customise_x_serialisation(self, v, info) -> str:
+        def customise_x_serialization(self, v, info) -> str:
             return f'{info.mode}:{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': 'python:1,234'}
@@ -365,7 +365,7 @@ def test_serialize_decorator_self_no_info():
         x: Optional[int]
 
         @field_serializer('x')
-        def customise_x_serialisation(self, v) -> str:
+        def customise_x_serialization(self, v) -> str:
             return f'{v:,}'
 
     assert MyModel(x=1234).model_dump() == {'x': '1,234'}
@@ -799,7 +799,7 @@ def test_serialize_any_model():
 def test_invalid_field():
     msg = (
         r'Decorators defined with incorrect fields:'
-        r' tests.test_serialize.test_invalid_field.<locals>.Model:\d+.customise_b_serialisation'
+        r' tests.test_serialize.test_invalid_field.<locals>.Model:\d+.customise_b_serialization'
         r" \(use check_fields=False if you're inheriting from the model and intended this\)"
     )
     with pytest.raises(errors.PydanticUserError, match=msg):
@@ -808,7 +808,7 @@ def test_invalid_field():
             a: str
 
             @field_serializer('b')
-            def customise_b_serialisation(v):
+            def customise_b_serialization(v):
                 return v
 
 
