@@ -95,7 +95,7 @@ class GetCoreSchemaHandler:
         This means you don't have to check before calling this function.
 
         Args:
-            __maybe_ref_schema: A CoreSchema, ref based or not.
+            __maybe_ref_schema: A `CoreSchema`, `ref`-based or not.
 
         Raises:
             LookupError: if the ref is not found.
