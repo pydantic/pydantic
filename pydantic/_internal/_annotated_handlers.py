@@ -101,6 +101,6 @@ class GetCoreSchemaHandler:
             LookupError: if the ref is not found.
 
         Returns:
-            CoreSchema: A concrete CoreSchema.
+            A concrete `CoreSchema`.
         """
         raise NotImplementedError
