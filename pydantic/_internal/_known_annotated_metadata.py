@@ -58,7 +58,7 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
             yield annotation
 
 
-def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # noqa: C901
+def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | None:  # noqa: C901
     """Apply `annotation` to `schema` if it is an annotation we know about (Gt, Le, etc.).
     Otherwise return `None`.
 
