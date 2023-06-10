@@ -1494,7 +1494,7 @@ class _Definitions:
         If a definition exists, a tuple of `(ref_string, CoreSchema)` is returned.
         If no definition exists yet, a tuple of `(ref_string, None)` is returned.
 
-        Note that the returned CoreSchema will always be a DefinitionReferenceSchema,
+        Note that the returned `CoreSchema` will always be a `DefinitionReferenceSchema`,
         not the actual definition itself.
 
         This should be called for any type that can be identified by reference.
