@@ -164,33 +164,6 @@ def modify_model_json_schema(
     return json_schema
 
 
-class Definitions:
-    def __init__(self) -> None:
-        self.seen: set[str] = set()
-        self.definitions: dict[str, core_schema.CoreSchema] = {}
-
-    @contextmanager
-    def get_schema_or_ref(self, cls: Any) -> Iterator[tuple[str, None] | tuple[str, CoreSchema]]:
-        ref = get_type_ref(cls)
-        if ref in self.seen or ref in self.definitions:
-            yield (ref, core_schema.definition_reference_schema(ref))
-        else:
-            self.seen.add(ref)
-            try:
-                yield (ref, None)
-            finally:
-                self.seen.discard(ref)
-
-
-def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchema]) -> CoreSchema | None:
-    if schema['type'] == 'definition-ref':
-        return definitions.get(schema['schema_ref'], None)
-    elif schema['type'] == 'definitions':
-        return schema['schema']
-    else:
-        return schema
-
-
 class GenerateSchema:
     __slots__ = '_config_wrapper_stack', 'types_namespace', 'typevars_map', 'recursion_cache', 'definitions', 'defs'
 
@@ -205,7 +178,7 @@ class GenerateSchema:
         self.types_namespace = types_namespace
         self.typevars_map = typevars_map
 
-        self.defs = Definitions()
+        self.defs = _Definitions()
 
     @property
     def config_wrapper(self) -> ConfigWrapper:
@@ -1504,3 +1477,50 @@ def _common_field(
         'frozen': frozen,
         'metadata': metadata,
     }
+
+
+class _Definitions:
+    """Keeps track of references and definitions"""
+
+    def __init__(self) -> None:
+        self.seen: set[str] = set()
+        self.definitions: dict[str, core_schema.CoreSchema] = {}
+
+    @contextmanager
+    def get_schema_or_ref(self, tp: Any) -> Iterator[tuple[str, None] | tuple[str, CoreSchema]]:
+        """
+        Get a definition for `tp` if one exists.
+
+        If a definition exists a tuple of (ref_string, CoreSchema) is returned.
+        If no definition exists yet a tuple of (ref_string, None) is returned.
+
+        Note that the returned CoreSchema will always be a DefinitionReferenceSchema,
+        not the actual definition itself.
+
+        This should be called for any type that can be identified by reference.
+        This includes any recursive types.
+        At present the following types can be named / recursive:
+        - BaseModel
+        - Dataclasses
+        - TypedDict
+        - TypeAliasType
+        """
+        ref = get_type_ref(tp)
+        # return the reference if we're either (1) in a cycle or (2) it was already defined
+        if ref in self.seen or ref in self.definitions:
+            yield (ref, core_schema.definition_reference_schema(ref))
+        else:
+            self.seen.add(ref)
+            try:
+                yield (ref, None)
+            finally:
+                self.seen.discard(ref)
+
+
+def resolve_original_schema(schema: CoreSchema, definitions: dict[str, CoreSchema]) -> CoreSchema | None:
+    if schema['type'] == 'definition-ref':
+        return definitions.get(schema['schema_ref'], None)
+    elif schema['type'] == 'definitions':
+        return schema['schema']
+    else:
+        return schema
