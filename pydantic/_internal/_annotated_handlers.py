@@ -98,7 +98,7 @@ class GetCoreSchemaHandler:
             __maybe_ref_schema: A `CoreSchema`, `ref`-based or not.
 
         Raises:
-            LookupError: if the ref is not found.
+            LookupError: If the `ref` is not found.
 
         Returns:
             A concrete `CoreSchema`.
