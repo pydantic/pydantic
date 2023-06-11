@@ -1499,9 +1499,9 @@ class _Definitions:
 
         This should be called for any type that can be identified by reference.
         This includes any recursive types.
-        
+
         At present the following types can be named/recursive:
-        
+
         - BaseModel
         - Dataclasses
         - TypedDict
