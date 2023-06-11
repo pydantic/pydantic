@@ -117,7 +117,7 @@ except ValidationError as e:
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
 
-See [schema](../schema.md) for more details on how the model's schema is generated.
+See [schema](../json_schema.md) for more details on how the model's schema is generated.
 
 ### Arbitrary Types Allowed
 

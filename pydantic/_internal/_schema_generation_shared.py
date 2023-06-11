@@ -1,6 +1,4 @@
-"""
-Types and utility functions used by various other internal tools.
-"""
+"""Types and utility functions used by various other internal tools."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable
@@ -18,8 +16,7 @@ if TYPE_CHECKING:
 
 
 class UnpackedRefJsonSchemaHandler(GetJsonSchemaHandler):
-    """
-    A GetJsonSchemaHandler implementation that automatically unpacks `$ref`
+    """A GetJsonSchemaHandler implementation that automatically unpacks `$ref`
     schemas so that the caller doesn't have to worry about that.
 
     This is used for custom types and models that implement `__get_pydantic_core_schema__`
@@ -71,8 +68,7 @@ def wrap_json_schema_fn_for_model_or_custom_type_with_ref_unpacking(
 
 
 class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
-    """
-    JsonSchemaHandler implementation that doesn't do ref unwrapping by default.
+    """JsonSchemaHandler implementation that doesn't do ref unwrapping by default.
 
     This is used for any Annotated metadata so that we don't end up with conflicting
     modifications to the definition schema.
@@ -103,8 +99,7 @@ class GenerateJsonSchemaHandler(GetJsonSchemaHandler):
 
 
 class CallbackGetCoreSchemaHandler(GetCoreSchemaHandler):
-    """
-    Wrapper to use an arbitrary function as a `GetCoreSchemaHandler`.
+    """Wrapper to use an arbitrary function as a `GetCoreSchemaHandler`.
 
     Used internally by Pydantic, please do not rely on this implementation.
     See `GetCoreSchemaHandler` for the handler API.

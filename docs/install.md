@@ -4,8 +4,12 @@ Installation is as simple as:
 pip install pydantic
 ```
 
-*pydantic* has no required dependencies except Python 3.7, 3.8, 3.9, 3.10 or 3.11 and
-[`typing-extensions`](https://pypi.org/project/typing-extensions/).
+*pydantic* has a few dependencies:
+
+* [`pydantic-core`](https://pypi.org/project/pydantic-core/): Core validation logic for _pydantic_ written in rust.
+* [`typing-extensions`](https://pypi.org/project/typing-extensions/): Backport of the standard library `typing` module.
+* [`annotated-types`](https://pypi.org/project/annotated-types/): Reusable constraint types to use with `typing.Annotated`.
+
 If you've got Python 3.7+ and `pip` installed, you're good to go.
 
 Pydantic is also available on [conda](https://www.anaconda.com) under the [conda-forge](https://conda-forge.org)
@@ -34,7 +38,7 @@ Of course, you can also install requirements manually with `pip install email-va
 And if you prefer to install *pydantic* directly from the repository:
 
 ```bash
-pip install git+git://github.com/pydantic/pydantic@main#egg=pydantic
+pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic
 # or with extras
-pip install git+git://github.com/pydantic/pydantic@main#egg=pydantic[email]
+pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic[email]
 ```

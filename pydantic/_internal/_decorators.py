@@ -1,6 +1,4 @@
-"""
-Logic related to validators applied to models etc. via the `@field_validator` and `@root_validator` decorators.
-"""
+"""Logic related to validators applied to models etc. via the `@field_validator` and `@root_validator` decorators."""
 from __future__ import annotations as _annotations
 
 from collections import deque
@@ -31,8 +29,7 @@ except ImportError:
 
 @slots_dataclass
 class ValidatorDecoratorInfo:
-    """
-    A container for data from `@validator` so that we can access it
+    """A container for data from `@validator` so that we can access it
     while building the pydantic-core schema.
     """
 
@@ -47,8 +44,7 @@ class ValidatorDecoratorInfo:
 
 @slots_dataclass
 class FieldValidatorDecoratorInfo:
-    """
-    A container for data from `@field_validator` so that we can access it
+    """A container for data from `@field_validator` so that we can access it
     while building the pydantic-core schema.
     """
 
@@ -61,8 +57,7 @@ class FieldValidatorDecoratorInfo:
 
 @slots_dataclass
 class RootValidatorDecoratorInfo:
-    """
-    A container for data from `@root_validator` so that we can access it
+    """A container for data from `@root_validator` so that we can access it
     while building the pydantic-core schema.
     """
 
@@ -72,8 +67,7 @@ class RootValidatorDecoratorInfo:
 
 @slots_dataclass
 class FieldSerializerDecoratorInfo:
-    """
-    A container for data from `@field_serializer` so that we can access it
+    """A container for data from `@field_serializer` so that we can access it
     while building the pydantic-core schema.
     """
 
@@ -87,8 +81,7 @@ class FieldSerializerDecoratorInfo:
 
 @slots_dataclass
 class ModelSerializerDecoratorInfo:
-    """
-    A container for data from `@model_serializer` so that we can access it
+    """A container for data from `@model_serializer` so that we can access it
     while building the pydantic-core schema.
     """
 
@@ -100,8 +93,7 @@ class ModelSerializerDecoratorInfo:
 
 @slots_dataclass
 class ModelValidatorDecoratorInfo:
-    """
-    A container for data from `@model_validator` so that we can access it
+    """A container for data from `@model_validator` so that we can access it
     while building the pydantic-core schema.
     """
 
@@ -127,8 +119,7 @@ DecoratedType: TypeAlias = (
 
 @dataclass  # can't use slots here since we set attributes on `__post_init__`
 class PydanticDescriptorProxy(Generic[ReturnType]):
-    """
-    Wrap a classmethod, staticmethod, property or unbound function
+    """Wrap a classmethod, staticmethod, property or unbound function
     and act as a descriptor that allows us to detect decorated items
     from the class' attributes.
 
@@ -162,7 +153,7 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
             self.wrapped.__set_name__(instance, name)
 
     def __getattr__(self, __name: str) -> Any:
-        """Forward checks for __isabstractmethod__ and such"""
+        """Forward checks for __isabstractmethod__ and such."""
         return getattr(self.wrapped, __name)
 
 
@@ -171,8 +162,7 @@ DecoratorInfoType = TypeVar('DecoratorInfoType', bound=DecoratorInfo)
 
 @slots_dataclass
 class Decorator(Generic[DecoratorInfoType]):
-    """
-    A generic container class to join together the decorator metadata
+    """A generic container class to join together the decorator metadata
     (metadata from decorator itself, which we have when the
     decorator is called but not when we are building the core-schema)
     and the bound function (which we have after the class itself is created).
@@ -222,12 +212,10 @@ def get_bases(tp: type[Any]) -> tuple[type[Any], ...]:
 
 
 def mro(tp: type[Any]) -> tuple[type[Any], ...]:
-    """
-    Calculate the Method Resolution Order of bases using the C3 algorithm.
+    """Calculate the Method Resolution Order of bases using the C3 algorithm.
 
     See https://www.python.org/download/releases/2.3/mro/
     """
-
     # try to use the existing mro, for performance mainly
     # but also because it helps verify the implementation below
     if not is_typeddict(tp):
@@ -268,8 +256,7 @@ def mro(tp: type[Any]) -> tuple[type[Any], ...]:
 
 
 def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
-    """
-    Get the attribute from the next class in the MRO that has it,
+    """Get the attribute from the next class in the MRO that has it,
     aiming to simulate calling the method on the actual class.
 
     The reason for iterating over the mro instead of just getting
@@ -311,8 +298,7 @@ class DecoratorInfos:
 
     @staticmethod
     def build(model_dc: type[Any]) -> DecoratorInfos:  # noqa: C901 (ignore complexity)
-        """
-        We want to collect all DecFunc instances that exist as
+        """We want to collect all DecFunc instances that exist as
         attributes in the namespace of the class (a BaseModel or dataclass)
         that called us
         But we want to collect these in the order of the bases
@@ -324,7 +310,6 @@ class DecoratorInfos:
         If we do replace any functions we put the replacement into the position
         the replaced function was in; that is, we maintain the order.
         """
-
         # reminder: dicts are ordered and replacement does not alter the order
         res = DecoratorInfos()
         for base in reversed(mro(model_dc)[1:]):
@@ -400,8 +385,7 @@ class DecoratorInfos:
 
 
 def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) -> bool:
-    """
-    Look at a field or model validator function and determine if it whether it takes an info argument.
+    """Look at a field or model validator function and determine if it whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
 
@@ -433,8 +417,7 @@ def inspect_validator(validator: Callable[..., Any], mode: FieldValidatorModes) 
 
 
 def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> tuple[bool, bool]:
-    """
-    Look at a field serializer function and determine if it is a field serializer,
+    """Look at a field serializer function and determine if it is a field serializer,
     and whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
@@ -468,8 +451,7 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
 
 
 def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
-    """
-    Look at a serializer function used via `Annotated` and determine whether it takes an info argument.
+    """Look at a serializer function used via `Annotated` and determine whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
 
@@ -492,8 +474,7 @@ def inspect_annotated_serializer(serializer: Callable[..., Any], mode: Literal['
 
 
 def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plain', 'wrap']) -> bool:
-    """
-    Look at a model serializer function and determine whether it takes an info argument.
+    """Look at a model serializer function and determine whether it takes an info argument.
 
     An error is raised if the function has an invalid signature.
 
@@ -504,7 +485,6 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
     Returns:
         `info_arg` - whether the function expects an info argument
     """
-
     if isinstance(serializer, (staticmethod, classmethod)) or not is_instance_method_from_sig(serializer):
         raise PydanticUserError(
             '`@model_serializer` must be applied to instance methods', code='model-serializer-instance-method'
@@ -575,8 +555,7 @@ def unwrap_wrapped_function(
     *,
     unwrap_class_static_method: bool = True,
 ) -> Any:
-    """
-    Recursively unwraps a wrapped function until the underlying function is reached.
+    """Recursively unwraps a wrapped function until the underlying function is reached.
     This handles functools.partial, functools.partialmethod, staticmethod and classmethod.
 
     Args:
@@ -633,8 +612,7 @@ def can_be_positional(param: Parameter) -> bool:
 
 
 def ensure_property(f: Any) -> Any:
-    """
-    Ensure that a function is a `property` or `cached_property`, or is a valid descriptor.
+    """Ensure that a function is a `property` or `cached_property`, or is a valid descriptor.
 
     Args:
         f: The function to check.
@@ -642,7 +620,6 @@ def ensure_property(f: Any) -> Any:
     Returns:
         The function, or a `property` or `cached_property` instance wrapping the function.
     """
-
     if ismethoddescriptor(f) or isdatadescriptor(f):
         return f
     else:

@@ -93,7 +93,7 @@ except ValidationError as e:
 
 ## Options
 
-See the [`ConfigDict` API documentation](/api/config/#pydantic.config.ConfigDict) for the full list of settings.
+See the [`ConfigDict` API documentation](../api/config.md#pydantic.config.ConfigDict) for the full list of settings.
 
 ## Change behaviour globally
 
@@ -205,6 +205,10 @@ print(Character.model_json_schema(by_alias=True))
 }
 """
 ```
+
+## Populate by Name
+
+TODO: Add information here.
 
 ## Revalidate instances
 

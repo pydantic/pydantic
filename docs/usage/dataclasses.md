@@ -92,7 +92,7 @@ print(TypeAdapter(User).json_schema())
 keyword argument `config` which has the same meaning as [model_config](model_config.md).
 
 !!! warning
-    After v1.2, [The Mypy plugin](/mypy/) must be installed to type check _pydantic_ dataclasses.
+    After v1.2, [The Mypy plugin](../integrations/mypy.md) must be installed to type check _pydantic_ dataclasses.
 
 For more information about combining validators with dataclasses, see
 [dataclass validators](validators.md#dataclass-validators).

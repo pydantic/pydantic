@@ -23,8 +23,10 @@ _inspect_validator = _decorators.inspect_validator
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class AfterValidator:
-    '''
-    A metadata class that indicates that a validation should be applied **after** the inner validation logic.
+    '''A metadata class that indicates that a validation should be applied **after** the inner validation logic.
+
+    Attributes:
+        func: The validator function.
 
     Example:
         ```py
@@ -45,7 +47,7 @@ class AfterValidator:
             Model(a='a')
         except ValidationError as e:
             print(e.json(indent=2))
-            """
+        """
         [
             {
                 "type": "int_parsing",
@@ -58,6 +60,7 @@ class AfterValidator:
             }
         ]
         """
+        ```
     '''
 
     func: core_schema.NoInfoValidatorFunction | core_schema.GeneralValidatorFunction
@@ -259,8 +262,7 @@ def field_validator(
     mode: FieldValidatorModes = 'after',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """
-    Decorate methods on the class indicating that they should be used to validate fields.
+    """Decorate methods on the class indicating that they should be used to validate fields.
 
     Args:
         __field: The first field the field_validator should be called on; this is separate
@@ -416,8 +418,7 @@ def model_validator(
     *,
     mode: Literal['wrap', 'before', 'after'],
 ) -> Any:
-    """
-    Decorate model methods for validation purposes.
+    """Decorate model methods for validation purposes.
 
     Args:
         mode: A required string literal that specifies the validation mode.

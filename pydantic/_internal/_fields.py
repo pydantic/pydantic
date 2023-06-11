@@ -1,6 +1,4 @@
-"""
-Private logic related to fields (the `Field()` function and `FieldInfo` class), and arguments to `Annotated`.
-"""
+"""Private logic related to fields (the `Field()` function and `FieldInfo` class), and arguments to `Annotated`."""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -36,9 +34,7 @@ def get_type_hints_infer_globalns(
 
 
 class _UndefinedType:
-    """
-    Singleton class to represent an undefined value.
-    """
+    """Singleton class to represent an undefined value."""
 
     def __repr__(self) -> str:
         return 'PydanticUndefined'
@@ -57,9 +53,7 @@ Undefined = _UndefinedType()
 
 
 class PydanticMetadata(Representation):
-    """
-    Base class for annotation markers like `Strict`.
-    """
+    """Base class for annotation markers like `Strict`."""
 
     __slots__ = ()
 
@@ -77,8 +71,7 @@ def collect_model_fields(  # noqa: C901
     *,
     typevars_map: dict[Any, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
-    """
-    Collect the fields of a nascent pydantic model
+    """Collect the fields of a nascent pydantic model.
 
     Also collect the names of any ClassVars present in the type hints.
 

@@ -94,9 +94,9 @@ Models possess the following methods and attributes:
     [Exporting models](exporting_models.md#modeldumpjson).
 - `model_extra`: get extra fields set during validation.
 - `model_fields_set`: set of fields which were set when the model instance was initialised.
-- `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [Schema](schema.md).
+- `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
 - `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
-    See [Schema](schema.md).
+    See [JSON Schema](json_schema.md).
 - `model_parameterized_name()`: compute the class name for parametrizations of generic classes.
 - `model_post_init()`: perform additional initialization after the model is initialised.
 - `model_rebuild()`: rebuild the model schema.
@@ -158,7 +158,7 @@ to the model field names. One common application of this functionality is integr
 (ORMs).
 
 To do this, use the `model_config` property on the model with `from_attributes` set to `True`. See
-[Model Config](model_config.md) and [ConfigDict](/api/config/#pydantic.config.ConfigDict) for more information.
+[Model Config](model_config.md) and [ConfigDict](../api/config.md#pydantic.config.ConfigDict) for more information.
 
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
@@ -961,7 +961,7 @@ Field order is important in models for the following reasons:
 
 * validation is performed in the order fields are defined; [fields validators](validators.md)
   can access the values of earlier fields, but not later ones
-* field order is preserved in the model [schema](schema.md)
+* field order is preserved in the model [schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
 * field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
 
@@ -1006,10 +1006,10 @@ class Model(BaseModel):
     c: int = Field(...)
 ```
 
-Where `Field` refers to the [field function](schema.md#field-customization).
+Where `Field` refers to the [field function](json_schema.md#field-customization).
 
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
-with [mypy](/mypy_plugin/), and as of **v1.0** should be avoided in most cases.
+with [mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
 
 ### Required Optional fields
 
@@ -1068,7 +1068,7 @@ assert m1.uid != m2.uid
 assert m1.updated != m2.updated
 ```
 
-Where `Field` refers to the [field function](schema.md#field-customization).
+Where `Field` refers to the [field function](fields.md).
 
 !!! warning
     The `default_factory` expects the field type to be set.
@@ -1247,4 +1247,4 @@ print('id(c1.arr) == id(c2.arr)  ', id(c1.arr) == id(c2.arr))
 ```
 
 !!! note
-    There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting [`config.revalidate_instances='always'`](/api/config/#pydantic.config.ConfigDict) in your model.
+    There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting [`config.revalidate_instances='always'`](../api/config.md#pydantic.config.ConfigDict) in your model.
