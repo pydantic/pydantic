@@ -2114,69 +2114,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <p>An international phone number</p>
 
 
-        <details class="quote">
-          <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/phone_numbers.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">PhoneNumber</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    An international phone number</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="n">supported_regions</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">phonenumbers</span><span class="o">.</span><span class="n">SUPPORTED_REGIONS</span><span class="p">)</span>
-    <span class="n">supported_formats</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">PhoneNumberFormat</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">if</span> <span class="n">f</span><span class="o">.</span><span class="n">isupper</span><span class="p">()])</span>
-
-    <span class="n">default_region_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">phone_format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;RFC3966&#39;</span>
-    <span class="n">min_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">7</span>
-    <span class="n">max_length</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="nb">type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">CoreSchema</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_after_validator_function</span><span class="p">(</span>
-            <span class="bp">cls</span><span class="o">.</span><span class="n">_validate</span><span class="p">,</span>
-            <span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(</span><span class="n">min_length</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">max_length</span><span class="p">),</span>
-        <span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">_validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">phone_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">try</span><span class="p">:</span>
-            <span class="n">parsed_number</span> <span class="o">=</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">phone_number</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">default_region_code</span><span class="p">)</span>
-        <span class="k">except</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">phonenumberutil</span><span class="o">.</span><span class="n">NumberParseException</span> <span class="k">as</span> <span class="n">exc</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;value_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid phone number&#39;</span><span class="p">)</span> <span class="kn">from</span> <span class="nn">exc</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">is_valid_number</span><span class="p">(</span><span class="n">parsed_number</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;value_error&#39;</span><span class="p">,</span> <span class="s1">&#39;value is not a valid phone number&#39;</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">phonenumbers</span><span class="o">.</span><span class="n">format_number</span><span class="p">(</span><span class="n">parsed_number</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">phonenumbers</span><span class="o">.</span><span class="n">PhoneNumberFormat</span><span class="p">,</span> <span class="bp">cls</span><span class="o">.</span><span class="n">phone_format</span><span class="p">))</span>
-</code></pre></div></td></tr></table></div>
-        </details>
 
   
 

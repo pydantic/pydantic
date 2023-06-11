@@ -2128,7 +2128,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 <a href="#pydantic_extra_types.routing_number.ABARoutingNumber" class="headerlink" title="Permanent link">&para;</a></h2>
-
+<div class="highlight"><pre><span></span><code><span class="n">ABARoutingNumber</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
+</code></pre></div>
 
   <div class="doc doc-contents ">
       <p class="doc doc-class-bases">
@@ -2136,103 +2137,15 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 
 
-        <details class="quote">
-          <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/routing_number.py</code></summary>
-          <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal"> 7</span>
-<span class="normal"> 8</span>
-<span class="normal"> 9</span>
-<span class="normal">10</span>
-<span class="normal">11</span>
-<span class="normal">12</span>
+          <details class="quote">
+            <summary>Source code in <code>.venv/lib/python3.10/site-packages/pydantic_extra_types/routing_number.py</code></summary>
+            <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">12</span>
 <span class="normal">13</span>
-<span class="normal">14</span>
-<span class="normal">15</span>
-<span class="normal">16</span>
-<span class="normal">17</span>
-<span class="normal">18</span>
-<span class="normal">19</span>
-<span class="normal">20</span>
-<span class="normal">21</span>
-<span class="normal">22</span>
-<span class="normal">23</span>
-<span class="normal">24</span>
-<span class="normal">25</span>
-<span class="normal">26</span>
-<span class="normal">27</span>
-<span class="normal">28</span>
-<span class="normal">29</span>
-<span class="normal">30</span>
-<span class="normal">31</span>
-<span class="normal">32</span>
-<span class="normal">33</span>
-<span class="normal">34</span>
-<span class="normal">35</span>
-<span class="normal">36</span>
-<span class="normal">37</span>
-<span class="normal">38</span>
-<span class="normal">39</span>
-<span class="normal">40</span>
-<span class="normal">41</span>
-<span class="normal">42</span>
-<span class="normal">43</span>
-<span class="normal">44</span>
-<span class="normal">45</span>
-<span class="normal">46</span>
-<span class="normal">47</span>
-<span class="normal">48</span>
-<span class="normal">49</span>
-<span class="normal">50</span>
-<span class="normal">51</span>
-<span class="normal">52</span>
-<span class="normal">53</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">class</span> <span class="nc">ABARoutingNumber</span><span class="p">(</span><span class="nb">str</span><span class="p">):</span>
-    <span class="n">strip_whitespace</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-    <span class="n">min_length</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
-    <span class="n">max_length</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">validate_digits</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_routing_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_routing_number</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">source</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">AfterValidatorFunctionSchema</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">general_after_validator_function</span><span class="p">(</span>
-            <span class="bp">cls</span><span class="o">.</span><span class="n">validate</span><span class="p">,</span>
-            <span class="n">core_schema</span><span class="o">.</span><span class="n">str_schema</span><span class="p">(</span>
-                <span class="n">min_length</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">min_length</span><span class="p">,</span>
-                <span class="n">max_length</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">max_length</span><span class="p">,</span>
-                <span class="n">strip_whitespace</span><span class="o">=</span><span class="bp">cls</span><span class="o">.</span><span class="n">strip_whitespace</span><span class="p">,</span>
-                <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
-            <span class="p">),</span>
-        <span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">__input_value</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">_</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidationInfo</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;ABARoutingNumber&#39;</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">__input_value</span><span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate_digits</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">routing_number</span><span class="o">.</span><span class="n">isdigit</span><span class="p">():</span>
-            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;aba_routing_number&#39;</span><span class="p">,</span> <span class="s1">&#39;routing number is not all digits&#39;</span><span class="p">)</span>
-
-    <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">validate_routing_number</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Check digit algorithm for ABA routing transit number.</span>
-<span class="sd">        https://en.wikipedia.org/wiki/ABA_routing_transit_number#Check_digit</span>
-<span class="sd">        https://www.routingnumber.com/</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">checksum</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="mi">3</span> <span class="o">*</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">[</span><span class="n">routing_number</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">3</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">6</span><span class="p">]])))</span>
-            <span class="o">+</span> <span class="mi">7</span> <span class="o">*</span> <span class="p">(</span><span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">[</span><span class="n">routing_number</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">7</span><span class="p">]])))</span>
-            <span class="o">+</span> <span class="nb">sum</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="p">[</span><span class="n">routing_number</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">5</span><span class="p">],</span> <span class="n">routing_number</span><span class="p">[</span><span class="mi">8</span><span class="p">]]))</span>
-        <span class="p">)</span>
-        <span class="k">if</span> <span class="n">checksum</span> <span class="o">%</span> <span class="mi">10</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">PydanticCustomError</span><span class="p">(</span><span class="s1">&#39;aba_routing_number&#39;</span><span class="p">,</span> <span class="s1">&#39;Incorrect ABA routing transit number&#39;</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">routing_number</span>
+<span class="normal">14</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">routing_number</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">validate_digits</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_routing_number</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">validate_routing_number</span><span class="p">(</span><span class="n">routing_number</span><span class="p">)</span>
 </code></pre></div></td></tr></table></div>
-        </details>
+          </details>
 
   
 

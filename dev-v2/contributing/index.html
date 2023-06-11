@@ -1491,6 +1491,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#guide-documentation" class="md-nav__link">
+    Guide documentation
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2198,6 +2205,13 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
   
 </li>
         
+          <li class="md-nav__item">
+  <a href="#guide-documentation" class="md-nav__link">
+    Guide documentation
+  </a>
+  
+</li>
+        
       </ul>
     </nav>
   
@@ -2316,16 +2330,53 @@ make<span class="w"> </span>docs
 <h2 id="code-style-and-requirements">Code style and requirements<a class="headerlink" href="#code-style-and-requirements" title="Permanent link">&para;</a></h2>
 <p>TODO</p>
 <h2 id="documentation-style">Documentation style<a class="headerlink" href="#documentation-style" title="Permanent link">&para;</a></h2>
-<p>Documentation is written in Markdown and built using Material for MkDocs.</p>
+<p>Documentation is written in Markdown and built using <a href="https://squidfunk.github.io/mkdocs-material/">Material for MkDocs</a>. API documentation is build from docstrings using <a href="https://mkdocstrings.github.io/">mkdocstrings</a>.</p>
+<h3 id="code-documentation">Code documentation<a class="headerlink" href="#code-documentation" title="Permanent link">&para;</a></h3>
+<p>When contributing to Pydantic, please make sure that all code is well documented. The following should be documented using properly formatted docstrings:</p>
+<ul>
+<li>Modules</li>
+<li>Class definitions</li>
+<li>Function definitions</li>
+<li>Module-level variables</li>
+</ul>
+<p>Pydantic uses <a href="https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings">Google-style docstrings</a> formatted according to <a href="https://www.python.org/dev/peps/pep-0257/">PEP 257</a> guidelines. (See <a href="https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html">Example Google Style Python Docstrings</a> for further examples.)</p>
+<p><a href="https://www.pydocstyle.org/en/stable/index.html">pydocstyle</a> is used for linting docstrings. You can run <code>make format</code> to check your docstrings.</p>
+<p>Where this is a conflict between Google-style docstrings and pydocstyle linting, follow the pydocstyle linting hints.</p>
+<p>Class attributes and function arguments should be documented in the format "name: description." When applicable, a return type should be documented with just a description. Types are inferred from the signature.</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span> <span class="nc">Foo</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A class docstring.</span>
+
+<span class="sd">    Attributes:</span>
+<span class="sd">        bar: A description of bar. Defaults to &quot;bar&quot;.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="n">bar</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s1">&#39;bar&#39;</span>
+</code></pre></div>
+<div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">bar</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">baz</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;A function docstring.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        baz: A description of `baz`.</span>
+
+<span class="sd">    Returns:</span>
+<span class="sd">        A description of the return value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">return</span> <span class="s1">&#39;bar&#39;</span>
+</code></pre></div>
+<p>You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested using <a href="https://docs.python.org/3/library/doctest.html">doctest</a>, so make sure they are correct and complete. See <a href="../api/fields/#pydantic.fields.FieldInfo.from_annotated_attribute">FieldInfo.from_annotated_attribute()</a> for an example.</p>
+<div class="admonition note">
+<p class="admonition-title">Class and instance attributes</p>
+<p>Class attributes should be documented in the class docstring.</p>
+<p>Instance attributes should be documented as "Args" in the <code>__init__</code> docstring.</p>
+</div>
+<h3 id="guide-documentation">Guide documentation<a class="headerlink" href="#guide-documentation" title="Permanent link">&para;</a></h3>
 <p>In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.</p>
 <p>Code examples are encouraged, but should be kept short and simple. However, every code example should be complete, self-contained, and runnable. (If you're not sure how to do this, ask for help!) We prefer print output to naked asserts, but if you're testing something that doesn't have a useful print output, asserts are fine.</p>
 <p>Pydantic's test coverage will test all code examples in the documentation, so it's important that they are correct and complete. When adding a new code example, use <code>pytest --update-examples</code> to update the output and create Python version-specific examples when appropriate.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># Run tests and update code examples</span>
 pytest<span class="w"> </span>--update-examples
 </code></pre></div>
-<h3 id="code-documentation">Code documentation<a class="headerlink" href="#code-documentation" title="Permanent link">&para;</a></h3>
-<p>Modules, classes, functions, and module-level variables should be documented using docstrings formatted according to <a href="https://www.python.org/dev/peps/pep-0257/">PEP 257</a>. Type annotations should be used wherever possible.</p>
-<p>Pydantic uses <a href="https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings">Google-style docstrings</a> for all docstrings. (See <a href="https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html">Example Google Style Python Docstrings</a> for further examples.)</p>
 
 
 
