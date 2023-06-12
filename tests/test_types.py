@@ -102,7 +102,7 @@ from pydantic import (
 from pydantic.errors import PydanticSchemaGenerationError
 from pydantic.functional_validators import AfterValidator
 from pydantic.json_schema import JsonSchemaValue
-from pydantic.types import AllowInfNan, ImportString, InstanceOf, SecretField, SkipValidation, Strict, TransformSchema
+from pydantic.types import AllowInfNan, ImportString, InstanceOf, SkipValidation, Strict, TransformSchema
 
 try:
     import email_validator
@@ -3860,10 +3860,6 @@ def test_secretstr():
     assert f.empty_password.get_secret_value() == ''
 
 
-def test_secretstr_is_secret_field():
-    assert issubclass(SecretStr, SecretField)
-
-
 def test_secretstr_equality():
     assert SecretStr('abc') == SecretStr('abc')
     assert SecretStr('123') != SecretStr('321')
@@ -3901,7 +3897,6 @@ def test_secretstr_idempotent():
         conbytes,
         SecretBytes,
         constr,
-        SecretField,
         StrictStr,
         SecretStr,
         ImportString,
@@ -4026,10 +4021,6 @@ def test_secretbytes():
     copied_with_changes = f.model_copy()
     copied_with_changes.password = SecretBytes(b'4321')
     assert f != copied_with_changes
-
-
-def test_secretbytes_is_secret_field():
-    assert issubclass(SecretBytes, SecretField)
 
 
 def test_secretbytes_equality():
