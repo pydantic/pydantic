@@ -38,7 +38,8 @@ class Extra(str, Enum):
 
 
 # https://github.com/cython/cython/issues/4003
-# Will be fixed with Cython 3 but still in alpha right now
+# Fixed in Cython 3 and Pydantic v1 won't support Cython 3.
+# Pydantic v2 doesn't depend on Cython at all.
 if not compiled:
     from typing_extensions import TypedDict
 
