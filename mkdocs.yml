@@ -159,16 +159,16 @@ watch:
 - pydantic
 
 plugins:
-- mike:
+  mike:
     alias_type: symlink
     canonical_version: latest
-- search
-- exclude:
+  search: {}
+  exclude:
     glob:
     - theme/announce.html
     - plugins/*
     - __pycache__/*
-- mkdocstrings:
+  mkdocstrings:
     handlers:
       python:
         paths: [.]
@@ -178,12 +178,12 @@ plugins:
           docstring_options:
             ignore_init_summary: true
           merge_init_into_class: true
-- mkdocs-simple-hooks:
+  mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'
       on_files: 'docs.plugins.main:on_files'
       on_page_markdown: 'docs.plugins.main:on_page_markdown'
-- redirects:
+  redirects:
     redirect_maps:
       'usage/mypy.md': 'integrations/mypy.md'
       'mypy_plugin.md': 'integrations/mypy.md'
@@ -193,4 +193,4 @@ plugins:
       'pycharm_plugin.md': 'integrations/pycharm.md'
       'usage/devtools.md': 'integrations/devtools.md'
       'usage/rich.md': 'integrations/rich.md'
-- external-markdown:
+  external-markdown: {}
