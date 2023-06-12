@@ -6,15 +6,15 @@ use pyo3::prelude::*;
 use pyo3::types::{PyDict, PySet, PyString, PyTuple, PyType};
 use pyo3::{ffi, intern};
 
+use super::function::convert_err;
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{ErrorType, ValError, ValResult};
 use crate::input::{py_error_on_minusone, Input};
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::{py_err, SchemaDict};
-
-use super::function::convert_err;
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use crate::UndefinedType;
 
 const ROOT_FIELD: &str = "root";
 const DUNDER_DICT: &str = "__dict__";
@@ -126,11 +126,11 @@ impl Validator for ModelValidator {
         let class = self.class.as_ref(py);
         if let Some(py_input) = input.input_is_instance(class) {
             if self.revalidate.should_revalidate(py_input, class) {
+                let fields_set = py_input.getattr(intern!(py, DUNDER_FIELDS_SET_KEY))?;
                 if self.root_model {
                     let inner_input = py_input.getattr(intern!(py, ROOT_FIELD))?;
-                    self.validate_construct(py, inner_input, None, extra, definitions, recursion_guard)
+                    self.validate_construct(py, inner_input, Some(fields_set), extra, definitions, recursion_guard)
                 } else {
-                    let fields_set = py_input.getattr(intern!(py, DUNDER_FIELDS_SET_KEY))?;
                     // get dict here so from_attributes logic doesn't apply
                     let dict = py_input.getattr(intern!(py, DUNDER_DICT))?;
                     let model_extra = py_input.getattr(intern!(py, DUNDER_MODEL_EXTRA_KEY))?;
@@ -259,6 +259,12 @@ impl ModelValidator {
             .validate(py, input, &new_extra, definitions, recursion_guard)?;
 
         if self.root_model {
+            let fields_set = if input.to_object(py).is(&UndefinedType::py_undefined()) {
+                PySet::empty(py)?
+            } else {
+                PySet::new(py, [&String::from(ROOT_FIELD)])?
+            };
+            force_setattr(py, self_instance, intern!(py, DUNDER_FIELDS_SET_KEY), fields_set)?;
             force_setattr(py, self_instance, intern!(py, ROOT_FIELD), output.as_ref(py))?;
         } else {
             let (model_dict, model_extra, fields_set): (&PyAny, &PyAny, &PyAny) = output.extract(py)?;

@@ -3,14 +3,14 @@ use pyo3::once_cell::GILOnceCell;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
+use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
 use crate::build_tools::py_schema_err;
 use crate::build_tools::schema_or_config_same;
 use crate::errors::{LocItem, ValError, ValResult};
 use crate::input::Input;
 use crate::recursion_guard::RecursionGuard;
 use crate::tools::SchemaDict;
-
-use super::{build_validator, BuildValidator, CombinedValidator, Definitions, DefinitionsBuilder, Extra, Validator};
+use crate::UndefinedType;
 
 static COPY_DEEPCOPY: GILOnceCell<PyObject> = GILOnceCell::new();
 
@@ -121,15 +121,21 @@ impl Validator for WithDefaultValidator {
         definitions: &'data Definitions<CombinedValidator>,
         recursion_guard: &'s mut RecursionGuard,
     ) -> ValResult<'data, PyObject> {
-        match self.validator.validate(py, input, extra, definitions, recursion_guard) {
-            Ok(v) => Ok(v),
-            Err(e) => match self.on_error {
-                OnError::Raise => Err(e),
-                OnError::Default => Ok(self
-                    .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
-                    .unwrap()),
-                OnError::Omit => Err(ValError::Omit),
-            },
+        if input.to_object(py).is(&UndefinedType::py_undefined()) {
+            Ok(self
+                .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
+                .unwrap())
+        } else {
+            match self.validator.validate(py, input, extra, definitions, recursion_guard) {
+                Ok(v) => Ok(v),
+                Err(e) => match self.on_error {
+                    OnError::Raise => Err(e),
+                    OnError::Default => Ok(self
+                        .default_value(py, None::<usize>, extra, definitions, recursion_guard)?
+                        .unwrap()),
+                    OnError::Omit => Err(ValError::Omit),
+                },
+            }
         }
     }
 
