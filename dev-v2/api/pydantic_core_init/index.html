@@ -2541,6 +2541,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <div class="doc doc-contents ">
 
+  
+      
 
 
 
@@ -2578,6 +2580,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <div class="doc doc-contents ">
 
+  
+      
 
 
 
@@ -2617,6 +2621,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       <p class="doc doc-class-bases">
         Bases: <code>ValueError</code></p>
 
+  
+      
 
 
 
@@ -2681,6 +2687,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
       <p class="doc doc-class-bases">
         Bases: <code>ValueError</code></p>
 
+  
+      
 
 
 
@@ -2745,6 +2753,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
       <p class="doc doc-class-bases">
         Bases: <code>Exception</code></p>
 
+  
+      
 
 
 
@@ -2809,6 +2819,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
       <p class="doc doc-class-bases">
         Bases: <code>ValueError</code></p>
 
+  
+      
 
 
 
@@ -2873,6 +2885,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
       <p class="doc doc-class-bases">
         Bases: <code>ValueError</code></p>
 
+  
+      
 
 
 
@@ -2937,6 +2951,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
       <p class="doc doc-class-bases">
         Bases: <code>Exception</code></p>
 
+  
+      
 
 
 
@@ -3001,6 +3017,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
       <p class="doc doc-class-bases">
         Bases: <code>Exception</code></p>
 
+  
+      
 
 
 
@@ -3063,6 +3081,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 
   <div class="doc doc-contents ">
 
+  
+      
 
 
 
@@ -3100,6 +3120,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 
   <div class="doc doc-contents ">
 
+  
+      
 
 
 
@@ -3137,6 +3159,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 
   <div class="doc doc-contents ">
 
+  
+      
 
 
 
@@ -3174,6 +3198,8 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 
   <div class="doc doc-contents ">
 
+  
+      
 
 
 
@@ -3242,10 +3268,7 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 
 <a href="#pydantic_core._pydantic_core.ValidationError.from_exception_data" class="headerlink" title="Permanent link">&para;</a></h3>
 <div class="highlight"><pre><span></span><code><span class="n">from_exception_data</span><span class="p">(</span>
-    <span class="n">title</span><span class="p">,</span>
-    <span class="n">line_errors</span><span class="p">,</span>
-    <span class="n">error_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">hide_input</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
+    <span class="n">title</span><span class="p">,</span> <span class="n">line_errors</span><span class="p">,</span> <span class="n">error_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hide_input</span><span class="o">=</span><span class="kc">False</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -3310,16 +3333,16 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 <div class="highlight"><pre><span></span><code><span class="n">to_json</span><span class="p">(</span>
     <span class="n">value</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">indent</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">include</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">exclude</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">exclude_none</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">round_trip</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">timedelta_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">bytes_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">serialize_unknown</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">fallback</span><span class="o">=</span><span class="bp">Ellipsis</span>
+    <span class="n">indent</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">timedelta_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">bytes_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">serialize_unknown</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">fallback</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
 
@@ -3345,15 +3368,15 @@ set self.<strong>traceback</strong> to tb and return self.</p>
 <div class="highlight"><pre><span></span><code><span class="n">to_jsonable_python</span><span class="p">(</span>
     <span class="n">value</span><span class="p">,</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">include</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">exclude</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">by_alias</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">exclude_none</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">round_trip</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">timedelta_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">bytes_mode</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">serialize_unknown</span><span class="o">=</span><span class="bp">Ellipsis</span><span class="p">,</span>
-    <span class="n">fallback</span><span class="o">=</span><span class="bp">Ellipsis</span>
+    <span class="n">include</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">exclude</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">exclude_none</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">round_trip</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">timedelta_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">bytes_mode</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">serialize_unknown</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">fallback</span><span class="o">=</span><span class="kc">None</span>
 <span class="p">)</span>
 </code></pre></div>
 
