@@ -37,7 +37,7 @@ print(user.model_dump(by_alias=True))  # (2)!
 1. The alias `'username'` is used for instance creation and validation.
 2. We are using `model_dump` to convert the model into a serializable format.
 
-    You can see more details about [`model_dump`](/api/main/#pydantic.main.BaseModel.model_dump) in the API reference.
+    You can see more details about [`model_dump`](../api/main/#pydantic.main.BaseModel.model_dump) in the API reference.
 
     Note that the `by_alias` keyword argument defaults to `False`, and must be specified explicitly to dump
     models using the field (serialization) aliases.
@@ -88,8 +88,8 @@ In case you use `alias` together with `validation_alias` or `serialization_alias
 the `validation_alias` will have priority over `alias` for validation, and `serialization_alias` will have priority
 over `alias` for serialization.
 
-You can read more about [Alias Precedence](/usage/model_config/#alias-precedence) in the
-[Model Config](/usage/model_config/) documentation.
+You can read more about [Alias Precedence](../model_config/#alias-precedence) in the
+[Model Config](../model_config/) documentation.
 
 
 ??? tip "VSCode and Pyright users"

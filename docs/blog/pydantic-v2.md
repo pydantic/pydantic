@@ -1,3 +1,4 @@
+<!-- markdown-link-check-disable -->
 # Pydantic V2 Plan
 
 <aside class="blog" markdown>
@@ -951,3 +952,5 @@ The `ModelClass` validator (use to create instances of a class) uses the `TypedD
 with `__dict__` and `__fields_set__` set, so same rules apply as `TypedDict`.
 
 [speedate]: https://docs.rs/speedate/latest/speedate/
+
+<!-- markdown-link-check-enable -->
