@@ -912,7 +912,6 @@ PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, lis
     uuid_prepare_pydantic_annotations,
     path_schema_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,
-    enum_prepare_pydantic_annotations,
     ip_prepare_pydantic_annotations,
     url_prepare_pydantic_annotations,
 )

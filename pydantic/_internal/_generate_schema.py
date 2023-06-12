@@ -9,6 +9,7 @@ import sys
 import typing
 from contextlib import contextmanager
 from copy import copy
+from enum import Enum
 from functools import partial
 from inspect import Parameter, _ParameterKind, signature
 from itertools import chain
@@ -426,6 +427,14 @@ class GenerateSchema:
             return self.generate_schema(get_args(obj)[0])
         elif isinstance(obj, (FunctionType, LambdaType, MethodType, partial)):
             return self._callable_schema(obj)
+        elif inspect.isclass(obj) and issubclass(obj, Enum):
+            from ._std_types_schema import enum_prepare_pydantic_annotations
+
+            # TODO: consider moving `enum_prepare_pydantic_annotations` out of `_std_types_schema`
+            res = enum_prepare_pydantic_annotations(obj, (), getattr(obj, '__pydantic_config__', ConfigDict()))
+            assert res is not None
+            source_type, annotations = res
+            return self._apply_annotations(lambda x: x, source_type, annotations)
 
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
