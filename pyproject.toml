@@ -176,7 +176,6 @@ convention = "google"
 'tests/test_forward_ref.py' = ['F821']
 'tests/*' = ['D']
 'pydantic/deprecated/*' = ['D']
-'pydantic/fields.py' = ['D']
 'pydantic/functional_validators.py' = ['D']
 'pydantic/json_schema.py' = ['D']
 'pydantic/main.py' = ['D']
