@@ -36,6 +36,7 @@ if TYPE_CHECKING:
     from . import ConfigDict
     from ._internal._core_utils import CoreSchemaField, CoreSchemaOrField
     from ._internal._dataclasses import PydanticDataclass
+    from ._internal._schema_generation_shared import GetJsonSchemaHandler
     from .main import BaseModel
 
 
@@ -392,7 +393,7 @@ class GenerateJsonSchema:
 
             def new_handler_func(
                 schema_or_field: CoreSchemaOrField,
-                current_handler: _core_metadata.GetJsonSchemaHandler = current_handler,
+                current_handler: GetJsonSchemaHandler = current_handler,
                 js_modify_function: _core_metadata.GetJsonSchemaFunction = js_modify_function,
             ) -> JsonSchemaValue:
                 json_schema = js_modify_function(schema_or_field, current_handler)
