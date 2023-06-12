@@ -353,6 +353,9 @@ def exec_examples() -> int:  # noqa: C901 (I really don't want to decompose it a
         if upgrade:
             versions.extend(populate_upgraded_versions(file, file_text, lowest_version))
 
+        # flush importlib caches to ensure the code we just generated is discovered
+        importlib.invalidate_caches()
+
         json_outputs: set[str | None] = set()
         should_run_as_is = not requirements
         final_content: list[str] = []
