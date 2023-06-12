@@ -2125,6 +2125,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 <a id="pydantic.functional_serializers"></a>
   <div class="doc doc-contents first">
+  
+      <p>This module contains related classes and functions for serialization.</p>
 
   
 
@@ -2267,7 +2269,7 @@ logic, and can modify the resulting value before returning it as the final outpu
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Optional return type for the function, if omitted it will be inferred from the type annotation.</p>
+              <p>The return type for the function, if omitted it will be inferred from the type annotation.</p>
             </div>
           </td>
         </tr>
@@ -2278,7 +2280,7 @@ logic, and can modify the resulting value before returning it as the final outpu
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines the serializer will be used for serialization. Accepts a string with values <code>'always'</code>,
+              <p>Determines when this serializer should be used. Accepts a string with values <code>'always'</code>,
 <code>'unless-none'</code>, <code>'json'</code>, and <code>'json-unless-none'</code>. Defaults to 'always'.</p>
             </div>
           </td>
@@ -2448,8 +2450,7 @@ default serialization logic.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">135</span>
-<span class="normal">136</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">136</span>
 <span class="normal">137</span>
 <span class="normal">138</span>
 <span class="normal">139</span>
@@ -2489,7 +2490,8 @@ default serialization logic.</p>
 <span class="normal">173</span>
 <span class="normal">174</span>
 <span class="normal">175</span>
-<span class="normal">176</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
+<span class="normal">176</span>
+<span class="normal">177</span></pre></div></td><td class="code"><div><pre><span></span><code><span class="k">def</span> <span class="nf">field_serializer</span><span class="p">(</span>
     <span class="o">*</span><span class="n">fields</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
     <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s1">&#39;plain&#39;</span><span class="p">,</span> <span class="s1">&#39;wrap&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;plain&#39;</span><span class="p">,</span>
     <span class="n">return_type</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -2558,7 +2560,6 @@ default serialization logic.</p>
   <div class="doc doc-contents ">
   
       <p>Decorate a function which will be called to serialize the model.</p>
-<p>(<code>when_used</code> is not permitted here since it makes no sense.)</p>
 
   <p><strong>Parameters:</strong></p>
   <table>
@@ -2608,7 +2609,8 @@ to optionally call the default serialization logic.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Determines the serializer will be be used for serialization.</p>
+              <p>Determines when this serializer should be used. Accepts a string with values <code>'always'</code>,
+<code>'unless-none'</code>, <code>'json'</code>, <code>'json-unless-none'</code>. Defaults to <code>'always'</code>.</p>
             </div>
           </td>
           <td>
@@ -2622,7 +2624,7 @@ to optionally call the default serialization logic.</p>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Optional return type for the function, if omitted it will be inferred from the type annotation.</p>
+              <p>The return type for the function, if omitted it will be inferred from the type annotation.</p>
             </div>
           </td>
           <td>
@@ -2656,8 +2658,7 @@ to optionally call the default serialization logic.</p>
 
       <details class="quote">
         <summary>Source code in <code>pydantic/functional_serializers.py</code></summary>
-        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">197</span>
-<span class="normal">198</span>
+        <div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span></span><span class="normal">198</span>
 <span class="normal">199</span>
 <span class="normal">200</span>
 <span class="normal">201</span>
@@ -2697,15 +2698,14 @@ to optionally call the default serialization logic.</p>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Any</span><span class="p">],</span> <span class="n">Any</span><span class="p">]:</span>
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;Decorate a function which will be called to serialize the model.</span>
 
-<span class="sd">    (`when_used` is not permitted here since it makes no sense.)</span>
-
 <span class="sd">    Args:</span>
 <span class="sd">        __f: The function to be decorated.</span>
 <span class="sd">        mode: The serialization mode. `&#39;plain&#39;` means the function will be called</span>
 <span class="sd">            instead of the default serialization logic, `&#39;wrap&#39;` means the function will be called with an argument</span>
 <span class="sd">            to optionally call the default serialization logic.</span>
-<span class="sd">        when_used: Determines the serializer will be be used for serialization.</span>
-<span class="sd">        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.</span>
+<span class="sd">        when_used: Determines when this serializer should be used. Accepts a string with values `&#39;always&#39;`,</span>
+<span class="sd">            `&#39;unless-none&#39;`, `&#39;json&#39;`, `&#39;json-unless-none&#39;`. Defaults to `&#39;always&#39;`.</span>
+<span class="sd">        return_type: The return type for the function, if omitted it will be inferred from the type annotation.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        A decorator that can be used to decorate a function to be used as a model serializer.</span>
