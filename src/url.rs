@@ -12,7 +12,7 @@ use crate::SchemaValidator;
 
 static SCHEMA_DEFINITION_URL: GILOnceCell<SchemaValidator> = GILOnceCell::new();
 
-#[pyclass(name = "Url", module = "pydantic_core._pydantic_core")]
+#[pyclass(name = "Url", module = "pydantic_core._pydantic_core", subclass)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyUrl {
@@ -147,7 +147,7 @@ impl PyUrl {
     }
 }
 
-#[pyclass(name = "MultiHostUrl", module = "pydantic_core._pydantic_core")]
+#[pyclass(name = "MultiHostUrl", module = "pydantic_core._pydantic_core", subclass)]
 #[derive(Clone)]
 #[cfg_attr(debug_assertions, derive(Debug))]
 pub struct PyMultiHostUrl {
