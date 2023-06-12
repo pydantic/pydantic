@@ -81,7 +81,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#datetime-types" class="md-skip">
+        <a href="#validation-of-datetime-types" class="md-skip">
           Skip to content
         </a>
       
@@ -663,8 +663,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#datetime-types" class="md-nav__link">
-    Datetime types
+  <a href="#validation-of-datetime-types" class="md-nav__link">
+    Validation of datetime types
   </a>
   
 </li>
@@ -2044,8 +2044,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#datetime-types" class="md-nav__link">
-    Datetime types
+  <a href="#validation-of-datetime-types" class="md-nav__link">
+    Validation of datetime types
   </a>
   
 </li>
@@ -2078,94 +2078,72 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   <h1>Datetimes</h1>
 
-<p><em>Pydantic</em> supports the following <a href="https://docs.python.org/library/datetime.html#available-types">datetime</a>
+<p>Pydantic supports the following <a href="https://docs.python.org/library/datetime.html#available-types">datetime</a>
 types:</p>
-<dl>
-<dt><code>datetime.date</code></dt>
-<dd>see <a href="#datetime-types">Datetime Types</a> below for more detail on parsing and validation</dd>
-<dt><code>datetime.time</code></dt>
-<dd>see <a href="#datetime-types">Datetime Types</a> below for more detail on parsing and validation</dd>
-<dt><code>datetime.datetime</code></dt>
-<dd>see <a href="#datetime-types">Datetime Types</a> below for more detail on parsing and validation</dd>
-<dt><code>datetime.timedelta</code></dt>
-<dd>see <a href="#datetime-types">Datetime Types</a> below for more detail on parsing and validation</dd>
-<dt><code>PastDate</code></dt>
-<dd>like <code>date</code>, but the date should be in the past</dd>
-<dt><code>FutureDate</code></dt>
-<dd>like <code>date</code>, but the date should be in the future</dd>
-</dl>
-<h2 id="datetime-types">Datetime types<a class="headerlink" href="#datetime-types" title="Permanent link">&para;</a></h2>
+<ul>
+<li><code>datetime.date</code></li>
+<li><code>datetime.time</code></li>
+<li><code>datetime.datetime</code></li>
+<li><code>datetime.timedelta</code></li>
+</ul>
+<h2 id="validation-of-datetime-types">Validation of datetime types<a class="headerlink" href="#validation-of-datetime-types" title="Permanent link">&para;</a></h2>
 <ul>
 <li>
-<p><code>datetime</code> fields can be:</p>
+<p><code>datetime</code> fields will accept values of type:</p>
 </li>
 <li>
-<p><code>datetime</code>, existing <code>datetime</code> object</p>
+<p><code>datetime</code>; an existing <code>datetime</code> object</p>
 </li>
-<li><code>int</code> or <code>float</code>, assumed as Unix time, i.e. seconds (if &gt;= <code>-2e10</code> and &lt;= <code>2e10</code>) or milliseconds (if &lt; <code>-2e10</code>or &gt; <code>2e10</code>) since 1 January 1970</li>
+<li><code>int</code> or <code>float</code>; assumed as Unix time, i.e. seconds (if &gt;= <code>-2e10</code> and &lt;= <code>2e10</code>) or milliseconds
+    (if &lt; <code>-2e10</code>or &gt; <code>2e10</code>) since 1 January 1970</li>
 <li>
-<p><code>str</code>, following formats work:</p>
+<p><code>str</code>; the following formats are accepted:</p>
 <ul>
 <li><code>YYYY-MM-DD[T]HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]</code></li>
 <li><code>int</code> or <code>float</code> as a string (assumed as Unix time)</li>
 </ul>
 </li>
 <li>
-<p><code>date</code> fields can be:</p>
+<p><code>date</code> fields will accept values of type:</p>
 </li>
 <li>
-<p><code>date</code>, existing <code>date</code> object</p>
+<p><code>date</code>; an existing <code>date</code> object</p>
 </li>
-<li><code>int</code> or <code>float</code>, see <code>datetime</code></li>
+<li><code>int</code> or <code>float</code>; handled the same as described for <code>datetime</code> above</li>
 <li>
-<p><code>str</code>, following formats work:</p>
+<p><code>str</code>; the following formats are accepted:</p>
 <ul>
 <li><code>YYYY-MM-DD</code></li>
-<li><code>int</code> or <code>float</code>, see <code>datetime</code></li>
+<li><code>int</code> or <code>float</code> as a string (assumed as Unix time)</li>
 </ul>
 </li>
 <li>
-<p><code>time</code> fields can be:</p>
+<p><code>time</code> fields will accept values of type:</p>
 </li>
 <li>
-<p><code>time</code>, existing <code>time</code> object</p>
+<p><code>time</code>; an existing <code>time</code> object</p>
 </li>
 <li>
-<p><code>str</code>, following formats work:</p>
+<p><code>str</code>; the following formats are accepted:</p>
 <ul>
 <li><code>HH:MM[:SS[.ffffff]][Z or [±]HH[:]MM]</code></li>
 </ul>
 </li>
 <li>
-<p><code>timedelta</code> fields can be:</p>
+<p><code>timedelta</code> fields will accept values of type:</p>
 </li>
 <li>
-<p><code>timedelta</code>, existing <code>timedelta</code> object</p>
+<p><code>timedelta</code>; an existing <code>timedelta</code> object</p>
 </li>
-<li><code>int</code> or <code>float</code>, assumed as seconds</li>
+<li><code>int</code> or <code>float</code>; assumed to be seconds</li>
 <li>
-<p><code>str</code>, following formats work:</p>
+<p><code>str</code>; the following formats are accepted:</p>
 <ul>
 <li><code>[-][DD ][HH:MM]SS[.ffffff]</code></li>
 <li><code>[±]P[DD]DT[HH]H[MM]M[SS]S</code> (<a href="https://en.wikipedia.org/wiki/ISO_8601">ISO 8601</a> format for timedelta)</li>
 </ul>
 </li>
 </ul>
-<h2 id="pydantic-date-types">Pydantic date types<a class="headerlink" href="#pydantic-date-types" title="Permanent link">&para;</a></h2>
-<dl>
-<dt><code>PastDate</code></dt>
-<dd>like <code>date</code>, but the date should be in the past</dd>
-<dt><code>FutureDate</code></dt>
-<dd>like <code>date</code>, but the date should be in the future</dd>
-<dt><code>AwareDatetime</code></dt>
-<dd>like <code>datetime</code>, but requires the value to have timezone info</dd>
-<dt><code>NaiveDatetime</code></dt>
-<dd>like <code>datetime</code>, but requires the value to lack timezone info</dd>
-<dt><code>PastDatetime</code></dt>
-<dd>like <code>datetime</code>, but the datetime should be in the past</dd>
-<dt><code>FutureDatetime</code></dt>
-<dd>like <code>datetime</code>, but the datetime should be in the future</dd>
-</dl>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">date</span><span class="p">,</span> <span class="n">datetime</span><span class="p">,</span> <span class="n">time</span><span class="p">,</span> <span class="n">timedelta</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -2190,6 +2168,23 @@ types:</p>
 <span class="sd">{&#39;d&#39;: datetime.date(2023, 3, 24), &#39;dt&#39;: datetime.datetime(2032, 4, 23, 10, 20, 30, 400000, tzinfo=TzInfo(+02:30)), &#39;t&#39;: datetime.time(4, 8, 16), &#39;td&#39;: datetime.timedelta(days=3, seconds=45005)}</span>
 <span class="sd">&quot;&quot;&quot;</span>
 </code></pre></div>
+<h2 id="pydantic-date-types">Pydantic date types<a class="headerlink" href="#pydantic-date-types" title="Permanent link">&para;</a></h2>
+<p>The following types can be imported from <code>pydantic</code>, and augment the types described above
+with additional validation constraints:</p>
+<dl>
+<dt><code>PastDate</code></dt>
+<dd>like <code>date</code>, with the constraint that the value must be in the past</dd>
+<dt><code>FutureDate</code></dt>
+<dd>like <code>date</code>, with the constraint that the value must be in the future</dd>
+<dt><code>PastDatetime</code></dt>
+<dd>like <code>PastDate</code>, but for <code>datetime</code></dd>
+<dt><code>FutureDatetime</code></dt>
+<dd>like <code>FutureDate</code>, but for <code>datetime</code></dd>
+<dt><code>AwareDatetime</code></dt>
+<dd>like <code>datetime</code>, with the constraint that the value must have timezone info</dd>
+<dt><code>NaiveDatetime</code></dt>
+<dd>like <code>datetime</code>, with the constraint that the value must lack timezone info</dd>
+</dl>
 
 
 
