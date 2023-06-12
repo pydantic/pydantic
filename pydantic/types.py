@@ -73,7 +73,6 @@ __all__ = (
     'DirectoryPath',
     'NewPath',
     'Json',
-    'SecretField',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
