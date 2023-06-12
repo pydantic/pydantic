@@ -3,7 +3,7 @@ import math
 import re
 import warnings
 from datetime import date
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from enum import Enum
 from pathlib import Path
 from types import new_class
@@ -691,7 +691,11 @@ class ConstrainedDecimal(Decimal, metaclass=ConstrainedNumberMeta):
 
     @classmethod
     def validate(cls, value: Decimal) -> Decimal:
-        digit_tuple, exponent = value.as_tuple()[1:]
+        try:
+            normalized_value = value.normalize()
+        except InvalidOperation:
+            normalized_value = value
+        digit_tuple, exponent = normalized_value.as_tuple()[1:]
         if exponent in {'F', 'n', 'N'}:
             raise errors.DecimalIsNotFiniteError()
 
