@@ -132,7 +132,7 @@ def conint(
     """A wrapper around `int` that allows for additional constraints.
 
     Args:
-        strict: Whether to validate the integer in strict mode.
+        strict: Whether to validate the integer in strict mode. Defaults to `None`.
         gt: The value must be greater than this.
         ge: The value must be greater than or equal to this.
         lt: The value must be less than this.
@@ -1051,7 +1051,7 @@ def condate(
     """A wrapper for date that adds constraints.
 
     Args:
-        strict: Whether to validate the value in strict mode. Defaults to `None`.
+        strict: Whether to validate the date value in strict mode. Defaults to `None`.
         gt: The value must be greater than this. Defaults to `None`.
         ge: The value must be greater than or equal to this. Defaults to `None`.
         lt: The value must be less than this. Defaults to `None`.
