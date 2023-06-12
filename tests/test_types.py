@@ -5553,3 +5553,39 @@ def test_annotated_default_value_functional_validator() -> None:
 )
 def test_types_repr(pydantic_type, expected):
     assert repr(pydantic_type()) == expected
+
+
+def test_enum_custom_schema() -> None:
+    class MyEnum(str, Enum):
+        foo = 'FOO'
+        bar = 'BAR'
+        baz = 'BAZ'
+
+        @classmethod
+        def __get_pydantic_core_schema__(
+            cls,
+            source_type: Any,
+            handler: GetCoreSchemaHandler,
+        ) -> CoreSchema:
+            # check that we can still call handler
+            handler(source_type)
+
+            # return a custom unrelated schema so we can test that
+            # it gets used
+            schema = core_schema.union_schema(
+                [
+                    core_schema.str_schema(),
+                    core_schema.is_instance_schema(cls),
+                ]
+            )
+            return core_schema.no_info_after_validator_function(
+                function=lambda x: MyEnum(x.upper()) if isinstance(x, str) else x,
+                schema=schema,
+                serialization=core_schema.plain_serializer_function_ser_schema(
+                    lambda x: x.value, return_schema=core_schema.int_schema()
+                ),
+            )
+
+    ta = TypeAdapter(MyEnum)
+
+    assert ta.validate_python('foo') == MyEnum.foo

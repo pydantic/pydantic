@@ -430,6 +430,11 @@ class GenerateSchema:
         if _typing_extra.is_dataclass(obj):
             return self._dataclass_schema(obj, None)
 
+        res = self._get_prepare_pydantic_annotations_for_known_type(obj, (), skip_if_has_get_core_schema=False)
+        if res is not None:
+            source_type, annotations = res
+            return self._apply_annotations(lambda x: x, source_type, annotations)
+
         origin = get_origin(obj)
 
         if isinstance(obj, TypeAliasType) or isinstance(origin, TypeAliasType):
@@ -1070,8 +1075,17 @@ class GenerateSchema:
         return schema
 
     def _get_prepare_pydantic_annotations_for_known_type(
-        self, obj: Any, annotations: tuple[Any, ...]
+        self, obj: Any, annotations: tuple[Any, ...], skip_if_has_get_core_schema: bool = True
     ) -> tuple[Any, list[Any]] | None:
+        if skip_if_has_get_core_schema and hasattr(obj, '__get_pydantic_core_schema__'):
+            # for known types that have a `__get_pydantic_core_schema__`
+            # don't use our "known" schema and instead call the users'
+            # `__get_pydantic_core_schema__`
+            # this only makes sense for known types that can be subclassed
+            # which is currently only Enums, but it could
+            # apply to other types as well
+            return None
+
         from ._std_types_schema import PREPARE_METHODS
 
         for gen in PREPARE_METHODS:
