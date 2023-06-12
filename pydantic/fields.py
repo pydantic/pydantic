@@ -12,6 +12,7 @@ from warnings import warn
 
 import annotated_types
 import typing_extensions
+from typing_extensions import Unpack
 
 from . import types
 from ._internal import _decorators, _fields, _generics, _internal_dataclass, _repr, _typing_extra, _utils
@@ -157,7 +158,7 @@ class FieldInfo(_repr.Representation):
         'decimal_places': None,
     }
 
-    def __init__(self, **kwargs: typing_extensions.Unpack[_FieldInfoInputs]) -> None:
+    def __init__(self, **kwargs: Unpack[_FieldInfoInputs]) -> None:
         """This class should generally not be initialized directly; instead, use the `pydantic.fields.Field` function
         or one of the constructor classmethods.
 
@@ -199,9 +200,7 @@ class FieldInfo(_repr.Representation):
         self.metadata = self._collect_metadata(kwargs) + annotation_metadata  # type: ignore
 
     @classmethod
-    def from_field(
-        cls, default: Any = _Undefined, **kwargs: typing_extensions.Unpack[_FromFieldInfoInputs]
-    ) -> typing_extensions.Self:
+    def from_field(cls, default: Any = _Undefined, **kwargs: Unpack[_FromFieldInfoInputs]) -> typing_extensions.Self:
         """Create a new `FieldInfo` object with the `Field` function.
 
         Args:
@@ -614,7 +613,7 @@ def Field(  # C901
     decimal_places: int | None = None,
     min_length: int | None = None,
     max_length: int | None = None,
-    **extra: typing_extensions.Unpack[_EmptyKwargs],
+    **extra: Unpack[_EmptyKwargs],
 ) -> Any:
     """Create a field for objects that can be configured.
 
@@ -655,6 +654,10 @@ def Field(  # C901
         allow_inf_nan: Allow `inf`, `-inf`, `nan`. Only applicable to numbers.
         max_digits: Maximum number of allow digits for strings.
         decimal_places: Maximum number of decimal places allowed for numbers.
+        extra: Include extra fields used by the JSON schema.
+
+            !!! warning Deprecated
+                The `extra` kwargs is deprecated. Use `json_schema_extra` instead.
 
     Returns:
         The generated `FieldInfo` object
