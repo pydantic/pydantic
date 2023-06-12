@@ -1,3 +1,4 @@
+"""The networks module contains types for common network-related fields."""
 from __future__ import annotations as _annotations
 
 import dataclasses as _dataclasses
@@ -46,6 +47,17 @@ __all__ = [
 
 @_dataclasses.dataclass
 class UrlConstraints(_fields.PydanticMetadata):
+    """Url constraints.
+
+    Attributes:
+        max_length: The maximum length of the url. Defaults to `None`.
+        allowed_schemes: The allowed schemes. Defaults to `None`.
+        host_required: Whether the host is required. Defaults to `None`.
+        default_host: The default host. Defaults to `None`.
+        default_port: The default port. Defaults to `None`.
+        default_path: The default path. Defaults to `None`.
+    """
+
     max_length: int | None = None
     allowed_schemes: list[str] | None = None
     host_required: bool | None = None
@@ -67,10 +79,13 @@ class UrlConstraints(_fields.PydanticMetadata):
 
 
 AnyUrl = Url
-# host_required is false because all schemes are "special" so host is required by rust-url automatically
+"""Base type for all URLs."""
 AnyHttpUrl = Annotated[Url, UrlConstraints(allowed_schemes=['http', 'https'])]
+"""A type that will accept any http or https URL."""
 HttpUrl = Annotated[Url, UrlConstraints(max_length=2083, allowed_schemes=['http', 'https'])]
+"""A type that will accept any http or https URL with a max length of 2083 characters."""
 FileUrl = Annotated[Url, UrlConstraints(allowed_schemes=['file'])]
+"""A type that will accept any file URL."""
 PostgresDsn = Annotated[
     MultiHostUrl,
     UrlConstraints(
@@ -88,6 +103,7 @@ PostgresDsn = Annotated[
         ],
     ),
 ]
+"""A type that will accept any Postgres DSN."""
 
 CockroachDsn = Annotated[
     Url,
@@ -100,13 +116,18 @@ CockroachDsn = Annotated[
         ],
     ),
 ]
+"""A type that will accept any Cockroach DSN."""
 AmqpDsn = Annotated[Url, UrlConstraints(allowed_schemes=['amqp', 'amqps'])]
+"""A type that will accept any AMQP DSN."""
 RedisDsn = Annotated[
     Url,
     UrlConstraints(allowed_schemes=['redis', 'rediss'], default_host='localhost', default_port=6379, default_path='/0'),
 ]
+"""A type that will accept any Redis DSN."""
 MongoDsn = Annotated[MultiHostUrl, UrlConstraints(allowed_schemes=['mongodb', 'mongodb+srv'], default_port=27017)]
+"""A type that will accept any MongoDB DSN."""
 KafkaDsn = Annotated[Url, UrlConstraints(allowed_schemes=['kafka'], default_host='localhost', default_port=9092)]
+"""A type that will accept any Kafka DSN."""
 MySQLDsn = Annotated[
     Url,
     UrlConstraints(
@@ -123,6 +144,7 @@ MySQLDsn = Annotated[
         default_port=3306,
     ),
 ]
+"""A type that will accept any MySQL DSN."""
 MariaDBDsn = Annotated[
     Url,
     UrlConstraints(
@@ -130,6 +152,7 @@ MariaDBDsn = Annotated[
         default_port=3306,
     ),
 ]
+"""A type that will accept any MariaDB DSN."""
 
 
 def import_email_validator() -> None:
@@ -145,13 +168,27 @@ if TYPE_CHECKING:
 else:
 
     class EmailStr:
+        """Validate email addresses.
+
+        Example:
+            ```py
+            from pydantic import BaseModel, EmailStr
+
+            class Model(BaseModel):
+                email: EmailStr
+
+            print(Model(email='contact@mail.com'))
+            # > email='contact@mail.com'
+            ```
+        """
+
         @classmethod
         def __get_pydantic_core_schema__(
             cls,
             source: type[Any],
         ) -> core_schema.CoreSchema:
             import_email_validator()
-            return core_schema.general_after_validator_function(cls.validate, core_schema.str_schema())
+            return core_schema.general_after_validator_function(cls._validate, core_schema.str_schema())
 
         @classmethod
         def __get_pydantic_json_schema__(
@@ -162,11 +199,29 @@ else:
             return field_schema
 
         @classmethod
-        def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> str:
+        def _validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> str:
             return validate_email(__input_value)[1]
 
 
 class NameEmail(_repr.Representation):
+    """Validate a name and email address combination.
+
+    Example:
+        ```py
+        from pydantic import BaseModel, NameEmail
+
+        class User(BaseModel):
+            email: NameEmail
+
+        print(User(email='John Doe <john.doe@mail.com>'))
+        #> email=NameEmail(name='John Doe', email='john.doe@mail.com')
+        ```
+
+    Attributes:
+        name: The name.
+        email: The email address.
+    """
+
     __slots__ = 'name', 'email'
 
     def __init__(self, name: str, email: str):
@@ -209,9 +264,12 @@ class NameEmail(_repr.Representation):
 
 
 class IPvAnyAddress:
+    """Validate an IPv4 or IPv6 address."""
+
     __slots__ = ()
 
     def __new__(cls, value: Any) -> IPv4Address | IPv6Address:  # type: ignore[misc]
+        """Validate an IPv4 or IPv6 address."""
         try:
             return IPv4Address(value)
         except ValueError:
@@ -243,9 +301,12 @@ class IPvAnyAddress:
 
 
 class IPvAnyInterface:
+    """Validate an IPv4 or IPv6 interface."""
+
     __slots__ = ()
 
     def __new__(cls, value: NetworkType) -> IPv4Interface | IPv6Interface:  # type: ignore[misc]
+        """Validate an IPv4 or IPv6 interface."""
         try:
             return IPv4Interface(value)
         except ValueError:
@@ -277,9 +338,12 @@ class IPvAnyInterface:
 
 
 class IPvAnyNetwork:
+    """Validate an IPv4 or IPv6 network."""
+
     __slots__ = ()
 
     def __new__(cls, value: NetworkType) -> IPv4Network | IPv6Network:  # type: ignore[misc]
+        """Validate an IPv4 or IPv6 network."""
         # Assume IP Network is defined with a default value for `strict` argument.
         # Define your own class if you want to specify network address check strictness.
         try:
@@ -316,13 +380,14 @@ pretty_email_regex = re.compile(r' *([\w ]*?) *<(.+?)> *')
 
 
 def validate_email(value: str) -> tuple[str, str]:
-    """
-    Email address validation using https://pypi.org/project/email-validator/
+    """Email address validation using https://pypi.org/project/email-validator/.
 
-    Notes:
-    * raw ip address (literal) domain parts are not allowed.
-    * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed
-    * spaces are striped from the beginning and end of addresses but no error is raised
+    Note:
+        Note that:
+
+        * Raw IP address (literal) domain parts are not allowed.
+        * "John Doe <local_part@domain.com>" style "pretty" email addresses are processed.
+        * Spaces are striped from the beginning and end of addresses, but no error is raised.
     """
     if email_validator is None:
         import_email_validator()

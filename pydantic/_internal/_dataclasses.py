@@ -1,6 +1,4 @@
-"""
-Private logic for creating pydantic dataclasses.
-"""
+"""Private logic for creating pydantic dataclasses."""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -45,9 +43,7 @@ if typing.TYPE_CHECKING:
 
 
 def set_dataclass_fields(cls: type[StandardDataclass], types_namespace: dict[str, Any] | None = None) -> None:
-    """
-    Collect and set `cls.__pydantic_fields__`
-    """
+    """Collect and set `cls.__pydantic_fields__`."""
     typevars_map = get_standard_typevars_map(cls)
     fields = collect_dataclass_fields(cls, types_namespace, typevars_map=typevars_map)
 
@@ -61,8 +57,7 @@ def complete_dataclass(
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
 ) -> bool:
-    """
-    Finish building a pydantic dataclass.
+    """Finish building a pydantic dataclass.
 
     This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
 
@@ -103,7 +98,8 @@ def complete_dataclass(
                 cls,
                 CallbackGetCoreSchemaHandler(
                     partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-                    gen_schema.generate_schema,
+                    gen_schema,
+                    ref_mode='unpack',
                 ),
             )
         else:
@@ -133,6 +129,8 @@ def complete_dataclass(
 
     core_config = config_wrapper.core_config(cls)
 
+    schema = gen_schema.collect_definitions(schema)
+
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
@@ -154,9 +152,8 @@ def complete_dataclass(
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
-    """
-    Whether a class is a stdlib dataclass
-    (useful to discriminated a pydantic dataclass that is actually a wrapper around a stdlib dataclass)
+    """Whether a class is a stdlib dataclass
+    (useful to discriminated a pydantic dataclass that is actually a wrapper around a stdlib dataclass).
 
     we check that
     - `_cls` is a dataclass

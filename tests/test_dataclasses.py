@@ -2310,3 +2310,41 @@ def test_rebuild_dataclass():
 
     with pytest.raises(PydanticUndefinedAnnotation, match="name 'Foo' is not defined"):
         rebuild_dataclass(MyDataClass1, _parent_namespace_depth=0)
+
+
+@pytest.mark.parametrize(
+    'dataclass_decorator',
+    [
+        pydantic.dataclasses.dataclass,
+        dataclasses.dataclass,
+    ],
+    ids=['pydantic', 'stdlib'],
+)
+def test_model_config(dataclass_decorator: Any) -> None:
+    @dataclass_decorator
+    class Model:
+        x: str
+        __pydantic_config__ = ConfigDict(str_to_lower=True)
+
+    ta = TypeAdapter(Model)
+    assert ta.validate_python({'x': 'ABC'}).x == 'abc'
+
+
+def test_model_config_override_in_decorator() -> None:
+    @pydantic.dataclasses.dataclass(config=ConfigDict(str_to_lower=False, str_strip_whitespace=True))
+    class Model:
+        x: str
+        __pydantic_config__ = ConfigDict(str_to_lower=True)
+
+    ta = TypeAdapter(Model)
+    assert ta.validate_python({'x': 'ABC '}).x == 'ABC'
+
+
+def test_model_config_override_in_decorator_empty_config() -> None:
+    @pydantic.dataclasses.dataclass(config=ConfigDict())
+    class Model:
+        x: str
+        __pydantic_config__ = ConfigDict(str_to_lower=True)
+
+    ta = TypeAdapter(Model)
+    assert ta.validate_python({'x': 'ABC '}).x == 'ABC '

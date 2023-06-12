@@ -61,7 +61,7 @@ requires-python = '>=3.7'
 dependencies = [
     'typing-extensions>=4.6.1',
     'annotated-types>=0.4.0',
-    "pydantic-core==0.38.0",
+    "pydantic-core==0.39.0",
 ]
 dynamic = ['version', 'readme']
 
@@ -84,6 +84,8 @@ docs = [
     "mkdocs-embed-external-markdown>=2.3.0",
     "black>=23.3.0",
     "pytest-examples>=0.0.9",
+    "pydantic-settings>=2.0b1",
+    "pydantic-extra-types @ git+https://github.com/pydantic/pydantic-extra-types.git@main"
 ]
 linting = [
     "black",
@@ -156,16 +158,30 @@ require_change_file = false
 
 [tool.ruff]
 line-length = 120
-extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I']
+extend-select = ['Q', 'RUF100', 'C90', 'UP', 'I', 'D']
+extend-ignore = ['D105', 'D107', 'D205']
 flake8-quotes = {inline-quotes = 'single', multiline-quotes = 'double'}
 mccabe = { max-complexity = 14 }
 isort = { known-first-party = ['pydantic', 'tests'] }
 target-version = "py37"
 exclude=['pydantic/v1']
 
+[tool.ruff.pydocstyle]
+convention = "google"
+
 [tool.ruff.per-file-ignores]
+'docs/*' = ['D']
+'pydantic/_*' = ['D']
 'pydantic/__init__.py' = ['F405', 'F403']
 'tests/test_forward_ref.py' = ['F821']
+'tests/*' = ['D']
+'pydantic/deprecated/*' = ['D']
+'pydantic/functional_validators.py' = ['D']
+'pydantic/json_schema.py' = ['D']
+'pydantic/main.py' = ['D']
+'pydantic/mypy.py' = ['D']
+'pydantic/root_model.py' = ['D']
+'pydantic/type_adapter.py' = ['D']
 
 [tool.coverage.run]
 source = ['pydantic']

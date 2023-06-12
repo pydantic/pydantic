@@ -1,6 +1,4 @@
-"""
-Logic for creating models.
-"""
+"""Logic for creating models."""
 from __future__ import annotations as _annotations
 
 import types
@@ -54,15 +52,14 @@ if typing.TYPE_CHECKING:
     # should be `set[int] | set[str] | dict[int, IncEx] | dict[str, IncEx] | None`, but mypy can't cope
     IncEx: typing_extensions.TypeAlias = 'set[int] | set[str] | dict[int, Any] | dict[str, Any] | None'
 
-__all__ = 'BaseModel', 'RootModel', 'create_model'
+__all__ = 'BaseModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
 _Undefined = _fields.Undefined
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
-    """
-    A base model class for creating Pydantic models.
+    """A base model class for creating Pydantic models.
 
     * `model_fields` is a class attribute that contains the fields defined on the model in Pydantic V2.
         This replaces `Model.__fields__` from Pydantic V1.
@@ -126,8 +123,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     __pydantic_root_model__: typing.ClassVar[bool] = False
 
     def __init__(__pydantic_self__, **data: Any) -> None:  # type: ignore
-        """
-        Create a new model by parsing and validating input data from keyword arguments.
+        """Create a new model by parsing and validating input data from keyword arguments.
 
         Raises ValidationError if the input data cannot be parsed to form a valid model.
 
@@ -193,8 +189,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     if typing.TYPE_CHECKING:
 
         def __init_subclass__(cls, **kwargs: Unpack[ConfigDict]):
-            """
-            This signature is included purely to help type-checkers check arguments to class declaration, which
+            """This signature is included purely to help type-checkers check arguments to class declaration, which
             provides a way to conveniently set model_config key/value pairs:
 
             ```py
@@ -212,8 +207,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def __pydantic_init_subclass__(cls, **kwargs: Any) -> None:
-        """
-        This is intended to behave just like `__init_subclass__`, but is called by `ModelMetaclass`
+        """This is intended to behave just like `__init_subclass__`, but is called by `ModelMetaclass`
         only after the class is actually fully initialized. In particular, attributes like `model_fields` will
         be present when this is called.
 
@@ -262,8 +256,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @property
     def model_fields_set(self) -> set[str]:
-        """
-        Returns the set of fields that have been set on this model instance.
+        """Returns the set of fields that have been set on this model instance.
 
         Returns:
             A set of strings representing the fields that have been set,
@@ -273,8 +266,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @property
     def model_extra(self) -> dict[str, Any] | None:
-        """
-        Get extra fields set during validation.
+        """Get extra fields set during validation.
 
         Returns:
             A dictionary of extra fields, or `None` if `config.extra` is not set to `"allow"`.
@@ -283,8 +275,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @property
     def model_computed_fields(self) -> dict[str, ComputedFieldInfo]:
-        """
-        Get the computed fields of this model instance.
+        """Get the computed fields of this model instance.
 
         Returns:
             A dictionary of computed field names and their corresponding `ComputedFieldInfo` objects.
@@ -299,8 +290,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         strict: bool | None = None,
         context: dict[str, Any] | None = None,
     ) -> Model:
-        """
-        Validate the given JSON data against the Pydantic model.
+        """Validate the given JSON data against the Pydantic model.
 
         Args:
             json_data: The JSON data to validate.
@@ -318,8 +308,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return cls.__pydantic_validator__.validate_json(json_data, strict=strict, context=context)
 
     def model_post_init(self, __context: Any) -> None:
-        """
-        Override this method to perform additional initialization after `__init__` and `model_construct`.
+        """Override this method to perform additional initialization after `__init__` and `model_construct`.
         This is useful if you want to do some validation that requires the entire model to be initialized.
         """
         pass
@@ -390,8 +379,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> dict[str, Any]:
-        """
-        Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
+        """Generate a dictionary representation of the model, optionally specifying which fields to include or exclude.
 
         Args:
             mode: The mode in which `to_python` should run.
@@ -435,8 +423,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         round_trip: bool = False,
         warnings: bool = True,
     ) -> str:
-        """
-        Generates a JSON representation of the model using Pydantic's `to_json` method.
+        """Generates a JSON representation of the model using Pydantic's `to_json` method.
 
         Args:
             indent: Indentation to use in the JSON output. If None is passed, the output will be compact.
@@ -467,8 +454,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_construct(cls: type[Model], _fields_set: set[str] | None = None, **values: Any) -> Model:
-        """
-        Creates a new instance of the `Model` class with validated data.
+        """Creates a new instance of the `Model` class with validated data.
 
         Creates a new model setting `__dict__` and `__pydantic_fields_set__` from trusted or pre-validated data.
         Default values are respected, but no other validation is performed.
@@ -484,13 +470,18 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         """
         m = cls.__new__(cls)
         fields_values: dict[str, Any] = {}
+        defaults: dict[str, Any] = {}  # keeping this separate from `fields_values` helps us compute `_fields_set`
         for name, field in cls.model_fields.items():
             if field.alias and field.alias in values:
-                fields_values[name] = values[field.alias]
+                fields_values[name] = values.pop(field.alias)
             elif name in values:
-                fields_values[name] = values[name]
+                fields_values[name] = values.pop(name)
             elif not field.is_required():
-                fields_values[name] = field.get_default(call_default_factory=True)
+                defaults[name] = field.get_default(call_default_factory=True)
+        if _fields_set is None:
+            _fields_set = set(fields_values.keys())
+        fields_values.update(defaults)
+
         _extra: dict[str, Any] | None = None
         if cls.model_config.get('extra') == 'allow':
             _extra = {}
@@ -499,8 +490,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         else:
             fields_values.update(values)
         _object_setattr(m, '__dict__', fields_values)
-        if _fields_set is None:
-            _fields_set = set(values.keys())
         _object_setattr(m, '__pydantic_fields_set__', _fields_set)
         _object_setattr(m, '__pydantic_extra__', _extra)
 
@@ -521,8 +510,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
         mode: JsonSchemaMode = 'validation',
     ) -> dict[str, Any]:
-        """
-        Generates a JSON schema for a model class.
+        """Generates a JSON schema for a model class.
 
         To override the logic used to generate the JSON schema, you can create a subclass of `GenerateJsonSchema`
         with your desired modifications, then override this method on a custom base class and set the default
@@ -549,8 +537,10 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         _parent_namespace_depth: int = 2,
         _types_namespace: dict[str, Any] | None = None,
     ) -> bool | None:
-        """
-        Tries to rebuild or reconstruct the model core schema.
+        """Try to rebuild the pydantic-core schema for the model.
+
+        This may be necessary when one of the annotations is a ForwardRef which could not be resolved during
+        the initial attempt to build the schema, and automatic rebuilding fails.
 
         Args:
             force: Whether to force the rebuilding of the model schema, defaults to `False`.
@@ -559,8 +549,8 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _types_namespace: The types namespace, defaults to `None`.
 
         Returns:
-            Returns `None` if model schema is complete and no rebuilding is required.
-                If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.
+            Returns `None` if the schema is already "complete" and rebuilding was not required.
+            If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
         """
         if not force and cls.__pydantic_complete__:
             return None
@@ -585,9 +575,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             )
 
     def __iter__(self) -> TupleGenerator:
-        """
-        so `dict(model)` works
-        """
+        """So `dict(model)` works."""
         yield from self.__dict__.items()
 
     def __eq__(self, other: Any) -> bool:
@@ -608,8 +596,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             return NotImplemented  # delegate to the other item in the comparison
 
     def model_copy(self: Model, *, update: dict[str, Any] | None = None, deep: bool = False) -> Model:
-        """
-        Returns a copy of the model.
+        """Returns a copy of the model.
 
         Args:
             update: Values to change/add in the new model. Note: the data is not validated
@@ -635,9 +622,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return copied
 
     def __copy__(self: Model) -> Model:
-        """
-        Returns a shallow copy of the model
-        """
+        """Returns a shallow copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', copy(self.__dict__))
@@ -654,9 +639,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return m
 
     def __deepcopy__(self: Model, memo: dict[int, Any] | None = None) -> Model:
-        """
-        Returns a deep copy of the model
-        """
+        """Returns a deep copy of the model."""
         cls = type(self)
         m = cls.__new__(cls)
         _object_setattr(m, '__dict__', deepcopy(self.__dict__, memo=memo))
@@ -765,8 +748,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
     @classmethod
     def model_parametrized_name(cls, params: tuple[type[Any], ...]) -> str:
-        """
-        Compute the class name for parametrizations of generic classes.
+        """Compute the class name for parametrizations of generic classes.
 
         This method can be overridden to achieve a custom naming scheme for generic BaseModels.
 
@@ -973,8 +955,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         update: typing.Dict[str, Any] | None = None,  # noqa UP006
         deep: bool = False,
     ) -> Model:  # pragma: no cover
-        """
-        Returns a copy of the model.
+        """Returns a copy of the model.
 
         This method is now deprecated; use `model_copy` instead. If you need `include` or `exclude`, use:
 
@@ -995,9 +976,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
 
         Returns:
             A copy of the model with included, excluded and updated fields as specified.
-
-        Raises:
-            DeprecationWarning: The `copy` method is deprecated; use `model_copy` instead.
         """
         warnings.warn(
             'The `copy` method is deprecated; use `model_copy` instead. '
@@ -1115,58 +1093,6 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         return _deprecated_copy_internals._calculate_keys(self, *args, **kwargs)  # type: ignore
 
 
-RootModelRootType = typing.TypeVar('RootModelRootType')
-
-
-class RootModel(BaseModel, typing.Generic[RootModelRootType]):
-    """
-    A Pydantic `BaseModel` for the root object of the model.
-
-    Attributes:
-        root (RootModelRootType): The root object of the model.
-    """
-
-    __pydantic_root_model__ = True
-    # TODO: Make `__pydantic_fields_set__` logic consistent with `BaseModel`, i.e. it should be `set()` if default value
-    # was used
-    __pydantic_fields_set__ = {'root'}  # It's fine having a set here as it will never change
-    __pydantic_private__ = None
-    __pydantic_extra__ = None
-
-    root: RootModelRootType
-
-    def __init__(__pydantic_self__, root: RootModelRootType) -> None:  # type: ignore
-        __tracebackhide__ = True
-        __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
-
-    __init__.__pydantic_base_init__ = True  # type: ignore
-
-    @classmethod
-    def model_construct(cls: type[Model], root: RootModelRootType, _fields_set: set[str] | None = None) -> Model:
-        """
-        Create a new model using the provided root object and update fields set.
-
-        Args:
-            root: The root object of the model.
-            _fields_set: The set of fields to be updated.
-
-        Returns:
-            The new model.
-
-        Raises:
-            NotImplemented: If the model is not a subclass of `RootModel`.
-        """
-        return super().model_construct(root=root, _fields_set=_fields_set)
-
-    def __eq__(self, other: Any) -> bool:
-        if not isinstance(other, RootModel):
-            return NotImplemented
-        return self.model_fields['root'].annotation == other.model_fields['root'].annotation and super().__eq__(other)
-
-    def __repr_args__(self) -> _repr.ReprArgs:
-        yield 'root', self.root
-
-
 @typing.overload
 def create_model(
     __model_name: str,
@@ -1206,8 +1132,7 @@ def create_model(
     __slots__: tuple[str, ...] | None = None,
     **field_definitions: Any,
 ) -> type[Model]:
-    """
-    Dynamically creates and returns a new Pydantic model.
+    """Dynamically creates and returns a new Pydantic model.
 
     Args:
         __model_name: The name of the newly created model.

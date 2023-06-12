@@ -1,6 +1,4 @@
-"""
-Provide an enhanced dataclass that performs validation.
-"""
+"""Provide an enhanced dataclass that performs validation."""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -40,7 +38,6 @@ if sys.version_info >= (3, 10):
         kw_only: bool = ...,
         slots: bool = ...,
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
-        """Overload for `dataclass`."""
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
@@ -59,7 +56,6 @@ if sys.version_info >= (3, 10):
         kw_only: bool = ...,
         slots: bool = ...,
     ) -> type[PydanticDataclass]:
-        """Overload for `dataclass`."""
         ...
 
 else:
@@ -77,7 +73,6 @@ else:
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
     ) -> Callable[[type[_T]], type[PydanticDataclass]]:  # type: ignore
-        """Overload for `dataclass`."""
         ...
 
     @dataclass_transform(field_specifiers=(dataclasses.field, Field))
@@ -94,7 +89,6 @@ else:
         config: ConfigDict | type[object] | None = None,
         validate_on_init: bool | None = None,
     ) -> type[PydanticDataclass]:
-        """Overload for `dataclass`."""
         ...
 
 
@@ -113,30 +107,16 @@ def dataclass(
     kw_only: bool = False,
     slots: bool = False,
 ) -> Callable[[type[_T]], type[PydanticDataclass]] | type[PydanticDataclass]:
-    """
-    A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
+    """A decorator used to create a Pydantic-enhanced dataclass, similar to the standard Python `dataclasses`,
     but with added validation.
 
-    Args:
-        _cls (type[_T] | None): The target dataclass.
-        init (Literal[False]): If set to `False`, the `dataclass` will not generate an `__init__`,
-            and you will need to provide one. Defaults to `False`.
-        repr (bool): Determines if a `__repr__` should be generated for the class. Defaults to `True`.
-        eq (bool): Determines if a `__eq__` should be generated for the class. Defaults to `True`.
-        order (bool): Determines if comparison magic methods should be generated, such as `__lt__`, but
-            not `__eq__`. Defaults to `False`.
-        unsafe_hash (bool): Determines if an unsafe hashing function should be included in the class.
-        frozen (bool): Determines if the generated class should be a 'frozen' dataclass, which does not allow its
-            attributes to be modified from its constructor. Defaults to `False`.
-        config (ConfigDict | type[object] | None): A configuration for the `dataclass` generation. Defaults to `None`.
-        validate_on_init (bool | None): Determines whether the `dataclass` will be validated upon creation.
-        kw_only (bool): Determines if keyword-only parameters should be used on the `__init__` method. Defaults
-            to `False`.
+    This function should be used similarly to `dataclasses.dataclass`.
 
     Args:
         _cls: The target dataclass.
-        init: If set to `False`, the dataclass will not generate an `__init__`,
-            and you will need to provide one. Defaults to `False`.
+        init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to
+            `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its
+            own  `__init__` function. Defaults to `False`.
         repr: Determines if a `__repr__` should be generated for the class. Defaults to `True`.
         eq: Determines if a `__eq__` should be generated for the class. Defaults to `True`.
         order: Determines if comparison magic methods should be generated, such as` __lt__`, but
@@ -145,18 +125,20 @@ def dataclass(
         frozen: Determines if the generated class should be a 'frozen' dataclass, which does not allow its
             attributes to be modified from its constructor. Defaults to `False`.
         config: A configuration for the dataclass generation. Defaults to `None`.
-        validate_on_init: Determines whether the dataclass will be validated upon creation.
-        kw_only: Determines if keyword-only parameters should be used on the `__init__` method. Defaults
-            to `False`.
+        validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all pydantic dataclasses
+            are validated on init.
+        kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
+        slots: Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of
+            new attributes after instantiation. Defaults to `False`.
 
     Returns:
-        A callable that takes a `type` as its argument, and returns a `type` of `PydanticDataclass`. This can
-        also return a `tyoe` of `PydanticDataclass` directly.
+        A decorator that accepts a class as its argument and returns a Pydantic dataclass.
 
     Raises:
-        AssertionError: Raised if `init` is not `False`.
+        AssertionError: Raised if `init` is not `False` or `validate_on_init` is `False`.
     """
     assert init is False, 'pydantic.dataclasses.dataclass only supports init=False'
+    assert validate_on_init is not False, 'validate_on_init=False is no longer supported'
 
     if sys.version_info >= (3, 10):
         kwargs = dict(kw_only=kw_only, slots=slots)
@@ -171,14 +153,16 @@ def dataclass(
 
         Returns:
             A Pydantic dataclass.
-
-        Raises:
-            TypeError: If a non-class value is provided.
         """
-
         original_cls = cls
 
-        config_wrapper = _config.ConfigWrapper(config)
+        config_dict = config
+        if config_dict is None:
+            # if not explicitly provided, read from the type
+            cls_config = getattr(cls, '__pydantic_config__', None)
+            if cls_config is not None:
+                config_dict = cls_config
+        config_wrapper = _config.ConfigWrapper(config_dict)
         decorators = _decorators.DecoratorInfos.build(cls)
 
         # Keep track of the original __doc__ so that we can restore it after applying the dataclasses decorator
@@ -234,8 +218,7 @@ if (3, 8) <= sys.version_info < (3, 11):
     # Starting in 3.11, typing.get_type_hints will not raise an error if the retrieved type hints are not callable.
 
     def _call_initvar(*args: Any, **kwargs: Any) -> NoReturn:
-        """
-        This function does nothing but raise an error that is as similar as possible to what you'd get
+        """This function does nothing but raise an error that is as similar as possible to what you'd get
         if you were to try calling `InitVar[int]()` without this monkeypatch. The whole purpose is just
         to ensure typing._type_check does not error if the type hint evaluates to `InitVar[<parameter>]`.
         """
@@ -252,8 +235,10 @@ def rebuild_dataclass(
     _parent_namespace_depth: int = 2,
     _types_namespace: dict[str, Any] | None = None,
 ) -> bool | None:
-    """
-    Try to rebuild or reconstruct the dataclass core schema.
+    """Try to rebuild the pydantic-core schema for the dataclass.
+
+    This may be necessary when one of the annotations is a ForwardRef which could not be resolved during
+    the initial attempt to build the schema, and automatic rebuilding fails.
 
     This is analogous to `BaseModel.model_rebuild`.
 
@@ -265,8 +250,8 @@ def rebuild_dataclass(
         _types_namespace: The types namespace, defaults to `None`.
 
     Returns:
-        Returns `None` if model schema is complete and no rebuilding is required.
-            If rebuilding _is_ required, returns `True` if rebuilding was successful, otherwise `False`.
+        Returns `None` if the schema is already "complete" and rebuilding was not required.
+        If rebuilding _was_ required, returns `True` if rebuilding was successful, otherwise `False`.
     """
     if not force and cls.__pydantic_complete__:
         return None

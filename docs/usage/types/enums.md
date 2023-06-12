@@ -2,7 +2,7 @@
 description: Support for Enum types and choices.
 ---
 
-*pydantic* uses Python's standard `enum` classes to define choices.
+Pydantic uses Python's standard `enum` classes to define choices.
 
 `enum.Enum`
 : checks that the value is a valid Enum instance

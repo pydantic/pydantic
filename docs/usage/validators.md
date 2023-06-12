@@ -224,7 +224,7 @@ print(DemoModel(ts='2017-11-08T14:00'))
 ```
 
 You'll often want to use this together with `pre`, since otherwise with `always=True`
-*pydantic* would try to validate the default `None` which would cause an error.
+Pydantic would try to validate the default `None` which would cause an error.
 
 ## Reuse validators
 
@@ -343,7 +343,7 @@ In this case you should set `check_fields=False` on the validator.
 
 ## Dataclass Validators
 
-Validators also work with *pydantic* dataclasses.
+Validators also work with Pydantic dataclasses.
 
 **TODO: Change this example so that it *should* use a validator; right now it would be better off with default_factory..**
 

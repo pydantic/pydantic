@@ -1,5 +1,4 @@
-"""
-Validator functions for standard library types.
+"""Validator functions for standard library types.
 
 Import of this module is deferred since it contains imports of many standard library modules.
 """
@@ -19,9 +18,7 @@ def sequence_validator(
     __input_value: typing.Sequence[Any],
     validator: core_schema.ValidatorFunctionWrapHandler,
 ) -> typing.Sequence[Any]:
-    """
-    Validator for `Sequence` types, isinstance(v, Sequence) has already been called.
-    """
+    """Validator for `Sequence` types, isinstance(v, Sequence) has already been called."""
     value_type = type(__input_value)
 
     # We don't accept any plain string as a sequence
@@ -58,9 +55,8 @@ def import_string(value: Any) -> Any:
 
 
 def _import_string_logic(dotted_path: str) -> Any:
-    """
-    Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
-    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.)
+    """Inspired by uvicorn — dotted paths should include a colon before the final item if that item is not a module.
+    (This is necessary to distinguish between a submodule and an attribute when there is a conflict.).
 
     If the dotted path does not include a colon and the final item is not a valid module, importing as an attribute
     rather than a submodule will be attempted automatically.
@@ -178,8 +174,7 @@ def ip_v6_address_validator(__input_value: Any) -> IPv6Address:
 
 
 def ip_v4_network_validator(__input_value: Any) -> IPv4Network:
-    """
-    Assume IPv4Network initialised with a default `strict` argument
+    """Assume IPv4Network initialised with a default `strict` argument.
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv4Network
@@ -194,8 +189,7 @@ def ip_v4_network_validator(__input_value: Any) -> IPv4Network:
 
 
 def ip_v6_network_validator(__input_value: Any) -> IPv6Network:
-    """
-    Assume IPv6Network initialised with a default `strict` argument
+    """Assume IPv6Network initialised with a default `strict` argument.
 
     See more:
     https://docs.python.org/library/ipaddress.html#ipaddress.IPv6Network
