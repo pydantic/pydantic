@@ -2385,52 +2385,66 @@ with <code>__get_validators__</code>.</p>
 <code>__get_validators__</code> you don't need to use <code>arbitrary_types_allowed</code> for it to work.</p>
 <p>Because you can declare validators that receive the current <code>field</code>, you can extract
 the <code>sub_fields</code> (from the generic class type parameters) and validate data with them.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+<div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
 
-<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-<span class="kn">from</span> <span class="nn">pydantic.fields</span> <span class="kn">import</span> <span class="n">ModelField</span>
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">core_schema</span>
+<span class="kn">from</span> <span class="nn">typing_extensions</span> <span class="kn">import</span> <span class="n">get_args</span><span class="p">,</span> <span class="n">get_origin</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 <span class="n">AgedType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;AgedType&#39;</span><span class="p">)</span>
 <span class="n">QualityType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;QualityType&#39;</span><span class="p">)</span>
 
 
 <span class="c1"># This is not a pydantic model, it&#39;s an arbitrary generic class</span>
+<span class="nd">@dataclass</span>
 <span class="k">class</span> <span class="nc">TastingModel</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">AgedType</span><span class="p">,</span> <span class="n">QualityType</span><span class="p">]):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">aged</span><span class="p">:</span> <span class="n">AgedType</span><span class="p">,</span> <span class="n">quality</span><span class="p">:</span> <span class="n">QualityType</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">aged</span> <span class="o">=</span> <span class="n">aged</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">quality</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">aged</span><span class="p">:</span> <span class="n">AgedType</span>
+    <span class="n">quality</span><span class="p">:</span> <span class="n">QualityType</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span> <span class="nf">__get_validators__</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
-        <span class="k">yield</span> <span class="bp">cls</span><span class="o">.</span><span class="n">validate</span>
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="n">get_origin</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># used as `x: TastingModel` without params</span>
+            <span class="n">origin</span> <span class="o">=</span> <span class="n">source_type</span>
+            <span class="n">age_tp</span> <span class="o">=</span> <span class="n">quality_tp</span> <span class="o">=</span> <span class="n">Any</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">age_tp</span><span class="p">,</span> <span class="n">quality_tp</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
+        <span class="n">aged_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">age_tp</span><span class="p">)</span>
+        <span class="n">quality_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">quality_tp</span><span class="p">)</span>
 
-    <span class="nd">@classmethod</span>
-    <span class="c1"># You don&#39;t need to add the &quot;ModelField&quot;, but it will help your</span>
-    <span class="c1"># editor give you completion and catch errors</span>
-    <span class="k">def</span> <span class="nf">validate</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="n">field</span><span class="p">:</span> <span class="n">ModelField</span><span class="p">):</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="bp">cls</span><span class="p">):</span>
-            <span class="c1"># The value is not even a TastingModel</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s1">&#39;Invalid value&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="n">field</span><span class="o">.</span><span class="n">sub_fields</span><span class="p">:</span>
-            <span class="c1"># Generic parameters were not provided so we don&#39;t try to validate</span>
-            <span class="c1"># them and just return the value as is</span>
+        <span class="k">def</span> <span class="nf">val_aged</span><span class="p">(</span>
+            <span class="n">v</span><span class="p">:</span> <span class="n">TastingModel</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidatorFunctionWrapHandler</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">aged</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">v</span>
-        <span class="n">aged_f</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">sub_fields</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">quality_f</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">sub_fields</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="c1"># Here we don&#39;t need the validated value, but we want the errors</span>
-        <span class="n">valid_value</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">aged_f</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">aged</span><span class="p">,</span> <span class="p">{},</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;aged&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-        <span class="c1"># Here we don&#39;t need the validated value, but we want the errors</span>
-        <span class="n">valid_value</span><span class="p">,</span> <span class="n">error</span> <span class="o">=</span> <span class="n">quality_f</span><span class="o">.</span><span class="n">validate</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">quality</span><span class="p">,</span> <span class="p">{},</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;quality&#39;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">error</span><span class="p">:</span>
-            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="n">ValidationError</span><span class="o">.</span><span class="n">from_exception_data</span><span class="p">(</span><span class="n">errors</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span>
-        <span class="c1"># Validation passed without errors, return the same instance received</span>
-        <span class="k">return</span> <span class="n">v</span>
+
+        <span class="k">def</span> <span class="nf">val_quality</span><span class="p">(</span>
+            <span class="n">v</span><span class="p">:</span> <span class="n">TastingModel</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidatorFunctionWrapHandler</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">chain_schema</span><span class="p">(</span>
+            <span class="c1"># `chain_schema` means do the following steps in order:</span>
+            <span class="p">[</span>
+                <span class="c1"># Ensure the value is an instance of TastingModel</span>
+                <span class="n">core_schema</span><span class="o">.</span><span class="n">is_instance_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">),</span>
+                <span class="c1"># Use the aged_schema to validate the `aged` field of generic type `AgedType`</span>
+                <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span><span class="n">val_aged</span><span class="p">,</span> <span class="n">aged_schema</span><span class="p">),</span>
+                <span class="c1"># Use the quality_schema to validate the `quality` field of generic type `QualityType`</span>
+                <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+                    <span class="n">val_quality</span><span class="p">,</span> <span class="n">quality_schema</span>
+                <span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
@@ -2451,11 +2465,19 @@ the <code>sub_fields</code> (from the generic class type parameters) and validat
     <span class="n">thing</span><span class="o">=</span><span class="n">TastingModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Python&#39;</span><span class="p">,</span> <span class="n">aged</span><span class="o">=</span><span class="s1">&#39;Not much&#39;</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="s1">&#39;Awesome&#39;</span><span class="p">),</span>
 <span class="p">)</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">wine=TastingModel(name=&#39;Cabernet Sauvignon&#39;, aged=20, quality=85.6) cheese=TastingModel(name=&#39;Gouda&#39;, aged=True, quality=&#39;Good&#39;) thing=TastingModel(name=&#39;Python&#39;, aged=&#39;Not much&#39;, quality=&#39;Awesome&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">wine</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
+<span class="c1">#&gt; 20</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">wine</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+<span class="c1">#&gt; 85.6</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cheese</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
+<span class="c1">#&gt; True</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cheese</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+<span class="c1">#&gt; Good</span>
 <span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">thing</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
+<span class="c1">#&gt; Not much</span>
 <span class="k">try</span><span class="p">:</span>
     <span class="c1"># If the values of the sub-types are invalid, we get an error</span>
     <span class="n">Model</span><span class="p">(</span>
@@ -2469,7 +2491,130 @@ the <code>sub_fields</code> (from the generic class type parameters) and validat
     <span class="p">)</span>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Model</span>
+<span class="sd">    wine</span>
+<span class="sd">      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value=&#39;Kinda good&#39;, input_type=str]</span>
+<span class="sd">    cheese</span>
+<span class="sd">      Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value=&#39;yeah&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">dataclasses</span> <span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Generic</span><span class="p">,</span> <span class="n">TypeVar</span>
+
+<span class="kn">from</span> <span class="nn">pydantic_core</span> <span class="kn">import</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">core_schema</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">get_args</span><span class="p">,</span> <span class="n">get_origin</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">GetCoreSchemaHandler</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+<span class="n">AgedType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;AgedType&#39;</span><span class="p">)</span>
+<span class="n">QualityType</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s1">&#39;QualityType&#39;</span><span class="p">)</span>
+
+
+<span class="c1"># This is not a pydantic model, it&#39;s an arbitrary generic class</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span> <span class="nc">TastingModel</span><span class="p">(</span><span class="n">Generic</span><span class="p">[</span><span class="n">AgedType</span><span class="p">,</span> <span class="n">QualityType</span><span class="p">]):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">aged</span><span class="p">:</span> <span class="n">AgedType</span>
+    <span class="n">quality</span><span class="p">:</span> <span class="n">QualityType</span>
+
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">__get_pydantic_core_schema__</span><span class="p">(</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">source_type</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetCoreSchemaHandler</span>
+    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">CoreSchema</span><span class="p">:</span>
+        <span class="n">origin</span> <span class="o">=</span> <span class="n">get_origin</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">origin</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># used as `x: TastingModel` without params</span>
+            <span class="n">origin</span> <span class="o">=</span> <span class="n">source_type</span>
+            <span class="n">age_tp</span> <span class="o">=</span> <span class="n">quality_tp</span> <span class="o">=</span> <span class="n">Any</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">age_tp</span><span class="p">,</span> <span class="n">quality_tp</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
+        <span class="n">aged_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">age_tp</span><span class="p">)</span>
+        <span class="n">quality_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">quality_tp</span><span class="p">)</span>
+
+        <span class="k">def</span> <span class="nf">val_aged</span><span class="p">(</span>
+            <span class="n">v</span><span class="p">:</span> <span class="n">TastingModel</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidatorFunctionWrapHandler</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">aged</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="k">def</span> <span class="nf">val_quality</span><span class="p">(</span>
+            <span class="n">v</span><span class="p">:</span> <span class="n">TastingModel</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidatorFunctionWrapHandler</span>
+        <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+            <span class="n">v</span><span class="o">.</span><span class="n">quality</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">v</span>
+
+        <span class="k">return</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">chain_schema</span><span class="p">(</span>
+            <span class="c1"># `chain_schema` means do the following steps in order:</span>
+            <span class="p">[</span>
+                <span class="c1"># Ensure the value is an instance of TastingModel</span>
+                <span class="n">core_schema</span><span class="o">.</span><span class="n">is_instance_schema</span><span class="p">(</span><span class="bp">cls</span><span class="p">),</span>
+                <span class="c1"># Use the aged_schema to validate the `aged` field of generic type `AgedType`</span>
+                <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span><span class="n">val_aged</span><span class="p">,</span> <span class="n">aged_schema</span><span class="p">),</span>
+                <span class="c1"># Use the quality_schema to validate the `quality` field of generic type `QualityType`</span>
+                <span class="n">core_schema</span><span class="o">.</span><span class="n">no_info_wrap_validator_function</span><span class="p">(</span>
+                    <span class="n">val_quality</span><span class="p">,</span> <span class="n">quality_schema</span>
+                <span class="p">),</span>
+            <span class="p">]</span>
+        <span class="p">)</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="c1"># for wine, &quot;aged&quot; is an int with years, &quot;quality&quot; is a float</span>
+    <span class="n">wine</span><span class="p">:</span> <span class="n">TastingModel</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">]</span>
+    <span class="c1"># for cheese, &quot;aged&quot; is a bool, &quot;quality&quot; is a str</span>
+    <span class="n">cheese</span><span class="p">:</span> <span class="n">TastingModel</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span>
+    <span class="c1"># for thing, &quot;aged&quot; is a Any, &quot;quality&quot; is Any</span>
+    <span class="n">thing</span><span class="p">:</span> <span class="n">TastingModel</span>
+
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span>
+    <span class="c1"># This wine was aged for 20 years and has a quality of 85.6</span>
+    <span class="n">wine</span><span class="o">=</span><span class="n">TastingModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Cabernet Sauvignon&#39;</span><span class="p">,</span> <span class="n">aged</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="mf">85.6</span><span class="p">),</span>
+    <span class="c1"># This cheese is aged (is mature) and has &quot;Good&quot; quality</span>
+    <span class="n">cheese</span><span class="o">=</span><span class="n">TastingModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Gouda&#39;</span><span class="p">,</span> <span class="n">aged</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="s1">&#39;Good&#39;</span><span class="p">),</span>
+    <span class="c1"># This Python thing has aged &quot;Not much&quot; and has a quality &quot;Awesome&quot;</span>
+    <span class="n">thing</span><span class="o">=</span><span class="n">TastingModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Python&#39;</span><span class="p">,</span> <span class="n">aged</span><span class="o">=</span><span class="s1">&#39;Not much&#39;</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="s1">&#39;Awesome&#39;</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">wine=TastingModel(name=&#39;Cabernet Sauvignon&#39;, aged=20, quality=85.6) cheese=TastingModel(name=&#39;Gouda&#39;, aged=True, quality=&#39;Good&#39;) thing=TastingModel(name=&#39;Python&#39;, aged=&#39;Not much&#39;, quality=&#39;Awesome&#39;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">wine</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
+<span class="c1">#&gt; 20</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">wine</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+<span class="c1">#&gt; 85.6</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cheese</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
+<span class="c1">#&gt; True</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">cheese</span><span class="o">.</span><span class="n">quality</span><span class="p">)</span>
+<span class="c1">#&gt; Good</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">thing</span><span class="o">.</span><span class="n">aged</span><span class="p">)</span>
+<span class="c1">#&gt; Not much</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># If the values of the sub-types are invalid, we get an error</span>
+    <span class="n">Model</span><span class="p">(</span>
+        <span class="c1"># For wine, aged should be an int with the years, and quality a float</span>
+        <span class="n">wine</span><span class="o">=</span><span class="n">TastingModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Merlot&#39;</span><span class="p">,</span> <span class="n">aged</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="s1">&#39;Kinda good&#39;</span><span class="p">),</span>
+        <span class="c1"># For cheese, aged should be a bool, and quality a str</span>
+        <span class="n">cheese</span><span class="o">=</span><span class="n">TastingModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Gouda&#39;</span><span class="p">,</span> <span class="n">aged</span><span class="o">=</span><span class="s1">&#39;yeah&#39;</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="mi">5</span><span class="p">),</span>
+        <span class="c1"># For thing, no type parameters are declared, and we skipped validation</span>
+        <span class="c1"># in those cases in the Assessment.validate() function</span>
+        <span class="n">thing</span><span class="o">=</span><span class="n">TastingModel</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Python&#39;</span><span class="p">,</span> <span class="n">aged</span><span class="o">=</span><span class="s1">&#39;Not much&#39;</span><span class="p">,</span> <span class="n">quality</span><span class="o">=</span><span class="s1">&#39;Awesome&#39;</span><span class="p">),</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    2 validation errors for Model</span>
+<span class="sd">    wine</span>
+<span class="sd">      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value=&#39;Kinda good&#39;, input_type=str]</span>
+<span class="sd">    cheese</span>
+<span class="sd">      Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value=&#39;yeah&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+</div>
+</div>
+</div>
 
 
 
