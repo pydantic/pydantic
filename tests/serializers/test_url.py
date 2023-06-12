@@ -86,3 +86,13 @@ def test_custom_serializer():
 
     multi_host_url = MultiHostUrl('https://ex.com,ex.org/path')
     assert s.to_python(multi_host_url) == multi_host_url
+
+
+@pytest.mark.parametrize('base_class', [Url, MultiHostUrl])
+def test_url_subclass(base_class):
+    class MyUrl(base_class):
+        def some_method(self):
+            return self.path + '-success'
+
+    m = MyUrl('http://ex.com/path')
+    assert m.some_method() == '/path-success'
