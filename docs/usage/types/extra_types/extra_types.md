@@ -1,4 +1,4 @@
-For types that are more complex, or don't need to be on *pydantic* itself, we have the [Pydantic Extra Types] project.
+For types that are more complex, or don't need to be on Pydantic itself, we have the [Pydantic Extra Types] project.
 
 The following types are supported by [Pydantic Extra Types]:
 

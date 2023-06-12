@@ -1,8 +1,8 @@
-*pydantic* works well with any editor or IDE out of the box because it's made on top of standard Python type annotations.
+Pydantic works well with any editor or IDE out of the box because it's made on top of standard Python type annotations.
 
 When using [Visual Studio Code (VS Code)](https://code.visualstudio.com/), there are some **additional editor features** supported, comparable to the ones provided by the [PyCharm plugin](../integrations/pycharm.md).
 
-This means that you will have **autocompletion** (or "IntelliSense") and **error checks** for types and required arguments even while creating new *pydantic* model instances.
+This means that you will have **autocompletion** (or "IntelliSense") and **error checks** for types and required arguments even while creating new Pydantic model instances.
 
 ![pydantic autocompletion in VS Code](../img/vs_code_01.png)
 
@@ -22,7 +22,7 @@ Pylance is installed as part of the [Python Extension for VS Code](https://marke
 
 Then you need to make sure your editor knows the [Python environment](https://code.visualstudio.com/docs/python/python-tutorial#_install-and-use-packages) (probably a virtual environment) for your Python project.
 
-This would be the environment in where you installed *pydantic*.
+This would be the environment in where you installed Pydantic.
 
 ### Configure Pylance
 
@@ -37,7 +37,7 @@ You can enable type error checks from Pylance with these steps:
 
 ![Type Checking Mode set to strict in VS Code](../img/vs_code_02.png)
 
-Now you will not only get autocompletion when creating new *pydantic* model instances but also error checks for **required arguments**.
+Now you will not only get autocompletion when creating new Pydantic model instances but also error checks for **required arguments**.
 
 ![Required arguments error checks in VS Code](../img/vs_code_03.png)
 
@@ -54,7 +54,7 @@ And you will also get error checks for **invalid data types**.
 
 You might also want to configure mypy in VS Code to get mypy error checks inline in your editor (alternatively/additionally to Pylance).
 
-This would include the errors detected by the [*pydantic* mypy plugin](../integrations/mypy.md), if you configured it.
+This would include the errors detected by the [Pydantic mypy plugin](../integrations/mypy.md), if you configured it.
 
 To enable mypy in VS Code, do the following:
 
@@ -67,13 +67,13 @@ To enable mypy in VS Code, do the following:
 
 ## Tips and tricks
 
-Here are some additional tips and tricks to improve your developer experience when using VS Code with *pydantic*.
+Here are some additional tips and tricks to improve your developer experience when using VS Code with Pydantic.
 
 ### Strict errors
 
-The way this additional editor support works is that Pylance will treat your *pydantic* models as if they were Python's pure `dataclasses`.
+The way this additional editor support works is that Pylance will treat your Pydantic models as if they were Python's pure `dataclasses`.
 
-And it will show **strict type error checks** about the data types passed in arguments when creating a new *pydantic* model instance.
+And it will show **strict type error checks** about the data types passed in arguments when creating a new Pydantic model instance.
 
 In this example you can see that it shows that a `str` of `'23'` is not a valid `int` for the argument `age`.
 
@@ -81,7 +81,7 @@ In this example you can see that it shows that a `str` of `'23'` is not a valid 
 
 It would expect `age=23` instead of `age='23'`.
 
-Nevertheless, the design, and one of the main features of *pydantic*, is that it is very **lenient with data types**.
+Nevertheless, the design, and one of the main features of Pydantic, is that it is very **lenient with data types**.
 
 It will actually accept the `str` with value `'23'` and will convert it to an `int` with value `23`.
 
@@ -91,9 +91,9 @@ These strict error checks are **very useful** most of the time and can help you 
 
 This example above with `age='23'` is intentionally simple, to show the error and the differences in types.
 
-But more common cases where these strict errors would be inconvenient would be when using more sophisticated data types, like `int` values for `datetime` fields, or `dict` values for *pydantic* sub-models.
+But more common cases where these strict errors would be inconvenient would be when using more sophisticated data types, like `int` values for `datetime` fields, or `dict` values for Pydantic sub-models.
 
-For example, this is valid for *pydantic*:
+For example, this is valid for Pydantic:
 
 ```Python hl_lines="12 17"
 from pydantic import BaseModel
@@ -115,7 +115,7 @@ quest = Quest(
 )
 ```
 
-The type of the field `knight` is declared with the class `Knight` (a *pydantic* model) and the code is passing a literal `dict` instead. This is still valid for *pydantic*, and the `dict` would be automatically converted to a `Knight` instance.
+The type of the field `knight` is declared with the class `Knight` (a Pydantic model) and the code is passing a literal `dict` instead. This is still valid for Pydantic, and the `dict` would be automatically converted to a `Knight` instance.
 
 Nevertheless, it would be detected as a type error:
 
@@ -219,7 +219,7 @@ So, this is the equivalent of the previous example, without the additional varia
 
 ### Config in class arguments
 
-*pydantic* has a rich set of [Model Configurations](../usage/model_config.md) available.
+Pydantic has a rich set of [Model Configurations](../usage/model_config.md) available.
 
 These configurations can be set in an internal `class Config` on each model:
 
@@ -279,7 +279,7 @@ This is a limitation of dataclass transforms and cannot be fixed in pydantic.
 ## Technical Details
 
 !!! warning
-    As a *pydantic* user, you don't need the details below. Feel free to skip the rest of this section.
+    As a Pydantic user, you don't need the details below. Feel free to skip the rest of this section.
 
     These details are only useful for other library authors, etc.
 
@@ -287,12 +287,12 @@ This additional editor support works by implementing the proposed draft standard
 
 The proposed draft standard is written by Eric Traut, from the Microsoft team, the same author of the open source package Pyright (used by Pylance to provide Python support in VS Code).
 
-The intention of the standard is to provide a way for libraries like *pydantic* and others to tell editors and tools that they (the editors) should treat these libraries (e.g. *pydantic*) as if they were `dataclasses`, providing autocompletion, type checks, etc.
+The intention of the standard is to provide a way for libraries like Pydantic and others to tell editors and tools that they (the editors) should treat these libraries (e.g. Pydantic) as if they were `dataclasses`, providing autocompletion, type checks, etc.
 
-The draft standard also includes an [Alternate Form](https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md#alternate-form) for early adopters, like *pydantic*, to add support for it right away, even before the new draft standard is finished and approved.
+The draft standard also includes an [Alternate Form](https://github.com/microsoft/pyright/blob/master/specs/dataclass_transforms.md#alternate-form) for early adopters, like Pydantic, to add support for it right away, even before the new draft standard is finished and approved.
 
 This new draft standard, with the Alternate Form, is already supported by Pyright, so it can be used via Pylance in VS Code.
 
 As it is being proposed as an official standard for Python, other editors can also easily add support for it.
 
-And authors of other libraries similar to *pydantic* can also easily adopt the standard right away (using the "Alternate Form") and get the benefits of these additional editor features.
+And authors of other libraries similar to Pydantic can also easily adopt the standard right away (using the "Alternate Form") and get the benefits of these additional editor features.

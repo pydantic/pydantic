@@ -66,7 +66,7 @@ print(Model(x=['{"a": 1}', '[1, 2]']).model_dump(round_trip=True))
 
 ## `dict(model)` and iteration
 
-*pydantic* models can also be converted to dictionaries using `dict(model)`, and you can also
+Pydantic models can also be converted to dictionaries using `dict(model)`, and you can also
 iterate over a model's field using `for field_name, value in model:`. With this approach the raw field values are
 returned, so sub-models will not be converted to dictionaries.
 
@@ -137,7 +137,7 @@ only the values are serialised)
 
 See [arguments](../api/main.md#pydantic.main.BaseModel.model_dump_json) for more information.
 
-*pydantic* can serialise many commonly used types to JSON (e.g. `datetime`, `date` or `UUID`) which would normally
+Pydantic can serialise many commonly used types to JSON (e.g. `datetime`, `date` or `UUID`) which would normally
 fail with a simple `json.dumps(foobar)`.
 
 ```py
@@ -304,7 +304,7 @@ print(m.model_dump_json())
 
 ## `pickle.dumps(model)`
 
-Using the same plumbing as `model_copy()`, *pydantic* models support efficient pickling and unpickling.
+Using the same plumbing as `model_copy()`, Pydantic models support efficient pickling and unpickling.
 
 ```py test="skip"
 # TODO need to get pickling to work

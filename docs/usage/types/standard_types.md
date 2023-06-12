@@ -64,7 +64,7 @@ Pydantic supports many common types from the Python standard library. If you nee
     This is a new feature of the Python standard library as of Python 3.8;
     prior to Python 3.8, it requires the [typing-extensions](https://pypi.org/project/typing-extensions/) package.
 
-*pydantic* supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to Python 3.8)
+Pydantic supports the use of `typing.Literal` (or `typing_extensions.Literal` prior to Python 3.8)
 as a lightweight way to specify that a field may accept only specific literal values:
 
 ```py requires="3.8"

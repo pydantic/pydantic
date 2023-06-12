@@ -21,7 +21,7 @@ print(Model(a=('1', 2, 3), b='ok'))
 #> a=[1, 2, 3] b='ok'
 ```
 
-Internally, *pydantic*  will call a method similar to `typing.get_type_hints` to resolve annotations.
+Internally, Pydantic  will call a method similar to `typing.get_type_hints` to resolve annotations.
 
 In cases where the referenced type is not yet defined, `ForwardRef` can be used (although referencing the
 type directly or by its string is a simpler solution in the case of
@@ -71,7 +71,7 @@ print(Foo(sibling={'a': '321'}))
 
 Since Python 3.7, you can also refer it by its type, provided you import `annotations` (see
 [above](postponed_annotations.md) for support depending on Python
-and *pydantic* versions).
+and Pydantic versions).
 
 ```py
 from __future__ import annotations

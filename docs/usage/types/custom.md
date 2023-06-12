@@ -179,7 +179,7 @@ print(type(model2.pet))
 
 !!! warning
     This is an advanced technique that you might not need in the beginning. In most of
-    the cases you will probably be fine with standard *pydantic* models.
+    the cases you will probably be fine with standard Pydantic models.
 
 You can use
 [Generic Classes](https://docs.python.org/3/library/typing.html#typing.Generic) as
