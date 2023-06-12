@@ -4,7 +4,7 @@ Installation is as simple as:
 pip install pydantic
 ```
 
-*pydantic* has a few dependencies:
+Pydantic has a few dependencies:
 
 * [`pydantic-core`](https://pypi.org/project/pydantic-core/): Core validation logic for _pydantic_ written in rust.
 * [`typing-extensions`](https://pypi.org/project/typing-extensions/): Backport of the standard library `typing` module.
@@ -21,11 +21,11 @@ conda install pydantic -c conda-forge
 
 ## Optional dependencies
 
-*pydantic* has the following optional dependencies:
+Pydantic has the following optional dependencies:
 
 * If you require email validation, you can add [email-validator](https://github.com/JoshData/python-email-validator).
 
-To install optional dependencies along with *pydantic*:
+To install optional dependencies along with Pydantic:
 
 ```bash
 pip install pydantic[email]
@@ -35,7 +35,7 @@ Of course, you can also install requirements manually with `pip install email-va
 
 ## Install from repository
 
-And if you prefer to install *pydantic* directly from the repository:
+And if you prefer to install Pydantic directly from the repository:
 
 ```bash
 pip install git+https://github.com/pydantic/pydantic@main#egg=pydantic

@@ -8,7 +8,7 @@ description: Support for iterable types.
 `typing.Iterable`
 : this is reserved for iterables that shouldn't be consumed. See [Infinite Generators](#infinite-generators) below for more detail on parsing and validation
 
-*pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
+Pydantic uses standard library `typing` types as defined in PEP 484 to define complex objects.
 
 ```py
 from typing import Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union
@@ -67,7 +67,7 @@ print(Model(deque=[1, 2, 3]).deque)
 ### Strings aren't Sequences
 
 
-*pydantic* doesn't treat strings, i.e. `str` and `bytes` subclasses, as sequences:
+Pydantic doesn't treat strings, i.e. `str` and `bytes` subclasses, as sequences:
 
 ```py
 from typing import Optional, Sequence

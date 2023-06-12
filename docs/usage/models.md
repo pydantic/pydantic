@@ -398,7 +398,7 @@ except ValidationError as e:
 
 ### Creating models without validation
 
-*pydantic* also provides the `model_construct()` method which allows models to be created **without validation** this
+Pydantic also provides the `model_construct()` method which allows models to be created **without validation** this
 can be useful when data has already been validated or comes from a trusted source and you want to create a model
 as efficiently as possible (`model_construct()` is generally around 30x faster than creating a model with full validation).
 
@@ -679,7 +679,7 @@ print(concrete_model(a=1, b=1))
 
 ## Dynamic model creation
 
-There are some occasions where the shape of a model is not known until runtime. For this *pydantic* provides
+There are some occasions where the shape of a model is not known until runtime. For this Pydantic provides
 the `create_model` method to allow models to be created on the fly.
 
 ```py
@@ -1112,7 +1112,7 @@ are supported.
 
 ## Data conversion
 
-*pydantic* may cast input data to force it to conform to model field types,
+Pydantic may cast input data to force it to conform to model field types,
 and in some cases this may result in a loss of information.
 For example:
 
@@ -1130,14 +1130,14 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 #> {'a': 3, 'b': 2.72, 'c': 'binary data'}
 ```
 
-This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See
+This is a deliberate decision of Pydantic, and in general it's the most useful approach. See
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, [strict type checking](types/types.md#strict-types) is partially supported.
 
 ## Model signature
 
-All *pydantic* models will have their signature generated based on their fields:
+All Pydantic models will have their signature generated based on their fields:
 
 ```py
 import inspect
@@ -1180,14 +1180,14 @@ print(inspect.signature(MyModel))
 ```
 
 To be included in the signature, a field's alias or name must be a valid Python identifier.
-*pydantic* prefers aliases over names, but may use field names if the alias is not a valid Python identifier.
+Pydantic prefers aliases over names, but may use field names if the alias is not a valid Python identifier.
 
 If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
 In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
 
 ## Structural pattern matching
 
-*pydantic* supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
+Pydantic supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
 ```py requires="3.10" lint="skip"
 from pydantic import BaseModel

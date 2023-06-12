@@ -4,7 +4,7 @@ description: Support for Type[T] and TypeVar.
 
 ## Type
 
-*pydantic* supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
+Pydantic supports the use of `Type[T]` to specify that a field may only accept classes (not instances)
 that are subclasses of `T`.
 
 ```py
