@@ -75,7 +75,9 @@ def _get_schema(type_: Any, config_wrapper: _config.ConfigWrapper, parent_depth:
     global_ns = sys._getframe(max(parent_depth - 1, 1)).f_globals.copy()
     global_ns.update(local_ns or {})
     gen = _generate_schema.GenerateSchema(config_wrapper, types_namespace=global_ns, typevars_map={})
-    return gen.generate_schema(type_)
+    schema = gen.generate_schema(type_)
+    schema = gen.collect_definitions(schema)
+    return schema
 
 
 def _getattr_no_parents(obj: Any, attribute: str) -> Any:

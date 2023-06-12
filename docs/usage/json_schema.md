@@ -774,6 +774,7 @@ class Person(BaseModel):
         cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
         json_schema['examples'] = [
             {
                 'name': 'John Doe',

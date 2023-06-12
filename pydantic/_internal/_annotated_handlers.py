@@ -88,3 +88,19 @@ class GetCoreSchemaHandler:
             CoreSchema: the `pydantic-core` CoreSchema generated.
         """
         raise NotImplementedError
+
+    def resolve_ref_schema(self, __maybe_ref_schema: core_schema.CoreSchema) -> core_schema.CoreSchema:
+        """Get the real schema for a `definition-ref` schema.
+        If the schema given is not a `definition-ref` schema, it will be returned as is.
+        This means you don't have to check before calling this function.
+
+        Args:
+            __maybe_ref_schema: A `CoreSchema`, `ref`-based or not.
+
+        Raises:
+            LookupError: If the `ref` is not found.
+
+        Returns:
+            A concrete `CoreSchema`.
+        """
+        raise NotImplementedError
