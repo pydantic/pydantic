@@ -1199,7 +1199,7 @@ class Base64Encoder(EncoderProtocol):
 
     @classmethod
     def decode(cls, data: bytes) -> bytes:
-        """Decode the data from bytes to a base64 encoded bytes.
+        """Decode the data from base64 encoded bytes to original bytes data.
 
         Args:
             data: The data to decode.
