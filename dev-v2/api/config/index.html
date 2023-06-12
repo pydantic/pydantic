@@ -2397,6 +2397,17 @@ class without an annotation and has a type that is not in this tuple (or otherwi
           </td>
         </tr>
         <tr>
+          <td><code>json_schema_extra</code></td>
+          <td>
+                <code>dict[str, object] | <span title="pydantic.config.JsonSchemaExtraCallable">JsonSchemaExtraCallable</span> | None</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A dict or callable to provide extra JSON schema properties. Defaults to <code>None</code>.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
           <td><code>strict</code></td>
           <td>
                 <code>bool</code>
