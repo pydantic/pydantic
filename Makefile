@@ -16,11 +16,11 @@ install: .pdm .pre-commit
 
 .PHONY: refresh-lockfiles  ## Sync lockfiles with requirements files.
 refresh-lockfiles: .pdm
-	pdm update --update-reuse --group email --group testing --group docs --group memray --group testing-extra --group linting --group mypy
+	pdm update --update-reuse --group :all
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
 rebuild-lockfiles: .pdm
-	pdm update --update-eager --group email --group testing --group docs --group memray --group testing-extra --group linting --group mypy
+	pdm update --update-eager --group :all
 
 .PHONY: format  ## Auto-format python source files
 format: .pdm
