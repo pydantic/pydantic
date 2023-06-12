@@ -91,6 +91,7 @@ class ConfigDict(TypedDict, total=False):
             class without an annotation and has a type that is not in this tuple (or otherwise recognized by
             _pydantic_), an error will be raised. Defaults to `()`.
         allow_inf_nan: Whether to allow infinity (`+inf` an `-inf`) and NaN values to float fields. Defaults to `True`.
+        json_schema_extra: A dict or callable to provide extra JSON schema properties. Defaults to `None`.
         strict: Whether to make the configuration strict. Defaults to `False`.
         revalidate_instances: When and how to revalidate models and dataclasses during validation. Accepts the string
             values of `'never'`, `'always'` and `'subclass-instances'`. Defaults to `'never'`.
