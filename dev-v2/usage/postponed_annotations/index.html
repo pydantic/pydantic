@@ -2083,7 +2083,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="p">(</span><span class="s1">&#39;1&#39;</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;ok&#39;</span><span class="p">))</span>
 <span class="c1">#&gt; a=[1, 2, 3] b=&#39;ok&#39;</span>
 </code></pre></div>
-<p>Internally, <em>pydantic</em>  will call a method similar to <code>typing.get_type_hints</code> to resolve annotations.</p>
+<p>Internally, Pydantic  will call a method similar to <code>typing.get_type_hints</code> to resolve annotations.</p>
 <p>In cases where the referenced type is not yet defined, <code>ForwardRef</code> can be used (although referencing the
 type directly or by its string is a simpler solution in the case of
 <a href="#self-referencing-models">self-referencing models</a>).</p>
@@ -2124,7 +2124,7 @@ resolved after model creation.</p>
 </code></pre></div>
 <p>Since Python 3.7, you can also refer it by its type, provided you import <code>annotations</code> (see
 <a href="./">above</a> for support depending on Python
-and <em>pydantic</em> versions).</p>
+and Pydantic versions).</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>

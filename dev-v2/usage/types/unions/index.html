@@ -2151,7 +2151,7 @@ Know that you can also make the check slower but stricter by using <a href="../.
 </div>
 </div>
 </div>
-<p>However, as can be seen above, <em>pydantic</em> will attempt to 'match' any of the types defined under <code>Union</code> and will use
+<p>However, as can be seen above, Pydantic will attempt to 'match' any of the types defined under <code>Union</code> and will use
 the first one that matches. In the above example the <code>id</code> of <code>user_03</code> was defined as a <code>uuid.UUID</code> class (which
 is defined under the attribute's <code>Union</code> annotation) but as the <code>uuid.UUID</code> can be marshalled into an <code>int</code> it
 chose to match against the <code>int</code> type and disregarded the other types.</p>

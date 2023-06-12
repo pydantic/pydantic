@@ -2388,7 +2388,7 @@ and exported in a number of ways:</p>
 </div>
 </div>
 <h2 id="dictmodel-and-iteration"><code>dict(model)</code> and iteration<a class="headerlink" href="#dictmodel-and-iteration" title="Permanent link">&para;</a></h2>
-<p><em>pydantic</em> models can also be converted to dictionaries using <code>dict(model)</code>, and you can also
+<p>Pydantic models can also be converted to dictionaries using <code>dict(model)</code>, and you can also
 iterate over a model's field using <code>for field_name, value in model:</code>. With this approach the raw field values are
 returned, so sub-models will not be converted to dictionaries.</p>
 <p>Example:</p>
@@ -2447,7 +2447,7 @@ See <a href="../../api/main/#pydantic.main.BaseModel.model_copy">arguments</a> f
 <p>The <code>.model_dump_json()</code> method will serialise a model to JSON. (For <code>RootModel</code> <a href="../models/#custom-root-types">custom root type</a>,
 only the values are serialised)</p>
 <p>See <a href="../../api/main/#pydantic.main.BaseModel.model_dump_json">arguments</a> for more information.</p>
-<p><em>pydantic</em> can serialise many commonly used types to JSON (e.g. <code>datetime</code>, <code>date</code> or <code>UUID</code>) which would normally
+<p>Pydantic can serialise many commonly used types to JSON (e.g. <code>datetime</code>, <code>date</code> or <code>UUID</code>) which would normally
 fail with a simple <code>json.dumps(foobar)</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
@@ -2734,7 +2734,7 @@ If you want to serialise them differently, you can use <code>model_serializer</c
 </div>
 </div>
 <h2 id="pickledumpsmodel"><code>pickle.dumps(model)</code><a class="headerlink" href="#pickledumpsmodel" title="Permanent link">&para;</a></h2>
-<p>Using the same plumbing as <code>model_copy()</code>, <em>pydantic</em> models support efficient pickling and unpickling.</p>
+<p>Using the same plumbing as <code>model_copy()</code>, Pydantic models support efficient pickling and unpickling.</p>
 <div class="highlight"><pre><span></span><code><span class="c1"># TODO need to get pickling to work</span>
 <span class="kn">import</span> <span class="nn">pickle</span>
 

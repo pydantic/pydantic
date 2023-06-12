@@ -2478,7 +2478,7 @@ to set a dynamic default value.</p>
 <span class="c1">#&gt; ts=datetime.datetime(2017, 11, 8, 14, 0)</span>
 </code></pre></div>
 <p>You'll often want to use this together with <code>pre</code>, since otherwise with <code>always=True</code>
-<em>pydantic</em> would try to validate the default <code>None</code> which would cause an error.</p>
+Pydantic would try to validate the default <code>None</code> which would cause an error.</p>
 <h2 id="reuse-validators">Reuse validators<a class="headerlink" href="#reuse-validators" title="Permanent link">&para;</a></h2>
 <p>Occasionally, you will want to use the same validator on multiple fields/models (e.g. to
 normalize some input data). The "naive" approach would be to write a separate function,
@@ -2582,7 +2582,7 @@ field defaults where applicable.</p>
 <p>Occasionally however this is undesirable: e.g. if you define a validator to validate fields on inheriting models.
 In this case you should set <code>check_fields=False</code> on the validator.</p>
 <h2 id="dataclass-validators">Dataclass Validators<a class="headerlink" href="#dataclass-validators" title="Permanent link">&para;</a></h2>
-<p>Validators also work with <em>pydantic</em> dataclasses.</p>
+<p>Validators also work with Pydantic dataclasses.</p>
 <p><strong>TODO: Change this example so that it <em>should</em> use a validator; right now it would be better off with default_factory..</strong></p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 

@@ -2262,7 +2262,7 @@ creation and initialisation; it provides an extremely easy way to apply validati
 boilerplate.</p>
 <div class="admonition info">
 <p class="admonition-title">In Beta</p>
-<p>The <code>validate_call</code> decorator is in <strong>beta</strong>, it has been added to <em>pydantic</em> in <strong>v1.5</strong> on a
+<p>The <code>validate_call</code> decorator is in <strong>beta</strong>, it has been added to Pydantic in <strong>v1.5</strong> on a
 <strong>provisional basis</strong>. It may change significantly in future releases and its interface will not be concrete
 until <strong>v2</strong>. Feedback from the community while it's still provisional would be extremely useful; either comment
 on <a href="https://github.com/pydantic/pydantic/issues/1205">#1205</a> or create a new issue.</p>
@@ -2297,9 +2297,9 @@ on <a href="https://github.com/pydantic/pydantic/issues/1205">#1205</a> or creat
 </code></pre></div>
 <h2 id="argument-types">Argument Types<a class="headerlink" href="#argument-types" title="Permanent link">&para;</a></h2>
 <p>Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
-as <code>Any</code>. All types listed in <a href="../types/types/">types</a> can be validated, including <em>pydantic</em> models and
+as <code>Any</code>. All types listed in <a href="../types/types/">types</a> can be validated, including Pydantic models and
 <a href="../types/types/#custom-data-types">custom types</a>.
-As with the rest of <em>pydantic</em>, types can be coerced by the decorator before they're passed to the actual function:</p>
+As with the rest of Pydantic, types can be coerced by the decorator before they're passed to the actual function:</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="1:3"><input checked="checked" id="__tabbed_1_1" name="__tabbed_1" type="radio" /><input id="__tabbed_1_2" name="__tabbed_1" type="radio" /><input id="__tabbed_1_3" name="__tabbed_1" type="radio" /><div class="tabbed-labels"><label for="__tabbed_1_1">Python 3.7 and above</label><label for="__tabbed_1_2">Python 3.9 and above</label><label for="__tabbed_1_3">Python 3.10 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -2713,7 +2713,7 @@ or a dict of properties which are converted to a class later.</p>
 be added later, see <a href="https://github.com/pydantic/pydantic/issues/1205">#1205</a> for some more discussion of this.</p>
 <p>In particular:</p>
 <h3 id="validation-exception">Validation Exception<a class="headerlink" href="#validation-exception" title="Permanent link">&para;</a></h3>
-<p>Currently upon validation failure, a standard <em>pydantic</em> <code>ValidationError</code> is raised,
+<p>Currently upon validation failure, a standard Pydantic <code>ValidationError</code> is raised,
 see <a href="../models/#error-handling">model error handling</a>.</p>
 <p>This is helpful since it's <code>str()</code> method provides useful details of the error which occurred and methods like
 <code>.errors()</code> and <code>.json()</code> can be useful when exposing the errors to end users, however <code>ValidationError</code> inherits
@@ -2721,13 +2721,13 @@ from <code>ValueError</code> <strong>not</strong> <code>TypeError</code> which m
 or missing arguments. This may be addressed in future by either allow a custom error or raising a different
 exception by default, or both.</p>
 <h3 id="coercion-and-strictness">Coercion and Strictness<a class="headerlink" href="#coercion-and-strictness" title="Permanent link">&para;</a></h3>
-<p><em>pydantic</em> currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
+<p>Pydantic currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
 see <a href="../models/#data-conversion">model data conversion</a> and <code>validate_call</code> is no different.</p>
 <p>See <a href="https://github.com/pydantic/pydantic/issues/1098">#1098</a> and other issues with the "strictness" label
-for a discussion of this. If <em>pydantic</em> gets a "strict" mode in future, <code>validate_call</code> will have an option
+for a discussion of this. If Pydantic gets a "strict" mode in future, <code>validate_call</code> will have an option
 to use this, it may even become the default for the decorator.</p>
 <h3 id="performance">Performance<a class="headerlink" href="#performance" title="Permanent link">&para;</a></h3>
-<p>We've made a big effort to make <em>pydantic</em> as performant as possible
+<p>We've made a big effort to make Pydantic as performant as possible
 and argument inspect and model creation is only performed once when the function is defined, however
 there will still be a performance impact to using the <code>validate_call</code> decorator compared to
 calling the raw function.</p>
@@ -2749,7 +2749,7 @@ the function's signature:</p>
 <li><code>v__positional_only</code></li>
 </ul>
 <p>These names (together with <code>"args"</code> and <code>"kwargs"</code>) may or may not (depending on the function's signature) appear as
-fields on the internal <em>pydantic</em> model accessible via <code>.model</code> thus this model isn't especially useful
+fields on the internal Pydantic model accessible via <code>.model</code> thus this model isn't especially useful
 (e.g. for generating a schema) at the moment.</p>
 <p>This should be fixable in future as the way error are raised is changed.</p>
 

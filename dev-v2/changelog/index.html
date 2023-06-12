@@ -3842,7 +3842,7 @@ for their kind support.</p>
 <li>Add support for autocomplete in VS Code via <code>__dataclass_transform__</code>, <a href="https://github.com/pydantic/pydantic/issues/2721">#2721</a> by <a href="https://github.com/tiangolo">@tiangolo</a></li>
 <li>add missing type annotations in <code>BaseConfig</code> and handle <code>max_length = 0</code>, <a href="https://github.com/pydantic/pydantic/issues/2719">#2719</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Change <code>orm_mode</code> checking to allow recursive ORM mode parsing with dicts, <a href="https://github.com/pydantic/pydantic/issues/2718">#2718</a> by <a href="https://github.com/nuno-andre">@nuno-andre</a></li>
-<li>Add episode 313 of the <em>Talk Python To Me</em> podcast, where Michael Kennedy and Samuel Colvin discuss <em>pydantic</em>, to the docs, <a href="https://github.com/pydantic/pydantic/issues/2712">#2712</a> by <a href="https://github.com/RatulMaharaj">@RatulMaharaj</a></li>
+<li>Add episode 313 of the <em>Talk Python To Me</em> podcast, where Michael Kennedy and Samuel Colvin discuss Pydantic, to the docs, <a href="https://github.com/pydantic/pydantic/issues/2712">#2712</a> by <a href="https://github.com/RatulMaharaj">@RatulMaharaj</a></li>
 <li>fix JSON schema generation when a field is of type <code>NamedTuple</code> and has a default value, <a href="https://github.com/pydantic/pydantic/issues/2707">#2707</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li><code>Enum</code> fields now properly support extra kwargs in schema generation, <a href="https://github.com/pydantic/pydantic/issues/2697">#2697</a> by <a href="https://github.com/sammchardy">@sammchardy</a></li>
 <li><strong>Breaking Change, see <a href="https://github.com/pydantic/pydantic/issues/3780">#3780</a></strong>: Make serialization of referenced pydantic models possible, <a href="https://github.com/pydantic/pydantic/issues/2650">#2650</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
@@ -4087,7 +4087,7 @@ for their kind support.</p>
 <li>Support <code>ref_template</code> when creating schema <code>$ref</code>s, <a href="https://github.com/pydantic/pydantic/issues/1479">#1479</a> by <a href="https://github.com/kilo59">@kilo59</a></li>
 <li>Add a <code>__call__</code> stub to <code>PyObject</code> so that mypy will know that it is callable, <a href="https://github.com/pydantic/pydantic/issues/1352">#1352</a> by <a href="https://github.com/brianmaissy">@brianmaissy</a></li>
 <li><code>pydantic.dataclasses.dataclass</code> decorator now supports built-in <code>dataclasses.dataclass</code>.
-  It is hence possible to convert an existing <code>dataclass</code> easily to add <em>pydantic</em> validation.
+  It is hence possible to convert an existing <code>dataclass</code> easily to add Pydantic validation.
   Moreover nested dataclasses are also supported, <a href="https://github.com/pydantic/pydantic/issues/744">#744</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 </ul>
 <h2 id="v162-2021-05-11">v1.6.2 (2021-05-11)<a class="headerlink" href="#v162-2021-05-11" title="Permanent link">&para;</a></h2>
@@ -4110,7 +4110,7 @@ for their kind support.</p>
   Instead of computing all the items in the iterable and storing them in memory, they are computed one-by-one and never
   stored as a huge list. This can save on both runtime and memory space, <a href="https://github.com/pydantic/pydantic/issues/1642">#1642</a> by <a href="https://github.com/cool-RR">@cool-RR</a></li>
 <li>Add <code>conset()</code>, analogous to <code>conlist()</code>, <a href="https://github.com/pydantic/pydantic/issues/1623">#1623</a> by <a href="https://github.com/patrickkwang">@patrickkwang</a></li>
-<li>make <em>pydantic</em> errors (un)pickable, <a href="https://github.com/pydantic/pydantic/issues/1616">#1616</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
+<li>make Pydantic errors (un)pickable, <a href="https://github.com/pydantic/pydantic/issues/1616">#1616</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Allow custom encoding for <code>dotenv</code> files, <a href="https://github.com/pydantic/pydantic/issues/1615">#1615</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Ensure <code>SchemaExtraCallable</code> is always defined to get type hints on BaseConfig, <a href="https://github.com/pydantic/pydantic/issues/1614">#1614</a> by <a href="https://github.com/PrettyWood">@PrettyWood</a></li>
 <li>Update datetime parser to support negative timestamps, <a href="https://github.com/pydantic/pydantic/issues/1600">#1600</a> by <a href="https://github.com/mlbiche">@mlbiche</a></li>

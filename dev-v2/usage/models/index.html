@@ -3109,7 +3109,7 @@ contain information about all the errors and how they happened.</p>
 </div>
 </div>
 <h3 id="creating-models-without-validation">Creating models without validation<a class="headerlink" href="#creating-models-without-validation" title="Permanent link">&para;</a></h3>
-<p><em>pydantic</em> also provides the <code>model_construct()</code> method which allows models to be created <strong>without validation</strong> this
+<p>Pydantic also provides the <code>model_construct()</code> method which allows models to be created <strong>without validation</strong> this
 can be useful when data has already been validated or comes from a trusted source and you want to create a model
 as efficiently as possible (<code>model_construct()</code> is generally around 30x faster than creating a model with full validation).</p>
 <div class="admonition warning">
@@ -3486,7 +3486,7 @@ comes to leaving them unparameterized, or using bounded <code>TypeVar</code> ins
 <span class="c1">#&gt; a=1 b=1</span>
 </code></pre></div>
 <h2 id="dynamic-model-creation">Dynamic model creation<a class="headerlink" href="#dynamic-model-creation" title="Permanent link">&para;</a></h2>
-<p>There are some occasions where the shape of a model is not known until runtime. For this <em>pydantic</em> provides
+<p>There are some occasions where the shape of a model is not known until runtime. For this Pydantic provides
 the <code>create_model</code> method to allow models to be created on the fly.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">create_model</span>
 
@@ -4029,7 +4029,7 @@ using <code>PrivateAttr</code>:</p>
 <p>Private attribute names must start with underscore to prevent conflicts with model fields: both <code>_attr</code> and <code>__attr__</code>
 are supported.</p>
 <h2 id="data-conversion">Data conversion<a class="headerlink" href="#data-conversion" title="Permanent link">&para;</a></h2>
-<p><em>pydantic</em> may cast input data to force it to conform to model field types,
+<p>Pydantic may cast input data to force it to conform to model field types,
 and in some cases this may result in a loss of information.
 For example:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
@@ -4044,11 +4044,11 @@ For example:</p>
 <span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="mf">3.000</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="s1">&#39;2.72&#39;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="sa">b</span><span class="s1">&#39;binary data&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">model_dump</span><span class="p">())</span>
 <span class="c1">#&gt; {&#39;a&#39;: 3, &#39;b&#39;: 2.72, &#39;c&#39;: &#39;binary data&#39;}</span>
 </code></pre></div>
-<p>This is a deliberate decision of <em>pydantic</em>, and in general it's the most useful approach. See
+<p>This is a deliberate decision of Pydantic, and in general it's the most useful approach. See
 <a href="https://github.com/pydantic/pydantic/issues/578">here</a> for a longer discussion on the subject.</p>
 <p>Nevertheless, <a href="../types/types/#strict-types">strict type checking</a> is partially supported.</p>
 <h2 id="model-signature">Model signature<a class="headerlink" href="#model-signature" title="Permanent link">&para;</a></h2>
-<p>All <em>pydantic</em> models will have their signature generated based on their fields:</p>
+<p>All Pydantic models will have their signature generated based on their fields:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">import</span> <span class="nn">inspect</span>
 
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
@@ -4084,11 +4084,11 @@ For example:</p>
 <span class="c1">#&gt; (id: int = 1, *, bar: str, info: str = &#39;Foo&#39;) -&gt; None</span>
 </code></pre></div>
 <p>To be included in the signature, a field's alias or name must be a valid Python identifier.
-<em>pydantic</em> prefers aliases over names, but may use field names if the alias is not a valid Python identifier.</p>
+Pydantic prefers aliases over names, but may use field names if the alias is not a valid Python identifier.</p>
 <p>If a field's alias and name are both invalid identifiers, a <code>**data</code> argument will be added.
 In addition, the <code>**data</code> argument will always be present in the signature if <code>Config.extra</code> is <code>Extra.allow</code>.</p>
 <h2 id="structural-pattern-matching">Structural pattern matching<a class="headerlink" href="#structural-pattern-matching" title="Permanent link">&para;</a></h2>
-<p><em>pydantic</em> supports structural pattern matching for models, as introduced by <a href="https://peps.python.org/pep-0636/">PEP 636</a> in Python 3.10.</p>
+<p>Pydantic supports structural pattern matching for models, as introduced by <a href="https://peps.python.org/pep-0636/">PEP 636</a> in Python 3.10.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 

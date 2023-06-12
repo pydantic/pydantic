@@ -2760,7 +2760,7 @@ It has the following arguments:</p>
 </ul>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p><em>pydantic</em> validates strings using <code>re.match</code>,
+<p>Pydantic validates strings using <code>re.match</code>,
 which treats regular expressions as implicitly anchored at the beginning.
 On the contrary,
 JSON Schema validators treat the <code>pattern</code> keyword as implicitly unanchored,
@@ -2771,12 +2771,12 @@ either explicitly anchor your regular expressions with <code>^</code>
 or explicitly allow an arbitrary prefix with <code>.*?</code>
 (e.g. <code>.*?foo</code> to match any string containing the substring <code>foo</code>).</p>
 <p>See <a href="https://github.com/pydantic/pydantic/issues/1631">#1631</a>
-for a discussion of possible changes to <em>pydantic</em> behavior in <strong>v2</strong>.</p>
+for a discussion of possible changes to Pydantic behavior in <strong>v2</strong>.</p>
 </div>
 <p>Instead of using <code>Field</code>, the <code>fields</code> property of <a href="../model_config/">the Config class</a> can be used
 to set all of the arguments above except <code>default</code>.</p>
 <h3 id="unenforced-field-constraints">Unenforced Field constraints<a class="headerlink" href="#unenforced-field-constraints" title="Permanent link">&para;</a></h3>
-<p>If <em>pydantic</em> finds constraints which are not being enforced, an error will be raised. If you want to force the
+<p>If Pydantic finds constraints which are not being enforced, an error will be raised. If you want to force the
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
 to <code>Field()</code> with the raw schema attribute name:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span><span class="p">,</span> <span class="n">PositiveInt</span>
@@ -3314,9 +3314,9 @@ following priority order (when there is an equivalent available):</p>
 <li><a href="http://json-schema.org/latest/json-schema-core.html#rfc.section.4.3.1">JSON Schema Core</a></li>
 <li><a href="http://json-schema.org/latest/json-schema-validation.html">JSON Schema Validation</a></li>
 <li><a href="https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types">OpenAPI Data Types</a></li>
-<li>The standard <code>format</code> JSON field is used to define <em>pydantic</em> extensions for more complex <code>string</code> sub-types.</li>
+<li>The standard <code>format</code> JSON field is used to define Pydantic extensions for more complex <code>string</code> sub-types.</li>
 </ol>
-<p>The field schema mapping from Python / <em>pydantic</em> to JSON Schema is done as follows:</p>
+<p>The field schema mapping from Python / Pydantic to JSON Schema is done as follows:</p>
 <h2 id="top-level-schema-generation">Top-level schema generation<a class="headerlink" href="#top-level-schema-generation" title="Permanent link">&para;</a></h2>
 <p>You can also generate a top-level JSON Schema that only includes a list of models and related
 sub-models in its <code>definitions</code>:</p>

@@ -2134,7 +2134,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
 <dl>
 <dt><code>int</code></dt>
-<dd><em>pydantic</em> uses <code>int(v)</code> to coerce types to an <code>int</code>;
+<dd>Pydantic uses <code>int(v)</code> to coerce types to an <code>int</code>;
   see <a href="../../models/#data-conversion">this</a> warning on loss of information during data conversion</dd>
 <dt><code>float</code></dt>
 <dd>similarly, <code>float(v)</code> is used to coerce values to floats</dd>
@@ -2144,7 +2144,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <dd>checks that the value is a valid member of the integer enum;
   see <a href="#enums-and-choices">Enums and Choices</a> for more details</dd>
 <dt><code>decimal.Decimal</code></dt>
-<dd><em>pydantic</em> attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code></dd>
+<dd>Pydantic attempts to convert the value to a string, then passes the string to <code>Decimal(v)</code></dd>
 <dt><code>NegativeFloat</code></dt>
 <dd>allows a float which is negative; uses standard <code>float</code> parsing then checks the value is less than 0;
   see <a href="#constrained-types">Constrained Types</a></dd>
