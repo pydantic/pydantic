@@ -1,3 +1,4 @@
+"""This module contains related classes and functions for serialization."""
 from __future__ import annotations
 
 from functools import partialmethod
@@ -56,8 +57,8 @@ class WrapSerializer:
 
     Attributes:
         func: The function to be wrapped.
-        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
-        when_used: Determines the serializer will be used for serialization. Accepts a string with values `'always'`,
+        return_type: The return type for the function, if omitted it will be inferred from the type annotation.
+        when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
             `'unless-none'`, `'json'`, and `'json-unless-none'`. Defaults to 'always'.
     """
 
@@ -203,15 +204,14 @@ def model_serializer(
 ) -> Callable[[Any], Any]:
     """Decorate a function which will be called to serialize the model.
 
-    (`when_used` is not permitted here since it makes no sense.)
-
     Args:
         __f: The function to be decorated.
         mode: The serialization mode. `'plain'` means the function will be called
             instead of the default serialization logic, `'wrap'` means the function will be called with an argument
             to optionally call the default serialization logic.
-        when_used: Determines the serializer will be be used for serialization.
-        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
+        when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
+            `'unless-none'`, `'json'`, `'json-unless-none'`. Defaults to `'always'`.
+        return_type: The return type for the function, if omitted it will be inferred from the type annotation.
 
     Returns:
         A decorator that can be used to decorate a function to be used as a model serializer.
