@@ -14,4 +14,4 @@ python3 -m pdm install -G docs
 
 python3 -m pdm run python -c 'import docs.plugins.main'
 
-python3 -m pdm run mkdocs build
+python3 -m pdm run mkdocs build --config-file mkdocs.insiders.yml
