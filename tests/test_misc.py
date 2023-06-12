@@ -1,9 +1,11 @@
+import copy
+import pickle
 import re
 
 import pytest
 from typing_extensions import get_args
 
-from pydantic_core import CoreSchema, CoreSchemaType
+from pydantic_core import CoreSchema, CoreSchemaType, PydanticUndefined
 from pydantic_core._pydantic_core import SchemaError, SchemaValidator, ValidationError, __version__, build_profile
 
 
@@ -160,3 +162,16 @@ def test_core_schema_type_literal():
         literal = ''.join(f'\n    {e!r},' for e in schema_types)
         print(f'python code (near end of pydantic_core/core_schema.py):\n\nCoreSchemaType = Literal[{literal}\n]')
         pytest.fail('core_schema.CoreSchemaType needs to be updated')
+
+
+def test_undefined():
+    with pytest.raises(NotImplementedError, match='UndefinedType'):
+        PydanticUndefined.__class__()
+
+    undefined_copy = copy.copy(PydanticUndefined)
+    undefined_deepcopy = copy.deepcopy(PydanticUndefined)
+
+    assert undefined_copy is PydanticUndefined
+    assert undefined_deepcopy is PydanticUndefined
+
+    assert pickle.loads(pickle.dumps(PydanticUndefined)) is PydanticUndefined
