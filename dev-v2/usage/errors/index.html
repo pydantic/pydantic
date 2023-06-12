@@ -2602,11 +2602,16 @@ below:</p>
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="n">json_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+        <span class="n">json_schema</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__get_pydantic_json_schema__</span><span class="p">(</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">handler</span><span class="p">)</span>
+        <span class="n">json_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
         <span class="n">json_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="s1">&#39;examples&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">json_schema</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;examples&#39;: &#39;examples&#39;, &#39;properties&#39;: {}, &#39;title&#39;: &#39;Model&#39;, &#39;type&#39;: &#39;object&#39;}</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -2620,11 +2625,16 @@ below:</p>
 <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">__get_pydantic_json_schema__</span><span class="p">(</span>
-        <span class="bp">cls</span><span class="p">,</span> <span class="n">schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
+        <span class="bp">cls</span><span class="p">,</span> <span class="n">core_schema</span><span class="p">:</span> <span class="n">CoreSchema</span><span class="p">,</span> <span class="n">handler</span><span class="p">:</span> <span class="n">GetJsonSchemaHandler</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="n">json_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">schema</span><span class="p">)</span>
+        <span class="n">json_schema</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">__get_pydantic_json_schema__</span><span class="p">(</span><span class="n">core_schema</span><span class="p">,</span> <span class="n">handler</span><span class="p">)</span>
+        <span class="n">json_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">resolve_ref_schema</span><span class="p">(</span><span class="n">json_schema</span><span class="p">)</span>
         <span class="n">json_schema</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">examples</span><span class="o">=</span><span class="s1">&#39;examples&#39;</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">json_schema</span>
+
+
+<span class="nb">print</span><span class="p">(</span><span class="n">Model</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">())</span>
+<span class="c1">#&gt; {&#39;examples&#39;: &#39;examples&#39;, &#39;properties&#39;: {}, &#39;title&#39;: &#39;Model&#39;, &#39;type&#39;: &#39;object&#39;}</span>
 </code></pre></div>
 </div>
 </div>
@@ -3077,9 +3087,9 @@ by annotating it as a <code>ClassVar</code>:</p>
 <span class="k">try</span><span class="p">:</span>
 
     <span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
-
         <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">from_attributes</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+        <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
 
         <span class="k">class</span> <span class="nc">Config</span><span class="p">:</span>
             <span class="n">from_attributes</span> <span class="o">=</span> <span class="kc">True</span>
@@ -3453,7 +3463,8 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 </div>
 </div>
 <h2 id="type-adapter-config-unused"><code>config</code> is unused with TypeAdapter<a class="headerlink" href="#type-adapter-config-unused" title="Permanent link">&para;</a></h2>
-<p>You will get this error if you try to pass <code>config</code> to <code>TypeAdapter</code> when the type is a type that has it's own config that cannot be overridden (currently this is only <code>BaseModel</code>, <code>TypedDict</code> and <code>dataclass</code>):</p>
+<p>You will get this error if you try to pass <code>config</code> to <code>TypeAdapter</code> when the type is a type that
+has it's own config that cannot be overridden (currently this is only <code>BaseModel</code>, <code>TypedDict</code> and <code>dataclass</code>):</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="7:2"><input checked="checked" id="__tabbed_7_1" name="__tabbed_7" type="radio" /><input id="__tabbed_7_2" name="__tabbed_7" type="radio" /><div class="tabbed-labels"><label for="__tabbed_7_1">Python 3.7 and above</label><label for="__tabbed_7_2">Python 3.11 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
@@ -3468,13 +3479,8 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">MyTypedDict</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Cannot use `config` when the type is a BaseModel, dataclass or TypedDict. These types can have their own config and setting the config via the `config` parameter to TypeAdapter will not override it, thus the `config` you passed to TypeAdapter becomes meaningless, which is probably not what you want.</span>
-
-<span class="sd">    For further information visit https://errors.pydantic.dev/2/u/type-adapter-config-unused</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;type-adapter-config-unused&#39;</span>
 </code></pre></div>
 </div>
 <div class="tabbed-block">
@@ -3489,13 +3495,8 @@ but it is a dictionary instead of an object like it was in Pydantic V1.</p>
 
 <span class="k">try</span><span class="p">:</span>
     <span class="n">TypeAdapter</span><span class="p">(</span><span class="n">MyTypedDict</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">ConfigDict</span><span class="p">(</span><span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Cannot use `config` when the type is a BaseModel, dataclass or TypedDict. These types can have their own config and setting the config via the `config` parameter to TypeAdapter will not override it, thus the `config` you passed to TypeAdapter becomes meaningless, which is probably not what you want.</span>
-
-<span class="sd">    For further information visit https://errors.pydantic.dev/2/u/type-adapter-config-unused</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="k">except</span> <span class="n">PydanticUserError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">code</span> <span class="o">==</span> <span class="s1">&#39;type-adapter-config-unused&#39;</span>
 </code></pre></div>
 </div>
 </div>
