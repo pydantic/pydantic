@@ -222,8 +222,8 @@ class TastingModel(Generic[AgedType, QualityType]):
             age_tp = quality_tp = Any
         else:
             age_tp, quality_tp = get_args(source_type)
-        aged_schema = handler.generate_schema(age_tp)
-        quality_schema = handler.generate_schema(quality_tp)
+        aged_schema = handler(age_tp)
+        quality_schema = handler(quality_tp)
 
         def val_aged(
             v: TastingModel[Any, Any], handler: core_schema.ValidatorFunctionWrapHandler

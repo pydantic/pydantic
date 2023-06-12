@@ -2276,7 +2276,7 @@ def test_model_get_core_schema() -> None:
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             assert handler(int) == {'type': 'int'}
-            assert handler.generate_schema(int) == {'type': 'int'}
+            assert handler(int) == {'type': 'int'}
             return handler(source_type)
 
     Model()
