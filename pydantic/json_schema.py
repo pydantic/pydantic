@@ -783,6 +783,8 @@ class GenerateJsonSchema:
     def tagged_union_schema(self, schema: core_schema.TaggedUnionSchema) -> JsonSchemaValue:
         generated: dict[str, JsonSchemaValue] = {}
         for k, v in schema['choices'].items():
+            if isinstance(k, Enum):
+                k = k.value
             if not isinstance(v, (str, int)):
                 try:
                     # Use str(k) since keys must be strings for json; while not technically correct,
