@@ -613,9 +613,7 @@ else:
 SecretType = TypeVar('SecretType', str, bytes)
 
 
-class SecretField(Generic[SecretType]):
-    """A generic secret field that can be used to store sensitive data."""
-
+class _SecretField(Generic[SecretType]):
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
 
@@ -668,12 +666,12 @@ def _secret_display(value: str | bytes) -> str:
 
 @_internal_dataclass.slots_dataclass
 class _SecretFieldValidator:
-    field_type: type[SecretField[Any]]
+    field_type: type[_SecretField[Any]]
     min_length: int | None = None
     max_length: int | None = None
     inner_schema: CoreSchema = _dataclasses.field(init=False)
 
-    def validate(self, value: SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
+    def validate(self, value: _SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
         error_prefix: Literal['string', 'bytes'] = 'string' if self.field_type is SecretStr else 'bytes'
         if self.min_length is not None and len(value) < self.min_length:
             short_kind: core_schema.ErrorType = f'{error_prefix}_too_short'  # type: ignore[assignment]
@@ -688,8 +686,8 @@ class _SecretFieldValidator:
             return self.field_type(value)  # type: ignore[arg-type]
 
     def serialize(
-        self, value: SecretField[SecretType], info: core_schema.SerializationInfo
-    ) -> str | SecretField[SecretType]:
+        self, value: _SecretField[SecretType], info: core_schema.SerializationInfo
+    ) -> str | _SecretField[SecretType]:
         if info.mode == 'json':
             # we want the output to always be string without the `b'` prefix for bytes,
             # hence we just use `secret_display`
@@ -735,7 +733,7 @@ class _SecretFieldValidator:
         )
 
 
-class SecretStr(SecretField[str]):
+class SecretStr(_SecretField[str]):
     """A string that is displayed as `**********` in reprs and can be used for passwords.
 
     Example:
@@ -759,7 +757,7 @@ class SecretStr(SecretField[str]):
         return _secret_display(self.get_secret_value())
 
 
-class SecretBytes(SecretField[bytes]):
+class SecretBytes(_SecretField[bytes]):
     """A bytes that is displayed as `**********` in reprs and can be used for passwords."""
 
     def _display(self) -> bytes:
