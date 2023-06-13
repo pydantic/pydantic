@@ -1044,7 +1044,39 @@ except ValidationError as e:
 In this model, `a` and `b` can take `None` as a value. But `b` is optional, while `a` and is required.
 `a` requires a value, even if the value is `None`.
 
-## Field with dynamic default value
+## Fields with non-hashable default values
+
+A common source of bugs in python is to use a mutable object as a default value for a function or method argument,
+as the same instance ends up being reused in each call.
+
+The `dataclasses` module actually raises an error in this case, indicating that you should use the `default_factory`
+argument to `dataclasses.field`.
+
+Pydantic also supports the use of a [`default_factory`](#fields-with-dynamic-default-values) for non-hashable default
+values, but it is not required. In the event that the default value is not hashable, Pydantic will deepcopy the default
+value when creating each instance of the model:
+
+```py
+from typing import Dict, List
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    item_counts: List[Dict[str, int]] = [{}]
+
+
+m1 = Model()
+m1.item_counts[0]['a'] = 1
+print(m1.item_counts)
+#> [{'a': 1}]
+
+m2 = Model()
+print(m2.item_counts)
+#> [{}]
+```
+
+## Fields with dynamic default values
 
 When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
 To do this, you may want to use a `default_factory`.
