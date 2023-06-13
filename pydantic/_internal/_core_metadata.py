@@ -15,7 +15,7 @@ if typing.TYPE_CHECKING:
 
 
 class CoreMetadata(typing_extensions.TypedDict, total=False):
-    """A TypedDict for holding the metadata dict of the schema
+    """A `TypedDict` for holding the metadata dict of the schema.
 
     Attributes:
         pydantic_js_functions: List of Json schema functions.
