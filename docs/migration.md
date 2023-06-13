@@ -63,7 +63,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
 | `__pydantic_post_init__` | |
 
 * Some of the built-in data-loading functionality has been slated for removal. In particular,
-    `parse_raw` and `parse_file` are now deprecated. You should load the data and then pass it to `model_validate`.
+    `parse_raw` and `parse_file` are now deprecated. In Prefect V2, `model_validate_json` works like `parse_raw`. Otherwise, you should load the data and then pass it to `model_validate`.
 * The `from_orm` method has been removed; you can now just use `model_validate` (equivalent to `parse_obj` from
   Pydantic V1) to achieve something similar, as long as you've set `from_attributes=True` in the model config.
 * The `__eq__` method has changed for models.
@@ -109,8 +109,19 @@ While it may not raise an error, we strongly advise against using _parametrized_
 Find more information in the [Generic models](usage/models.md#generic-models) documentation.
 
 ### Changes to `pydantic.Field`
-* `Field` no longer supports arbitrary keyword arguments to be added to the JSON schema. Instead, any extra
-  data you want to add to the JSON schema should be passed as a dictionary to the `json_schema_extra` keyword argument.
+
+`Field` no longer supports arbitrary keyword arguments to be added to the JSON schema. Instead, any extra
+data you want to add to the JSON schema should be passed as a dictionary to the `json_schema_extra` keyword argument.
+
+The following properties have been removed from `Field`:
+
+- `const`
+- `min_items`
+- `max_items`
+- `unique_items`
+- `allow_mutation`
+- `regex`
+
 * [TODO: Need to document all other backwards-incompatible changes to `pydantic.Field`]
 
 
@@ -165,9 +176,8 @@ Find more information in the [Generic models](usage/models.md#generic-models) do
 
 #### `@validator` and `@root_validator` are deprecated
 
-* `@validator` has been deprecated, and should be replaced with `@field_validator`, which provides various new features
+* `@validator` has been deprecated, and should be replaced with [`@field_validator`](usage/validators.md), which provides various new features
     and improvements.
-    * [TODO: Add link to documentation of `@field_validator`]
     * The new `@field_validator` decorator does not have the `each_item` keyword argument; validators you want to
         apply to items within a generic container should be added by annotating the type argument. See
         [validators in Annotated metadata](usage/validators.md#generic-validated-collections) for details.
