@@ -99,7 +99,7 @@ See the [`ConfigDict` API documentation](../api/config.md#pydantic.config.Config
 
 ## Change behaviour globally
 
-If you wish to change the behaviour of pydantic globally, you can create your own custom `BaseModel`
+If you wish to change the behaviour of Pydantic globally, you can create your own custom `BaseModel`
 with custom `model_config` since the config is inherited:
 
 ```py
