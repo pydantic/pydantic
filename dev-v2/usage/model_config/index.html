@@ -1105,6 +1105,19 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     Revalidate instances
   </a>
   
+    <nav class="md-nav" aria-label="Revalidate instances">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arbitrary-types-allowed" class="md-nav__link">
+    Arbitrary Types Allowed
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2151,6 +2164,19 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
     Revalidate instances
   </a>
   
+    <nav class="md-nav" aria-label="Revalidate instances">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#arbitrary-types-allowed" class="md-nav__link">
+    Arbitrary Types Allowed
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
 </li>
       
         <li class="md-nav__item">
@@ -2609,6 +2635,58 @@ of subclasses of the model.</p>
 <li>This is not revalidated, since <code>my_user</code> is not a subclass of <code>User</code>.</li>
 <li>Using <code>'never'</code> we would have gotten <code>user=SubUser(hobbies=['scuba diving'], sins=['lying'])</code>.</li>
 </ol>
+<h3 id="arbitrary-types-allowed">Arbitrary Types Allowed<a class="headerlink" href="#arbitrary-types-allowed" title="Permanent link">&para;</a></h3>
+<p>You can allow arbitrary types using the <code>arbitrary_types_allowed</code> setting in the model's config:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="c1"># This is not a pydantic model, it&#39;s an arbitrary class</span>
+<span class="k">class</span> <span class="nc">Pet</span><span class="p">:</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">pet</span><span class="p">:</span> <span class="n">Pet</span>
+    <span class="n">owner</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">pet</span> <span class="o">=</span> <span class="n">Pet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Hedwig&#39;</span><span class="p">)</span>
+<span class="c1"># A simple check of instance type is used to validate the data</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;Harry&#39;</span><span class="p">,</span> <span class="n">pet</span><span class="o">=</span><span class="n">pet</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<span class="c1">#&gt; pet=&lt;__main__.Pet object at 0x0123456789ab&gt; owner=&#39;Harry&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="p">)</span>
+<span class="c1">#&gt; &lt;__main__.Pet object at 0x0123456789ab&gt;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="c1">#&gt; Hedwig</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="p">))</span>
+<span class="c1">#&gt; &lt;class &#39;__main__.Pet&#39;&gt;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="c1"># If the value is not an instance of the type, it&#39;s invalid</span>
+    <span class="n">Model</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;Harry&#39;</span><span class="p">,</span> <span class="n">pet</span><span class="o">=</span><span class="s1">&#39;Hedwig&#39;</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for Model</span>
+<span class="sd">    pet</span>
+<span class="sd">      Input should be an instance of Pet [type=is_instance_of, input_value=&#39;Hedwig&#39;, input_type=str]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<span class="c1"># Nothing in the instance of the arbitrary type is checked</span>
+<span class="c1"># Here name probably should have been a str, but it&#39;s not validated</span>
+<span class="n">pet2</span> <span class="o">=</span> <span class="n">Pet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
+<span class="n">model2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;Harry&#39;</span><span class="p">,</span> <span class="n">pet</span><span class="o">=</span><span class="n">pet2</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="p">)</span>
+<span class="c1">#&gt; pet=&lt;__main__.Pet object at 0x0123456789ab&gt; owner=&#39;Harry&#39;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="p">)</span>
+<span class="c1">#&gt; &lt;__main__.Pet object at 0x0123456789ab&gt;</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+<span class="c1">#&gt; 42</span>
+<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="p">))</span>
+<span class="c1">#&gt; &lt;class &#39;__main__.Pet&#39;&gt;</span>
+</code></pre></div>
 <h2 id="protected-namespaces">Protected Namespaces<a class="headerlink" href="#protected-namespaces" title="Permanent link">&para;</a></h2>
 <p>Pydantic prevents collisions between model attributes and <code>BaseModel</code>'s own methods by
 namespacing them with the prefix <code>model_</code>.</p>

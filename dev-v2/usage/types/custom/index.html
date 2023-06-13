@@ -922,13 +922,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#arbitrary-types-allowed" class="md-nav__link">
-    Arbitrary Types Allowed
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#generic-classes-as-types" class="md-nav__link">
     Generic Classes as Types
   </a>
@@ -2058,13 +2051,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
-  <a href="#arbitrary-types-allowed" class="md-nav__link">
-    Arbitrary Types Allowed
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#generic-classes-as-types" class="md-nav__link">
     Generic Classes as Types
   </a>
@@ -2319,58 +2305,6 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <p>Similar validation could be achieved using <a href="#constrained-types"><code>constr(regex=...)</code></a> except the value won't be
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.</p>
 <p>See <a href="../../json_schema/">schema</a> for more details on how the model's schema is generated.</p>
-<h3 id="arbitrary-types-allowed">Arbitrary Types Allowed<a class="headerlink" href="#arbitrary-types-allowed" title="Permanent link">&para;</a></h3>
-<p>You can allow arbitrary types using the <code>arbitrary_types_allowed</code> config in the
-<a href="../../model_config/">Model Config</a>.</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
-
-
-<span class="c1"># This is not a pydantic model, it&#39;s an arbitrary class</span>
-<span class="k">class</span> <span class="nc">Pet</span><span class="p">:</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
-
-
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">arbitrary_types_allowed</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-    <span class="n">pet</span><span class="p">:</span> <span class="n">Pet</span>
-    <span class="n">owner</span><span class="p">:</span> <span class="nb">str</span>
-
-
-<span class="n">pet</span> <span class="o">=</span> <span class="n">Pet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;Hedwig&#39;</span><span class="p">)</span>
-<span class="c1"># A simple check of instance type is used to validate the data</span>
-<span class="n">model</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;Harry&#39;</span><span class="p">,</span> <span class="n">pet</span><span class="o">=</span><span class="n">pet</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
-<span class="c1">#&gt; pet=&lt;__main__.Pet object at 0x0123456789ab&gt; owner=&#39;Harry&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="p">)</span>
-<span class="c1">#&gt; &lt;__main__.Pet object at 0x0123456789ab&gt;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-<span class="c1">#&gt; Hedwig</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">pet</span><span class="p">))</span>
-<span class="c1">#&gt; &lt;class &#39;__main__.Pet&#39;&gt;</span>
-<span class="k">try</span><span class="p">:</span>
-    <span class="c1"># If the value is not an instance of the type, it&#39;s invalid</span>
-    <span class="n">Model</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;Harry&#39;</span><span class="p">,</span> <span class="n">pet</span><span class="o">=</span><span class="s1">&#39;Hedwig&#39;</span><span class="p">)</span>
-<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
-    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    1 validation error for Model</span>
-<span class="sd">    pet</span>
-<span class="sd">      Input should be an instance of Pet [type=is_instance_of, input_value=&#39;Hedwig&#39;, input_type=str]</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-<span class="c1"># Nothing in the instance of the arbitrary type is checked</span>
-<span class="c1"># Here name probably should have been a str, but it&#39;s not validated</span>
-<span class="n">pet2</span> <span class="o">=</span> <span class="n">Pet</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="mi">42</span><span class="p">)</span>
-<span class="n">model2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">(</span><span class="n">owner</span><span class="o">=</span><span class="s1">&#39;Harry&#39;</span><span class="p">,</span> <span class="n">pet</span><span class="o">=</span><span class="n">pet2</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="p">)</span>
-<span class="c1">#&gt; pet=&lt;__main__.Pet object at 0x0123456789ab&gt; owner=&#39;Harry&#39;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="p">)</span>
-<span class="c1">#&gt; &lt;__main__.Pet object at 0x0123456789ab&gt;</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
-<span class="c1">#&gt; 42</span>
-<span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">model2</span><span class="o">.</span><span class="n">pet</span><span class="p">))</span>
-<span class="c1">#&gt; &lt;class &#39;__main__.Pet&#39;&gt;</span>
-</code></pre></div>
 <h3 id="generic-classes-as-types">Generic Classes as Types<a class="headerlink" href="#generic-classes-as-types" title="Permanent link">&para;</a></h3>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
@@ -2382,7 +2316,7 @@ the cases you will probably be fine with standard Pydantic models.</p>
 field types and perform custom validation based on the "type parameters" (or sub-types)
 with <code>__get_validators__</code>.</p>
 <p>If the Generic class that you are using as a sub-type has a classmethod
-<code>__get_validators__</code> you don't need to use <code>arbitrary_types_allowed</code> for it to work.</p>
+<code>__get_validators__</code> you don't need to use <a href="../../model_config/#arbitrary-types-allowed"><code>arbitrary_types_allowed</code></a> for it to work.</p>
 <p>Because you can declare validators that receive the current <code>field</code>, you can extract
 the <code>sub_fields</code> (from the generic class type parameters) and validate data with them.</p>
 <div class="tabbed-set tabbed-alternate" data-tabs="2:2"><input checked="checked" id="__tabbed_2_1" name="__tabbed_2" type="radio" /><input id="__tabbed_2_2" name="__tabbed_2" type="radio" /><div class="tabbed-labels"><label for="__tabbed_2_1">Python 3.7 and above</label><label for="__tabbed_2_2">Python 3.10 and above</label></div>
