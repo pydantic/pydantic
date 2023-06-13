@@ -2,8 +2,9 @@ from __future__ import annotations as _annotations
 
 import typing
 
-from ._internal import _fields, _repr
-from ._internal._model_construction import object_setattr
+from pydantic_core import PydanticUndefined
+
+from ._internal import _repr
 from .main import BaseModel
 
 if typing.TYPE_CHECKING:
@@ -32,28 +33,8 @@ class RootModel(BaseModel, typing.Generic[RootModelRootType]):
 
     root: RootModelRootType
 
-    def __new__(cls, root: RootModelRootType | _fields._UndefinedType = _fields.Undefined) -> RootModel:
-        __pydantic_self__ = super().__new__(cls)
-        # We need to set `__pydantic_fields_set__` here for cases when `RootModel` is being created by pydantic-core in
-        # its bare parametrized form without subclassing. This could happen when `RootModel[<type>]` is being used as a
-        # field with a default value that is being created via validator.
-        # See `tests/test_root_model.py::test_root_model_as_attr_with_validate_default`
-        if root is _fields.Undefined:
-            object_setattr(__pydantic_self__, '__pydantic_fields_set__', set())
-        else:
-            object_setattr(__pydantic_self__, '__pydantic_fields_set__', {'root'})
-        return __pydantic_self__
-
-    def __init__(
-        __pydantic_self__, root: RootModelRootType | _fields._UndefinedType = _fields.Undefined
-    ) -> None:  # type: ignore
+    def __init__(__pydantic_self__, root: RootModelRootType = PydanticUndefined) -> None:  # type: ignore
         __tracebackhide__ = True
-        if root is _fields.Undefined:
-            root_field = __pydantic_self__.model_fields['root']
-            root = root_field.get_default(call_default_factory=True)
-            if not (__pydantic_self__.model_config.get('validate_default', False) or root_field.validate_default):
-                object_setattr(__pydantic_self__, '__dict__', {'root': root})
-                return
         __pydantic_self__.__pydantic_validator__.validate_python(root, self_instance=__pydantic_self__)
 
     __init__.__pydantic_base_init__ = True  # type: ignore

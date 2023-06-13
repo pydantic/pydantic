@@ -2,10 +2,9 @@ import pickle
 from typing import Any, List, Optional
 
 import pytest
-from pydantic_core import ValidationError
+from pydantic_core import PydanticUndefined, ValidationError
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr
-from pydantic._internal._fields import Undefined
 
 
 class Model(BaseModel):
@@ -349,7 +348,7 @@ def test_pickle_undefined(create_module):
     m2 = pickle.loads(pickle.dumps(m))
     assert m2._foo_ == {'private'}
 
-    m._foo_ = Undefined
+    m._foo_ = PydanticUndefined
     m3 = pickle.loads(pickle.dumps(m))
     assert not hasattr(m3, '_foo_')
 
@@ -359,7 +358,7 @@ def test_copy_undefined(ModelTwo, copy_method):
     m2 = copy_method(m)
     assert m2._foo_ == {'private'}
 
-    m._foo_ = Undefined
+    m._foo_ = PydanticUndefined
     m3 = copy_method(m)
     assert not hasattr(m3, '_foo_')
 

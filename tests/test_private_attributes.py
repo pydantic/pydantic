@@ -2,9 +2,9 @@ import functools
 from typing import ClassVar, Generic, TypeVar
 
 import pytest
+from pydantic_core import PydanticUndefined
 
 from pydantic import BaseModel, ConfigDict, PrivateAttr
-from pydantic.fields import _Undefined
 
 
 def test_private_attribute():
@@ -69,7 +69,7 @@ def test_private_attribute_annotation():
 
         _foo: str
 
-    assert Model.__private_attributes__ == {'_foo': PrivateAttr(_Undefined)}
+    assert Model.__private_attributes__ == {'_foo': PrivateAttr(PydanticUndefined)}
     assert repr(Model.__doc__) == "'The best model'"
 
     m = Model()

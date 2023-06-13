@@ -8,7 +8,7 @@ from functools import partial
 from types import FunctionType
 from typing import Any, Callable, Generic, Mapping
 
-from pydantic_core import SchemaSerializer, SchemaValidator
+from pydantic_core import PydanticUndefined, SchemaSerializer, SchemaValidator
 from typing_extensions import dataclass_transform, deprecated
 
 from ..errors import PydanticUndefinedAnnotation, PydanticUserError
@@ -231,7 +231,7 @@ def init_private_attributes(self: BaseModel, __context: Any) -> None:
     pydantic_private = {}
     for name, private_attr in self.__private_attributes__.items():
         default = private_attr.get_default()
-        if default is not Undefined:
+        if default is not PydanticUndefined:
             pydantic_private[name] = default
     object_setattr(self, '__pydantic_private__', pydantic_private)
 

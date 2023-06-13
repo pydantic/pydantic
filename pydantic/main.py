@@ -9,12 +9,12 @@ from typing import Any
 
 import pydantic_core
 import typing_extensions
+from pydantic_core import PydanticUndefined
 
 from ._internal import (
     _annotated_handlers,
     _config,
     _decorators,
-    _fields,
     _forward_ref,
     _generics,
     _mock_validator,
@@ -29,13 +29,7 @@ from .deprecated import copy_internals as _deprecated_copy_internals
 from .deprecated import parse as _deprecated_parse
 from .errors import PydanticUndefinedAnnotation, PydanticUserError
 from .fields import ComputedFieldInfo, FieldInfo, ModelPrivateAttr
-from .json_schema import (
-    DEFAULT_REF_TEMPLATE,
-    GenerateJsonSchema,
-    JsonSchemaMode,
-    JsonSchemaValue,
-    model_json_schema,
-)
+from .json_schema import DEFAULT_REF_TEMPLATE, GenerateJsonSchema, JsonSchemaMode, JsonSchemaValue, model_json_schema
 
 if typing.TYPE_CHECKING:
     from inspect import Signature
@@ -56,7 +50,6 @@ if typing.TYPE_CHECKING:
 __all__ = 'BaseModel', 'create_model'
 
 _object_setattr = _model_construction.object_setattr
-_Undefined = _fields.Undefined
 
 
 class BaseModel(metaclass=_model_construction.ModelMetaclass):
@@ -401,7 +394,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
     def __getstate__(self) -> dict[Any, Any]:
         private = self.__pydantic_private__
         if private:
-            private = {k: v for k, v in private.items() if v is not _Undefined}
+            private = {k: v for k, v in private.items() if v is not PydanticUndefined}
         return {
             '__dict__': self.__dict__,
             '__pydantic_extra__': self.__pydantic_extra__,
@@ -682,7 +675,9 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _object_setattr(m, '__pydantic_private__', None)
         else:
             _object_setattr(
-                m, '__pydantic_private__', {k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}
+                m,
+                '__pydantic_private__',
+                {k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined},
             )
 
         return m
@@ -703,7 +698,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
             _object_setattr(
                 m,
                 '__pydantic_private__',
-                deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}, memo=memo),
+                deepcopy({k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined}, memo=memo),
             )
 
         return m
@@ -867,14 +862,14 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
-        encoder: typing.Callable[[Any], Any] | None = _Undefined,  # type: ignore[assignment]
-        models_as_dict: bool = _Undefined,  # type: ignore[assignment]
+        encoder: typing.Callable[[Any], Any] | None = PydanticUndefined,  # type: ignore[assignment]
+        models_as_dict: bool = PydanticUndefined,  # type: ignore[assignment]
         **dumps_kwargs: Any,
     ) -> str:
         warnings.warn('The `json` method is deprecated; use `model_dump_json` instead.', DeprecationWarning)
-        if encoder is not _Undefined:
+        if encoder is not PydanticUndefined:
             raise TypeError('The `encoder` argument is no longer supported; use field serializers instead.')
-        if models_as_dict is not _Undefined:
+        if models_as_dict is not PydanticUndefined:
             raise TypeError('The `models_as_dict` argument is no longer supported; use a model serializer instead.')
         if dumps_kwargs:
             raise TypeError('`dumps_kwargs` keyword arguments are no longer supported.')
@@ -1040,7 +1035,7 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         if self.__pydantic_private__ is None:
             private = None
         else:
-            private = {k: v for k, v in self.__pydantic_private__.items() if v is not _Undefined}
+            private = {k: v for k, v in self.__pydantic_private__.items() if v is not PydanticUndefined}
 
         if self.__pydantic_extra__ is None:
             extra: dict[str, Any] | None = None
