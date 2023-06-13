@@ -2274,7 +2274,7 @@ def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return handler.generate_schema(Path)
+            return handler(Path)
 
         @classmethod
         def __get_pydantic_json_schema__(
