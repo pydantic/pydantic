@@ -2,7 +2,7 @@
 
 You can also define your own custom data types. There are several ways to achieve it.
 
-### Classes with `____get_pydantic_core_schema____`
+### Classes with `__get_pydantic_core_schema__`
 
 
 ```py

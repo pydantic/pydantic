@@ -90,6 +90,7 @@ to help ease migration, but calling them will emit `DeprecationWarning`s.
         serialization logic, and we think the new serialization decorators are a better choice in most common scenarios.
         However, if your usage of `json_encoders` is not compatible with the new serialization decorators,
         please create a GitHub issue letting us know.
+* `GetterDict` has been removed as it was just an implementation detail of `orm_mode`, which has been removed.
 
 ### Changes to `pydantic.generics.GenericModel`
 
@@ -206,9 +207,8 @@ class Model(BaseModel):
 Model()
 ```
 
-* `@root_validator` has been deprecated, and should be replaced with `@model_validator`, which also provides new
-    features and improvements.
-    * [TODO: Add link to documentation of `@model_validator`]
+* `@root_validator` has been deprecated, and should be replaced with
+    [`@model_validator`](api/functional_validators.md#pydantic.functional_validators.model_validator), which also provides new features and improvements.
     * Under some circumstances (such as assignment when `model_config['validate_assignment'] is True`),
         the `@model_validator` decorator will receive an instance of the model, not a dict of values. You may
         need to be careful to handle this case.
@@ -216,10 +216,10 @@ Model()
         you can no longer run with `skip_on_failure=False` (which is the default value of this keyword argument,
         so must be set explicitly to `True`).
 
-#### Changes to `@validator`'s allowed signatures
+#### Changes to validator's allowed signatures
 
-In Pydantic V1 functions wrapped by `@validator` could receive keyword arguments with metadata about what was
-being validated. Some of these arguments have been removed:
+In Pydantic V1, functions wrapped by `@validator` could receive keyword arguments with metadata about what was
+being validated. Some of these arguments have been removed from `@field_validator` in Pydantic V2:
 
 * `config`: Pydantic V2's config is now a dictionary instead of a class, which means this argument is no longer
     backwards compatible. If you need to access the configuration you should migrate to `@field_validator` and use
@@ -414,7 +414,7 @@ Additionally, you can use `typing.Annotated` to modify or provide the `__get_pyd
 This provides a powerful and flexible mechanism for integrating third-party types with Pydantic, and in some cases
 may help you remove hacks from Pydantic V1 introduced to work around the limitations for custom types.
 
-[TODO: Add link to full documentation for custom types, including `__prepare_pydantic_annotations__` etc.]
+See [Custom Data Types](usage/types/custom.md) for more information.
 
 ### Changes to JSON schema generation
 
@@ -424,6 +424,7 @@ In Pydantic V2, we have tried to address many of the common requests:
 
 * The JSON schema for `Optional` fields now indicates that the value `null` is allowed.
 * The `Decimal` type is now exposed in JSON schema (and serialized) as a string.
+* The JSON schema no longer preserves named tuples as named tuples.
 * The JSON schema we generate by default now targets draft 2020-12 (with some OpenAPI extensions).
 * When they differ, you can now specify if you want the JSON schema representing the inputs to validation,
     or the outputs from serialization.
@@ -435,7 +436,8 @@ generation process involved various recursive function calls; to override one, y
 implementation.
 
 In Pydantic V2, one of our design goals was to make it easier to customize JSON schema generation. To this end, we have
-introduced the class `GenerateJsonSchema`, which implements the translation of a type's pydantic-core schema into
+introduced the class [`GenerateJsonSchema`](api/json_schema.md#pydantic.json_schema.GenerateJsonSchema),
+which implements the translation of a type's pydantic-core schema into
 a JSON schema. By design, this class breaks the JSON schema generation process into smaller methods that can be
 easily overridden in subclasses to modify the "global" approach to generating JSON schema.
 
@@ -446,5 +448,3 @@ and you can pass your custom subclass to these methods in order to use your own 
 Hopefully this means that if you disagree with any of the choices we've made, or if you are reliant on behaviors in
 Pydantic V1 that have changed in Pydantic V2, you can use a custom `schema_generator`, modifying the
 `GenerateJsonSchema` class as necessary for your application.
-
-[TODO: Add link to documentation of `GenerateJsonSchema`]
