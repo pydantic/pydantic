@@ -43,7 +43,12 @@ if typing.TYPE_CHECKING:
 
 
 def set_dataclass_fields(cls: type[StandardDataclass], types_namespace: dict[str, Any] | None = None) -> None:
-    """Collect and set `cls.__pydantic_fields__`."""
+    """Collect and set `cls.__pydantic_fields__`.
+
+    Args:
+        cls: The class.
+        types_namespace: The types namespace, defaults to `None`.
+    """
     typevars_map = get_standard_typevars_map(cls)
     fields = collect_dataclass_fields(cls, types_namespace, typevars_map=typevars_map)
 
@@ -62,6 +67,18 @@ def complete_dataclass(
     This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
 
     This is somewhat analogous to `pydantic._internal._model_construction.complete_model_class`.
+
+    Args:
+        cls: The class.
+        config_wrapper: The config wrapper instance.
+        raise_errors: Whether to raise errors, defaults to `True`.
+        types_namespace: The types namespace.
+
+    Returns:
+        `True` if building a pydantic dataclass is successfully completed, `False` otherwise.
+
+    Raises:
+        PydanticUndefinedAnnotation: If `raise_error` is `True` and there is an undefined annotations.
     """
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
@@ -171,6 +188,12 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     ```
     In this case, when we first check `B`, we make an extra check and look at the annotations ('y'),
     which won't be a superset of all the dataclass fields (only the stdlib fields i.e. 'x')
+
+    Args:
+        cls: The class.
+
+    Returns:
+        `True` if the class is a stdlib dataclass, `False` otherwise.
     """
     return (
         dataclasses.is_dataclass(_cls)
@@ -180,4 +203,13 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
 
 
 def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
+    """Whether a class is a pydantic dataclass.
+
+    Args:
+        cls: The class.
+
+    Returns:
+        `True` if the class is a pydantic dataclass, `False` otherwise.
+    """
+
     return dataclasses.is_dataclass(_cls) and '__pydantic_validator__' in _cls.__dict__
