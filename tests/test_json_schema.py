@@ -1657,6 +1657,22 @@ def test_model_default():
     }
 
 
+def test_model_subclass_metadata():
+    class A(BaseModel):
+        """A Model docstring"""
+
+    class B(A):
+        pass
+
+    assert A.model_json_schema() == {
+        'title': 'A',
+        'description': 'A Model docstring',
+        'type': 'object',
+        'properties': {},
+    }
+    assert B.model_json_schema() == {'title': 'B', 'type': 'object', 'properties': {}}
+
+
 @pytest.mark.parametrize(
     'kwargs,type_,expected_extra',
     [
@@ -4366,14 +4382,14 @@ def test_arbitrary_type_json_schema(field_schema, model_schema, instance_of):
 
 def test_root_model():
     class A(RootModel[int]):
-        pass
+        """A Model docstring"""
 
-    assert A.model_json_schema() == {'type': 'integer'}
+    assert A.model_json_schema() == {'title': 'A', 'description': 'A Model docstring', 'type': 'integer'}
 
     class B(RootModel[A]):
         pass
 
-    assert B.model_json_schema() == {'type': 'integer'}
+    assert B.model_json_schema() == {'title': 'B', 'type': 'integer'}
 
 
 def test_get_json_schema_is_passed_the_same_schema_handler_was_called_with() -> None:

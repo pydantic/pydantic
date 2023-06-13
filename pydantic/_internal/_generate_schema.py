@@ -271,7 +271,7 @@ class GenerateSchema:
                     post_init=getattr(cls, '__pydantic_post_init__', None),
                     config=core_config,
                     ref=model_ref,
-                    metadata={**metadata, **root_field['metadata']},
+                    metadata=metadata,
                 )
             else:
                 self._config_wrapper_stack.append(config_wrapper)
