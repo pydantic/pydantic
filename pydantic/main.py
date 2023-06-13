@@ -107,6 +107,21 @@ class BaseModel(metaclass=_model_construction.ModelMetaclass):
         __pydantic_parent_namespace__: typing.ClassVar[dict[str, Any] | None]
         __pydantic_custom_init__: typing.ClassVar[bool]
         __pydantic_post_init__: typing.ClassVar[None | Literal['model_post_init']]
+
+        def __getattr__(self, item: str) -> Any:
+            """
+            If you override this in a class with private attributes or `model_config['extra'] == 'allow'`,
+            you may want to copy the logic from `pydantic._internal._model_construction.model_extra_private_getattr`,
+            since due to the way model classes are constructed, calls to `super().__getattr__` will not call that logic.
+            """
+
+        def __delattr__(self, item: str) -> None:
+            """
+            If you override this in a class with private attributes, you may want to copy the logic from
+            `pydantic._internal._model_construction.model_private_delattr`, since due to the way model classes are
+            constructed, calls to `super().__delattr__` will not call that logic.
+            """
+
     else:
         # `model_fields` and `__pydantic_decorators__` must be set for
         # pydantic._internal._generate_schema.GenerateSchema.model_schema to work for a plain BaseModel annotation
