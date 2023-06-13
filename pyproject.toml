@@ -171,8 +171,7 @@ convention = "google"
 
 [tool.ruff.per-file-ignores]
 'docs/*' = ['D']
-'pydantic/_*' = ['D']
-'pydantic/__init__.py' = ['F405', 'F403']
+'pydantic/__init__.py' = ['F405', 'F403', 'D']
 'tests/test_forward_ref.py' = ['F821']
 'tests/*' = ['D']
 'pydantic/deprecated/*' = ['D']
@@ -181,7 +180,6 @@ convention = "google"
 'pydantic/main.py' = ['D']
 'pydantic/mypy.py' = ['D']
 'pydantic/root_model.py' = ['D']
-'pydantic/type_adapter.py' = ['D']
 
 [tool.coverage.run]
 source = ['pydantic']

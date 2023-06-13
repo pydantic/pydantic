@@ -362,7 +362,7 @@ def conlist(
                 '`unique_items` is removed, use `Set` instead'
                 '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
             ),
-            code='deprecated-kwargs',
+            code='removed-kwargs',
         )
     return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
@@ -1432,7 +1432,7 @@ else:
         def __get_pydantic_core_schema__(
             cls, source: Any, handler: _annotated_handlers.GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
-            original_schema = handler.generate_schema(source)
+            original_schema = handler(source)
             metadata = _core_metadata.build_metadata_dict(js_functions=[lambda _c, h: h(original_schema)])
             return core_schema.any_schema(metadata=metadata, serialization=original_schema)
 

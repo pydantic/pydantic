@@ -381,7 +381,7 @@ except PydanticUserError as exc_info:
     assert exc_info.code == 'config-both'
 ```
 
-## Keyword arguments deprecated {#deprecated-kwargs}
+## Keyword arguments removed {#removed-kwargs}
 
 This error is raised when the keyword arguments are not available in Pydantic V2.
 
@@ -396,7 +396,7 @@ try:
         x: str = Field(regex='test')
 
 except PydanticUserError as exc_info:
-    assert exc_info.code == 'deprecated-kwargs'
+    assert exc_info.code == 'removed-kwargs'
 ```
 
 ## JSON schema invalid type {#invalid-for-json-schema}
@@ -604,7 +604,7 @@ If you do, this root validator will no longer be called if validation fails for 
 
 Please see the [Migration Guide](../migration.md) for more details.
 
-## `model_validator` instance methods {#model-serializer-instance-method}
+## `model_serializer` instance methods {#model-serializer-instance-method}
 
 `@model_serializer` must be applied to instance methods.
 

@@ -1111,39 +1111,31 @@ def test_replace_types_with_user_defined_generic_type_field():
     class CustomCounter(Counter[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                cls, handler.generate_schema(Counter[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(cls, handler(Counter[get_args(source_type)[0]]))
 
     class CustomDefaultDict(DefaultDict[KT, VT]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(
-                lambda x: cls(x.default_factory, x), handler.generate_schema(DefaultDict[keys_type, values_type])
+                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
             )
 
     class CustomDeque(Deque[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                cls, handler.generate_schema(Deque[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(cls, handler(Deque[get_args(source_type)[0]]))
 
     class CustomDict(Dict[KT, VT]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
-            return core_schema.no_info_after_validator_function(
-                cls, handler.generate_schema(Dict[keys_type, values_type])
-            )
+            return core_schema.no_info_after_validator_function(cls, handler(Dict[keys_type, values_type]))
 
     class CustomFrozenset(FrozenSet[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                cls, handler.generate_schema(FrozenSet[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(cls, handler(FrozenSet[get_args(source_type)[0]]))
 
     class CustomIterable(Iterable[T]):
         def __init__(self, iterable):
@@ -1157,37 +1149,29 @@ def test_replace_types_with_user_defined_generic_type_field():
 
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                cls, handler.generate_schema(Iterable[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(cls, handler(Iterable[get_args(source_type)[0]]))
 
     class CustomList(List[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                cls, handler.generate_schema(List[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(cls, handler(List[get_args(source_type)[0]]))
 
     class CustomMapping(Mapping[KT, VT]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
-            return handler.generate_schema(Mapping[keys_type, values_type])
+            return handler(Mapping[keys_type, values_type])
 
     class CustomOrderedDict(OrderedDict[KT, VT]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
-            return core_schema.no_info_after_validator_function(
-                cls, handler.generate_schema(OrderedDict[keys_type, values_type])
-            )
+            return core_schema.no_info_after_validator_function(cls, handler(OrderedDict[keys_type, values_type]))
 
     class CustomSet(Set[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                cls, handler.generate_schema(Set[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(cls, handler(Set[get_args(source_type)[0]]))
 
     class CustomTuple(Tuple[T]):
         pass
@@ -1877,9 +1861,7 @@ def test_generic_with_user_defined_generic_field():
     class GenericList(List[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                GenericList, handler.generate_schema(List[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
 
     class Model(BaseModel, Generic[T]):
         field: GenericList[T]

@@ -8,6 +8,7 @@ import sys
 import typing
 import uuid
 from collections import OrderedDict, defaultdict, deque
+from dataclasses import dataclass
 from datetime import date, datetime, time, timedelta, timezone
 from decimal import Decimal
 from enum import Enum, IntEnum
@@ -4718,9 +4719,7 @@ def test_custom_generic_containers():
     class GenericList(List[T]):
         @classmethod
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return core_schema.no_info_after_validator_function(
-                GenericList, handler.generate_schema(List[get_args(source_type)[0]])
-            )
+            return core_schema.no_info_after_validator_function(GenericList, handler(List[get_args(source_type)[0]]))
 
     class Model(BaseModel):
         field: GenericList[int]
@@ -5068,7 +5067,7 @@ def test_custom_default_dict() -> None:
         def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
             keys_type, values_type = get_args(source_type)
             return core_schema.no_info_after_validator_function(
-                lambda x: cls(x.default_factory, x), handler.generate_schema(DefaultDict[keys_type, values_type])
+                lambda x: cls(x.default_factory, x), handler(DefaultDict[keys_type, values_type])
             )
 
     ta = TypeAdapter(CustomDefaultDict[str, int])
@@ -5589,3 +5588,21 @@ def test_enum_custom_schema() -> None:
     ta = TypeAdapter(MyEnum)
 
     assert ta.validate_python('foo') == MyEnum.foo
+
+
+def test_get_pydantic_core_schema_marker_unrelated_type() -> None:
+    """Test using handler.generate_schema() to generate a schema that ignores
+    the current context of annotations and such
+    """
+
+    @dataclass
+    class Marker:
+        num: int
+
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler.resolve_ref_schema(handler.generate_schema(source_type))
+            return core_schema.no_info_after_validator_function(lambda x: x * self.num, schema)
+
+    ta = TypeAdapter(Annotated[int, Marker(2), Marker(3)])
+
+    assert ta.validate_python('1') == 3

@@ -31,6 +31,15 @@ except ImportError:
 class ValidatorDecoratorInfo:
     """A container for data from `@validator` so that we can access it
     while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@validator'.
+        fields: A tuple of field names the validator should be called on.
+        mode: The proposed validator mode.
+        each_item: For complex objects (sets, lists etc.) whether to validate individual
+            elements rather than the whole object.
+        always: Whether this method and other validators should be called even if the value is missing.
+        check_fields: Whether to check that the fields actually exist on the model.
     """
 
     decorator_repr: ClassVar[str] = '@validator'
@@ -46,6 +55,12 @@ class ValidatorDecoratorInfo:
 class FieldValidatorDecoratorInfo:
     """A container for data from `@field_validator` so that we can access it
     while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@field_validator'.
+        fields: A tuple of field names the validator should be called on.
+        mode: The proposed validator mode.
+        check_fields: Whether to check that the fields actually exist on the model.
     """
 
     decorator_repr: ClassVar[str] = '@field_validator'
@@ -59,6 +74,10 @@ class FieldValidatorDecoratorInfo:
 class RootValidatorDecoratorInfo:
     """A container for data from `@root_validator` so that we can access it
     while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@root_validator'.
+        mode: The proposed validator mode.
     """
 
     decorator_repr: ClassVar[str] = '@root_validator'
@@ -69,6 +88,15 @@ class RootValidatorDecoratorInfo:
 class FieldSerializerDecoratorInfo:
     """A container for data from `@field_serializer` so that we can access it
     while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@field_serializer'.
+        fields: A tuple of field names the serializer should be called on.
+        mode: The proposed serializer mode.
+        return_type: The type of the serializer's return value.
+        when_used: The serialization condition. Accepts a string with values `'always'`, `'unless-none'`, `'json'`,
+            and `'json-unless-none'`.
+        check_fields: Whether to check that the fields actually exist on the model.
     """
 
     decorator_repr: ClassVar[str] = '@field_serializer'
@@ -83,6 +111,13 @@ class FieldSerializerDecoratorInfo:
 class ModelSerializerDecoratorInfo:
     """A container for data from `@model_serializer` so that we can access it
     while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@model_serializer'.
+        mode: The proposed serializer mode.
+        return_type: The type of the serializer's return value.
+        when_used: The serialization condition. Accepts a string with values `'always'`, `'unless-none'`, `'json'`,
+            and `'json-unless-none'`.
     """
 
     decorator_repr: ClassVar[str] = '@model_serializer'
@@ -95,6 +130,10 @@ class ModelSerializerDecoratorInfo:
 class ModelValidatorDecoratorInfo:
     """A container for data from `@model_validator` so that we can access it
     while building the pydantic-core schema.
+
+    Attributes:
+        decorator_repr: A class variable representing the decorator string, '@model_serializer'.
+        mode: The proposed serializer mode.
     """
 
     decorator_repr: ClassVar[str] = '@model_validator'
@@ -125,6 +164,11 @@ class PydanticDescriptorProxy(Generic[ReturnType]):
 
     This class' __get__ returns the wrapped item's __get__ result,
     which makes it transparent for classmethods and staticmethods.
+
+    Attributes:
+        wrapped: The decorator that has to be wrapped.
+        decorator_info: The decorator info.
+        shim: A wrapper function to wrap V1 style function.
     """
 
     wrapped: DecoratedType[ReturnType]
@@ -166,6 +210,13 @@ class Decorator(Generic[DecoratorInfoType]):
     (metadata from decorator itself, which we have when the
     decorator is called but not when we are building the core-schema)
     and the bound function (which we have after the class itself is created).
+
+    Attributes:
+        cls_ref: The class ref.
+        cls_var_name: The decorated function name.
+        func: The decorated function.
+        shim: A wrapper function to wrap V1 style function.
+        info: The decorator info.
     """
 
     cls_ref: str
@@ -182,6 +233,17 @@ class Decorator(Generic[DecoratorInfoType]):
         shim: Callable[[Any], Any] | None,
         info: DecoratorInfoType,
     ) -> Decorator[DecoratorInfoType]:
+        """Build a new decorator.
+
+        Args:
+            cls_: The class.
+            cls_var_name: The decorated function name.
+            shim: A wrapper function to wrap V1 style function.
+            info: The decorator info.
+
+        Returns:
+            The new decorator instance.
+        """
         func = get_attribute_from_bases(cls_, cls_var_name)
         if shim is not None:
             func = shim(func)
@@ -194,6 +256,14 @@ class Decorator(Generic[DecoratorInfoType]):
         )
 
     def bind_to_cls(self, cls: Any) -> Decorator[DecoratorInfoType]:
+        """Bind the decorator to a class.
+
+        Args:
+            cls: the class.
+
+        Returns:
+            The new decorator instance.
+        """
         return self.build(
             cls,
             cls_var_name=self.cls_var_name,
@@ -203,6 +273,14 @@ class Decorator(Generic[DecoratorInfoType]):
 
 
 def get_bases(tp: type[Any]) -> tuple[type[Any], ...]:
+    """Get the base classes of a class or typeddict.
+
+    Args:
+        tp: The type or class to get the bases.
+
+    Returns:
+        The base classes.
+    """
     if is_typeddict(tp):
         return tp.__orig_bases__  # type: ignore
     try:
@@ -265,8 +343,8 @@ def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
     from its bases (as done here).
 
     Args:
-        tp (type[Any]): The type or class to search for the attribute.
-        name (str): The name of the attribute to retrieve.
+        tp: The type or class to search for the attribute.
+        name: The name of the attribute to retrieve.
 
     Returns:
         Any: The attribute value, if found.
@@ -285,9 +363,12 @@ def get_attribute_from_bases(tp: type[Any], name: str) -> Any:
 
 @slots_dataclass
 class DecoratorInfos:
-    # mapping of name in the class namespace to decorator info
-    # note that the name in the class namespace is the function or attribute name
-    # not the field name!
+    """Mapping of name in the class namespace to decorator info.
+
+    note that the name in the class namespace is the function or attribute name
+    not the field name!
+    """
+
     validators: dict[str, Decorator[ValidatorDecoratorInfo]] = field(default_factory=dict)
     field_validators: dict[str, Decorator[FieldValidatorDecoratorInfo]] = field(default_factory=dict)
     root_validators: dict[str, Decorator[RootValidatorDecoratorInfo]] = field(default_factory=dict)
@@ -427,7 +508,7 @@ def inspect_field_serializer(serializer: Callable[..., Any], mode: Literal['plai
         mode: The serializer mode, either 'plain' or 'wrap'.
 
     Returns:
-        Tuple of (is_field_serializer, info_arg)
+        Tuple of (is_field_serializer, info_arg).
     """
     sig = signature(serializer)
 
@@ -483,7 +564,7 @@ def inspect_model_serializer(serializer: Callable[..., Any], mode: Literal['plai
         mode: The serializer mode, either 'plain' or 'wrap'.
 
     Returns:
-        `info_arg` - whether the function expects an info argument
+        `info_arg` - whether the function expects an info argument.
     """
     if isinstance(serializer, (staticmethod, classmethod)) or not is_instance_method_from_sig(serializer):
         raise PydanticUserError(
@@ -527,6 +608,17 @@ AnyDecoratorCallable: TypeAlias = (
 
 
 def is_instance_method_from_sig(function: AnyDecoratorCallable) -> bool:
+    """Whether the function is an instance method.
+
+    It will consider a function as instance method if the first parameter of
+    function is `self`.
+
+    Args:
+        function: The function to check.
+
+    Returns:
+        `True` if the function is an instance method, `False` otherwise.
+    """
     sig = signature(unwrap_wrapped_function(function))
     first = next(iter(sig.parameters.values()), None)
     if first and first.name == 'self':
@@ -535,6 +627,14 @@ def is_instance_method_from_sig(function: AnyDecoratorCallable) -> bool:
 
 
 def ensure_classmethod_based_on_signature(function: AnyDecoratorCallable) -> Any:
+    """Apply the `@classmethod` decorator on the function.
+
+    Args:
+        function: The function to apply the decorator on.
+
+    Return:
+        The `@classmethod` decorator applied function.
+    """
     if not isinstance(
         unwrap_wrapped_function(function, unwrap_class_static_method=False), classmethod
     ) and _is_classmethod_from_sig(function):
@@ -594,6 +694,18 @@ def unwrap_wrapped_function(
 
 
 def get_function_return_type(func: Any, explicit_return_type: Any) -> Any:
+    """Get the function return type.
+
+    It gets the return type from the type annotation if `explicit_return_type` is `None`.
+    Otherwise, it returns `explicit_return_type`.
+
+    Args:
+        func: The function to get its return type.
+        explicit_return_type: The explicit return type.
+
+    Returns:
+        The function return type.
+    """
     if explicit_return_type is None:
         # try to get it from the type annotation
         func = unwrap_wrapped_function(func)

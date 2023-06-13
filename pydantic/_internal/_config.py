@@ -62,7 +62,9 @@ class ConfigWrapper:
 
     @classmethod
     def for_model(cls, bases: tuple[type[Any], ...], namespace: dict[str, Any], kwargs: dict[str, Any]) -> Self:
-        """Build a new `ConfigWrapper` instance for a `BaseModel` based on (in descending order of priority):
+        """Build a new `ConfigWrapper` instance for a `BaseModel`.
+
+        The config wrapper built based on (in descending order of priority):
         - options from `kwargs`
         - options from the `namespace`
         - options from the base classes (`bases`)

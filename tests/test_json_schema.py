@@ -2274,7 +2274,7 @@ def test_path_modify_schema():
     class MyPath(Path):
         @classmethod
         def __get_pydantic_core_schema__(cls, _source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
-            return handler.generate_schema(Path)
+            return handler(Path)
 
         @classmethod
         def __get_pydantic_json_schema__(
@@ -4342,16 +4342,6 @@ def test_build_metadata_dict_initial_metadata():
 
     with pytest.raises(TypeError, match=re.escape("CoreSchema metadata should be a dict; got 'test'.")):
         build_metadata_dict(initial_metadata='test')
-
-
-def test_core_metadata_get_json_schema():
-    core_metadata_handler = CoreMetadataHandler({})
-    assert core_metadata_handler.get_json_schema({}, lambda c: c) == {}
-
-    core_metadata_handler = CoreMetadataHandler(
-        {'metadata': {'pydantic_js_function': lambda c, h: f'schema = {c}, {h.__name__}'}}
-    )
-    assert core_metadata_handler.get_json_schema({'foo': 'bar'}, lambda c: c) == "schema = {'foo': 'bar'}, <lambda>"
 
 
 def test_type_adapter_json_schemas_title_description():
