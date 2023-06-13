@@ -154,7 +154,6 @@ def modify_model_json_schema(
     schema_or_field: CoreSchemaOrField, handler: GetJsonSchemaHandler, *, cls: Any
 ) -> JsonSchemaValue:
     """Add title and description for model-like classes' JSON schema."""
-
     json_schema = handler(schema_or_field)
     original_schema = handler.resolve_ref_schema(json_schema)
     if 'title' not in original_schema:
@@ -1489,7 +1488,7 @@ def _common_field(
 
 
 class _Definitions:
-    """Keeps track of references and definitions"""
+    """Keeps track of references and definitions."""
 
     def __init__(self) -> None:
         self.seen: set[str] = set()
@@ -1497,8 +1496,7 @@ class _Definitions:
 
     @contextmanager
     def get_schema_or_ref(self, tp: Any) -> Iterator[tuple[str, None] | tuple[str, CoreSchema]]:
-        """
-        Get a definition for `tp` if one exists.
+        """Get a definition for `tp` if one exists.
 
         If a definition exists, a tuple of `(ref_string, CoreSchema)` is returned.
         If no definition exists yet, a tuple of `(ref_string, None)` is returned.
