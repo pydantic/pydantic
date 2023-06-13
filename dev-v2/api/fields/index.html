@@ -5065,7 +5065,7 @@ of aliases' fields and all the other fields will be ignored at serialization tim
     <span class="c1"># Check deprecated and removed params from V1. This logic should eventually be removed.</span>
     <span class="n">const</span> <span class="o">=</span> <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;const&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
     <span class="k">if</span> <span class="n">const</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`const` is removed, use `Literal` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated-kwargs&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`const` is removed, use `Literal` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;removed-kwargs&#39;</span><span class="p">)</span>
 
     <span class="n">min_items</span> <span class="o">=</span> <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;min_items&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
     <span class="k">if</span> <span class="n">min_items</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -5086,7 +5086,7 @@ of aliases' fields and all the other fields will be ignored at serialization tim
                 <span class="s1">&#39;`unique_items` is removed, use `Set` instead&#39;</span>
                 <span class="s1">&#39;(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)&#39;</span>
             <span class="p">),</span>
-            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated-kwargs&#39;</span><span class="p">,</span>
+            <span class="n">code</span><span class="o">=</span><span class="s1">&#39;removed-kwargs&#39;</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="n">allow_mutation</span> <span class="o">=</span> <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;allow_mutation&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
@@ -5097,7 +5097,7 @@ of aliases' fields and all the other fields will be ignored at serialization tim
 
     <span class="n">regex</span> <span class="o">=</span> <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;regex&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>  <span class="c1"># type: ignore</span>
     <span class="k">if</span> <span class="n">regex</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`regex` is removed. use `pattern` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;deprecated-kwargs&#39;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="n">PydanticUserError</span><span class="p">(</span><span class="s1">&#39;`regex` is removed. use `pattern` instead&#39;</span><span class="p">,</span> <span class="n">code</span><span class="o">=</span><span class="s1">&#39;removed-kwargs&#39;</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">extra</span><span class="p">:</span>
         <span class="n">warn</span><span class="p">(</span>
