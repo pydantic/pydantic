@@ -176,10 +176,24 @@ def test_typeddict_extra_default(TypedDict):
         name: str
         age: int
 
-    val = TypeAdapter(User)
+    ta = TypeAdapter(User)
+
+    assert ta.validate_python({'name': 'pika', 'age': 7, 'rank': 1}) == {'name': 'pika', 'age': 7}
+
+    class UserExtraAllow(User):
+        __pydantic_config__ = ConfigDict(extra='allow')
+
+    ta = TypeAdapter(UserExtraAllow)
+
+    assert ta.validate_python({'name': 'pika', 'age': 7, 'rank': 1}) == {'name': 'pika', 'age': 7, 'rank': 1}
+
+    class UserExtraForbid(User):
+        __pydantic_config__ = ConfigDict(extra='forbid')
+
+    ta = TypeAdapter(UserExtraForbid)
 
     with pytest.raises(ValidationError) as exc_info:
-        val.validate_python({'name': 'pika', 'age': 7, 'rank': 1})
+        ta.validate_python({'name': 'pika', 'age': 7, 'rank': 1})
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'extra_forbidden', 'loc': ('rank',), 'msg': 'Extra inputs are not permitted', 'input': 1}

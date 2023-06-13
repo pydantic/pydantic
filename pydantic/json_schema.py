@@ -24,7 +24,7 @@ from typing import (
 )
 
 import pydantic_core
-from pydantic_core import CoreSchema, PydanticOmit, core_schema
+from pydantic_core import CoreConfig, CoreSchema, PydanticOmit, core_schema
 from pydantic_core.core_schema import ComputedField
 from typing_extensions import Literal, assert_never
 
@@ -889,7 +889,16 @@ class GenerateJsonSchema:
         ]
         if self.mode == 'serialization':
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
-        return self._named_required_fields_schema(named_required_fields)
+        json_schema = self._named_required_fields_schema(named_required_fields)
+        config: CoreConfig | None = schema.get('config', None)
+
+        extra = (config or {}).get('extra_fields_behavior', 'ignore')
+        if extra == 'forbid':
+            json_schema['additionalProperties'] = False
+        elif extra == 'allow':
+            json_schema['additionalProperties'] = True
+
+        return json_schema
 
     @staticmethod
     def _name_required_computed_fields(
@@ -963,11 +972,9 @@ class GenerateJsonSchema:
         cls = cast('type[BaseModel]', schema['cls'])
         config = cls.model_config
         title = config.get('title')
-        forbid_additional_properties = config.get('extra') == 'forbid'
+
         json_schema_extra = config.get('json_schema_extra')
-        json_schema = self._update_class_schema(
-            json_schema, title, forbid_additional_properties, cls, json_schema_extra
-        )
+        json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         return json_schema
 
@@ -975,7 +982,7 @@ class GenerateJsonSchema:
         self,
         json_schema: JsonSchemaValue,
         title: str | None,
-        forbid_additional_properties: bool,
+        extra: Literal['allow', 'ignore', 'forbid'] | None,
         cls: type[Any],
         json_schema_extra: dict[str, Any] | JsonSchemaExtraCallable | None,
     ) -> JsonSchemaValue:
@@ -988,7 +995,9 @@ class GenerateJsonSchema:
             # referenced_schema['title'] = title
             schema_to_update.setdefault('title', title)
 
-        if forbid_additional_properties:
+        if extra == 'allow':
+            schema_to_update['additionalProperties'] = True
+        elif extra == 'forbid':
             schema_to_update['additionalProperties'] = False
 
         if isinstance(json_schema_extra, (staticmethod, classmethod)):
@@ -1063,11 +1072,9 @@ class GenerateJsonSchema:
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
 
         title = config.get('title') or cls.__name__
-        forbid_additional_properties = config.get('extra') == 'forbid'
+
         json_schema_extra = config.get('json_schema_extra')
-        json_schema = self._update_class_schema(
-            json_schema, title, forbid_additional_properties, cls, json_schema_extra
-        )
+        json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         # Dataclass-specific handling of description
         if is_dataclass(cls) and not hasattr(cls, '__pydantic_validator__'):
