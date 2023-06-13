@@ -2184,7 +2184,7 @@ def test_typeddict_with_extra_ignore():
 def test_typeddict_with_extra_forbid():
     @pydantic.dataclasses.dataclass
     class Model:
-        __pydantic_config__ = ConfigDict(extra='ignore')
+        __pydantic_config__ = ConfigDict(extra='forbid')
         a: str
 
     assert TypeAdapter(Model).json_schema() == {
@@ -2192,6 +2192,7 @@ def test_typeddict_with_extra_forbid():
         'type': 'object',
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
+        'additionalProperties': False,
     }
 
 

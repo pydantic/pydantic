@@ -971,18 +971,9 @@ class GenerateJsonSchema:
         cls = cast('type[BaseModel]', schema['cls'])
         config = cls.model_config
         title = config.get('title')
-        extra = config.get('extra', 'ignore')
-
-        extra = config.get('extra', 'ignore')
-        if extra == 'forbid':
-            additional_properties = False
-        elif extra == 'allow':
-            additional_properties = True
-        else:
-            additional_properties = None
 
         json_schema_extra = config.get('json_schema_extra')
-        json_schema = self._update_class_schema(json_schema, title, additional_properties, cls, json_schema_extra)
+        json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         return json_schema
 
@@ -990,7 +981,7 @@ class GenerateJsonSchema:
         self,
         json_schema: JsonSchemaValue,
         title: str | None,
-        additional_properties: bool | None,
+        extra: Literal['allow', 'ignore', 'forbid'] | None,
         cls: type[Any],
         json_schema_extra: dict[str, Any] | JsonSchemaExtraCallable | None,
     ) -> JsonSchemaValue:
@@ -1003,8 +994,10 @@ class GenerateJsonSchema:
             # referenced_schema['title'] = title
             schema_to_update.setdefault('title', title)
 
-        if additional_properties is not None:
-            schema_to_update['additionalProperties'] = additional_properties
+        if extra == 'allow':
+            schema_to_update['additionalProperties'] = True
+        elif extra == 'forbid':
+            schema_to_update['additionalProperties'] = False
 
         if isinstance(json_schema_extra, (staticmethod, classmethod)):
             # In older versions of python, this is necessary to ensure staticmethod/classmethods are callable
@@ -1079,16 +1072,8 @@ class GenerateJsonSchema:
 
         title = config.get('title') or cls.__name__
 
-        extra = config.get('extra', 'ignore')
-        if extra == 'forbid':
-            additional_properties = False
-        elif extra == 'allow':
-            additional_properties = True
-        else:
-            additional_properties = None
-
         json_schema_extra = config.get('json_schema_extra')
-        json_schema = self._update_class_schema(json_schema, title, additional_properties, cls, json_schema_extra)
+        json_schema = self._update_class_schema(json_schema, title, config.get('extra', None), cls, json_schema_extra)
 
         # Dataclass-specific handling of description
         if is_dataclass(cls) and not hasattr(cls, '__pydantic_validator__'):
