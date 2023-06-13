@@ -2412,7 +2412,7 @@ keyword argument <code>config</code> which has the same meaning as <a href="../m
 
 <span class="c1"># Option 1 - use directly a dict</span>
 <span class="c1"># Note: `mypy` will still raise typo error</span>
-<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="nd">@dataclass</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>  <span class="c1"># (1)!</span>
 <span class="k">class</span> <span class="nc">MyDataclass1</span><span class="p">:</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
 
@@ -2423,6 +2423,9 @@ keyword argument <code>config</code> which has the same meaning as <a href="../m
 <span class="k">class</span> <span class="nc">MyDataclass2</span><span class="p">:</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">int</span>
 </code></pre></div>
+<ol>
+<li>You can read more about <code>validate_assignment</code> in <a href="../model_config/#validate-assignment">model_config</a>.</li>
+</ol>
 <div class="admonition warning">
 <p class="admonition-title">Warning</p>
 <p>After v1.10, <em>pydantic</em> dataclasses support <code>Config.extra</code> but some default behaviour of stdlib dataclasses

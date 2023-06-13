@@ -3826,6 +3826,7 @@ has timezone info.</p>
 <span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">exc_info</span><span class="p">:</span>
     <span class="k">assert</span> <span class="n">exc_info</span><span class="o">.</span><span class="n">errors</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;extra_forbidden&#39;</span>
 </code></pre></div>
+<p>You can read more about the <code>extra</code> configuration on the <a href="../model_config/#extra-attributes">Extra Attributes</a> section.</p>
 <h2 id="finite_number"><code>finite_number</code><a class="headerlink" href="#finite_number" title="Permanent link">&para;</a></h2>
 <p>This error is raised when the value is an infinite number.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>

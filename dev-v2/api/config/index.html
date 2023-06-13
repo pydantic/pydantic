@@ -2126,7 +2126,10 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 
   
       <p>This class is only retained for backwards compatibility.</p>
-<p>The preferred approach going forward is to assign a <code>ConfigDict</code> to the <code>model_config</code> attribute of the Model class.</p>
+<div class="admonition warning">
+<p class="admonition-title">Deprecated</p>
+<p>BaseConfig is deprecated. Use the <code>pydantic.ConfigDict</code> instead.</p>
+</div>
 
 
 
@@ -2255,10 +2258,11 @@ Defaults to <code>False</code>.</p>
               <p>Whether to ignore, allow, or forbid extra attributes during model initialization.
 Accepts the string values of <code>'ignore'</code>, <code>'allow'</code>, or <code>'forbid'</code>. Defaults to <code>'ignore'</code>.</p>
 <ul>
-<li><code>'forbid'</code> will cause validation to fail if extra attributes are included</li>
-<li><code>'ignore'</code> will silently ignore any extra attributes</li>
-<li><code>'allow'</code> will assign the attributes to the model</li>
+<li><code>'forbid'</code> will cause validation to fail if extra attributes are included.</li>
+<li><code>'ignore'</code> will silently ignore any extra attributes.</li>
+<li><code>'allow'</code> will assign the attributes to the model.</li>
 </ul>
+<p>See <a href="/usage/model_config#extra-attributes">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>
@@ -2329,7 +2333,7 @@ This may be useful if you want to serialise <code>model.model_dump()</code> late
               <p>Whether to allow arbitrary user types for fields (they are validated simply by
 checking if the value is an instance of the type). If <code>False</code>, <code>RuntimeError</code> will be raised on model
 declaration. Defaults to <code>False</code>.</p>
-<p>See an example in <a href="../../usage/types/custom/#arbitrary-types-allowed">Field Types</a>.</p>
+<p>See <a href="/usage/types/custom/#arbitrary-types-allowed">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>
@@ -2367,7 +2371,7 @@ declaration. Defaults to <code>False</code>.</p>
           <td>
             <div class="doc-md-description">
               <p>a callable that takes a field name and returns an alias for it.</p>
-<p>See <a href="#pydantic.config.ConfigDict--alias-generator">the dedicated section</a>.</p>
+<p>See <a href="/usage/model_config#alias-generator">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>
@@ -2433,6 +2437,7 @@ values of <code>'never'</code>, <code>'always'</code> and <code>'subclass-instan
 <li><code>'subclass-instances'</code> will revalidate models and dataclasses during validation if the instance is a
     subclass of the model or dataclass</li>
 </ul>
+<p>See <a href="/usage/model_config#revalidate-instances">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>
@@ -2488,7 +2493,7 @@ Defaults to <code>'utf8'</code>.</p>
             <div class="doc-md-description">
               <p>A <code>tuple</code> of strings that prevent model to have field which conflict with them.
 Defaults to <code>('model_', )</code>).</p>
-<p>See <a href="#pydantic.config.ConfigDict--protected-namespaces">the dedicated section</a>.</p>
+<p>See <a href="/usage/model_config#protected-namespaces">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>
@@ -2500,7 +2505,7 @@ Defaults to <code>('model_', )</code>).</p>
           <td>
             <div class="doc-md-description">
               <p>Whether to hide inputs when printing errors. Defaults to <code>False</code>.</p>
-<p>See <a href="#pydantic.config.ConfigDict--hide-input-in-errors">the dedicated section</a>.</p>
+<p>See <a href="/usage/model_config#hide-input-in-errors">the dedicated section</a>.</p>
             </div>
           </td>
         </tr>

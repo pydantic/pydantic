@@ -1080,8 +1080,22 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#extra-attributes" class="md-nav__link">
+    Extra Attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#populate-by-name" class="md-nav__link">
     Populate by Name
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate-assignment" class="md-nav__link">
+    Validate Assignment
   </a>
   
 </li>
@@ -2112,8 +2126,22 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 </li>
       
         <li class="md-nav__item">
+  <a href="#extra-attributes" class="md-nav__link">
+    Extra Attributes
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#populate-by-name" class="md-nav__link">
     Populate by Name
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#validate-assignment" class="md-nav__link">
+    Validate Assignment
   </a>
   
 </li>
@@ -2188,7 +2216,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">):</span>  <span class="c1"># (1)!</span>
     <span class="n">a</span><span class="p">:</span> <span class="nb">str</span>
 
 
@@ -2202,6 +2230,9 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=&#39;oh no&#39;, input_type=str]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div></p>
+<ol>
+<li>See the <a href="#extra-attributes">Extra Attributes</a> section for more details.</li>
+</ol>
 <p>Similarly, if using the <code>@dataclass</code> decorator from <em>pydantic</em>:
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">datetime</span> <span class="kn">import</span> <span class="n">datetime</span>
 
@@ -2250,8 +2281,8 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
 <h2 id="options">Options<a class="headerlink" href="#options" title="Permanent link">&para;</a></h2>
 <p>See the <a href="../../api/config/#pydantic.config.ConfigDict"><code>ConfigDict</code> API documentation</a> for the full list of settings.</p>
 <h2 id="change-behaviour-globally">Change behaviour globally<a class="headerlink" href="#change-behaviour-globally" title="Permanent link">&para;</a></h2>
-<p>If you wish to change the behaviour of <em>pydantic</em> globally, you can create your own custom <code>BaseModel</code>
-with custom <code>model_config</code> since the config is inherited
+<p>If you wish to change the behaviour of Pydantic globally, you can create your own custom <code>BaseModel</code>
+with custom <code>model_config</code> since the config is inherited:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span> <span class="k">as</span> <span class="n">PydanticBaseModel</span>
 <span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">ConfigDict</span>
 
@@ -2264,9 +2295,13 @@ with custom <code>model_config</code> since the config is inherited
 <span class="w">    </span><span class="sd">&quot;&quot;&quot;A random class&quot;&quot;&quot;</span>
 
 
-<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>  <span class="c1"># (1)!</span>
     <span class="n">x</span><span class="p">:</span> <span class="n">MyClass</span>
-</code></pre></div></p>
+</code></pre></div>
+<ol>
+<li>Since <code>BaseModel</code> is a subclass of <code>PydanticBaseModel</code>, it will inherit the <code>model_config</code> attribute.
+   This means that <code>Model</code> will have <code>arbitrary_types_allowed=True</code> by default.</li>
+</ol>
 <h2 id="alias-generator">Alias Generator<a class="headerlink" href="#alias-generator" title="Permanent link">&para;</a></h2>
 <p>If data source field names do not match your code style (e. g. CamelCase fields),
 you can automatically generate aliases using <code>alias_generator</code>:</p>
@@ -2294,63 +2329,163 @@ you can automatically generate aliases using <code>alias_generator</code>:</p>
 e.g. <code>CamelCase</code>. If you'd like instead to use lower camel case e.g. <code>camelCase</code>,
 instead use the <code>to_lower_camel</code> function.</p>
 <h2 id="alias-precedence">Alias Precedence<a class="headerlink" href="#alias-precedence" title="Permanent link">&para;</a></h2>
-<p>TODO: This section needs to be re-written.</p>
-<div class="admonition warning">
-<p class="admonition-title">Warning</p>
-<p>Alias priority logic changed in <strong>v1.4</strong> to resolve buggy and unexpected behaviour in previous versions.
-In some circumstances this may represent a <strong>breaking change</strong>,
-see <a href="https://github.com/pydantic/pydantic/issues/1178">#1178</a> and the precedence order below for details.</p>
-</div>
-<p>In the case where a field's alias may be defined in multiple places,
-the selected value is determined as follows (in descending order of priority):</p>
-<ol>
-<li>Set via <code>Field(..., alias=&lt;alias&gt;)</code>, directly on the model</li>
-<li>Defined in <code>Config.fields</code>, directly on the model</li>
-<li>Set via <code>Field(..., alias=&lt;alias&gt;)</code>, on a parent model</li>
-<li>Defined in <code>Config.fields</code>, on a parent model</li>
-<li>Generated by <code>alias_generator</code>, regardless of whether it's on the model or a parent</li>
-</ol>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>This means an <code>alias_generator</code> defined on a child model <strong>does not</strong> take priority over an alias defined
-on a field in a parent model.</p>
-</div>
-<p>For example:</p>
-<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">Field</span>
+<p>If you specify an <code>alias</code> on the <code>Field</code>, it will take precedence over the generated alias:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
 
 
-<span class="k">class</span> <span class="nc">Voice</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
-    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">alias</span><span class="o">=</span><span class="s1">&#39;ActorName&#39;</span><span class="p">)</span>
-    <span class="n">language_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">mood</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
-
-
-<span class="k">def</span> <span class="nf">alias_generator</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-    <span class="c1"># this is the same as `alias_generator = to_camel` above</span>
+<span class="k">def</span> <span class="nf">to_camel</span><span class="p">(</span><span class="n">string</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
     <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">word</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span> <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">string</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">))</span>
 
 
-<span class="k">class</span> <span class="nc">Character</span><span class="p">(</span><span class="n">Voice</span><span class="p">):</span>
-    <span class="n">model_config</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">alias_generator</span><span class="o">=</span><span class="n">alias_generator</span><span class="p">)</span>
-    <span class="n">act</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="k">class</span> <span class="nc">Voice</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">alias_generator</span><span class="o">=</span><span class="n">to_camel</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+    <span class="n">language_code</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;lang&#39;</span><span class="p">)</span>
 
 
-<span class="nb">print</span><span class="p">(</span><span class="n">Character</span><span class="o">.</span><span class="n">model_json_schema</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
-<span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">{</span>
-<span class="sd">    &#39;properties&#39;: {</span>
-<span class="sd">        &#39;Act&#39;: {&#39;default&#39;: 1, &#39;title&#39;: &#39;Act&#39;, &#39;type&#39;: &#39;integer&#39;},</span>
-<span class="sd">        &#39;ActorName&#39;: {&#39;default&#39;: None, &#39;title&#39;: &#39;Actorname&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;LanguageCode&#39;: {&#39;default&#39;: None, &#39;title&#39;: &#39;Languagecode&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">        &#39;Mood&#39;: {&#39;default&#39;: None, &#39;title&#39;: &#39;Mood&#39;, &#39;type&#39;: &#39;string&#39;},</span>
-<span class="sd">    },</span>
-<span class="sd">    &#39;title&#39;: &#39;Character&#39;,</span>
-<span class="sd">    &#39;type&#39;: &#39;object&#39;,</span>
-<span class="sd">}</span>
-<span class="sd">&quot;&quot;&quot;</span>
+<span class="n">voice</span> <span class="o">=</span> <span class="n">Voice</span><span class="p">(</span><span class="n">Name</span><span class="o">=</span><span class="s1">&#39;Filiz&#39;</span><span class="p">,</span> <span class="n">lang</span><span class="o">=</span><span class="s1">&#39;tr-TR&#39;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">voice</span><span class="o">.</span><span class="n">language_code</span><span class="p">)</span>
+<span class="c1">#&gt; tr-TR</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">voice</span><span class="o">.</span><span class="n">model_dump</span><span class="p">(</span><span class="n">by_alias</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<span class="c1">#&gt; {&#39;Name&#39;: &#39;Filiz&#39;, &#39;lang&#39;: &#39;tr-TR&#39;}</span>
+</code></pre></div>
+<p>The same precedence applies to <code>validation_alias</code> and <code>serialization_alias</code>.
+See more about the different field aliases on <a href="/usage/fields.md#field-aliases">the dedicated section</a>.</p>
+<h2 id="extra-attributes">Extra Attributes<a class="headerlink" href="#extra-attributes" title="Permanent link">&para;</a></h2>
+<p>You can configure how pydantic handles the attributes that are not defined in the model:</p>
+<ul>
+<li><code>allow</code> - Allow any extra attributes.</li>
+<li><code>forbid</code> - Forbid any extra attributes.</li>
+<li><code>ignore</code> - Ignore any extra attributes.</li>
+</ul>
+<p>The default value is <code>'ignore'</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;ignore&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39;</span>
+</code></pre></div>
+<ol>
+<li>This is the the default behaviour.</li>
+<li>The <code>age</code> argument is ignored.</li>
+</ol>
+<p>Instead, with <code>extra='allow'</code>, the <code>age</code> argument is included:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;allow&#39;</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39; age=20</span>
+</code></pre></div>
+<ol>
+<li>The <code>age</code> argument is included.</li>
+</ol>
+<p>With <code>extra='forbid'</code>, an error is raised:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">extra</span><span class="o">=</span><span class="s1">&#39;forbid&#39;</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    age</span>
+<span class="sd">      Extra inputs are not permitted [type=extra_forbidden, input_value=20, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
 </code></pre></div>
 <h2 id="populate-by-name">Populate by Name<a class="headerlink" href="#populate-by-name" title="Permanent link">&para;</a></h2>
-<p>TODO: Add information here.</p>
+<p>In case you set an alias, you can still populate the model by the original name.</p>
+<p>You need to set <code>populate_by_name=True</code> in the <code>model_config</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span><span class="p">,</span> <span class="n">Field</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">model_config</span> <span class="o">=</span> <span class="n">ConfigDict</span><span class="p">(</span><span class="n">populate_by_name</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="n">Field</span><span class="p">(</span><span class="n">alias</span><span class="o">=</span><span class="s1">&#39;full_name&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+    <span class="n">age</span><span class="p">:</span> <span class="nb">int</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">full_name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39; age=20</span>
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">,</span> <span class="n">age</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>  <span class="c1"># (3)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39; age=20</span>
+</code></pre></div>
+<ol>
+<li>The field <code>'name'</code> has an alias <code>'full_name'</code>.</li>
+<li>The model is populated by the alias <code>'full_name'</code>.</li>
+<li>The model is populated by the field name <code>'name'</code>.</li>
+</ol>
+<h2 id="validate-assignment">Validate Assignment<a class="headerlink" href="#validate-assignment" title="Permanent link">&para;</a></h2>
+<p>The default behavior of Pydantic is to validate the data when the model is created.</p>
+<p>In case the user changes the data after the model is created, the model is <em>not</em> revalidated.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39;</span>
+<span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="mi">123</span>  <span class="c1"># (1)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=123</span>
+</code></pre></div>
+<ol>
+<li>The validation happens only when the model is created.</li>
+<li>The validation does not happen when the data is changed.</li>
+</ol>
+<p>In case you want to revalidate the model when the data is changed, you can use <code>validate_assignment=True</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ValidationError</span>
+
+
+<span class="k">class</span> <span class="nc">User</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">,</span> <span class="n">validate_assignment</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>  <span class="c1"># (1)!</span>
+    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span>
+
+
+<span class="n">user</span> <span class="o">=</span> <span class="n">User</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;John Doe&#39;</span><span class="p">)</span>  <span class="c1"># (2)!</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">user</span><span class="p">)</span>
+<span class="c1">#&gt; name=&#39;John Doe&#39;</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">user</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="mi">123</span>  <span class="c1"># (3)!</span>
+<span class="k">except</span> <span class="n">ValidationError</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    1 validation error for User</span>
+<span class="sd">    name</span>
+<span class="sd">      Input should be a valid string [type=string_type, input_value=123, input_type=int]</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+</code></pre></div>
+<ol>
+<li>You can either use class keyword arguments, or <code>model_config</code> to set <code>validate_assignment=True</code>.</li>
+<li>The validation happens when the model is created.</li>
+<li>The validation <em>also</em> happens when the data is changed.</li>
+</ol>
 <h2 id="revalidate-instances">Revalidate instances<a class="headerlink" href="#revalidate-instances" title="Permanent link">&para;</a></h2>
 <p>By default, model and dataclass instances are not revalidated during validation.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
@@ -2475,10 +2610,8 @@ of subclasses of the model.</p>
 <li>Using <code>'never'</code> we would have gotten <code>user=SubUser(hobbies=['scuba diving'], sins=['lying'])</code>.</li>
 </ol>
 <h2 id="protected-namespaces">Protected Namespaces<a class="headerlink" href="#protected-namespaces" title="Permanent link">&para;</a></h2>
-<p><em>Pydantic</em> prevents collisions between model attributes and <code>BaseModel</code>'s own methods by
-namespacing them with the prefix <code>model_</code>.
-This is customizable using the <code>protected_namespaces</code> setting in the model's config so that
-you can allow overriding <code>model_</code> or add your own protected namespaces.</p>
+<p>Pydantic prevents collisions between model attributes and <code>BaseModel</code>'s own methods by
+namespacing them with the prefix <code>model_</code>.</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
 
 <span class="k">try</span><span class="p">:</span>
@@ -2490,7 +2623,7 @@ you can allow overriding <code>model_</code> or add your own protected namespace
     <span class="nb">print</span><span class="p">(</span><span class="n">e</span><span class="p">)</span>
     <span class="c1">#&gt; Field &quot;model_prefixed_field&quot; has conflict with protected namespace &quot;model_&quot;</span>
 </code></pre></div>
-<p>You can change it or define multiple value for it:</p>
+<p>You can customize this behavior using the <code>protected_namespaces</code> setting:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">ConfigDict</span>
 
 <span class="k">try</span><span class="p">:</span>
