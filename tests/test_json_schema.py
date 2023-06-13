@@ -4344,16 +4344,6 @@ def test_build_metadata_dict_initial_metadata():
         build_metadata_dict(initial_metadata='test')
 
 
-def test_core_metadata_get_json_schema():
-    core_metadata_handler = CoreMetadataHandler({})
-    assert core_metadata_handler.get_json_schema({}, lambda c: c) == {}
-
-    core_metadata_handler = CoreMetadataHandler(
-        {'metadata': {'pydantic_js_function': lambda c, h: f'schema = {c}, {h.__name__}'}}
-    )
-    assert core_metadata_handler.get_json_schema({'foo': 'bar'}, lambda c: c) == "schema = {'foo': 'bar'}, <lambda>"
-
-
 def test_type_adapter_json_schemas_title_description():
     class Model(BaseModel):
         a: str
