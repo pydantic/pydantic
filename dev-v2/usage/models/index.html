@@ -713,8 +713,15 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
-  <a href="#field-with-dynamic-default-value" class="md-nav__link">
-    Field with dynamic default value
+  <a href="#fields-with-non-hashable-default-values" class="md-nav__link">
+    Fields with non-hashable default values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fields-with-dynamic-default-values" class="md-nav__link">
+    Fields with dynamic default values
   </a>
   
 </li>
@@ -2403,8 +2410,15 @@ Pydantic's <a href="https://pydantic.dev/roadmap/">commercial roadmap</a> is out
 </li>
       
         <li class="md-nav__item">
-  <a href="#field-with-dynamic-default-value" class="md-nav__link">
-    Field with dynamic default value
+  <a href="#fields-with-non-hashable-default-values" class="md-nav__link">
+    Fields with non-hashable default values
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#fields-with-dynamic-default-values" class="md-nav__link">
+    Fields with dynamic default values
   </a>
   
 </li>
@@ -3975,7 +3989,57 @@ you can use <code>Optional</code> with <code>...</code>:</p>
 </div>
 <p>In this model, <code>a</code> and <code>b</code> can take <code>None</code> as a value. But <code>b</code> is optional, while <code>a</code> and is required.
 <code>a</code> requires a value, even if the value is <code>None</code>.</p>
-<h2 id="field-with-dynamic-default-value">Field with dynamic default value<a class="headerlink" href="#field-with-dynamic-default-value" title="Permanent link">&para;</a></h2>
+<h2 id="fields-with-non-hashable-default-values">Fields with non-hashable default values<a class="headerlink" href="#fields-with-non-hashable-default-values" title="Permanent link">&para;</a></h2>
+<p>A common source of bugs in python is to use a mutable object as a default value for a function or method argument,
+as the same instance ends up being reused in each call.</p>
+<p>The <code>dataclasses</code> module actually raises an error in this case, indicating that you should use the <code>default_factory</code>
+argument to <code>dataclasses.field</code>.</p>
+<p>Pydantic also supports the use of a <a href="#fields-with-dynamic-default-values"><code>default_factory</code></a> for non-hashable default
+values, but it is not required. In the event that the default value is not hashable, Pydantic will deepcopy the default
+value when creating each instance of the model:</p>
+<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.7 and above</label><label for="__tabbed_14_2">Python 3.9 and above</label></div>
+<div class="tabbed-content">
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+
+<span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">item_counts</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[{}]</span>
+
+
+<span class="n">m1</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{}]</span>
+</code></pre></div>
+</div>
+<div class="tabbed-block">
+<div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span>
+
+
+<span class="k">class</span> <span class="nc">Model</span><span class="p">(</span><span class="n">BaseModel</span><span class="p">):</span>
+    <span class="n">item_counts</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="p">[{}]</span>
+
+
+<span class="n">m1</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m1</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{&#39;a&#39;: 1}]</span>
+
+<span class="n">m2</span> <span class="o">=</span> <span class="n">Model</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">m2</span><span class="o">.</span><span class="n">item_counts</span><span class="p">)</span>
+<span class="c1">#&gt; [{}]</span>
+</code></pre></div>
+</div>
+</div>
+</div>
+<h2 id="fields-with-dynamic-default-values">Fields with dynamic default values<a class="headerlink" href="#fields-with-dynamic-default-values" title="Permanent link">&para;</a></h2>
 <p>When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
 To do this, you may want to use a <code>default_factory</code>.</p>
 <p>Example of usage:</p>
@@ -4118,7 +4182,7 @@ it is just syntactic sugar for getting an attribute and either comparing it or d
 <h2 id="attribute-copies">Attribute copies<a class="headerlink" href="#attribute-copies" title="Permanent link">&para;</a></h2>
 <p>In many cases arguments passed to the constructor will be copied in order to perform validation and, where necessary, coercion. When constructing classes with data attributes, Pydantic copies the attributes in order to efficiently iterate over its elements for validation.</p>
 <p>In this example, note that the ID of the list changes after the class is constructed because it has been copied for validation.</p>
-<div class="tabbed-set tabbed-alternate" data-tabs="14:2"><input checked="checked" id="__tabbed_14_1" name="__tabbed_14" type="radio" /><input id="__tabbed_14_2" name="__tabbed_14" type="radio" /><div class="tabbed-labels"><label for="__tabbed_14_1">Python 3.7 and above</label><label for="__tabbed_14_2">Python 3.9 and above</label></div>
+<div class="tabbed-set tabbed-alternate" data-tabs="15:2"><input checked="checked" id="__tabbed_15_1" name="__tabbed_15" type="radio" /><input id="__tabbed_15_2" name="__tabbed_15" type="radio" /><div class="tabbed-labels"><label for="__tabbed_15_1">Python 3.7 and above</label><label for="__tabbed_15_2">Python 3.9 and above</label></div>
 <div class="tabbed-content">
 <div class="tabbed-block">
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
