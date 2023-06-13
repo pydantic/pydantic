@@ -1424,7 +1424,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#model-serializer-instance-method" class="md-nav__link">
-    model_validator instance methods
+    model_serializer instance methods
   </a>
   
 </li>
@@ -2428,7 +2428,7 @@ We're releasing the first alpha of Pydantic V2 for evaluation. Read the <a href=
       
         <li class="md-nav__item">
   <a href="#model-serializer-instance-method" class="md-nav__link">
-    model_validator instance methods
+    model_serializer instance methods
   </a>
   
 </li>
@@ -3264,7 +3264,7 @@ The <code>skip_on_failure=False</code> option is no longer available.</p>
 <p>If you were not trying to set <code>skip_on_failure=False</code>, you can safely set <code>skip_on_failure=True</code>.
 If you do, this root validator will no longer be called if validation fails for any of the fields.</p>
 <p>Please see the <a href="../../migration/">Migration Guide</a> for more details.</p>
-<h2 id="model-serializer-instance-method"><code>model_validator</code> instance methods<a class="headerlink" href="#model-serializer-instance-method" title="Permanent link">&para;</a></h2>
+<h2 id="model-serializer-instance-method"><code>model_serializer</code> instance methods<a class="headerlink" href="#model-serializer-instance-method" title="Permanent link">&para;</a></h2>
 <p><code>@model_serializer</code> must be applied to instance methods.</p>
 <p>This error is raised when you apply <code>model_serializer</code> on an instance method without <code>self</code>:</p>
 <div class="highlight"><pre><span></span><code><span class="kn">from</span> <span class="nn">pydantic</span> <span class="kn">import</span> <span class="n">BaseModel</span><span class="p">,</span> <span class="n">PydanticUserError</span><span class="p">,</span> <span class="n">model_serializer</span>
