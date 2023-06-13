@@ -288,7 +288,7 @@ def inspect_namespace(  # noqa C901
         elif var_name.startswith('__'):
             continue
         elif var_name.startswith('_'):
-            if var_name in raw_annotations and not is_classvar(raw_annotations[var_name]):
+            if var_name not in raw_annotations or not is_classvar(raw_annotations[var_name]):
                 private_attributes[var_name] = PrivateAttr(default=value)
                 del namespace[var_name]
         elif var_name in base_class_vars:

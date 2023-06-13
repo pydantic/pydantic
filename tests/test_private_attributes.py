@@ -339,3 +339,17 @@ def test_layout_compatible_multiple_private_parents():
     assert m.__pydantic_private__ == {'_mixin_private': 1, '_private': 2}
     assert m._mixin_private == 1
     assert m._private == 2
+
+
+def test_unannotated_private_attr():
+    from pydantic import BaseModel, PrivateAttr
+
+    class A(BaseModel):
+        _x = PrivateAttr()
+        _y = 52
+
+    a = A()
+    assert a._y == 52
+    assert a.__pydantic_private__ == {'_y': 52}
+    a._x = 1
+    assert a.__pydantic_private__ == {'_x': 1, '_y': 52}
