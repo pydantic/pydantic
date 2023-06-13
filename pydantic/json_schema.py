@@ -1,3 +1,4 @@
+"""This module contains the `GenerateJsonSchema` class, which is used to generate the JSON schema."""
 from __future__ import annotations as _annotations
 
 import inspect
@@ -83,13 +84,16 @@ JsonSchemaWarningKind = Literal['skipped-choice', 'non-serializable-default']
 """
 A type alias representing the kinds of warnings that can be emitted during JSON schema generation.
 
-See `GenerateJsonSchema.render_warning_message` for more details.
+See [`GenerateJsonSchema.render_warning_message`][pydantic.json_schema.GenerateJsonSchema.render_warning_message]
+for more details.
 """
 
 
 class PydanticJsonSchemaWarning(UserWarning):
     """This class is used to emit warnings produced during JSON schema generation.
-    See the `GenerateJsonSchema.emit_warning` and `GenerateJsonSchema.render_warning_message`
+
+    See the [`GenerateJsonSchema.emit_warning`][pydantic.json_schema.GenerateJsonSchema.emit_warning]
+    and [`GenerateJsonSchema.render_warning_message`][pydantic.json_schema.GenerateJsonSchema.render_warning_message]
     methods for more details; these can be overridden to control warning behavior.
     """
 
@@ -271,7 +275,7 @@ class GenerateJsonSchema:
 
         Args:
             schema: A Pydantic model.
-            mode: The mode in which to generate the schema. Defaults to 'validation'.
+            mode: The mode in which to generate the schema.
 
         Returns:
             A JSON schema representing the specified schema.
@@ -667,7 +671,8 @@ class GenerateJsonSchema:
         return json_schema
 
     def generator_schema(self, schema: core_schema.GeneratorSchema) -> JsonSchemaValue:
-        """Returns a JSON schema that represents the provided GeneratorSchema.
+        """Returns a JSON schema that represents the provided
+        [`GeneratorSchema`][pydantic_core.core_schema.GeneratorSchema].
 
         Args:
             schema: The schema.
@@ -821,7 +826,8 @@ class GenerateJsonSchema:
         self, schema: core_schema.TaggedUnionSchema, one_of_choices: list[_JsonDict]
     ) -> str | None:
         """Extract a compatible OpenAPI discriminator from the schema and one_of choices that end up in the final
-        schema."""
+        schema.
+        """
         openapi_discriminator: str | None = None
 
         if isinstance(schema['discriminator'], str):
@@ -1548,7 +1554,18 @@ def model_json_schema(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     mode: JsonSchemaMode = 'validation',
 ) -> dict[str, Any]:
-    """Utility function to generate a JSON Schema for a model."""
+    """Utility function to generate a JSON Schema for a model.
+
+    Args:
+        cls: The model class.
+        by_alias: Whether field aliases should be used as keys in the generated JSON Schema.
+        ref_template: The template to use for generating JSON Schema references.
+        schema_generator: The class to use for generating the JSON Schema.
+        mode: The mode to use for generating the JSON Schema.
+
+    Returns:
+        The generated JSON Schema.
+    """
     schema_generator_instance = schema_generator(by_alias=by_alias, ref_template=ref_template)
     return schema_generator_instance.generate(cls.__pydantic_core_schema__, mode=mode)
 
