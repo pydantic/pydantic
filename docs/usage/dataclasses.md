@@ -64,12 +64,7 @@ print(TypeAdapter(User).json_schema())
             'description': 'do not lie!',
             'title': 'The age of the user',
         },
-        'friends': {
-            'default': [0],
-            'items': {'type': 'integer'},
-            'title': 'Friends',
-            'type': 'array',
-        },
+        'friends': {'items': {'type': 'integer'}, 'title': 'Friends', 'type': 'array'},
         'height': {
             'anyOf': [
                 {'maximum': 300, 'minimum': 50, 'type': 'integer'},
