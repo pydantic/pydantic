@@ -312,6 +312,8 @@ input whenever possible, even if the correct type is not the first choice for wh
 As a demonstration, consider the following example:
 
 ```python
+from __future__ import annotations
+
 from pydantic import BaseModel
 
 
@@ -384,6 +386,8 @@ Due to limitations of inferring generic types with common type checkers, to get 
 may need to explicitly specify the generic parameter:
 
 ```python
+from __future__ import annotations
+
 from pydantic import TypeAdapter
 
 adapter: TypeAdapter[str | int] = TypeAdapter(str | int)
