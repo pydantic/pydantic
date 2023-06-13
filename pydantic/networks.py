@@ -376,7 +376,15 @@ class IPvAnyNetwork:
         return cls(__input_value)  # type: ignore[return-value]
 
 
-pretty_email_regex = re.compile(r' *([\w ]*?) *<(.+?)> *')
+def _build_pretty_email_regex() -> re.Pattern:
+    name_chars = r'[\w!#$%&\'*+\-/=?^_`{|}~]'
+    unquoted_name_group = fr'((?:{name_chars}+\s+)*{name_chars}+)'
+    quoted_name_group = r'"((?:[^"]|\")+)"'
+    email_group = r'<\s*(.+)\s*>'
+    return re.compile(rf'\s*(?:{unquoted_name_group}|{quoted_name_group})?\s*{email_group}\s*')
+
+
+pretty_email_regex = _build_pretty_email_regex()
 
 
 def validate_email(value: str) -> tuple[str, str]:
@@ -395,7 +403,8 @@ def validate_email(value: str) -> tuple[str, str]:
     m = pretty_email_regex.fullmatch(value)
     name: str | None = None
     if m:
-        name, value = m.groups()
+        unquoted_name, quoted_name, value = m.groups()
+        name = unquoted_name or quoted_name
 
     email = value.strip()
 
