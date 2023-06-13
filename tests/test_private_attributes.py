@@ -285,13 +285,13 @@ def test_ignored_types_are_ignored() -> None:
         _c: IgnoredType
         _d: IgnoredType = IgnoredType()
 
-        # The following are included to document existing behavior, and can be updated
-        # if the current behavior does not match the desired behavior
+        # The following are included to document existing behavior, which is to make them into PrivateAttrs
+        # this can be updated if the current behavior is not the desired behavior
         _e: int
         _f: int = 1
-        _g = 1  # Note: this is completely ignored, in keeping with v1
+        _g = 1
 
-    assert sorted(MyModel.__private_attributes__.keys()) == ['_e', '_f']
+    assert sorted(MyModel.__private_attributes__.keys()) == ['_e', '_f', '_g']
 
 
 @pytest.mark.skipif(not hasattr(functools, 'cached_property'), reason='cached_property is not available')
