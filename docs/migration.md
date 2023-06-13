@@ -377,7 +377,7 @@ from pydantic import TypeAdapter
 adapter = TypeAdapter(List[int])
 assert adapter.validate_python(['1', '2', '3']) == [1, 2, 3]
 print(adapter.json_schema())
-#> {'type': 'array', 'items': {'type': 'integer'}}
+#> {'items': {'type': 'integer'}, 'type': 'array'}
 ```
 
 Due to limitations of inferring generic types with common type checkers, to get proper typing in some scenarios, you
