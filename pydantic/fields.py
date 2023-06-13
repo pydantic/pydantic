@@ -665,7 +665,7 @@ def Field(  # C901
     # Check deprecated and removed params from V1. This logic should eventually be removed.
     const = extra.pop('const', None)  # type: ignore
     if const is not None:
-        raise PydanticUserError('`const` is removed, use `Literal` instead', code='deprecated-kwargs')
+        raise PydanticUserError('`const` is removed, use `Literal` instead', code='removed-kwargs')
 
     min_items = extra.pop('min_items', None)  # type: ignore
     if min_items is not None:
@@ -686,7 +686,7 @@ def Field(  # C901
                 '`unique_items` is removed, use `Set` instead'
                 '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
             ),
-            code='deprecated-kwargs',
+            code='removed-kwargs',
         )
 
     allow_mutation = extra.pop('allow_mutation', None)  # type: ignore
@@ -697,7 +697,7 @@ def Field(  # C901
 
     regex = extra.pop('regex', None)  # type: ignore
     if regex is not None:
-        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='deprecated-kwargs')
+        raise PydanticUserError('`regex` is removed. use `pattern` instead', code='removed-kwargs')
 
     if extra:
         warn(

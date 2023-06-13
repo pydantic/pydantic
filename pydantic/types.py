@@ -362,7 +362,7 @@ def conlist(
                 '`unique_items` is removed, use `Set` instead'
                 '(this feature is discussed in https://github.com/pydantic/pydantic-core/issues/296)'
             ),
-            code='deprecated-kwargs',
+            code='removed-kwargs',
         )
     return Annotated[  # type: ignore[return-value]
         List[item_type],  # type: ignore[valid-type]
