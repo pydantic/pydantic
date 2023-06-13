@@ -479,7 +479,7 @@ class Pet:
 
 
 class Model(BaseModel):
-   model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     pet: Pet
     owner: str
