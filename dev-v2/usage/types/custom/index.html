@@ -2351,8 +2351,8 @@ the <code>sub_fields</code> (from the generic class type parameters) and validat
             <span class="n">age_tp</span> <span class="o">=</span> <span class="n">quality_tp</span> <span class="o">=</span> <span class="n">Any</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">age_tp</span><span class="p">,</span> <span class="n">quality_tp</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
-        <span class="n">aged_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">age_tp</span><span class="p">)</span>
-        <span class="n">quality_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">quality_tp</span><span class="p">)</span>
+        <span class="n">aged_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">age_tp</span><span class="p">)</span>
+        <span class="n">quality_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">quality_tp</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">val_aged</span><span class="p">(</span>
             <span class="n">v</span><span class="p">:</span> <span class="n">TastingModel</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidatorFunctionWrapHandler</span>
@@ -2464,8 +2464,8 @@ the <code>sub_fields</code> (from the generic class type parameters) and validat
             <span class="n">age_tp</span> <span class="o">=</span> <span class="n">quality_tp</span> <span class="o">=</span> <span class="n">Any</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">age_tp</span><span class="p">,</span> <span class="n">quality_tp</span> <span class="o">=</span> <span class="n">get_args</span><span class="p">(</span><span class="n">source_type</span><span class="p">)</span>
-        <span class="n">aged_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">age_tp</span><span class="p">)</span>
-        <span class="n">quality_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="o">.</span><span class="n">generate_schema</span><span class="p">(</span><span class="n">quality_tp</span><span class="p">)</span>
+        <span class="n">aged_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">age_tp</span><span class="p">)</span>
+        <span class="n">quality_schema</span> <span class="o">=</span> <span class="n">handler</span><span class="p">(</span><span class="n">quality_tp</span><span class="p">)</span>
 
         <span class="k">def</span> <span class="nf">val_aged</span><span class="p">(</span>
             <span class="n">v</span><span class="p">:</span> <span class="n">TastingModel</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">],</span> <span class="n">handler</span><span class="p">:</span> <span class="n">core_schema</span><span class="o">.</span><span class="n">ValidatorFunctionWrapHandler</span>
