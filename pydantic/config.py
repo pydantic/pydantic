@@ -79,7 +79,7 @@ class ConfigDict(TypedDict, total=False):
             checking if the value is an instance of the type). If `False`, `RuntimeError` will be raised on model
             declaration. Defaults to `False`.
 
-            See [the dedicated section](/usage/types/custom/#arbitrary-types-allowed).
+            See [the dedicated section](/usage/model_config/#arbitrary-types-allowed).
         from_attributes: Whether to allow model creation from object attributes. Defaults to `False`.
 
             !!! note

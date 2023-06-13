@@ -119,62 +119,6 @@ formatted with a space, the schema would just include the full pattern and the r
 
 See [schema](../json_schema.md) for more details on how the model's schema is generated.
 
-### Arbitrary Types Allowed
-
-You can allow arbitrary types using the `arbitrary_types_allowed` config in the
-[Model Config](../model_config.md).
-
-```py
-from pydantic import BaseModel, ValidationError
-
-
-# This is not a pydantic model, it's an arbitrary class
-class Pet:
-    def __init__(self, name: str):
-        self.name = name
-
-
-class Model(BaseModel):
-    model_config = dict(arbitrary_types_allowed=True)
-    pet: Pet
-    owner: str
-
-
-pet = Pet(name='Hedwig')
-# A simple check of instance type is used to validate the data
-model = Model(owner='Harry', pet=pet)
-print(model)
-#> pet=<__main__.Pet object at 0x0123456789ab> owner='Harry'
-print(model.pet)
-#> <__main__.Pet object at 0x0123456789ab>
-print(model.pet.name)
-#> Hedwig
-print(type(model.pet))
-#> <class '__main__.Pet'>
-try:
-    # If the value is not an instance of the type, it's invalid
-    Model(owner='Harry', pet='Hedwig')
-except ValidationError as e:
-    print(e)
-    """
-    1 validation error for Model
-    pet
-      Input should be an instance of Pet [type=is_instance_of, input_value='Hedwig', input_type=str]
-    """
-# Nothing in the instance of the arbitrary type is checked
-# Here name probably should have been a str, but it's not validated
-pet2 = Pet(name=42)
-model2 = Model(owner='Harry', pet=pet2)
-print(model2)
-#> pet=<__main__.Pet object at 0x0123456789ab> owner='Harry'
-print(model2.pet)
-#> <__main__.Pet object at 0x0123456789ab>
-print(model2.pet.name)
-#> 42
-print(type(model2.pet))
-#> <class '__main__.Pet'>
-```
-
 ### Generic Classes as Types
 
 !!! warning
@@ -187,7 +131,7 @@ field types and perform custom validation based on the "type parameters" (or sub
 with `__get_validators__`.
 
 If the Generic class that you are using as a sub-type has a classmethod
-`__get_validators__` you don't need to use `arbitrary_types_allowed` for it to work.
+`__get_validators__` you don't need to use [`arbitrary_types_allowed`](../model_config.md#arbitrary-types-allowed) for it to work.
 
 Because you can declare validators that receive the current `field`, you can extract
 the `sub_fields` (from the generic class type parameters) and validate data with them.
