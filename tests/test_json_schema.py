@@ -31,8 +31,9 @@ from uuid import UUID
 
 import pytest
 from pydantic_core import CoreSchema, core_schema, to_json
-from typing_extensions import Annotated, Literal
+from typing_extensions import Annotated, Literal, TypedDict
 
+import pydantic
 from pydantic import (
     BaseModel,
     Field,
@@ -2080,6 +2081,117 @@ def test_model_with_extra_forbidden():
         'properties': {'a': {'title': 'A', 'type': 'string'}},
         'required': ['a'],
         'additionalProperties': False,
+    }
+
+
+def test_model_with_extra_allow():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='allow')
+        a: str
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': True,
+    }
+
+
+def test_model_with_extra_ignore():
+    class Model(BaseModel):
+        model_config = ConfigDict(extra='ignore')
+        a: str
+
+    assert Model.model_json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_dataclass_with_extra_allow():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        __pydantic_config__ = ConfigDict(extra='allow')
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': True,
+    }
+
+
+def test_dataclass_with_extra_ignore():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        __pydantic_config__ = ConfigDict(extra='ignore')
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_dataclass_with_extra_forbid():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        __pydantic_config__ = ConfigDict(extra='ignore')
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_extra_allow():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(extra='allow')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+        'additionalProperties': True,
+    }
+
+
+def test_typeddict_with_extra_ignore():
+    class Model(TypedDict):
+        __pydantic_config__ = ConfigDict(extra='ignore')  # type: ignore
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
+    }
+
+
+def test_typeddict_with_extra_forbid():
+    @pydantic.dataclasses.dataclass
+    class Model:
+        __pydantic_config__ = ConfigDict(extra='ignore')
+        a: str
+
+    assert TypeAdapter(Model).json_schema() == {
+        'title': 'Model',
+        'type': 'object',
+        'properties': {'a': {'title': 'A', 'type': 'string'}},
+        'required': ['a'],
     }
 
 

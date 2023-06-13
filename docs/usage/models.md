@@ -791,11 +791,9 @@ try:
 except ValidationError as e:
     print(e)
     """
-    2 validation errors for list[typed-dict]
+    1 validation error for list[typed-dict]
     0.id
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
-    0.other
-      Extra inputs are not permitted [type=extra_forbidden, input_value='no', input_type=str]
     """
 ```
 
