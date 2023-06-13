@@ -236,7 +236,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 class User(BaseModel):
-    model_config = ConfigDict(extra='forbid')  # (1)!
+    model_config = ConfigDict(extra='forbid')
 
     name: str
 
