@@ -96,6 +96,7 @@ class PydanticJsonSchemaWarning(UserWarning):
 
 # ##### JSON Schema Generation #####
 DEFAULT_REF_TEMPLATE = '#/$defs/{model}'
+"""The default format string used to generate reference names."""
 
 # There are three types of references relevant to building JSON schemas:
 #   1. core_schema "ref" values; these are not exposed as part of the JSON schema

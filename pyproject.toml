@@ -180,7 +180,6 @@ convention = "google"
 'pydantic/main.py' = ['D']
 'pydantic/mypy.py' = ['D']
 'pydantic/root_model.py' = ['D']
-'pydantic/type_adapter.py' = ['D']
 
 [tool.coverage.run]
 source = ['pydantic']
