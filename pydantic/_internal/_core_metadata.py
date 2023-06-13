@@ -31,8 +31,7 @@ class UpdateCoreSchemaCallable(typing_extensions.Protocol):
 
 
 class CoreMetadataHandler:
-    """
-    Because the metadata field in pydantic_core is of type `Any`, we can't assume much about its contents.
+    """Because the metadata field in pydantic_core is of type `Any`, we can't assume much about its contents.
 
     This class is used to interact with the metadata field on a CoreSchema object in a consistent
     way throughout pydantic.
@@ -51,8 +50,7 @@ class CoreMetadataHandler:
 
     @property
     def metadata(self) -> CoreMetadata:
-        """
-        Retrieves the metadata dict off the schema, initializing it to a dict if it is None
+        """Retrieves the metadata dict off the schema, initializing it to a dict if it is None
         and raises an error if it is not a dict.
         """
         metadata = self._schema.get('metadata')
@@ -79,8 +77,7 @@ def build_metadata_dict(
     js_prefer_positional_arguments: bool | None = None,
     initial_metadata: Any | None = None,
 ) -> Any:
-    """
-    Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent
+    """Builds a dict to use as the metadata field of a CoreSchema object in a manner that is consistent
     with the CoreMetadataHandler class.
     """
     if initial_metadata is not None and not isinstance(initial_metadata, dict):

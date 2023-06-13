@@ -22,10 +22,9 @@ class _ConfigMetaclass(type):
 
 @deprecated('BaseConfig is deprecated. Use the `pydantic.ConfigDict` instead.')
 class BaseConfig(metaclass=_ConfigMetaclass):
-    """
-    This class is only retained for backwards compatibility.
+    """This class is only retained for backwards compatibility.
 
-    The preferred approach going forward is to assign a ConfigDict to the `model_config` attribute of the Model class.
+    The preferred approach going forward is to assign a `ConfigDict` to the `model_config` attribute of the Model class.
     """
 
     def __getattr__(self, item: str) -> Any:

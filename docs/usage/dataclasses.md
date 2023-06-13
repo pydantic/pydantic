@@ -30,7 +30,7 @@ print(user)
 
 You can use all the standard _pydantic_ field types. Note, however, that arguments passed to constructor will be copied in order to perform validation and, where necessary coercion.
 
-The underlying model and its schema can be accessed through `__pydantic_model__`.
+The schema can be accessed by [TypeAdapter](models.md#using-pydantic-without-creating-a-basemodel).
 Also, fields that require a `default_factory` can be specified by either a `pydantic.Field` or a `dataclasses.field`.
 
 ```py
@@ -57,49 +57,49 @@ user = User(id='42')
 print(TypeAdapter(User).json_schema())
 """
 {
-    'type': 'object',
     'properties': {
-        'id': {'type': 'integer', 'title': 'Id'},
-        'name': {'type': 'string', 'default': 'John Doe', 'title': 'Name'},
-        'friends': {
-            'type': 'array',
-            'items': {'type': 'integer'},
-            'default': [0],
-            'title': 'Friends',
-        },
         'age': {
             'anyOf': [{'type': 'integer'}, {'type': 'null'}],
             'default': None,
-            'title': 'The age of the user',
             'description': 'do not lie!',
+            'title': 'The age of the user',
+        },
+        'friends': {
+            'default': [0],
+            'items': {'type': 'integer'},
+            'title': 'Friends',
+            'type': 'array',
         },
         'height': {
             'anyOf': [
-                {'type': 'integer', 'maximum': 300, 'minimum': 50},
+                {'maximum': 300, 'minimum': 50, 'type': 'integer'},
                 {'type': 'null'},
             ],
             'default': None,
             'title': 'The height in cm',
         },
+        'id': {'title': 'Id', 'type': 'integer'},
+        'name': {'default': 'John Doe', 'title': 'Name', 'type': 'string'},
     },
     'required': ['id'],
     'title': 'User',
+    'type': 'object',
 }
 """
 ```
 
 `pydantic.dataclasses.dataclass`'s arguments are the same as the standard decorator, except one extra
-keyword argument `config` which has the same meaning as [Config](model_config.md).
+keyword argument `config` which has the same meaning as [model_config](model_config.md).
 
 !!! warning
-    After v1.2, [The Mypy plugin](/mypy/) must be installed to type check _pydantic_ dataclasses.
+    After v1.2, [The Mypy plugin](../integrations/mypy.md) must be installed to type check _pydantic_ dataclasses.
 
 For more information about combining validators with dataclasses, see
 [dataclass validators](validators.md#dataclass-validators).
 
 ## Dataclass Config
 
-If you want to modify the `Config` like you would with a `BaseModel`, you have three options:
+If you want to modify the `config` like you would with a `BaseModel`, you have two options:
 
 ```py
 from pydantic import ConfigDict
@@ -153,8 +153,6 @@ print(navbar)
 Dataclasses attributes can be populated by tuples, dictionaries or instances of the dataclass itself.
 
 ## Stdlib dataclasses and _pydantic_ dataclasses
-
-**TODO this all needs re-doing since most things now work.**
 
 ### Inherit from stdlib dataclasses
 
@@ -261,7 +259,7 @@ In this case you can simply add `arbitrary_types_allowed` in the config!
 ```py
 import dataclasses
 
-import pydantic
+from pydantic import BaseModel, ConfigDict
 from pydantic.errors import PydanticSchemaGenerationError
 
 
@@ -284,7 +282,7 @@ my_dc = DC(a=ArbitraryType(value=3), b='qwe')
 
 try:
 
-    class Model(pydantic.BaseModel):
+    class Model(BaseModel):
         dc: DC
         other: str
 
@@ -298,8 +296,9 @@ except PydanticSchemaGenerationError as e:  # invalid as it is now a pydantic da
     """
 
 
-class Model(pydantic.BaseModel):
-    model_config = dict(arbitrary_types_allowed=True)
+class Model(BaseModel):
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
     dc: DC
     other: str
 
@@ -311,18 +310,13 @@ print(repr(m))
 
 ## Initialize hooks
 
-**TODO this has changed!**
-
-When you initialize a dataclass, it is possible to execute code *after* validation
-with the help of `__post_init_post_parse__`. This is not the same as `__post_init__`, which executes
-code *before* validation.
-
-!!! tip
-    If you use a stdlib `dataclass`, you may only have `__post_init__` available and wish the validation to
-    be done before. In this case you can set `Config.post_init_call = 'after_validation'`
-
+When you initialize a dataclass, it is possible to execute code *before* or *after* validation
+with the help of `model_validator` decorator.
 
 ```py
+from typing import Any, Dict
+
+from pydantic import model_validator
 from pydantic.dataclasses import dataclass
 
 
@@ -336,6 +330,18 @@ class Birth:
 @dataclass
 class User:
     birth: Birth
+
+    @model_validator(mode='before')
+    def pre_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        print(values)
+        #> ArgsKwargs((), {'birth': {'year': 1995, 'month': 3, 'day': 2}})
+        return values
+
+    @model_validator(mode='after')
+    def post_root(cls, values: Dict[str, Any]) -> Dict[str, Any]:
+        print(values)
+        #> User(birth=Birth(year=1995, month=3, day=2))
+        return values
 
     def __post_init__(self):
         print(self.birth)
@@ -374,18 +380,19 @@ assert path_data.path == Path('/hello/world')
 
 Note that the `dataclasses.dataclass` from Python stdlib implements only the `__post_init__` method since it doesn't run a validation step.
 
-When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.dataclass`, it is recommended to move the code executed in the `__post_init__` method to the `__post_init_post_parse__` method, and only leave behind part of code which needs to be executed before validation.
+When substituting usage of `dataclasses.dataclass` with `pydantic.dataclasses.dataclass`, it is recommended to move the code executed in the `__post_init__` to
+methods decorated with `model_validator`.
 
 ## JSON dumping
 
-_Pydantic_ dataclasses do not feature a `.json()` function. To dump them as JSON, you will need to make use of the `pydantic_encoder` as follows:
+_Pydantic_ dataclasses do not feature a `.model_dump_json()` function. To dump them as JSON, you will need to
+make use of the [RootModel](models.md#custom-root-types) as follows:
 
 ```py output="json"
 import dataclasses
 from typing import List
 
-import pydantic_core
-
+from pydantic import RootModel
 from pydantic.dataclasses import dataclass
 
 
@@ -397,8 +404,7 @@ class User:
 
 
 user = User(id='42')
-# TODO replace this with methods or equivalent
-print(pydantic_core.to_json(user, indent=4).decode())
+print(RootModel[User](User(id='42')).model_dump_json(indent=4))
 """
 {
     "id": 42,

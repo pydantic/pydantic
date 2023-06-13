@@ -42,7 +42,7 @@ def schema_of(
     ref_template: str = DEFAULT_REF_TEMPLATE,
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
 ) -> dict[str, Any]:
-    """Generate a JSON schema (as dict) for the passed model or dynamically generated one"""
+    """Generate a JSON schema (as dict) for the passed model or dynamically generated one."""
     warnings.warn(
         'schema_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.', DeprecationWarning, stacklevel=2
     )
@@ -74,7 +74,7 @@ def schema_json_of(
     schema_generator: type[GenerateJsonSchema] = GenerateJsonSchema,
     **dumps_kwargs: Any,
 ) -> str:
-    """Generate a JSON schema (as JSON) for the passed model or dynamically generated one"""
+    """Generate a JSON schema (as JSON) for the passed model or dynamically generated one."""
     warnings.warn(
         'schema_json_of is deprecated. Use pydantic.TypeAdapter.json_schema instead.', DeprecationWarning, stacklevel=2
     )

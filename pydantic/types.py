@@ -1,3 +1,4 @@
+"""The types module contains custom types used by pydantic."""
 from __future__ import annotations as _annotations
 
 import base64
@@ -72,7 +73,6 @@ __all__ = (
     'DirectoryPath',
     'NewPath',
     'Json',
-    'SecretField',
     'SecretStr',
     'SecretBytes',
     'StrictBool',
@@ -103,6 +103,8 @@ __all__ = (
 
 @_dataclasses.dataclass
 class Strict(_fields.PydanticMetadata):
+    """A field metadata class to indicate that a field should be validated in strict mode."""
+
     strict: bool = True
 
     def __hash__(self) -> int:
@@ -112,6 +114,7 @@ class Strict(_fields.PydanticMetadata):
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BOOLEAN TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 StrictBool = Annotated[bool, Strict()]
+"""A boolean that must be either ``True`` or ``False``."""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ INTEGER TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -125,6 +128,19 @@ def conint(
     le: int | None = None,
     multiple_of: int | None = None,
 ) -> type[int]:
+    """A wrapper around `int` that allows for additional constraints.
+
+    Args:
+        strict: Whether to validate the integer in strict mode. Defaults to `None`.
+        gt: The value must be greater than this.
+        ge: The value must be greater than or equal to this.
+        lt: The value must be less than this.
+        le: The value must be less than or equal to this.
+        multiple_of: The value must be a multiple of this.
+
+    Returns:
+        The wrapped integer type.
+    """
     return Annotated[  # type: ignore[return-value]
         int,
         Strict(strict) if strict is not None else None,
@@ -134,16 +150,23 @@ def conint(
 
 
 PositiveInt = Annotated[int, annotated_types.Gt(0)]
+"""An integer that must be greater than zero."""
 NegativeInt = Annotated[int, annotated_types.Lt(0)]
+"""An integer that must be less than zero."""
 NonPositiveInt = Annotated[int, annotated_types.Le(0)]
+"""An integer that must be less than or equal to zero."""
 NonNegativeInt = Annotated[int, annotated_types.Ge(0)]
+"""An integer that must be greater than or equal to zero."""
 StrictInt = Annotated[int, Strict()]
+"""An integer that must be validated in strict mode."""
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ FLOAT TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 
 @_dataclasses.dataclass
 class AllowInfNan(_fields.PydanticMetadata):
+    """A field metadata class to indicate that a field should allow ``-inf``, ``inf``, and ``nan``."""
+
     allow_inf_nan: bool = True
 
     def __hash__(self) -> int:
@@ -160,6 +183,20 @@ def confloat(
     multiple_of: float | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[float]:
+    """A wrapper around `float` that allows for additional constraints.
+
+    Args:
+        strict: Whether to validate the float in strict mode.
+        gt: The value must be greater than this.
+        ge: The value must be greater than or equal to this.
+        lt: The value must be less than this.
+        le: The value must be less than or equal to this.
+        multiple_of: The value must be a multiple of this.
+        allow_inf_nan: Whether to allow `-inf`, `inf`, and `nan`.
+
+    Returns:
+        The wrapped float type.
+    """
     return Annotated[  # type: ignore[return-value]
         float,
         Strict(strict) if strict is not None else None,
@@ -170,11 +207,17 @@ def confloat(
 
 
 PositiveFloat = Annotated[float, annotated_types.Gt(0)]
+"""A float that must be greater than zero."""
 NegativeFloat = Annotated[float, annotated_types.Lt(0)]
+"""A float that must be less than zero."""
 NonPositiveFloat = Annotated[float, annotated_types.Le(0)]
+"""A float that must be less than or equal to zero.""" ''
 NonNegativeFloat = Annotated[float, annotated_types.Ge(0)]
+"""A float that must be greater than or equal to zero."""
 StrictFloat = Annotated[float, Strict(True)]
+"""A float that must be validated in strict mode."""
 FiniteFloat = Annotated[float, AllowInfNan(False)]
+"""A float that must be finite (not ``-inf``, ``inf``, or ``nan``)."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ BYTES TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -186,6 +229,16 @@ def conbytes(
     max_length: int | None = None,
     strict: bool | None = None,
 ) -> type[bytes]:
+    """A wrapper around `bytes` that allows for additional constraints.
+
+    Args:
+        min_length: The minimum length of the bytes.
+        max_length: The maximum length of the bytes.
+        strict: Whether to validate the bytes in strict mode.
+
+    Returns:
+        The wrapped bytes type.
+    """
     return Annotated[  # type: ignore[return-value]
         bytes,
         Strict(strict) if strict is not None else None,
@@ -194,6 +247,7 @@ def conbytes(
 
 
 StrictBytes = Annotated[bytes, Strict()]
+"""A bytes that must be validated in strict mode."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ STRING TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -209,6 +263,20 @@ def constr(
     max_length: int | None = None,
     pattern: str | None = None,
 ) -> type[str]:
+    """A wrapper around `str` that allows for additional constraints.
+
+    Args:
+        strip_whitespace: Whether to strip whitespace from the string.
+        to_upper: Whether to convert the string to uppercase.
+        to_lower: Whether to convert the string to lowercase.
+        strict: Whether to validate the string in strict mode.
+        min_length: The minimum length of the string.
+        max_length: The maximum length of the string.
+        pattern: A regex pattern that the string must match.
+
+    Returns:
+        The wrapped string type.
+    """
     return Annotated[  # type: ignore[return-value]
         str,
         Strict(strict) if strict is not None else None,
@@ -223,6 +291,7 @@ def constr(
 
 
 StrictStr = Annotated[str, Strict()]
+"""A string that must be validated in strict mode."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~ COLLECTION TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -232,6 +301,16 @@ HashableItemType = TypeVar('HashableItemType', bound=Hashable)
 def conset(
     item_type: type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> type[set[HashableItemType]]:
+    """A wrapper around `typing.Set` that allows for additional constraints.
+
+    Args:
+        item_type: The type of the items in the set.
+        min_length: The minimum length of the set.
+        max_length: The maximum length of the set.
+
+    Returns:
+        The wrapped set type.
+    """
     return Annotated[  # type: ignore[return-value]
         Set[item_type], annotated_types.Len(min_length or 0, max_length)  # type: ignore[valid-type]
     ]
@@ -240,6 +319,16 @@ def conset(
 def confrozenset(
     item_type: type[HashableItemType], *, min_length: int | None = None, max_length: int | None = None
 ) -> type[frozenset[HashableItemType]]:
+    """A wrapper around `typing.FrozenSet` that allows for additional constraints.
+
+    Args:
+        item_type: The type of the items in the frozenset.
+        min_length: The minimum length of the frozenset.
+        max_length: The maximum length of the frozenset.
+
+    Returns:
+        The wrapped frozenset type.
+    """
     return Annotated[  # type: ignore[return-value]
         FrozenSet[item_type],  # type: ignore[valid-type]
         annotated_types.Len(min_length or 0, max_length),
@@ -259,13 +348,13 @@ def conlist(
     """A wrapper around typing.List that adds validation.
 
     Args:
-        item_type (type[AnyItemType]): The type of the items in the list.
-        min_length (int | None, optional): The minimum length of the list. Defaults to None.
-        max_length (int | None, optional): The maximum length of the list. Defaults to None.
-        unique_items (bool | None, optional): Whether the items in the list must be unique. Defaults to None.
+        item_type: The type of the items in the list.
+        min_length: The minimum length of the list. Defaults to None.
+        max_length: The maximum length of the list. Defaults to None.
+        unique_items: Whether the items in the list must be unique. Defaults to None.
 
     Returns:
-        type[list[AnyItemType]]: The wrapped list type.
+        The wrapped list type.
     """
     if unique_items is not None:
         raise PydanticUserError(
@@ -289,6 +378,25 @@ if TYPE_CHECKING:
 else:
 
     class ImportString:
+        """A type that can be used to import a type from a string.
+
+        Example:
+            ```py
+            from datetime import date
+            from typing import Type
+
+            from pydantic import BaseModel, ImportString
+
+
+            class Foo(BaseModel):
+                call_date: ImportString[Type[date]]
+
+
+            foo = Foo(call_date="datetime.date")
+            assert foo.call_date(2021, 1, 1) == date(2021, 1, 1)
+            ```
+        """
+
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]
@@ -336,6 +444,19 @@ def condecimal(
     decimal_places: int | None = None,
     allow_inf_nan: bool | None = None,
 ) -> type[Decimal]:
+    """A wrapper around Decimal that adds validation.
+
+    Args:
+        strict: Whether to validate the value in strict mode. Defaults to `None`.
+        gt: The value must be greater than this. Defaults to `None`.
+        ge: The value must be greater than or equal to this. Defaults to `None`.
+        lt: The value must be less than this. Defaults to `None`.
+        le: The value must be less than or equal to this. Defaults to `None`.
+        multiple_of: The value must be a multiple of this. Defaults to `None`.
+        max_digits: The maximum number of digits. Defaults to `None`.
+        decimal_places: The number of decimal places. Defaults to `None`.
+        allow_inf_nan: Whether to allow infinity and NaN. Defaults to `None`.
+    """
     return Annotated[  # type: ignore[return-value]
         Decimal,
         Strict(strict) if strict is not None else None,
@@ -380,9 +501,13 @@ class UuidVersion:
 
 
 UUID1 = Annotated[UUID, UuidVersion(1)]
+"""A UUID1 annotated type."""
 UUID3 = Annotated[UUID, UuidVersion(3)]
+"""A UUID3 annotated type."""
 UUID4 = Annotated[UUID, UuidVersion(4)]
+"""A UUID4 annotated type."""
 UUID5 = Annotated[UUID, UuidVersion(5)]
+"""A UUID5 annotated type."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ PATH TYPES ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -442,8 +567,11 @@ class PathType:
 
 
 FilePath = Annotated[Path, PathType('file')]
+"""A path that must point to a file."""
 DirectoryPath = Annotated[Path, PathType('dir')]
+"""A path that must point to a directory."""
 NewPath = Annotated[Path, PathType('new')]
+"""A path for a new file or directory that must not already exist."""
 
 
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ JSON TYPE ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -454,6 +582,8 @@ if TYPE_CHECKING:
 else:
 
     class Json:
+        """A special type wrapper which loads JSON before parsing."""
+
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]
@@ -482,11 +612,16 @@ else:
 SecretType = TypeVar('SecretType', str, bytes)
 
 
-class SecretField(Generic[SecretType]):
+class _SecretField(Generic[SecretType]):
     def __init__(self, secret_value: SecretType) -> None:
         self._secret_value: SecretType = secret_value
 
     def get_secret_value(self) -> SecretType:
+        """Get the secret value.
+
+        Returns:
+            The secret value.
+        """
         return self._secret_value
 
     @classmethod
@@ -530,12 +665,12 @@ def _secret_display(value: str | bytes) -> str:
 
 @_internal_dataclass.slots_dataclass
 class _SecretFieldValidator:
-    field_type: type[SecretField[Any]]
+    field_type: type[_SecretField[Any]]
     min_length: int | None = None
     max_length: int | None = None
     inner_schema: CoreSchema = _dataclasses.field(init=False)
 
-    def validate(self, value: SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
+    def validate(self, value: _SecretField[SecretType] | SecretType, _: core_schema.ValidationInfo) -> Any:
         error_prefix: Literal['string', 'bytes'] = 'string' if self.field_type is SecretStr else 'bytes'
         if self.min_length is not None and len(value) < self.min_length:
             short_kind: core_schema.ErrorType = f'{error_prefix}_too_short'  # type: ignore[assignment]
@@ -550,8 +685,8 @@ class _SecretFieldValidator:
             return self.field_type(value)  # type: ignore[arg-type]
 
     def serialize(
-        self, value: SecretField[SecretType], info: core_schema.SerializationInfo
-    ) -> str | SecretField[SecretType]:
+        self, value: _SecretField[SecretType], info: core_schema.SerializationInfo
+    ) -> str | _SecretField[SecretType]:
         if info.mode == 'json':
             # we want the output to always be string without the `b'` prefix for bytes,
             # hence we just use `secret_display`
@@ -597,12 +732,33 @@ class _SecretFieldValidator:
         )
 
 
-class SecretStr(SecretField[str]):
+class SecretStr(_SecretField[str]):
+    """A string that is displayed as `**********` in reprs and can be used for passwords.
+
+    Example:
+        ```py
+        from pydantic import BaseModel, SecretStr
+
+        class User(BaseModel):
+            username: str
+            password: SecretStr
+
+        user = User(username='scolvin', password='password1')
+
+        print(user)
+        #> username='scolvin' password=SecretStr('**********')
+        print(user.password.get_secret_value())
+        #> password1
+        ```
+    """
+
     def _display(self) -> str:
         return _secret_display(self.get_secret_value())
 
 
-class SecretBytes(SecretField[bytes]):
+class SecretBytes(_SecretField[bytes]):
+    """A bytes that is displayed as `**********` in reprs and can be used for passwords."""
+
     def _display(self) -> bytes:
         return _secret_display(self.get_secret_value()).encode()
 
@@ -620,15 +776,12 @@ class PaymentCardBrand(str, Enum):
         return self.value
 
 
-# TODO: Remove the comment when we add a section about `pydantic-extra-types` on the docs.
 @deprecated(
-    'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types.PaymentCardNumber` instead.'
-    # 'See https://pydantic-docs.helpmanual.io/usage/types/#pydantic-extra-types'
+    'The `PaymentCardNumber` class is deprecated, use `pydantic_extra_types` instead. '
+    'See https://pydantic-docs.helpmanual.io/usage/types/extra_types/payment_cards/.'
 )
 class PaymentCardNumber(str):
-    """
-    Based on: https://en.wikipedia.org/wiki/Payment_card_number
-    """
+    """Based on: https://en.wikipedia.org/wiki/Payment_card_number."""
 
     strip_whitespace: ClassVar[bool] = True
     min_length: ClassVar[int] = 12
@@ -659,23 +812,28 @@ class PaymentCardNumber(str):
 
     @classmethod
     def validate(cls, __input_value: str, _: core_schema.ValidationInfo) -> PaymentCardNumber:
+        """Validate the card number and return a `PaymentCardNumber` instance."""
         return cls(__input_value)
 
     @property
     def masked(self) -> str:
+        """Mask all but the last 4 digits of the card number.
+
+        Returns:
+            A masked card number string.
+        """
         num_masked = len(self) - 10  # len(bin) + len(last4) == 10
         return f'{self.bin}{"*" * num_masked}{self.last4}'
 
     @classmethod
     def validate_digits(cls, card_number: str) -> None:
+        """Validate that the card number is all digits."""
         if not card_number.isdigit():
             raise PydanticCustomError('payment_card_number_digits', 'Card number is not all digits')
 
     @classmethod
     def validate_luhn_check_digit(cls, card_number: str) -> str:
-        """
-        Based on: https://en.wikipedia.org/wiki/Luhn_algorithm
-        """
+        """Based on: https://en.wikipedia.org/wiki/Luhn_algorithm."""
         sum_ = int(card_number[-1])
         length = len(card_number)
         parity = length % 2
@@ -693,9 +851,8 @@ class PaymentCardNumber(str):
 
     @staticmethod
     def validate_brand(card_number: str) -> PaymentCardBrand:
-        """
-        Validate length based on BIN for major brands:
-        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN)
+        """Validate length based on BIN for major brands:
+        https://en.wikipedia.org/wiki/Payment_card_number#Issuer_identification_number_(IIN).
         """
         if card_number[0] == '4':
             brand = PaymentCardBrand.visa
@@ -750,14 +907,16 @@ byte_string_re = re.compile(r'^\s*(\d*\.?\d+)\s*(\w+)?', re.IGNORECASE)
 
 
 class ByteSize(int):
+    """Converts a bytes string with units to the number of bytes."""
+
     @classmethod
     def __get_pydantic_core_schema__(
         cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        return core_schema.general_plain_validator_function(cls.validate)
+        return core_schema.general_plain_validator_function(cls._validate)
 
     @classmethod
-    def validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
+    def _validate(cls, __input_value: Any, _: core_schema.ValidationInfo) -> ByteSize:
         try:
             return cls(int(__input_value))
         except ValueError:
@@ -779,6 +938,15 @@ class ByteSize(int):
         return cls(int(float(scalar) * unit_mult))
 
     def human_readable(self, decimal: bool = False) -> str:
+        """Converts a byte size to a human readable string.
+
+        Args:
+            decimal: If True, use decimal units (e.g. 1000 bytes per KB). If False, use binary units
+                (e.g. 1024 bytes per KiB).
+
+        Returns:
+            A human readable string representation of the byte size.
+        """
         if decimal:
             divisor = 1000
             units = 'B', 'KB', 'MB', 'GB', 'TB', 'PB'
@@ -800,6 +968,15 @@ class ByteSize(int):
         return f'{num:0.1f}{final_unit}'
 
     def to(self, unit: str) -> float:
+        """Converts a byte size to another unit.
+
+        Args:
+            unit: The unit to convert to. Must be one of the following: B, KB, MB, GB, TB, PB, EiB,
+                KiB, MiB, GiB, TiB, PiB, EiB.
+
+        Returns:
+            The byte size in the new unit.
+        """
         try:
             unit_div = BYTE_SIZES[unit.lower()]
         except KeyError:
@@ -822,6 +999,8 @@ if TYPE_CHECKING:
 else:
 
     class PastDate:
+        """A date in the past."""
+
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
@@ -839,6 +1018,8 @@ else:
             return 'PastDate'
 
     class FutureDate:
+        """A date in the future."""
+
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
@@ -864,6 +1045,18 @@ def condate(
     lt: date | None = None,
     le: date | None = None,
 ) -> type[date]:
+    """A wrapper for date that adds constraints.
+
+    Args:
+        strict: Whether to validate the date value in strict mode. Defaults to `None`.
+        gt: The value must be greater than this. Defaults to `None`.
+        ge: The value must be greater than or equal to this. Defaults to `None`.
+        lt: The value must be less than this. Defaults to `None`.
+        le: The value must be less than or equal to this. Defaults to `None`.
+
+    Returns:
+        A date type with the specified constraints.
+    """
     return Annotated[  # type: ignore[return-value]
         date,
         Strict(strict) if strict is not None else None,
@@ -882,6 +1075,8 @@ if TYPE_CHECKING:
 else:
 
     class AwareDatetime:
+        """A datetime that requires timezone info."""
+
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
@@ -899,6 +1094,8 @@ else:
             return 'AwareDatetime'
 
     class NaiveDatetime:
+        """A datetime that doesn't require timezone info."""
+
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
@@ -916,6 +1113,8 @@ else:
             return 'NaiveDatetime'
 
     class PastDatetime:
+        """A datetime that must be in the past."""
+
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
@@ -933,6 +1132,8 @@ else:
             return 'PastDatetime'
 
     class FutureDatetime:
+        """A datetime that must be in the future."""
+
         @classmethod
         def __get_pydantic_core_schema__(
             cls, source: type[Any], handler: _annotated_handlers.GetCoreSchemaHandler
@@ -954,23 +1155,55 @@ else:
 
 
 class EncoderProtocol(Protocol):
+    """Protocol for encoding and decoding data to and from bytes."""
+
     @classmethod
     def decode(cls, data: bytes) -> bytes:
-        """Can throw `PydanticCustomError`"""
+        """Decode the data using the encoder.
+
+        Args:
+            data: The data to decode.
+
+        Returns:
+            The decoded data.
+        """
         ...
 
     @classmethod
     def encode(cls, value: bytes) -> bytes:
+        """Encode the data using the encoder.
+
+        Args:
+            value: The data to encode.
+
+        Returns:
+            The encoded data.
+        """
         ...
 
     @classmethod
     def get_json_format(cls) -> str:
+        """Get the JSON format for the encoded data.
+
+        Returns:
+            The JSON format for the encoded data.
+        """
         ...
 
 
 class Base64Encoder(EncoderProtocol):
+    """Base64 encoder."""
+
     @classmethod
     def decode(cls, data: bytes) -> bytes:
+        """Decode the data from base64 encoded bytes to original bytes data.
+
+        Args:
+            data: The data to decode.
+
+        Returns:
+            The decoded data.
+        """
         try:
             return base64.decodebytes(data)
         except ValueError as e:
@@ -978,15 +1211,30 @@ class Base64Encoder(EncoderProtocol):
 
     @classmethod
     def encode(cls, value: bytes) -> bytes:
+        """Encode the data from bytes to a base64 encoded bytes.
+
+        Args:
+            value: The data to encode.
+
+        Returns:
+            The encoded data.
+        """
         return base64.encodebytes(value)
 
     @classmethod
-    def get_json_format(cls) -> str:
+    def get_json_format(cls) -> Literal['base64']:
+        """Get the JSON format for the encoded data.
+
+        Returns:
+            The JSON format for the encoded data.
+        """
         return 'base64'
 
 
 @_internal_dataclass.slots_dataclass
 class EncodedBytes:
+    """A bytes type that is encoded and decoded using the specified encoder."""
+
     encoder: type[EncoderProtocol]
 
     def __get_pydantic_json_schema__(
@@ -1006,9 +1254,25 @@ class EncodedBytes:
         )
 
     def decode(self, data: bytes, _: core_schema.ValidationInfo) -> bytes:
+        """Decode the data using the specified encoder.
+
+        Args:
+            data: The data to decode.
+
+        Returns:
+            The decoded data.
+        """
         return self.encoder.decode(data)
 
     def encode(self, value: bytes) -> bytes:
+        """Encode the data using the specified encoder.
+
+        Args:
+            value: The data to encode.
+
+        Returns:
+            The encoded data.
+        """
         return self.encoder.encode(value)
 
     def __hash__(self) -> int:
@@ -1016,6 +1280,8 @@ class EncodedBytes:
 
 
 class EncodedStr(EncodedBytes):
+    """A str type that is encoded and decoded using the specified encoder."""
+
     def __get_pydantic_core_schema__(
         self, source: type[Any], handler: Callable[[Any], core_schema.CoreSchema]
     ) -> core_schema.CoreSchema:
@@ -1026,9 +1292,25 @@ class EncodedStr(EncodedBytes):
         )
 
     def decode_str(self, data: bytes, _: core_schema.ValidationInfo) -> str:
+        """Decode the data using the specified encoder.
+
+        Args:
+            data: The data to decode.
+
+        Returns:
+            The decoded data.
+        """
         return data.decode()
 
     def encode_str(self, value: str) -> str:
+        """Encode the data using the specified encoder.
+
+        Args:
+            value: The data to encode.
+
+        Returns:
+            The encoded data.
+        """
         return super().encode(value=value.encode()).decode()
 
 
@@ -1044,6 +1326,38 @@ else:
 
     @_internal_dataclass.slots_dataclass
     class InstanceOf:
+        '''Generic type for annotating a type that is an instance of a given class.
+
+        Example:
+            ```py
+            from pydantic import BaseModel, InstanceOf
+
+            class Foo:
+                ...
+
+            class Bar(BaseModel):
+                foo: InstanceOf[Foo]
+
+            Bar(foo=Foo())
+            try:
+                Bar(foo=42)
+            except ValidationError as e:
+                print(e)
+                """
+                [
+                │   {
+                │   │   'type': 'is_instance_of',
+                │   │   'loc': ('foo',),
+                │   │   'msg': 'Input should be an instance of Foo',
+                │   │   'input': 42,
+                │   │   'ctx': {'class': 'Foo'},
+                │   │   'url': 'https://errors.pydantic.dev/0.38.0/v/is_instance_of'
+                │   }
+                ]
+                """
+            ```
+        '''
+
         @classmethod
         def __class_getitem__(cls, item: AnyType) -> AnyType:
             return Annotated[item, cls()]
@@ -1072,8 +1386,7 @@ __getattr__ = getattr_migration(__name__)
 
 @_internal_dataclass.slots_dataclass
 class WithJsonSchema:
-    """
-    Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
+    """Add this as an annotation on a field to override the (base) JSON schema that would be generated for that field.
 
     This provides a way to set a JSON schema for types that would otherwise raise errors when producing a JSON schema,
     such as Callable, or types that have an is-instance core schema, without needing to go so far as creating a
@@ -1101,9 +1414,8 @@ else:
 
     @_internal_dataclass.slots_dataclass
     class SkipValidation:
-        """
-        If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be skipped.
-        You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
+        """If this is applied as an annotation (e.g., via `x: Annotated[int, SkipValidation]`), validation will be
+            skipped. You can also use `SkipValidation[int]` as a shorthand for `Annotated[int, SkipValidation]`.
 
         This can be useful if you want to use a type annotation for documentation/IDE/type-checking purposes,
         and know that it is safe to skip validation for one or more of the fields.
@@ -1127,9 +1439,7 @@ else:
 
 @_internal_dataclass.slots_dataclass
 class TransformSchema:
-    """
-    An annotation that can be used to apply a transform to a core schema.
-    """
+    """An annotation that can be used to apply a transform to a core schema."""
 
     transform: Callable[[CoreSchema], CoreSchema]
 

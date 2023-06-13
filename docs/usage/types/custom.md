@@ -85,17 +85,17 @@ print(model.post_code)
 print(Model.model_json_schema())
 """
 {
-    'type': 'object',
     'properties': {
         'post_code': {
-            'type': 'string',
-            'pattern': '^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
             'examples': ['SP11 9DG', 'W1J 7BU'],
+            'pattern': '^[A-Z]{1,2}[0-9][A-Z0-9]? ?[0-9][A-Z]{2}$',
             'title': 'Post Code',
+            'type': 'string',
         }
     },
     'required': ['post_code'],
     'title': 'Model',
+    'type': 'object',
 }
 """
 try:
@@ -117,7 +117,7 @@ except ValidationError as e:
 Similar validation could be achieved using [`constr(regex=...)`](#constrained-types) except the value won't be
 formatted with a space, the schema would just include the full pattern and the returned value would be a vanilla string.
 
-See [schema](../schema.md) for more details on how the model's schema is generated.
+See [schema](../json_schema.md) for more details on how the model's schema is generated.
 
 ### Arbitrary Types Allowed
 
@@ -179,7 +179,7 @@ print(type(model2.pet))
 
 !!! warning
     This is an advanced technique that you might not need in the beginning. In most of
-    the cases you will probably be fine with standard *pydantic* models.
+    the cases you will probably be fine with standard Pydantic models.
 
 You can use
 [Generic Classes](https://docs.python.org/3/library/typing.html#typing.Generic) as
@@ -192,53 +192,64 @@ If the Generic class that you are using as a sub-type has a classmethod
 Because you can declare validators that receive the current `field`, you can extract
 the `sub_fields` (from the generic class type parameters) and validate data with them.
 
-```py test="xfail - what do we do with generic custom types"
-from typing import Generic, TypeVar
+```py
+from dataclasses import dataclass
+from typing import Any, Generic, TypeVar
 
-from pydantic import BaseModel, ValidationError
-from pydantic.fields import ModelField
+from pydantic_core import CoreSchema, core_schema
+from typing_extensions import get_args, get_origin
+
+from pydantic import BaseModel, GetCoreSchemaHandler, ValidationError
 
 AgedType = TypeVar('AgedType')
 QualityType = TypeVar('QualityType')
 
 
 # This is not a pydantic model, it's an arbitrary generic class
+@dataclass
 class TastingModel(Generic[AgedType, QualityType]):
-    def __init__(self, name: str, aged: AgedType, quality: QualityType):
-        self.name = name
-        self.aged = aged
-        self.quality = quality
+    name: str
+    aged: AgedType
+    quality: QualityType
 
     @classmethod
-    def __get_validators__(cls):
-        yield cls.validate
+    def __get_pydantic_core_schema__(
+        cls, source_type: Any, handler: GetCoreSchemaHandler
+    ) -> CoreSchema:
+        origin = get_origin(source_type)
+        if origin is None:  # used as `x: TastingModel` without params
+            origin = source_type
+            age_tp = quality_tp = Any
+        else:
+            age_tp, quality_tp = get_args(source_type)
+        aged_schema = handler.generate_schema(age_tp)
+        quality_schema = handler.generate_schema(quality_tp)
 
-    @classmethod
-    # You don't need to add the "ModelField", but it will help your
-    # editor give you completion and catch errors
-    def validate(cls, v, field: ModelField):
-        if not isinstance(v, cls):
-            # The value is not even a TastingModel
-            raise TypeError('Invalid value')
-        if not field.sub_fields:
-            # Generic parameters were not provided so we don't try to validate
-            # them and just return the value as is
+        def val_aged(
+            v: TastingModel[Any, Any], handler: core_schema.ValidatorFunctionWrapHandler
+        ) -> Any:
+            v.aged = handler(v.aged)
             return v
-        aged_f = field.sub_fields[0]
-        quality_f = field.sub_fields[1]
-        errors = []
-        # Here we don't need the validated value, but we want the errors
-        valid_value, error = aged_f.validate(v.aged, {}, loc='aged')
-        if error:
-            errors.append(error)
-        # Here we don't need the validated value, but we want the errors
-        valid_value, error = quality_f.validate(v.quality, {}, loc='quality')
-        if error:
-            errors.append(error)
-        if errors:
-            raise ValidationError.from_exception_data(errors, cls)
-        # Validation passed without errors, return the same instance received
-        return v
+
+        def val_quality(
+            v: TastingModel[Any, Any], handler: core_schema.ValidatorFunctionWrapHandler
+        ) -> Any:
+            v.quality = handler(v.quality)
+            return v
+
+        return core_schema.chain_schema(
+            # `chain_schema` means do the following steps in order:
+            [
+                # Ensure the value is an instance of TastingModel
+                core_schema.is_instance_schema(cls),
+                # Use the aged_schema to validate the `aged` field of generic type `AgedType`
+                core_schema.no_info_wrap_validator_function(val_aged, aged_schema),
+                # Use the quality_schema to validate the `quality` field of generic type `QualityType`
+                core_schema.no_info_wrap_validator_function(
+                    val_quality, quality_schema
+                ),
+            ]
+        )
 
 
 class Model(BaseModel):
@@ -259,11 +270,19 @@ model = Model(
     thing=TastingModel(name='Python', aged='Not much', quality='Awesome'),
 )
 print(model)
+"""
+wine=TastingModel(name='Cabernet Sauvignon', aged=20, quality=85.6) cheese=TastingModel(name='Gouda', aged=True, quality='Good') thing=TastingModel(name='Python', aged='Not much', quality='Awesome')
+"""
 print(model.wine.aged)
+#> 20
 print(model.wine.quality)
+#> 85.6
 print(model.cheese.aged)
+#> True
 print(model.cheese.quality)
+#> Good
 print(model.thing.aged)
+#> Not much
 try:
     # If the values of the sub-types are invalid, we get an error
     Model(
@@ -277,4 +296,11 @@ try:
     )
 except ValidationError as e:
     print(e)
+    """
+    2 validation errors for Model
+    wine
+      Input should be a valid number, unable to parse string as an number [type=float_parsing, input_value='Kinda good', input_type=str]
+    cheese
+      Input should be a valid boolean, unable to interpret input [type=bool_parsing, input_value='yeah', input_type=str]
+    """
 ```

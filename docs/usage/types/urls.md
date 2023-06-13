@@ -183,7 +183,7 @@ print(m3.url)
 
 
 !!! warning "Underscores in Hostnames"
-    In *pydantic* underscores are allowed in all parts of a domain except the tld.
+    In Pydantic underscores are allowed in all parts of a domain except the tld.
     Technically this might be wrong - in theory the hostname cannot have underscores, but subdomains can.
 
     To explain this; consider the following two cases:

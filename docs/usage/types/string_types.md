@@ -2,49 +2,30 @@
 description: Useful types provided by Pydantic.
 ---
 
-`str`
-: strings are accepted as-is, `int` `float` and `Decimal` are coerced using `str(v)`, `bytes` and `bytearray` are
-  converted using `v.decode()`, enums inheriting from `str` are converted using `v.value`,
-  and all other types cause an error
+## str
 
-`EmailStr`
-: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
-  the input string must be a valid email address, and the output is a simple string
-
-`NameEmail`
-: requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
-  the input string must be either a valid email address or in the format `Fred Bloggs <fred.bloggs@example.com>`,
-  and the output is a `NameEmail` object which has two properties: `name` and `email`.
-  For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
-  for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
-
-`ImportString`
-: expects a string and loads the Python object importable at that dotted path; attributes of modules may be separated
-  from the module by `:` or `.`, e.g. if `'math:cos'` was provided, the resulting field value would be the function
-`cos`. If a `.` is used and both an attribute and submodule are present at the same path, the module will be preferred.
-
-`constr`
-: type method for constraining strs;
-  see [Constrained Types](#constrained-types)
+Strings are accepted as-is, `bytes` and `bytearray` are converted using `v.decode()`,
+enums inheriting from `str` are converted using `v.value`, and all other types cause an error
 
 ## EmailStr
 
-`EmailStr` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
-  the input string must be a valid email address, and the output is a simple string
+`EmailStr` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed.
+The input string must be a valid email address, and the output is a simple string
 
 ## NameEmail
 
-`NameEmail` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed;
-  the input string must be either a valid email address or in the format `Fred Bloggs <fred.bloggs@example.com>`,
-  and the output is a `NameEmail` object which has two properties: `name` and `email`.
-  For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`;
-  for `fred.bloggs@example.com` it would be `"fred.bloggs"`.
-
+`NameEmail` requires [email-validator](https://github.com/JoshData/python-email-validator) to be installed.
+The input string must be either a valid email address or in the format `Fred Bloggs <fred.bloggs@example.com>`,
+and the output is a `NameEmail` object which has two properties: `name` and `email`.
+For `Fred Bloggs <fred.bloggs@example.com>` the name would be `"Fred Bloggs"`.
+For `fred.bloggs@example.com` it would be `"fred.bloggs"`.
 
 ## ImportString
 
-`ImportString` expects a string and loads the Python object importable at that dotted path; e.g. if `'math.cos'`
-was provided, the resulting field value would be the function `cos`; see [ImportString](#importstring)
+`ImportString` expects a string and loads the Python object importable at that dotted path.
+Attributes of modules may be separated from the module by `:` or `.`, e.g. if `'math:cos'` was provided,
+the resulting field value would be the function`cos`. If a `.` is used and both an attribute and submodule
+are present at the same path, the module will be preferred.
 
 On model instantiation, pointers will be evaluated and imported. There is
 some nuance to this behavior, demonstrated in the examples below.

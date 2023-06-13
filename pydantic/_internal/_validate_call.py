@@ -20,8 +20,7 @@ class CallMarker:
 
 
 class ValidateCallWrapper:
-    """
-    This is a wrapper around a function that validates the arguments passed to it, and optionally the return value.
+    """This is a wrapper around a function that validates the arguments passed to it, and optionally the return value.
 
     It's partially inspired by `wraps` which in turn uses `partial`, but extended to be a descriptor so
     these functions can be applied to instance methods, class methods, static methods, as well as normal functions.
@@ -72,9 +71,7 @@ class ValidateCallWrapper:
         return self.__pydantic_validator__.validate_python(pydantic_core.ArgsKwargs(args, kwargs))
 
     def __get__(self, obj: Any, objtype: type[Any] | None = None) -> ValidateCallWrapper:
-        """
-        Bind the raw function and return another ValidateCallWrapper wrapping that.
-        """
+        """Bind the raw function and return another ValidateCallWrapper wrapping that."""
         bound_function = self.raw_function.__get__(obj, objtype)
         return self.__class__(bound_function, self._config, self._validate_return)
 

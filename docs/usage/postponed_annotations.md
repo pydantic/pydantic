@@ -21,15 +21,11 @@ print(Model(a=('1', 2, 3), b='ok'))
 #> a=[1, 2, 3] b='ok'
 ```
 
-Internally, *pydantic*  will call a method similar to `typing.get_type_hints` to resolve annotations.
+Internally, Pydantic  will call a method similar to `typing.get_type_hints` to resolve annotations.
 
 In cases where the referenced type is not yet defined, `ForwardRef` can be used (although referencing the
 type directly or by its string is a simpler solution in the case of
 [self-referencing models](#self-referencing-models)).
-
-In some cases, a `ForwardRef` won't be able to be resolved during model creation.
-For example, this happens whenever a model references itself as a field type.
-When this happens, you'll need to call `update_forward_refs` after the model has been created before it can be used:
 
 ```py
 from typing import ForwardRef
@@ -49,56 +45,6 @@ print(Foo())
 print(Foo(b={'a': '321'}))
 #> a=123 b=Foo(a=321, b=None)
 ```
-
-!!! warning
-    To resolve strings (type names) into annotations (types), *pydantic* needs a namespace dict in which to
-    perform the lookup. For this it uses `module.__dict__`, just like `get_type_hints`.
-    This means *pydantic* may not play well with types not defined in the global scope of a module.
-
-For example, this works fine:
-
-```py test="skip - works fine in reality, but fails with pytest-examples"
-from __future__ import annotations
-
-from pydantic import (
-    BaseModel,
-    HttpUrl,  # HttpUrl is defined in the module's global scope
-)
-
-
-def this_works():
-    class Model(BaseModel):
-        a: HttpUrl
-
-    print(Model(a='https://example.com'))
-    #> a=Url('https://example.com/')
-
-
-this_works()
-```
-
-While this will break:
-
-```py
-from __future__ import annotations
-
-from pydantic import BaseModel
-
-
-def this_works():
-    from pydantic import HttpUrl  # HttpUrl is defined in function local scope
-
-    class Model(BaseModel):
-        a: HttpUrl
-
-    print(Model(a='https://example.com'))
-    #> a=Url('https://example.com/')
-
-
-this_works()
-```
-
-Resolving this is beyond the call for *pydantic*: either remove the future import or declare the types globally.
 
 ## Self-referencing Models
 
@@ -125,7 +71,7 @@ print(Foo(sibling={'a': '321'}))
 
 Since Python 3.7, you can also refer it by its type, provided you import `annotations` (see
 [above](postponed_annotations.md) for support depending on Python
-and *pydantic* versions).
+and Pydantic versions).
 
 ```py
 from __future__ import annotations

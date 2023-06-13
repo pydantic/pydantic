@@ -44,43 +44,12 @@ class MainModel(BaseModel):
 print(json.dumps(MainModel.model_json_schema(), indent=2))
 """
 {
-  "type": "object",
-  "properties": {
-    "foo_bar": {
-      "$ref": "#/$defs/FooBar"
-    },
-    "Gender": {
-      "anyOf": [
-        {
-          "$ref": "#/$defs/Gender"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null
-    },
-    "snap": {
-      "type": "integer",
-      "exclusiveMaximum": 50,
-      "exclusiveMinimum": 30,
-      "default": 42,
-      "title": "The Snap",
-      "description": "this is the value of snap"
-    }
-  },
-  "required": [
-    "foo_bar"
-  ],
-  "title": "Main",
-  "description": "\n    This is the description of the main model\n    ",
   "$defs": {
     "FooBar": {
-      "type": "object",
       "properties": {
         "count": {
-          "type": "integer",
-          "title": "Count"
+          "title": "Count",
+          "type": "integer"
         },
         "size": {
           "anyOf": [
@@ -98,7 +67,8 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
       "required": [
         "count"
       ],
-      "title": "FooBar"
+      "title": "FooBar",
+      "type": "object"
     },
     "Gender": {
       "enum": [
@@ -110,7 +80,37 @@ print(json.dumps(MainModel.model_json_schema(), indent=2))
       "title": "Gender",
       "type": "string"
     }
-  }
+  },
+  "description": "\n    This is the description of the main model\n    ",
+  "properties": {
+    "Gender": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Gender"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "foo_bar": {
+      "$ref": "#/$defs/FooBar"
+    },
+    "snap": {
+      "default": 42,
+      "description": "this is the value of snap",
+      "exclusiveMaximum": 50,
+      "exclusiveMinimum": 30,
+      "title": "The Snap",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "foo_bar"
+  ],
+  "title": "Main",
+  "type": "object"
 }
 """
 ```
@@ -172,6 +172,51 @@ Pet = Annotated[Union[Cat, Dog], Field(discriminator='pet_type')]
 print(schema_json_of(Pet, title='The Pet Schema', indent=2))
 """
 {
+  "$defs": {
+    "Cat": {
+      "properties": {
+        "cat_name": {
+          "title": "Cat Name",
+          "type": "string"
+        },
+        "pet_type": {
+          "const": "cat",
+          "title": "Pet Type"
+        }
+      },
+      "required": [
+        "pet_type",
+        "cat_name"
+      ],
+      "title": "Cat",
+      "type": "object"
+    },
+    "Dog": {
+      "properties": {
+        "dog_name": {
+          "title": "Dog Name",
+          "type": "string"
+        },
+        "pet_type": {
+          "const": "dog",
+          "title": "Pet Type"
+        }
+      },
+      "required": [
+        "pet_type",
+        "dog_name"
+      ],
+      "title": "Dog",
+      "type": "object"
+    }
+  },
+  "discriminator": {
+    "mapping": {
+      "cat": "#/$defs/Cat",
+      "dog": "#/$defs/Dog"
+    },
+    "propertyName": "pet_type"
+  },
   "oneOf": [
     {
       "$ref": "#/$defs/Cat"
@@ -180,51 +225,6 @@ print(schema_json_of(Pet, title='The Pet Schema', indent=2))
       "$ref": "#/$defs/Dog"
     }
   ],
-  "discriminator": {
-    "propertyName": "pet_type",
-    "mapping": {
-      "cat": "#/$defs/Cat",
-      "dog": "#/$defs/Dog"
-    }
-  },
-  "$defs": {
-    "Cat": {
-      "type": "object",
-      "properties": {
-        "pet_type": {
-          "const": "cat",
-          "title": "Pet Type"
-        },
-        "cat_name": {
-          "type": "string",
-          "title": "Cat Name"
-        }
-      },
-      "required": [
-        "pet_type",
-        "cat_name"
-      ],
-      "title": "Cat"
-    },
-    "Dog": {
-      "type": "object",
-      "properties": {
-        "pet_type": {
-          "const": "dog",
-          "title": "Pet Type"
-        },
-        "dog_name": {
-          "type": "string",
-          "title": "Dog Name"
-        }
-      },
-      "required": [
-        "pet_type",
-        "dog_name"
-      ],
-      "title": "Dog"
-    }
-  },
   "title": "The Pet Schema"
 }
 """
@@ -281,7 +281,7 @@ It has the following arguments:
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
 !!! note
-    *pydantic* validates strings using `re.match`,
+    Pydantic validates strings using `re.match`,
     which treats regular expressions as implicitly anchored at the beginning.
     On the contrary,
     JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
@@ -294,14 +294,14 @@ It has the following arguments:
     (e.g. `.*?foo` to match any string containing the substring `foo`).
 
     See [#1631](https://github.com/pydantic/pydantic/issues/1631)
-    for a discussion of possible changes to *pydantic* behavior in **v2**.
+    for a discussion of possible changes to Pydantic behavior in **v2**.
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
 to set all of the arguments above except `default`.
 
 ### Unenforced Field constraints
 
-If *pydantic* finds constraints which are not being enforced, an error will be raised. If you want to force the
+If Pydantic finds constraints which are not being enforced, an error will be raised. If you want to force the
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
 to `Field()` with the raw schema attribute name:
 
@@ -330,17 +330,17 @@ class ModelB(BaseModel):
 print(ModelB.model_json_schema())
 """
 {
-    'type': 'object',
     'properties': {
         'foo': {
-            'type': 'integer',
             'exclusiveMaximum': 10,
             'exclusiveMinimum': 0,
             'title': 'Foo',
+            'type': 'integer',
         }
     },
     'required': ['foo'],
     'title': 'ModelB',
+    'type': 'object',
 }
 """
 ```
@@ -433,10 +433,10 @@ class MyModel(BaseModel):
 print(MyModel.model_json_schema())
 """
 {
-    'type': 'object',
-    'properties': {'value': {'type': 'string', 'title': 'Value'}},
+    'properties': {'value': {'title': 'Value', 'type': 'string'}},
     'required': ['value'],
     'title': 'MyModel',
+    'type': 'object',
 }
 """
 print(MyModel(value='fox fox fox dog fox'))
@@ -490,10 +490,10 @@ class MyModel(BaseModel):
 print(MyModel.model_json_schema())
 """
 {
-    'type': 'object',
-    'properties': {'value': {'type': 'string', 'title': 'Value'}},
+    'properties': {'value': {'title': 'Value', 'type': 'string'}},
     'required': ['value'],
     'title': 'MyModel',
+    'type': 'object',
 }
 """
 print(MyModel(value='CBA'))
@@ -609,9 +609,9 @@ following priority order (when there is an equivalent available):
 1. [JSON Schema Core](http://json-schema.org/latest/json-schema-core.html#rfc.section.4.3.1)
 2. [JSON Schema Validation](http://json-schema.org/latest/json-schema-validation.html)
 3. [OpenAPI Data Types](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types)
-4. The standard `format` JSON field is used to define *pydantic* extensions for more complex `string` sub-types.
+4. The standard `format` JSON field is used to define Pydantic extensions for more complex `string` sub-types.
 
-The field schema mapping from Python / *pydantic* to JSON Schema is done as follows:
+The field schema mapping from Python / Pydantic to JSON Schema is done as follows:
 
 {{ schema_mappings_table }}
 
@@ -646,19 +646,31 @@ print(json.dumps(top_level_schema, indent=2))
 """
 {
   "$defs": {
-    "Foo": {
-      "type": "object",
+    "Bar": {
       "properties": {
-        "a": {
-          "type": "string",
-          "default": null,
-          "title": "A"
+        "c": {
+          "title": "C",
+          "type": "integer"
         }
       },
-      "title": "Foo"
+      "required": [
+        "c"
+      ],
+      "title": "Bar",
+      "type": "object"
+    },
+    "Foo": {
+      "properties": {
+        "a": {
+          "default": null,
+          "title": "A",
+          "type": "string"
+        }
+      },
+      "title": "Foo",
+      "type": "object"
     },
     "Model": {
-      "type": "object",
       "properties": {
         "b": {
           "$ref": "#/$defs/Foo"
@@ -667,20 +679,8 @@ print(json.dumps(top_level_schema, indent=2))
       "required": [
         "b"
       ],
-      "title": "Model"
-    },
-    "Bar": {
-      "type": "object",
-      "properties": {
-        "c": {
-          "type": "integer",
-          "title": "C"
-        }
-      },
-      "required": [
-        "c"
-      ],
-      "title": "Bar"
+      "title": "Model",
+      "type": "object"
     }
   },
   "title": "My Schema"
@@ -720,8 +720,20 @@ print(json.dumps(top_level_schema, indent=2))
 """
 {
   "$defs": {
+    "Foo": {
+      "properties": {
+        "a": {
+          "title": "A",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "a"
+      ],
+      "title": "Foo",
+      "type": "object"
+    },
     "Model": {
-      "type": "object",
       "properties": {
         "a": {
           "$ref": "#/components/schemas/Foo"
@@ -730,20 +742,8 @@ print(json.dumps(top_level_schema, indent=2))
       "required": [
         "a"
       ],
-      "title": "Model"
-    },
-    "Foo": {
-      "type": "object",
-      "properties": {
-        "a": {
-          "type": "integer",
-          "title": "A"
-        }
-      },
-      "required": [
-        "a"
-      ],
-      "title": "Foo"
+      "title": "Model",
+      "type": "object"
     }
   }
 }
@@ -774,6 +774,7 @@ class Person(BaseModel):
         cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
         json_schema['examples'] = [
             {
                 'name': 'John Doe',
@@ -786,15 +787,20 @@ class Person(BaseModel):
 print(json.dumps(Person.model_json_schema(), indent=2))
 """
 {
-  "type": "object",
+  "examples": [
+    {
+      "age": 25,
+      "name": "John Doe"
+    }
+  ],
   "properties": {
-    "name": {
-      "type": "string",
-      "title": "Name"
-    },
     "age": {
-      "type": "integer",
-      "title": "Age"
+      "title": "Age",
+      "type": "integer"
+    },
+    "name": {
+      "title": "Name",
+      "type": "string"
     }
   },
   "required": [
@@ -802,12 +808,7 @@ print(json.dumps(Person.model_json_schema(), indent=2))
     "age"
   ],
   "title": "Person",
-  "examples": [
-    {
-      "name": "John Doe",
-      "age": 25
-    }
-  ]
+  "type": "object"
 }
 """
 ```

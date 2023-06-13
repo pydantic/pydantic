@@ -17,6 +17,7 @@ from pydantic import (
     ConfigDict,
     Field,
     FieldValidationInfo,
+    PydanticUserError,
     ValidationError,
     ValidationInfo,
     ValidatorFunctionWrapHandler,
@@ -2524,6 +2525,23 @@ def test_root_validator_allow_reuse_inheritance():
 
     assert Parent(x=1).model_dump() == {'x': 2}
     assert Child(x=1).model_dump() == {'x': 4}
+
+
+def test_bare_root_validator():
+    with pytest.raises(
+        PydanticUserError,
+        match=re.escape(
+            'If you use `@root_validator` with pre=False (the default) you MUST specify `skip_on_failure=True`.'
+            ' Note that `@root_validator` is deprecated and should be replaced with `@model_validator`.'
+        ),
+    ):
+        with pytest.warns(DeprecationWarning, match='Pydantic V1 style `@root_validator` validators are deprecated.'):
+
+            class Model(BaseModel):
+                @root_validator
+                @classmethod
+                def validate_values(cls, values):
+                    return values
 
 
 def test_validator_with_underscore_name() -> None:

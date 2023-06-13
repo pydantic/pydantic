@@ -34,6 +34,20 @@ First pre-release of Pydantic V2!
 
 See [this post](https://docs.pydantic.dev/blog/pydantic-v2-alpha/) for more details.
 
+## v1.10.9 (2023-06-07)
+
+* Fix trailing zeros not ignored in Decimal validation, #5968 by @hramezani
+* Fix mypy plugin for v1.4.0, #5928 by @cdce8p
+* Add future and past date hypothesis strategies, #5850 by @bschoenmaeckers
+* Discourage usage of Cython 3 with Pydantic 1.x, #5845 by @lig
+
+## v1.10.8 (2023-05-23)
+
+* Fix a bug in `Literal` usage with `typing-extension==4.6.0`, #5826 by @hramezani
+* This solves the (closed) issue #3849 where aliased fields that use discriminated union fail to validate when the data contains the non-aliased field name, #5736 by @benwah
+* Update email-validator dependency to >=2.0.0post2, #5627 by @adriangb
+* update `AnyClassMethod` for changes in [python/typeshed#9771](https://github.com/python/typeshed/issues/9771), #5505 by @ITProKyle
+
 ## v1.10.7 (2023-03-22)
 
 * Fix creating schema from model using `ConstrainedStr` with `regex` as dict key, #5223 by @matejetz
@@ -315,7 +329,7 @@ for their kind support.
 * Add support for autocomplete in VS Code via `__dataclass_transform__`, #2721 by @tiangolo
 * add missing type annotations in `BaseConfig` and handle `max_length = 0`, #2719 by @PrettyWood
 * Change `orm_mode` checking to allow recursive ORM mode parsing with dicts, #2718 by @nuno-andre
-* Add episode 313 of the *Talk Python To Me* podcast, where Michael Kennedy and Samuel Colvin discuss *pydantic*, to the docs, #2712 by @RatulMaharaj
+* Add episode 313 of the *Talk Python To Me* podcast, where Michael Kennedy and Samuel Colvin discuss Pydantic, to the docs, #2712 by @RatulMaharaj
 * fix JSON schema generation when a field is of type `NamedTuple` and has a default value, #2707 by @PrettyWood
 * `Enum` fields now properly support extra kwargs in schema generation, #2697 by @sammchardy
 * **Breaking Change, see #3780**: Make serialization of referenced pydantic models possible, #2650 by @PrettyWood
@@ -566,7 +580,7 @@ for their kind support.
 * Support `ref_template` when creating schema `$ref`s, #1479 by @kilo59
 * Add a `__call__` stub to `PyObject` so that mypy will know that it is callable, #1352 by @brianmaissy
 * `pydantic.dataclasses.dataclass` decorator now supports built-in `dataclasses.dataclass`.
-  It is hence possible to convert an existing `dataclass` easily to add *pydantic* validation.
+  It is hence possible to convert an existing `dataclass` easily to add Pydantic validation.
   Moreover nested dataclasses are also supported, #744 by @PrettyWood
 
 ## v1.6.2 (2021-05-11)
@@ -590,7 +604,7 @@ Thank you to pydantic's sponsors: @matin, @tiangolo, @chdsbd, @jorgecarleitao, a
   Instead of computing all the items in the iterable and storing them in memory, they are computed one-by-one and never
   stored as a huge list. This can save on both runtime and memory space, #1642 by @cool-RR
 * Add `conset()`, analogous to `conlist()`, #1623 by @patrickkwang
-* make *pydantic* errors (un)pickable, #1616 by @PrettyWood
+* make Pydantic errors (un)pickable, #1616 by @PrettyWood
 * Allow custom encoding for `dotenv` files, #1615 by @PrettyWood
 * Ensure `SchemaExtraCallable` is always defined to get type hints on BaseConfig, #1614 by @PrettyWood
 * Update datetime parser to support negative timestamps, #1600 by @mlbiche

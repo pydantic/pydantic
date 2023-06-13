@@ -86,6 +86,8 @@ cases = [
             reason='cached_property is only available in Python 3.8+, errors are different with mypy 0.971',
         ),
     ),
+    ('mypy-default.ini', 'metaclass_args.py', 'metaclass_args_no_plugin.txt'),
+    ('mypy-plugin-very-strict.ini', 'metaclass_args.py', 'metaclass_args_plugin.txt'),
 ]
 
 

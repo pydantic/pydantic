@@ -2,6 +2,7 @@ import json
 import platform
 import re
 import sys
+from collections import defaultdict
 from copy import deepcopy
 from dataclasses import dataclass
 from enum import Enum
@@ -22,7 +23,7 @@ from typing import (
 from uuid import UUID, uuid4
 
 import pytest
-from pydantic_core import CoreSchema
+from pydantic_core import CoreSchema, core_schema
 from typing_extensions import Annotated, Final, Literal
 
 from pydantic import (
@@ -39,6 +40,7 @@ from pydantic import (
     constr,
     field_validator,
 )
+from pydantic.type_adapter import TypeAdapter
 
 
 def test_success():
@@ -2361,3 +2363,84 @@ def test_model_signature_annotated() -> None:
     # we used to accidentally convert `__metadata__` to a list
     # which caused things like `typing.get_args()` to fail
     assert Model.__signature__.parameters['x'].annotation.__metadata__ == (123,)
+
+
+def test_get_core_schema_unpacks_refs_for_source_type() -> None:
+    # use a list to track since we end up calling `__get_pydantic_core_schema__` multiple times for models
+    # e.g. InnerModel.__get_pydantic_core_schema__ gets called:
+    # 1. When InnerModel is defined
+    # 2. When OuterModel is defined
+    # 3. When we use the TypeAdapter
+    received_schemas: dict[str, list[str]] = defaultdict(list)
+
+    @dataclass
+    class Marker:
+        name: str
+
+        def __get_pydantic_core_schema__(self, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            received_schemas[self.name].append(schema['type'])
+            return schema
+
+    class InnerModel(BaseModel):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            received_schemas['InnerModel'].append(schema['type'])
+            schema['metadata'] = schema.get('metadata', {})
+            schema['metadata']['foo'] = 'inner was here!'
+            return deepcopy(schema)
+
+    class OuterModel(BaseModel):
+        inner: Annotated[InnerModel, Marker('Marker("inner")')]
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            received_schemas['OuterModel'].append(schema['type'])
+            return schema
+
+    ta = TypeAdapter(Annotated[OuterModel, Marker('Marker("outer")')])
+
+    # super hacky check but it works in all cases and avoids a complex and fragile iteration over CoreSchema
+    # the point here is to verify that `__get_pydantic_core_schema__`
+    assert 'inner was here' in str(ta.core_schema)
+
+    assert received_schemas == {
+        'InnerModel': ['model', 'model', 'model'],
+        'Marker("inner")': ['definition-ref', 'definition-ref'],
+        'OuterModel': ['model', 'model'],
+        'Marker("outer")': ['definition-ref'],
+    }
+
+
+def test_get_core_schema_return_new_ref() -> None:
+    class InnerModel(BaseModel):
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+            schema = deepcopy(schema)
+            schema['metadata'] = schema.get('metadata', {})
+            schema['metadata']['foo'] = 'inner was here!'
+            return deepcopy(schema)
+
+    class OuterModel(BaseModel):
+        inner: InnerModel
+        x: int = 1
+
+        @classmethod
+        def __get_pydantic_core_schema__(cls, source_type: Any, handler: GetCoreSchemaHandler) -> CoreSchema:
+            schema = handler(source_type)
+
+            def set_x(m: 'OuterModel') -> 'OuterModel':
+                m.x += 1
+                return m
+
+            return core_schema.no_info_after_validator_function(set_x, schema, ref=schema.pop('ref'))
+
+    cs = OuterModel.__pydantic_core_schema__
+    # super hacky check but it works in all cases and avoids a complex and fragile iteration over CoreSchema
+    # the point here is to verify that `__get_pydantic_core_schema__`
+    assert 'inner was here' in str(cs)
+
+    assert OuterModel(inner=InnerModel()).x == 2

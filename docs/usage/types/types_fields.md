@@ -4,8 +4,8 @@ description: Support for types with fields including NamedTuple and TypedDict.
 
 Pydantic supports four types with fields:
 
-* [`BaseModel`](/usage/models/)
-* [dataclasses](/usage/dataclasses/)
+* [`BaseModel`](../models.md)
+* [dataclasses](../dataclasses.md)
 * [`NamedTuple`](#namedtuple)
 * [`TypedDict`](#typeddict)
 

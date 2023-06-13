@@ -1,6 +1,4 @@
-"""
-Logic for V1 validators, e.g. `@validator` and `@root_validator`.
-"""
+"""Logic for V1 validators, e.g. `@validator` and `@root_validator`."""
 from __future__ import annotations as _annotations
 
 from inspect import Parameter, signature
@@ -14,9 +12,7 @@ from ._decorators import can_be_positional
 
 
 class V1OnlyValueValidator(Protocol):
-    """
-    A simple validator, supported for V1 validators and V2 validators
-    """
+    """A simple validator, supported for V1 validators and V2 validators."""
 
     def __call__(self, __value: Any) -> Any:
         ...
@@ -118,9 +114,7 @@ class V2CoreAfterRootValidator(Protocol):
 def make_v1_generic_root_validator(
     validator: V1RootValidatorFunction, pre: bool
 ) -> V2CoreBeforeRootValidator | V2CoreAfterRootValidator:
-    """
-    Wrap a V1 style root validator for V2 compatibility
-    """
+    """Wrap a V1 style root validator for V2 compatibility."""
     if pre is True:
         # mode='before' for pydantic-core
         def _wrapper1(values: RootValidatorValues, _: core_schema.ValidationInfo) -> RootValidatorValues:

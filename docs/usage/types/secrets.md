@@ -1,3 +1,7 @@
+---
+description: Support for secret types.
+---
+
 `SecretBytes`
 : bytes where the value is kept partially secret
 
