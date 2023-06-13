@@ -108,7 +108,7 @@ from pydantic.dataclasses import dataclass
 
 # Option 1 - use directly a dict
 # Note: `mypy` will still raise typo error
-@dataclass(config=dict(validate_assignment=True))
+@dataclass(config=dict(validate_assignment=True))  # (1)!
 class MyDataclass1:
     a: int
 
@@ -119,6 +119,8 @@ class MyDataclass1:
 class MyDataclass2:
     a: int
 ```
+
+1. You can read more about `validate_assignment` in [model_config](model_config.md#validate-assignment).
 
 !!! warning
     After v1.10, _pydantic_ dataclasses support `Config.extra` but some default behaviour of stdlib dataclasses
