@@ -890,12 +890,13 @@ class GenerateJsonSchema:
             named_required_fields.extend(self._name_required_computed_fields(schema.get('computed_fields', [])))
         json_schema = self._named_required_fields_schema(named_required_fields)
         config: CoreConfig | None = schema.get('config', None)
-        if self.mode != 'serialization':
-            extra = (config or {}).get('extra_fields_behavior', 'ignore')
-            if extra == 'forbid':
-                json_schema['additionalProperties'] = False
-            elif extra == 'allow':
-                json_schema['additionalProperties'] = True
+
+        extra = (config or {}).get('extra_fields_behavior', 'ignore')
+        if extra == 'forbid':
+            json_schema['additionalProperties'] = False
+        elif extra == 'allow':
+            json_schema['additionalProperties'] = True
+
         return json_schema
 
     @staticmethod
@@ -970,13 +971,16 @@ class GenerateJsonSchema:
         cls = cast('type[BaseModel]', schema['cls'])
         config = cls.model_config
         title = config.get('title')
-        additional_properties = None
-        if self.mode != 'serialization':
-            extra = config.get('extra', 'ignore')
-            if extra == 'forbid':
-                additional_properties = False
-            elif extra == 'allow':
-                additional_properties = True
+        extra = config.get('extra', 'ignore')
+
+        extra = config.get('extra', 'ignore')
+        if extra == 'forbid':
+            additional_properties = False
+        elif extra == 'allow':
+            additional_properties = True
+        else:
+            additional_properties = None
+
         json_schema_extra = config.get('json_schema_extra')
         json_schema = self._update_class_schema(json_schema, title, additional_properties, cls, json_schema_extra)
 
@@ -1074,13 +1078,15 @@ class GenerateJsonSchema:
         config: ConfigDict = getattr(cls, '__pydantic_config__', cast('ConfigDict', {}))
 
         title = config.get('title') or cls.__name__
-        additional_properties = None
-        if self.mode != 'serialization':
-            extra = config.get('extra', 'ignore')
-            if extra == 'forbid':
-                additional_properties = False
-            elif extra == 'allow':
-                additional_properties = True
+
+        extra = config.get('extra', 'ignore')
+        if extra == 'forbid':
+            additional_properties = False
+        elif extra == 'allow':
+            additional_properties = True
+        else:
+            additional_properties = None
+
         json_schema_extra = config.get('json_schema_extra')
         json_schema = self._update_class_schema(json_schema, title, additional_properties, cls, json_schema_extra)
 
