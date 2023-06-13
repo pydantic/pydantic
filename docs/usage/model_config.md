@@ -469,7 +469,7 @@ print(t)  # (3)!
 You can allow arbitrary types using the `arbitrary_types_allowed` setting in the model's config:
 
 ```py
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 # This is not a pydantic model, it's an arbitrary class
@@ -479,7 +479,8 @@ class Pet:
 
 
 class Model(BaseModel):
-    model_config = dict(arbitrary_types_allowed=True)
+   model_config = ConfigDict(arbitrary_types_allowed=True)
+
     pet: Pet
     owner: str
 
