@@ -604,7 +604,7 @@ If you do, this root validator will no longer be called if validation fails for 
 
 Please see the [Migration Guide](../migration.md) for more details.
 
-## `model_validator` instance methods {#model-serializer-instance-method}
+## `model_serializer` instance methods {#model-serializer-instance-method}
 
 `@model_serializer` must be applied to instance methods.
 
