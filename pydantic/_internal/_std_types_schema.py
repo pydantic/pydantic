@@ -99,7 +99,7 @@ def enum_prepare_pydantic_annotations(
     updates = {k: v for k, v in updates.items() if v is not None}
 
     def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = handler(core_schema.literal_schema([x.value for x in cases]))
+        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref))
         original_schema = handler.resolve_ref_schema(json_schema)
         update_json_schema(original_schema, updates)
         return json_schema
@@ -912,7 +912,6 @@ PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, lis
     uuid_prepare_pydantic_annotations,
     path_schema_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,
-    enum_prepare_pydantic_annotations,
     ip_prepare_pydantic_annotations,
     url_prepare_pydantic_annotations,
 )

@@ -1,5 +1,5 @@
 `int`
-: *pydantic* uses `int(v)` to coerce types to an `int`;
+: Pydantic uses `int(v)` to coerce types to an `int`;
   see [this](../models.md#data-conversion) warning on loss of information during data conversion
 
 `float`
@@ -13,7 +13,7 @@
   see [Enums and Choices](#enums-and-choices) for more details
 
 `decimal.Decimal`
-: *pydantic* attempts to convert the value to a string, then passes the string to `Decimal(v)`
+: Pydantic attempts to convert the value to a string, then passes the string to `Decimal(v)`
 
 `NegativeFloat`
 : allows a float which is negative; uses standard `float` parsing then checks the value is less than 0;

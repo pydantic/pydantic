@@ -40,7 +40,7 @@ print(user_03_uuid.int)
 #> 275603287559914445491632874575877060712
 ```
 
-However, as can be seen above, *pydantic* will attempt to 'match' any of the types defined under `Union` and will use
+However, as can be seen above, Pydantic will attempt to 'match' any of the types defined under `Union` and will use
 the first one that matches. In the above example the `id` of `user_03` was defined as a `uuid.UUID` class (which
 is defined under the attribute's `Union` annotation) but as the `uuid.UUID` can be marshalled into an `int` it
 chose to match against the `int` type and disregarded the other types.

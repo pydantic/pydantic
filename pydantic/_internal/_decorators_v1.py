@@ -19,21 +19,29 @@ class V1OnlyValueValidator(Protocol):
 
 
 class V1ValidatorWithValues(Protocol):
+    """A validator with `values` argument, supported for V1 validators and V2 validators."""
+
     def __call__(self, __value: Any, values: dict[str, Any]) -> Any:
         ...
 
 
 class V1ValidatorWithValuesKwOnly(Protocol):
+    """A validator with keyword only `values` argument, supported for V1 validators and V2 validators."""
+
     def __call__(self, __value: Any, *, values: dict[str, Any]) -> Any:
         ...
 
 
 class V1ValidatorWithKwargs(Protocol):
+    """A validator with `kwargs` argument, supported for V1 validators and V2 validators."""
+
     def __call__(self, __value: Any, **kwargs: Any) -> Any:
         ...
 
 
 class V1ValidatorWithValuesAndKwargs(Protocol):
+    """A validator with `values` and `kwargs` arguments, supported for V1 validators and V2 validators."""
+
     def __call__(self, __value: Any, values: dict[str, Any], **kwargs: Any) -> Any:
         ...
 
@@ -48,6 +56,18 @@ def can_be_keyword(param: Parameter) -> bool:
 
 
 def make_generic_v1_field_validator(validator: V1Validator) -> core_schema.FieldValidatorFunction:
+    """Wrap a V1 style field validator for V2 compatibility.
+
+    Args:
+        validator: The V1 style field validator.
+
+    Returns:
+        A wrapped V2 style field validator.
+
+    Raises:
+        PydanticUserError: If the signature is not supported or the parameters are
+            not available in Pydantic V2.
+    """
     sig = signature(validator)
 
     needs_values_kw = False
@@ -95,16 +115,22 @@ RootValidatorFieldsTuple = Tuple[Any, ...]
 
 
 class V1RootValidatorFunction(Protocol):
+    """A simple root validator, supported for V1 validators and V2 validators."""
+
     def __call__(self, __values: RootValidatorValues) -> RootValidatorValues:
         ...
 
 
 class V2CoreBeforeRootValidator(Protocol):
+    """V2 validator with mode='before'."""
+
     def __call__(self, __values: RootValidatorValues, __info: core_schema.ValidationInfo) -> RootValidatorValues:
         ...
 
 
 class V2CoreAfterRootValidator(Protocol):
+    """V2 validator with mode='after'."""
+
     def __call__(
         self, __fields_tuple: RootValidatorFieldsTuple, __info: core_schema.ValidationInfo
     ) -> RootValidatorFieldsTuple:
@@ -114,7 +140,15 @@ class V2CoreAfterRootValidator(Protocol):
 def make_v1_generic_root_validator(
     validator: V1RootValidatorFunction, pre: bool
 ) -> V2CoreBeforeRootValidator | V2CoreAfterRootValidator:
-    """Wrap a V1 style root validator for V2 compatibility."""
+    """Wrap a V1 style root validator for V2 compatibility.
+
+    Args:
+        validator: The V1 style field validator.
+        pre: Whether the validator is a pre validator.
+
+    Returns:
+        A wrapped V2 style validator.
+    """
     if pre is True:
         # mode='before' for pydantic-core
         def _wrapper1(values: RootValidatorValues, _: core_schema.ValidationInfo) -> RootValidatorValues:

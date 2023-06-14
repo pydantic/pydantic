@@ -46,7 +46,7 @@ from pydantic.utils import lenient_issubclass
 #
 # conlist() and conset() are unsupported for now, because the workarounds for
 # Cython and Hypothesis to handle parametrized generic types are incompatible.
-# Once Cython can support 'normal' generics we'll revisit this.
+# We are rethinking Hypothesis compatibility in Pydantic v2.
 
 # Emails
 try:
@@ -166,6 +166,11 @@ st.register_type_strategy(
 # don't go via those mechanisms.  Then there are the registration hooks below.
 st.register_type_strategy(pydantic.StrictBool, st.booleans())
 st.register_type_strategy(pydantic.StrictStr, st.text())
+
+
+# FutureDate, PastDate
+st.register_type_strategy(pydantic.FutureDate, st.dates(min_value=datetime.date.today() + datetime.timedelta(days=1)))
+st.register_type_strategy(pydantic.PastDate, st.dates(max_value=datetime.date.today() - datetime.timedelta(days=1)))
 
 
 # Constrained-type resolver functions

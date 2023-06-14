@@ -33,9 +33,8 @@ repo_name: pydantic/pydantic
 repo_url: https://github.com/pydantic/pydantic
 edit_uri: edit/main/docs/
 extra:
-  analytics:
-    provider: google
-    property: UA-62733018-4
+  version:
+    provider: mike
 
 extra_css:
 - 'extra/terminal.css'
@@ -159,10 +158,6 @@ markdown_extensions:
 watch:
 - pydantic
 
-extra:
-  version:
-    provider: mike
-
 plugins:
 - mike:
     alias_type: symlink
@@ -180,6 +175,9 @@ plugins:
         options:
           separate_signature: true
           filters: ["!^_"]
+          docstring_options:
+            ignore_init_summary: true
+          merge_init_into_class: true
 - mkdocs-simple-hooks:
     hooks:
       on_pre_build: 'docs.plugins.main:on_pre_build'

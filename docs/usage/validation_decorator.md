@@ -4,7 +4,7 @@ creation and initialisation; it provides an extremely easy way to apply validati
 boilerplate.
 
 !!! info "In Beta"
-    The `validate_call` decorator is in **beta**, it has been added to *pydantic* in **v1.5** on a
+    The `validate_call` decorator is in **beta**, it has been added to Pydantic in **v1.5** on a
     **provisional basis**. It may change significantly in future releases and its interface will not be concrete
     until **v2**. Feedback from the community while it's still provisional would be extremely useful; either comment
     on [#1205](https://github.com/pydantic/pydantic/issues/1205) or create a new issue.
@@ -43,9 +43,9 @@ except ValidationError as exc:
 ## Argument Types
 
 Argument types are inferred from type annotations on the function, arguments without a type decorator are considered
-as `Any`. All types listed in [types](types/types.md) can be validated, including *pydantic* models and
+as `Any`. All types listed in [types](types/types.md) can be validated, including Pydantic models and
 [custom types](types/types.md#custom-data-types).
-As with the rest of *pydantic*, types can be coerced by the decorator before they're passed to the actual function:
+As with the rest of Pydantic, types can be coerced by the decorator before they're passed to the actual function:
 
 ```py test="no-print-intercept"
 # TODO replace find_file with something that isn't affected the filesystem
@@ -218,7 +218,7 @@ print(type(when()))
 #> <class 'datetime.datetime'>
 ```
 
-The [alias](model_config.md#alias-precedence) can be used with the decorator as normal.
+The [`alias`](fields.md#field-aliases) can be used with the decorator as normal.
 
 ```py
 from typing_extensions import Annotated
@@ -377,7 +377,7 @@ In particular:
 
 ### Validation Exception
 
-Currently upon validation failure, a standard *pydantic* `ValidationError` is raised,
+Currently upon validation failure, a standard Pydantic `ValidationError` is raised,
 see [model error handling](models.md#error-handling).
 
 This is helpful since it's `str()` method provides useful details of the error which occurred and methods like
@@ -388,16 +388,16 @@ exception by default, or both.
 
 ### Coercion and Strictness
 
-*pydantic* currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
+Pydantic currently leans on the side of trying to coerce types rather than raise an error if a type is wrong,
 see [model data conversion](models.md#data-conversion) and `validate_call` is no different.
 
 See [#1098](https://github.com/pydantic/pydantic/issues/1098) and other issues with the "strictness" label
-for a discussion of this. If *pydantic* gets a "strict" mode in future, `validate_call` will have an option
+for a discussion of this. If Pydantic gets a "strict" mode in future, `validate_call` will have an option
 to use this, it may even become the default for the decorator.
 
 ### Performance
 
-We've made a big effort to make *pydantic* as performant as possible
+We've made a big effort to make Pydantic as performant as possible
 and argument inspect and model creation is only performed once when the function is defined, however
 there will still be a performance impact to using the `validate_call` decorator compared to
 calling the raw function.
@@ -427,7 +427,7 @@ the function's signature:
 * `v__positional_only`
 
 These names (together with `"args"` and `"kwargs"`) may or may not (depending on the function's signature) appear as
-fields on the internal *pydantic* model accessible via `.model` thus this model isn't especially useful
+fields on the internal Pydantic model accessible via `.model` thus this model isn't especially useful
 (e.g. for generating a schema) at the moment.
 
 This should be fixable in future as the way error are raised is changed.

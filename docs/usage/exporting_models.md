@@ -114,8 +114,8 @@ print(m.model_dump_json(indent=2))
 ## `dict(model)` and iteration
 
 Pydantic models can also be converted to dictionaries using `dict(model)`, and you can also iterate over a model's
-fields using `for field_name, field_value in model:`. When using this approach, the raw field values are returned;
-in particular, sub-models will not be recursively converted to dictionaries.
+fields using `for field_name, field_value in model:`. With this approach the raw field values are returned, so
+sub-models will not be converted to dictionaries.
 
 Example:
 

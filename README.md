@@ -10,8 +10,8 @@
 
 Data validation using Python type hints.
 
-Fast and extensible, *pydantic* plays nicely with your linters/IDE/brain.
-Define how data should be in pure, canonical Python 3.7+; validate it with *pydantic*.
+Fast and extensible, Pydantic plays nicely with your linters/IDE/brain.
+Define how data should be in pure, canonical Python 3.7+; validate it with Pydantic.
 
 ## Pydantic Company :rocket:
 
@@ -33,7 +33,7 @@ See [documentation](https://docs.pydantic.dev/) for more details.
 ## Installation
 
 Install using `pip install -U pydantic` or `conda install pydantic -c conda-forge`.
-For more installation options to make *pydantic* even faster,
+For more installation options to make Pydantic even faster,
 see the [Install](https://docs.pydantic.dev/install/) section in the documentation.
 
 ## A Simple Example
@@ -60,7 +60,7 @@ print(user.id)
 ## Contributing
 
 For guidance on setting up a development environment and how to make a
-contribution to *pydantic*, see
+contribution to Pydantic, see
 [Contributing to Pydantic](https://docs.pydantic.dev/contributing/).
 
 ## Reporting a Security Vulnerability
