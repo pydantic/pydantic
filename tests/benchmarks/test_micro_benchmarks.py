@@ -1360,7 +1360,7 @@ def test_validate_literal(
 @pytest.mark.benchmark(group='root_model')
 def test_core_root_model(benchmark):
     class MyModel:
-        __slots__ = 'root'
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
         root: List[int]
 
     v = SchemaValidator(

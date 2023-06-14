@@ -190,3 +190,36 @@ def test_fields_set():
     v.validate_python(PydanticUndefined, self_instance=m)
     assert m.root == 42
     assert m.__pydantic_fields_set__ == set()
+
+
+def test_construct_from_validate_default():
+    class RootModel:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        root: int
+
+    class Model:
+        __slots__ = '__dict__', '__pydantic_fields_set__', '__pydantic_extra__', '__pydantic_private__'
+        value: RootModel = 42
+
+    v = SchemaValidator(
+        core_schema.model_schema(
+            Model,
+            core_schema.model_fields_schema(
+                {
+                    'value': core_schema.model_field(
+                        core_schema.with_default_schema(
+                            core_schema.model_schema(RootModel, core_schema.int_schema(), root_model=True),
+                            default=42,
+                            validate_default=True,
+                        )
+                    )
+                }
+            ),
+        )
+    )
+
+    m = Model()
+    v.validate_python({}, self_instance=m)
+
+    assert m.value.root == 42
+    assert m.value.__pydantic_fields_set__ == {'root'}
