@@ -116,20 +116,19 @@ def dataclass(
         _cls: The target dataclass.
         init: Included for signature compatibility with `dataclasses.dataclass`, and is passed through to
             `dataclasses.dataclass` when appropriate. If specified, must be set to `False`, as pydantic inserts its
-            own  `__init__` function. Defaults to `False`.
-        repr: Determines if a `__repr__` should be generated for the class. Defaults to `True`.
-        eq: Determines if a `__eq__` should be generated for the class. Defaults to `True`.
-        order: Determines if comparison magic methods should be generated, such as` __lt__`, but
-            not `__eq__`. Defaults to `False`.
+            own  `__init__` function.
+        repr: A boolean indicating whether or not to include the field in the __repr__ output.
+        eq: Determines if a `__eq__` should be generated for the class.
+        order: Determines if comparison magic methods should be generated, such as` __lt__`, but not `__eq__`.
         unsafe_hash: Determines if an unsafe hashing function should be included in the class.
         frozen: Determines if the generated class should be a 'frozen' dataclass, which does not allow its
-            attributes to be modified from its constructor. Defaults to `False`.
-        config: A configuration for the dataclass generation. Defaults to `None`.
+            attributes to be modified from its constructor.
+        config: A configuration for the dataclass generation.
         validate_on_init: A deprecated parameter included for backwards compatibility; in V2, all pydantic dataclasses
             are validated on init.
         kw_only: Determines if `__init__` method parameters must be specified by keyword only. Defaults to `False`.
         slots: Determines if the generated class should be a 'slots' dataclass, which does not allow the addition of
-            new attributes after instantiation. Defaults to `False`.
+            new attributes after instantiation.
 
     Returns:
         A decorator that accepts a class as its argument and returns a Pydantic dataclass.

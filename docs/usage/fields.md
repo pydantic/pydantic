@@ -9,8 +9,12 @@ The `default` parameter is used to define a default value for a field.
 
 ```py
 from pydantic import BaseModel, Field
+
+
 class User(BaseModel):
     name: str = Field(default='John Doe')
+
+
 user = User()
 print(user)
 #> name='John Doe'
@@ -20,7 +24,10 @@ You can also use `default_factory` to define a callable that will be called to g
 
 ```py
 from uuid import uuid4
+
 from pydantic import BaseModel, Field
+
+
 class User(BaseModel):
     id: int = Field(default_factory=lambda: uuid4().hex)
 ```
@@ -289,6 +296,8 @@ Here's an example:
 
 ```py
 from pydantic import BaseModel, Field
+
+
 class Foo(BaseModel):
     positive: int = Field(..., gt=0)
     non_negative: int = Field(..., ge=0)
@@ -296,13 +305,15 @@ class Foo(BaseModel):
     non_positive: int = Field(..., le=0)
     even: int = Field(..., multiple_of=2)
     love_for_pydantic: float = Field(..., allow_inf_nan=True)
+
+
 foo = Foo(
     positive=1,
     non_negative=0,
     negative=-1,
     non_positive=0,
     even=2,
-    love_for_pydantic=float("inf"),
+    love_for_pydantic=float('inf'),
 )
 print(foo)
 #> positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf
@@ -382,10 +393,10 @@ from pydantic import BaseModel, Field
 class Foo(BaseModel):
     short: str = Field(min_length=3)
     long: str = Field(max_length=10)
-    regex: str = Field(pattern=r"^\d*$")  # (1)!
+    regex: str = Field(pattern=r'^\d*$')  # (1)!
 
 
-foo = Foo(short="foo", long="foobarbaz", regex="123")
+foo = Foo(short='foo', long='foobarbaz', regex='123')
 print(foo)
 #> short='foo' long='foobarbaz' regex='123'
 ```
@@ -448,6 +459,8 @@ There are fields that can be used to constrain decimals:
 Here's an example:
 
 ```py
+from decimal import Decimal
+
 from pydantic import BaseModel, Field
 
 
@@ -455,7 +468,7 @@ class Foo(BaseModel):
     precise: Decimal = Field(max_digits=5, decimal_places=2)
 
 
-foo = Foo(precise=Decimal("123.45"))
+foo = Foo(precise=Decimal('123.45'))
 print(foo)
 #> precise=Decimal('123.45')
 ```
@@ -464,8 +477,169 @@ print(foo)
 
 There are fields that can be used to constrain dataclasses:
 
-* `init_var`: TODO
-* `kw_only`: TODO
+* `init_var`: Whether the field should be included in the constructor of the dataclass.
+* `kw_only`: Whether the field should be a keyword-only argument in the constructor of the dataclass.
 
+Here's an example:
+
+```py
+from pydantic import BaseModel, Field
+from pydantic.dataclasses import dataclass
+
+
+@dataclass
+class Foo:
+    bar: str
+    baz: str = Field(init_var=True)
+    qux: str = Field(kw_only=True)
+
+
+class Model(BaseModel):
+    foo: Foo
+
+
+model = Model(foo=Foo('bar', 'baz', qux='qux'))
+print(model)
+"""
+foo = Foo(
+    bar='bar', baz=FieldInfo(annotation=str, required=True, init_var=True), qux='qux'
+)
+"""
+```
+
+TODO: What am I doing here?
+
+## Field Representation
+
+The parameter `repr` can be used to control whether the field should be included in the string
+representation of the model.
+
+```py
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    name: str = Field(repr=True)  # (1)!
+    age: int = Field(repr=False)
+
+
+user = User(name='John', age=42)
+print(user)
+#> name='John'
+```
+
+1. This is the default value.
+
+## Discriminator
+
+The parameter `discriminator` can be used to control the field that will be used to discriminate between different
+models in a union.
+
+```py
+from typing import Literal, Union
+
+from pydantic import BaseModel, Field
+
+
+class Cat(BaseModel):
+    pet_type: Literal['cat']
+    age: int
+
+
+class Dog(BaseModel):
+    pet_type: Literal['dog']
+    age: int
+
+
+class Model(BaseModel):
+    pet: Union[Cat, Dog] = Field(discriminator='pet_type')
+
+
+print(Model.model_validate({'pet': {'pet_type': 'cat', 'age': 12}}))  # (1)!
+#> pet=Cat(pet_type='cat', age=12)
+```
+
+1. See more about [Helper Functions] in the [Models] page.
+
+See the [Discriminated Unions] for more details.
+
+## Strict Mode
+
+The parameter `strict` can be used to control whether the field should be included in the strict mode.
+
+TODO: Should we explain what is strict mode here or add a link?
+
+```py
+from pydantic import BaseModel, Field
+
+
+class User(BaseModel):
+    name: str = Field(strict=True)  # (1)!
+    age: int = Field(strict=False)
+
+
+user = User(name='John', age='42')
+print(user)
+#> name='John'
+```
+
+## Customise JSON Schema
+
+There are fields that exclusively to customise the generated JSON Schema:
+
+* `title`: The title of the field.
+* `description`: The description of the field.
+* `examples`: The examples of the field.
+* `json_schema_extra`: Extra JSON Schema properties to be added to the field.
+
+Here's an example:
+
+```py
+from pydantic import BaseModel, EmailStr, Field, SecretStr
+
+
+class User(BaseModel):
+    age: int = Field(description='Age of the user')
+    email: EmailStr = Field(examples=['marcelo@mail.com'])
+    name: str = Field(title='Username')
+    password: SecretStr = Field(
+        json_schema_extra={
+            'title': 'Password',
+            'description': 'Password of the user',
+            'examples': ['123456'],
+        }
+    )
+
+
+print(User.model_json_schema())
+"""
+{
+    'properties': {
+        'age': {'description': 'Age of the user', 'title': 'Age', 'type': 'integer'},
+        'email': {
+            'examples': ['marcelo@mail.com'],
+            'format': 'email',
+            'title': 'Email',
+            'type': 'string',
+        },
+        'name': {'title': 'Username', 'type': 'string'},
+        'password': {
+            'description': 'Password of the user',
+            'examples': ['123456'],
+            'format': 'password',
+            'title': 'Password',
+            'type': 'string',
+            'writeOnly': True,
+        },
+    },
+    'required': ['age', 'email', 'name', 'password'],
+    'title': 'User',
+    'type': 'object',
+}
+"""
+```
 
 [JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
+[Discriminated Unions]: /usage/types/unions/#discriminated-unions-aka-tagged-unions
+[Helper Functions]: /usage/models/#helper-functions
+[Models]: /usage/models/
