@@ -176,10 +176,24 @@ def test_typeddict_extra_default(TypedDict):
         name: str
         age: int
 
-    val = TypeAdapter(User)
+    ta = TypeAdapter(User)
+
+    assert ta.validate_python({'name': 'pika', 'age': 7, 'rank': 1}) == {'name': 'pika', 'age': 7}
+
+    class UserExtraAllow(User):
+        __pydantic_config__ = ConfigDict(extra='allow')
+
+    ta = TypeAdapter(UserExtraAllow)
+
+    assert ta.validate_python({'name': 'pika', 'age': 7, 'rank': 1}) == {'name': 'pika', 'age': 7, 'rank': 1}
+
+    class UserExtraForbid(User):
+        __pydantic_config__ = ConfigDict(extra='forbid')
+
+    ta = TypeAdapter(UserExtraForbid)
 
     with pytest.raises(ValidationError) as exc_info:
-        val.validate_python({'name': 'pika', 'age': 7, 'rank': 1})
+        ta.validate_python({'name': 'pika', 'age': 7, 'rank': 1})
     # insert_assert(exc_info.value.errors(include_url=False))
     assert exc_info.value.errors(include_url=False) == [
         {'type': 'extra_forbidden', 'loc': ('rank',), 'msg': 'Extra inputs are not permitted', 'input': 1}
@@ -201,9 +215,11 @@ def test_typeddict_schema(TypedDict):
             cls, source_type: Any, handler: GetCoreSchemaHandler
         ) -> core_schema.CoreSchema:
             schema = handler(source_type)
-            schema['computed_fields'] = [
-                core_schema.computed_field(property_name='another_b', return_schema=core_schema.int_schema())
-            ]
+            schema = handler.resolve_ref_schema(schema)
+            assert schema['type'] == 'typed-dict'
+            b = schema['fields']['b']['schema']
+            assert b['type'] == 'int'
+            b['gt'] = 0  # type: ignore
             return schema
 
     class Model(BaseModel):
@@ -211,66 +227,66 @@ def test_typeddict_schema(TypedDict):
         data_td: DataTD
         custom_td: CustomTD
 
+    # insert_assert(Model.model_json_schema(mode='validation'))
     assert Model.model_json_schema(mode='validation') == {
-        'title': 'Model',
         'type': 'object',
         'properties': {
-            'custom_td': {'$ref': '#/$defs/CustomTD'},
             'data': {'$ref': '#/$defs/Data'},
             'data_td': {'$ref': '#/$defs/DataTD'},
+            'custom_td': {'$ref': '#/$defs/CustomTD'},
         },
         'required': ['data', 'data_td', 'custom_td'],
+        'title': 'Model',
         '$defs': {
+            'DataTD': {
+                'type': 'object',
+                'properties': {'a': {'type': 'integer', 'title': 'A'}},
+                'required': ['a'],
+                'title': 'DataTD',
+            },
             'CustomTD': {
                 'type': 'object',
-                'title': 'CustomTD',
-                'properties': {'b': {'title': 'B', 'type': 'integer'}},
+                'properties': {'b': {'type': 'integer', 'exclusiveMinimum': 0, 'title': 'B'}},
                 'required': ['b'],
+                'title': 'CustomTD',
             },
             'Data': {
                 'type': 'object',
+                'properties': {'a': {'type': 'integer', 'title': 'A'}},
+                'required': ['a'],
                 'title': 'Data',
-                'properties': {'a': {'title': 'A', 'type': 'integer'}},
-                'required': ['a'],
-            },
-            'DataTD': {
-                'type': 'object',
-                'title': 'DataTD',
-                'properties': {'a': {'title': 'A', 'type': 'integer'}},
-                'required': ['a'],
             },
         },
     }
+
+    # insert_assert(Model.model_json_schema(mode='serialization'))
     assert Model.model_json_schema(mode='serialization') == {
-        'title': 'Model',
         'type': 'object',
         'properties': {
-            'custom_td': {'$ref': '#/$defs/CustomTD'},
             'data': {'$ref': '#/$defs/Data'},
             'data_td': {'$ref': '#/$defs/DataTD'},
+            'custom_td': {'$ref': '#/$defs/CustomTD'},
         },
         'required': ['data', 'data_td', 'custom_td'],
+        'title': 'Model',
         '$defs': {
+            'DataTD': {
+                'type': 'object',
+                'properties': {'a': {'type': 'integer', 'title': 'A'}},
+                'required': ['a'],
+                'title': 'DataTD',
+            },
             'CustomTD': {
                 'type': 'object',
+                'properties': {'b': {'type': 'integer', 'exclusiveMinimum': 0, 'title': 'B'}},
+                'required': ['b'],
                 'title': 'CustomTD',
-                'properties': {
-                    'b': {'title': 'B', 'type': 'integer'},
-                    'another_b': {'title': 'Another B', 'type': 'integer'},
-                },
-                'required': ['b', 'another_b'],
             },
             'Data': {
                 'type': 'object',
+                'properties': {'a': {'type': 'integer', 'title': 'A'}},
+                'required': ['a'],
                 'title': 'Data',
-                'properties': {'a': {'title': 'A', 'type': 'integer'}},
-                'required': ['a'],
-            },
-            'DataTD': {
-                'type': 'object',
-                'title': 'DataTD',
-                'properties': {'a': {'title': 'A', 'type': 'integer'}},
-                'required': ['a'],
             },
         },
     }

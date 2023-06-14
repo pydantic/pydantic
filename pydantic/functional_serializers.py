@@ -1,3 +1,4 @@
+"""This module contains related classes and functions for serialization."""
 from __future__ import annotations
 
 from functools import partialmethod
@@ -12,8 +13,7 @@ from ._internal import _annotated_handlers, _decorators, _internal_dataclass
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class PlainSerializer:
-    """
-    Plain serializers use a function to modify the output of serialization.
+    """Plain serializers use a function to modify the output of serialization.
 
     Attributes:
         func: The serializer function.
@@ -29,8 +29,7 @@ class PlainSerializer:
     def __get_pydantic_core_schema__(
         self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        """
-        Gets the Pydantic core schema.
+        """Gets the Pydantic core schema.
 
         Args:
             source_type: The source type.
@@ -53,14 +52,13 @@ class PlainSerializer:
 
 @_internal_dataclass.slots_dataclass(frozen=True)
 class WrapSerializer:
-    """
-    Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization logic,
-    and can modify the resulting value before returning it as the final output of serialization.
+    """Wrap serializers receive the raw inputs along with a handler function that applies the standard serialization
+    logic, and can modify the resulting value before returning it as the final output of serialization.
 
     Attributes:
         func: The function to be wrapped.
-        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
-        when_used: Determines the serializer will be used for serialization. Accepts a string with values `'always'`,
+        return_type: The return type for the function, if omitted it will be inferred from the type annotation.
+        when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
             `'unless-none'`, `'json'`, and `'json-unless-none'`. Defaults to 'always'.
     """
 
@@ -71,8 +69,7 @@ class WrapSerializer:
     def __get_pydantic_core_schema__(
         self, source_type: Any, handler: _annotated_handlers.GetCoreSchemaHandler
     ) -> core_schema.CoreSchema:
-        """
-        This method is used to get the Pydantic core schema of the class.
+        """This method is used to get the Pydantic core schema of the class.
 
         Args:
             source_type: Source type.
@@ -143,8 +140,7 @@ def field_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     check_fields: bool | None = None,
 ) -> Callable[[Any], Any]:
-    """
-    Decorate methods on the class indicating that they should be used to serialize fields.
+    """Decorate methods on the class indicating that they should be used to serialize fields.
 
     Four signatures are supported:
 
@@ -206,18 +202,16 @@ def model_serializer(
     when_used: Literal['always', 'unless-none', 'json', 'json-unless-none'] = 'always',
     return_type: Any = None,
 ) -> Callable[[Any], Any]:
-    """
-    Decorate a function which will be called to serialize the model.
-
-    (`when_used` is not permitted here since it makes no sense.)
+    """Decorate a function which will be called to serialize the model.
 
     Args:
         __f: The function to be decorated.
         mode: The serialization mode. `'plain'` means the function will be called
             instead of the default serialization logic, `'wrap'` means the function will be called with an argument
             to optionally call the default serialization logic.
-        when_used: Determines the serializer will be be used for serialization.
-        return_type: Optional return type for the function, if omitted it will be inferred from the type annotation.
+        when_used: Determines when this serializer should be used. Accepts a string with values `'always'`,
+            `'unless-none'`, `'json'`, `'json-unless-none'`. Defaults to `'always'`.
+        return_type: The return type for the function, if omitted it will be inferred from the type annotation.
 
     Returns:
         A decorator that can be used to decorate a function to be used as a model serializer.

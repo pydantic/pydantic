@@ -576,6 +576,8 @@ except ValidationError as exc_info:
     assert exc_info.errors()[0]['type'] == 'extra_forbidden'
 ```
 
+You can read more about the `extra` configuration on the [Extra Attributes](model_config.md#extra-attributes) section.
+
 ## `finite_number`
 
 This error is raised when the value is an infinite number.

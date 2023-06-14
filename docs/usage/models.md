@@ -94,9 +94,9 @@ Models possess the following methods and attributes:
     [Exporting models](exporting_models.md#modeldumpjson).
 - `model_extra`: get extra fields set during validation.
 - `model_fields_set`: set of fields which were set when the model instance was initialised.
-- `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [Schema](schema.md).
+- `model_json_schema()`: returns a dictionary representing the model as JSON Schema. See [JSON Schema](json_schema.md).
 - `model_modify_json_schema()`: a method for how the "generic" properties of the JSON schema are populated.
-    See [Schema](schema.md).
+    See [JSON Schema](json_schema.md).
 - `model_parameterized_name()`: compute the class name for parametrizations of generic classes.
 - `model_post_init()`: perform additional initialization after the model is initialised.
 - `model_rebuild()`: rebuild the model schema.
@@ -158,7 +158,7 @@ to the model field names. One common application of this functionality is integr
 (ORMs).
 
 To do this, use the `model_config` property on the model with `from_attributes` set to `True`. See
-[Model Config](model_config.md) and [ConfigDict](/api/config/#pydantic.config.ConfigDict) for more information.
+[Model Config](model_config.md) and [ConfigDict](../api/config.md#pydantic.config.ConfigDict) for more information.
 
 The example here uses [SQLAlchemy](https://www.sqlalchemy.org/), but the same approach should work for any ORM.
 
@@ -176,6 +176,7 @@ Base = declarative_base()
 
 class CompanyOrm(Base):
     __tablename__ = 'companies'
+
     id = Column(Integer, primary_key=True, nullable=False)
     public_key = Column(String(20), index=True, nullable=False, unique=True)
     name = Column(String(63), unique=True)
@@ -398,13 +399,21 @@ except ValidationError as e:
 
 ### Creating models without validation
 
-*pydantic* also provides the `model_construct()` method which allows models to be created **without validation** this
-can be useful when data has already been validated or comes from a trusted source and you want to create a model
-as efficiently as possible (`model_construct()` is generally around 30x faster than creating a model with full validation).
+Pydantic also provides the `model_construct()` method, which allows models to be created **without validation**. This
+can be useful in at least a few cases:
+
+* when working with complex data that is already known to be valid (for performance reasons)
+* when one or more of the validator functions are non-idempotent, or
+* when one or more of the validator functions have side effects that you don't want to be triggered.
+
+!!! note
+    In Pydantic V2, the performance gap between `BaseModel.__init__` and `BaseModel.model_construct` has been narrowed
+    considerably. For simple models, calling `BaseModel.__init__` may even be faster. If you are using `model_construct`
+    for performance reasons, you may want to profile your use case before assuming that `model_construct` is faster.
 
 !!! warning
     `model_construct()` does not do any validation, meaning it can create models which are invalid. **You should only
-    ever use the `model_construct()` method with data which has already been validated, or you trust.**
+    ever use the `model_construct()` method with data which has already been validated, or that you definitely trust.**
 
 ```py
 from pydantic import BaseModel
@@ -449,6 +458,23 @@ of the data provided.
 
 For example, in the example above, if `_fields_set` was not provided,
 `new_user.model_fields_set` would be `{'id', 'age', 'name'}`.
+
+Note that for subclasses of [`RootModel`](#custom-root-types), the root value can be passed to `model_construct`
+positionally, instead of using a keyword argument.
+
+Here are some additional notes on the behavior of `model_construct`:
+* When we say "no validation is performed" — this includes converting dicts to model instances. So if you have a field
+  with a `Model` type, you will need to convert the inner dict to a model yourself before passing it to
+  `model_construct`.
+  * In particular, the `model_construct` method does not support recursively constructing models from dicts.
+* If you do not pass keyword arguments for fields with defaults, the default values will still be used.
+* For models with `model_config['extra'] == 'allow'`, data not corresponding to fields will be correctly stored in
+  the `__pydantic_extra__` dict.
+* For models with private attributes, the `__pydantic_private__` dict will be initialized the same as it would be when
+  calling `__init__`.
+* When constructing an instance using `model_construct()`, no `__init__` method from the model or any of its parent
+  classes will be called, even when a custom `__init__` method is defined.
+
 
 ## Generic models
 
@@ -679,7 +705,7 @@ print(concrete_model(a=1, b=1))
 
 ## Dynamic model creation
 
-There are some occasions where the shape of a model is not known until runtime. For this *pydantic* provides
+There are some occasions where the shape of a model is not known until runtime. For this Pydantic provides
 the `create_model` method to allow models to be created on the fly.
 
 ```py
@@ -797,11 +823,9 @@ try:
 except ValidationError as e:
     print(e)
     """
-    2 validation errors for list[typed-dict]
+    1 validation error for list[typed-dict]
     0.id
       Input should be a valid integer, unable to parse string as an integer [type=int_parsing, input_value='wrong', input_type=str]
-    0.other
-      Extra inputs are not permitted [type=extra_forbidden, input_value='no', input_type=str]
     """
 ```
 
@@ -968,7 +992,7 @@ Field order is important in models for the following reasons:
 
 * validation is performed in the order fields are defined; [fields validators](validators.md)
   can access the values of earlier fields, but not later ones
-* field order is preserved in the model [schema](schema.md)
+* field order is preserved in the model [schema](json_schema.md)
 * field order is preserved in [validation errors](#error-handling)
 * field order is preserved by [`.model_dump()` and `.model_dump_json()` etc.](exporting_models.md#modeldict)
 
@@ -1013,10 +1037,10 @@ class Model(BaseModel):
     c: int = Field(...)
 ```
 
-Where `Field` refers to the [field function](schema.md#field-customization).
+Where `Field` refers to the [field function](json_schema.md#field-customization).
 
 Here `a`, `b` and `c` are all required. However, use of the ellipses in `b` will not work well
-with [mypy](/mypy_plugin/), and as of **v1.0** should be avoided in most cases.
+with [mypy](../integrations/mypy.md), and as of **v1.0** should be avoided in most cases.
 
 ### Required Optional fields
 
@@ -1050,7 +1074,39 @@ except ValidationError as e:
 In this model, `a` and `b` can take `None` as a value. But `b` is optional, while `a` and is required.
 `a` requires a value, even if the value is `None`.
 
-## Field with dynamic default value
+## Fields with non-hashable default values
+
+A common source of bugs in python is to use a mutable object as a default value for a function or method argument,
+as the same instance ends up being reused in each call.
+
+The `dataclasses` module actually raises an error in this case, indicating that you should use the `default_factory`
+argument to `dataclasses.field`.
+
+Pydantic also supports the use of a [`default_factory`](#fields-with-dynamic-default-values) for non-hashable default
+values, but it is not required. In the event that the default value is not hashable, Pydantic will deepcopy the default
+value when creating each instance of the model:
+
+```py
+from typing import Dict, List
+
+from pydantic import BaseModel
+
+
+class Model(BaseModel):
+    item_counts: List[Dict[str, int]] = [{}]
+
+
+m1 = Model()
+m1.item_counts[0]['a'] = 1
+print(m1.item_counts)
+#> [{'a': 1}]
+
+m2 = Model()
+print(m2.item_counts)
+#> [{}]
+```
+
+## Fields with dynamic default values
 
 When declaring a field with a default value, you may want it to be dynamic (i.e. different for each model).
 To do this, you may want to use a `default_factory`.
@@ -1075,7 +1131,7 @@ assert m1.uid != m2.uid
 assert m1.updated != m2.updated
 ```
 
-Where `Field` refers to the [field function](schema.md#field-customization).
+Where `Field` refers to the [field function](fields.md).
 
 !!! warning
     The `default_factory` expects the field type to be set.
@@ -1119,7 +1175,7 @@ are supported.
 
 ## Data conversion
 
-*pydantic* may cast input data to force it to conform to model field types,
+Pydantic may cast input data to force it to conform to model field types,
 and in some cases this may result in a loss of information.
 For example:
 
@@ -1137,14 +1193,14 @@ print(Model(a=3.000, b='2.72', c=b'binary data').model_dump())
 #> {'a': 3, 'b': 2.72, 'c': 'binary data'}
 ```
 
-This is a deliberate decision of *pydantic*, and in general it's the most useful approach. See
+This is a deliberate decision of Pydantic, and in general it's the most useful approach. See
 [here](https://github.com/pydantic/pydantic/issues/578) for a longer discussion on the subject.
 
 Nevertheless, [strict type checking](types/types.md#strict-types) is partially supported.
 
 ## Model signature
 
-All *pydantic* models will have their signature generated based on their fields:
+All Pydantic models will have their signature generated based on their fields:
 
 ```py
 import inspect
@@ -1187,14 +1243,14 @@ print(inspect.signature(MyModel))
 ```
 
 To be included in the signature, a field's alias or name must be a valid Python identifier.
-*pydantic* prefers aliases over names, but may use field names if the alias is not a valid Python identifier.
+Pydantic prefers aliases over names, but may use field names if the alias is not a valid Python identifier.
 
 If a field's alias and name are both invalid identifiers, a `**data` argument will be added.
 In addition, the `**data` argument will always be present in the signature if `Config.extra` is `Extra.allow`.
 
 ## Structural pattern matching
 
-*pydantic* supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
+Pydantic supports structural pattern matching for models, as introduced by [PEP 636](https://peps.python.org/pep-0636/) in Python 3.10.
 
 ```py requires="3.10" lint="skip"
 from pydantic import BaseModel
@@ -1254,4 +1310,4 @@ print('id(c1.arr) == id(c2.arr)  ', id(c1.arr) == id(c2.arr))
 ```
 
 !!! note
-    There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting [`config.revalidate_instances='always'`](/api/config/#pydantic.config.ConfigDict) in your model.
+    There are some situations where Pydantic does not copy attributes, such as when passing models &mdash; we use the model as is. You can override this behaviour by setting [`config.revalidate_instances='always'`](../api/config.md#pydantic.config.ConfigDict) in your model.

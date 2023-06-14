@@ -31,8 +31,7 @@ def validate_call(
     config: ConfigDict | None = None,
     validate_return: bool = False,
 ) -> AnyCallableT | Callable[[AnyCallableT], AnyCallableT]:
-    """
-    Decorator to validate the arguments passed to a function and, optionally, the return value.
+    """Returns a decorated version of the function that validates the arguments and, optionally, the return value.
 
     Args:
         __func: The function to be decorated.

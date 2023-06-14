@@ -1,5 +1,4 @@
-"""
-Logic for generating pydantic-core schemas for standard library types.
+"""Logic for generating pydantic-core schemas for standard library types.
 
 Import of this module is deferred since it contains imports of many standard library modules.
 """
@@ -100,7 +99,7 @@ def enum_prepare_pydantic_annotations(
     updates = {k: v for k, v in updates.items() if v is not None}
 
     def get_json_schema(_, handler: GetJsonSchemaHandler) -> JsonSchemaValue:
-        json_schema = handler(core_schema.literal_schema([x.value for x in cases]))
+        json_schema = handler(core_schema.literal_schema([x.value for x in cases], ref=enum_ref))
         original_schema = handler.resolve_ref_schema(json_schema)
         update_json_schema(original_schema, updates)
         return json_schema
@@ -325,7 +324,7 @@ def decimal_prepare_pydantic_annotations(
 
 @slots_dataclass
 class InnerSchemaValidator:
-    """Use a fixed CoreSchema, avoiding interference from outward annotations"""
+    """Use a fixed CoreSchema, avoiding interference from outward annotations."""
 
     core_schema: CoreSchema
     js_schema: JsonSchemaValue | None = None
@@ -913,7 +912,6 @@ PREPARE_METHODS: tuple[Callable[[Any, Iterable[Any], ConfigDict], tuple[Any, lis
     uuid_prepare_pydantic_annotations,
     path_schema_prepare_pydantic_annotations,
     mapping_like_prepare_pydantic_annotations,
-    enum_prepare_pydantic_annotations,
     ip_prepare_pydantic_annotations,
     url_prepare_pydantic_annotations,
 )

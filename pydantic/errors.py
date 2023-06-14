@@ -1,6 +1,4 @@
-"""
-Pydantic errors.
-"""
+"""Pydantic-specific errors."""
 from __future__ import annotations as _annotations
 
 import re
@@ -34,7 +32,7 @@ PydanticErrorCodes = Literal[
     'model-field-overridden',
     'model-field-missing-annotation',
     'config-both',
-    'deprecated-kwargs',
+    'removed-kwargs',
     'invalid-for-json-schema',
     'json-schema-already-used',
     'base-model-instantiated',
@@ -60,8 +58,7 @@ PydanticErrorCodes = Literal[
 
 
 class PydanticErrorMixin:
-    """
-    A mixin class for common functionality shared by all Pydantic-specific errors.
+    """A mixin class for common functionality shared by all Pydantic-specific errors.
 
     Attributes:
         message: A message describing the error.
@@ -80,9 +77,7 @@ class PydanticErrorMixin:
 
 
 class PydanticUserError(PydanticErrorMixin, TypeError):
-    """
-    Error raised due to incorrect use of Pydantic.
-    """
+    """An error raised due to incorrect use of Pydantic."""
 
 
 class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
@@ -99,8 +94,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
 
     @classmethod
     def from_name_error(cls, name_error: NameError) -> Self:
-        """
-        Convert a `NameError` to a `PydanticUndefinedAnnotation` error.
+        """Convert a `NameError` to a `PydanticUndefinedAnnotation` error.
 
         Args:
             name_error: `NameError` to be converted.
@@ -116,8 +110,7 @@ class PydanticUndefinedAnnotation(PydanticErrorMixin, NameError):
 
 
 class PydanticImportError(PydanticErrorMixin, ImportError):
-    """
-    Error raised when an import fails due to module changes between V1 and V2.
+    """An error raised when an import fails due to module changes between V1 and V2.
 
     Attributes:
         message: Description of the error.
@@ -128,8 +121,7 @@ class PydanticImportError(PydanticErrorMixin, ImportError):
 
 
 class PydanticSchemaGenerationError(PydanticUserError):
-    """
-    Error raised during failures to generate a `CoreSchema` for some type.
+    """An error raised during failures to generate a `CoreSchema` for some type.
 
     Attributes:
         message: Description of the error.
@@ -140,8 +132,7 @@ class PydanticSchemaGenerationError(PydanticUserError):
 
 
 class PydanticInvalidForJsonSchema(PydanticUserError):
-    """
-    Error raised during failures to generate a JSON schema for some `CoreSchema`.
+    """An error raised during failures to generate a JSON schema for some `CoreSchema`.
 
     Attributes:
         message: Description of the error.
