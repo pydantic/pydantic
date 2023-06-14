@@ -309,6 +309,12 @@ impl ModelValidator {
         let instance_ref = instance.as_ref(py);
 
         if self.root_model {
+            let fields_set = if input.to_object(py).is(&UndefinedType::py_undefined()) {
+                PySet::empty(py)?
+            } else {
+                PySet::new(py, [&String::from(ROOT_FIELD)])?
+            };
+            force_setattr(py, instance_ref, intern!(py, DUNDER_FIELDS_SET_KEY), fields_set)?;
             force_setattr(py, instance_ref, intern!(py, ROOT_FIELD), output)?;
         } else {
             let (model_dict, model_extra, val_fields_set): (&PyAny, &PyAny, &PyAny) = output.extract(py)?;
