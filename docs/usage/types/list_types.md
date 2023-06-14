@@ -21,7 +21,7 @@
 
 ### Typing Iterables
 
-*pydantic* uses standard library `typing` types as defined in PEP 484 to define complex objects.
+Pydantic uses standard library `typing` types as defined in PEP 484 to define complex objects.
 
 ```py
 from typing import Deque, Dict, FrozenSet, List, Optional, Sequence, Set, Tuple, Union

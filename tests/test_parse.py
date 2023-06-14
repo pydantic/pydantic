@@ -1,9 +1,11 @@
 from typing import List, Tuple
 
 import pytest
+from pydantic_core import CoreSchema
 
-from pydantic import BaseModel, ValidationError, model_validator, parse_obj_as
+from pydantic import BaseModel, GetJsonSchemaHandler, ValidationError, model_validator, parse_obj_as
 from pydantic.functional_serializers import model_serializer
+from pydantic.json_schema import JsonSchemaValue
 
 
 class Model(BaseModel):
@@ -76,9 +78,12 @@ def test_model_validate_root():
                 return data
 
         @classmethod
-        def __get_pydantic_json_schema__(cls, core_schema, handler):
+        def __get_pydantic_json_schema__(
+            cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
+        ) -> JsonSchemaValue:
             json_schema = handler(core_schema)
-            return json_schema['properties']['root']
+            root = handler.resolve_ref_schema(json_schema)['properties']['root']
+            return root
 
     # Validation
     m = MyModel.model_validate('a')

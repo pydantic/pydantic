@@ -1,6 +1,3 @@
-!!! note
-    Both postponed annotations via the future import and `ForwardRef` require Python 3.7+.
-
 Postponed annotations (as described in [PEP563](https://www.python.org/dev/peps/pep-0563/))
 "just work".
 
@@ -21,11 +18,10 @@ print(Model(a=('1', 2, 3), b='ok'))
 #> a=[1, 2, 3] b='ok'
 ```
 
-Internally, *pydantic*  will call a method similar to `typing.get_type_hints` to resolve annotations.
+Internally, Pydantic will call a method similar to `typing.get_type_hints` to resolve annotations.
 
-In cases where the referenced type is not yet defined, `ForwardRef` can be used (although referencing the
-type directly or by its string is a simpler solution in the case of
-[self-referencing models](#self-referencing-models)).
+Even without using `from __future__ import annotations`, in cases where the referenced type is not yet defined, a
+`ForwardRef` or string can be used:
 
 ```py
 from typing import ForwardRef
@@ -46,9 +42,9 @@ print(Foo(b={'a': '321'}))
 #> a=123 b=Foo(a=321, b=None)
 ```
 
-## Self-referencing Models
+## Self-referencing (or "Recursive") Models
 
-Data structures with self-referencing models are also supported. Self-referencing fields will be automatically
+Models with self-referencing fields are also supported. Self-referencing fields will be automatically
 resolved after model creation.
 
 Within the model, you can refer to the not-yet-constructed model using a string:
@@ -69,9 +65,7 @@ print(Foo(sibling={'a': '321'}))
 #> a=123 sibling=Foo(a=321, sibling=None)
 ```
 
-Since Python 3.7, you can also refer it by its type, provided you import `annotations` (see
-[above](postponed_annotations.md) for support depending on Python
-and *pydantic* versions).
+If you use `from __future__ import annotations`, you can also just refer to the model by its type name:
 
 ```py
 from __future__ import annotations

@@ -4,8 +4,8 @@ description: Support for types with fields including NamedTuple and TypedDict.
 
 Pydantic supports four types with fields:
 
-* [`BaseModel`](/usage/models/)
-* [dataclasses](/usage/dataclasses/)
+* [`BaseModel`](../models.md)
+* [dataclasses](../dataclasses.md)
 * [`NamedTuple`](#namedtuple)
 * [`TypedDict`](#typeddict)
 
@@ -52,7 +52,7 @@ except ValidationError as e:
 ```py
 from typing_extensions import TypedDict
 
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, ConfigDict, ValidationError
 
 
 # `total=False` means keys are non-required
@@ -67,7 +67,7 @@ class User(TypedDict):
 
 
 class Model(BaseModel):
-    model_config = dict(extra='forbid')
+    model_config = ConfigDict(extra='forbid')
     u: User
 
 

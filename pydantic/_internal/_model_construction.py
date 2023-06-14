@@ -362,10 +362,13 @@ def complete_model_class(
         types_namespace,
         typevars_map,
     )
+
     handler = CallbackGetCoreSchemaHandler(
         partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-        gen_schema.generate_schema,
+        gen_schema,
+        ref_mode='unpack',
     )
+
     try:
         schema = cls.__get_pydantic_core_schema__(cls, handler)
     except PydanticUndefinedAnnotation as e:
@@ -389,10 +392,11 @@ def complete_model_class(
 
     core_config = config_wrapper.core_config(cls)
 
+    schema = gen_schema.collect_definitions(schema)
+    schema = flatten_schema_defs(schema)
+
     # debug(schema)
     cls.__pydantic_core_schema__ = schema
-
-    schema = flatten_schema_defs(schema)
     simplified_core_schema = inline_schema_defs(schema)
     cls.__pydantic_validator__ = SchemaValidator(simplified_core_schema, core_config)
     cls.__pydantic_serializer__ = SchemaSerializer(simplified_core_schema, core_config)
