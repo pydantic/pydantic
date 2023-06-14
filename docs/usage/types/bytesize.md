@@ -41,7 +41,7 @@ class MyModel(BaseModel):
 You can use the `ByteSize` data type to (case-insensitively) convert a string representation of a number of bytes into
 an integer, and also to print out human-readable strings representing a number of bytes.
 
-We interpret `'1KB'` to mean 1000 bytes, and `'1KiB'` to mean 1024 bytes. In general, including a middle `'i'`
+In conformance with [IEC 80000-13 Standard](https://en.wikipedia.org/wiki/ISO/IEC_80000) we interpret `'1KB'` to mean 1000 bytes, and `'1KiB'` to mean 1024 bytes. In general, including a middle `'i'`
 will cause the unit to be interpreted as a power of 2, rather than a power of 10 (so, for example,
 `'1 MB'` is treated as `1_000_000` bytes, whereas `'1 MiB'` is treated as `1_048_576` bytes).
 
