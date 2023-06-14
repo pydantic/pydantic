@@ -1,4 +1,4 @@
-"""Generators for converting between different naming conventions."""
+"""Alias generators for converting between different capitalization conventions."""
 import re
 
 __all__ = ('to_pascal', 'to_camel', 'to_snake')
@@ -8,7 +8,7 @@ def to_pascal(snake: str) -> str:
     """Convert a snake_case string to PascalCase.
 
     Args:
-        snake: The snake_case string to convert.
+        snake: The string to convert.
 
     Returns:
         The PascalCase string.
@@ -21,7 +21,7 @@ def to_camel(snake: str) -> str:
     """Convert a snake_case string to camelCase.
 
     Args:
-        snake: The snake_case string to convert.
+        snake: The string to convert.
 
     Returns:
         The converted camelCase string.

@@ -1,6 +1,4 @@
-"""
-Private logic related to fields (the `Field()` function and `FieldInfo` class), and arguments to `Annotated`.
-"""
+"""Private logic related to fields (the `Field()` function and `FieldInfo` class), and arguments to `Annotated`."""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -36,9 +34,7 @@ def get_type_hints_infer_globalns(
 
 
 class _UndefinedType:
-    """
-    Singleton class to represent an undefined value.
-    """
+    """Singleton class to represent an undefined value."""
 
     def __repr__(self) -> str:
         return 'PydanticUndefined'
@@ -57,9 +53,7 @@ Undefined = _UndefinedType()
 
 
 class PydanticMetadata(Representation):
-    """
-    Base class for annotation markers like `Strict`.
-    """
+    """Base class for annotation markers like `Strict`."""
 
     __slots__ = ()
 
@@ -77,8 +71,7 @@ def collect_model_fields(  # noqa: C901
     *,
     typevars_map: dict[Any, Any] | None = None,
 ) -> tuple[dict[str, FieldInfo], set[str]]:
-    """
-    Collect the fields of a nascent pydantic model
+    """Collect the fields of a nascent pydantic model.
 
     Also collect the names of any ClassVars present in the type hints.
 
@@ -99,6 +92,11 @@ def collect_model_fields(  # noqa: C901
 
     class_vars: set[str] = set()
     for ann_name, ann_type in type_hints.items():
+        if ann_name == 'model_config':
+            # We never want to treat `model_config` as a field
+            # Note: we may need to change this logic if/when we introduce a `BareModel` class with no
+            # protected namespaces (where `model_config` might be allowed as a field name)
+            continue
         for protected_namespace in config_wrapper.protected_namespaces:
             if ann_name.startswith(protected_namespace):
                 raise NameError(f'Field "{ann_name}" has conflict with protected namespace "{protected_namespace}"')

@@ -281,7 +281,7 @@ It has the following arguments:
 * `**` any other keyword arguments (e.g. `examples`) will be added verbatim to the field's schema
 
 !!! note
-    *pydantic* validates strings using `re.match`,
+    Pydantic validates strings using `re.match`,
     which treats regular expressions as implicitly anchored at the beginning.
     On the contrary,
     JSON Schema validators treat the `pattern` keyword as implicitly unanchored,
@@ -294,14 +294,14 @@ It has the following arguments:
     (e.g. `.*?foo` to match any string containing the substring `foo`).
 
     See [#1631](https://github.com/pydantic/pydantic/issues/1631)
-    for a discussion of possible changes to *pydantic* behavior in **v2**.
+    for a discussion of possible changes to Pydantic behavior in **v2**.
 
 Instead of using `Field`, the `fields` property of [the Config class](model_config.md) can be used
 to set all of the arguments above except `default`.
 
 ### Unenforced Field constraints
 
-If *pydantic* finds constraints which are not being enforced, an error will be raised. If you want to force the
+If Pydantic finds constraints which are not being enforced, an error will be raised. If you want to force the
 constraint to appear in the schema, even though it's not being checked upon parsing, you can use variadic arguments
 to `Field()` with the raw schema attribute name:
 
@@ -609,9 +609,9 @@ following priority order (when there is an equivalent available):
 1. [JSON Schema Core](http://json-schema.org/latest/json-schema-core.html#rfc.section.4.3.1)
 2. [JSON Schema Validation](http://json-schema.org/latest/json-schema-validation.html)
 3. [OpenAPI Data Types](https://github.com/OAI/OpenAPI-Specification/blob/master/versions/3.0.2.md#data-types)
-4. The standard `format` JSON field is used to define *pydantic* extensions for more complex `string` sub-types.
+4. The standard `format` JSON field is used to define Pydantic extensions for more complex `string` sub-types.
 
-The field schema mapping from Python / *pydantic* to JSON Schema is done as follows:
+The field schema mapping from Python / Pydantic to JSON Schema is done as follows:
 
 {{ schema_mappings_table }}
 
@@ -774,6 +774,7 @@ class Person(BaseModel):
         cls, core_schema: CoreSchema, handler: GetJsonSchemaHandler
     ) -> JsonSchemaValue:
         json_schema = handler(core_schema)
+        json_schema = handler.resolve_ref_schema(json_schema)
         json_schema['examples'] = [
             {
                 'name': 'John Doe',

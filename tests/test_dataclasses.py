@@ -566,7 +566,6 @@ def test_schema():
             },
             'aliases': {
                 'additionalProperties': {'type': 'string'},
-                'default': {'John': 'Joey'},
                 'title': 'Aliases',
                 'type': 'object',
             },

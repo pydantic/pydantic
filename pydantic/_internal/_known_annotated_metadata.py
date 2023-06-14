@@ -58,9 +58,8 @@ def expand_grouped_metadata(annotations: Iterable[Any]) -> Iterable[Any]:
             yield annotation
 
 
-def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # noqa: C901
-    """
-    Apply `annotation` to `schema` if it is an annotation we know about (Gt, Le, etc.).
+def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema | None:  # noqa: C901
+    """Apply `annotation` to `schema` if it is an annotation we know about (Gt, Le, etc.).
     Otherwise return `None`.
 
     This does not handle all known annotations. If / when it does, it can always
@@ -140,17 +139,18 @@ def apply_known_metadata(annotation: Any, schema: CoreSchema) -> CoreSchema:  # 
             return v
 
         return cs.no_info_after_validator_function(val_func, schema)
-
-    # for all other annotations just update the schema
-    # this includes things like `strict` which apply to pretty much every schema
-    schema.update(schema_update)  # type: ignore
+    elif schema_update:
+        # for all other annotations just update the schema
+        # this includes things like `strict` which apply to pretty much every schema
+        schema.update(schema_update)  # type: ignore
+    else:
+        return None
 
     return schema
 
 
 def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], list[Any]]:
-    """
-    Split `annotations` into known metadata and unknown annotations.
+    """Split `annotations` into known metadata and unknown annotations.
 
     For example `[Gt(1), Len(42), Unknown()]` -> `({'gt': 1, 'min_length': 42}, [Unknown()])`.
     """
@@ -180,8 +180,7 @@ def collect_known_metadata(annotations: Iterable[Any]) -> tuple[dict[str, Any], 
 
 
 def check_metadata(metadata: dict[str, Any], allowed: Iterable[str], source_type: Any) -> None:
-    """
-    A small utility function to validate that the given metadata can be applied to the target.
+    """A small utility function to validate that the given metadata can be applied to the target.
     More than saving lines of code, this gives us a consistent error message for all of our internal implementations.
     """
     unknown = metadata.keys() - set(allowed)

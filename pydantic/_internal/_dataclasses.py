@@ -1,6 +1,4 @@
-"""
-Private logic for creating pydantic dataclasses.
-"""
+"""Private logic for creating pydantic dataclasses."""
 from __future__ import annotations as _annotations
 
 import dataclasses
@@ -45,8 +43,11 @@ if typing.TYPE_CHECKING:
 
 
 def set_dataclass_fields(cls: type[StandardDataclass], types_namespace: dict[str, Any] | None = None) -> None:
-    """
-    Collect and set `cls.__pydantic_fields__`
+    """Collect and set `cls.__pydantic_fields__`.
+
+    Args:
+        cls: The class.
+        types_namespace: The types namespace, defaults to `None`.
     """
     typevars_map = get_standard_typevars_map(cls)
     fields = collect_dataclass_fields(cls, types_namespace, typevars_map=typevars_map)
@@ -61,12 +62,23 @@ def complete_dataclass(
     raise_errors: bool = True,
     types_namespace: dict[str, Any] | None,
 ) -> bool:
-    """
-    Finish building a pydantic dataclass.
+    """Finish building a pydantic dataclass.
 
     This logic is called on a class which is yet to be wrapped in `dataclasses.dataclass()`.
 
     This is somewhat analogous to `pydantic._internal._model_construction.complete_model_class`.
+
+    Args:
+        cls: The class.
+        config_wrapper: The config wrapper instance.
+        raise_errors: Whether to raise errors, defaults to `True`.
+        types_namespace: The types namespace.
+
+    Returns:
+        `True` if building a pydantic dataclass is successfully completed, `False` otherwise.
+
+    Raises:
+        PydanticUndefinedAnnotation: If `raise_error` is `True` and there is an undefined annotations.
     """
     if hasattr(cls, '__post_init_post_parse__'):
         warnings.warn(
@@ -103,7 +115,8 @@ def complete_dataclass(
                 cls,
                 CallbackGetCoreSchemaHandler(
                     partial(gen_schema.generate_schema, from_dunder_get_core_schema=False),
-                    gen_schema.generate_schema,
+                    gen_schema,
+                    ref_mode='unpack',
                 ),
             )
         else:
@@ -133,6 +146,8 @@ def complete_dataclass(
 
     core_config = config_wrapper.core_config(cls)
 
+    schema = gen_schema.collect_definitions(schema)
+
     # We are about to set all the remaining required properties expected for this cast;
     # __pydantic_decorators__ and __pydantic_fields__ should already be set
     cls = typing.cast('type[PydanticDataclass]', cls)
@@ -154,9 +169,8 @@ def complete_dataclass(
 
 
 def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
-    """
-    Whether a class is a stdlib dataclass
-    (useful to discriminated a pydantic dataclass that is actually a wrapper around a stdlib dataclass)
+    """Whether a class is a stdlib dataclass
+    (useful to discriminated a pydantic dataclass that is actually a wrapper around a stdlib dataclass).
 
     we check that
     - `_cls` is a dataclass
@@ -174,6 +188,12 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
     ```
     In this case, when we first check `B`, we make an extra check and look at the annotations ('y'),
     which won't be a superset of all the dataclass fields (only the stdlib fields i.e. 'x')
+
+    Args:
+        cls: The class.
+
+    Returns:
+        `True` if the class is a stdlib dataclass, `False` otherwise.
     """
     return (
         dataclasses.is_dataclass(_cls)
@@ -183,4 +203,12 @@ def is_builtin_dataclass(_cls: type[Any]) -> TypeGuard[type[StandardDataclass]]:
 
 
 def is_pydantic_dataclass(_cls: type[Any]) -> TypeGuard[type[PydanticDataclass]]:
+    """Whether a class is a pydantic dataclass.
+
+    Args:
+        cls: The class.
+
+    Returns:
+        `True` if the class is a pydantic dataclass, `False` otherwise.
+    """
     return dataclasses.is_dataclass(_cls) and '__pydantic_validator__' in _cls.__dict__

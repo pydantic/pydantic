@@ -125,7 +125,58 @@ TODO
 
 ## Documentation style
 
-Documentation is written in Markdown and built using Material for MkDocs.
+Documentation is written in Markdown and built using [Material for MkDocs](https://squidfunk.github.io/mkdocs-material/). API documentation is build from docstrings using [mkdocstrings](https://mkdocstrings.github.io/).
+
+### Code documentation
+
+When contributing to Pydantic, please make sure that all code is well documented. The following should be documented using properly formatted docstrings:
+
+- Modules
+- Class definitions
+- Function definitions
+- Module-level variables
+
+Pydantic uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) formatted according to [PEP 257](https://www.python.org/dev/peps/pep-0257/) guidelines. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) for further examples.)
+
+[pydocstyle](https://www.pydocstyle.org/en/stable/index.html) is used for linting docstrings. You can run `make format` to check your docstrings.
+
+Where this is a conflict between Google-style docstrings and pydocstyle linting, follow the pydocstyle linting hints.
+
+Class attributes and function arguments should be documented in the format "name: description." When applicable, a return type should be documented with just a description. Types are inferred from the signature.
+
+```python
+class Foo:
+    """A class docstring.
+
+    Attributes:
+        bar: A description of bar. Defaults to "bar".
+    """
+
+    bar: str = 'bar'
+```
+
+```python
+def bar(self, baz: int) -> str:
+    """A function docstring.
+
+    Args:
+        baz: A description of `baz`.
+
+    Returns:
+        A description of the return value.
+    """
+
+    return 'bar'
+```
+
+You may include example code in docstrings. This code should be complete, self-contained, and runnable. Docstring examples are tested using [doctest](https://docs.python.org/3/library/doctest.html), so make sure they are correct and complete. See [FieldInfo.from_annotated_attribute()](api/fields.md#pydantic.fields.FieldInfo.from_annotated_attribute) for an example.
+
+!!! note "Class and instance attributes"
+    Class attributes should be documented in the class docstring.
+
+    Instance attributes should be documented as "Args" in the `__init__` docstring.
+
+### Guide documentation
 
 In general, documentation should be written in a friendly, approachable style. It should be easy to read and understand, and should be as concise as possible while still being complete.
 
@@ -137,9 +188,3 @@ Pydantic's test coverage will test all code examples in the documentation, so it
 # Run tests and update code examples
 pytest --update-examples
 ```
-
-### Code documentation
-
-Modules, classes, functions, and module-level variables should be documented using docstrings formatted according to [PEP 257](https://www.python.org/dev/peps/pep-0257/). Type annotations should be used wherever possible.
-
-Pydantic uses [Google-style docstrings](https://google.github.io/styleguide/pyguide.html#38-comments-and-docstrings) for all docstrings. (See [Example Google Style Python Docstrings](https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html) for further examples.)
