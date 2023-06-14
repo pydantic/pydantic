@@ -363,10 +363,109 @@ print(foo)
     }
     ```
 
-    Check the [JSON Schema 2020-12] for more details.
+    See the [JSON Schema Draft 2020-12] for more details.
 
 ## String Constraints
 
-TODO: Document usage of other `Field` keyword arguments
+There are fields that can be used to constrain strings:
 
-[JSON Schema 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
+* `min_length`: Minimum length of the string.
+* `max_length`: Maximum length of the string.
+* `pattern`: A regular expression that the string must match.
+
+Here's an example:
+
+```py
+from pydantic import BaseModel, Field
+
+
+class Foo(BaseModel):
+    short: str = Field(min_length=3)
+    long: str = Field(max_length=10)
+    regex: str = Field(pattern=r"^\d*$")  # (1)!
+
+
+foo = Foo(short="foo", long="foobarbaz", regex="123")
+print(foo)
+#> short='foo' long='foobarbaz' regex='123'
+```
+
+1. Only digits are allowed.
+
+??? info "JSON Schema"
+    In the generated JSON schema:
+
+    - `min_length` constraint will be translated to `minLength`.
+    - `max_length` constraint will be translated to `maxLength`.
+    - `pattern` constraint will be translated to `pattern`.
+
+    The above snippet will generate the following JSON Schema:
+
+    ```json
+    {
+      "title": "Foo",
+      "type": "object",
+      "properties": {
+        "short": {
+          "title": "Short",
+          "type": "string",
+          "minLength": 3
+        },
+        "long": {
+          "title": "Long",
+          "type": "string",
+          "maxLength": 10
+        },
+        "regex": {
+          "title": "Regex",
+          "type": "string",
+          "pattern": "^\\d*$"
+        }
+      },
+      "required": [
+        "short",
+        "long",
+        "regex"
+      ]
+    }
+    ```
+
+## Decimal Constraints
+
+<!--
+* `max_digits`: for `Decimal` values, this adds a validation to have a maximum number of digits within the decimal. It
+  does not include a zero before the decimal point or trailing decimal zeroes.
+* `decimal_places`: for `Decimal` values, this adds a validation to have at most a number of decimal places allowed. It
+  does not include trailing decimal zeroes.
+ -->
+
+There are fields that can be used to constrain decimals:
+
+* `max_digits`: Maximum number of digits within the `Decimal`. It does not include a zero before the decimal point or
+  trailing decimal zeroes.
+* `decimal_places`: Maximum number of decimal places allowed. It does not include trailing decimal zeroes.
+
+Here's an example:
+
+```py
+from pydantic import BaseModel, Field
+
+
+class Foo(BaseModel):
+    precise: Decimal = Field(max_digits=5, decimal_places=2)
+
+
+foo = Foo(precise=Decimal("123.45"))
+print(foo)
+#> precise=Decimal('123.45')
+```
+
+## Dataclass Constraints
+
+There are fields that can be used to constrain dataclasses:
+
+* `init_var`: TODO
+* `kw_only`: TODO
+
+
+[JSON Schema Draft 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
