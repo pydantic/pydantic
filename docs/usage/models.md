@@ -399,13 +399,21 @@ except ValidationError as e:
 
 ### Creating models without validation
 
-Pydantic also provides the `model_construct()` method which allows models to be created **without validation** this
-can be useful when data has already been validated or comes from a trusted source and you want to create a model
-as efficiently as possible (`model_construct()` is generally around 30x faster than creating a model with full validation).
+Pydantic also provides the `model_construct()` method, which allows models to be created **without validation**. This
+can be useful in at least a few cases:
+
+* when working with complex data that is already known to be valid (for performance reasons)
+* when one or more of the validator functions are non-idempotent, or
+* when one or more of the validator functions have side effects that you don't want to be triggered.
+
+!!! note
+    In Pydantic V2, the performance gap between `BaseModel.__init__` and `BaseModel.model_construct` has been narrowed
+    considerably. For simple models, calling `BaseModel.__init__` may even be faster. If you are using `model_construct`
+    for performance reasons, you may want to profile your use case before assuming that `model_construct` is faster.
 
 !!! warning
     `model_construct()` does not do any validation, meaning it can create models which are invalid. **You should only
-    ever use the `model_construct()` method with data which has already been validated, or you trust.**
+    ever use the `model_construct()` method with data which has already been validated, or that you definitely trust.**
 
 ```py
 from pydantic import BaseModel
@@ -450,6 +458,23 @@ of the data provided.
 
 For example, in the example above, if `_fields_set` was not provided,
 `new_user.model_fields_set` would be `{'id', 'age', 'name'}`.
+
+Note that for subclasses of [`RootModel`](#custom-root-types), the root value can be passed to `model_construct`
+positionally, instead of using a keyword argument.
+
+Here are some additional notes on the behavior of `model_construct`:
+* When we say "no validation is performed" — this includes converting dicts to model instances. So if you have a field
+  with a `Model` type, you will need to convert the inner dict to a model yourself before passing it to
+  `model_construct`.
+  * In particular, the `model_construct` method does not support recursively constructing models from dicts.
+* If you do not pass keyword arguments for fields with defaults, the default values will still be used.
+* For models with `model_config['extra'] == 'allow'`, data not corresponding to fields will be correctly stored in
+  the `__pydantic_extra__` dict.
+* For models with private attributes, the `__pydantic_private__` dict will be initialized the same as it would be when
+  calling `__init__`.
+* When constructing an instance using `model_construct()`, no `__init__` method from the model or any of its parent
+  classes will be called, even when a custom `__init__` method is defined.
+
 
 ## Generic models
 

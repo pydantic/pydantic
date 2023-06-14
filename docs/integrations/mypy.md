@@ -89,9 +89,9 @@ should also work well with mypy.
   will use the types of the model fields (otherwise they will be annotated as `Any` to allow parsing).
 
 ### Generate a typed signature for `Model.model_construct`
-* The [`model_construct`](../usage/models.md#creating-models-without-validation) method is a faster alternative to `__init__`
-  when input data is known to be valid and does not need to be parsed. But because this method performs no runtime
-  validation, static checking is important to detect errors.
+* The [`model_construct`](../usage/models.md#creating-models-without-validation) method is an alternative to `__init__`
+  when input data is known to be valid and should not be parsed. Because this method performs no runtime validation,
+  static checking is important to detect errors.
 
 ### Respect `Config.allow_mutation`
 * If `Config.allow_mutation` is `False`, you'll get a mypy error if you try to change
