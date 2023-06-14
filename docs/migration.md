@@ -180,6 +180,25 @@ Model(x=1)
   To work around this, use an `IsInstance` validator (more details to come).
 * Subclasses of built-ins won't validate into their subclass types; you'll need to use an `IsInstance` validator to validate these types.
 
+### Input types are not preserved
+
+In Pydantic V1 we made an effort to preserve the input type.
+For example, given the annotation `Mapping[str, int]` if you passed in a `collection.Counter()` you'd get a `collection.Counter()` as the value.
+In Pydantic V2 we no longer promise we will preserve the input type (although we may in some cases).
+Instead, we only promise that the output type will match the type annotations.
+In this case, we promise it will be a valid `Mapping`, so it could be a plain Python dict.
+If you want the output type to be a specific type, consider annotating it as such.
+
+```python
+from collections import Counter
+from typing import Mapping
+
+from pydantic import TypeAdapter
+
+print(type(TypeAdapter(Mapping[str, int]).validate_python(Counter())))
+#> <class 'dict'>
+```
+
 ### Changes to Generic models
 
 * While it does not raise an error at runtime yet, subclass checks for parametrized generics should no longer be used.
