@@ -1,7 +1,35 @@
 
-The `Field` class is used to define fields in models.
+The `Field` function is used to customize and add metadata to fields of models.
 
 TODO: Refactor the `Field customization` section from the `json_schema.md`.
+
+## Default values
+
+The `default` parameter is used to define a default value for a field.
+
+```py
+from pydantic import BaseModel, Field
+class User(BaseModel):
+    name: str = Field(default='John Doe')
+user = User()
+print(user)
+#> name='John Doe'
+```
+
+You can also use `default_factory` to define a callable that will be called to generate a default value.
+
+```py
+from uuid import uuid4
+from pydantic import BaseModel, Field
+class User(BaseModel):
+    id: int = Field(default_factory=lambda: uuid4().hex)
+```
+
+!!! info
+    The `default` and `default_factory` parameters are mutually exclusive.
+
+!!! note
+    If you use `typing.Optional`, it doesn't mean that the field has a default value of `None`!
 
 ## Field aliases
 
@@ -246,4 +274,99 @@ print(user)
 #> first_name='John' last_name='Doe'
 ```
 
+## Number Constraints
+
+There are fields that can be used to constrain numbers:
+
+* `gt` - greater than
+* `lt` - less than
+* `ge` - greater than or equal to
+* `le` - less than or equal to
+* `multiple_of` - a multiple of the given number
+* `allow_inf_nan` - allow `'inf'`, `'-inf'`, `'nan'` values
+
+Here's an example:
+
+```py
+from pydantic import BaseModel, Field
+class Foo(BaseModel):
+    positive: int = Field(..., gt=0)
+    non_negative: int = Field(..., ge=0)
+    negative: int = Field(..., lt=0)
+    non_positive: int = Field(..., le=0)
+    even: int = Field(..., multiple_of=2)
+    love_for_pydantic: float = Field(..., allow_inf_nan=True)
+foo = Foo(
+    positive=1,
+    non_negative=0,
+    negative=-1,
+    non_positive=0,
+    even=2,
+    love_for_pydantic=float("inf"),
+)
+print(foo)
+#> positive=1 non_negative=0 negative=-1 non_positive=0 even=2 love_for_pydantic=inf
+```
+
+??? info "JSON Schema"
+    In the generated JSON schema:
+
+    - `gt` and `lt` constraints will be translated to `exclusiveMinimum` and `exclusiveMaximum`.
+    - `ge` and `le` constraints will be translated to `minimum` and `maximum`.
+    - `multiple_of` constraint will be translated to `multipleOf`.
+
+    The above snippet will generate the following JSON Schema:
+
+    ```json
+    {
+      "title": "Foo",
+      "type": "object",
+      "properties": {
+        "positive": {
+          "title": "Positive",
+          "type": "integer",
+          "exclusiveMinimum": 0
+        },
+        "non_negative": {
+          "title": "Non Negative",
+          "type": "integer",
+          "minimum": 0
+        },
+        "negative": {
+          "title": "Negative",
+          "type": "integer",
+          "exclusiveMaximum": 0
+        },
+        "non_positive": {
+          "title": "Non Positive",
+          "type": "integer",
+          "maximum": 0
+        },
+        "even": {
+          "title": "Even",
+          "type": "integer",
+          "multipleOf": 2
+        },
+        "love_for_pydantic": {
+          "title": "Love For Pydantic",
+          "type": "number"
+        }
+      },
+      "required": [
+        "positive",
+        "non_negative",
+        "negative",
+        "non_positive",
+        "even",
+        "love_for_pydantic"
+      ]
+    }
+    ```
+
+    Check the [JSON Schema 2020-12] for more details.
+
+## String Constraints
+
 TODO: Document usage of other `Field` keyword arguments
+
+[JSON Schema 2020-12]: https://json-schema.org/understanding-json-schema/reference/numeric.html#numeric-types
